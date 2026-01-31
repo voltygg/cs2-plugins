@@ -4,8 +4,8 @@
       "name": "Win32",
       "includePath": [
         "${workspaceFolder}/src",
-        "${env:MMSOURCE}/core",
-        "${env:MMSOURCE}/core/sourcehook",
+        "${env:MMSOURCE20}/core",
+        "${env:MMSOURCE20}/core/sourcehook",
         "${env:HL2SDKCS2}/common",
         "${env:HL2SDKCS2}/game/shared",
         "${env:HL2SDKCS2}/game/server",

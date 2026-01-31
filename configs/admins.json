@@ -4,7 +4,7 @@
     {
       "steam_id": "76561198153558892",
       "name": ".NET Player",
-      "groups": ["creator"],
+      "groups": ["superadmin"],
       "flags": "",
       "immunity": 100,
       "notes": "Server owner"

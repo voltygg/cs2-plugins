@@ -3,25 +3,30 @@
 # mypy: ignore-errors
 #
 # Admin System - Source AMBuilder
-#
-# Note: 'builder' and 'AdminSystem' are injected at runtime by AMBuild
 
-# Create plugin library
-binary = AdminSystem.HL2Library(builder, "admin-system")
+import os
 
-# Source files
-binary.sources += [
-    # Core
-    "core/plugin.cpp",
-    # Add more source files as they are created
-]
+# Build for each SDK target
+for sdk_target in AdminSystem.sdk_targets:
+    sdk = sdk_target.sdk
+    cxx = sdk_target.cxx
 
-# Libraries for Windows (detect via compiler)
-if binary.compiler.like("msvc"):
-    binary.compiler.linkflags += [
-        "libpq.lib",
-        "pqxx.lib",
+    # Create plugin library using HL2Library (handles SDK includes, Source 2 files, etc.)
+    binary = AdminSystem.HL2Library(builder, cxx, "admin-system", sdk)
+
+    # Plugin source files
+    binary.sources += [
+        # Core
+        os.path.join(builder.sourcePath, "src", "core", "plugin.cpp"),
+        # Add more source files as they are created
     ]
 
-# Add binary to the build
-builder.Add(binary)
+    # Libraries for Windows
+    if binary.compiler.like("msvc"):
+        binary.compiler.linkflags += [
+            "libpq.lib",
+            "pqxx.lib",
+        ]
+
+    # Add binary to the build
+    AdminSystem.binaries += [builder.Add(binary)]

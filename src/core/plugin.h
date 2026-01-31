@@ -1,9 +1,8 @@
 #pragma once
 
+// Metamod:Source 2.0 plugin header
+// META_IS_SOURCE2 is defined by AMBuildScript for Source 2 games
 #include <ISmmPlugin.h>
-
-// Note: Some HL2SDK headers (igameevents.h, iplayerinfo.h, eiface.h) require
-// protobuf headers to be generated. Install protoc and generate them before use.
 
 // Plugin version info
 #define ADMIN_SYSTEM_VERSION "1.0.0"
