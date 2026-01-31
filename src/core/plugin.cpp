@@ -1,5 +1,17 @@
 #include "plugin.h"
+#include "config.h"
+#include "../database/database.h"
+#include "../player/player_manager.h"
+#include "../admin/admin_manager.h"
+#include "../commands/command_manager.h"
+#include "../punishments/punishment_manager.h"
 #include <cstdio>
+
+using namespace database;
+using namespace player;
+using namespace admin;
+using namespace commands;
+using namespace punishments;
 
 // Global plugin instance
 AdminSystemPlugin g_AdminSystemPlugin;
@@ -124,37 +136,101 @@ void* AdminSystemPlugin::OnMetamodQuery(const char* iface, int* ret)
 
 bool AdminSystemPlugin::InitializeSubsystems(bool late)
 {
-    // TODO: Initialize subsystems in order:
-    // 1. Logger
-    // 2. Config loader
-    // 3. Database connection
-    // 4. Player manager
-    // 5. Admin manager
-    // 6. Command manager
-    // 7. Punishment manager
-    // 8. Menu manager
-
+    // 1. Load configuration files
+    META_CONPRINTF("[Admin System] Loading configurations...\n");
     if (!LoadConfigs())
     {
         META_CONPRINTF("[Admin System] Warning: Failed to load some configs.\n");
+        return false;
     }
 
+    // 2. Initialize database connection
+    META_CONPRINTF("[Admin System] Connecting to database...\n");
+    auto& db = Database::Instance();
+    auto& config_mgr = core::ConfigManager::Instance();
+
+    if (!db.Initialize(config_mgr.GetDatabaseConfig()))
+    {
+        META_CONPRINTF("[Admin System] Error: Failed to connect to database.\n");
+        return false;
+    }
+
+    // 3. Load admin groups and admins
+    META_CONPRINTF("[Admin System] Loading admins...\n");
+    auto& admin_mgr = AdminManager::Instance();
+
+    if (!admin_mgr.LoadGroups())
+    {
+        META_CONPRINTF("[Admin System] Warning: Failed to load admin groups.\n");
+    }
+
+    if (!admin_mgr.LoadAdmins())
+    {
+        META_CONPRINTF("[Admin System] Warning: Failed to load admins.\n");
+    }
+
+    // 4. Initialize player manager (singleton, auto-initialized)
+    META_CONPRINTF("[Admin System] Player manager ready.\n");
+
+    // 5. Initialize command manager
+    META_CONPRINTF("[Admin System] Initializing commands...\n");
+    auto& cmd_mgr = CommandManager::Instance();
+    cmd_mgr.InitializeBuiltinCommands();
+
+    // 6. Initialize punishment manager
+    META_CONPRINTF("[Admin System] Loading active punishments...\n");
+    auto& punishment_mgr = PunishmentManager::Instance();
+    if (!punishment_mgr.LoadActivePunishments())
+    {
+        META_CONPRINTF("[Admin System] Warning: Failed to load active punishments.\n");
+    }
+
+    // 7. TODO: Initialize menu manager
+
+    META_CONPRINTF("[Admin System] All subsystems initialized.\n");
     return true;
 }
 
 void AdminSystemPlugin::ShutdownSubsystems()
 {
-    // TODO: Shutdown subsystems in reverse order
+    META_CONPRINTF("[Admin System] Shutting down subsystems...\n");
+
+    // Clear player manager
+    PlayerManager::Instance().Clear();
+
+    // Shutdown database
+    Database::Instance().Shutdown();
+
+    META_CONPRINTF("[Admin System] Subsystems shut down.\n");
 }
 
 bool AdminSystemPlugin::LoadConfigs()
 {
-    // TODO: Load JSON configuration files
-    // - config.json
-    // - database.json
-    // - admins.json
-    // - groups.json
-    // - overrides.json
+    auto& config_mgr = core::ConfigManager::Instance();
+
+    // Load main config
+    if (!config_mgr.LoadConfig("addons/admin-system/configs/config.json"))
+    {
+        META_CONPRINTF("[Admin System] Warning: Failed to load config.json\n");
+    }
+
+    // Load database config
+    if (!config_mgr.LoadDatabaseConfig("addons/admin-system/configs/database.json"))
+    {
+        META_CONPRINTF("[Admin System] Error: Failed to load database.json\n");
+        return false;
+    }
+
+    // Load admins and groups (will be loaded into AdminManager after DB init)
+    if (!config_mgr.LoadAdmins("addons/admin-system/configs/admins.json"))
+    {
+        META_CONPRINTF("[Admin System] Warning: Failed to load admins.json\n");
+    }
+
+    if (!config_mgr.LoadGroups("addons/admin-system/configs/groups.json"))
+    {
+        META_CONPRINTF("[Admin System] Warning: Failed to load groups.json\n");
+    }
 
     return true;
 }

@@ -10,10 +10,38 @@ import os
 # SOURCE FILES - Add your .cpp files here
 # =============================================================================
 SOURCES = [
+    # Core
     "core/plugin.cpp",
-    # Add more source files as needed:
-    # "player/player_manager.cpp",
-    # "admin/admin_manager.cpp",
+    "core/config.cpp",
+
+    # Utilities
+    "utils/steamid.cpp",
+    "utils/time.cpp",
+    "utils/string.cpp",
+
+    # Database
+    "database/database.cpp",
+    "database/entities/admin.cpp",
+    "database/entities/admin_group.cpp",
+    "database/entities/ban.cpp",
+    "database/entities/mute.cpp",
+    "database/entities/gag.cpp",
+    "database/repositories/admin_repository.cpp",
+    "database/repositories/ban_repository.cpp",
+
+    # Player
+    "player/player.cpp",
+    "player/player_manager.cpp",
+
+    # Admin
+    "admin/admin_manager.cpp",
+
+    # Commands
+    "commands/command.cpp",
+    "commands/command_manager.cpp",
+
+    # Punishments
+    "punishments/punishment_manager.cpp",
 ]
 
 # =============================================================================
@@ -25,8 +53,8 @@ WINDOWS_LIBS = [
 ]
 
 LINUX_LIBS = [
-    # "pqxx",
-    # "pq",
+    "pqxx",
+    "pq",
 ]
 
 # =============================================================================

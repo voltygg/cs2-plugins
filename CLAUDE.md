@@ -6,7 +6,7 @@ C++ Metamod:Source plugin for CS2 community servers providing comprehensive admi
 
 ## Tech Stack
 
-- **Language:** C++20
+- **Language:** C++23
 - **Framework:** Metamod:Source 2.0 + hl2sdk-cs2
 - **Database:** PostgreSQL 18 via libpqxx
 - **UI:** Panorama (XML/JS/CSS)
@@ -15,9 +15,6 @@ C++ Metamod:Source plugin for CS2 community servers providing comprehensive admi
 ## Build Commands
 
 ```bash
-# Docker build (recommended)
-docker compose run --rm build
-
 # Local Windows (from x64 Native Tools Command Prompt)
 cd scripts
 ./build.sh
@@ -45,13 +42,20 @@ gamedata/           # Signatures and offsets
 
 ## Code Conventions
 
-- Use modern C++20 features (concepts, ranges, std::format)
-- Follow existing patterns in codebase
-- Entity classes in `src/database/entities/`
-- Repository pattern for database access
-- JSON for all configuration files
-- Prefer `std::optional` over null pointers
-- Use `int64_t` for SteamIDs
+- **C++ Version**: Use modern C++23 features where supported
+  - Prefer C++23 > C++20 features (ranges, std::expected, std::print)
+  - Use `using namespace` in .cpp files (not in headers)
+  - Use ranges and views for collections
+  - Use designated initializers
+  - Use std::format for string formatting
+- **Code Style**:
+  - Follow existing patterns in codebase
+  - Entity classes in `src/database/entities/`
+  - Repository pattern for database access
+  - JSON for all configuration files
+  - Prefer `std::optional` over null pointers
+  - Use `int64_t` for SteamIDs
+  - Avoid namespace:: prefixes in implementation files (use using namespace)
 
 ## Database
 
