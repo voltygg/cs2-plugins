@@ -2,9 +2,9 @@
   "$schema": "./schemas/admins.schema.json",
   "admins": [
     {
-      "steam_id": "76561198012345678",
-      "name": "Example Admin",
-      "groups": ["superadmin"],
+      "steam_id": "76561198153558892",
+      "name": ".NET Player",
+      "groups": ["creator"],
       "flags": "",
       "immunity": 100,
       "notes": "Server owner"

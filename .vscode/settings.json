@@ -57,9 +57,16 @@
 
   // Python (for AMBuild scripts)
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter",
-    "editor.tabSize": 4
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.tabSize": 4,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
   },
+  "ruff.lineLength": 100,
+  "mypy-type-checker.args": ["--config-file=${workspaceFolder}/pyproject.toml"],
+  "python.analysis.typeCheckingMode": "basic",
 
   // JavaScript/CSS (for Panorama UI)
   "[javascript]": {
@@ -68,10 +75,6 @@
   },
   "[css]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.tabSize": 2
-  },
-  "[xml]": {
-    "editor.defaultFormatter": "redhat.vscode-xml",
     "editor.tabSize": 2
   },
 

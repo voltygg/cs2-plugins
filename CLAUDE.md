@@ -22,14 +22,11 @@ docker compose run --rm build
 mkdir build && cd build
 python ../configure.py
 ambuild
-
-# Generate Visual Studio 2026 project for debugging
-python ../configure.py --gen=vs --vs-version 19
 ```
 
 ## Project Structure
 
-```
+```text
 src/
 ├── core/           # Plugin infrastructure (ISmmPlugin, events, hooks)
 ├── sdk/            # SDK wrappers (entity access, user messages)

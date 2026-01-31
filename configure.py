@@ -5,23 +5,14 @@
 # AMBuild Configuration Script
 #
 
-import sys
 import os
+import sys
 
 # Add AMBuild path
-if os.path.exists(
-    os.path.join(os.path.dirname(__file__), "metamod", "third_party", "ambuild")
-):
-    sys.path.insert(
-        0, os.path.join(os.path.dirname(__file__), "metamod", "third_party", "ambuild")
-    )
+if os.path.exists(os.path.join(os.path.dirname(__file__), "metamod", "third_party", "ambuild")):
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "metamod", "third_party", "ambuild"))
 
 from ambuild2 import run
-
-
-def make_objdir_name(p):
-    return "obj-" + p.target_platform
-
 
 parser = run.BuildParser(sourcePath=sys.path[0], api="2.2")
 
@@ -38,7 +29,7 @@ parser.options.add_argument(
     "--mms-path",
     type=str,
     dest="mms_path",
-    default=os.environ.get("MMSOURCE112", None),
+    default=os.environ.get("MMSOURCE", None),
     help="Path to Metamod:Source",
 )
 
@@ -59,17 +50,4 @@ parser.options.add_argument(
     help="Enable optimization",
 )
 
-# Visual Studio generation
-parser.options.add_argument(
-    "--gen", type=str, dest="generator", default=None, help="Build file generator (vs)"
-)
-
-parser.options.add_argument(
-    "--vs-version",
-    type=str,
-    dest="vs_version",
-    default="18",
-    help="Visual Studio version (17 = 2022, 18 = 2026)",
-)
-
-parser.Configure(make_objdir_name)
+parser.Configure()

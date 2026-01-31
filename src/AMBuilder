@@ -1,27 +1,27 @@
 # vim: set ts=8 sts=4 sw=4 tw=99 et ft=python:
+# ruff: noqa: F821
+# mypy: ignore-errors
 #
 # Admin System - Source AMBuilder
 #
-
-import os
-
-AdminSystem = builder.parent.AdminSystem
+# Note: 'builder' and 'AdminSystem' are injected at runtime by AMBuild
 
 # Create plugin library
-binary = AdminSystem.HL2Library(builder, 'admin-system')
+binary = AdminSystem.HL2Library(builder, "admin-system")
 
 # Source files
 binary.sources += [
     # Core
-    'core/plugin.cpp',
+    "core/plugin.cpp",
     # Add more source files as they are created
 ]
 
-# Libraries for Windows
-if builder.target.platform == 'windows':
+# Libraries for Windows (detect via compiler)
+if binary.compiler.like("msvc"):
     binary.compiler.linkflags += [
-        'libpq.lib',
-        'pqxx.lib',
+        "libpq.lib",
+        "pqxx.lib",
     ]
 
-AdminSystem.binaries += [binary]
+# Add binary to the build
+builder.Add(binary)

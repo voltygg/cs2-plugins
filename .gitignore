@@ -1,6 +1,6 @@
 # Build output
 build/
-obj-*/
+objdir/
 package/
 
 # IDE
@@ -48,7 +48,6 @@ desktop.ini
 
 # Debug
 *.dmp
-core
 
 # Temporary
 *.tmp
@@ -64,6 +63,13 @@ __pycache__/
 .env
 .env.local
 *.local.json
+env.bat
+env.cmd
+env.ps1
+env.sh
+
+# PDM
+.pdm-python
 
 # Claude local settings
 .claude/settings.local.json

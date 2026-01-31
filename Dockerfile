@@ -20,7 +20,7 @@ RUN git clone https://github.com/alliedmodders/hl2sdk --branch cs2 hl2sdk-cs2 \
 
 # Set environment variables for SDK paths
 ENV HL2SDKCS2=/sdk/hl2sdk-cs2
-ENV MMSOURCE112=/sdk/metamod-source
+ENV MMSOURCE=/sdk/metamod-source
 
 # Set working directory for plugin source
 WORKDIR /app

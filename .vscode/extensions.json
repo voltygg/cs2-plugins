@@ -1,25 +1,24 @@
 {
   "recommendations": [
-    // C++ development
+    // C++ development (MSVC)
     "ms-vscode.cpptools",
     "ms-vscode.cpptools-extension-pack",
-    "llvm-vs-code-extensions.vscode-clangd",
-    "xaver.clang-format",
+    "ms-vscode.cmake-tools",
 
     // Python (for AMBuild)
     "ms-python.python",
-    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    "ms-python.mypy-type-checker",
 
-    // JSON/YAML
+    // JSON/XML
     "esbenp.prettier-vscode",
-    "redhat.vscode-yaml",
-
-    // XML (for Panorama)
     "redhat.vscode-xml",
 
     // Database
     "mtxr.sqltools",
     "mtxr.sqltools-driver-pg"
   ],
-  "unwantedRecommendations": []
+  "unwantedRecommendations": [
+    "llvm-vs-code-extensions.vscode-clangd"
+  ]
 }

@@ -73,10 +73,6 @@ A modern C++ admin system plugin for Counter-Strike 2 community servers, built o
 }
 ```
 
-## Building from Source
-
-See [CLAUDE.md](CLAUDE.md) for development setup and build instructions.
-
 ### Quick Start (Docker)
 
 ```bash
@@ -88,8 +84,14 @@ docker compose run --rm build
 
 ### Windows Build
 
-Requires Visual Studio 2022 and vcpkg. See CLAUDE.md for details.
+Requires Visual Studio 2026 and vcpkg.
 
-## License
+```bash
+# Local Windows (from x64 Native Tools Command Prompt)
+mkdir build && cd build
+python ../configure.py
+ambuild
 
-MIT License - see [LICENSE](LICENSE) for details.
+# Generate Visual Studio 2026 project for debugging
+python ../configure.py --gen=vs --vs-version 19
+```
