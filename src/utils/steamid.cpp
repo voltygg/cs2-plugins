@@ -1,8 +1,10 @@
 #include "steamid.h"
+
 #include <format>
 #include <regex>
 
-namespace utils {
+namespace utils
+{
 
 std::string SteamID::ToSteamID3(int64_t steamid64)
 {
@@ -79,4 +81,4 @@ uint32_t SteamID::GetAccountID(int64_t steamid64)
     return static_cast<uint32_t>(steamid64 - STEAMID64_BASE);
 }
 
-} // namespace utils
+}  // namespace utils

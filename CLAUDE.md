@@ -44,7 +44,6 @@ gamedata/           # Signatures and offsets
 
 - **C++ Version**: Use modern C++23 features where supported
   - Prefer C++23 > C++20 features (ranges, std::expected, std::print)
-  - Use `using namespace` in .cpp files (not in headers)
   - Use ranges and views for collections
   - Use designated initializers
   - Use std::format for string formatting
@@ -55,7 +54,6 @@ gamedata/           # Signatures and offsets
   - JSON for all configuration files
   - Prefer `std::optional` over null pointers
   - Use `int64_t` for SteamIDs
-  - Avoid namespace:: prefixes in implementation files (use using namespace)
 
 ## Database
 

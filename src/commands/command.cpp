@@ -1,9 +1,11 @@
 #include "command.h"
+
 #include "../utils/string.h"
 
 using namespace std;
 
-namespace commands {
+namespace commands
+{
 
 bool Command::Matches(const string& cmd) const
 {
@@ -21,4 +23,4 @@ bool Command::Matches(const string& cmd) const
     return false;
 }
 
-} // namespace commands
+}  // namespace commands

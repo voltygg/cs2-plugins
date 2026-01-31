@@ -1,11 +1,13 @@
 #include "mute.h"
+
 #include "../../utils/time.h"
 
-namespace database {
+namespace database
+{
 
 bool Mute::IsExpired() const
 {
     return utils::Time::IsExpired(expires_at);
 }
 
-} // namespace database
+}  // namespace database

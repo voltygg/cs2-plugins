@@ -1,19 +1,18 @@
 #include "admin_repository.h"
-#include "../database.h"
-#include "../../utils/time.h"
 
-namespace database {
+#include "../../utils/time.h"
+#include "../database.h"
+
+namespace database
+{
 
 // AdminRepository implementation
 std::optional<Admin> AdminRepository::FindBySteamID(int64_t steam_id)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
-            "find_admin_by_steamid",
-            "SELECT * FROM admins WHERE steam_id = $1",
-            steam_id
-        );
+        auto result = Database::Instance().ExecutePrepared("find_admin_by_steamid",
+                                                           "SELECT * FROM admins WHERE steam_id = $1", steam_id);
 
         if (result.empty())
         {
@@ -79,11 +78,7 @@ bool AdminRepository::Delete(int64_t steam_id)
 {
     try
     {
-        Database::Instance().ExecutePrepared(
-            "delete_admin",
-            "DELETE FROM admins WHERE steam_id = $1",
-            steam_id
-        );
+        Database::Instance().ExecutePrepared("delete_admin", "DELETE FROM admins WHERE steam_id = $1", steam_id);
 
         return true;
     }
@@ -117,11 +112,8 @@ std::optional<AdminGroup> AdminGroupRepository::FindByName(const std::string& na
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
-            "find_group_by_name",
-            "SELECT * FROM admin_groups WHERE name = $1",
-            name
-        );
+        auto result = Database::Instance().ExecutePrepared("find_group_by_name",
+                                                           "SELECT * FROM admin_groups WHERE name = $1", name);
 
         if (result.empty())
         {
@@ -187,11 +179,7 @@ bool AdminGroupRepository::Delete(const std::string& name)
 {
     try
     {
-        Database::Instance().ExecutePrepared(
-            "delete_group",
-            "DELETE FROM admin_groups WHERE name = $1",
-            name
-        );
+        Database::Instance().ExecutePrepared("delete_group", "DELETE FROM admin_groups WHERE name = $1", name);
 
         return true;
     }
@@ -219,4 +207,4 @@ AdminGroup AdminGroupRepository::ParseRow(const pqxx::row& row)
     return group;
 }
 
-} // namespace database
+}  // namespace database

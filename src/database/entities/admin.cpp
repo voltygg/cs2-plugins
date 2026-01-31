@@ -1,7 +1,9 @@
 #include "admin.h"
+
 #include <algorithm>
 
-namespace database {
+namespace database
+{
 
 bool Admin::HasFlag(char flag) const
 {
@@ -57,4 +59,4 @@ bool Admin::IsRoot() const
     return HasFlag('z');
 }
 
-} // namespace database
+}  // namespace database

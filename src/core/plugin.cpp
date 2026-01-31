@@ -1,17 +1,13 @@
 #include "plugin.h"
-#include "config.h"
-#include "../database/database.h"
-#include "../player/player_manager.h"
+
 #include "../admin/admin_manager.h"
 #include "../commands/command_manager.h"
+#include "../database/database.h"
+#include "../player/player_manager.h"
 #include "../punishments/punishment_manager.h"
-#include <cstdio>
+#include "config.h"
 
-using namespace database;
-using namespace player;
-using namespace admin;
-using namespace commands;
-using namespace punishments;
+#include <cstdio>
 
 // Global plugin instance
 AdminSystemPlugin g_AdminSystemPlugin;
@@ -146,7 +142,7 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 2. Initialize database connection
     META_CONPRINTF("[Admin System] Connecting to database...\n");
-    auto& db = Database::Instance();
+    auto& db = database::Database::Instance();
     auto& config_mgr = core::ConfigManager::Instance();
 
     if (!db.Initialize(config_mgr.GetDatabaseConfig()))
@@ -157,7 +153,7 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 3. Load admin groups and admins
     META_CONPRINTF("[Admin System] Loading admins...\n");
-    auto& admin_mgr = AdminManager::Instance();
+    auto& admin_mgr = admin::AdminManager::Instance();
 
     if (!admin_mgr.LoadGroups())
     {
@@ -174,12 +170,12 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 5. Initialize command manager
     META_CONPRINTF("[Admin System] Initializing commands...\n");
-    auto& cmd_mgr = CommandManager::Instance();
+    auto& cmd_mgr = commands::CommandManager::Instance();
     cmd_mgr.InitializeBuiltinCommands();
 
     // 6. Initialize punishment manager
     META_CONPRINTF("[Admin System] Loading active punishments...\n");
-    auto& punishment_mgr = PunishmentManager::Instance();
+    auto& punishment_mgr = punishments::PunishmentManager::Instance();
     if (!punishment_mgr.LoadActivePunishments())
     {
         META_CONPRINTF("[Admin System] Warning: Failed to load active punishments.\n");
@@ -196,10 +192,10 @@ void AdminSystemPlugin::ShutdownSubsystems()
     META_CONPRINTF("[Admin System] Shutting down subsystems...\n");
 
     // Clear player manager
-    PlayerManager::Instance().Clear();
+    player::PlayerManager::Instance().Clear();
 
     // Shutdown database
-    Database::Instance().Shutdown();
+    database::Database::Instance().Shutdown();
 
     META_CONPRINTF("[Admin System] Subsystems shut down.\n");
 }

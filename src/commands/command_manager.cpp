@@ -1,26 +1,27 @@
 #include "command_manager.h"
-#include "../player/player_manager.h"
+
 #include "../admin/admin_manager.h"
+#include "../player/player_manager.h"
 #include "../utils/string.h"
+
 #include <algorithm>
 
 using namespace std;
 using namespace player;
-using namespace admin;
-using namespace utils;
 
-namespace commands {
+namespace commands
+{
 
 void CommandManager::RegisterCommand(const Command& cmd)
 {
     lock_guard<mutex> lock(m_mutex);
-    m_commands[String::ToLower(cmd.name)] = cmd;
+    m_commands[utils::String::ToLower(cmd.name)] = cmd;
 }
 
 void CommandManager::UnregisterCommand(const string& name)
 {
     lock_guard<mutex> lock(m_mutex);
-    m_commands.erase(String::ToLower(name));
+    m_commands.erase(utils::String::ToLower(name));
 }
 
 bool CommandManager::HandleChatMessage(Player* player, const string& message)
@@ -33,17 +34,17 @@ bool CommandManager::HandleChatMessage(Player* player, const string& message)
         return false;
 
     // Parse command and arguments
-    auto parts = ParseArguments(message.substr(1)); // Skip prefix
+    auto parts = ParseArguments(message.substr(1));  // Skip prefix
     if (parts.empty())
         return false;
 
-    const string& cmdName = parts[0];
+    const std::string& cmdName = parts[0];
     vector<string> args(parts.begin() + 1, parts.end());
 
     // Find command
     const Command* cmd = GetCommand(cmdName);
     if (!cmd)
-        return false; // Command not found
+        return false;  // Command not found
 
     // Check argument count
     if (args.size() < static_cast<size_t>(cmd->min_args))
@@ -61,7 +62,7 @@ bool CommandManager::HandleChatMessage(Player* player, const string& message)
     // Check permissions
     if (!cmd->permission.empty())
     {
-        auto& adminMgr = AdminManager::Instance();
+        auto& adminMgr = admin::AdminManager::Instance();
         if (!adminMgr.HasAnyPermission(player->GetSteamID(), cmd->permission))
         {
             // TODO: Send "no permission" message
@@ -83,7 +84,7 @@ const Command* CommandManager::GetCommand(const string& name) const
 {
     lock_guard<mutex> lock(m_mutex);
 
-    string lowerName = String::ToLower(name);
+    string lowerName = utils::String::ToLower(name);
 
     // Direct lookup
     auto it = m_commands.find(lowerName);
@@ -118,79 +119,74 @@ vector<const Command*> CommandManager::GetAllCommands() const
 void CommandManager::InitializeBuiltinCommands()
 {
     // Kick command
-    RegisterCommand({
-        .name = "kick",
-        .aliases = {"k"},
-        .description = "Kick a player from the server",
-        .usage = "!kick <player> [reason]",
-        .permission = "c",
-        .min_args = 1,
-        .handler = [](Player* admin, const vector<string>& args) -> CommandResult {
-            // TODO: Implement kick logic
-            return {true, "Kick command executed"};
-        }
-    });
+    RegisterCommand({.name = "kick",
+                     .aliases = {"k"},
+                     .description = "Kick a player from the server",
+                     .usage = "!kick <player> [reason]",
+                     .permission = "c",
+                     .min_args = 1,
+                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
+                     {
+                         // TODO: Implement kick logic
+                         return {true, "Kick command executed"};
+                     }});
 
     // Ban command
-    RegisterCommand({
-        .name = "ban",
-        .aliases = {"b"},
-        .description = "Ban a player from the server",
-        .usage = "!ban <player> <duration> [reason]",
-        .permission = "b",
-        .min_args = 2,
-        .handler = [](Player* admin, const vector<string>& args) -> CommandResult {
-            // TODO: Implement ban logic
-            return {true, "Ban command executed"};
-        }
-    });
+    RegisterCommand({.name = "ban",
+                     .aliases = {"b"},
+                     .description = "Ban a player from the server",
+                     .usage = "!ban <player> <duration> [reason]",
+                     .permission = "b",
+                     .min_args = 2,
+                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
+                     {
+                         // TODO: Implement ban logic
+                         return {true, "Ban command executed"};
+                     }});
 
     // Mute command
-    RegisterCommand({
-        .name = "mute",
-        .aliases = {"m"},
-        .description = "Mute a player's voice",
-        .usage = "!mute <player> <duration> [reason]",
-        .permission = "i",
-        .min_args = 2,
-        .handler = [](Player* admin, const vector<string>& args) -> CommandResult {
-            // TODO: Implement mute logic
-            return {true, "Mute command executed"};
-        }
-    });
+    RegisterCommand({.name = "mute",
+                     .aliases = {"m"},
+                     .description = "Mute a player's voice",
+                     .usage = "!mute <player> <duration> [reason]",
+                     .permission = "i",
+                     .min_args = 2,
+                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
+                     {
+                         // TODO: Implement mute logic
+                         return {true, "Mute command executed"};
+                     }});
 
     // Gag command
-    RegisterCommand({
-        .name = "gag",
-        .aliases = {"g"},
-        .description = "Gag a player's chat",
-        .usage = "!gag <player> <duration> [reason]",
-        .permission = "i",
-        .min_args = 2,
-        .handler = [](Player* admin, const vector<string>& args) -> CommandResult {
-            // TODO: Implement gag logic
-            return {true, "Gag command executed"};
-        }
-    });
+    RegisterCommand({.name = "gag",
+                     .aliases = {"g"},
+                     .description = "Gag a player's chat",
+                     .usage = "!gag <player> <duration> [reason]",
+                     .permission = "i",
+                     .min_args = 2,
+                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
+                     {
+                         // TODO: Implement gag logic
+                         return {true, "Gag command executed"};
+                     }});
 
     // Warn command
-    RegisterCommand({
-        .name = "warn",
-        .aliases = {"w"},
-        .description = "Warn a player",
-        .usage = "!warn <player> [reason]",
-        .permission = "i",
-        .min_args = 1,
-        .handler = [](Player* admin, const vector<string>& args) -> CommandResult {
-            // TODO: Implement warn logic
-            return {true, "Warn command executed"};
-        }
-    });
+    RegisterCommand({.name = "warn",
+                     .aliases = {"w"},
+                     .description = "Warn a player",
+                     .usage = "!warn <player> [reason]",
+                     .permission = "i",
+                     .min_args = 1,
+                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
+                     {
+                         // TODO: Implement warn logic
+                         return {true, "Warn command executed"};
+                     }});
 }
 
 vector<string> CommandManager::ParseArguments(const string& text) const
 {
-    return String::Split(text, ' ');
+    return utils::String::Split(text, ' ');
 }
 
 CommandManager& CommandManager::Instance()
@@ -199,4 +195,4 @@ CommandManager& CommandManager::Instance()
     return instance;
 }
 
-} // namespace commands
+}  // namespace commands

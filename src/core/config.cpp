@@ -1,8 +1,10 @@
 #include "config.h"
+
 #include <fstream>
 #include <iostream>
 
-namespace core {
+namespace core
+{
 
 void PluginConfig::from_json(const json& j)
 {
@@ -151,4 +153,4 @@ ConfigManager& ConfigManager::Instance()
     return instance;
 }
 
-} // namespace core
+}  // namespace core

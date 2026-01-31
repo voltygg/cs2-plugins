@@ -1,7 +1,9 @@
 #include "player_manager.h"
+
 #include "../utils/string.h"
 
-namespace player {
+namespace player
+{
 
 Player* PlayerManager::AddPlayer(int slot, int64_t steam_id, const std::string& name, const std::string& ip_address)
 {
@@ -113,4 +115,4 @@ PlayerManager& PlayerManager::Instance()
     return instance;
 }
 
-} // namespace player
+}  // namespace player

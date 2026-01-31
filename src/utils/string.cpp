@@ -1,36 +1,35 @@
 #include "string.h"
+
 #include "steamid.h"
+
 #include <sstream>
 
-namespace utils {
+namespace utils
+{
 
 std::string String::ToLower(const std::string& str)
 {
     std::string result = str;
-    std::transform(result.begin(), result.end(), result.begin(),
-        [](unsigned char c) { return std::tolower(c); });
+    std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::tolower(c); });
     return result;
 }
 
 std::string String::ToUpper(const std::string& str)
 {
     std::string result = str;
-    std::transform(result.begin(), result.end(), result.begin(),
-        [](unsigned char c) { return std::toupper(c); });
+    std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::toupper(c); });
     return result;
 }
 
 std::string String::TrimLeft(const std::string& str)
 {
-    auto it = std::find_if(str.begin(), str.end(),
-        [](unsigned char c) { return !std::isspace(c); });
+    auto it = std::find_if(str.begin(), str.end(), [](unsigned char c) { return !std::isspace(c); });
     return std::string(it, str.end());
 }
 
 std::string String::TrimRight(const std::string& str)
 {
-    auto it = std::find_if(str.rbegin(), str.rend(),
-        [](unsigned char c) { return !std::isspace(c); });
+    auto it = std::find_if(str.rbegin(), str.rend(), [](unsigned char c) { return !std::isspace(c); });
     return std::string(str.begin(), it.base());
 }
 
@@ -122,8 +121,7 @@ bool String::IsNumeric(const std::string& str)
         return false;
     }
 
-    return std::all_of(str.begin(), str.end(),
-        [](unsigned char c) { return std::isdigit(c); });
+    return std::all_of(str.begin(), str.end(), [](unsigned char c) { return std::isdigit(c); });
 }
 
 String::TargetInfo String::ParseTarget(const std::string& target)
@@ -214,4 +212,4 @@ String::TargetInfo String::ParseTarget(const std::string& target)
     return info;
 }
 
-} // namespace utils
+}  // namespace utils

@@ -1,12 +1,13 @@
 #include "punishment_manager.h"
+
 #include "../database/repositories/ban_repository.h"
 #include "../player/player_manager.h"
 
 using namespace std;
 using namespace database;
-using namespace player;
 
-namespace punishments {
+namespace punishments
+{
 
 bool PunishmentManager::LoadActivePunishments()
 {
@@ -80,7 +81,7 @@ bool PunishmentManager::IssueBan(const Ban& ban)
         m_activeBans[ban.target_steam_id] = ban;
 
         // Kick player if online
-        auto& playerMgr = PlayerManager::Instance();
+        auto& playerMgr = player::PlayerManager::Instance();
         auto* player = playerMgr.GetPlayerBySteamID(ban.target_steam_id);
         if (player)
         {
@@ -107,7 +108,7 @@ bool PunishmentManager::IssueMute(const Mute& mute)
         m_mutedPlayers.insert(mute.target_steam_id);
 
         // Update player if online
-        auto& playerMgr = PlayerManager::Instance();
+        auto& playerMgr = player::PlayerManager::Instance();
         auto* player = playerMgr.GetPlayerBySteamID(mute.target_steam_id);
         if (player)
         {
@@ -134,7 +135,7 @@ bool PunishmentManager::IssueGag(const Gag& gag)
         m_gaggedPlayers.insert(gag.target_steam_id);
 
         // Update player if online
-        auto& playerMgr = PlayerManager::Instance();
+        auto& playerMgr = player::PlayerManager::Instance();
         auto* player = playerMgr.GetPlayerBySteamID(gag.target_steam_id);
         if (player)
         {
@@ -259,4 +260,4 @@ PunishmentManager& PunishmentManager::Instance()
     return instance;
 }
 
-} // namespace punishments
+}  // namespace punishments

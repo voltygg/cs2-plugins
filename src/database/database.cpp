@@ -1,15 +1,15 @@
 #include "database.h"
+
 #include <format>
 #include <stdexcept>
 
-namespace database {
+namespace database
+{
 
 std::string DatabaseConfig::GetConnectionString() const
 {
-    return std::format(
-        "host={} port={} dbname={} user={} password={} sslmode={}",
-        host, port, database, username, password, ssl_mode
-    );
+    return std::format("host={} port={} dbname={} user={} password={} sslmode={}", host, port, database, username,
+                       password, ssl_mode);
 }
 
 bool Database::Initialize(const DatabaseConfig& config)
@@ -104,4 +104,4 @@ Database& Database::Instance()
     return instance;
 }
 
-} // namespace database
+}  // namespace database

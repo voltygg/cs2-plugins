@@ -1,10 +1,12 @@
 #include "time.h"
+
+#include <algorithm>
+#include <cctype>
 #include <format>
 #include <regex>
-#include <cctype>
-#include <algorithm>
 
-namespace utils {
+namespace utils
+{
 
 int64_t Time::Now()
 {
@@ -117,18 +119,13 @@ std::string Time::FormatTimestamp(int64_t timestamp)
     localtime_r(&time, &tm);
 #endif
 
-    return std::format("{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}",
-        tm.tm_year + 1900,
-        tm.tm_mon + 1,
-        tm.tm_mday,
-        tm.tm_hour,
-        tm.tm_min,
-        tm.tm_sec);
+    return std::format("{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                       tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
 
 bool Time::IsExpired(int64_t expiresAt)
 {
-    if (expiresAt == 0) // Permanent
+    if (expiresAt == 0)  // Permanent
     {
         return false;
     }
@@ -138,7 +135,7 @@ bool Time::IsExpired(int64_t expiresAt)
 
 int64_t Time::GetExpirationTime(int64_t durationSeconds)
 {
-    if (durationSeconds == 0) // Permanent
+    if (durationSeconds == 0)  // Permanent
     {
         return 0;
     }
@@ -146,4 +143,4 @@ int64_t Time::GetExpirationTime(int64_t durationSeconds)
     return Now() + durationSeconds;
 }
 
-} // namespace utils
+}  // namespace utils
