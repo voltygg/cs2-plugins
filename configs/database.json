@@ -1,0 +1,12 @@
+{
+  "$schema": "./schemas/database.schema.json",
+  "host": "localhost",
+  "port": 5433,
+  "database": "cs2_server",
+  "username": "admin_system",
+  "password": "",
+  "schema": "admin_system",
+  "pool_size": 4,
+  "connect_timeout_seconds": 10,
+  "ssl_mode": "prefer"
+}

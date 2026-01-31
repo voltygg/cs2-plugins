@@ -1,0 +1,59 @@
+{
+  "$schema": "./schemas/groups.schema.json",
+  "groups": [
+    {
+      "name": "superadmin",
+      "flags": "z",
+      "immunity": 100,
+      "description": "Full access to all commands"
+    },
+    {
+      "name": "headadmin",
+      "flags": "bcdefghijklmnopqr",
+      "immunity": 80,
+      "description": "Head administrator"
+    },
+    {
+      "name": "admin",
+      "flags": "bcdfopqr",
+      "immunity": 60,
+      "description": "Full administrator"
+    },
+    {
+      "name": "moderator",
+      "flags": "bcopqr",
+      "immunity": 40,
+      "description": "Moderator with basic admin powers"
+    },
+    {
+      "name": "vip",
+      "flags": "a",
+      "immunity": 5,
+      "description": "VIP with reserved slot"
+    }
+  ],
+  "flag_descriptions": {
+    "a": "Reserved slot access",
+    "b": "Generic admin",
+    "c": "Kick players",
+    "d": "Ban players",
+    "e": "Unban players",
+    "f": "Slay/harm players",
+    "g": "Change map",
+    "h": "Change cvars",
+    "i": "Execute configs",
+    "j": "Special chat",
+    "k": "Create votes",
+    "l": "Set password",
+    "m": "RCON access",
+    "n": "Cheat commands",
+    "o": "Mute players",
+    "p": "Gag players",
+    "q": "Warn players",
+    "r": "Admin menu access",
+    "s": "Custom 1",
+    "t": "Custom 2",
+    "u": "Custom 3",
+    "z": "Root (all permissions)"
+  }
+}

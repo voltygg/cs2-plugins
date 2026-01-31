@@ -1,0 +1,173 @@
+# vim: set ts=8 sts=4 sw=4 tw=99 et ft=python:
+#
+# Admin System - CS2 Metamod Plugin
+# AMBuild Main Script
+#
+
+import os
+import sys
+
+class AdminSystemConfig:
+    def __init__(self):
+        self.binaries = []
+        self.hl2sdk_root = None
+        self.mms_root = None
+        self.plugin_name = 'admin-system'
+
+    def configure(self):
+        # Detect compiler
+        builder.cxx = builder.DetectCxx()
+
+        # Set SDK paths
+        if builder.options.hl2sdk_root:
+            self.hl2sdk_root = builder.options.hl2sdk_root
+        else:
+            # Try to find SDK in standard locations
+            sdk_paths = [
+                os.path.join(builder.sourcePath, 'sdk'),
+                os.environ.get('HL2SDKCS2', ''),
+                '/sdk/hl2sdk-cs2',
+            ]
+            for path in sdk_paths:
+                if path and os.path.exists(path):
+                    self.hl2sdk_root = path
+                    break
+
+        if builder.options.mms_path:
+            self.mms_root = builder.options.mms_path
+        else:
+            mms_paths = [
+                os.path.join(builder.sourcePath, 'metamod'),
+                os.environ.get('MMSOURCE112', ''),
+                '/sdk/metamod-source',
+            ]
+            for path in mms_paths:
+                if path and os.path.exists(path):
+                    self.mms_root = path
+                    break
+
+        if not self.hl2sdk_root:
+            raise Exception('Could not find HL2SDK. Set --hl2sdk-root or HL2SDKCS2 environment variable.')
+        if not self.mms_root:
+            raise Exception('Could not find Metamod:Source. Set --mms-path or MMSOURCE112 environment variable.')
+
+        print(f'Using HL2SDK: {self.hl2sdk_root}')
+        print(f'Using Metamod:Source: {self.mms_root}')
+
+        # C++ standard
+        if builder.cxx.like('gcc') or builder.cxx.like('clang'):
+            builder.cxx.cxxflags += ['-std=c++20']
+        elif builder.cxx.like('msvc'):
+            builder.cxx.cxxflags += ['/std:c++20']
+
+        # Common defines
+        builder.cxx.defines += [
+            'META_IS_SOURCE2',
+        ]
+
+        if builder.cxx.like('msvc'):
+            builder.cxx.defines += ['COMPILER_MSVC64']
+        else:
+            builder.cxx.defines += ['COMPILER_GCC']
+
+        # Platform-specific settings
+        if builder.target.platform == 'windows':
+            self.configure_windows()
+        elif builder.target.platform == 'linux':
+            self.configure_linux()
+
+        # Include paths
+        self.configure_includes()
+
+    def configure_windows(self):
+        builder.cxx.defines += [
+            'WIN32',
+            '_WINDOWS',
+            'NOMINMAX',
+            '_CRT_SECURE_NO_WARNINGS',
+        ]
+        builder.cxx.cxxflags += [
+            '/EHsc',
+            '/W3',
+            '/wd4005',  # macro redefinition
+            '/wd4996',  # deprecated functions
+            '/wd4828',  # illegal character
+        ]
+        if builder.options.debug:
+            builder.cxx.cxxflags += ['/Od', '/Zi', '/MDd']
+            builder.cxx.linkflags += ['/DEBUG']
+        else:
+            builder.cxx.cxxflags += ['/O2', '/MD']
+
+        builder.cxx.linkflags += [
+            'kernel32.lib',
+            'user32.lib',
+            'ws2_32.lib',
+        ]
+
+    def configure_linux(self):
+        builder.cxx.defines += [
+            'LINUX',
+            '_LINUX',
+            'POSIX',
+            '_POSIX',
+        ]
+        builder.cxx.cxxflags += [
+            '-fPIC',
+            '-fvisibility=hidden',
+            '-fvisibility-inlines-hidden',
+            '-Wall',
+            '-Wno-switch',
+            '-Wno-unused-function',
+            '-Wno-unused-variable',
+        ]
+        if builder.options.debug:
+            builder.cxx.cxxflags += ['-g', '-O0']
+        else:
+            builder.cxx.cxxflags += ['-O2']
+
+        builder.cxx.linkflags += [
+            '-lpthread',
+            '-ldl',
+            '-lpq',
+            '-lpqxx',
+        ]
+
+    def configure_includes(self):
+        builder.cxx.cxxincludes += [
+            os.path.join(builder.sourcePath, 'src'),
+            os.path.join(self.mms_root, 'core'),
+            os.path.join(self.mms_root, 'core', 'sourcehook'),
+            os.path.join(self.hl2sdk_root, 'common'),
+            os.path.join(self.hl2sdk_root, 'game', 'shared'),
+            os.path.join(self.hl2sdk_root, 'game', 'server'),
+            os.path.join(self.hl2sdk_root, 'public'),
+            os.path.join(self.hl2sdk_root, 'public', 'engine'),
+            os.path.join(self.hl2sdk_root, 'public', 'mathlib'),
+            os.path.join(self.hl2sdk_root, 'public', 'tier0'),
+            os.path.join(self.hl2sdk_root, 'public', 'tier1'),
+            os.path.join(self.hl2sdk_root, 'public', 'entity2'),
+            os.path.join(self.hl2sdk_root, 'public', 'game', 'server'),
+        ]
+
+        # vcpkg includes for libpqxx (Windows)
+        vcpkg_root = os.environ.get('VCPKG_ROOT', '')
+        if vcpkg_root and builder.target.platform == 'windows':
+            triplet = 'x64-windows'
+            builder.cxx.cxxincludes += [
+                os.path.join(vcpkg_root, 'installed', triplet, 'include'),
+            ]
+            builder.cxx.libdirs += [
+                os.path.join(vcpkg_root, 'installed', triplet, 'lib'),
+            ]
+
+    def HL2Library(self, context, name):
+        binary = context.cxx.Library(name)
+        return binary
+
+# Initialize configuration
+AdminSystem = AdminSystemConfig()
+AdminSystem.configure()
+
+# Build the plugin
+builder.Build(['src/AMBuilder'], { 'AdminSystem': AdminSystem })

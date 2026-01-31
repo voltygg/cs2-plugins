@@ -1,0 +1,27 @@
+{
+  "$schema": "./schemas/config.schema.json",
+  "plugin": {
+    "enabled": true,
+    "log_level": "info",
+    "server_id": "server1"
+  },
+  "admin": {
+    "immunity_mode": "simple",
+    "require_generic_flag": true
+  },
+  "commands": {
+    "chat_prefixes": ["!", "."],
+    "silent_prefix": "@"
+  },
+  "punishments": {
+    "default_ban_reason": "Banned by administrator",
+    "default_mute_reason": "Muted by administrator",
+    "max_ban_duration_minutes": 0,
+    "warning_threshold": 3,
+    "warning_action": "kick"
+  },
+  "database": {
+    "enabled": true,
+    "check_interval_seconds": 30
+  }
+}

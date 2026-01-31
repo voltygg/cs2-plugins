@@ -1,0 +1,27 @@
+# vim: set ts=8 sts=4 sw=4 tw=99 et ft=python:
+#
+# Admin System - Source AMBuilder
+#
+
+import os
+
+AdminSystem = builder.parent.AdminSystem
+
+# Create plugin library
+binary = AdminSystem.HL2Library(builder, 'admin-system')
+
+# Source files
+binary.sources += [
+    # Core
+    'core/plugin.cpp',
+    # Add more source files as they are created
+]
+
+# Libraries for Windows
+if builder.target.platform == 'windows':
+    binary.compiler.linkflags += [
+        'libpq.lib',
+        'pqxx.lib',
+    ]
+
+AdminSystem.binaries += [binary]
