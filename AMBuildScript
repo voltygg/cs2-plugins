@@ -259,15 +259,13 @@ class AdminSystemConfig:
         # Use SdkHelpers to configure SDK includes, libs, etc.
         SdkHelpers.configureCxx(context, binary, sdk)
 
-        # vcpkg includes for libpqxx (Windows)
-        vcpkg_root = os.environ.get("VCPKG_ROOT", "")
-        if vcpkg_root and cxx.like("msvc"):
+        # vcpkg includes for libpqxx (Windows) - uses project-local vcpkg_installed
+        if cxx.like("msvc"):
             triplet = "x64-windows"
-            cxx.cxxincludes += [
-                os.path.join(vcpkg_root, "installed", triplet, "include"),
-            ]
-            lib_path = os.path.join(vcpkg_root, "installed", triplet, "lib")
-            cxx.linkflags += [f"/LIBPATH:{lib_path}"]
+            vcpkg_installed = os.path.join(builder.sourcePath, "vcpkg_installed", triplet)
+            if os.path.isdir(vcpkg_installed):
+                cxx.cxxincludes += [os.path.join(vcpkg_installed, "include")]
+                cxx.linkflags += [f"/LIBPATH:{os.path.join(vcpkg_installed, 'lib')}"]
 
         return binary
 

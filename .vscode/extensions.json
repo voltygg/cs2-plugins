@@ -10,15 +10,12 @@
     "charliermarsh.ruff",
     "ms-python.mypy-type-checker",
 
-    // JSON/XML
+    // JSON
     "esbenp.prettier-vscode",
-    "redhat.vscode-xml",
 
     // Database
     "mtxr.sqltools",
     "mtxr.sqltools-driver-pg"
   ],
-  "unwantedRecommendations": [
-    "llvm-vs-code-extensions.vscode-clangd"
-  ]
+  "unwantedRecommendations": ["llvm-vs-code-extensions.vscode-clangd"]
 }

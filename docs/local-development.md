@@ -65,36 +65,30 @@ This installs AMBuild (from the AlliedModders GitHub repository) and other build
 
 > **Note:** AMBuild is not available on PyPI. The `pyproject.toml` references it directly from GitHub via `git+https://github.com/alliedmodders/ambuild.git`.
 
-## 4. Install vcpkg
+## 4. Install vcpkg Dependencies
 
-vcpkg manages C++ library dependencies (libpqxx for PostgreSQL).
-
-```powershell
-# Clone vcpkg to a permanent location
-cd C:\dev
-git clone https://github.com/microsoft/vcpkg.git
-cd vcpkg
-
-# Bootstrap vcpkg
-.\bootstrap-vcpkg.bat
-
-# Set environment variable (add to system environment variables for persistence)
-setx VCPKG_ROOT "C:\dev\vcpkg"
-```
+This project uses vcpkg in **manifest mode** with project-local installation. Visual Studio 2026 includes a bundled vcpkg, so no separate installation is required.
 
 ### Install C++ Dependencies
 
-```powershell
-# Install libpqxx (PostgreSQL C++ client)
-vcpkg install libpqxx:x64-windows
+From the project root directory:
 
-# Integrate with Visual Studio
-vcpkg integrate install
+```powershell
+cd C:\path\to\admin-system
+
+# Install dependencies locally (uses vcpkg.json manifest)
+vcpkg install
+
+# Dependencies are installed to: vcpkg_installed/
 ```
+
+This installs `libpqxx` and `nlohmann-json` to the `vcpkg_installed/` folder within the project.
+
+> **Note:** The `vcpkg_installed/` folder is gitignored. Each developer runs `vcpkg install` to get dependencies locally.
 
 ## 5. Clone HL2SDK and Metamod:Source
 
-The plugin requires HL2SDK-CS2 and Metamod:Source SDK.
+The plugin requires HL2SDK-CS2, HL2SDK manifests, and Metamod:Source 2.0.
 
 ```powershell
 # Create SDK directory
@@ -104,8 +98,11 @@ cd C:\dev\alliedmodders
 # Clone HL2SDK for CS2
 git clone https://github.com/alliedmodders/hl2sdk.git --branch cs2 hl2sdk-cs2
 
-# Clone Metamod:Source
-git clone https://github.com/alliedmodders/metamod-source.git --branch 1.12-dev mmsource-1.12
+# Clone HL2SDK manifests
+git clone https://github.com/nicedreamgame/hl2sdk-manifests.git hl2sdk-manifests
+
+# Clone Metamod:Source 2.0
+git clone https://github.com/alliedmodders/metamod-source.git --branch master mmsource-2.0
 ```
 
 ### Set Environment Variables
@@ -114,16 +111,26 @@ Add these to your system environment variables:
 
 ```powershell
 setx HL2SDKCS2 "C:\dev\alliedmodders\hl2sdk-cs2"
-setx MMSOURCE "C:\dev\alliedmodders\mmsource-1.12"
+setx HL2SDKMANIFESTS "C:\dev\alliedmodders\hl2sdk-manifests"
+setx MMSOURCE20 "C:\dev\alliedmodders\mmsource-2.0"
 ```
 
-Or create a `env.bat` file in the project root:
+Or copy the example environment file and adjust paths as needed:
 
-```batch
-@echo off
-set HL2SDKCS2=C:\dev\alliedmodders\hl2sdk-cs2
-set MMSOURCE=C:\dev\alliedmodders\mmsource-1.12
-set VCPKG_ROOT=C:\dev\vcpkg
+**PowerShell** (copy `env.example.ps1` to `env.ps1`):
+
+```powershell
+$env:HL2SDKCS2 = "C:\dev\alliedmodders\hl2sdk-cs2"
+$env:HL2SDKMANIFESTS = "C:\dev\alliedmodders\hl2sdk-manifests"
+$env:MMSOURCE20 = "C:\dev\alliedmodders\mmsource-2.0"
+```
+
+**Bash/Git Bash** (copy `env.example.sh` to `env.sh`):
+
+```bash
+export HL2SDKCS2="C:/dev/alliedmodders/hl2sdk-cs2"
+export HL2SDKMANIFESTS="C:/dev/alliedmodders/hl2sdk-manifests"
+export MMSOURCE20="C:/dev/alliedmodders/mmsource-2.0"
 ```
 
 ## 6. Build from Command Line
@@ -133,14 +140,23 @@ Open **x64 Native Tools Command Prompt for VS 2026** and run:
 ```powershell
 cd C:\path\to\admin-system
 
-# Source environment (if using env.bat)
-call env.bat
+# Source environment (PowerShell)
+. .\env.ps1
+
+# Or for Command Prompt, use env.bat:
+# call env.bat
+
+# Install Python dependencies (includes AMBuild)
+pdm install
+
+# Install C++ dependencies (libpqxx, nlohmann-json)
+vcpkg install
 
 # Create build directory
 mkdir build
 cd build
 
-# Configure with AMBuild (using PDM)
+# Configure with AMBuild
 pdm run python ../configure.py
 
 # Build
@@ -198,17 +214,16 @@ docker compose up -d postgres
 ## Directory Structure After Setup
 
 ```text
-C:\dev\
-├── vcpkg\                    # vcpkg package manager
-├── alliedmodders\
-│   ├── hl2sdk-cs2\          # HL2SDK for CS2
-│   └── mmsource-1.12\       # Metamod:Source
-└── ...
+C:\dev\alliedmodders\
+├── hl2sdk-cs2\              # HL2SDK for CS2
+├── hl2sdk-manifests\        # HL2SDK manifests
+└── mmsource-2.0\            # Metamod:Source 2.0
 
 C:\path\to\admin-system\
 ├── .venv\                    # Python virtual environment (PDM)
 ├── build\                    # AMBuild output
 ├── build-vs\                 # Visual Studio solution
+├── vcpkg_installed\          # vcpkg dependencies (project-local)
 └── ...
 ```
 
@@ -237,19 +252,23 @@ echo %HL2SDKCS2%
 echo %MMSOURCE%
 ```
 
-### vcpkg packages not found by VS
+### vcpkg packages not found
 
-Run vcpkg integration:
+Ensure you ran `vcpkg install` from the project root:
 
 ```powershell
-vcpkg integrate install
+cd C:\path\to\admin-system
+vcpkg install
 ```
+
+Verify the `vcpkg_installed/` folder exists and contains the dependencies.
 
 ## Quick Reference
 
 | Task | Command |
 |------|---------|
 | Install Python deps | `pdm install` |
+| Install C++ deps | `vcpkg install` |
 | Build (command line) | `pdm run ambuild` |
 | Generate VS solution | `pdm run python configure.py --gen=vs --vs-version 19` |
 | Start PostgreSQL | `docker compose up -d postgres` |

@@ -16,7 +16,7 @@
         "${env:HL2SDKCS2}/public/tier1",
         "${env:HL2SDKCS2}/public/entity2",
         "${env:HL2SDKCS2}/public/game/server",
-        "${env:VCPKG_ROOT}/installed/x64-windows/include"
+        "${workspaceFolder}/vcpkg_installed/x64-windows/include"
       ],
       "defines": [
         "_DEBUG",

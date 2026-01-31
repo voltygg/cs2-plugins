@@ -16,11 +16,13 @@ RUN pip3 install git+https://github.com/alliedmodders/ambuild
 # Set up SDK in /sdk directory
 WORKDIR /sdk
 RUN git clone https://github.com/alliedmodders/hl2sdk --branch cs2 hl2sdk-cs2 \
-    && git clone https://github.com/alliedmodders/metamod-source --recursive
+    && git clone https://github.com/nicedreamgame/hl2sdk-manifests hl2sdk-manifests \
+    && git clone https://github.com/alliedmodders/metamod-source --branch master mmsource-2.0
 
 # Set environment variables for SDK paths
 ENV HL2SDKCS2=/sdk/hl2sdk-cs2
-ENV MMSOURCE=/sdk/metamod-source
+ENV HL2SDKMANIFESTS=/sdk/hl2sdk-manifests
+ENV MMSOURCE20=/sdk/mmsource-2.0
 
 # Set working directory for plugin source
 WORKDIR /app
