@@ -18,7 +18,7 @@ distribution = false
 [tool.pdm.scripts]
 configure = "python configure.py"
 configure-vs = "python configure.py --gen=vs --vs-version 19"
-build = "cd objdir && ambuild"
+build = "cd scripts && ./build.sh"
 clean = "rm -rf objdir"
 
 [tool.ruff]

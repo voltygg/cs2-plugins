@@ -16,6 +16,7 @@
         "${env:HL2SDKCS2}/public/tier1",
         "${env:HL2SDKCS2}/public/entity2",
         "${env:HL2SDKCS2}/public/game/server",
+        "${env:HL2SDKCS2}/thirdparty/protobuf-3.21.8/src",
         "${workspaceFolder}/vcpkg_installed/x64-windows/include"
       ],
       "defines": [

@@ -2,23 +2,36 @@
 # ruff: noqa: F821
 # mypy: ignore-errors
 #
-# Admin System - CS2 Metamod Plugin
-# AMBuild Main Script (Source 2 / CS2)
-#
+# Generic Metamod:Source 2 Plugin Build Script
 # Note: 'builder' is injected at runtime by AMBuild
 
 import os
 
+# =============================================================================
+# PLUGIN CONFIGURATION - Edit these for your plugin
+# =============================================================================
+PLUGIN_NAME = "admin-system"
 
-def resolveEnvPath(env, folder=None):
+# Additional include paths (relative to source root)
+EXTRA_INCLUDES = []
+
+# vcpkg triplet (for Windows vcpkg dependencies)
+VCPKG_TRIPLET = "x64-windows"
+
+# =============================================================================
+# SDK RESOLUTION - Generic, no changes needed
+# =============================================================================
+
+def resolve_env_path(env, folder=None):
+    """Resolve path from environment variable or by searching parent directories."""
     if env in os.environ:
         path = os.environ[env]
         if os.path.isdir(path):
             return path
-    if folder is not None:
+    if folder:
         head = os.getcwd()
         oldhead = None
-        while head is not None and head != oldhead:
+        while head and head != oldhead:
             path = os.path.join(head, folder)
             if os.path.isdir(path):
                 return path
@@ -27,41 +40,35 @@ def resolveEnvPath(env, folder=None):
     return None
 
 
-def resolveMMSRoot():
-    path = None
-    if builder.options.mms_path:
-        path = builder.options.mms_path
-    else:
-        path = resolveEnvPath("MMSOURCE20", "mmsource-2.0")
-        if not path:
-            path = resolveEnvPath("MMSOURCE_DEV", "metamod-source")
+def resolve_mms_root():
+    path = builder.options.mms_path or resolve_env_path("MMSOURCE20", "mmsource-2.0")
+    if not path:
+        path = resolve_env_path("MMSOURCE_DEV", "metamod-source")
     if not path or not os.path.isdir(path):
         raise Exception("Could not find Metamod:Source 2.0. Set MMSOURCE20 environment variable.")
     return os.path.abspath(os.path.normpath(path))
 
 
-def resolveHL2SDKManifestsRoot():
-    path = None
-    if builder.options.hl2sdk_manifests:
-        path = builder.options.hl2sdk_manifests
-    else:
-        path = resolveEnvPath("HL2SDKMANIFESTS", "hl2sdk-manifests")
+def resolve_hl2sdk_manifests_root():
+    path = builder.options.hl2sdk_manifests or resolve_env_path("HL2SDKMANIFESTS", "hl2sdk-manifests")
     if not path or not os.path.isdir(path):
         raise Exception("Could not find HL2SDK manifests. Set HL2SDKMANIFESTS environment variable.")
     return os.path.abspath(os.path.normpath(path))
 
 
-# Resolve paths
-mms_root = resolveMMSRoot()
-hl2sdk_manifests_root = resolveHL2SDKManifestsRoot()
-
-# Load SDK helpers
+# Resolve paths and load SDK helpers
+mms_root = resolve_mms_root()
+hl2sdk_manifests_root = resolve_hl2sdk_manifests_root()
 SdkHelpers = builder.Eval(
     os.path.join(hl2sdk_manifests_root, "SdkHelpers.ambuild"), {"Project": "metamod"}
 )
 
 
-class AdminSystemConfig:
+# =============================================================================
+# PLUGIN CONFIG CLASS
+# =============================================================================
+
+class PluginConfig:
     def __init__(self):
         self.sdks = {}
         self.sdk_manifests = []
@@ -70,44 +77,35 @@ class AdminSystemConfig:
         self.mms_root = mms_root
         self.all_targets = []
         self.target_archs = set()
-
-        self.plugin_name = "admin-system"
+        self.plugin_name = PLUGIN_NAME
 
         # Detect target architectures
-        if builder.options.targets:
-            target_archs = builder.options.targets.split(",")
-        else:
-            target_archs = ["x86_64"]
-
+        target_archs = builder.options.targets.split(",") if builder.options.targets else ["x86_64"]
         for arch in target_archs:
             try:
                 cxx = builder.DetectCxx(target_arch=arch)
                 self.target_archs.add(cxx.target.arch)
+                self.all_targets.append(cxx)
             except Exception as e:
                 if builder.options.targets:
                     raise
                 print(f"Skipping target {arch}: {e}")
-                continue
-            self.all_targets.append(cxx)
 
         if not self.all_targets:
             raise Exception("No suitable C/C++ compiler was found.")
 
-    def findSdkPath(self, sdk_name):
+    def find_sdk_path(self, sdk_name):
         dir_name = f"hl2sdk-{sdk_name}"
-        hl2sdk_root = builder.options.hl2sdk_root
-        if not hl2sdk_root:
-            hl2sdk_root = resolveEnvPath("HL2SDKROOT")
-
+        hl2sdk_root = builder.options.hl2sdk_root or resolve_env_path("HL2SDKROOT")
         if hl2sdk_root:
             sdk_path = os.path.abspath(os.path.normpath(os.path.join(hl2sdk_root, dir_name)))
             if os.path.exists(sdk_path):
                 return sdk_path
-        return resolveEnvPath(f"HL2SDK{sdk_name.upper()}", dir_name)
+        return resolve_env_path(f"HL2SDK{sdk_name.upper()}", dir_name)
 
-    def detectSDKs(self):
+    def detect_sdks(self):
         sdk_list = [s for s in builder.options.sdks.split(",") if s]
-        SdkHelpers.find_sdk_path = self.findSdkPath
+        SdkHelpers.find_sdk_path = self.find_sdk_path
         SdkHelpers.findSdks(builder, self.all_targets, sdk_list)
 
         self.sdks = SdkHelpers.sdks
@@ -119,90 +117,73 @@ class AdminSystemConfig:
                 raise Exception("Only Source 2 games are supported.")
 
         if self.sdk_targets:
-            sdk = self.sdk_targets[0].sdk
-            print(f"Using HL2SDK: {sdk['path']}")
+            print(f"Using HL2SDK: {self.sdk_targets[0].sdk['path']}")
         print(f"Using Metamod:Source: {self.mms_root}")
 
     def configure(self):
         for cxx in self.all_targets:
             if cxx.target.arch not in ["x86", "x86_64"]:
                 raise Exception(f"Unknown target architecture: {cxx.target.arch}")
-            self.configureCxx(cxx)
+            self._configure_compiler(cxx)
 
-    def configureCxx(self, cxx):
+    def _configure_compiler(self, cxx):
         if cxx.behavior == "gcc":
-            cxx.defines += [
-                "stricmp=strcasecmp",
-                "_stricmp=strcasecmp",
-                "_snprintf=snprintf",
-                "_vsnprintf=vsnprintf",
-                "HAVE_STDINT_H",
-                "GNUC",
-            ]
-            cxx.cflags += [
-                "-pipe",
-                "-fno-strict-aliasing",
-                "-Wall",
-                "-Wno-sign-compare",
-                "-Wno-uninitialized",
-                "-Wno-unused",
-                "-Wno-switch",
-                "-msse",
-                "-fPIC",
-            ]
-            cxx.cxxflags += ["-std=c++20"]
-            if cxx.version >= "gcc-4.0" or cxx.family == "clang":
-                cxx.cflags += ["-fvisibility=hidden"]
-                cxx.cxxflags += ["-fvisibility-inlines-hidden"]
-            cxx.cxxflags += [
-                "-fno-exceptions",
-                "-fno-threadsafe-statics",
-                "-Wno-non-virtual-dtor",
-                "-Wno-overloaded-virtual",
-                "-Wno-register",
-                "-Wno-invalid-offsetof",
-            ]
-            if cxx.version >= "gcc-4.7" or cxx.family == "clang":
-                cxx.cxxflags += ["-Wno-delete-non-virtual-dtor"]
-            if cxx.family == "gcc":
-                cxx.cflags += ["-mfpmath=sse"]
-
+            self._configure_gcc(cxx)
         elif cxx.like("msvc"):
-            if builder.options.debug == "1":
-                cxx.cflags += ["/MTd"]
-                cxx.linkflags += ["/NODEFAULTLIB:libcmt"]
-            else:
-                cxx.cflags += ["/MT"]
-            cxx.defines += [
-                "_CRT_SECURE_NO_DEPRECATE",
-                "_CRT_SECURE_NO_WARNINGS",
-                "_CRT_NONSTDC_NO_DEPRECATE",
-                "NOMINMAX",
-            ]
-            cxx.cflags += [
-                "/W3",
-                "/Zi",
-                "/std:c++20",
-            ]
-            cxx.cxxflags += ["/TP"]
-            cxx.linkflags += [
-                "/SUBSYSTEM:WINDOWS",
-                "kernel32.lib",
-                "user32.lib",
-                "gdi32.lib",
-                "winspool.lib",
-                "comdlg32.lib",
-                "advapi32.lib",
-                "shell32.lib",
-                "ole32.lib",
-                "oleaut32.lib",
-                "uuid.lib",
-                "odbc32.lib",
-                "odbccp32.lib",
-                "ws2_32.lib",
-            ]
+            self._configure_msvc(cxx)
 
-        # Optimization
+        self._configure_optimization(cxx)
+        self._configure_platform(cxx)
+
+    def _configure_gcc(self, cxx):
+        cxx.defines += [
+            "stricmp=strcasecmp", "_stricmp=strcasecmp",
+            "_snprintf=snprintf", "_vsnprintf=vsnprintf",
+            "HAVE_STDINT_H", "GNUC",
+        ]
+        cxx.cflags += [
+            "-pipe", "-fno-strict-aliasing", "-Wall",
+            "-Wno-sign-compare", "-Wno-uninitialized", "-Wno-unused",
+            "-Wno-switch", "-msse", "-fPIC",
+        ]
+        cxx.cxxflags += ["-std=c++20"]
+
+        if cxx.version >= "gcc-4.0" or cxx.family == "clang":
+            cxx.cflags += ["-fvisibility=hidden"]
+            cxx.cxxflags += ["-fvisibility-inlines-hidden"]
+
+        cxx.cxxflags += [
+            "-fno-exceptions", "-fno-threadsafe-statics",
+            "-Wno-non-virtual-dtor", "-Wno-overloaded-virtual",
+            "-Wno-register", "-Wno-invalid-offsetof",
+        ]
+
+        if cxx.version >= "gcc-4.7" or cxx.family == "clang":
+            cxx.cxxflags += ["-Wno-delete-non-virtual-dtor"]
+        if cxx.family == "gcc":
+            cxx.cflags += ["-mfpmath=sse"]
+
+    def _configure_msvc(self, cxx):
+        if builder.options.debug == "1":
+            cxx.cflags += ["/MTd"]
+            cxx.linkflags += ["/NODEFAULTLIB:libcmt"]
+        else:
+            cxx.cflags += ["/MT"]
+
+        cxx.defines += [
+            "_CRT_SECURE_NO_DEPRECATE", "_CRT_SECURE_NO_WARNINGS",
+            "_CRT_NONSTDC_NO_DEPRECATE", "NOMINMAX",
+        ]
+        cxx.cflags += ["/W3", "/Zi", "/std:c++20"]
+        cxx.cxxflags += ["/TP"]
+        cxx.linkflags += [
+            "/SUBSYSTEM:WINDOWS",
+            "kernel32.lib", "user32.lib", "gdi32.lib", "winspool.lib",
+            "comdlg32.lib", "advapi32.lib", "shell32.lib", "ole32.lib",
+            "oleaut32.lib", "uuid.lib", "odbc32.lib", "odbccp32.lib", "ws2_32.lib",
+        ]
+
+    def _configure_optimization(self, cxx):
         if builder.options.opt == "1":
             cxx.defines += ["NDEBUG"]
             if cxx.behavior == "gcc":
@@ -211,7 +192,6 @@ class AdminSystemConfig:
                 cxx.cflags += ["/Ox", "/Zo"]
                 cxx.linkflags += ["/OPT:ICF", "/OPT:REF"]
 
-        # Debugging
         if builder.options.debug == "1":
             cxx.defines += ["DEBUG", "_DEBUG"]
             if cxx.behavior == "gcc":
@@ -219,7 +199,7 @@ class AdminSystemConfig:
             elif cxx.behavior == "msvc":
                 cxx.cflags += ["/Od", "/RTC1"]
 
-        # Platform-specifics
+    def _configure_platform(self, cxx):
         if cxx.target.platform == "linux":
             cxx.defines += ["LINUX", "_LINUX", "POSIX", "_FILE_OFFSET_BITS=64"]
             if cxx.family == "gcc":
@@ -230,25 +210,28 @@ class AdminSystemConfig:
         elif cxx.target.platform == "windows":
             cxx.defines += ["WIN32", "_WINDOWS"]
 
-    def Library(self, cxx, name):
-        binary = cxx.Library(name)
-        return binary
-
-    def HL2Library(self, context, compiler, name, sdk):
-        binary = self.Library(compiler, name)
-        mms_core_path = os.path.join(self.mms_root, "core")
+    def create_library(self, context, compiler, sdk):
+        """Create a library binary with SDK and Metamod includes configured."""
+        binary = compiler.Library(self.plugin_name)
         cxx = binary.compiler
+        mms_core = os.path.join(self.mms_root, "core")
 
+        # Metamod includes
         cxx.cxxincludes += [
             os.path.join(context.currentSourcePath),
-            mms_core_path,
-            os.path.join(mms_core_path, "sourcehook"),
+            mms_core,
+            os.path.join(mms_core, "sourcehook"),
         ]
 
+        # Extra project includes
+        for inc in EXTRA_INCLUDES:
+            cxx.cxxincludes += [os.path.join(builder.sourcePath, inc)]
+
+        # SDK defines
         for other_sdk in self.sdk_manifests:
             cxx.defines += [f"SE_{other_sdk['define']}={other_sdk['code']}"]
 
-        # Source 2 specific setup
+        # Source 2 setup
         if sdk["source2"]:
             cxx.defines += ["META_IS_SOURCE2"]
             binary.sources += [
@@ -256,24 +239,25 @@ class AdminSystemConfig:
                 os.path.join(sdk["path"], "tier1", "convar.cpp"),
             ]
 
-        # Use SdkHelpers to configure SDK includes, libs, etc.
+        # SDK configuration (includes, libs)
         SdkHelpers.configureCxx(context, binary, sdk)
 
-        # vcpkg includes for libpqxx (Windows) - uses project-local vcpkg_installed
+        # vcpkg (Windows)
         if cxx.like("msvc"):
-            triplet = "x64-windows"
-            vcpkg_installed = os.path.join(builder.sourcePath, "vcpkg_installed", triplet)
-            if os.path.isdir(vcpkg_installed):
-                cxx.cxxincludes += [os.path.join(vcpkg_installed, "include")]
-                cxx.linkflags += [f"/LIBPATH:{os.path.join(vcpkg_installed, 'lib')}"]
+            vcpkg_path = os.path.join(builder.sourcePath, "vcpkg_installed", VCPKG_TRIPLET)
+            if os.path.isdir(vcpkg_path):
+                cxx.cxxincludes += [os.path.join(vcpkg_path, "include")]
+                cxx.linkflags += [f"/LIBPATH:{os.path.join(vcpkg_path, 'lib')}"]
 
         return binary
 
 
-# Initialize configuration
-AdminSystem = AdminSystemConfig()
-AdminSystem.detectSDKs()
-AdminSystem.configure()
+# =============================================================================
+# BUILD
+# =============================================================================
 
-# Build the plugin
-builder.Build(["src/AMBuilder"], {"AdminSystem": AdminSystem})
+Plugin = PluginConfig()
+Plugin.detect_sdks()
+Plugin.configure()
+
+builder.Build(["src/AMBuilder"], {"Plugin": Plugin})

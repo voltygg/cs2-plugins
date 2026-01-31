@@ -163,7 +163,7 @@ pdm run python ../configure.py
 pdm run ambuild
 ```
 
-Output files will be in `build/package/`.
+Output files will be in `objdir/src/`.
 
 ## 7. Generate Visual Studio Solution
 
@@ -262,6 +262,10 @@ vcpkg install
 ```
 
 Verify the `vcpkg_installed/` folder exists and contains the dependencies.
+
+### Fatal error: 'network_connection.pb.h' file not found
+
+Run the [generate-protos.ps1](../scripts/generate-protos.ps1) or [generate-protos.sh](../scripts/generate-protos.sh) to generate protobuf files in the HL2SDK
 
 ## Quick Reference
 

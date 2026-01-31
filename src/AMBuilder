@@ -2,31 +2,52 @@
 # ruff: noqa: F821
 # mypy: ignore-errors
 #
-# Admin System - Source AMBuilder
+# Source AMBuilder - Define your plugin sources and dependencies here
 
 import os
 
-# Build for each SDK target
-for sdk_target in AdminSystem.sdk_targets:
+# =============================================================================
+# SOURCE FILES - Add your .cpp files here
+# =============================================================================
+SOURCES = [
+    "core/plugin.cpp",
+    # Add more source files as needed:
+    # "player/player_manager.cpp",
+    # "admin/admin_manager.cpp",
+]
+
+# =============================================================================
+# LIBRARIES - Platform-specific libraries
+# =============================================================================
+WINDOWS_LIBS = [
+    "libpq.lib",
+    "pqxx.lib",
+]
+
+LINUX_LIBS = [
+    # "pqxx",
+    # "pq",
+]
+
+# =============================================================================
+# BUILD - No changes needed below
+# =============================================================================
+
+for sdk_target in Plugin.sdk_targets:
     sdk = sdk_target.sdk
     cxx = sdk_target.cxx
 
-    # Create plugin library using HL2Library (handles SDK includes, Source 2 files, etc.)
-    binary = AdminSystem.HL2Library(builder, cxx, "admin-system", sdk)
+    binary = Plugin.create_library(builder, cxx, sdk)
 
-    # Plugin source files
-    binary.sources += [
-        # Core
-        os.path.join(builder.sourcePath, "src", "core", "plugin.cpp"),
-        # Add more source files as they are created
-    ]
+    # Add source files
+    for src in SOURCES:
+        binary.sources += [os.path.join(builder.sourcePath, "src", src)]
 
-    # Libraries for Windows
+    # Link libraries
     if binary.compiler.like("msvc"):
-        binary.compiler.linkflags += [
-            "libpq.lib",
-            "pqxx.lib",
-        ]
+        binary.compiler.linkflags += WINDOWS_LIBS
+    else:
+        for lib in LINUX_LIBS:
+            binary.compiler.linkflags += [f"-l{lib}"]
 
-    # Add binary to the build
-    AdminSystem.binaries += [builder.Add(binary)]
+    Plugin.binaries += [builder.Add(binary)]

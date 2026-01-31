@@ -4,12 +4,17 @@ services:
     build: .
     volumes:
       - .:/app
-      - build-cache:/app/build
-    command: bash -c "mkdir -p build && cd build && CC=clang CXX=clang++ python3 ../configure.py && ambuild"
+      - objdir-cache:/app/objdir
+    command: >
+      bash -c "
+        mkdir -p objdir && cd objdir &&
+        CC=clang CXX=clang++ python3 ../configure.py &&
+        ambuild
+      "
 
   # PostgreSQL database for development
   postgres:
-    image: postgres:18
+    image: postgres:latest
     container_name: admin-system-db
     environment:
       POSTGRES_DB: cs2_server
@@ -44,6 +49,6 @@ services:
       - tools
 
 volumes:
-  build-cache:
+  objdir-cache:
   postgres-data:
   pgadmin-data:

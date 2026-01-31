@@ -3,7 +3,6 @@
 #
 # Admin System - CS2 Metamod Plugin
 # AMBuild Configuration Script
-#
 
 import os
 import sys
@@ -13,7 +12,7 @@ mms_ambuild = os.path.join(os.path.dirname(__file__), "mmsource-2.0", "third_par
 if os.path.exists(mms_ambuild):
     sys.path.insert(0, mms_ambuild)
 
-from ambuild2 import run
+from ambuild2 import run  # noqa: E402
 
 parser = run.BuildParser(sourcePath=sys.path[0], api="2.2")
 

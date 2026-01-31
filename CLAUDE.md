@@ -19,9 +19,8 @@ C++ Metamod:Source plugin for CS2 community servers providing comprehensive admi
 docker compose run --rm build
 
 # Local Windows (from x64 Native Tools Command Prompt)
-mkdir build && cd build
-python ../configure.py
-ambuild
+cd scripts
+./build.sh
 ```
 
 ## Project Structure
