@@ -10,6 +10,10 @@
     Path to your CS2 dedicated server root folder.
     Default: C:\cs2-server
 
+.PARAMETER SteamCmdPath
+    Path to steamcmd.exe for server updates.
+    Default: C:\steamcmd\steamcmd.exe
+
 .PARAMETER Map
     Initial map to load.
     Default: de_dust2
@@ -30,6 +34,10 @@
     RCON password for remote administration.
     Default: (none)
 
+.PARAMETER CheckUpdate
+    Run SteamCMD to update the server before starting.
+    Default: $false
+
 .EXAMPLE
     .\Start-Server.ps1
     Starts server with default settings (LAN mode).
@@ -45,14 +53,36 @@
 
 param(
     [string]$ServerPath = "C:\cs2-server",
+    [string]$SteamCmdPath = "C:\Program Files\steamcmd\steamcmd.exe",
     [string]$Map = "de_dust2",
     [string]$GsltToken = "",
     [int]$MaxPlayers = 64,
     [int]$Port = 27015,
-    [string]$RconPassword = ""
+    [string]$RconPassword = "",
+    [switch]$CheckUpdate
 )
 
 $ErrorActionPreference = "Stop"
+
+# Update server via SteamCMD
+if ($CheckUpdate) {
+    if (Test-Path $SteamCmdPath) {
+        Write-Host "=== Updating CS2 Dedicated Server ===" -ForegroundColor Cyan
+        & $SteamCmdPath +force_install_dir $ServerPath +login anonymous +app_update 730 validate +quit
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "WARNING: SteamCMD update failed (exit code $LASTEXITCODE). Continuing with existing files..." -ForegroundColor Yellow
+        }
+        else {
+            Write-Host "Server update complete." -ForegroundColor Green
+        }
+        Write-Host ""
+    }
+    else {
+        Write-Host "WARNING: SteamCMD not found at $SteamCmdPath. Skipping update." -ForegroundColor Yellow
+        Write-Host "Install SteamCMD or use -SteamCmdPath to specify its location." -ForegroundColor Yellow
+        Write-Host ""
+    }
+}
 
 # Validate server path
 $Cs2Exe = Join-Path $ServerPath "game\bin\win64\cs2.exe"
@@ -70,7 +100,8 @@ Write-Host "Max Players: $MaxPlayers" -ForegroundColor Gray
 Write-Host "Port: $Port" -ForegroundColor Gray
 if ($GsltToken) {
     Write-Host "GSLT: Enabled (public server)" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "GSLT: Not set (LAN mode)" -ForegroundColor Yellow
 }
 Write-Host ""
@@ -83,7 +114,7 @@ $Args = @(
     "+map $Map"
     "-maxplayers $MaxPlayers"
     "-port $Port"
-	"+game_mode 0"
+    "+game_mode 0"
 )
 
 if ($GsltToken) {
@@ -106,6 +137,7 @@ Write-Host ""
 Push-Location (Join-Path $ServerPath "game\bin\win64")
 try {
     & $Cs2Exe $Args
-} finally {
+}
+finally {
     Pop-Location
 }
