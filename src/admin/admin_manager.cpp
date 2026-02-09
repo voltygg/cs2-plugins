@@ -159,6 +159,12 @@ void AdminManager::AddAdmin(const database::Admin& admin)
     m_admins[admin.steam_id] = admin;
 }
 
+void AdminManager::AddGroup(const database::AdminGroup& group)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_groups[group.name] = group;
+}
+
 void AdminManager::RemoveAdmin(int64_t steam_id)
 {
     std::lock_guard<std::mutex> lock(m_mutex);

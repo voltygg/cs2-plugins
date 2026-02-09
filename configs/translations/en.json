@@ -1,0 +1,26 @@
+{
+    "admin_panel": "Admin Panel",
+    "player_management": "Player Management",
+    "server_management": "Server Management",
+    "player_actions": "Player Actions",
+    "select_duration": "Select Duration",
+
+    "action_kick": "Kick",
+    "action_ban": "Ban",
+    "action_mute": "Mute",
+    "action_gag": "Gag",
+    "action_warn": "Warn",
+    "action_changemap": "Change Map",
+    "action_restart_round": "Restart Round",
+
+    "duration_5min": "5 Minutes",
+    "duration_30min": "30 Minutes",
+    "duration_1h": "1 Hour",
+    "duration_1d": "1 Day",
+    "duration_7d": "7 Days",
+    "duration_perm": "Permanent",
+
+    "no_players": "No players available",
+    "no_permission": "You do not have permission to use this command.",
+    "menu_opened": "Admin menu opened."
+}

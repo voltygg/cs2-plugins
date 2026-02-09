@@ -92,6 +92,12 @@ public:
     void AddAdmin(const database::Admin& admin);
 
     /**
+     * @brief Add group to cache (from file or runtime)
+     * @param group AdminGroup entity
+     */
+    void AddGroup(const database::AdminGroup& group);
+
+    /**
      * @brief Remove admin from cache
      * @param steam_id SteamID64
      */

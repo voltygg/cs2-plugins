@@ -1,0 +1,12 @@
+{
+  "_comment": "Admin System gamedata - Engine-internal offsets not available via schema system",
+  "_updated": "2026-02-09",
+  "_note": "Entity field offsets (m_hPlayerPawn, m_pMovementServices, m_nButtons, m_pButtonStates) are resolved at runtime via ISchemaSystem. Only engine-internal offsets that are NOT in the schema need to be listed here.",
+  "offsets": {
+    "GameEntitySystem": {
+      "_description": "Offset from IGameResourceService to CGameEntitySystem* pointer (from CS2Fixes gamedata)",
+      "windows": 88,
+      "linux": 80
+    }
+  }
+}

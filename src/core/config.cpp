@@ -1,7 +1,14 @@
 #include "config.h"
 
+#include "../admin/admin_manager.h"
+
+#include <ISmmPlugin.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+
+extern ISmmAPI* g_SMAPI;
+extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace core
 {
@@ -93,7 +100,7 @@ bool ConfigManager::LoadDatabaseConfig(const std::string& file_path)
     }
     catch (const std::exception& e)
     {
-        std::cerr << "[Config] Error parsing database config: " << e.what() << std::endl;
+        std::cerr << "[AdminSystem] Error parsing database config: " << e.what() << std::endl;
         return false;
     }
 }
@@ -106,9 +113,49 @@ bool ConfigManager::LoadAdmins(const std::string& file_path)
         return false;
     }
 
-    // TODO: Parse admins array and load into AdminManager
-    // This will be implemented when AdminManager is ready
+    if (!j.contains("admins") || !j["admins"].is_array())
+    {
+        META_CONPRINTF("[AdminSystem] admins.json missing 'admins' array\n");
+        return false;
+    }
 
+    auto& admin_mgr = admin::AdminManager::Instance();
+    int count = 0;
+
+    for (const auto& entry : j["admins"])
+    {
+        try
+        {
+            database::Admin admin;
+
+            if (entry.contains("steam_id"))
+                admin.steam_id = std::stoll(entry["steam_id"].get<std::string>());
+
+            if (entry.contains("name"))
+                admin.name = entry["name"].get<std::string>();
+
+            if (entry.contains("flags"))
+                admin.flags = entry["flags"].get<std::string>();
+
+            if (entry.contains("immunity"))
+                admin.immunity = entry["immunity"].get<int32_t>();
+
+            if (entry.contains("groups") && entry["groups"].is_array())
+            {
+                for (const auto& group : entry["groups"])
+                    admin.groups.push_back(group.get<std::string>());
+            }
+
+            admin_mgr.AddAdmin(admin);
+            ++count;
+        }
+        catch (const std::exception& e)
+        {
+            META_CONPRINTF("[AdminSystem] Warning: Failed to parse admin entry: %s\n", e.what());
+        }
+    }
+
+    META_CONPRINTF("[AdminSystem] Loaded %d admin(s) from file.\n", count);
     return true;
 }
 
@@ -120,9 +167,46 @@ bool ConfigManager::LoadGroups(const std::string& file_path)
         return false;
     }
 
-    // TODO: Parse groups array and load into AdminManager
-    // This will be implemented when AdminManager is ready
+    if (!j.contains("groups") || !j["groups"].is_array())
+    {
+        META_CONPRINTF("[AdminSystem] groups.json missing 'groups' array\n");
+        return false;
+    }
 
+    auto& admin_mgr = admin::AdminManager::Instance();
+    int count = 0;
+
+    for (const auto& entry : j["groups"])
+    {
+        try
+        {
+            database::AdminGroup group;
+
+            if (entry.contains("name"))
+                group.name = entry["name"].get<std::string>();
+
+            if (entry.contains("flags"))
+                group.flags = entry["flags"].get<std::string>();
+
+            if (entry.contains("immunity"))
+                group.immunity = entry["immunity"].get<int32_t>();
+
+            if (entry.contains("inherits") && entry["inherits"].is_array())
+            {
+                for (const auto& parent : entry["inherits"])
+                    group.inherits.push_back(parent.get<std::string>());
+            }
+
+            admin_mgr.AddGroup(group);
+            ++count;
+        }
+        catch (const std::exception& e)
+        {
+            META_CONPRINTF("[AdminSystem] Warning: Failed to parse group entry: %s\n", e.what());
+        }
+    }
+
+    META_CONPRINTF("[AdminSystem] Loaded %d group(s) from file.\n", count);
     return true;
 }
 
@@ -130,10 +214,17 @@ bool ConfigManager::LoadJsonFile(const std::string& file_path, json& out_json)
 {
     try
     {
-        std::ifstream file(file_path);
+        // Resolve relative paths against Metamod's game base directory (game/csgo/)
+        std::filesystem::path resolved_path(file_path);
+        if (resolved_path.is_relative() && g_SMAPI)
+        {
+            resolved_path = std::filesystem::path(g_SMAPI->GetBaseDir()) / file_path;
+        }
+
+        std::ifstream file(resolved_path);
         if (!file.is_open())
         {
-            std::cerr << "[Config] Failed to open: " << file_path << std::endl;
+            META_CONPRINTF("[AdminSystem] Failed to open: %s\n", resolved_path.string().c_str());
             return false;
         }
 
@@ -142,7 +233,7 @@ bool ConfigManager::LoadJsonFile(const std::string& file_path, json& out_json)
     }
     catch (const std::exception& e)
     {
-        std::cerr << "[Config] Error loading " << file_path << ": " << e.what() << std::endl;
+        META_CONPRINTF("[AdminSystem] Error loading %s: %s\n", file_path.c_str(), e.what());
         return false;
     }
 }

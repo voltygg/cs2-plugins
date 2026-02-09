@@ -14,10 +14,16 @@ SOURCES = [
     "core/plugin.cpp",
     "core/config.cpp",
 
+    # SDK
+    "sdk/schema.cpp",
+    "sdk/usermessage.cpp",
+    "sdk/entity.cpp",
+
     # Utilities
     "utils/steamid.cpp",
     "utils/time.cpp",
     "utils/string.cpp",
+    "utils/translations.cpp",
 
     # Database
     "database/database.cpp",
@@ -42,14 +48,32 @@ SOURCES = [
 
     # Punishments
     "punishments/punishment_manager.cpp",
+
+    # Menus
+    "menus/menu_renderer.cpp",
+    "menus/menu_manager.cpp",
+    "menus/admin_menu.cpp",
 ]
 
 # =============================================================================
 # LIBRARIES - Platform-specific libraries
 # =============================================================================
 WINDOWS_LIBS = [
-    "libpq.lib",
+    # libpqxx + libpq (static)
     "pqxx.lib",
+    "libpq.lib",
+    "libpgcommon.lib",
+    "libpgport.lib",
+    # OpenSSL (static, required by libpq)
+    "libssl.lib",
+    "libcrypto.lib",
+    # Compression (static, required by libpq)
+    "zlib.lib",
+    "lz4.lib",
+    # Windows system libs required by OpenSSL/libpq
+    "crypt32.lib",
+    "secur32.lib",
+    "wldap32.lib",
 ]
 
 LINUX_LIBS = [

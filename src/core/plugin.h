@@ -3,6 +3,8 @@
 // Metamod:Source 2.0 plugin header
 // META_IS_SOURCE2 is defined by AMBuildScript for Source 2 games
 #include <ISmmPlugin.h>
+#include <eiface.h>
+#include <icvar.h>
 
 // Plugin version info
 #define ADMIN_SYSTEM_VERSION "1.0.0"
@@ -40,6 +42,14 @@ public:
     // IMetamodListener
     void* OnMetamodQuery(const char* iface, int* ret) override;
 
+    // SourceHook callbacks
+    void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick);
+    void Hook_OnClientConnected(CPlayerSlot slot, const char* pszName, uint64 xuid,
+                                const char* pszNetworkID, const char* pszAddress, bool bFakePlayer);
+    void Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason,
+                               const char* pszName, uint64 xuid, const char* pszNetworkID);
+    void Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args);
+
 public:
     // Accessors
     bool IsLateLoad() const { return m_lateLoad; }
@@ -58,6 +68,11 @@ private:
 
 // Global plugin instance
 extern AdminSystemPlugin g_AdminSystemPlugin;
+
+// Global SDK interface pointers
+extern IServerGameDLL* g_pServerGameDLL;
+extern IServerGameClients* g_pServerGameClients;
+// g_pCVar is declared in hl2sdk interfaces.h
 
 // Metamod plugin globals macro
 PLUGIN_GLOBALVARS();
