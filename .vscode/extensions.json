@@ -1,9 +1,7 @@
 {
   "recommendations": [
-    // C++ development (MSVC)
+    // C++ development
     "ms-vscode.cpptools",
-    "ms-vscode.cpptools-extension-pack",
-    "ms-vscode.cmake-tools",
 
     // Python (for AMBuild)
     "ms-python.python",

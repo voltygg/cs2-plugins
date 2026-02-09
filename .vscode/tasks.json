@@ -9,11 +9,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": ["$gcc"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
+      "problemMatcher": ["$gcc"]
     },
     {
       "label": "Build (Windows)",
@@ -23,24 +19,14 @@
         "/c",
         "if not exist build mkdir build && cd build && python ../configure.py && ambuild"
       ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
       "group": "build",
-      "problemMatcher": ["$msCompile"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
+      "problemMatcher": ["$msCompile"]
     },
     {
       "label": "Clean Build",
       "type": "shell",
       "command": "cmd",
       "args": ["/c", "if exist build rmdir /s /q build"],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
       "problemMatcher": [],
       "presentation": {
         "reveal": "silent"
@@ -54,40 +40,25 @@
         "/c",
         "if not exist build mkdir build && cd build && python ../configure.py --gen=vs --vs-version 18"
       ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
+      "problemMatcher": []
     },
     {
       "label": "Start PostgreSQL",
       "type": "shell",
       "command": "docker compose up -d postgres",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
+      "problemMatcher": []
     },
     {
       "label": "Stop PostgreSQL",
       "type": "shell",
       "command": "docker compose down",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
+      "problemMatcher": []
     },
     {
       "label": "View PostgreSQL Logs",
       "type": "shell",
       "command": "docker compose logs -f postgres",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always"
-      }
+      "problemMatcher": []
     },
     {
       "label": "Start CS2 Server",
@@ -101,7 +72,6 @@
       ],
       "problemMatcher": [],
       "presentation": {
-        "reveal": "always",
         "panel": "dedicated"
       }
     }

@@ -1,5 +1,5 @@
 # Clang-Format Configuration for Admin System
-# Based on Google style with modifications for game development
+# Based on Google style with Allman braces and 4-space indent
 
 Language: Cpp
 BasedOnStyle: Google
@@ -7,14 +7,11 @@ BasedOnStyle: Google
 # Indentation
 IndentWidth: 4
 TabWidth: 4
-UseTab: Never
 IndentCaseLabels: false
-IndentCaseBlocks: false
-NamespaceIndentation: None
 AccessModifierOffset: -4
 
-# Braces
-BreakBeforeBraces: Allman
+# Braces (Allman-like with compact empty bodies)
+BreakBeforeBraces: Custom
 BraceWrapping:
   AfterCaseLabel: true
   AfterClass: true
@@ -36,61 +33,27 @@ BraceWrapping:
 # Line breaking
 ColumnLimit: 120
 AllowShortBlocksOnASingleLine: Empty
-AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
-AllowShortLambdasOnASingleLine: All
-AlwaysBreakTemplateDeclarations: Yes
 
 # Alignment
-AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
 AlignConsecutiveMacros: true
-AlignEscapedNewlines: Left
 AlignOperands: Align
-AlignTrailingComments: true
 
 # Spaces
-SpaceAfterCStyleCast: false
-SpaceAfterLogicalNot: false
-SpaceAfterTemplateKeyword: true
-SpaceBeforeAssignmentOperators: true
-SpaceBeforeCpp11BracedList: false
-SpaceBeforeParens: ControlStatements
-SpaceBeforeRangeBasedForLoopColon: true
-SpaceInEmptyBlock: false
-SpaceInEmptyParentheses: false
-SpacesBeforeTrailingComments: 2
-SpacesInAngles: false
-SpacesInCStyleCastParentheses: false
-SpacesInConditionalStatement: false
 SpacesInContainerLiterals: false
-SpacesInParentheses: false
-SpacesInSquareBrackets: false
 
 # Includes
 IncludeBlocks: Regroup
 IncludeCategories:
-  # Plugin headers first
   - Regex: '^"'
     Priority: 1
-  # SDK headers
   - Regex: '^<(ISmmPlugin|igameevents|iplayerinfo|sh_)'
     Priority: 2
-  # Standard library
   - Regex: '^<'
     Priority: 3
-SortIncludes: true
 
 # Pointer alignment
 DerivePointerAlignment: false
 PointerAlignment: Left
-
-# Other
-FixNamespaceComments: true
-MaxEmptyLinesToKeep: 1
-ReflowComments: true
-SortUsingDeclarations: true
-Cpp11BracedListStyle: true
