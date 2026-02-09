@@ -145,6 +145,30 @@ if (Test-Path $PdbPath) {
 }
 
 # =============================================================================
+# COPY VCPKG RUNTIME DEPENDENCIES
+# =============================================================================
+
+$VcpkgBinPath = Join-Path (Get-Location) "vcpkg_installed\x64-windows\bin"
+if (Test-Path $VcpkgBinPath) {
+    Write-Host "Copying vcpkg runtime dependencies..." -ForegroundColor Yellow
+    $RuntimeDlls = @(
+        "pqxx.dll",
+        "libpq.dll",
+        "libssl-3-x64.dll",
+        "libcrypto-3-x64.dll",
+        "zlib1.dll",
+        "lz4.dll"
+    )
+    foreach ($dll in $RuntimeDlls) {
+        $dllSrc = Join-Path $VcpkgBinPath $dll
+        if (Test-Path $dllSrc) {
+            Copy-Item $dllSrc (Join-Path $BinPath $dll) -Force
+            Write-Host "  -> addons\$DetectedPluginName\bin\win64\$dll" -ForegroundColor Gray
+        }
+    }
+}
+
+# =============================================================================
 # COPY VDF PLUGIN REGISTRATION
 # =============================================================================
 

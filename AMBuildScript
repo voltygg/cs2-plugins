@@ -16,7 +16,7 @@ PLUGIN_NAME = "admin-system"
 EXTRA_INCLUDES = []
 
 # vcpkg triplet (for Windows vcpkg dependencies)
-VCPKG_TRIPLET = "x64-windows"
+VCPKG_TRIPLET = "x64-windows-static"
 
 # =============================================================================
 # SDK RESOLUTION - Generic, no changes needed
