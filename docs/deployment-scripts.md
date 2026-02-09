@@ -69,10 +69,6 @@ your-plugin/
 │   ├── config.json
 │   ├── database.json
 │   └── ...
-├── assets/                    # Panorama UI assets (optional)
-│   ├── layout/
-│   ├── scripts/
-│   └── styles/
 ├── gamedata/                  # Signatures/offsets (optional)
 │   └── plugin.games.txt
 └── objdir/
@@ -99,10 +95,6 @@ csgo/
     │   └── your-plugin.pdb (or .so.dbg)
     └── your-plugin/
         ├── configs/
-        ├── assets/
-        │   ├── layout/
-        │   ├── scripts/
-        │   └── styles/
         └── gamedata/
 ```
 

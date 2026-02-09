@@ -6,7 +6,7 @@ A modern C++ admin system plugin for Counter-Strike 2 community servers, built o
 
 - **Player Management:** Kick, ban, mute, gag, warn
 - **Admin System:** Permission flags, groups, immunity levels
-- **Stunning UI:** In-game Panorama menus with dark theme
+- **WASD Menus:** In-game center-HTML menus with W/S/E/R navigation
 - **Database:** PostgreSQL with async queries
 - **Chat Commands:** `!kick`, `!ban`, `!mute`, `!gag`, `!warn` and more
 

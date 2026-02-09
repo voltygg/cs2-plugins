@@ -9,7 +9,7 @@ C++ Metamod:Source plugin for CS2 community servers providing comprehensive admi
 - **Language:** C++23
 - **Framework:** Metamod:Source 2.0 + hl2sdk-cs2
 - **Database:** PostgreSQL 18 via libpqxx
-- **UI:** Panorama (XML/JS/CSS)
+- **UI:** WASD center-HTML menus
 - **Build System:** AMBuild
 
 ## Build Commands
@@ -31,11 +31,9 @@ src/
 ├── commands/       # Chat command system (.kick, !ban, etc.)
 ├── punishments/    # Kick, ban, mute, gag, warnings
 ├── database/       # PostgreSQL integration, async queries
-├── menus/          # Menu builder system
-├── chat/           # Chat colors and formatting
+├── menus/          # WASD menu system (center HTML)
 └── utils/          # Common utilities (SteamID, time, strings)
 
-assets/             # Panorama UI files (XML/JS/CSS)
 configs/            # Plugin configuration (JSON format)
 gamedata/           # Signatures and offsets
 ```
@@ -78,3 +76,4 @@ gamedata/           # Signatures and offsets
 - `CommandManager` - Registers and dispatches chat commands
 - `PunishmentManager` - Handles ban/mute/gag/warn enforcement
 - `Database` - PostgreSQL connection pool and async queries
+- `MenuManager` - WASD-style center HTML menu system

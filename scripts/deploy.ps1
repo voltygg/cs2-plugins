@@ -120,12 +120,6 @@ if (Test-Path "configs") {
     $null = New-Item -ItemType Directory -Force -Path (Join-Path $PluginAddonPath "configs")
 }
 
-if (Test-Path "assets") {
-    $null = New-Item -ItemType Directory -Force -Path (Join-Path $PluginAddonPath "assets\layout")
-    $null = New-Item -ItemType Directory -Force -Path (Join-Path $PluginAddonPath "assets\scripts")
-    $null = New-Item -ItemType Directory -Force -Path (Join-Path $PluginAddonPath "assets\styles")
-}
-
 if (Test-Path "gamedata") {
     $null = New-Item -ItemType Directory -Force -Path (Join-Path $PluginAddonPath "gamedata")
 }
@@ -188,35 +182,6 @@ if (Test-Path "configs") {
 }
 
 # =============================================================================
-# COPY ASSETS (PANORAMA UI)
-# =============================================================================
-
-if (Test-Path "assets") {
-    $hasAssets = $false
-
-    if (Test-Path "assets\layout") {
-        $layoutFiles = Get-ChildItem "assets\layout" -Recurse -File -ErrorAction SilentlyContinue
-        if ($layoutFiles) { $hasAssets = $true }
-    }
-
-    if ($hasAssets) {
-        Write-Host "Copying assets..." -ForegroundColor Yellow
-
-        if (Test-Path "assets\layout") {
-            Copy-Item "assets\layout\*" (Join-Path $PluginAddonPath "assets\layout\") -Recurse -Force -ErrorAction SilentlyContinue
-        }
-        if (Test-Path "assets\scripts") {
-            Copy-Item "assets\scripts\*" (Join-Path $PluginAddonPath "assets\scripts\") -Recurse -Force -ErrorAction SilentlyContinue
-        }
-        if (Test-Path "assets\styles") {
-            Copy-Item "assets\styles\*" (Join-Path $PluginAddonPath "assets\styles\") -Recurse -Force -ErrorAction SilentlyContinue
-        }
-
-        Write-Host "  -> assets/" -ForegroundColor Gray
-    }
-}
-
-# =============================================================================
 # COPY GAMEDATA (SIGNATURES/OFFSETS)
 # =============================================================================
 
@@ -241,9 +206,6 @@ Write-Host "  Plugin:  $CsgoPath\addons\$DetectedPluginName\bin\win64\$DetectedP
 Write-Host "  VDF:     $CsgoPath\addons\metamod\$DetectedPluginName.vdf"
 if (Test-Path (Join-Path $PluginAddonPath "configs")) {
     Write-Host "  Configs: $CsgoPath\addons\$DetectedPluginName\configs\"
-}
-if (Test-Path (Join-Path $PluginAddonPath "assets")) {
-    Write-Host "  Assets:  $CsgoPath\addons\$DetectedPluginName\assets\"
 }
 Write-Host ""
 Write-Host "To verify installation, run on server console: meta list" -ForegroundColor Gray
