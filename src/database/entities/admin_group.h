@@ -25,12 +25,6 @@ struct AdminGroup
      * @return true if group has the flag
      */
     bool HasFlag(char flag) const;
-
-    /**
-     * @brief Check if group has root access (z flag)
-     * @return true if group has root access
-     */
-    bool IsRoot() const;
 };
 
 } // namespace database

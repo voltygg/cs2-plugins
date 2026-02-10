@@ -17,7 +17,10 @@ C++ Metamod:Source plugin for CS2 community servers providing comprehensive admi
 ```bash
 # Local Windows (from x64 Native Tools Command Prompt)
 cd scripts
-./build.sh
+./build.ps1
+
+# Deploy to server (copies plugin to server directory)
+./deploy.ps1
 ```
 
 ## Project Structure

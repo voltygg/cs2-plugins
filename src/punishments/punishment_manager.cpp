@@ -3,19 +3,16 @@
 #include "../database/repositories/ban_repository.h"
 #include "../player/player_manager.h"
 
-using namespace std;
-using namespace database;
-
 namespace punishments
 {
 
 bool PunishmentManager::LoadActivePunishments()
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     try
     {
-        BanRepository banRepo;
+        database::BanRepository banRepo;
         auto bans = banRepo.FindAllActive();
 
         m_activeBans.clear();
@@ -28,15 +25,15 @@ bool PunishmentManager::LoadActivePunishments()
 
         return true;
     }
-    catch (const exception& e)
+    catch (const std::exception& e)
     {
         return false;
     }
 }
 
-optional<Ban> PunishmentManager::GetActiveBan(int64_t steam_id)
+std::optional<database::Ban> PunishmentManager::GetActiveBan(int64_t steam_id)
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     auto it = m_activeBans.find(steam_id);
     if (it != m_activeBans.end())
@@ -51,29 +48,29 @@ optional<Ban> PunishmentManager::GetActiveBan(int64_t steam_id)
         m_activeBans.erase(it);
     }
 
-    return nullopt;
+    return std::nullopt;
 }
 
 bool PunishmentManager::IsMuted(int64_t steam_id)
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     return m_mutedPlayers.contains(steam_id);
 }
 
 bool PunishmentManager::IsGagged(int64_t steam_id)
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     return m_gaggedPlayers.contains(steam_id);
 }
 
-bool PunishmentManager::IssueBan(const Ban& ban)
+bool PunishmentManager::IssueBan(const database::Ban& ban)
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     try
     {
         // Save to database
-        BanRepository repo;
+        database::BanRepository repo;
         if (!repo.Create(ban))
             return false;
 
@@ -90,15 +87,15 @@ bool PunishmentManager::IssueBan(const Ban& ban)
 
         return true;
     }
-    catch (const exception& e)
+    catch (const std::exception& e)
     {
         return false;
     }
 }
 
-bool PunishmentManager::IssueMute(const Mute& mute)
+bool PunishmentManager::IssueMute(const database::Mute& mute)
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     try
     {
@@ -117,15 +114,15 @@ bool PunishmentManager::IssueMute(const Mute& mute)
 
         return true;
     }
-    catch (const exception& e)
+    catch (const std::exception& e)
     {
         return false;
     }
 }
 
-bool PunishmentManager::IssueGag(const Gag& gag)
+bool PunishmentManager::IssueGag(const database::Gag& gag)
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     try
     {
@@ -144,35 +141,26 @@ bool PunishmentManager::IssueGag(const Gag& gag)
 
         return true;
     }
-    catch (const exception& e)
+    catch (const std::exception& e)
     {
         return false;
     }
 }
 
-bool PunishmentManager::IssueWarning(const Warning& warning)
+bool PunishmentManager::IssueWarning(const database::Warning& warning)
 {
-    try
-    {
-        // TODO: Save to database via WarningRepository
-
-        // TODO: Check warning count and auto-punish if threshold reached
-
-        return true;
-    }
-    catch (const exception& e)
-    {
-        return false;
-    }
+    // TODO: Save to database via WarningRepository
+    // TODO: Check warning count and auto-punish if threshold reached
+    return true;
 }
 
-bool PunishmentManager::RemoveBan(int64_t ban_id, int64_t removed_by, const string& reason)
+bool PunishmentManager::RemoveBan(int64_t ban_id, int64_t removed_by, const std::string& reason)
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     try
     {
-        BanRepository repo;
+        database::BanRepository repo;
         if (!repo.Remove(ban_id, removed_by, reason))
             return false;
 
@@ -188,54 +176,34 @@ bool PunishmentManager::RemoveBan(int64_t ban_id, int64_t removed_by, const stri
 
         return true;
     }
-    catch (const exception& e)
+    catch (const std::exception& e)
     {
         return false;
     }
 }
 
-bool PunishmentManager::RemoveMute(int64_t mute_id, int64_t removed_by, const string& reason)
+bool PunishmentManager::RemoveMute(int64_t mute_id, int64_t removed_by, const std::string& reason)
 {
-    lock_guard<mutex> lock(m_mutex);
-
-    try
-    {
-        // TODO: Remove from database via MuteRepository
-
-        // TODO: Remove from cache (need to track mute ID -> SteamID mapping)
-
-        return true;
-    }
-    catch (const exception& e)
-    {
-        return false;
-    }
+    std::lock_guard<std::mutex> lock(m_mutex);
+    // TODO: Remove from database via MuteRepository
+    // TODO: Remove from cache (need to track mute ID -> SteamID mapping)
+    return true;
 }
 
-bool PunishmentManager::RemoveGag(int64_t gag_id, int64_t removed_by, const string& reason)
+bool PunishmentManager::RemoveGag(int64_t gag_id, int64_t removed_by, const std::string& reason)
 {
-    lock_guard<mutex> lock(m_mutex);
-
-    try
-    {
-        // TODO: Remove from database via GagRepository
-
-        // TODO: Remove from cache
-
-        return true;
-    }
-    catch (const exception& e)
-    {
-        return false;
-    }
+    std::lock_guard<std::mutex> lock(m_mutex);
+    // TODO: Remove from database via GagRepository
+    // TODO: Remove from cache
+    return true;
 }
 
 void PunishmentManager::ExpireOldPunishments()
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     // Expire bans
-    BanRepository banRepo;
+    database::BanRepository banRepo;
     banRepo.ExpireOldBans();
 
     // Remove expired from cache

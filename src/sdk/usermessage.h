@@ -1,23 +1,15 @@
 #pragma once
 
 #include <string>
+#include <igameevents.h>
 
 // Forward declarations from HL2SDK
 class IGameEventSystem;
 class INetworkMessages;
-class INetworkMessageInternal;
-class CNetMessage;
 
 namespace sdk {
 
-// HUD message destinations
-constexpr int HUD_PRINTNOTIFY = 1;
-constexpr int HUD_PRINTCONSOLE = 2;
-constexpr int HUD_PRINTTALK = 3;
-constexpr int HUD_PRINTCENTER = 4;
-
-// Base user message IDs (from usermessages.proto)
-constexpr int UM_TextMsg = 124;
+// User message IDs (from usermessages.proto)
 constexpr int UM_SayText2 = 118;
 
 /**
@@ -41,8 +33,9 @@ void SendChatMessage(int slot, const std::string& message);
  */
 void ClearCenterHtml(int slot);
 
-// Global interface pointers (set by InitMessageSystem)
+// Global interface pointers (set by InitMessageSystem / plugin Load)
 extern IGameEventSystem* g_pGameEventSystem;
 extern INetworkMessages* g_pNetworkMessages;
+extern IGameEventManager2* g_pGameEventManager2;
 
 } // namespace sdk

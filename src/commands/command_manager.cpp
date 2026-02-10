@@ -4,27 +4,22 @@
 #include "../player/player_manager.h"
 #include "../utils/string.h"
 
-#include <algorithm>
-
-using namespace std;
-using namespace player;
-
 namespace commands
 {
 
 void CommandManager::RegisterCommand(const Command& cmd)
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_commands[utils::String::ToLower(cmd.name)] = cmd;
 }
 
-void CommandManager::UnregisterCommand(const string& name)
+void CommandManager::UnregisterCommand(const std::string& name)
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_commands.erase(utils::String::ToLower(name));
 }
 
-bool CommandManager::HandleChatMessage(Player* player, const string& message)
+bool CommandManager::HandleChatMessage(player::Player* player, const std::string& message)
 {
     if (!player || message.empty())
         return false;
@@ -39,7 +34,7 @@ bool CommandManager::HandleChatMessage(Player* player, const string& message)
         return false;
 
     const std::string& cmdName = parts[0];
-    vector<string> args(parts.begin() + 1, parts.end());
+    std::vector<std::string> args(parts.begin() + 1, parts.end());
 
     // Find command
     const Command* cmd = GetCommand(cmdName);
@@ -80,11 +75,11 @@ bool CommandManager::HandleChatMessage(Player* player, const string& message)
     return true;
 }
 
-const Command* CommandManager::GetCommand(const string& name) const
+const Command* CommandManager::GetCommand(const std::string& name) const
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
-    string lowerName = utils::String::ToLower(name);
+    std::string lowerName = utils::String::ToLower(name);
 
     // Direct lookup
     auto it = m_commands.find(lowerName);
@@ -101,11 +96,11 @@ const Command* CommandManager::GetCommand(const string& name) const
     return nullptr;
 }
 
-vector<const Command*> CommandManager::GetAllCommands() const
+std::vector<const Command*> CommandManager::GetAllCommands() const
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
-    vector<const Command*> commands;
+    std::vector<const Command*> commands;
     commands.reserve(m_commands.size());
 
     for (const auto& [name, cmd] : m_commands)
@@ -118,73 +113,10 @@ vector<const Command*> CommandManager::GetAllCommands() const
 
 void CommandManager::InitializeBuiltinCommands()
 {
-    // Kick command
-    RegisterCommand({.name = "kick",
-                     .aliases = {"k"},
-                     .description = "Kick a player from the server",
-                     .usage = "!kick <player> [reason]",
-                     .permission = "c",
-                     .min_args = 1,
-                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
-                     {
-                         // TODO: Implement kick logic
-                         return {true, "Kick command executed"};
-                     }});
-
-    // Ban command
-    RegisterCommand({.name = "ban",
-                     .aliases = {"b"},
-                     .description = "Ban a player from the server",
-                     .usage = "!ban <player> <duration> [reason]",
-                     .permission = "b",
-                     .min_args = 2,
-                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
-                     {
-                         // TODO: Implement ban logic
-                         return {true, "Ban command executed"};
-                     }});
-
-    // Mute command
-    RegisterCommand({.name = "mute",
-                     .aliases = {"m"},
-                     .description = "Mute a player's voice",
-                     .usage = "!mute <player> <duration> [reason]",
-                     .permission = "i",
-                     .min_args = 2,
-                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
-                     {
-                         // TODO: Implement mute logic
-                         return {true, "Mute command executed"};
-                     }});
-
-    // Gag command
-    RegisterCommand({.name = "gag",
-                     .aliases = {"g"},
-                     .description = "Gag a player's chat",
-                     .usage = "!gag <player> <duration> [reason]",
-                     .permission = "i",
-                     .min_args = 2,
-                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
-                     {
-                         // TODO: Implement gag logic
-                         return {true, "Gag command executed"};
-                     }});
-
-    // Warn command
-    RegisterCommand({.name = "warn",
-                     .aliases = {"w"},
-                     .description = "Warn a player",
-                     .usage = "!warn <player> [reason]",
-                     .permission = "i",
-                     .min_args = 1,
-                     .handler = [](Player* admin, const vector<string>& args) -> CommandResult
-                     {
-                         // TODO: Implement warn logic
-                         return {true, "Warn command executed"};
-                     }});
+    // Builtin commands are registered in plugin.cpp
 }
 
-vector<string> CommandManager::ParseArguments(const string& text) const
+std::vector<std::string> CommandManager::ParseArguments(const std::string& text) const
 {
     return utils::String::Split(text, ' ');
 }

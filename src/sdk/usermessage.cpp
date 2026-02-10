@@ -14,41 +14,10 @@ namespace sdk {
 
 IGameEventSystem* g_pGameEventSystem = nullptr;
 INetworkMessages* g_pNetworkMessages = nullptr;
-
-static INetworkMessageInternal* s_pTextMsgInternal = nullptr;
-
-// Lazy-resolve a network message (not available during Load(), only after server startup)
-static INetworkMessageInternal* ResolveTextMsg()
-{
-    META_CONPRINTF("[AdminSystem] Resolving TextMsg network message...\n");
-
-    if (s_pTextMsgInternal)
-    {
-        META_CONPRINTF("[AdminSystem] TextMsg already resolved.\n");
-        return s_pTextMsgInternal;
-    }
-
-
-    if (!g_pNetworkMessages)
-    {
-        META_CONPRINTF("[AdminSystem] Error: INetworkMessages not available.\n");
-        return nullptr;
-    }
-
-    // Try by ID first, then by name
-    s_pTextMsgInternal = g_pNetworkMessages->FindNetworkMessageById(UM_TextMsg);
-    if (!s_pTextMsgInternal)
-        s_pTextMsgInternal = g_pNetworkMessages->FindNetworkMessage("CUserMessageTextMsg");
-
-    if (s_pTextMsgInternal)
-        META_CONPRINTF("[AdminSystem] TextMsg network message resolved.\n");
-
-    return s_pTextMsgInternal;
-}
+IGameEventManager2* g_pGameEventManager2 = nullptr;
 
 bool InitMessageSystem()
 {
-    // Interfaces are obtained via GET_V_IFACE_ANY in plugin Load()
     if (!g_pGameEventSystem)
     {
         META_CONPRINTF("[AdminSystem] Error: IGameEventSystem not available.\n");
@@ -61,44 +30,25 @@ bool InitMessageSystem()
         return false;
     }
 
-    // Network messages are registered after entity networking is built,
-    // which happens after plugin Load(). TextMsg will be resolved lazily on first use.
-    META_CONPRINTF("[AdminSystem] Message system initialized (messages resolve on first use).\n");
+    // Note: g_pGameEventManager2 is resolved later via signature scan in InitEntitySystem()
+
+    META_CONPRINTF("[AdminSystem] Message system initialized.\n");
     return true;
 }
 
 void SendCenterHtml(int slot, const std::string& html)
 {
-    if (!g_pGameEventSystem || slot < 0 || slot >= 64)
+    if (!g_pGameEventManager2 || slot < 0 || slot >= 64)
         return;
 
-    auto* pTextMsgInternal = ResolveTextMsg();
-    if (!pTextMsgInternal)
+    IGameEvent* pEvent = g_pGameEventManager2->CreateEvent("show_survival_respawn_status");
+    if (!pEvent)
         return;
 
-    CNetMessage* pMsg = pTextMsgInternal->AllocateMessage();
-    if (!pMsg)
-        return;
-
-    auto* pTextMsg = pMsg->ToPB<CUserMessageTextMsg>();
-    pTextMsg->set_dest(HUD_PRINTCENTER);
-    pTextMsg->add_param(html.c_str());
-
-    // Build client bitmask: bit position corresponds to client slot
-    uint64_t clients = (1ULL << slot);
-
-    g_pGameEventSystem->PostEventAbstract(
-        0,           // CSplitScreenSlot
-        false,       // bLocalOnly
-        1,           // nClientCount
-        &clients,    // client bitmask
-        pTextMsgInternal,
-        pMsg,
-        0,           // nSize (unused)
-        NetChannelBufType_t::BUF_RELIABLE
-    );
-
-    g_pNetworkMessages->DeallocateNetMessageAbstract(pTextMsgInternal, pMsg);
+    pEvent->SetString("loc_token", html.c_str());
+    pEvent->SetInt("userid", slot);
+    pEvent->SetInt("duration", 1);
+    g_pGameEventManager2->FireEvent(pEvent);
 }
 
 void SendChatMessage(int slot, const std::string& message)

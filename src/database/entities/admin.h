@@ -26,26 +26,6 @@ struct Admin
      * @return true if admin has the flag
      */
     bool HasFlag(char flag) const;
-
-    /**
-     * @brief Check if admin has all specified flags
-     * @param requiredFlags Flags to check (string of characters)
-     * @return true if admin has all flags
-     */
-    bool HasAllFlags(const std::string& requiredFlags) const;
-
-    /**
-     * @brief Check if admin has any of the specified flags
-     * @param anyFlags Flags to check (string of characters)
-     * @return true if admin has any of the flags
-     */
-    bool HasAnyFlag(const std::string& anyFlags) const;
-
-    /**
-     * @brief Check if admin has root access (z flag)
-     * @return true if admin has root access
-     */
-    bool IsRoot() const;
 };
 
 /**

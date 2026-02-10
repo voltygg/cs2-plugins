@@ -2,12 +2,10 @@
 
 #include "../utils/string.h"
 
-using namespace std;
-
 namespace commands
 {
 
-bool Command::Matches(const string& cmd) const
+bool Command::Matches(const std::string& cmd) const
 {
     using utils::String;
 

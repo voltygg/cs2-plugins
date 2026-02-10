@@ -14,9 +14,4 @@ bool AdminGroup::HasFlag(char flag) const
     return flags.find(flag) != std::string::npos;
 }
 
-bool AdminGroup::IsRoot() const
-{
-    return HasFlag('z');
-}
-
 }  // namespace database

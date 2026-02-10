@@ -48,32 +48,6 @@ std::vector<Admin> AdminRepository::FindAll()
     return admins;
 }
 
-bool AdminRepository::Create(const Admin& admin)
-{
-    try
-    {
-        // TODO: Implement admin creation
-        return true;
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
-}
-
-bool AdminRepository::Update(const Admin& admin)
-{
-    try
-    {
-        // TODO: Implement admin update
-        return true;
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
-}
-
 bool AdminRepository::Delete(int64_t steam_id)
 {
     try
@@ -101,7 +75,6 @@ Admin AdminRepository::ParseRow(const pqxx::row& row)
 
     // Parse groups array (PostgreSQL text array)
     // TODO: Implement proper array parsing
-    // For now, leave empty
     admin.groups = {};
 
     return admin;
@@ -149,32 +122,6 @@ std::vector<AdminGroup> AdminGroupRepository::FindAll()
     return groups;
 }
 
-bool AdminGroupRepository::Create(const AdminGroup& group)
-{
-    try
-    {
-        // TODO: Implement group creation
-        return true;
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
-}
-
-bool AdminGroupRepository::Update(const AdminGroup& group)
-{
-    try
-    {
-        // TODO: Implement group update
-        return true;
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
-}
-
 bool AdminGroupRepository::Delete(const std::string& name)
 {
     try
@@ -201,7 +148,6 @@ AdminGroup AdminGroupRepository::ParseRow(const pqxx::row& row)
 
     // Parse inherits array (PostgreSQL text array)
     // TODO: Implement proper array parsing
-    // For now, leave empty
     group.inherits = {};
 
     return group;

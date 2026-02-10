@@ -69,3 +69,5 @@ env.sh
 
 # Claude local settings
 .claude/settings.local.json
+
+references/

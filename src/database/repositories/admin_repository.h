@@ -28,20 +28,6 @@ public:
     std::vector<Admin> FindAll();
 
     /**
-     * @brief Create a new admin
-     * @param admin Admin entity to create
-     * @return true if successful
-     */
-    bool Create(const Admin& admin);
-
-    /**
-     * @brief Update an existing admin
-     * @param admin Admin entity to update
-     * @return true if successful
-     */
-    bool Update(const Admin& admin);
-
-    /**
      * @brief Delete an admin
      * @param steam_id SteamID64 to delete
      * @return true if successful
@@ -70,20 +56,6 @@ public:
      * @return Vector of all groups
      */
     std::vector<AdminGroup> FindAll();
-
-    /**
-     * @brief Create a new group
-     * @param group AdminGroup entity to create
-     * @return true if successful
-     */
-    bool Create(const AdminGroup& group);
-
-    /**
-     * @brief Update an existing group
-     * @param group AdminGroup entity to update
-     * @return true if successful
-     */
-    bool Update(const AdminGroup& group);
 
     /**
      * @brief Delete a group

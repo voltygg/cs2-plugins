@@ -204,7 +204,6 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prev_buttons)
 
 void MenuManager::RenderMenu(int slot)
 {
-    META_CONPRINTF("[AdminSystem] Rendering menu for slot %d\n", slot);
     auto& state = m_states[slot];
     auto* menu = state.GetCurrentMenu();
     if (!menu)
