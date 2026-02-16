@@ -1,4 +1,5 @@
 #include "SigScanner.hpp"
+#include "../Utils/Log.hpp"
 
 #include <ISmmPlugin.h>
 
@@ -13,6 +14,8 @@
 #include <link.h>
 #include <cstring>
 #endif
+
+using namespace AdminSystem::Utils;
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
@@ -187,22 +190,22 @@ void* FindPattern(const char* moduleName, const std::string& pattern)
     size_t size = 0;
     if (!GetModuleInfo(fullName.c_str(), base, size))
     {
-        META_CONPRINTF("[AdminSystem] SigScanner: Module '%s' not found.\n", fullName.c_str());
+        Log::Error("SigScanner: Module '{}' not found.", fullName);
         return nullptr;
     }
 
-    META_CONPRINTF("[AdminSystem] SigScanner: Scanning '%s' (base=%p, size=0x%zX)...\n",
-                   fullName.c_str(), static_cast<void*>(base), size);
+    Log::Info("SigScanner: Scanning '{}' (base={:#x}, size=0x{:X})...",
+                     fullName, reinterpret_cast<uintptr_t>(base), size);
 
     auto patternBytes = ParsePattern(pattern);
     void* result = ScanMemory(base, size, patternBytes);
     if (!result)
     {
-        META_CONPRINTF("[AdminSystem] SigScanner: Pattern not found in '%s'.\n", fullName.c_str());
+        Log::Warn("SigScanner: Pattern not found in '{}'.", fullName);
     }
     else
     {
-        META_CONPRINTF("[AdminSystem] SigScanner: Found match at %p.\n", result);
+        Log::Info("SigScanner: Found match at {:#x}.", reinterpret_cast<uintptr_t>(result));
     }
     return result;
 }

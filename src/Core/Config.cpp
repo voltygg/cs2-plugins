@@ -1,5 +1,6 @@
 #include "Config.hpp"
 #include "../Admin/AdminManager.hpp"
+#include "../Utils/Log.hpp"
 
 #include <ISmmPlugin.h>
 #include <nlohmann/json.hpp>
@@ -10,10 +11,10 @@ extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
 using json = nlohmann::json;
+using namespace AdminSystem::Admin;
+using namespace AdminSystem::Utils;
 
 namespace AdminSystem::Core {
-
-using namespace AdminSystem::Admin;
 
 bool ConfigManager::LoadSettings(const std::string& path)
 {
@@ -52,7 +53,7 @@ bool ConfigManager::LoadSettings(const std::string& path)
             _pluginConfig.MaxWarnings = pun["warningThreshold"];
     }
 
-    META_CONPRINTF("[AdminSystem] Loaded settings from %s\n", path.c_str());
+    Log::Info("Loaded settings from {}", path);
     return true;
 }
 
@@ -88,10 +89,10 @@ bool ConfigManager::LoadAdminsConfig(const std::string& path)
             }
             catch (const std::exception& e)
             {
-                META_CONPRINTF("[AdminSystem] Warning: Failed to parse group entry: %s\n", e.what());
+                Log::Warn("Failed to parse group entry: {}", e.what());
             }
         }
-        META_CONPRINTF("[AdminSystem] Loaded %d group(s) from config.\n", groupCount);
+        Log::Info("Loaded {} group(s) from config.", groupCount);
     }
 
     // Load admins
@@ -123,10 +124,10 @@ bool ConfigManager::LoadAdminsConfig(const std::string& path)
             }
             catch (const std::exception& e)
             {
-                META_CONPRINTF("[AdminSystem] Warning: Failed to parse admin entry: %s\n", e.what());
+                Log::Warn("Failed to parse admin entry: {}", e.what());
             }
         }
-        META_CONPRINTF("[AdminSystem] Loaded %d admin(s) from config.\n", adminCount);
+        Log::Info("Loaded {} admin(s) from config.", adminCount);
     }
 
     return true;
@@ -145,7 +146,7 @@ bool ConfigManager::LoadJsonFile(const std::string& filePath, json& outJson)
         std::ifstream file(resolvedPath);
         if (!file.is_open())
         {
-            META_CONPRINTF("[AdminSystem] Failed to open: %s\n", resolvedPath.string().c_str());
+            Log::Error("Failed to open: {}", resolvedPath.string());
             return false;
         }
 
@@ -154,7 +155,7 @@ bool ConfigManager::LoadJsonFile(const std::string& filePath, json& outJson)
     }
     catch (const std::exception& e)
     {
-        META_CONPRINTF("[AdminSystem] Error loading %s: %s\n", filePath.c_str(), e.what());
+        Log::Error("Error loading {}: {}", filePath, e.what());
         return false;
     }
 }

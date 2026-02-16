@@ -2,6 +2,7 @@
 #include "SigScanner.hpp"
 #include "GameData.hpp"
 #include "GameInterfaces.hpp"
+#include "../Utils/Log.hpp"
 
 #include <ISmmPlugin.h>
 #include <igameevents.h>
@@ -10,6 +11,8 @@
 #include <networksystem/netmessage.h>
 #include <usermessages.pb.h>
 #include <irecipientfilter.h>
+
+using namespace AdminSystem::Utils;
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
@@ -26,17 +29,17 @@ bool InitMessageSystem()
 
     if (!interfaces.GameEventSystem)
     {
-        META_CONPRINTF("[AdminSystem] Error: IGameEventSystem not available.\n");
+        Log::Error("IGameEventSystem not available.");
         return false;
     }
 
     if (!interfaces.NetworkMessages)
     {
-        META_CONPRINTF("[AdminSystem] Error: INetworkMessages not available.\n");
+        Log::Error("INetworkMessages not available.");
         return false;
     }
 
-    META_CONPRINTF("[AdminSystem] Message system initialized.\n");
+    Log::Info("Message system initialized.");
     return true;
 }
 
@@ -54,17 +57,17 @@ bool InitGameEventManager()
 
         if (interfaces.GameEventManager)
         {
-            META_CONPRINTF("[AdminSystem] Game event manager resolved at %p.\n",
-                           static_cast<void*>(interfaces.GameEventManager));
+            Log::Info("Game event manager resolved at {:#x}.",
+                             reinterpret_cast<uintptr_t>(interfaces.GameEventManager));
         }
         else
         {
-            META_CONPRINTF("[AdminSystem] Warning: Game event manager pointer is null after resolve.\n");
+            Log::Warn("Game event manager pointer is null after resolve.");
         }
     }
     else
     {
-        META_CONPRINTF("[AdminSystem] Warning: GameEventManager signature not found.\n");
+        Log::Warn("GameEventManager signature not found.");
     }
 
     // Resolve GetLegacyGameEventListener (optional - used for per-player event delivery)
@@ -72,11 +75,11 @@ bool InitGameEventManager()
     if (legacyListenerAddr)
     {
         sGetLegacyListener = reinterpret_cast<GetLegacyGameEventListenerFn>(legacyListenerAddr);
-        META_CONPRINTF("[AdminSystem] LegacyGameEventListener resolved.\n");
+        Log::Info("LegacyGameEventListener resolved.");
     }
     else
     {
-        META_CONPRINTF("[AdminSystem] Warning: LegacyGameEventListener signature not found (will use broadcast fallback).\n");
+        Log::Warn("LegacyGameEventListener signature not found (will use broadcast fallback).");
     }
 
     return interfaces.GameEventManager != nullptr;

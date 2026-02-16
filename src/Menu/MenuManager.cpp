@@ -2,9 +2,12 @@
 #include "MenuRenderer.hpp"
 #include "../Sdk/Entity.hpp"
 #include "../Sdk/UserMessage.hpp"
+#include "../Utils/Log.hpp"
 
 #include <ISmmPlugin.h>
 #include <chrono>
+
+using namespace AdminSystem::Utils;
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
@@ -30,8 +33,8 @@ void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
     state.SelectedIndex = 0;
     state.LastInputTime = GetCurrentTimeMs();
 
-    META_CONPRINTF("[AdminSystem] Menu opened for slot %d (title: %s, items: %zu)\n",
-                   slot, state.GetCurrentMenu()->Title.c_str(), state.GetCurrentMenu()->Items.size());
+    Log::Info("Menu opened for slot {} (title: {}, items: {})",
+                     slot, state.GetCurrentMenu()->Title, state.GetCurrentMenu()->Items.size());
 }
 
 void MenuManager::CloseMenu(int slot)

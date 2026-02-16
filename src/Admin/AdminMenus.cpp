@@ -4,6 +4,7 @@
 #include "../Menu/MenuManager.hpp"
 #include "../Players/PlayerManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
+#include "../Utils/Log.hpp"
 #include "../Utils/Translations.hpp"
 
 #include <ISmmPlugin.h>
@@ -139,8 +140,7 @@ std::shared_ptr<Menu::Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot
                 auto* t = plrMgr.GetPlayerBySlot(tgt);
                 if (a && t)
                 {
-                    META_CONPRINTF("[AdminSystem] %s kicked %s\n",
-                                   a->GetName().c_str(), t->GetName().c_str());
+                    Log::Info("{} kicked {}", a->GetName(), t->GetName());
                 }
                 MenuManager::Instance().CloseAllMenus(slot);
             },
@@ -271,14 +271,14 @@ std::shared_ptr<Menu::Menu> BuildServerMenu(int adminSlot)
     // TODO: Implement server management actions
     builder.AddItem(tr.Get("actionChangemap"),
         [](int slot) {
-            META_CONPRINTF("[AdminSystem] Map change requested by slot %d\n", slot);
+            Log::Info("Map change requested by slot {}", slot);
             MenuManager::Instance().CloseAllMenus(slot);
         },
         false); // Disabled until implemented
 
     builder.AddItem(tr.Get("actionRestartRound"),
         [](int slot) {
-            META_CONPRINTF("[AdminSystem] Round restart requested by slot %d\n", slot);
+            Log::Info("Round restart requested by slot {}", slot);
             MenuManager::Instance().CloseAllMenus(slot);
         },
         false);

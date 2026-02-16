@@ -1,4 +1,5 @@
 #include "Translations.hpp"
+#include "Log.hpp"
 
 #include <ISmmPlugin.h>
 #include <nlohmann/json.hpp>
@@ -21,8 +22,7 @@ bool Translations::Load(const std::string& dirPath)
 
     if (!fs::exists(resolvedPath) || !fs::is_directory(resolvedPath))
     {
-        META_CONPRINTF("[AdminSystem] Warning: Translations directory not found: %s\n",
-                       resolvedPath.string().c_str());
+        Log::Warn("Translations directory not found: {}", resolvedPath.string());
         return false;
     }
 
@@ -48,17 +48,15 @@ bool Translations::Load(const std::string& dirPath)
             }
 
             ++loaded;
-            META_CONPRINTF("[AdminSystem] Loaded translations: %s (%zu keys)\n",
-                           langCode.c_str(), langMap.size());
+            Log::Info("Loaded translations: {} ({} keys)", langCode, langMap.size());
         }
         catch (const std::exception& e)
         {
-            META_CONPRINTF("[AdminSystem] Warning: Failed to parse %s: %s\n",
-                           entry.path().string().c_str(), e.what());
+            Log::Warn("Failed to parse {}: {}", entry.path().string(), e.what());
         }
     }
 
-    META_CONPRINTF("[AdminSystem] Loaded %d language(s).\n", loaded);
+    Log::Info("Loaded {} language(s).", loaded);
     return loaded > 0;
 }
 

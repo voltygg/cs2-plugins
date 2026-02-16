@@ -1,11 +1,14 @@
 #include "GameData.hpp"
 #include "SigScanner.hpp"
+#include "../Utils/Log.hpp"
 
 #include <nlohmann/json.hpp>
 #include <ISmmPlugin.h>
 
 #include <filesystem>
 #include <fstream>
+
+using namespace AdminSystem::Utils;
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
@@ -20,7 +23,7 @@ bool GameData::Load(const std::string& path)
         std::ifstream file(fullPath);
         if (!file.is_open())
         {
-            META_CONPRINTF("[AdminSystem] Warning: GameData file not found: %s\n", path.c_str());
+            Log::Warn("GameData file not found: {}", path);
             return false;
         }
 
@@ -59,13 +62,12 @@ bool GameData::Load(const std::string& path)
             }
         }
 
-        META_CONPRINTF("[AdminSystem] GameData loaded: %zu offsets, %zu signatures.\n",
-                       _offsets.size(), _signatures.size());
+        Log::Info("GameData loaded: {} offsets, {} signatures.", _offsets.size(), _signatures.size());
         return true;
     }
     catch (const std::exception& e)
     {
-        META_CONPRINTF("[AdminSystem] Warning: Failed to parse GameData: %s\n", e.what());
+        Log::Warn("Failed to parse GameData: {}", e.what());
         return false;
     }
 }

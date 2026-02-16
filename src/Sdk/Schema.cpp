@@ -1,11 +1,14 @@
 #include "Schema.hpp"
 #include "GameInterfaces.hpp"
+#include "../Utils/Log.hpp"
 
 #include <ISmmPlugin.h>
 #include <schemasystem/schemasystem.h>
 
 #include <map>
 #include <string>
+
+using namespace AdminSystem::Utils;
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
@@ -19,11 +22,11 @@ bool InitSchemaSystem()
 {
     if (!GameInterfaces::Instance().SchemaSystem)
     {
-        META_CONPRINTF("[AdminSystem] Warning: ISchemaSystem not available.\n");
+        Log::Warn("ISchemaSystem not available.");
         return false;
     }
 
-    META_CONPRINTF("[AdminSystem] Schema system initialized.\n");
+    Log::Info("Schema system initialized.");
     return true;
 }
 
@@ -52,7 +55,7 @@ int GetSchemaOffset(const char* className, const char* fieldName)
     CSchemaSystemTypeScope* pTypeScope = schemaSystem->FindTypeScopeForModule(moduleName);
     if (!pTypeScope)
     {
-        META_CONPRINTF("[AdminSystem] Schema: Failed to find type scope for %s.\n", moduleName);
+        Log::Error("Schema: Failed to find type scope for {}.", moduleName);
         return -1;
     }
 
@@ -60,7 +63,7 @@ int GetSchemaOffset(const char* className, const char* fieldName)
     CSchemaClassInfo* pClassInfo = hClassInfo.Get();
     if (!pClassInfo)
     {
-        META_CONPRINTF("[AdminSystem] Schema: Class '%s' not found.\n", className);
+        Log::Error("Schema: Class '{}' not found.", className);
         return -1;
     }
 
@@ -75,13 +78,12 @@ int GetSchemaOffset(const char* className, const char* fieldName)
             // Cache it
             sOffsetCache[className][fieldName] = offset;
 
-            META_CONPRINTF("[AdminSystem] Schema: %s::%s = 0x%X (%d)\n",
-                           className, fieldName, offset, offset);
+            Log::Info("Schema: {}::{} = 0x{:X} ({})", className, fieldName, offset, offset);
             return offset;
         }
     }
 
-    META_CONPRINTF("[AdminSystem] Schema: Field '%s' not found in '%s'.\n", fieldName, className);
+    Log::Warn("Schema: Field '{}' not found in '{}'.", fieldName, className);
     return -1;
 }
 

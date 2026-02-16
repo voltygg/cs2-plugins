@@ -14,6 +14,7 @@
 #include "../Sdk/GameInterfaces.hpp"
 #include "../Sdk/Schema.hpp"
 #include "../Sdk/UserMessage.hpp"
+#include "../Utils/Log.hpp"
 #include "../Utils/Translations.hpp"
 
 #include <engine/igameeventsystem.h>
@@ -26,12 +27,6 @@
 #include <cstring>
 #include <filesystem>
 
-// Global plugin instance
-AdminSystemPlugin g_AdminSystemPlugin;
-
-// Metamod plugin expose
-PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
-
 using namespace AdminSystem::Admin;
 using namespace AdminSystem::Commands;
 using namespace AdminSystem::Core;
@@ -41,6 +36,12 @@ using namespace AdminSystem::Players;
 using namespace AdminSystem::Punishments;
 using namespace AdminSystem::Sdk;
 using namespace AdminSystem::Utils;
+
+// Global plugin instance
+AdminSystemPlugin g_AdminSystemPlugin;
+
+// Metamod plugin expose
+PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
 
 // SourceHook hook declarations (file scope)
 SH_DECL_HOOK3_void(IServerGameDLL, GameFrame, SH_NOATTRIB, 0, bool, bool, bool);
@@ -57,7 +58,7 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     PLUGIN_SAVEVARS();
     _lateLoad = late;
 
-    META_CONPRINTF("[AdminSystem] Loading v%s...\n", ADMIN_SYSTEM_VERSION);
+    Log::Info("Loading v{}...", ADMIN_SYSTEM_VERSION);
 
     // Get SDK interfaces - store in centralized GameInterfaces singleton
     auto& gi = GameInterfaces::Instance();
@@ -80,18 +81,18 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     // Register hooks
     RegisterHooks();
 
-    META_CONPRINTF("[AdminSystem] Loaded successfully%s.\n", late ? " (late)" : "");
+    Log::Info("Loaded successfully{}.", late ? " (late)" : "");
     return true;
 }
 
 bool AdminSystemPlugin::Unload(char* error, size_t maxlen)
 {
-    META_CONPRINTF("[AdminSystem] Unloading...\n");
+    Log::Info("Unloading...");
 
     UnregisterHooks();
     ShutdownSubsystems();
 
-    META_CONPRINTF("[AdminSystem] Unloaded.\n");
+    Log::Info("Unloaded.");
     return true;
 }
 
@@ -222,7 +223,7 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
 
     if (handled)
     {
-        META_CONPRINTF("[AdminSystem] Command handled: %s (player slot %d)\n", message.c_str(), playerSlot);
+        Log::Info("Command handled: {} (player slot {})", message, playerSlot);
     }
 }
 
@@ -233,55 +234,55 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
 bool AdminSystemPlugin::InitializeSubsystems(bool late)
 {
     // 1. Load configuration files
-    META_CONPRINTF("[AdminSystem] Loading configurations...\n");
+    Log::Info("Loading configurations...");
     if (!LoadConfigs())
     {
-        META_CONPRINTF("[AdminSystem] Warning: Failed to load some configs.\n");
+        Log::Warn("Failed to load some configs.");
         return false;
     }
 
     // 2. Load game data (signatures and offsets)
-    META_CONPRINTF("[AdminSystem] Loading game data...\n");
+    Log::Info("Loading game data...");
     GameData::Instance().Load("addons/admin-system/gamedata");
 
     // 3. Initialize SDK message system
-    META_CONPRINTF("[AdminSystem] Initializing SDK message system...\n");
+    Log::Info("Initializing SDK message system...");
     if (!InitMessageSystem())
     {
-        META_CONPRINTF("[AdminSystem] Error: Failed to initialize message system.\n");
+        Log::Error("Failed to initialize message system.");
         return false;
     }
 
     // 4. Initialize schema system (resolves entity field offsets at runtime)
-    META_CONPRINTF("[AdminSystem] Initializing schema system...\n");
+    Log::Info("Initializing schema system...");
     if (!InitSchemaSystem())
     {
-        META_CONPRINTF("[AdminSystem] Warning: Schema system init failed (button detection may not work).\n");
+        Log::Warn("Schema system init failed (button detection may not work).");
     }
 
     // 5. Initialize entity system
-    META_CONPRINTF("[AdminSystem] Initializing entity system...\n");
+    Log::Info("Initializing entity system...");
     if (!InitEntitySystem())
     {
-        META_CONPRINTF("[AdminSystem] Warning: Entity system init failed (menus may not work).\n");
+        Log::Warn("Entity system init failed (menus may not work).");
     }
 
     // 6. Resolve IGameEventManager2 via signature scanning
-    META_CONPRINTF("[AdminSystem] Resolving game event manager...\n");
+    Log::Info("Resolving game event manager...");
     if (!InitGameEventManager())
     {
-        META_CONPRINTF("[AdminSystem] Warning: Game event manager not resolved (center HTML display will not work).\n");
+        Log::Warn("Game event manager not resolved (center HTML display will not work).");
     }
 
     // 7. Initialize database connection (optional -- plugin works without DB)
-    META_CONPRINTF("[AdminSystem] Connecting to database...\n");
+    Log::Info("Connecting to database...");
     auto& db = Database::Instance();
     auto& configMgr = ConfigManager::Instance();
 
     bool dbConnected = db.Initialize(configMgr.GetDatabaseConfig());
     if (!dbConnected)
     {
-        META_CONPRINTF("[AdminSystem] Warning: Database not available. Running without DB features.\n");
+        Log::Warn("Database not available. Running without DB features.");
     }
 
     // 8. Load admin groups and admins
@@ -291,26 +292,26 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
         // 8a. Load from database first (if connected)
         if (dbConnected)
         {
-            META_CONPRINTF("[AdminSystem] Loading admins from database...\n");
+            Log::Info("Loading admins from database...");
 
             if (!adminMgr.LoadGroups())
-                META_CONPRINTF("[AdminSystem] Warning: Failed to load admin groups from DB.\n");
+                Log::Warn("Failed to load admin groups from DB.");
 
             if (!adminMgr.LoadAdmins())
-                META_CONPRINTF("[AdminSystem] Warning: Failed to load admins from DB.\n");
+                Log::Warn("Failed to load admins from DB.");
         }
 
         // 8b. Load from JSON config (groups + admins in one file)
-        META_CONPRINTF("[AdminSystem] Loading admins from config files...\n");
+        Log::Info("Loading admins from config files...");
         if (!configMgr.LoadAdminsConfig("addons/admin-system/configs/admins.json"))
-            META_CONPRINTF("[AdminSystem] Warning: Failed to load admins.json\n");
+            Log::Warn("Failed to load admins.json");
     }
 
     // 9. Initialize player manager (singleton, auto-initialized)
-    META_CONPRINTF("[AdminSystem] Player manager ready.\n");
+    Log::Info("Player manager ready.");
 
     // 10. Initialize command manager and register commands
-    META_CONPRINTF("[AdminSystem] Initializing commands...\n");
+    Log::Info("Initializing commands...");
     auto& cmdMgr = CommandManager::Instance();
 
     // Register !admin command using CommandBuilder
@@ -324,15 +325,14 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
             .OnExecute([](Player* admin,
                           const std::vector<std::string>& /*args*/) -> CommandResult
             {
-                META_CONPRINTF("[AdminSystem] !admin handler: slot=%d, steamid=%lld\n",
-                               admin->GetSlot(), static_cast<long long>(admin->GetSteamID()));
+                Log::Info("!admin handler: slot={}, steamid={}", admin->GetSlot(), admin->GetSteamID());
                 auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
                 if (mainMenu)
                 {
                     MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
                     return {true, "Admin menu opened"};
                 }
-                META_CONPRINTF("[AdminSystem] !admin handler: BuildAdminMainMenu returned nullptr!\n");
+                Log::Error("!admin handler: BuildAdminMainMenu returned nullptr!");
                 return {false, "Failed to open admin menu"};
             })
             .Build()
@@ -341,27 +341,27 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
     // 11. Initialize punishment manager (requires DB)
     if (dbConnected)
     {
-        META_CONPRINTF("[AdminSystem] Loading active punishments...\n");
+        Log::Info("Loading active punishments...");
         auto& punishmentMgr = PunishmentManager::Instance();
         if (!punishmentMgr.LoadActivePunishments())
-            META_CONPRINTF("[AdminSystem] Warning: Failed to load active punishments.\n");
+            Log::Warn("Failed to load active punishments.");
     }
 
     // 12. Load translations
-    META_CONPRINTF("[AdminSystem] Loading translations...\n");
+    Log::Info("Loading translations...");
     auto& translations = Translations::Instance();
     translations.Load("addons/admin-system/configs/translations");
 
     // 13. Initialize menu manager (singleton, ready to use)
-    META_CONPRINTF("[AdminSystem] Menu manager ready.\n");
+    Log::Info("Menu manager ready.");
 
-    META_CONPRINTF("[AdminSystem] All subsystems initialized.\n");
+    Log::Info("All subsystems initialized.");
     return true;
 }
 
 void AdminSystemPlugin::ShutdownSubsystems()
 {
-    META_CONPRINTF("[AdminSystem] Shutting down subsystems...\n");
+    Log::Info("Shutting down subsystems...");
 
     // Clear player manager
     PlayerManager::Instance().Clear();
@@ -369,7 +369,7 @@ void AdminSystemPlugin::ShutdownSubsystems()
     // Shutdown database
     Database::Instance().Shutdown();
 
-    META_CONPRINTF("[AdminSystem] Subsystems shut down.\n");
+    Log::Info("Subsystems shut down.");
 }
 
 bool AdminSystemPlugin::LoadConfigs()
@@ -378,7 +378,7 @@ bool AdminSystemPlugin::LoadConfigs()
 
     // Load consolidated settings (plugin, database, commands, punishments, admin)
     if (!configMgr.LoadSettings("addons/admin-system/configs/settings.json"))
-        META_CONPRINTF("[AdminSystem] Warning: Failed to load settings.json\n");
+        Log::Warn("Failed to load settings.json");
 
     return true;
 }
@@ -396,7 +396,7 @@ void AdminSystemPlugin::RegisterHooks()
     SH_ADD_HOOK(ICvar, DispatchConCommand, gi.CVar,
                 SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand), false);
 
-    META_CONPRINTF("[AdminSystem] Hooks registered.\n");
+    Log::Info("Hooks registered.");
 }
 
 void AdminSystemPlugin::UnregisterHooks()
@@ -412,5 +412,5 @@ void AdminSystemPlugin::UnregisterHooks()
     SH_REMOVE_HOOK(ICvar, DispatchConCommand, gi.CVar,
                    SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand), false);
 
-    META_CONPRINTF("[AdminSystem] Hooks unregistered.\n");
+    Log::Info("Hooks unregistered.");
 }

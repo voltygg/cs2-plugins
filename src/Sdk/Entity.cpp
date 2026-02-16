@@ -2,12 +2,15 @@
 #include "Schema.hpp"
 #include "GameData.hpp"
 #include "GameInterfaces.hpp"
+#include "../Utils/Log.hpp"
 
 #include <ISmmPlugin.h>
 #include <entity2/entitysystem.h>
 #include <entity2/entityinstance.h>
 #include <entity2/entityidentity.h>
 #include <entity2/concreteentitylist.h>
+
+using namespace AdminSystem::Utils;
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
@@ -36,13 +39,13 @@ static void ResolveSchemaOffsets()
     if (sOffsetPlayerPawn >= 0 && sOffsetMovementServices >= 0 &&
         sOffsetButtons >= 0 && sOffsetButtonStates >= 0)
     {
-        META_CONPRINTF("[AdminSystem] Button access chain resolved via schema:\n");
-        META_CONPRINTF("  Controller + 0x%X -> Pawn + 0x%X -> MovementServices + 0x%X -> Buttons + 0x%X\n",
-                       sOffsetPlayerPawn, sOffsetMovementServices, sOffsetButtons, sOffsetButtonStates);
+        Log::Info("Button access chain resolved via schema:");
+        Log::Info("  Controller + 0x{:X} -> Pawn + 0x{:X} -> MovementServices + 0x{:X} -> Buttons + 0x{:X}",
+                         sOffsetPlayerPawn, sOffsetMovementServices, sOffsetButtons, sOffsetButtonStates);
     }
     else
     {
-        META_CONPRINTF("[AdminSystem] Warning: Some schema offsets not resolved. Button detection may not work.\n");
+        Log::Warn("Some schema offsets not resolved. Button detection may not work.");
     }
 }
 
@@ -52,7 +55,7 @@ bool InitEntitySystem()
 
     if (!interfaces.GameResourceService)
     {
-        META_CONPRINTF("[AdminSystem] Warning: IGameResourceService not available.\n");
+        Log::Warn("IGameResourceService not available.");
     }
 
     // Get the GameEntitySystem offset from GameData (already parsed)
@@ -60,11 +63,11 @@ bool InitEntitySystem()
 
     if (offsetGameEntitySystem < 0)
     {
-        META_CONPRINTF("[AdminSystem] Warning: GameEntitySystem offset not found in gamedata.\n");
+        Log::Warn("GameEntitySystem offset not found in gamedata.");
     }
     else
     {
-        META_CONPRINTF("[AdminSystem] Gamedata loaded (entity system offset: %d).\n", offsetGameEntitySystem);
+        Log::Info("Gamedata loaded (entity system offset: {}).", offsetGameEntitySystem);
     }
 
     // Resolve entity system pointer from IGameResourceService + offset
@@ -76,11 +79,11 @@ bool InitEntitySystem()
 
     if (interfaces.EntitySystem)
     {
-        META_CONPRINTF("[AdminSystem] Entity system initialized.\n");
+        Log::Info("Entity system initialized.");
     }
     else
     {
-        META_CONPRINTF("[AdminSystem] Warning: Entity system not available. Menu button detection disabled.\n");
+        Log::Warn("Entity system not available. Menu button detection disabled.");
     }
 
     return true;
