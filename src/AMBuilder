@@ -7,54 +7,16 @@
 import os
 
 # =============================================================================
-# SOURCE FILES - Add your .cpp files here
+# SOURCE FILES - Auto-discovered from src/ directory
 # =============================================================================
-SOURCES = [
-    # Core
-    "core/plugin.cpp",
-    "core/config.cpp",
+SRC_DIR = os.path.join(builder.sourcePath, "src")
 
-    # SDK
-    "sdk/schema.cpp",
-    "sdk/usermessage.cpp",
-    "sdk/entity.cpp",
-    "sdk/sigscanner.cpp",
-
-    # Utilities
-    "utils/steamid.cpp",
-    "utils/time.cpp",
-    "utils/string.cpp",
-    "utils/translations.cpp",
-
-    # Database
-    "database/database.cpp",
-    "database/entities/admin.cpp",
-    "database/entities/admin_group.cpp",
-    "database/entities/ban.cpp",
-    "database/entities/mute.cpp",
-    "database/entities/gag.cpp",
-    "database/repositories/admin_repository.cpp",
-    "database/repositories/ban_repository.cpp",
-
-    # Player
-    "player/player.cpp",
-    "player/player_manager.cpp",
-
-    # Admin
-    "admin/admin_manager.cpp",
-
-    # Commands
-    "commands/command.cpp",
-    "commands/command_manager.cpp",
-
-    # Punishments
-    "punishments/punishment_manager.cpp",
-
-    # Menus
-    "menus/menu_renderer.cpp",
-    "menus/menu_manager.cpp",
-    "menus/admin_menu.cpp",
-]
+SOURCES = []
+for root, dirs, files in os.walk(SRC_DIR):
+    for f in files:
+        if f.endswith(".cpp"):
+            SOURCES.append(os.path.relpath(os.path.join(root, f), SRC_DIR))
+SOURCES.sort()
 
 # =============================================================================
 # LIBRARIES - Platform-specific libraries
