@@ -71,6 +71,10 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     GET_V_IFACE_CURRENT(GetEngineFactory, gi.GameResourceService, IGameResourceService, GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
     GET_V_IFACE_ANY(GetEngineFactory, gi.CVar, ICvar, CVAR_INTERFACE_VERSION);
 
+    // Also set the SDK global g_pCVar — required by ConCommandRef::GetName()
+    // (convar.cpp from HL2SDK uses this global internally)
+    g_pCVar = gi.CVar;
+
     // Initialize subsystems
     if (!InitializeSubsystems(late))
     {
@@ -243,7 +247,7 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 2. Load game data (signatures and offsets)
     Log::Info("Loading game data...");
-    GameData::Instance().Load("addons/admin-system/gamedata");
+    GameData::Instance().Load("addons/admin-system/gamedata/signatures.jsonc");
 
     // 3. Initialize SDK message system
     Log::Info("Initializing SDK message system...");

@@ -33,8 +33,12 @@ void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
     state.SelectedIndex = 0;
     state.LastInputTime = GetCurrentTimeMs();
 
-    Log::Info("Menu opened for slot {} (title: {}, items: {})",
-                     slot, state.GetCurrentMenu()->Title, state.GetCurrentMenu()->Items.size());
+    auto* current = state.GetCurrentMenu();
+    if (current)
+    {
+        Log::Info("Menu opened for slot {} (title: {}, items: {})",
+                         slot, current->Title, current->Items.size());
+    }
 }
 
 void MenuManager::CloseMenu(int slot)

@@ -27,7 +27,8 @@ bool GameData::Load(const std::string& path)
             return false;
         }
 
-        auto json = nlohmann::json::parse(file);
+        auto json = nlohmann::json::parse(file,
+            /*cb=*/nullptr, /*allow_exceptions=*/true, /*ignore_comments=*/true);
 
 #ifdef _WIN32
         constexpr const char* platform = "windows";
@@ -104,6 +105,8 @@ void* GameData::ResolveSignature(const std::string& name) const
 
     auto addr = reinterpret_cast<uintptr_t>(match) + sig.Offset;
     addr = ResolveRelativeAddress(addr, 0, 4);
+    if (addr == 0)
+        return nullptr;
     return reinterpret_cast<void*>(addr);
 }
 

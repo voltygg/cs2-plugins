@@ -18,8 +18,8 @@
     // Retrieved via: GameResourceService + offset → CGameEntitySystem*
     "GameEntitySystem": {
       "windows": 88,
-      "linux": 80,
-    },
+      "linux": 80
+    }
   },
 
   "signatures": {
@@ -31,12 +31,12 @@
       "library": "server",
       "windows": {
         "pattern": "48 83 EC ? 48 83 3D ? ? ? ? ? 74 ? 33 C9 E8 ? ? ? ? FF 15 ? ? ? ?",
-        "offset": 98,
+        "offset": 98
       },
       "linux": {
         "pattern": "55 48 89 E5 41 55 41 54 53 48 83 EC 08 48 8D 05 ? ? ? ? 48 83 38 00",
-        "offset": 106,
-      },
+        "offset": 106
+      }
     },
 
     // GetLegacyGameEventListener — function pointer used to obtain an
@@ -45,11 +45,11 @@
     "LegacyGameEventListener": {
       "library": "server",
       "windows": {
-        "pattern": "48 8B 15 ? ? ? ? 48 85 D2 74 ? 83 F9 ? 77",
+        "pattern": "48 8B 15 ? ? ? ? 48 85 D2 74 ? 83 F9 ? 77"
       },
       "linux": {
-        "pattern": "48 8B 05 ? ? ? ? 48 85 C0 74 ? 83 FF ? 77 ? 48 63 FF 48 C1 E7 ? 48 8D 44 38",
-      },
-    },
-  },
+        "pattern": "48 8B 05 ? ? ? ? 48 85 C0 74 ? 83 FF ? 77 ? 48 63 FF 48 C1 E7 ? 48 8D 44 38"
+      }
+    }
+  }
 }

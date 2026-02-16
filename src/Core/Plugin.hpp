@@ -4,10 +4,10 @@
 #include <eiface.h>
 #include <icvar.h>
 
-#define ADMIN_SYSTEM_VERSION "1.0.0"
-#define ADMIN_SYSTEM_AUTHOR "m9snoi"
-#define ADMIN_SYSTEM_DESCRIPTION "Admin System for CS2"
-#define ADMIN_SYSTEM_URL "https://github.com/m9snoi/admin-system"
+constexpr const char* ADMIN_SYSTEM_VERSION = "1.0.0";
+constexpr const char* ADMIN_SYSTEM_AUTHOR = "m9snoi";
+constexpr const char* ADMIN_SYSTEM_DESCRIPTION = "Admin System for CS2";
+constexpr const char* ADMIN_SYSTEM_URL = "https://github.com/m9snoi/admin-system";
 
 /**
  * Main Metamod:Source plugin entry point.

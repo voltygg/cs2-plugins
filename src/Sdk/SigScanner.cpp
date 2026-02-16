@@ -212,6 +212,9 @@ void* FindPattern(const char* moduleName, const std::string& pattern)
 
 uintptr_t ResolveRelativeAddress(uintptr_t addr, int ripOffset, int ripSize)
 {
+    if (addr == 0)
+        return 0;
+
     int32_t relative = *reinterpret_cast<int32_t*>(addr + ripOffset);
     return addr + ripSize + relative;
 }

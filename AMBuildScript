@@ -172,7 +172,7 @@ class PluginConfig:
             "_CRT_SECURE_NO_DEPRECATE", "_CRT_SECURE_NO_WARNINGS",
             "_CRT_NONSTDC_NO_DEPRECATE", "NOMINMAX",
         ]
-        cxx.cflags += ["/W3", "/std:c++latest"]
+        cxx.cflags += ["/W3", "/std:c++latest", "/EHsc"]
         cxx.cxxflags += ["/TP"]
         cxx.linkflags += [
             "/SUBSYSTEM:WINDOWS",

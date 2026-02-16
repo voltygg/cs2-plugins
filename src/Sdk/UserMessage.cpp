@@ -139,6 +139,11 @@ void SendChatMessage(int slot, const std::string& message)
         return;
 
     auto* pSayText = pMsg->ToPB<CUserMessageSayText2>();
+    if (!pSayText)
+    {
+        interfaces.NetworkMessages->DeallocateNetMessageAbstract(sSayText2Internal, pMsg);
+        return;
+    }
     pSayText->set_entityindex(-1);
     pSayText->set_chat(false);
     pSayText->set_messagename(message.c_str());
