@@ -23,13 +23,15 @@ void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
     if (slot < 0 || slot >= 64 || !menu)
         return;
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     auto& state = m_states[slot];
     state.menu_stack.push(std::move(menu));
     state.selected_index = 0;
     state.last_input_time = GetCurrentTimeMs();
-    state.last_render_time = 0; // Force immediate render
+
+    META_CONPRINTF("[AdminSystem] Menu opened for slot %d (title: %s, items: %zu)\n",
+                   slot, state.GetCurrentMenu()->title.c_str(), state.GetCurrentMenu()->items.size());
 }
 
 void MenuManager::CloseMenu(int slot)
@@ -37,7 +39,7 @@ void MenuManager::CloseMenu(int slot)
     if (slot < 0 || slot >= 64)
         return;
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     auto& state = m_states[slot];
     if (state.menu_stack.empty())
@@ -60,7 +62,6 @@ void MenuManager::CloseMenu(int slot)
     {
         // Returned to parent menu - reset selection
         state.selected_index = 0;
-        state.last_render_time = 0; // Force re-render
     }
 }
 
@@ -69,7 +70,7 @@ void MenuManager::CloseAllMenus(int slot)
     if (slot < 0 || slot >= 64)
         return;
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     auto& state = m_states[slot];
     state.Reset();
@@ -81,13 +82,13 @@ bool MenuManager::HasActiveMenu(int slot) const
     if (slot < 0 || slot >= 64)
         return false;
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     return m_states[slot].HasMenu();
 }
 
 void MenuManager::OnGameFrame()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     for (int slot = 0; slot < 64; ++slot)
     {
@@ -102,14 +103,7 @@ void MenuManager::OnGameFrame()
 
         // Handle input (edge-detected: newly pressed this frame)
         HandleInput(slot, buttons, prev);
-
-        // Re-render at interval (center HTML fades, needs refresh)
-        int64_t now = GetCurrentTimeMs();
-        if (now - state.last_render_time >= RENDER_INTERVAL_MS)
-        {
-            RenderMenu(slot);
-            state.last_render_time = now;
-        }
+        RenderMenu(slot);
     }
 }
 
@@ -190,7 +184,6 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prev_buttons)
         else
         {
             state.selected_index = 0;
-            state.last_render_time = 0;
         }
         input_handled = true;
     }
@@ -198,7 +191,6 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prev_buttons)
     if (input_handled)
     {
         state.last_input_time = now;
-        state.last_render_time = 0; // Force immediate re-render
     }
 }
 
@@ -218,7 +210,7 @@ void MenuManager::OnPlayerDisconnect(int slot)
     if (slot < 0 || slot >= 64)
         return;
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     m_states[slot].Reset();
 }
 

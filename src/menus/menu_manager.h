@@ -64,13 +64,10 @@ private:
     void RenderMenu(int slot);
 
     std::array<PlayerMenuState, 64> m_states;
-    mutable std::mutex m_mutex;
+    mutable std::recursive_mutex m_mutex;
 
     // Input debounce interval in milliseconds
     static constexpr int64_t INPUT_DEBOUNCE_MS = 200;
-
-    // Render interval in milliseconds (center HTML refresh)
-    static constexpr int64_t RENDER_INTERVAL_MS = 100;
 };
 
 } // namespace menus

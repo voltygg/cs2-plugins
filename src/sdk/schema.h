@@ -6,10 +6,13 @@ class ISchemaSystem;
 
 namespace sdk {
 
+// Global schema system pointer — set by plugin Load() via GET_V_IFACE_ANY
+extern ISchemaSystem* g_pSchemaSystem;
+
 /**
- * @brief Initialize the schema system. Call during plugin Load().
- * Obtains ISchemaSystem interface and prepares for offset lookups.
- * @return true if initialized successfully
+ * @brief Validate that the schema system interface is available.
+ * Must be called after g_pSchemaSystem is set in plugin Load().
+ * @return true if g_pSchemaSystem is set
  */
 bool InitSchemaSystem();
 

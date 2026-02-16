@@ -11,19 +11,16 @@ extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace sdk {
 
-static ISchemaSystem* s_pSchemaSystem = nullptr;
+ISchemaSystem* g_pSchemaSystem = nullptr;
 
 // Cache: className -> (fieldName -> offset)
 static std::map<std::string, std::map<std::string, int>> s_offsetCache;
 
 bool InitSchemaSystem()
 {
-    s_pSchemaSystem = static_cast<ISchemaSystem*>(
-        g_SMAPI->MetaFactory(SCHEMASYSTEM_INTERFACE_VERSION, nullptr, nullptr));
-
-    if (!s_pSchemaSystem)
+    if (!g_pSchemaSystem)
     {
-        META_CONPRINTF("[AdminSystem] Warning: Failed to get ISchemaSystem.\n");
+        META_CONPRINTF("[AdminSystem] Warning: ISchemaSystem not available.\n");
         return false;
     }
 
@@ -33,7 +30,7 @@ bool InitSchemaSystem()
 
 int GetSchemaOffset(const char* className, const char* fieldName)
 {
-    if (!s_pSchemaSystem)
+    if (!g_pSchemaSystem)
         return -1;
 
     // Check cache first
@@ -52,7 +49,7 @@ int GetSchemaOffset(const char* className, const char* fieldName)
     const char* moduleName = "libserver.so";
 #endif
 
-    CSchemaSystemTypeScope* pTypeScope = s_pSchemaSystem->FindTypeScopeForModule(moduleName);
+    CSchemaSystemTypeScope* pTypeScope = g_pSchemaSystem->FindTypeScopeForModule(moduleName);
     if (!pTypeScope)
     {
         META_CONPRINTF("[AdminSystem] Schema: Failed to find type scope for %s.\n", moduleName);

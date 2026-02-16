@@ -19,6 +19,13 @@ constexpr int UM_SayText2 = 118;
 bool InitMessageSystem();
 
 /**
+ * @brief Initialize IGameEventManager2 via signature scanning.
+ * Must be called after gamedata is loaded.
+ * @return true if game event manager was resolved
+ */
+bool InitGameEventManager();
+
+/**
  * @brief Send center HTML text to a specific player slot.
  */
 void SendCenterHtml(int slot, const std::string& html);

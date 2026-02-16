@@ -188,7 +188,7 @@ if (Test-Path $VdfPath) {
 if (Test-Path "configs") {
     Write-Host "Copying configuration files..." -ForegroundColor Yellow
 
-    # Get all config files
+    # Get all config files (top-level)
     $ConfigFiles = Get-ChildItem "configs" -File
 
     foreach ($configFile in $ConfigFiles) {
@@ -202,6 +202,15 @@ if (Test-Path "configs") {
 
         Copy-Item $configFile.FullName $destPath -Force
         Write-Host "  -> configs\$($configFile.Name)" -ForegroundColor Gray
+    }
+
+    # Copy subdirectories (translations, etc.)
+    $ConfigDirs = Get-ChildItem "configs" -Directory
+    foreach ($dir in $ConfigDirs) {
+        $destDir = Join-Path $PluginAddonPath "configs\$($dir.Name)"
+        $null = New-Item -ItemType Directory -Force -Path $destDir
+        Copy-Item "$($dir.FullName)\*" $destDir -Recurse -Force
+        Write-Host "  -> configs\$($dir.Name)/" -ForegroundColor Gray
     }
 }
 

@@ -38,7 +38,6 @@ struct PlayerMenuState
     int selected_index{0};
     int64_t last_input_time{0};
     uint64_t prev_buttons{0};
-    int64_t last_render_time{0};
 
     bool HasMenu() const { return !menu_stack.empty(); }
     Menu* GetCurrentMenu() { return menu_stack.empty() ? nullptr : menu_stack.top().get(); }
@@ -49,7 +48,6 @@ struct PlayerMenuState
         selected_index = 0;
         last_input_time = 0;
         prev_buttons = 0;
-        last_render_time = 0;
     }
 };
 

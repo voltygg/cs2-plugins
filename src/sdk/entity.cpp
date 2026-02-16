@@ -6,6 +6,7 @@
 #include <entity2/entityinstance.h>
 #include <entity2/entityidentity.h>
 #include <entity2/concreteentitylist.h>
+#include <interfaces/interfaces.h>
 #include <nlohmann/json.hpp>
 
 #include <filesystem>
@@ -14,16 +15,10 @@
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-// IGameResourceService is forward-declared in the SDK.
-// We obtain the entity system pointer from it at a gamedata offset.
-class IGameResourceService;
-
 namespace sdk {
 
 CGameEntitySystem* g_pEntitySystem = nullptr;
 
-// SDK interface for obtaining entity system
-static IGameResourceService* s_pGameResourceService = nullptr;
 
 // GameEntitySystem offset (from gamedata — this is NOT in the schema system)
 static int s_offsetGameEntitySystem = -1;
@@ -62,13 +57,9 @@ static void ResolveSchemaOffsets()
 
 bool InitEntitySystem()
 {
-    // Get IGameResourceService via MetaFactory
-    s_pGameResourceService = static_cast<IGameResourceService*>(
-        g_SMAPI->MetaFactory("GameResourceServiceServerV001", nullptr, nullptr));
-
-    if (!s_pGameResourceService)
+    if (!g_pGameResourceServiceServer)
     {
-        META_CONPRINTF("[AdminSystem] Warning: Failed to get IGameResourceService.\n");
+        META_CONPRINTF("[AdminSystem] Warning: IGameResourceService not available.\n");
     }
 
     // Load gamedata for engine-internal offsets (not available via schema)
@@ -111,10 +102,10 @@ bool InitEntitySystem()
     }
 
     // Resolve entity system pointer from IGameResourceService + offset
-    if (s_pGameResourceService && s_offsetGameEntitySystem >= 0)
+    if (g_pGameResourceServiceServer && s_offsetGameEntitySystem >= 0)
     {
         g_pEntitySystem = *reinterpret_cast<CGameEntitySystem**>(
-            reinterpret_cast<uintptr_t>(s_pGameResourceService) + s_offsetGameEntitySystem);
+            reinterpret_cast<uintptr_t>(g_pGameResourceServiceServer) + s_offsetGameEntitySystem);
     }
 
     if (g_pEntitySystem)
@@ -132,10 +123,10 @@ bool InitEntitySystem()
 CGameEntitySystem* GetEntitySystem()
 {
     // Lazy re-resolve if not yet available (entity system may not exist until map load)
-    if (!g_pEntitySystem && s_pGameResourceService && s_offsetGameEntitySystem >= 0)
+    if (!g_pEntitySystem && g_pGameResourceServiceServer && s_offsetGameEntitySystem >= 0)
     {
         g_pEntitySystem = *reinterpret_cast<CGameEntitySystem**>(
-            reinterpret_cast<uintptr_t>(s_pGameResourceService) + s_offsetGameEntitySystem);
+            reinterpret_cast<uintptr_t>(g_pGameResourceServiceServer) + s_offsetGameEntitySystem);
     }
     return g_pEntitySystem;
 }

@@ -18,6 +18,7 @@ SOURCES = [
     "sdk/schema.cpp",
     "sdk/usermessage.cpp",
     "sdk/entity.cpp",
+    "sdk/sigscanner.cpp",
 
     # Utilities
     "utils/steamid.cpp",
@@ -74,6 +75,8 @@ WINDOWS_LIBS = [
     "crypt32.lib",
     "secur32.lib",
     "wldap32.lib",
+    # Required by sigscanner (GetModuleInformation)
+    "psapi.lib",
 ]
 
 LINUX_LIBS = [

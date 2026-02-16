@@ -15,6 +15,8 @@
 
 #include <engine/igameeventsystem.h>
 #include <networksystem/inetworkmessages.h>
+#include <schemasystem/schemasystem.h>
+#include <interfaces/interfaces.h>
 #include <icvar.h>
 
 #include <cstdio>
@@ -27,7 +29,6 @@ AdminSystemPlugin g_AdminSystemPlugin;
 // Global SDK interface pointers
 IServerGameDLL* g_pServerGameDLL = nullptr;
 IServerGameClients* g_pServerGameClients = nullptr;
-// Note: g_pCVar is declared in hl2sdk interfaces.h and defined in interfaces.lib
 
 // Metamod plugin expose
 PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
@@ -55,6 +56,8 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     GET_V_IFACE_ANY(GetServerFactory, g_pServerGameClients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
     GET_V_IFACE_ANY(GetEngineFactory, sdk::g_pGameEventSystem, IGameEventSystem, GAMEEVENTSYSTEM_INTERFACE_VERSION);
     GET_V_IFACE_ANY(GetEngineFactory, sdk::g_pNetworkMessages, INetworkMessages, NETWORKMESSAGES_INTERFACE_VERSION);
+    GET_V_IFACE_ANY(GetEngineFactory, sdk::g_pSchemaSystem, ISchemaSystem, SCHEMASYSTEM_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pGameResourceServiceServer, IGameResourceService, GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
     GET_V_IFACE_ANY(GetEngineFactory, g_pCVar, ICvar, CVAR_INTERFACE_VERSION);
 
     // Initialize subsystems
@@ -162,10 +165,7 @@ void* AdminSystemPlugin::OnMetamodQuery(const char* iface, int* ret)
 
 void AdminSystemPlugin::Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
-    if (simulating)
-    {
-        menus::MenuManager::Instance().OnGameFrame();
-    }
+    menus::MenuManager::Instance().OnGameFrame();
 }
 
 void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* pszName, uint64 xuid,
@@ -286,6 +286,13 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
         META_CONPRINTF("[AdminSystem] Warning: Entity system init failed (menus may not work).\n");
     }
 
+    // 4b. Resolve IGameEventManager2 via signature scanning (requires gamedata loaded in step 4)
+    META_CONPRINTF("[AdminSystem] Resolving game event manager...\n");
+    if (!sdk::InitGameEventManager())
+    {
+        META_CONPRINTF("[AdminSystem] Warning: Game event manager not resolved (center HTML display will not work).\n");
+    }
+
     // 5. Initialize database connection (optional — plugin works without DB)
     META_CONPRINTF("[AdminSystem] Connecting to database...\n");
     auto& db = database::Database::Instance();
@@ -297,20 +304,36 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
         META_CONPRINTF("[AdminSystem] Warning: Database not available. Running without DB features.\n");
     }
 
-    // 6. Load admin groups and admins (requires DB)
-    if (dbConnected)
+    // 6. Load admin groups and admins
     {
-        META_CONPRINTF("[AdminSystem] Loading admins...\n");
         auto& admin_mgr = admin::AdminManager::Instance();
 
-        if (!admin_mgr.LoadGroups())
+        // 6a. Load from database first (if connected)
+        if (dbConnected)
         {
-            META_CONPRINTF("[AdminSystem] Warning: Failed to load admin groups.\n");
+            META_CONPRINTF("[AdminSystem] Loading admins from database...\n");
+
+            if (!admin_mgr.LoadGroups())
+            {
+                META_CONPRINTF("[AdminSystem] Warning: Failed to load admin groups from DB.\n");
+            }
+
+            if (!admin_mgr.LoadAdmins())
+            {
+                META_CONPRINTF("[AdminSystem] Warning: Failed to load admins from DB.\n");
+            }
         }
 
-        if (!admin_mgr.LoadAdmins())
+        // 6b. Load from JSON files (supplements/overrides DB entries)
+        // Done after DB load because admin_mgr.LoadAdmins() clears m_admins first.
+        META_CONPRINTF("[AdminSystem] Loading admins from config files...\n");
+        if (!config_mgr.LoadGroups("addons/admin-system/configs/groups.json"))
         {
-            META_CONPRINTF("[AdminSystem] Warning: Failed to load admins.\n");
+            META_CONPRINTF("[AdminSystem] Warning: Failed to load groups.json\n");
+        }
+        if (!config_mgr.LoadAdmins("addons/admin-system/configs/admins.json"))
+        {
+            META_CONPRINTF("[AdminSystem] Warning: Failed to load admins.json\n");
         }
     }
 
@@ -333,12 +356,15 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
         .max_args = 0,
         .handler = [](player::Player* admin, const std::vector<std::string>& /*args*/) -> commands::CommandResult
         {
+            META_CONPRINTF("[AdminSystem] !admin handler: slot=%d, steamid=%lld\n",
+                           admin->GetSlot(), static_cast<long long>(admin->GetSteamID()));
             auto main_menu = menus::BuildAdminMainMenu(admin->GetSlot());
             if (main_menu)
             {
                 menus::MenuManager::Instance().OpenMenu(admin->GetSlot(), main_menu);
                 return {true, "Admin menu opened"};
             }
+            META_CONPRINTF("[AdminSystem] !admin handler: BuildAdminMainMenu returned nullptr!\n");
             return {false, "Failed to open admin menu"};
         },
     });
@@ -393,17 +419,6 @@ bool AdminSystemPlugin::LoadConfigs()
     if (!config_mgr.LoadDatabaseConfig("addons/admin-system/configs/database.json"))
     {
         META_CONPRINTF("[AdminSystem] Warning: Failed to load database.json\n");
-    }
-
-    // Load groups first (admins reference groups for permission resolution)
-    if (!config_mgr.LoadGroups("addons/admin-system/configs/groups.json"))
-    {
-        META_CONPRINTF("[AdminSystem] Warning: Failed to load groups.json\n");
-    }
-
-    if (!config_mgr.LoadAdmins("addons/admin-system/configs/admins.json"))
-    {
-        META_CONPRINTF("[AdminSystem] Warning: Failed to load admins.json\n");
     }
 
     return true;

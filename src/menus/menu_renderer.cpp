@@ -24,18 +24,18 @@ std::string RenderMenuHtml(const Menu* menu, int selected_index)
     std::ostringstream html;
 
     // Top border
-    html << "<font color='" << theme::GOLD << "'>\u2605 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 \u2605</font><br>";
+    html << "<font color='" << theme::GOLD << "'>* ===================== *</font><br>";
 
     // Title
-    html << "<font color='" << theme::GOLD << "'><b>\u2605 "
+    html << "<font color='" << theme::GOLD << "'><b>* "
          << menu->title
-         << " \u2605</b></font><br>";
+         << " *</b></font><br>";
 
     // Subtitle
     html << "<font color='" << theme::WARM_GRAY << "'>admin-system v1.0</font><br>";
 
     // Divider
-    html << "<font color='" << theme::GOLD << "'>\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550</font><br>";
+    html << "<font color='" << theme::GOLD << "'>=======================</font><br>";
 
     // Spacer
     html << "<br>";
@@ -48,20 +48,20 @@ std::string RenderMenuHtml(const Menu* menu, int selected_index)
         if (!item.enabled)
         {
             // Disabled item
-            html << "<font color='" << theme::DISABLED << "'>\u2500 "
+            html << "<font color='" << theme::DISABLED << "'>- "
                  << item.title << "</font><br>";
         }
         else if (i == selected_index)
         {
             // Selected item - Gold & Amber highlight
-            html << "<font color='" << theme::AMBER << "'><b>\u2605 "
+            html << "<font color='" << theme::AMBER << "'><b>&gt; "
                  << item.title << "</b></font> "
                  << "<font color='" << theme::GOLD << "'>[E]</font><br>";
         }
         else
         {
             // Normal item
-            html << "<font color='" << theme::WARM_WHITE << "'>\u2606 "
+            html << "<font color='" << theme::WARM_WHITE << "'>  "
                  << item.title << "</font><br>";
         }
     }
@@ -70,12 +70,14 @@ std::string RenderMenuHtml(const Menu* menu, int selected_index)
     html << "<br>";
 
     // Bottom border
-    html << "<font color='" << theme::GOLD << "'>\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550</font><br>";
+    html << "<font color='" << theme::GOLD << "'>=======================</font><br>";
 
     // Navigation hints
-    html << "<font color='" << theme::NAV_GOLD << "'>W \u25b2  S \u25bc</font>"
-         << "          "
-         << "<font color='" << theme::NAV_CLOSE << "'>R \u2715</font>";
+    html << "<font color='" << theme::NAV_GOLD << "'>W/S Navigate</font>"
+         << "   "
+         << "<font color='" << theme::GOLD << "'>E Select</font>"
+         << "   "
+         << "<font color='" << theme::NAV_CLOSE << "'>R Close</font>";
 
     return html.str();
 }
