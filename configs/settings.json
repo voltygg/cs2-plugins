@@ -1,8 +1,6 @@
 {
   "plugin": {
-    "enabled": true,
-    "logLevel": "info",
-    "serverId": "server1"
+    "logLevel": "info"
   },
   "database": {
     "host": "localhost",
@@ -11,30 +9,10 @@
     "username": "postgres",
     "password": "Test12345#",
     "schema": "admin_system",
-    "poolSize": 4,
-    "connectTimeoutSeconds": 10,
     "sslMode": "prefer"
-  },
-  "commands": {
-    "prefixes": ["!", "."],
-    "silentPrefix": "@",
-    "overrides": {
-      "kick": "cd",
-      "restart": "g"
-    },
-    "groupOverrides": {
-      "@punish": "d"
-    }
   },
   "punishments": {
     "defaultBanReason": "Banned by administrator",
-    "defaultMuteReason": "Muted by administrator",
-    "maxBanDurationMinutes": 0,
-    "warningThreshold": 3,
-    "warningAction": "kick"
-  },
-  "admin": {
-    "immunityMode": "simple",
-    "requireGenericFlag": true
+    "warningThreshold": 3
   }
 }

@@ -9,13 +9,9 @@ namespace AdminSystem::Core {
 
 /** General plugin settings loaded from the "plugin" and "punishments" sections of settings.json. */
 struct PluginConfig {
-    std::string PluginName = "admin-system";
-    std::string Version = "1.0.0";
     bool DebugMode = false;
-    int BanCheckInterval = 30;
     int MaxWarnings = 3;
     std::string DefaultBanReason = "Banned by administrator";
-    std::string DefaultKickReason = "Kicked by administrator";
 };
 
 /**

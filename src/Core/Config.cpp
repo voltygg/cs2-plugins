@@ -25,8 +25,6 @@ bool ConfigManager::LoadSettings(const std::string& path)
     if (j.contains("plugin"))
     {
         auto& p = j["plugin"];
-        if (p.contains("enabled"))
-            _pluginConfig.PluginName = "admin-system";
         if (p.contains("logLevel"))
             _pluginConfig.DebugMode = (p["logLevel"] == "debug");
     }
@@ -41,7 +39,6 @@ bool ConfigManager::LoadSettings(const std::string& path)
         if (db.contains("username"))   _databaseConfig.Username = db["username"];
         if (db.contains("password"))   _databaseConfig.Password = db["password"];
         if (db.contains("schema"))     _databaseConfig.Schema = db["schema"];
-        if (db.contains("poolSize"))   _databaseConfig.PoolSize = db["poolSize"];
         if (db.contains("sslMode"))    _databaseConfig.SslMode = db["sslMode"];
     }
 

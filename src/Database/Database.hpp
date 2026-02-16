@@ -16,7 +16,6 @@ struct DatabaseConfig {
     std::string Username = "admin_system";
     std::string Password;
     std::string Schema = "admin_system";
-    int PoolSize = 4;
     std::string SslMode = "prefer";
 
     std::string GetConnectionString() const;
