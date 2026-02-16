@@ -6,6 +6,7 @@
 
 namespace AdminSystem::Database {
 
+/** Database entity representing a named admin group with flags, immunity, and inheritance. */
 struct AdminGroup {
     int64_t Id = 0;
     std::string Name;

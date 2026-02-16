@@ -7,6 +7,10 @@
 
 namespace AdminSystem::Commands {
 
+/**
+ * Dispatches chat commands (prefixed with ! or .) to registered handlers.
+ * Handles prefix matching, argument parsing, and permission enforcement.
+ */
 class CommandManager : public Core::Singleton<CommandManager> {
     friend class Core::Singleton<CommandManager>;
 

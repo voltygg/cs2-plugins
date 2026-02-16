@@ -8,6 +8,7 @@
 
 namespace AdminSystem::Database {
 
+/** PostgreSQL connection parameters loaded from the "database" section of settings.json. */
 struct DatabaseConfig {
     std::string Host = "localhost";
     int Port = 5432;
@@ -21,6 +22,10 @@ struct DatabaseConfig {
     std::string GetConnectionString() const;
 };
 
+/**
+ * PostgreSQL database access layer. Thread-safe (mutex-protected) since
+ * future async queries may run off the game thread.
+ */
 class Database : public Core::Singleton<Database> {
     friend class Core::Singleton<Database>;
 

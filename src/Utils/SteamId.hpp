@@ -6,6 +6,7 @@
 
 namespace AdminSystem::Utils {
 
+/** Static utilities for converting between SteamID formats (64-bit, SteamID2, SteamID3). */
 class SteamId {
 public:
     static std::string ToSteamId3(int64_t steamId64);

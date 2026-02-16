@@ -5,6 +5,7 @@
 
 namespace AdminSystem::Utils {
 
+/** Collection of static string manipulation utilities. */
 class StringUtils {
 public:
     static std::string ToLower(const std::string& str);
@@ -20,6 +21,7 @@ public:
     static std::string ReplaceAll(const std::string& str, const std::string& from, const std::string& to);
     static bool IsNumeric(const std::string& str);
 
+    /** How a command target string (e.g. "@all", "#3", "player name", SteamID) was parsed. */
     enum class TargetType {
         All,
         Me,
@@ -28,6 +30,7 @@ public:
         SteamId
     };
 
+    /** Result of parsing a target string into type + value. */
     struct TargetInfo {
         TargetType Type;
         std::string Value;

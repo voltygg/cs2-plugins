@@ -13,6 +13,8 @@ using json = nlohmann::json;
 
 namespace AdminSystem::Core {
 
+using namespace AdminSystem::Admin;
+
 bool ConfigManager::LoadSettings(const std::string& path)
 {
     json j;
@@ -63,7 +65,7 @@ bool ConfigManager::LoadAdminsConfig(const std::string& path)
     if (!LoadJsonFile(path, j))
         return false;
 
-    auto& adminMgr = Admin::AdminManager::Instance();
+    auto& adminMgr = AdminManager::Instance();
 
     // Load groups
     if (j.contains("groups") && j["groups"].is_array())

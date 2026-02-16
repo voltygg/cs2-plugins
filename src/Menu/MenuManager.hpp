@@ -6,6 +6,11 @@
 
 namespace AdminSystem::Menu {
 
+/**
+ * Manages WASD-navigated center-HTML menus for all players.
+ * Supports a per-player menu stack (submenus push, R pops back).
+ * Driven by OnGameFrame() — reads button state each tick for input.
+ */
 class MenuManager : public Core::Singleton<MenuManager> {
     friend class Core::Singleton<MenuManager>;
 

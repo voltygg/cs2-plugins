@@ -5,6 +5,7 @@
 
 namespace AdminSystem::Utils {
 
+/** Static utilities for Unix timestamps, duration parsing/formatting, and expiration checks. */
 class TimeUtils {
 public:
     static int64_t Now();

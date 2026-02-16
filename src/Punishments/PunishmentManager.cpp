@@ -3,6 +3,8 @@
 
 namespace AdminSystem::Punishments {
 
+using namespace AdminSystem::Players;
+
 bool PunishmentManager::LoadActivePunishments()
 {
     try
@@ -68,7 +70,7 @@ bool PunishmentManager::IssueBan(const Database::Ban& ban)
         _activeBans[ban.TargetSteamId] = ban;
 
         // Kick player if online
-        auto& playerMgr = Players::PlayerManager::Instance();
+        auto& playerMgr = PlayerManager::Instance();
         auto* player = playerMgr.GetPlayerBySteamId(ban.TargetSteamId);
         if (player)
         {
@@ -93,7 +95,7 @@ bool PunishmentManager::IssueMute(const Database::Mute& mute)
         _mutedPlayers.insert(mute.TargetSteamId);
 
         // Update player if online
-        auto& playerMgr = Players::PlayerManager::Instance();
+        auto& playerMgr = PlayerManager::Instance();
         auto* player = playerMgr.GetPlayerBySteamId(mute.TargetSteamId);
         if (player)
         {
@@ -118,7 +120,7 @@ bool PunishmentManager::IssueGag(const Database::Gag& gag)
         _gaggedPlayers.insert(gag.TargetSteamId);
 
         // Update player if online
-        auto& playerMgr = Players::PlayerManager::Instance();
+        auto& playerMgr = PlayerManager::Instance();
         auto* player = playerMgr.GetPlayerBySteamId(gag.TargetSteamId);
         if (player)
         {

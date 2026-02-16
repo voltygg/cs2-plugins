@@ -5,14 +5,17 @@
 
 namespace AdminSystem::Commands {
 
+using namespace AdminSystem::Admin;
+using namespace AdminSystem::Utils;
+
 void CommandManager::Register(Command cmd)
 {
-    _commands[Utils::StringUtils::ToLower(cmd.Name)] = std::move(cmd);
+    _commands[StringUtils::ToLower(cmd.Name)] = std::move(cmd);
 }
 
 void CommandManager::Unregister(const std::string& name)
 {
-    _commands.erase(Utils::StringUtils::ToLower(name));
+    _commands.erase(StringUtils::ToLower(name));
 }
 
 bool CommandManager::HandleChatMessage(Players::Player* player, const std::string& message)
@@ -66,7 +69,7 @@ bool CommandManager::HandleChatMessage(Players::Player* player, const std::strin
     // Check permissions
     if (!cmd->Permission.empty())
     {
-        auto& adminMgr = Admin::AdminManager::Instance();
+        auto& adminMgr = AdminManager::Instance();
         if (!adminMgr.HasAnyPermission(player->GetSteamID(), cmd->Permission))
         {
             // TODO: Send "no permission" message
@@ -86,7 +89,7 @@ bool CommandManager::HandleChatMessage(Players::Player* player, const std::strin
 
 const Command* CommandManager::GetCommand(const std::string& name) const
 {
-    std::string lowerName = Utils::StringUtils::ToLower(name);
+    std::string lowerName = StringUtils::ToLower(name);
 
     // Direct lookup
     auto it = _commands.find(lowerName);
@@ -118,7 +121,7 @@ std::vector<const Command*> CommandManager::GetAllCommands() const
 
 std::vector<std::string> CommandManager::ParseArguments(const std::string& text) const
 {
-    return Utils::StringUtils::Split(text, ' ');
+    return StringUtils::Split(text, ' ');
 }
 
 } // namespace AdminSystem::Commands

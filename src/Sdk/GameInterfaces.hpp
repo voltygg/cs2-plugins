@@ -15,6 +15,10 @@ class ISchemaSystem;
 
 namespace AdminSystem::Sdk {
 
+/**
+ * Centralized holder for all HL2SDK interface pointers.
+ * Populated during plugin Load() via Metamod's GET_V_IFACE macros.
+ */
 struct GameInterfaces : Core::Singleton<GameInterfaces> {
     friend class Core::Singleton<GameInterfaces>;
 

@@ -5,6 +5,7 @@
 
 namespace AdminSystem::Database {
 
+/** Database entity for a player ban. Supports permanent and timed bans with removal tracking. */
 struct Ban {
     int64_t Id = 0;
     int64_t TargetSteamId = 0;

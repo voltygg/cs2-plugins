@@ -4,6 +4,8 @@
 
 namespace AdminSystem::Database {
 
+using namespace AdminSystem::Utils;
+
 std::optional<Ban> BanRepository::FindActiveBySteamId(int64_t steamId)
 {
     try
@@ -12,7 +14,7 @@ std::optional<Ban> BanRepository::FindActiveBySteamId(int64_t steamId)
             "find_active_ban_by_steamid",
             "SELECT * FROM bans WHERE target_steam_id = $1 AND "
             "is_active = true AND (expires_at = 0 OR expires_at > $2)",
-            steamId, Utils::TimeUtils::Now());
+            steamId, TimeUtils::Now());
 
         if (result.empty())
         {
@@ -35,7 +37,7 @@ std::optional<Ban> BanRepository::FindActiveByIp(const std::string& ip)
             "find_active_ban_by_ip",
             "SELECT * FROM bans WHERE target_ip = $1 AND "
             "is_active = true AND (expires_at = 0 OR expires_at > $2)",
-            ip, Utils::TimeUtils::Now());
+            ip, TimeUtils::Now());
 
         if (result.empty())
         {
@@ -59,7 +61,7 @@ std::vector<Ban> BanRepository::FindAllActive()
         auto result = Database::Instance().ExecutePrepared(
             "find_all_active_bans",
             "SELECT * FROM bans WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)",
-            Utils::TimeUtils::Now());
+            TimeUtils::Now());
 
         for (const auto& row : result)
         {
@@ -120,7 +122,7 @@ bool BanRepository::Remove(int64_t banId, int64_t removedBy, const std::string& 
         Database::Instance().ExecutePrepared(
             "remove_ban",
             "UPDATE bans SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 WHERE id = $1",
-            banId, Utils::TimeUtils::Now(), removedBy, reason);
+            banId, TimeUtils::Now(), removedBy, reason);
 
         return true;
     }
@@ -137,7 +139,7 @@ int BanRepository::ExpireOldBans()
         auto result = Database::Instance().ExecutePrepared(
             "expire_old_bans",
             "UPDATE bans SET is_active = false WHERE is_active = true AND expires_at > 0 AND expires_at <= $1",
-            Utils::TimeUtils::Now());
+            TimeUtils::Now());
 
         return result.affected_rows();
     }

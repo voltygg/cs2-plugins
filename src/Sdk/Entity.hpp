@@ -8,7 +8,7 @@ class CEntityInstance;
 
 namespace AdminSystem::Sdk {
 
-// Player button flags (InputBitMask_t from Source 2) - keep engine names
+/** @name Player button flags -- InputBitMask_t constants from the Source 2 engine. */
 constexpr uint64_t IN_ATTACK    = 0x1;
 constexpr uint64_t IN_JUMP      = 0x2;
 constexpr uint64_t IN_DUCK      = 0x4;
@@ -28,10 +28,15 @@ constexpr uint64_t IN_LOOK_AT_WEAPON = 0x800000000ULL;
 
 constexpr int MaxPlayers = 64;
 
+/** Initialize the entity system by resolving CGameEntitySystem from GameResourceService. */
 bool InitEntitySystem();
+/** Get the global CGameEntitySystem pointer (nullptr if not initialized). */
 CGameEntitySystem* GetEntitySystem();
+/** Get the CCSPlayerController entity for a player slot (nullptr if invalid). */
 CEntityInstance* GetPlayerController(int slot);
+/** Read the current button bitmask for a player (traverses pawn -> movement services -> buttons). */
 uint64_t GetPlayerButtons(int slot);
+/** Check whether a player slot index is in the valid range [0, MaxPlayers). */
 bool IsPlayerSlotValid(int slot);
 
 } // namespace AdminSystem::Sdk

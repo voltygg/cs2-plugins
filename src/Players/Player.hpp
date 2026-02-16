@@ -5,6 +5,10 @@
 
 namespace AdminSystem::Players {
 
+/**
+ * Represents a connected player on the server.
+ * Tracks identity (slot, SteamID, name, IP), connection time, and admin/punishment state.
+ */
 class Player {
 public:
     Player(int slot, int64_t steamId, const std::string& name, const std::string& ipAddress);

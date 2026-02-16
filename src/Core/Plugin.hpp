@@ -9,6 +9,11 @@
 #define ADMIN_SYSTEM_DESCRIPTION "Admin System for CS2"
 #define ADMIN_SYSTEM_URL "https://github.com/m9snoi/admin-system"
 
+/**
+ * Main Metamod:Source plugin entry point.
+ * Handles plugin lifecycle (Load/Unload), SourceHook callbacks for game events
+ * (GameFrame, client connect/disconnect, chat commands), and subsystem initialization.
+ */
 class AdminSystemPlugin : public ISmmPlugin, public IMetamodListener {
 public:
     bool Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late) override;

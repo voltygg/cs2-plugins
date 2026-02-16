@@ -11,6 +11,8 @@ extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace AdminSystem::Menu {
 
+using namespace AdminSystem::Sdk;
+
 static int64_t GetCurrentTimeMs()
 {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -51,7 +53,7 @@ void MenuManager::CloseMenu(int slot)
     if (state.MenuStack.empty())
     {
         // No more menus - clear the HUD
-        Sdk::ClearCenterHtml(slot);
+        ClearCenterHtml(slot);
         state.Reset();
     }
     else
@@ -68,7 +70,7 @@ void MenuManager::CloseAllMenus(int slot)
 
     auto& state = _states[slot];
     state.Reset();
-    Sdk::ClearCenterHtml(slot);
+    ClearCenterHtml(slot);
 }
 
 bool MenuManager::HasActiveMenu(int slot) const
@@ -88,7 +90,7 @@ void MenuManager::OnGameFrame()
             continue;
 
         // Read current button state
-        uint64_t buttons = Sdk::GetPlayerButtons(slot);
+        uint64_t buttons = GetPlayerButtons(slot);
         uint64_t prev = state.PrevButtons;
         state.PrevButtons = buttons;
 
@@ -121,7 +123,7 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
 
     bool inputHandled = false;
 
-    if (pressed & Sdk::IN_FORWARD)
+    if (pressed & IN_FORWARD)
     {
         // Move selection up, wrapping around
         state.SelectedIndex = (state.SelectedIndex - 1 + itemCount) % itemCount;
@@ -133,7 +135,7 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
 
         inputHandled = true;
     }
-    else if (pressed & Sdk::IN_BACK)
+    else if (pressed & IN_BACK)
     {
         // Move selection down, wrapping around
         state.SelectedIndex = (state.SelectedIndex + 1) % itemCount;
@@ -145,7 +147,7 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
 
         inputHandled = true;
     }
-    else if (pressed & Sdk::IN_USE)
+    else if (pressed & IN_USE)
     {
         // Execute selected item
         if (state.SelectedIndex >= 0 && state.SelectedIndex < itemCount)
@@ -156,7 +158,7 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
         }
         inputHandled = true;
     }
-    else if (pressed & Sdk::IN_RELOAD)
+    else if (pressed & IN_RELOAD)
     {
         // Go back / close menu - no mutex, so we can call CloseMenu directly
         CloseMenu(slot);
@@ -177,7 +179,7 @@ void MenuManager::RenderMenu(int slot)
         return;
 
     std::string html = RenderMenuHtml(menu, state.SelectedIndex);
-    Sdk::SendCenterHtml(slot, html);
+    SendCenterHtml(slot, html);
 }
 
 void MenuManager::OnPlayerDisconnect(int slot)

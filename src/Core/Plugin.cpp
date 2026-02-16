@@ -32,6 +32,16 @@ AdminSystemPlugin g_AdminSystemPlugin;
 // Metamod plugin expose
 PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
 
+using namespace AdminSystem::Admin;
+using namespace AdminSystem::Commands;
+using namespace AdminSystem::Core;
+using namespace AdminSystem::Database;
+using namespace AdminSystem::Menu;
+using namespace AdminSystem::Players;
+using namespace AdminSystem::Punishments;
+using namespace AdminSystem::Sdk;
+using namespace AdminSystem::Utils;
+
 // SourceHook hook declarations (file scope)
 SH_DECL_HOOK3_void(IServerGameDLL, GameFrame, SH_NOATTRIB, 0, bool, bool, bool);
 SH_DECL_HOOK6_void(IServerGameClients, OnClientConnected, SH_NOATTRIB, 0, CPlayerSlot, const char*, uint64, const char*, const char*, bool);
@@ -50,7 +60,7 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     META_CONPRINTF("[AdminSystem] Loading v%s...\n", ADMIN_SYSTEM_VERSION);
 
     // Get SDK interfaces - store in centralized GameInterfaces singleton
-    auto& gi = AdminSystem::Sdk::GameInterfaces::Instance();
+    auto& gi = GameInterfaces::Instance();
 
     GET_V_IFACE_ANY(GetServerFactory, gi.ServerGameDLL, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
     GET_V_IFACE_ANY(GetServerFactory, gi.ServerGameClients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
@@ -131,7 +141,7 @@ void* AdminSystemPlugin::OnMetamodQuery(const char* iface, int* ret)
 
 void AdminSystemPlugin::Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
-    AdminSystem::Menu::MenuManager::Instance().OnGameFrame();
+    MenuManager::Instance().OnGameFrame();
 }
 
 void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* pszName, uint64 xuid,
@@ -143,11 +153,11 @@ void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* psz
     int playerSlot = slot.Get();
     int64_t steamId = static_cast<int64_t>(xuid);
 
-    auto& plrMgr = AdminSystem::Players::PlayerManager::Instance();
+    auto& plrMgr = PlayerManager::Instance();
     plrMgr.AddPlayer(playerSlot, steamId, pszName ? pszName : "", pszAddress ? pszAddress : "");
 
     // Check if player is admin
-    auto& adminMgr = AdminSystem::Admin::AdminManager::Instance();
+    auto& adminMgr = AdminManager::Instance();
     auto* player = plrMgr.GetPlayerBySlot(playerSlot);
     if (player)
     {
@@ -161,10 +171,10 @@ void AdminSystemPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconne
     int playerSlot = slot.Get();
 
     // Clean up menu state
-    AdminSystem::Menu::MenuManager::Instance().OnPlayerDisconnect(playerSlot);
+    MenuManager::Instance().OnPlayerDisconnect(playerSlot);
 
     // Remove player
-    AdminSystem::Players::PlayerManager::Instance().RemovePlayer(playerSlot);
+    PlayerManager::Instance().RemovePlayer(playerSlot);
 }
 
 void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args)
@@ -196,7 +206,7 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
         return;
 
     // Quick check: at least one prefix must match
-    auto& cmdMgr = AdminSystem::Commands::CommandManager::Instance();
+    auto& cmdMgr = CommandManager::Instance();
     // Delegate prefix checking to HandleChatMessage
 
     // Get player slot from context
@@ -204,7 +214,7 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
     if (playerSlot < 0 || playerSlot >= 64)
         return;
 
-    auto* player = AdminSystem::Players::PlayerManager::Instance().GetPlayerBySlot(playerSlot);
+    auto* player = PlayerManager::Instance().GetPlayerBySlot(playerSlot);
     if (!player)
         return;
 
@@ -232,11 +242,11 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 2. Load game data (signatures and offsets)
     META_CONPRINTF("[AdminSystem] Loading game data...\n");
-    AdminSystem::Sdk::GameData::Instance().Load("addons/admin-system/gamedata");
+    GameData::Instance().Load("addons/admin-system/gamedata");
 
     // 3. Initialize SDK message system
     META_CONPRINTF("[AdminSystem] Initializing SDK message system...\n");
-    if (!AdminSystem::Sdk::InitMessageSystem())
+    if (!InitMessageSystem())
     {
         META_CONPRINTF("[AdminSystem] Error: Failed to initialize message system.\n");
         return false;
@@ -244,29 +254,29 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 4. Initialize schema system (resolves entity field offsets at runtime)
     META_CONPRINTF("[AdminSystem] Initializing schema system...\n");
-    if (!AdminSystem::Sdk::InitSchemaSystem())
+    if (!InitSchemaSystem())
     {
         META_CONPRINTF("[AdminSystem] Warning: Schema system init failed (button detection may not work).\n");
     }
 
     // 5. Initialize entity system
     META_CONPRINTF("[AdminSystem] Initializing entity system...\n");
-    if (!AdminSystem::Sdk::InitEntitySystem())
+    if (!InitEntitySystem())
     {
         META_CONPRINTF("[AdminSystem] Warning: Entity system init failed (menus may not work).\n");
     }
 
     // 6. Resolve IGameEventManager2 via signature scanning
     META_CONPRINTF("[AdminSystem] Resolving game event manager...\n");
-    if (!AdminSystem::Sdk::InitGameEventManager())
+    if (!InitGameEventManager())
     {
         META_CONPRINTF("[AdminSystem] Warning: Game event manager not resolved (center HTML display will not work).\n");
     }
 
     // 7. Initialize database connection (optional -- plugin works without DB)
     META_CONPRINTF("[AdminSystem] Connecting to database...\n");
-    auto& db = AdminSystem::Database::Database::Instance();
-    auto& configMgr = AdminSystem::Core::ConfigManager::Instance();
+    auto& db = Database::Instance();
+    auto& configMgr = ConfigManager::Instance();
 
     bool dbConnected = db.Initialize(configMgr.GetDatabaseConfig());
     if (!dbConnected)
@@ -276,7 +286,7 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 8. Load admin groups and admins
     {
-        auto& adminMgr = AdminSystem::Admin::AdminManager::Instance();
+        auto& adminMgr = AdminManager::Instance();
 
         // 8a. Load from database first (if connected)
         if (dbConnected)
@@ -301,25 +311,25 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 10. Initialize command manager and register commands
     META_CONPRINTF("[AdminSystem] Initializing commands...\n");
-    auto& cmdMgr = AdminSystem::Commands::CommandManager::Instance();
+    auto& cmdMgr = CommandManager::Instance();
 
     // Register !admin command using CommandBuilder
     cmdMgr.Register(
-        AdminSystem::Commands::CommandBuilder("admin")
+        CommandBuilder("admin")
             .WithAliases({"a", "menu"})
             .WithDescription("Open the admin menu")
             .WithUsage("!admin")
             .RequirePermission("a")
             .WithArgs(0, 0)
-            .OnExecute([](AdminSystem::Players::Player* admin,
-                          const std::vector<std::string>& /*args*/) -> AdminSystem::Commands::CommandResult
+            .OnExecute([](Player* admin,
+                          const std::vector<std::string>& /*args*/) -> CommandResult
             {
                 META_CONPRINTF("[AdminSystem] !admin handler: slot=%d, steamid=%lld\n",
                                admin->GetSlot(), static_cast<long long>(admin->GetSteamID()));
-                auto mainMenu = AdminSystem::Admin::BuildAdminMainMenu(admin->GetSlot());
+                auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
                 if (mainMenu)
                 {
-                    AdminSystem::Menu::MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
+                    MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
                     return {true, "Admin menu opened"};
                 }
                 META_CONPRINTF("[AdminSystem] !admin handler: BuildAdminMainMenu returned nullptr!\n");
@@ -332,14 +342,14 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
     if (dbConnected)
     {
         META_CONPRINTF("[AdminSystem] Loading active punishments...\n");
-        auto& punishmentMgr = AdminSystem::Punishments::PunishmentManager::Instance();
+        auto& punishmentMgr = PunishmentManager::Instance();
         if (!punishmentMgr.LoadActivePunishments())
             META_CONPRINTF("[AdminSystem] Warning: Failed to load active punishments.\n");
     }
 
     // 12. Load translations
     META_CONPRINTF("[AdminSystem] Loading translations...\n");
-    auto& translations = AdminSystem::Utils::Translations::Instance();
+    auto& translations = Translations::Instance();
     translations.Load("addons/admin-system/configs/translations");
 
     // 13. Initialize menu manager (singleton, ready to use)
@@ -354,17 +364,17 @@ void AdminSystemPlugin::ShutdownSubsystems()
     META_CONPRINTF("[AdminSystem] Shutting down subsystems...\n");
 
     // Clear player manager
-    AdminSystem::Players::PlayerManager::Instance().Clear();
+    PlayerManager::Instance().Clear();
 
     // Shutdown database
-    AdminSystem::Database::Database::Instance().Shutdown();
+    Database::Instance().Shutdown();
 
     META_CONPRINTF("[AdminSystem] Subsystems shut down.\n");
 }
 
 bool AdminSystemPlugin::LoadConfigs()
 {
-    auto& configMgr = AdminSystem::Core::ConfigManager::Instance();
+    auto& configMgr = ConfigManager::Instance();
 
     // Load consolidated settings (plugin, database, commands, punishments, admin)
     if (!configMgr.LoadSettings("addons/admin-system/configs/settings.json"))
@@ -375,7 +385,7 @@ bool AdminSystemPlugin::LoadConfigs()
 
 void AdminSystemPlugin::RegisterHooks()
 {
-    auto& gi = AdminSystem::Sdk::GameInterfaces::Instance();
+    auto& gi = GameInterfaces::Instance();
 
     SH_ADD_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL,
                 SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame), true);
@@ -391,7 +401,7 @@ void AdminSystemPlugin::RegisterHooks()
 
 void AdminSystemPlugin::UnregisterHooks()
 {
-    auto& gi = AdminSystem::Sdk::GameInterfaces::Instance();
+    auto& gi = GameInterfaces::Instance();
 
     SH_REMOVE_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL,
                    SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame), true);

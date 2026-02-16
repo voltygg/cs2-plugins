@@ -3,6 +3,8 @@
 
 namespace AdminSystem::Players {
 
+using namespace AdminSystem::Utils;
+
 Player* PlayerManager::AddPlayer(int slot, int64_t steamId, const std::string& name, const std::string& ipAddress)
 {
     // Remove existing player in this slot if any
@@ -60,7 +62,7 @@ std::vector<Player*> PlayerManager::FindPlayersByName(const std::string& name)
 
     for (const auto& [slot, player] : _playersBySlot)
     {
-        if (Utils::StringUtils::ContainsIgnoreCase(player->GetName(), name))
+        if (StringUtils::ContainsIgnoreCase(player->GetName(), name))
         {
             results.push_back(player.get());
         }

@@ -5,6 +5,7 @@
 
 namespace AdminSystem::Database {
 
+/** Database entity for an admin-issued warning against a player. */
 struct Warning {
     int64_t Id = 0;
     int64_t TargetSteamId = 0;

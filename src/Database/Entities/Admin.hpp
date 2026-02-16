@@ -6,6 +6,7 @@
 
 namespace AdminSystem::Database {
 
+/** Database entity representing an administrator with permission flags and group membership. */
 struct Admin {
     int64_t Id = 0;
     int64_t SteamId = 0;

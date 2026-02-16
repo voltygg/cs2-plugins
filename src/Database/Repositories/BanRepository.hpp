@@ -7,6 +7,7 @@
 
 namespace AdminSystem::Database {
 
+/** Repository for ban records -- lookup, creation, removal, expiration, and history queries. */
 class BanRepository {
 public:
     std::optional<Ban> FindActiveBySteamId(int64_t steamId);

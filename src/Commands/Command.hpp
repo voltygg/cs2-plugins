@@ -8,13 +8,16 @@ namespace AdminSystem::Players { class Player; }
 
 namespace AdminSystem::Commands {
 
+/** Result returned by a command handler to indicate success/failure and an optional message. */
 struct CommandResult {
     bool Success = true;
     std::string Message;
 };
 
+/** Signature for command handler callbacks: (caller, arguments) -> result. */
 using CommandHandler = std::function<CommandResult(Players::Player*, const std::vector<std::string>&)>;
 
+/** A registered chat command with metadata, permission requirements, and handler callback. */
 struct Command {
     std::string Name;
     std::vector<std::string> Aliases;
@@ -28,6 +31,10 @@ struct Command {
     bool Matches(const std::string& cmd) const;
 };
 
+/**
+ * Fluent builder for constructing Command instances.
+ * Usage: CommandBuilder("kick").WithAliases({"k"}).RequirePermission("c").OnExecute(...).Build()
+ */
 class CommandBuilder {
 public:
     explicit CommandBuilder(const std::string& name) { _command.Name = name; }

@@ -4,6 +4,10 @@
 
 namespace AdminSystem::Menu {
 
+/**
+ * Fluent builder for constructing Menu instances.
+ * Usage: MenuBuilder("Title").AddItem("Foo", handler).AddItem("Bar", handler, false).Build()
+ */
 class MenuBuilder {
 public:
     explicit MenuBuilder(const std::string& title)

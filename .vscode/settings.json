@@ -33,7 +33,9 @@
 
   // JSON settings
   "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2
+  },
+  "[jsonc]": {
     "editor.tabSize": 2
   },
 

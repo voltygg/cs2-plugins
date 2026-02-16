@@ -8,6 +8,11 @@
 
 namespace AdminSystem::Admin {
 
+/**
+ * Central authority for admin permissions, flag resolution, and immunity checks.
+ * Admins are loaded from JSON config and/or database. Flags are resolved into
+ * uint32_t bitmasks for O(1) permission checks ('a'=bit0 ... 'z'=bit25).
+ */
 class AdminManager : public Core::Singleton<AdminManager> {
     friend class Core::Singleton<AdminManager>;
 
@@ -26,7 +31,7 @@ public:
     void AddGroup(const Database::AdminGroup& group);
     void RemoveAdmin(int64_t steamId);
 
-    /// Convert a single flag character ('a'-'z') to a bitmask bit
+    /** Convert a single flag character ('a'-'z') to a bitmask bit. */
     static uint32_t FlagToBit(char flag)
     {
         if (flag >= 'a' && flag <= 'z')
@@ -43,7 +48,7 @@ private:
     std::unordered_map<int64_t, Database::Admin> _admins;
     std::unordered_map<std::string, Database::AdminGroup> _groups;
 
-    /// Cached resolved flag bitmasks per admin steam ID
+    /** Cached resolved flag bitmasks per admin steam ID. */
     std::unordered_map<int64_t, uint32_t> _resolvedFlags;
 };
 

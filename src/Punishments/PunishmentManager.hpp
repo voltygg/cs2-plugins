@@ -11,6 +11,10 @@
 
 namespace AdminSystem::Punishments {
 
+/**
+ * Manages active punishments (bans, mutes, gags, warnings).
+ * Caches active punishments in memory and syncs with the database.
+ */
 class PunishmentManager : public Core::Singleton<PunishmentManager> {
     friend class Core::Singleton<PunishmentManager>;
 

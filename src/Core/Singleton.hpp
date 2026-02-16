@@ -2,6 +2,11 @@
 
 namespace AdminSystem::Core {
 
+/**
+ * CRTP singleton base. Derived classes inherit via `class Foo : public Singleton<Foo>`
+ * and declare `friend class Singleton<Foo>` with a private default constructor.
+ * Instance lifetime is static-local (created on first access, destroyed at program exit).
+ */
 template<typename T>
 class Singleton {
 public:

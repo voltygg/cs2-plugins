@@ -8,6 +8,10 @@
 
 namespace AdminSystem::Players {
 
+/**
+ * Manages all connected players, indexed by slot and SteamID.
+ * Main-thread-only (no mutex) — all access happens from game thread callbacks.
+ */
 class PlayerManager : public Core::Singleton<PlayerManager> {
     friend class Core::Singleton<PlayerManager>;
 
