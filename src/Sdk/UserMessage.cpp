@@ -49,7 +49,7 @@ bool InitGameEventManager()
     auto& gameData = GameData::Instance();
 
     // Resolve IGameEventManager2 via GameData signature
-    void* eventManagerAddr = gameData.ResolveSignature("CSource2Server::g_GameEventManager");
+    void* eventManagerAddr = gameData.ResolveSignature("GameEventManager");
     if (eventManagerAddr)
     {
         interfaces.GameEventManager = *reinterpret_cast<IGameEventManager2**>(
