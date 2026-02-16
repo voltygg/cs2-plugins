@@ -1,61 +1,55 @@
-#include "translations.h"
+#include "Translations.hpp"
 
 #include <ISmmPlugin.h>
 #include <nlohmann/json.hpp>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace utils {
+namespace AdminSystem::Utils {
 
-bool Translations::Load(const std::string& dir_path)
+bool Translations::Load(const std::string& dirPath)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_translations.clear();
-
+    _translations.clear();
     namespace fs = std::filesystem;
 
-    // Resolve relative paths against Metamod's game base directory (game/csgo/)
-    fs::path resolved_path(dir_path);
-    if (resolved_path.is_relative() && g_SMAPI)
-    {
-        resolved_path = fs::path(g_SMAPI->GetBaseDir()) / dir_path;
-    }
+    fs::path resolvedPath(dirPath);
+    if (resolvedPath.is_relative() && g_SMAPI)
+        resolvedPath = fs::path(g_SMAPI->GetBaseDir()) / dirPath;
 
-    if (!fs::exists(resolved_path) || !fs::is_directory(resolved_path))
+    if (!fs::exists(resolvedPath) || !fs::is_directory(resolvedPath))
     {
-        META_CONPRINTF("[AdminSystem] Warning: Translations directory not found: %s\n", resolved_path.string().c_str());
+        META_CONPRINTF("[AdminSystem] Warning: Translations directory not found: %s\n",
+                       resolvedPath.string().c_str());
         return false;
     }
 
     int loaded = 0;
-    for (const auto& entry : fs::directory_iterator(resolved_path))
+    for (const auto& entry : fs::directory_iterator(resolvedPath))
     {
         if (entry.path().extension() != ".json")
             continue;
 
-        std::string lang_code = entry.path().stem().string();
-
+        std::string langCode = entry.path().stem().string();
         try
         {
             std::ifstream file(entry.path());
             if (!file.is_open())
                 continue;
 
-            nlohmann::json data = nlohmann::json::parse(file);
-            auto& lang_map = m_translations[lang_code];
-
+            auto data = nlohmann::json::parse(file);
+            auto& langMap = _translations[langCode];
             for (auto& [key, value] : data.items())
             {
                 if (value.is_string())
-                    lang_map[key] = value.get<std::string>();
+                    langMap[key] = value.get<std::string>();
             }
 
             ++loaded;
             META_CONPRINTF("[AdminSystem] Loaded translations: %s (%zu keys)\n",
-                           lang_code.c_str(), lang_map.size());
+                           langCode.c_str(), langMap.size());
         }
         catch (const std::exception& e)
         {
@@ -70,43 +64,36 @@ bool Translations::Load(const std::string& dir_path)
 
 void Translations::SetLanguage(const std::string& lang)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_activeLang = lang;
+    _activeLang = lang;
+}
+
+const std::string& Translations::GetLanguage() const
+{
+    return _activeLang;
 }
 
 std::string Translations::Get(const std::string& key) const
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-
-    // Try active language first
-    auto lang_it = m_translations.find(m_activeLang);
-    if (lang_it != m_translations.end())
+    auto langIt = _translations.find(_activeLang);
+    if (langIt != _translations.end())
     {
-        auto key_it = lang_it->second.find(key);
-        if (key_it != lang_it->second.end())
-            return key_it->second;
+        auto keyIt = langIt->second.find(key);
+        if (keyIt != langIt->second.end())
+            return keyIt->second;
     }
 
-    // Fallback to English
-    if (m_activeLang != "en")
+    if (_activeLang != "en")
     {
-        lang_it = m_translations.find("en");
-        if (lang_it != m_translations.end())
+        langIt = _translations.find("en");
+        if (langIt != _translations.end())
         {
-            auto key_it = lang_it->second.find(key);
-            if (key_it != lang_it->second.end())
-                return key_it->second;
+            auto keyIt = langIt->second.find(key);
+            if (keyIt != langIt->second.end())
+                return keyIt->second;
         }
     }
 
-    // Return the key itself as last resort
     return key;
 }
 
-Translations& Translations::Instance()
-{
-    static Translations instance;
-    return instance;
-}
-
-} // namespace utils
+} // namespace AdminSystem::Utils

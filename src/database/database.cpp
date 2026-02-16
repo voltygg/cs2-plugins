@@ -1,33 +1,32 @@
-#include "database.h"
+#include "Database.hpp"
 
 #include <format>
 #include <stdexcept>
 
-namespace database
-{
+namespace AdminSystem::Database {
 
 std::string DatabaseConfig::GetConnectionString() const
 {
-    return std::format("host={} port={} dbname={} user={} password={} sslmode={}", host, port, database, username,
-                       password, ssl_mode);
+    return std::format("host={} port={} dbname={} user={} password={} sslmode={}",
+                       Host, Port, DatabaseName, Username, Password, SslMode);
 }
 
 bool Database::Initialize(const DatabaseConfig& config)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 
-    if (m_initialized)
+    if (_initialized)
     {
         return true;
     }
 
     try
     {
-        m_config = config;
-        m_connectionString = config.GetConnectionString();
+        _config = config;
+        _connectionString = config.GetConnectionString();
 
         // Test connection
-        auto conn = std::make_unique<pqxx::connection>(m_connectionString);
+        auto conn = std::make_unique<pqxx::connection>(_connectionString);
         if (!conn->is_open())
         {
             return false;
@@ -35,10 +34,10 @@ bool Database::Initialize(const DatabaseConfig& config)
 
         // Set schema search path
         pqxx::work txn(*conn);
-        txn.exec(std::format("SET search_path TO {}", config.schema));
+        txn.exec(std::format("SET search_path TO {}", config.Schema));
         txn.commit();
 
-        m_initialized = true;
+        _initialized = true;
         return true;
     }
     catch (const std::exception& e)
@@ -50,29 +49,31 @@ bool Database::Initialize(const DatabaseConfig& config)
 
 void Database::Shutdown()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_initialized = false;
+    std::lock_guard<std::mutex> lock(_mutex);
+    _initialized = false;
 }
 
 bool Database::IsConnected() const
 {
-    return m_initialized;
+    return _initialized;
 }
 
 std::unique_ptr<pqxx::connection> Database::GetConnection()
 {
-    if (!m_initialized)
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    if (!_initialized)
     {
         return nullptr;
     }
 
     try
     {
-        auto conn = std::make_unique<pqxx::connection>(m_connectionString);
+        auto conn = std::make_unique<pqxx::connection>(_connectionString);
 
         // Set schema search path
         pqxx::work txn(*conn);
-        txn.exec(std::format("SET search_path TO {}", m_config.schema));
+        txn.exec(std::format("SET search_path TO {}", _config.Schema));
         txn.commit();
 
         return conn;
@@ -98,10 +99,4 @@ pqxx::result Database::Execute(const std::string& query)
     return result;
 }
 
-Database& Database::Instance()
-{
-    static Database instance;
-    return instance;
-}
-
-}  // namespace database
+} // namespace AdminSystem::Database

@@ -1,13 +1,11 @@
-#include "gag.h"
+#include "Gag.hpp"
+#include "../../Utils/TimeUtils.hpp"
 
-#include "../../utils/time.h"
-
-namespace database
-{
+namespace AdminSystem::Database {
 
 bool Gag::IsExpired() const
 {
-    return utils::Time::IsExpired(expires_at);
+    return !IsPermanent() && Utils::TimeUtils::IsExpired(ExpiresAt);
 }
 
-}  // namespace database
+} // namespace AdminSystem::Database

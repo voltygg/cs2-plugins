@@ -1,39 +1,36 @@
-#include "usermessage.h"
-#include "sigscanner.h"
+#include "UserMessage.hpp"
+#include "SigScanner.hpp"
+#include "GameData.hpp"
+#include "GameInterfaces.hpp"
 
 #include <ISmmPlugin.h>
+#include <igameevents.h>
 #include <engine/igameeventsystem.h>
 #include <networksystem/inetworkmessages.h>
 #include <networksystem/netmessage.h>
 #include <usermessages.pb.h>
 #include <irecipientfilter.h>
-#include <nlohmann/json.hpp>
-
-#include <filesystem>
-#include <fstream>
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace sdk {
+namespace AdminSystem::Sdk {
 
-IGameEventSystem* g_pGameEventSystem = nullptr;
-INetworkMessages* g_pNetworkMessages = nullptr;
-IGameEventManager2* g_pGameEventManager2 = nullptr;
-
-// GetLegacyGameEventListener function pointer — resolved via signature
+// GetLegacyGameEventListener function pointer - resolved via signature
 using GetLegacyGameEventListenerFn = IGameEventListener2* (*)(CPlayerSlot slot);
-static GetLegacyGameEventListenerFn s_pGetLegacyListener = nullptr;
+static GetLegacyGameEventListenerFn sGetLegacyListener = nullptr;
 
 bool InitMessageSystem()
 {
-    if (!g_pGameEventSystem)
+    auto& interfaces = GameInterfaces::Instance();
+
+    if (!interfaces.GameEventSystem)
     {
         META_CONPRINTF("[AdminSystem] Error: IGameEventSystem not available.\n");
         return false;
     }
 
-    if (!g_pNetworkMessages)
+    if (!interfaces.NetworkMessages)
     {
         META_CONPRINTF("[AdminSystem] Error: INetworkMessages not available.\n");
         return false;
@@ -45,110 +42,56 @@ bool InitMessageSystem()
 
 bool InitGameEventManager()
 {
-    // Load signatures from gamedata
-    try
+    auto& interfaces = GameInterfaces::Instance();
+    auto& gameData = GameData::Instance();
+
+    // Resolve IGameEventManager2 via GameData signature
+    void* eventManagerAddr = gameData.ResolveSignature("CSource2Server::g_GameEventManager");
+    if (eventManagerAddr)
     {
-        std::filesystem::path gamedata_path = std::filesystem::path(g_SMAPI->GetBaseDir())
-            / "addons/admin-system/gamedata/admin_system.games.json";
-        std::ifstream file(gamedata_path);
-        if (!file.is_open())
+        interfaces.GameEventManager = *reinterpret_cast<IGameEventManager2**>(
+            reinterpret_cast<uintptr_t>(eventManagerAddr));
+
+        if (interfaces.GameEventManager)
         {
-            META_CONPRINTF("[AdminSystem] Warning: gamedata file not found for signature scanning.\n");
-            return false;
+            META_CONPRINTF("[AdminSystem] Game event manager resolved at %p.\n",
+                           static_cast<void*>(interfaces.GameEventManager));
         }
-
-        nlohmann::json gamedata = nlohmann::json::parse(file);
-
-        if (!gamedata.contains("signatures"))
+        else
         {
-            META_CONPRINTF("[AdminSystem] Warning: No signatures section in gamedata.\n");
-            return false;
-        }
-
-        auto& sigs = gamedata["signatures"];
-
-#ifdef _WIN32
-        const char* platform = "windows";
-        const char* offsetKey = "windows_offset";
-#else
-        const char* platform = "linux";
-        const char* offsetKey = "linux_offset";
-#endif
-
-        // Resolve IGameEventManager2
-        if (sigs.contains("CSource2Server::g_GameEventManager"))
-        {
-            auto& sigEntry = sigs["CSource2Server::g_GameEventManager"];
-            if (sigEntry.contains(platform) && sigEntry.contains(offsetKey))
-            {
-                std::string pattern = sigEntry[platform].get<std::string>();
-                std::string lib = sigEntry.value("lib", "server");
-                int offset = sigEntry[offsetKey].get<int>();
-
-                void* match = FindPattern(lib.c_str(), pattern);
-                if (match)
-                {
-                    uintptr_t addr = reinterpret_cast<uintptr_t>(match) + offset;
-                    addr = ResolveRelativeAddress(addr, 0, 4);
-                    g_pGameEventManager2 = *reinterpret_cast<IGameEventManager2**>(addr);
-
-                    if (g_pGameEventManager2)
-                    {
-                        META_CONPRINTF("[AdminSystem] Game event manager resolved at %p.\n",
-                                       static_cast<void*>(g_pGameEventManager2));
-                    }
-                    else
-                    {
-                        META_CONPRINTF("[AdminSystem] Warning: Game event manager pointer is null after resolve.\n");
-                    }
-                }
-                else
-                {
-                    META_CONPRINTF("[AdminSystem] Warning: GameEventManager signature not found.\n");
-                }
-            }
-        }
-
-        // Resolve GetLegacyGameEventListener (optional — used for per-player event delivery)
-        if (sigs.contains("LegacyGameEventListener"))
-        {
-            auto& sigEntry = sigs["LegacyGameEventListener"];
-            if (sigEntry.contains(platform))
-            {
-                std::string pattern = sigEntry[platform].get<std::string>();
-                std::string lib = sigEntry.value("lib", "server");
-
-                void* match = FindPattern(lib.c_str(), pattern);
-                if (match)
-                {
-                    s_pGetLegacyListener = reinterpret_cast<GetLegacyGameEventListenerFn>(match);
-                    META_CONPRINTF("[AdminSystem] LegacyGameEventListener resolved.\n");
-                }
-                else
-                {
-                    META_CONPRINTF("[AdminSystem] Warning: LegacyGameEventListener signature not found (will use broadcast fallback).\n");
-                }
-            }
+            META_CONPRINTF("[AdminSystem] Warning: Game event manager pointer is null after resolve.\n");
         }
     }
-    catch (const std::exception& e)
+    else
     {
-        META_CONPRINTF("[AdminSystem] Warning: Failed to parse gamedata for signatures: %s\n", e.what());
-        return false;
+        META_CONPRINTF("[AdminSystem] Warning: GameEventManager signature not found.\n");
     }
 
-    return g_pGameEventManager2 != nullptr;
+    // Resolve GetLegacyGameEventListener (optional - used for per-player event delivery)
+    void* legacyListenerAddr = gameData.FindSignature("LegacyGameEventListener");
+    if (legacyListenerAddr)
+    {
+        sGetLegacyListener = reinterpret_cast<GetLegacyGameEventListenerFn>(legacyListenerAddr);
+        META_CONPRINTF("[AdminSystem] LegacyGameEventListener resolved.\n");
+    }
+    else
+    {
+        META_CONPRINTF("[AdminSystem] Warning: LegacyGameEventListener signature not found (will use broadcast fallback).\n");
+    }
+
+    return interfaces.GameEventManager != nullptr;
 }
 
 // Fresh event each frame, matching cs2-menus pattern exactly:
-// CreateEvent → SetFields → FireGameEvent → FreeEvent, every frame, duration=5.
+// CreateEvent -> SetFields -> FireGameEvent -> FreeEvent, every frame, duration=5.
 
 void SendCenterHtml(int slot, const std::string& html)
 {
-    if (!g_pGameEventManager2 || slot < 0 || slot >= 64)
+    auto* gameEventManager = GameInterfaces::Instance().GameEventManager;
+    if (!gameEventManager || slot < 0 || slot >= 64)
         return;
 
-    IGameEvent* pEvent = g_pGameEventManager2->CreateEvent("show_survival_respawn_status");
+    IGameEvent* pEvent = gameEventManager->CreateEvent("show_survival_respawn_status");
     if (!pEvent)
         return;
 
@@ -156,38 +99,39 @@ void SendCenterHtml(int slot, const std::string& html)
     pEvent->SetInt("userid", slot);
     pEvent->SetInt("duration", 5);
 
-    if (s_pGetLegacyListener)
+    if (sGetLegacyListener)
     {
-        IGameEventListener2* pListener = s_pGetLegacyListener(CPlayerSlot(slot));
+        IGameEventListener2* pListener = sGetLegacyListener(CPlayerSlot(slot));
         if (pListener)
         {
             pListener->FireGameEvent(pEvent);
-            g_pGameEventManager2->FreeEvent(pEvent);
+            gameEventManager->FreeEvent(pEvent);
             return;
         }
     }
 
     // Fallback: broadcast (FireEvent frees the event)
-    g_pGameEventManager2->FireEvent(pEvent);
+    gameEventManager->FireEvent(pEvent);
 }
 
 void SendChatMessage(int slot, const std::string& message)
 {
-    if (!g_pGameEventSystem || !g_pNetworkMessages || slot < 0 || slot >= 64)
+    auto& interfaces = GameInterfaces::Instance();
+    if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || slot < 0 || slot >= 64)
         return;
 
-    static INetworkMessageInternal* s_pSayText2Internal = nullptr;
-    if (!s_pSayText2Internal)
+    static INetworkMessageInternal* sSayText2Internal = nullptr;
+    if (!sSayText2Internal)
     {
-        s_pSayText2Internal = g_pNetworkMessages->FindNetworkMessageById(UM_SayText2);
-        if (!s_pSayText2Internal)
-            s_pSayText2Internal = g_pNetworkMessages->FindNetworkMessage("CUserMessageSayText2");
+        sSayText2Internal = interfaces.NetworkMessages->FindNetworkMessageById(UmSayText2);
+        if (!sSayText2Internal)
+            sSayText2Internal = interfaces.NetworkMessages->FindNetworkMessage("CUserMessageSayText2");
     }
 
-    if (!s_pSayText2Internal)
+    if (!sSayText2Internal)
         return;
 
-    CNetMessage* pMsg = s_pSayText2Internal->AllocateMessage();
+    CNetMessage* pMsg = sSayText2Internal->AllocateMessage();
     if (!pMsg)
         return;
 
@@ -198,13 +142,13 @@ void SendChatMessage(int slot, const std::string& message)
 
     uint64_t clients = (1ULL << slot);
 
-    g_pGameEventSystem->PostEventAbstract(
+    interfaces.GameEventSystem->PostEventAbstract(
         0, false, 1, &clients,
-        s_pSayText2Internal, pMsg, 0,
+        sSayText2Internal, pMsg, 0,
         NetChannelBufType_t::BUF_RELIABLE
     );
 
-    g_pNetworkMessages->DeallocateNetMessageAbstract(s_pSayText2Internal, pMsg);
+    interfaces.NetworkMessages->DeallocateNetMessageAbstract(sSayText2Internal, pMsg);
 }
 
 void ClearCenterHtml(int slot)
@@ -212,4 +156,4 @@ void ClearCenterHtml(int slot)
     SendCenterHtml(slot, " ");
 }
 
-} // namespace sdk
+} // namespace AdminSystem::Sdk

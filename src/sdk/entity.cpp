@@ -1,53 +1,44 @@
-#include "entity.h"
-#include "schema.h"
+#include "Entity.hpp"
+#include "Schema.hpp"
+#include "GameData.hpp"
+#include "GameInterfaces.hpp"
 
 #include <ISmmPlugin.h>
 #include <entity2/entitysystem.h>
 #include <entity2/entityinstance.h>
 #include <entity2/entityidentity.h>
 #include <entity2/concreteentitylist.h>
-#include <interfaces/interfaces.h>
-#include <nlohmann/json.hpp>
-
-#include <filesystem>
-#include <fstream>
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace sdk {
-
-CGameEntitySystem* g_pEntitySystem = nullptr;
-
-
-// GameEntitySystem offset (from gamedata — this is NOT in the schema system)
-static int s_offsetGameEntitySystem = -1;
+namespace AdminSystem::Sdk {
 
 // Schema-resolved offsets for the button access chain (cached after first lookup)
-static int s_offsetPlayerPawn = -1;       // CCSPlayerController::m_hPlayerPawn
-static int s_offsetMovementServices = -1; // CBasePlayerPawn::m_pMovementServices
-static int s_offsetButtons = -1;          // CPlayer_MovementServices::m_nButtons
-static int s_offsetButtonStates = -1;     // CInButtonState::m_pButtonStates
-static bool s_schemaOffsetsResolved = false;
+static int sOffsetPlayerPawn = -1;       // CCSPlayerController::m_hPlayerPawn
+static int sOffsetMovementServices = -1; // CBasePlayerPawn::m_pMovementServices
+static int sOffsetButtons = -1;          // CPlayer_MovementServices::m_nButtons
+static int sOffsetButtonStates = -1;     // CInButtonState::m_pButtonStates
+static bool sSchemaOffsetsResolved = false;
 
 static void ResolveSchemaOffsets()
 {
-    if (s_schemaOffsetsResolved)
+    if (sSchemaOffsetsResolved)
         return;
 
-    s_offsetPlayerPawn = GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
-    s_offsetMovementServices = GetSchemaOffset("CBasePlayerPawn", "m_pMovementServices");
-    s_offsetButtons = GetSchemaOffset("CPlayer_MovementServices", "m_nButtons");
-    s_offsetButtonStates = GetSchemaOffset("CInButtonState", "m_pButtonStates");
+    sOffsetPlayerPawn = GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
+    sOffsetMovementServices = GetSchemaOffset("CBasePlayerPawn", "m_pMovementServices");
+    sOffsetButtons = GetSchemaOffset("CPlayer_MovementServices", "m_nButtons");
+    sOffsetButtonStates = GetSchemaOffset("CInButtonState", "m_pButtonStates");
 
-    s_schemaOffsetsResolved = true;
+    sSchemaOffsetsResolved = true;
 
-    if (s_offsetPlayerPawn >= 0 && s_offsetMovementServices >= 0 &&
-        s_offsetButtons >= 0 && s_offsetButtonStates >= 0)
+    if (sOffsetPlayerPawn >= 0 && sOffsetMovementServices >= 0 &&
+        sOffsetButtons >= 0 && sOffsetButtonStates >= 0)
     {
         META_CONPRINTF("[AdminSystem] Button access chain resolved via schema:\n");
         META_CONPRINTF("  Controller + 0x%X -> Pawn + 0x%X -> MovementServices + 0x%X -> Buttons + 0x%X\n",
-                       s_offsetPlayerPawn, s_offsetMovementServices, s_offsetButtons, s_offsetButtonStates);
+                       sOffsetPlayerPawn, sOffsetMovementServices, sOffsetButtons, sOffsetButtonStates);
     }
     else
     {
@@ -57,58 +48,33 @@ static void ResolveSchemaOffsets()
 
 bool InitEntitySystem()
 {
-    if (!g_pGameResourceServiceServer)
+    auto& interfaces = GameInterfaces::Instance();
+
+    if (!interfaces.GameResourceService)
     {
         META_CONPRINTF("[AdminSystem] Warning: IGameResourceService not available.\n");
     }
 
-    // Load gamedata for engine-internal offsets (not available via schema)
-    try
+    // Get the GameEntitySystem offset from GameData (already parsed)
+    int offsetGameEntitySystem = GameData::Instance().GetOffset("GameEntitySystem");
+
+    if (offsetGameEntitySystem < 0)
     {
-        std::filesystem::path gamedata_path = std::filesystem::path(g_SMAPI->GetBaseDir())
-            / "addons/admin-system/gamedata/admin_system.games.json";
-        std::ifstream file(gamedata_path);
-        if (!file.is_open())
-        {
-            META_CONPRINTF("[AdminSystem] Warning: gamedata/admin_system.games.json not found.\n");
-            return true;
-        }
-
-        nlohmann::json gamedata = nlohmann::json::parse(file);
-
-        if (gamedata.contains("offsets"))
-        {
-            auto& offsets = gamedata["offsets"];
-
-#ifdef _WIN32
-            const char* platform = "windows";
-#else
-            const char* platform = "linux";
-#endif
-
-            if (offsets.contains("GameEntitySystem") &&
-                offsets["GameEntitySystem"].contains(platform))
-            {
-                s_offsetGameEntitySystem = offsets["GameEntitySystem"][platform].get<int>();
-            }
-        }
-
-        META_CONPRINTF("[AdminSystem] Gamedata loaded (entity system offset: %d).\n",
-                       s_offsetGameEntitySystem);
+        META_CONPRINTF("[AdminSystem] Warning: GameEntitySystem offset not found in gamedata.\n");
     }
-    catch (const std::exception& e)
+    else
     {
-        META_CONPRINTF("[AdminSystem] Warning: Failed to parse gamedata: %s\n", e.what());
+        META_CONPRINTF("[AdminSystem] Gamedata loaded (entity system offset: %d).\n", offsetGameEntitySystem);
     }
 
     // Resolve entity system pointer from IGameResourceService + offset
-    if (g_pGameResourceServiceServer && s_offsetGameEntitySystem >= 0)
+    if (interfaces.GameResourceService && offsetGameEntitySystem >= 0)
     {
-        g_pEntitySystem = *reinterpret_cast<CGameEntitySystem**>(
-            reinterpret_cast<uintptr_t>(g_pGameResourceServiceServer) + s_offsetGameEntitySystem);
+        interfaces.EntitySystem = *reinterpret_cast<CGameEntitySystem**>(
+            reinterpret_cast<uintptr_t>(interfaces.GameResourceService) + offsetGameEntitySystem);
     }
 
-    if (g_pEntitySystem)
+    if (interfaces.EntitySystem)
     {
         META_CONPRINTF("[AdminSystem] Entity system initialized.\n");
     }
@@ -122,13 +88,19 @@ bool InitEntitySystem()
 
 CGameEntitySystem* GetEntitySystem()
 {
+    auto& interfaces = GameInterfaces::Instance();
+
     // Lazy re-resolve if not yet available (entity system may not exist until map load)
-    if (!g_pEntitySystem && g_pGameResourceServiceServer && s_offsetGameEntitySystem >= 0)
+    if (!interfaces.EntitySystem && interfaces.GameResourceService)
     {
-        g_pEntitySystem = *reinterpret_cast<CGameEntitySystem**>(
-            reinterpret_cast<uintptr_t>(g_pGameResourceServiceServer) + s_offsetGameEntitySystem);
+        int offsetGameEntitySystem = GameData::Instance().GetOffset("GameEntitySystem");
+        if (offsetGameEntitySystem >= 0)
+        {
+            interfaces.EntitySystem = *reinterpret_cast<CGameEntitySystem**>(
+                reinterpret_cast<uintptr_t>(interfaces.GameResourceService) + offsetGameEntitySystem);
+        }
     }
-    return g_pEntitySystem;
+    return interfaces.EntitySystem;
 }
 
 // Our own implementation of entity identity lookup via the chunk list.
@@ -172,7 +144,7 @@ static CEntityInstance* ResolveEntityHandle(uint32_t handle)
 CEntityInstance* GetPlayerController(int slot)
 {
     auto* pSys = GetEntitySystem();
-    if (!pSys || slot < 0 || slot >= MAXPLAYERS)
+    if (!pSys || slot < 0 || slot >= MaxPlayers)
         return nullptr;
 
     // Player controllers are at entity indices (slot + 1)
@@ -186,11 +158,11 @@ CEntityInstance* GetPlayerController(int slot)
 uint64_t GetPlayerButtons(int slot)
 {
     // Resolve schema offsets on first call (deferred because schema may not be ready at init)
-    if (!s_schemaOffsetsResolved)
+    if (!sSchemaOffsetsResolved)
         ResolveSchemaOffsets();
 
-    if (s_offsetPlayerPawn < 0 || s_offsetMovementServices < 0 ||
-        s_offsetButtons < 0 || s_offsetButtonStates < 0)
+    if (sOffsetPlayerPawn < 0 || sOffsetMovementServices < 0 ||
+        sOffsetButtons < 0 || sOffsetButtonStates < 0)
         return 0;
 
     // Step 1: Get player controller entity
@@ -201,7 +173,7 @@ uint64_t GetPlayerButtons(int slot)
     auto* pCtrlBase = reinterpret_cast<uint8_t*>(pController);
 
     // Step 2: Read m_hPlayerPawn handle (CHandle<CCSPlayerPawn> = uint32)
-    uint32_t hPawn = *reinterpret_cast<uint32_t*>(pCtrlBase + s_offsetPlayerPawn);
+    uint32_t hPawn = *reinterpret_cast<uint32_t*>(pCtrlBase + sOffsetPlayerPawn);
     CEntityInstance* pPawn = ResolveEntityHandle(hPawn);
     if (!pPawn)
         return 0;
@@ -209,7 +181,7 @@ uint64_t GetPlayerButtons(int slot)
     auto* pPawnBase = reinterpret_cast<uint8_t*>(pPawn);
 
     // Step 3: Read m_pMovementServices pointer
-    auto* pMovementServices = *reinterpret_cast<uint8_t**>(pPawnBase + s_offsetMovementServices);
+    auto* pMovementServices = *reinterpret_cast<uint8_t**>(pPawnBase + sOffsetMovementServices);
     if (!pMovementServices)
         return 0;
 
@@ -219,7 +191,7 @@ uint64_t GetPlayerButtons(int slot)
     //   [1] = buttons that changed this frame
     //   [2] = scroll/other
     auto* pButtonStates = reinterpret_cast<uint64_t*>(
-        pMovementServices + s_offsetButtons + s_offsetButtonStates);
+        pMovementServices + sOffsetButtons + sOffsetButtonStates);
 
     return pButtonStates[0]; // Current held buttons
 }
@@ -229,4 +201,4 @@ bool IsPlayerSlotValid(int slot)
     return GetPlayerController(slot) != nullptr;
 }
 
-} // namespace sdk
+} // namespace AdminSystem::Sdk

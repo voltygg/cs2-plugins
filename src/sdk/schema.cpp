@@ -1,4 +1,5 @@
-#include "schema.h"
+#include "Schema.hpp"
+#include "GameInterfaces.hpp"
 
 #include <ISmmPlugin.h>
 #include <schemasystem/schemasystem.h>
@@ -9,16 +10,14 @@
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace sdk {
-
-ISchemaSystem* g_pSchemaSystem = nullptr;
+namespace AdminSystem::Sdk {
 
 // Cache: className -> (fieldName -> offset)
-static std::map<std::string, std::map<std::string, int>> s_offsetCache;
+static std::map<std::string, std::map<std::string, int>> sOffsetCache;
 
 bool InitSchemaSystem()
 {
-    if (!g_pSchemaSystem)
+    if (!GameInterfaces::Instance().SchemaSystem)
     {
         META_CONPRINTF("[AdminSystem] Warning: ISchemaSystem not available.\n");
         return false;
@@ -30,12 +29,13 @@ bool InitSchemaSystem()
 
 int GetSchemaOffset(const char* className, const char* fieldName)
 {
-    if (!g_pSchemaSystem)
+    auto* schemaSystem = GameInterfaces::Instance().SchemaSystem;
+    if (!schemaSystem)
         return -1;
 
     // Check cache first
-    auto classIt = s_offsetCache.find(className);
-    if (classIt != s_offsetCache.end())
+    auto classIt = sOffsetCache.find(className);
+    if (classIt != sOffsetCache.end())
     {
         auto fieldIt = classIt->second.find(fieldName);
         if (fieldIt != classIt->second.end())
@@ -49,7 +49,7 @@ int GetSchemaOffset(const char* className, const char* fieldName)
     const char* moduleName = "libserver.so";
 #endif
 
-    CSchemaSystemTypeScope* pTypeScope = g_pSchemaSystem->FindTypeScopeForModule(moduleName);
+    CSchemaSystemTypeScope* pTypeScope = schemaSystem->FindTypeScopeForModule(moduleName);
     if (!pTypeScope)
     {
         META_CONPRINTF("[AdminSystem] Schema: Failed to find type scope for %s.\n", moduleName);
@@ -73,7 +73,7 @@ int GetSchemaOffset(const char* className, const char* fieldName)
             int offset = field.m_nSingleInheritanceOffset;
 
             // Cache it
-            s_offsetCache[className][fieldName] = offset;
+            sOffsetCache[className][fieldName] = offset;
 
             META_CONPRINTF("[AdminSystem] Schema: %s::%s = 0x%X (%d)\n",
                            className, fieldName, offset, offset);
@@ -85,4 +85,4 @@ int GetSchemaOffset(const char* className, const char* fieldName)
     return -1;
 }
 
-} // namespace sdk
+} // namespace AdminSystem::Sdk

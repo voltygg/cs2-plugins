@@ -2,15 +2,15 @@
 
 ## Project Overview
 
-C++ Metamod:Source plugin for CS2 community servers providing comprehensive admin functionality including player management, punishments, and a stunning in-game UI.
+C++23 Metamod:Source plugin for CS2 community servers providing admin functionality: player management, punishments (ban/mute/gag/warn), and WASD center-HTML menus.
 
 ## Tech Stack
 
 - **Language:** C++23
 - **Framework:** Metamod:Source 2.0 + hl2sdk-cs2
 - **Database:** PostgreSQL 18 via libpqxx
-- **UI:** WASD center-HTML menus
-- **Build System:** AMBuild
+- **UI:** WASD center-HTML menus (W/S navigate, E select, R close)
+- **Build System:** AMBuild (auto-discovers .cpp files from `src/`)
 
 ## Build Commands
 
@@ -18,7 +18,7 @@ C++ Metamod:Source plugin for CS2 community servers providing comprehensive admi
 # Local Windows (from x64 Native Tools Command Prompt)
 scripts/build.ps1
 
-# Deploy only (copies plugin to server directory)
+# Deploy to CS2 server
 scripts/deploy.ps1
 ```
 
@@ -26,57 +26,136 @@ scripts/deploy.ps1
 
 ```text
 src/
-├── core/           # Plugin infrastructure (ISmmPlugin, events, hooks)
-├── sdk/            # SDK wrappers (entity access, user messages)
-├── player/         # Player tracking and management
-├── admin/          # Admin levels, permissions, groups
-├── commands/       # Chat command system (.kick, !ban, etc.)
-├── punishments/    # Kick, ban, mute, gag, warnings
-├── database/       # PostgreSQL integration, async queries
-├── menus/          # WASD menu system (center HTML)
-└── utils/          # Common utilities (SteamID, time, strings)
+├── Core/
+│   ├── Plugin.hpp/cpp          # ISmmPlugin entry point, hooks, subsystem init
+│   ├── Config.hpp/cpp          # Loads settings.json + admins.json
+│   └── Singleton.hpp           # CRTP singleton base (header-only)
+├── Sdk/
+│   ├── Entity.hpp/cpp          # Entity system access
+│   ├── Schema.hpp/cpp          # Runtime schema field offset resolution
+│   ├── UserMessage.hpp/cpp     # Chat & center HTML message sending
+│   ├── SigScanner.hpp/cpp      # Signature scanning (byte pattern matching)
+│   ├── GameData.hpp/cpp        # Centralized signature/offset management
+│   └── GameInterfaces.hpp      # All SDK interface pointers (header-only)
+├── Players/
+│   ├── Player.hpp/cpp          # Player data (slot, SteamID, name, flags)
+│   └── PlayerManager.hpp/cpp   # Player lifecycle tracking
+├── Admin/
+│   ├── AdminManager.hpp/cpp    # Permissions, flags (bitmask), immunity
+│   └── AdminMenus.hpp/cpp      # Admin-specific menu builders
+├── Commands/
+│   ├── Command.hpp/cpp         # Command struct + CommandBuilder (fluent API)
+│   └── CommandManager.hpp/cpp  # Registration, prefix handling, dispatch
+├── Menu/                       # Generic reusable menu framework
+│   ├── Menu.hpp                # Data structures + MenuLayout (header/footer)
+│   ├── MenuBuilder.hpp         # Fluent builder pattern (header-only)
+│   ├── MenuManager.hpp/cpp     # Lifecycle, WASD input, menu stack
+│   └── MenuRenderer.hpp/cpp    # 3-section HTML rendering
+├── Punishments/
+│   └── PunishmentManager.hpp/cpp
+├── Database/
+│   ├── Database.hpp/cpp        # PostgreSQL connection pool
+│   ├── Entities/               # Admin, AdminGroup, Ban, Mute, Gag, Warning, Player
+│   └── Repositories/           # AdminRepository, BanRepository
+└── Utils/
+    ├── StringUtils.hpp/cpp     # String manipulation, target parsing
+    ├── SteamId.hpp/cpp         # SteamID conversions
+    ├── TimeUtils.hpp/cpp       # Time formatting
+    └── Translations.hpp/cpp    # JSON-based i18n
 
-vendor/             # Git submodules (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0)
-configs/            # Plugin configuration (JSON format)
-gamedata/           # Signatures and offsets
+configs/
+├── settings.json               # Plugin, database, commands, punishments config
+├── admins.json                 # Groups + admins (merged)
+└── translations/               # en.json, ru.json
+gamedata/
+└── signatures.json             # Engine signatures and offsets
+vendor/                         # Git submodules (hl2sdk-cs2, mmsource-2.0)
 ```
 
 ## Code Conventions
 
-- **C++ Version**: Use modern C++23 features where supported
-  - Prefer C++23 > C++20 features (ranges, std::expected, std::print)
-  - Use ranges and views for collections
-  - Use designated initializers
-  - Use std::format for string formatting
-- **Code Style**:
-  - Follow existing patterns in codebase
-  - Entity classes in `src/database/entities/`
-  - Repository pattern for database access
-  - JSON for all configuration files
-  - Prefer `std::optional` over null pointers
-  - Use `int64_t` for SteamIDs
+### Naming (C# style)
+
+| Element | Convention | Example |
+| ------- | ---------- | ------- |
+| Namespaces | `PascalCase`, nested | `AdminSystem::Players` |
+| Classes/Structs | `PascalCase` | `PlayerManager`, `MenuItem` |
+| Methods | `PascalCase` | `GetPlayer()`, `HandleInput()` |
+| Member variables | `_camelCase` | `_admins`, `_states` |
+| Constants | `PascalCase` | `MaxPlayers`, `InputDebounceMs` |
+| Parameters/locals | `camelCase` | `steamId`, `targetSlot` |
+| JSON keys | `camelCase` | `steamId`, `adminPanel` |
+
+### C++ Style
+
+- **C++17 nested namespaces:** `namespace AdminSystem::Sdk { ... }`
+- **`.hpp` headers** (not `.h`)
+- **CRTP Singleton** (`Core::Singleton<T>`) for all singletons
+- **No mutexes** (main-thread-only design; all Metamod hooks run on game thread)
+- **Designated initializers** for struct construction
+- **`std::format`** for string formatting
+- **`int64_t`** for SteamIDs
+- **`uint32_t` bitmask** for admin flags (a=bit0, b=bit1, ..., z=bit25)
+- **Builder pattern** for Menu and Command construction
+
+## Key Design Patterns
+
+### Singleton (CRTP)
+
+```cpp
+class MyManager : public Core::Singleton<MyManager> {
+    friend class Core::Singleton<MyManager>;
+private:
+    MyManager() = default;
+};
+```
+
+### MenuBuilder (fluent)
+
+```cpp
+auto menu = Menu::MenuBuilder("Title")
+    .AddItem("Option", [](int slot) { ... })
+    .AddSubmenu("Sub", [](int slot) { return BuildSubmenu(slot); })
+    .WithHeader([]() { return "<b>Custom Header</b>"; })
+    .Build();
+Menu::MenuManager::Instance().OpenMenu(slot, menu);
+```
+
+### CommandBuilder (fluent)
+
+```cpp
+cmdMgr.Register(
+    Commands::CommandBuilder("kick")
+        .WithAliases({"k"})
+        .RequirePermission("c")
+        .WithArgs(1, 2)
+        .OnExecute([](Player* p, auto args) -> CommandResult { ... })
+        .Build()
+);
+```
+
+### SDK Abstractions
+
+- **`GameInterfaces`**: Centralized holder for all SDK interface pointers (replaces scattered `extern` globals)
+- **`GameData`**: Loads `signatures.json`, provides `FindSignature()` / `ResolveSignature()` (replaces duplicate gamedata parsing)
+
+## Config Files
+
+- **`settings.json`**: All plugin configuration (plugin, database, commands, punishments, admin sections)
+- **`admins.json`**: Admin groups and admin entries (merged file)
+- **`signatures.json`**: Engine signatures/offsets with platform-specific pattern+offset pairs
+
+## Admin Flags
+
+Single char a-z, stored as `uint32_t` bitmask for O(1) checks:
+
+- `a` = reserved slot, `b` = generic admin, `c` = kick, `d` = ban
+- `o` = mute, `p` = gag, `q` = warn, `r` = admin menu access
+- `z` = root (all permissions)
 
 ## Database
 
-- PostgreSQL with dedicated schema: `admin_system`
+- PostgreSQL with schema: `admin_system`
 - Tables: admins, admin_groups, players, bans, mutes, gags, warnings, audit_log
-- Use prepared statements for all queries (SQL injection prevention)
-- Async queries for non-blocking operations
-
-## Testing Workflow
-
-1. Start PostgreSQL: `docker compose up -d postgres`
-2. Build plugin: `docker compose run --rm build`
-3. Copy `build/package/` contents to CS2 server's `csgo/` folder
-4. Start server: `scripts/start-server.ps1`
-5. Connect with CS2 client and test commands
-
-## Key Classes
-
-- `AdminSystemPlugin` - Main plugin entry point (ISmmPlugin)
-- `PlayerManager` - Tracks connected players
-- `AdminManager` - Manages admin cache and permissions
-- `CommandManager` - Registers and dispatches chat commands
-- `PunishmentManager` - Handles ban/mute/gag/warn enforcement
-- `Database` - PostgreSQL connection pool and async queries
-- `MenuManager` - WASD-style center HTML menu system
+- Prepared statements for all queries
+- Mutex only in Database class (future async support)

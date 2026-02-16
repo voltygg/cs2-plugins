@@ -1,17 +1,26 @@
-#include "admin.h"
+#include "Admin.hpp"
 
-namespace database
-{
+namespace AdminSystem::Database {
 
 bool Admin::HasFlag(char flag) const
 {
-    // Root flag 'z' grants all permissions
-    if (flags.find('z') != std::string::npos)
-    {
+    if (FlagBits & FlagToBit('z'))  // Root has all flags
         return true;
-    }
-
-    return flags.find(flag) != std::string::npos;
+    return (FlagBits & FlagToBit(flag)) != 0;
 }
 
-}  // namespace database
+void Admin::BuildFlagBits()
+{
+    FlagBits = 0;
+    for (char c : Flags)
+        FlagBits |= FlagToBit(c);
+}
+
+uint32_t Admin::FlagToBit(char flag)
+{
+    if (flag >= 'a' && flag <= 'z')
+        return 1u << (flag - 'a');
+    return 0;
+}
+
+} // namespace AdminSystem::Database

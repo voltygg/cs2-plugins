@@ -1,4 +1,4 @@
-#include "sigscanner.h"
+#include "SigScanner.hpp"
 
 #include <ISmmPlugin.h>
 
@@ -17,7 +17,7 @@
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace sdk {
+namespace AdminSystem::Sdk {
 
 struct PatternByte
 {
@@ -101,7 +101,7 @@ static bool GetModuleInfo(const char* moduleName, uint8_t*& base, size_t& size)
         if (_stricmp(fileName, moduleName) != 0)
             continue;
 
-        // Get module size — pick the largest one (real server vs Metamod stub)
+        // Get module size - pick the largest one (real server vs Metamod stub)
         MODULEINFO modInfo{};
         if (GetModuleInformation(hProcess, hModules[i], &modInfo, sizeof(modInfo)))
         {
@@ -135,7 +135,7 @@ struct ModuleInfo
     bool found;
 };
 
-static int dl_iterate_callback(struct dl_phdr_info* info, size_t /*size*/, void* data)
+static int DlIterateCallback(struct dl_phdr_info* info, size_t /*size*/, void* data)
 {
     auto* mod = static_cast<ModuleInfo*>(data);
     if (info->dlpi_name && strstr(info->dlpi_name, mod->name))
@@ -162,7 +162,7 @@ static int dl_iterate_callback(struct dl_phdr_info* info, size_t /*size*/, void*
 static bool GetModuleInfo(const char* moduleName, uint8_t*& base, size_t& size)
 {
     ModuleInfo mod{moduleName, nullptr, 0, false};
-    dl_iterate_phdr(dl_iterate_callback, &mod);
+    dl_iterate_phdr(DlIterateCallback, &mod);
     if (mod.found)
     {
         base = mod.base;
@@ -213,4 +213,4 @@ uintptr_t ResolveRelativeAddress(uintptr_t addr, int ripOffset, int ripSize)
     return addr + ripSize + relative;
 }
 
-} // namespace sdk
+} // namespace AdminSystem::Sdk

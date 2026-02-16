@@ -194,8 +194,8 @@ if (Test-Path "configs") {
     foreach ($configFile in $ConfigFiles) {
         $destPath = Join-Path $PluginAddonPath "configs\$($configFile.Name)"
 
-        # Skip database.json if it already exists (preserve existing config)
-        if ($configFile.Name -eq "database.json" -and (Test-Path $destPath)) {
+        # Skip settings.json if it already exists (preserves DB credentials and server config)
+        if ($configFile.Name -eq "settings.json" -and (Test-Path $destPath)) {
             Write-Host "  -> configs\$($configFile.Name) (skipped - already exists)" -ForegroundColor Cyan
             continue
         }

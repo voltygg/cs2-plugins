@@ -1,24 +1,19 @@
-#include "command.h"
+#include "Command.hpp"
+#include "../Utils/StringUtils.hpp"
 
-#include "../utils/string.h"
-
-namespace commands
-{
+namespace AdminSystem::Commands {
 
 bool Command::Matches(const std::string& cmd) const
 {
-    using utils::String;
-
-    if (String::ToLower(name) == String::ToLower(cmd))
+    auto lower = Utils::StringUtils::ToLower(cmd);
+    if (Utils::StringUtils::ToLower(Name) == lower)
         return true;
-
-    for (const auto& alias : aliases)
+    for (const auto& alias : Aliases)
     {
-        if (String::ToLower(alias) == String::ToLower(cmd))
+        if (Utils::StringUtils::ToLower(alias) == lower)
             return true;
     }
-
     return false;
 }
 
-}  // namespace commands
+} // namespace AdminSystem::Commands
