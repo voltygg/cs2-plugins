@@ -10,3 +10,8 @@ pdm run python configure.py
 # Build from the objdir folder
 Set-Location -Path "objdir"
 pdm run ambuild
+
+Set-Location -Path "../scripts"
+
+# Run deploy script to copy built files to the output directory
+.\deploy.ps1
