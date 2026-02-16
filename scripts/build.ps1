@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
 Set-Location -Path (Split-Path -Parent $PSScriptRoot)
 
-# Source environment variables
-. .\env.ps1
+# Initialize submodules if not already done
+git submodule update --init --recursive
 
 # Configure with AMBuild (creates objdir folder)
 pdm run python configure.py

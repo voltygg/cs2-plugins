@@ -76,22 +76,28 @@ A modern C++ admin system plugin for Counter-Strike 2 community servers, built o
 ### Quick Start (Docker)
 
 ```bash
+# Clone with submodules
+git clone --recursive <https://github.com/m9snoi/admin-system.git>
+
 # Build Linux binary
 docker compose run --rm build
-
-# Output in build/package/
 ```
 
 ### Windows Build
 
-Requires Visual Studio 2026 and vcpkg.
+Requires Visual Studio 2026, vcpkg, and Python 3.14+ with PDM.
 
 ```bash
-# Local Windows (from x64 Native Tools Command Prompt)
-mkdir build && cd build
-python ../configure.py
-ambuild
+# Clone with submodules
+git clone --recursive <https://github.com/m9snoi/admin-system.git>
+cd admin-system
 
-# Generate Visual Studio 2026 project for debugging
-python ../configure.py --gen=vs --vs-version 19
+# Install dependencies
+pdm install
+vcpkg install
+
+# Build and deploy
+scripts/build.ps1
 ```
+
+See [docs/local-development.md](docs/local-development.md) for full setup guide.

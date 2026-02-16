@@ -7,7 +7,7 @@
   "files.trimFinalNewlines": true,
 
   // C++ settings
-  "C_Cpp.default.cppStandard": "c++20",
+  "C_Cpp.default.cppStandard": "c++23",
   "C_Cpp.default.cStandard": "c17",
   "C_Cpp.formatting": "clangFormat",
   "C_Cpp.clang_format_style": "file",
@@ -27,7 +27,8 @@
     "**/.vs": true,
     "**/vcpkg_installed": true,
     "**/__pycache__": true,
-    "**/.mypy_cache": true
+    "**/.mypy_cache": true,
+    "**/vendor": true
   },
 
   // JSON settings

@@ -16,11 +16,10 @@ C++ Metamod:Source plugin for CS2 community servers providing comprehensive admi
 
 ```bash
 # Local Windows (from x64 Native Tools Command Prompt)
-cd scripts
-./build.ps1
+scripts/build.ps1
 
-# Deploy to server (copies plugin to server directory)
-./deploy.ps1
+# Deploy only (copies plugin to server directory)
+scripts/deploy.ps1
 ```
 
 ## Project Structure
@@ -37,6 +36,7 @@ src/
 ├── menus/          # WASD menu system (center HTML)
 └── utils/          # Common utilities (SteamID, time, strings)
 
+vendor/             # Git submodules (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0)
 configs/            # Plugin configuration (JSON format)
 gamedata/           # Signatures and offsets
 ```

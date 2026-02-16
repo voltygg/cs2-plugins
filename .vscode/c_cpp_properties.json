@@ -4,19 +4,19 @@
       "name": "Win32",
       "includePath": [
         "${workspaceFolder}/src",
-        "${env:MMSOURCE20}/core",
-        "${env:MMSOURCE20}/core/sourcehook",
-        "${env:HL2SDKCS2}/common",
-        "${env:HL2SDKCS2}/game/shared",
-        "${env:HL2SDKCS2}/game/server",
-        "${env:HL2SDKCS2}/public",
-        "${env:HL2SDKCS2}/public/engine",
-        "${env:HL2SDKCS2}/public/mathlib",
-        "${env:HL2SDKCS2}/public/tier0",
-        "${env:HL2SDKCS2}/public/tier1",
-        "${env:HL2SDKCS2}/public/entity2",
-        "${env:HL2SDKCS2}/public/game/server",
-        "${env:HL2SDKCS2}/thirdparty/protobuf-3.21.8/src",
+        "${workspaceFolder}/vendor/mmsource-2.0/core",
+        "${workspaceFolder}/vendor/mmsource-2.0/core/sourcehook",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/common",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/game/shared",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/game/server",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/public",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/public/engine",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/public/mathlib",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/public/tier0",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/public/tier1",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/public/entity2",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/public/game/server",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/thirdparty/protobuf-3.21.8/src",
         "${workspaceFolder}/vcpkg_installed/x64-windows/include"
       ],
       "defines": [
@@ -32,19 +32,16 @@
       "windowsSdkVersion": "10.0.22621.0",
       "compilerPath": "cl.exe",
       "cStandard": "c17",
-      "cppStandard": "c++20",
+      "cppStandard": "c++23",
       "intelliSenseMode": "windows-msvc-x64"
     },
     {
       "name": "Linux",
       "includePath": [
         "${workspaceFolder}/src",
-        "${workspaceFolder}/sdk/**",
-        "${workspaceFolder}/metamod/core",
-        "${workspaceFolder}/metamod/core/sourcehook",
-        "/sdk/hl2sdk-cs2/**",
-        "/sdk/metamod-source/core",
-        "/sdk/metamod-source/core/sourcehook",
+        "${workspaceFolder}/vendor/hl2sdk-cs2/**",
+        "${workspaceFolder}/vendor/mmsource-2.0/core",
+        "${workspaceFolder}/vendor/mmsource-2.0/core/sourcehook",
         "/usr/include"
       ],
       "defines": [
@@ -57,7 +54,7 @@
       ],
       "compilerPath": "/usr/bin/clang++",
       "cStandard": "c17",
-      "cppStandard": "c++20",
+      "cppStandard": "c++23",
       "intelliSenseMode": "linux-clang-x64"
     }
   ],

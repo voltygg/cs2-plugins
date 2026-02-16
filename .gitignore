@@ -59,10 +59,6 @@ __pycache__/
 .env
 .env.local
 *.local.json
-env.bat
-env.cmd
-env.ps1
-env.sh
 
 # PDM
 .pdm-python
