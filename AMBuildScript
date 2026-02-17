@@ -19,15 +19,16 @@ EXTRA_INCLUDES = []
 VCPKG_TRIPLET = "x64-windows-static"
 
 # =============================================================================
-# SDK RESOLUTION
+# SDK RESOLUTION - Uses cs2-kit's vendor submodules
 # =============================================================================
 
-VENDOR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor")
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+CS2KIT_VENDOR_DIR = os.path.join(PROJECT_ROOT, "vendor", "cs2-kit", "vendor")
 
 
 def resolve_vendor_path(folder):
-    """Resolve path from vendor/ submodules."""
-    path = os.path.join(VENDOR_DIR, folder)
+    """Resolve path from cs2-kit's vendor/ submodules."""
+    path = os.path.join(CS2KIT_VENDOR_DIR, folder)
     if os.path.isdir(path):
         return path
     return None

@@ -1,6 +1,6 @@
 #include "PlayerManager.hpp"
 
-#include "../../vendor/cs2-kit/src/Utils/StringUtils.hpp"
+#include <CS2Kit/Utils/StringUtils.hpp>
 
 namespace AdminSystem::Players
 {

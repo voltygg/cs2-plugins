@@ -10,7 +10,9 @@ import os
 # SOURCE FILES - Auto-discovered from src/ and vendor/cs2-kit/src/
 # =============================================================================
 SRC_DIR = os.path.join(builder.sourcePath, "src")
-CS2KIT_SRC_DIR = os.path.join(builder.sourcePath, "vendor", "cs2-kit", "src")
+CS2KIT_DIR = os.path.join(builder.sourcePath, "vendor", "cs2-kit")
+CS2KIT_SRC_DIR = os.path.join(CS2KIT_DIR, "src")
+CS2KIT_INCLUDE_DIR = os.path.join(CS2KIT_DIR, "include")
 
 SOURCES = []
 for root, dirs, files in os.walk(SRC_DIR):
@@ -18,7 +20,7 @@ for root, dirs, files in os.walk(SRC_DIR):
         if f.endswith(".cpp"):
             SOURCES.append(os.path.relpath(os.path.join(root, f), SRC_DIR))
 
-# cs2-kit library sources (relative to SRC_DIR for build output)
+# cs2-kit library sources (compiled inline for source inclusion approach)
 CS2KIT_SOURCES = []
 for root, dirs, files in os.walk(CS2KIT_SRC_DIR):
     for f in files:
@@ -66,14 +68,19 @@ for sdk_target in Plugin.sdk_targets:
 
     binary = Plugin.create_library(builder, cxx, sdk)
 
-    # Add cs2-kit include path
-    binary.compiler.cxxincludes += [CS2KIT_SRC_DIR]
+    # Add cs2-kit public include path (for #include <CS2Kit/...>)
+    binary.compiler.cxxincludes += [CS2KIT_INCLUDE_DIR]
+
+    # nlohmann/json (from cs2-kit submodule, fallback for non-vcpkg builds)
+    nlohmann_include = os.path.join(CS2KIT_DIR, "vendor", "nlohmann", "single_include")
+    if os.path.isdir(nlohmann_include):
+        binary.compiler.cxxincludes += [nlohmann_include]
 
     # Add plugin source files
     for src in SOURCES:
         binary.sources += [os.path.join(builder.sourcePath, "src", src)]
 
-    # Add cs2-kit library source files
+    # Add cs2-kit library source files (source inclusion approach)
     for src in CS2KIT_SOURCES:
         binary.sources += [src]
 

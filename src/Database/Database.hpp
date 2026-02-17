@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../vendor/cs2-kit/src/Core/Singleton.hpp"
+#include <CS2Kit/Core/Singleton.hpp>
 
 #include <memory>
 #include <mutex>

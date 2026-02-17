@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../vendor/cs2-kit/src/Menu/Menu.hpp"
+#include <CS2Kit/Menu/Menu.hpp>
 
 #include <memory>
 

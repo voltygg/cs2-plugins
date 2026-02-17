@@ -1,14 +1,3 @@
-[submodule "vendor/hl2sdk-cs2"]
-	path = vendor/hl2sdk-cs2
-	url = https://github.com/alliedmodders/hl2sdk
-	branch = cs2
-[submodule "vendor/hl2sdk-manifests"]
-	path = vendor/hl2sdk-manifests
-	url = https://github.com/alliedmodders/hl2sdk-manifests
-[submodule "vendor/mmsource-2.0"]
-	path = vendor/mmsource-2.0
-	url = https://github.com/alliedmodders/metamod-source
-	branch = master
 [submodule "vendor/cs2-kit"]
 	path = vendor/cs2-kit
 	url = https://github.com/suxrobGM/cs2-kit.git

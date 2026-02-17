@@ -4,7 +4,7 @@
 
 C++23 Metamod:Source plugin for CS2 community servers providing admin functionality: player management, punishments (ban/mute/gag/warn), and WASD center-HTML menus.
 
-Reusable engine abstractions (commands, menu, SDK wrappers, utilities) have been extracted into **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** (`vendor/cs2-kit/`), a standalone library. Admin-system consumes CS2-Kit as a vendored submodule compiled alongside plugin source.
+Reusable engine abstractions (commands, menu, SDK wrappers, utilities) live in **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** (`vendor/cs2-kit/`), a standalone library with its own build system and SDK submodules. Admin-system consumes CS2-Kit via source inclusion (compiles `.cpp` files inline into the plugin binary).
 
 ## Tech Stack
 
@@ -30,9 +30,9 @@ scripts/deploy.ps1
 ```text
 src/
 ├── Core/
-│   ├── Plugin.hpp/cpp          # ISmmPlugin entry point, hooks, subsystem init
+│   ├── Plugin.hpp/cpp          # ISmmPlugin entry point, hooks, CS2Kit::Initialize()
 │   ├── Config.hpp/cpp          # Loads settings.json + admins.json
-│   └── Adapters.hpp/cpp        # CS2-Kit interface implementations (ILogger, IPathResolver, IMenuIO, ICommandCaller)
+│   └── PlayerCaller.hpp/cpp    # ICommandCaller adapter (wraps Player* for command system)
 ├── Players/
 │   ├── Player.hpp/cpp          # Player data (slot, SteamID, name, flags)
 │   └── PlayerManager.hpp/cpp   # Player lifecycle tracking
@@ -46,16 +46,20 @@ src/
 │   ├── Entities/               # Admin, AdminGroup, Ban, Mute, Gag, Warning, Player
 │   └── Repositories/           # AdminRepository, BanRepository
 vendor/
-├── cs2-kit/                    # Reusable CS2 plugin library (submodule)
-│   └── src/
-│       ├── Commands/           # Command system (Command, CommandBuilder, CommandManager, ICommandCaller)
-│       ├── Core/               # Singleton, Scheduler, ILogger, IPathResolver
-│       ├── Menu/               # Menu system (Menu, MenuBuilder, MenuManager, MenuRenderer, IMenuIO)
-│       ├── Sdk/                # SDK wrappers (GameInterfaces, GameData, Entity, Schema, SigScanner, ...)
-│       └── Utils/              # SteamId, StringUtils, TimeUtils, Translations, Log
-├── hl2sdk-cs2/                 # HL2SDK for Source 2
-├── hl2sdk-manifests/           # SDK manifest definitions
-└── mmsource-2.0/               # Metamod:Source 2.0
+└── cs2-kit/                    # Reusable CS2 plugin library (only submodule)
+    ├── include/CS2Kit/         # Public headers (#include <CS2Kit/...>)
+    │   ├── CS2Kit.hpp          # Initialization API (InitParams, Initialize/Shutdown)
+    │   ├── Commands/           # Command, CommandBuilder, CommandManager, ICommandCaller
+    │   ├── Core/               # Singleton, Scheduler, ILogger, ConsoleLogger, Paths
+    │   ├── Menu/               # Menu, MenuBuilder, MenuManager, MenuRenderer
+    │   ├── Sdk/                # GameInterfaces, GameData, Entity, Schema, SigScanner, ...
+    │   └── Utils/              # SteamId, StringUtils, TimeUtils, Translations, Log
+    ├── src/                    # Implementation (.cpp files)
+    └── vendor/                 # SDK submodules (shared, no duplicates in admin-system)
+        ├── hl2sdk-cs2/         # HL2SDK for Source 2
+        ├── hl2sdk-manifests/   # SDK manifest definitions
+        ├── mmsource-2.0/       # Metamod:Source 2.0
+        └── nlohmann/           # nlohmann/json (single-include)
 
 configs/
 ├── settings.json               # Plugin, database, commands, punishments config
@@ -65,6 +69,21 @@ gamedata/
 └── signatures.jsonc            # Engine signatures and offsets
 references/                     # Third-party project examples (read-only reference, do NOT modify or search extensively)
 ```
+
+## CS2-Kit Integration
+
+Admin-system uses **source inclusion**: cs2-kit `.cpp` files are compiled directly into the plugin binary. The AMBuild auto-discovers sources from `vendor/cs2-kit/src/`. All SDK dependencies (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0, nlohmann/json) live inside cs2-kit's `vendor/` — admin-system has no duplicate submodules.
+
+Include style: `#include <CS2Kit/Commands/Command.hpp>`
+
+### Initialization Flow
+
+Plugin.cpp populates `CS2Kit::InitParams` with SDK interfaces (via `GET_V_IFACE` macros) and calls `CS2Kit::Initialize(params)`. This replaces the old adapter pattern — cs2-kit ships a built-in `ConsoleLogger` and internal path resolution, so the only adapter needed is `PlayerCaller` (implements `ICommandCaller` to bridge `Player*` into the command system).
+
+Hook callbacks:
+- `Hook_GameFrame` → `CS2Kit::OnGameFrame()` (drives Scheduler + MenuManager)
+- `Hook_ClientDisconnect` → `CS2Kit::OnPlayerDisconnect(slot)` (cleans menu state)
+- `Hook_DispatchConCommand` → dispatches chat messages to `CommandManager`
 
 ## Code Conventions
 

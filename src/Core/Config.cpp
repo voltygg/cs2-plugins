@@ -1,7 +1,7 @@
 #include "Config.hpp"
 
-#include "../../vendor/cs2-kit/src/Core/IPathResolver.hpp"
-#include "../../vendor/cs2-kit/src/Utils/Log.hpp"
+#include <CS2Kit/Core/Paths.hpp>
+#include <CS2Kit/Utils/Log.hpp>
 #include "../Admin/AdminManager.hpp"
 
 #include <filesystem>
@@ -152,8 +152,7 @@ bool ConfigManager::LoadJsonFile(const std::string& filePath, json& outJson)
 {
     try
     {
-        auto* resolver = GetGlobalPathResolver();
-        auto resolvedPath = resolver ? resolver->ResolvePath(filePath) : std::filesystem::path(filePath);
+        auto resolvedPath = ResolvePath(filePath);
 
         std::ifstream file(resolvedPath);
         if (!file.is_open())

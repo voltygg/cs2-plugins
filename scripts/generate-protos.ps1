@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 # This script generates protobuf files for the HL2SDK
 Set-Location -Path (Split-Path -Parent $PSScriptRoot)
 
-$HL2SDKCS2 = Join-Path (Get-Location) "vendor\hl2sdk-cs2"
+$HL2SDKCS2 = Join-Path (Get-Location) "vendor\cs2-kit\vendor\hl2sdk-cs2"
 
 if (-not (Test-Path $HL2SDKCS2)) {
     Write-Error "HL2SDK not found at $HL2SDKCS2. Run 'git submodule update --init --recursive' first."

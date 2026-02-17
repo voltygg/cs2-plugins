@@ -1,9 +1,9 @@
 #include "AdminMenu.hpp"
 
-#include "../../vendor/cs2-kit/src/Menu/MenuBuilder.hpp"
-#include "../../vendor/cs2-kit/src/Menu/MenuManager.hpp"
-#include "../../vendor/cs2-kit/src/Utils/Log.hpp"
-#include "../../vendor/cs2-kit/src/Utils/Translations.hpp"
+#include <CS2Kit/Menu/MenuBuilder.hpp>
+#include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Utils/Translations.hpp>
 #include "../Players/PlayerManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "AdminManager.hpp"

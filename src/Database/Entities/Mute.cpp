@@ -1,6 +1,6 @@
 #include "Mute.hpp"
 
-#include "../../../vendor/cs2-kit/src/Utils/TimeUtils.hpp"
+#include <CS2Kit/Utils/TimeUtils.hpp>
 
 using namespace CS2Kit::Utils;
 

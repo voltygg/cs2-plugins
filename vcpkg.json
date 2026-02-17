@@ -9,10 +9,6 @@
     {
       "name": "libpqxx",
       "version>=": "7.10.0"
-    },
-    {
-      "name": "nlohmann-json",
-      "version>=": "3.12.0"
     }
   ]
 }
