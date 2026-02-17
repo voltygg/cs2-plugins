@@ -1,9 +1,9 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include "../Database/Entities/Admin.hpp"
 #include "../Database/Entities/AdminGroup.hpp"
 
+#include <CS2Kit/Core/Singleton.hpp>
 #include <string>
 #include <unordered_map>
 

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include "../Database/Entities/Ban.hpp"
 #include "../Database/Entities/Gag.hpp"
 #include "../Database/Entities/Mute.hpp"
 #include "../Database/Entities/Warning.hpp"
 
+#include <CS2Kit/Core/Singleton.hpp>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>

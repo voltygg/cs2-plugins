@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Commands/ICommandCaller.hpp>
-
 #include <string>
 
 namespace AdminSystem::Players
@@ -11,11 +10,12 @@ class Player;
 
 namespace AdminSystem::Core
 {
+using namespace CS2Kit::Commands;
 
 /**
  * Command caller adapter: wraps Players::Player* to implement ICommandCaller.
  */
-class PlayerCaller : public CS2Kit::Commands::ICommandCaller
+class PlayerCaller : public ICommandCaller
 {
 public:
     explicit PlayerCaller(Players::Player* player) : _player(player) {}

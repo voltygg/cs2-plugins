@@ -1,8 +1,8 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include "Player.hpp"
 
+#include <CS2Kit/Core/Singleton.hpp>
 #include <memory>
 #include <unordered_map>
 #include <vector>

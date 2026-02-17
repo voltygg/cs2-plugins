@@ -1,12 +1,5 @@
 #include "Plugin.hpp"
 
-#include <CS2Kit/CS2Kit.hpp>
-#include <CS2Kit/Commands/Command.hpp>
-#include <CS2Kit/Commands/CommandManager.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Sdk/GameInterfaces.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/AdminMenu.hpp"
 #include "../Database/Database.hpp"
@@ -15,6 +8,13 @@
 #include "Config.hpp"
 #include "PlayerCaller.hpp"
 
+#include <CS2Kit/CS2Kit.hpp>
+#include <CS2Kit/Commands/Command.hpp>
+#include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Utils/Translations.hpp>
 #include <cstdio>
 #include <cstring>
 
@@ -93,9 +93,7 @@ bool AdminSystemPlugin::Unpause(char* error, size_t maxlen)
     return true;
 }
 
-void AdminSystemPlugin::AllPluginsLoaded()
-{
-}
+void AdminSystemPlugin::AllPluginsLoaded() {}
 
 //-----------------------------------------------------------------------------
 // Plugin Info

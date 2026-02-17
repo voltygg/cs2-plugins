@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Menu/Menu.hpp>
-
 #include <memory>
 
 namespace AdminSystem::Admin

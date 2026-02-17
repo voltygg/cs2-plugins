@@ -1,8 +1,8 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include "../Database/Database.hpp"
 
+#include <CS2Kit/Core/Singleton.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 

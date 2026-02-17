@@ -1,7 +1,8 @@
 #include "BanRepository.hpp"
 
-#include <CS2Kit/Utils/TimeUtils.hpp>
 #include "../Database.hpp"
+
+#include <CS2Kit/Utils/TimeUtils.hpp>
 
 namespace AdminSystem::Database
 {

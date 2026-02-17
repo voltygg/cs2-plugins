@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/Singleton.hpp>
-
 #include <memory>
 #include <mutex>
 #include <pqxx/pqxx>
