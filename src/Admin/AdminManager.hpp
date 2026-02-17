@@ -10,12 +10,14 @@
 namespace AdminSystem::Admin
 {
 
+using namespace CS2Kit::Core;
+
 /**
  * Central authority for admin permissions, flag resolution, and immunity checks.
  * Admins are loaded from JSON config and/or database. Flags are resolved into
  * uint32_t bitmasks for O(1) permission checks ('a'=bit0 ... 'z'=bit25).
  */
-class AdminManager : public CS2Kit::Core::Singleton<AdminManager>
+class AdminManager : public Singleton<AdminManager>
 {
 public:
     explicit AdminManager(Token) {}

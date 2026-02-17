@@ -2,20 +2,25 @@
 
 #include "../../vendor/cs2-kit/src/Core/Singleton.hpp"
 #include "../Database/Entities/Ban.hpp"
-#include "../Database/Entities/Mute.hpp"
 #include "../Database/Entities/Gag.hpp"
+#include "../Database/Entities/Mute.hpp"
 #include "../Database/Entities/Warning.hpp"
+
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
-#include <optional>
 
-namespace AdminSystem::Punishments {
+namespace AdminSystem::Punishments
+{
+
+using namespace CS2Kit::Core;
 
 /**
  * Manages active punishments (bans, mutes, gags, warnings).
  * Caches active punishments in memory and syncs with the database.
  */
-class PunishmentManager : public CS2Kit::Core::Singleton<PunishmentManager> {
+class PunishmentManager : public Singleton<PunishmentManager>
+{
 public:
     explicit PunishmentManager(Token) {}
 
@@ -38,4 +43,4 @@ private:
     std::unordered_map<int64_t, Database::Ban> _activeBans;
 };
 
-} // namespace AdminSystem::Punishments
+}  // namespace AdminSystem::Punishments

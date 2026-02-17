@@ -4,10 +4,10 @@
 
 #include <algorithm>
 
-using namespace AdminSystem::Database;
-
 namespace AdminSystem::Admin
 {
+
+using namespace AdminSystem::Database;
 
 bool AdminManager::LoadAdmins()
 {

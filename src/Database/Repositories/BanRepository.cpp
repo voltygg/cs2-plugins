@@ -3,10 +3,10 @@
 #include "../../../vendor/cs2-kit/src/Utils/TimeUtils.hpp"
 #include "../Database.hpp"
 
-using namespace CS2Kit::Utils;
-
 namespace AdminSystem::Database
 {
+
+using namespace CS2Kit::Utils;
 
 std::optional<Ban> BanRepository::FindActiveBySteamId(int64_t steamId)
 {

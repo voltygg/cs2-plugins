@@ -2,7 +2,7 @@
 Set-Location -Path (Split-Path -Parent $PSScriptRoot)
 
 # Initialize submodules if not already done
-git submodule update --init --recursive
+# git submodule update --init --recursive
 
 # Configure with AMBuild (creates objdir folder)
 pdm run python configure.py

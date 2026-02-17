@@ -11,6 +11,8 @@
 namespace AdminSystem::Core
 {
 
+using namespace CS2Kit::Sdk;
+
 // HL2SDKLogger
 
 void HL2SDKLogger::Info(const std::string& message)
@@ -32,17 +34,17 @@ void HL2SDKLogger::Error(const std::string& message)
 
 uint64_t SdkMenuIO::GetPlayerButtons(int slot)
 {
-    return CS2Kit::Sdk::EntitySystem::Instance().GetPlayerButtons(slot);
+    return EntitySystem::Instance().GetPlayerButtons(slot);
 }
 
 void SdkMenuIO::SendCenterHtml(int slot, const std::string& html)
 {
-    CS2Kit::Sdk::MessageSystem::Instance().SendCenterHtml(slot, html);
+    MessageSystem::Instance().SendCenterHtml(slot, html);
 }
 
 void SdkMenuIO::ClearCenterHtml(int slot)
 {
-    CS2Kit::Sdk::MessageSystem::Instance().ClearCenterHtml(slot);
+    MessageSystem::Instance().ClearCenterHtml(slot);
 }
 
 // PlayerCaller

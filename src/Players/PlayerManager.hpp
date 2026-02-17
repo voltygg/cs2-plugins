@@ -10,11 +10,13 @@
 namespace AdminSystem::Players
 {
 
+using namespace CS2Kit::Core;
+
 /**
  * Manages all connected players, indexed by slot and SteamID.
  * Main-thread-only (no mutex) — all access happens from game thread callbacks.
  */
-class PlayerManager : public CS2Kit::Core::Singleton<PlayerManager>
+class PlayerManager : public Singleton<PlayerManager>
 {
 public:
     explicit PlayerManager(Token) {}

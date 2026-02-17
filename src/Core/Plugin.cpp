@@ -1,12 +1,5 @@
 #include "Plugin.hpp"
 
-#include "../Admin/AdminManager.hpp"
-#include "../Admin/AdminMenu.hpp"
-#include "../Players/PlayerManager.hpp"
-#include "../Punishments/PunishmentManager.hpp"
-#include "Adapters.hpp"
-#include "Config.hpp"
-
 #include "../../vendor/cs2-kit/src/Commands/Command.hpp"
 #include "../../vendor/cs2-kit/src/Commands/CommandManager.hpp"
 #include "../../vendor/cs2-kit/src/Core/ILogger.hpp"
@@ -22,8 +15,13 @@
 #include "../../vendor/cs2-kit/src/Sdk/UserMessage.hpp"
 #include "../../vendor/cs2-kit/src/Utils/Log.hpp"
 #include "../../vendor/cs2-kit/src/Utils/Translations.hpp"
-
+#include "../Admin/AdminManager.hpp"
+#include "../Admin/AdminMenu.hpp"
 #include "../Database/Database.hpp"
+#include "../Players/PlayerManager.hpp"
+#include "../Punishments/PunishmentManager.hpp"
+#include "Adapters.hpp"
+#include "Config.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -39,6 +37,7 @@ using namespace AdminSystem::Core;
 using namespace AdminSystem::Database;
 using namespace AdminSystem::Players;
 using namespace AdminSystem::Punishments;
+using namespace CS2Kit::Core;
 using namespace CS2Kit::Commands;
 using namespace CS2Kit::Menu;
 using namespace CS2Kit::Sdk;
@@ -74,8 +73,8 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
 
     // Initialize CS2Kit adapters
     g_pathResolver.SetBaseDir(ismm->GetBaseDir());
-    CS2Kit::Core::SetGlobalLogger(&g_logger);
-    CS2Kit::Core::SetGlobalPathResolver(&g_pathResolver);
+    SetGlobalLogger(&g_logger);
+    SetGlobalPathResolver(&g_pathResolver);
 
     Log::Info("Loading v{}...", ADMIN_SYSTEM_VERSION);
 
@@ -191,7 +190,7 @@ void* AdminSystemPlugin::OnMetamodQuery(const char* iface, int* ret)
 
 void AdminSystemPlugin::Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
-    CS2Kit::Core::Scheduler::Instance().OnGameFrame();
+    Scheduler::Instance().OnGameFrame();
     MenuManager::Instance().OnGameFrame();
 }
 
@@ -340,10 +339,9 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
     MenuManager::Instance().SetMenuIO(&g_menuIO);
 
     // 6d. Set up command permission callback
-    CommandManager::Instance().SetPermissionCallback(
-        [](int64_t steamId, const std::string& permission) -> bool {
-            return AdminManager::Instance().HasAnyPermission(steamId, permission);
-        });
+    CommandManager::Instance().SetPermissionCallback([](int64_t steamId, const std::string& permission) -> bool {
+        return AdminManager::Instance().HasAnyPermission(steamId, permission);
+    });
 
     // 7. Initialize database connection (optional -- plugin works without DB)
     Log::Info("Connecting to database...");
@@ -386,29 +384,30 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
     auto& cmdMgr = CommandManager::Instance();
 
     // Register !admin command using CommandBuilder
-    cmdMgr.Register(CommandBuilder("admin")
-                        .WithAliases({"a", "menu"})
-                        .WithDescription("Open the admin menu")
-                        .WithUsage("!admin")
-                        .RequirePermission("a")
-                        .WithArgs(0, 0)
-                        .OnExecute([](ICommandCaller* caller, const std::vector<std::string>& /*args*/) -> CommandResult {
-                            auto* playerCaller = dynamic_cast<PlayerCaller*>(caller);
-                            if (!playerCaller || !playerCaller->GetPlayer())
-                                return {false, "Invalid caller"};
+    cmdMgr.Register(
+        CommandBuilder("admin")
+            .WithAliases({"a", "menu"})
+            .WithDescription("Open the admin menu")
+            .WithUsage("!admin")
+            .RequirePermission("a")
+            .WithArgs(0, 0)
+            .OnExecute([](ICommandCaller* caller, const std::vector<std::string>& /*args*/) -> CommandResult {
+                auto* playerCaller = dynamic_cast<PlayerCaller*>(caller);
+                if (!playerCaller || !playerCaller->GetPlayer())
+                    return {false, "Invalid caller"};
 
-                            auto* admin = playerCaller->GetPlayer();
-                            Log::Info("!admin handler: slot={}, steamid={}", admin->GetSlot(), admin->GetSteamID());
-                            auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
-                            if (mainMenu)
-                            {
-                                MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
-                                return {true, "Admin menu opened"};
-                            }
-                            Log::Error("!admin handler: BuildAdminMainMenu returned nullptr!");
-                            return {false, "Failed to open admin menu"};
-                        })
-                        .Build());
+                auto* admin = playerCaller->GetPlayer();
+                Log::Info("!admin handler: slot={}, steamid={}", admin->GetSlot(), admin->GetSteamID());
+                auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
+                if (mainMenu)
+                {
+                    MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
+                    return {true, "Admin menu opened"};
+                }
+                Log::Error("!admin handler: BuildAdminMainMenu returned nullptr!");
+                return {false, "Failed to open admin menu"};
+            })
+            .Build());
 
     // 11. Initialize punishment manager (requires DB)
     if (dbConnected)
@@ -421,7 +420,7 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 12. Load translations
     Log::Info("Loading translations...");
-    auto& translations = CS2Kit::Utils::Translations::Instance();
+    auto& translations = Translations::Instance();
     translations.Load("addons/admin-system/configs/translations");
 
     // 13. Initialize menu manager (singleton, ready to use)
@@ -436,7 +435,7 @@ void AdminSystemPlugin::ShutdownSubsystems()
     Log::Info("Shutting down subsystems...");
 
     // Cancel all scheduled timers
-    CS2Kit::Core::Scheduler::Instance().CancelAll();
+    Scheduler::Instance().CancelAll();
 
     // Clear player manager
     PlayerManager::Instance().Clear();

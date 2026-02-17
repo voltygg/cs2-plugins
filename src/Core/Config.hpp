@@ -1,13 +1,21 @@
 #pragma once
 
-#include "../Database/Database.hpp"
 #include "../../vendor/cs2-kit/src/Core/Singleton.hpp"
+#include "../Database/Database.hpp"
 
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 
 namespace AdminSystem::Core
 {
+
+using namespace CS2Kit::Core;
+using namespace CS2Kit::Utils;
+using namespace AdminSystem::Admin;
+
+using json = nlohmann::json;
+using DatabaseConfig = AdminSystem::Database::DatabaseConfig;
+using Database = AdminSystem::Database::Database;
 
 /** General plugin settings loaded from the "plugin" and "punishments" sections of settings.json. */
 struct PluginConfig
@@ -21,7 +29,7 @@ struct PluginConfig
  * Loads and owns all JSON configuration (settings.json, admins.json).
  * Provides read-only access to parsed config structs.
  */
-class ConfigManager : public CS2Kit::Core::Singleton<ConfigManager>
+class ConfigManager : public Singleton<ConfigManager>
 {
 public:
     explicit ConfigManager(Token) {}
@@ -33,13 +41,13 @@ public:
     bool LoadAdminsConfig(const std::string& path);
 
     const PluginConfig& GetPluginConfig() const { return _pluginConfig; }
-    const Database::DatabaseConfig& GetDatabaseConfig() const { return _databaseConfig; }
+    const DatabaseConfig& GetDatabaseConfig() const { return _databaseConfig; }
 
 private:
-    bool LoadJsonFile(const std::string& filePath, nlohmann::json& outJson);
+    bool LoadJsonFile(const std::string& filePath, json& outJson);
 
     PluginConfig _pluginConfig;
-    Database::DatabaseConfig _databaseConfig;
+    DatabaseConfig _databaseConfig;
 };
 
 }  // namespace AdminSystem::Core

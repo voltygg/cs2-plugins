@@ -9,6 +9,7 @@
 
 namespace AdminSystem::Database
 {
+using namespace CS2Kit::Core;
 
 /** PostgreSQL connection parameters loaded from the "database" section of settings.json. */
 struct DatabaseConfig
@@ -28,7 +29,7 @@ struct DatabaseConfig
  * PostgreSQL database access layer. Thread-safe (mutex-protected) since
  * future async queries may run off the game thread.
  */
-class Database : public CS2Kit::Core::Singleton<Database>
+class Database : public Singleton<Database>
 {
 public:
     explicit Database(Token) {}

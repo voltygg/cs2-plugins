@@ -1,7 +1,9 @@
 #include "PunishmentManager.hpp"
+
 #include "../Players/PlayerManager.hpp"
 
-namespace AdminSystem::Punishments {
+namespace AdminSystem::Punishments
+{
 
 using namespace AdminSystem::Players;
 
@@ -205,4 +207,4 @@ void PunishmentManager::ExpireOldPunishments()
     // TODO: Expire mutes and gags
 }
 
-} // namespace AdminSystem::Punishments
+}  // namespace AdminSystem::Punishments

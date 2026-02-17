@@ -1,21 +1,25 @@
 #include "Config.hpp"
 
-#include "../Admin/AdminManager.hpp"
-
 #include "../../vendor/cs2-kit/src/Core/IPathResolver.hpp"
 #include "../../vendor/cs2-kit/src/Utils/Log.hpp"
+#include "../Admin/AdminManager.hpp"
 
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-using namespace AdminSystem::Admin;
-using namespace CS2Kit::Utils;
-using namespace AdminSystem::Database;
-
 namespace AdminSystem::Core
 {
+
+using namespace CS2Kit::Core;
+using namespace CS2Kit::Utils;
+using namespace AdminSystem::Admin;
+
+using json = nlohmann::json;
+using DatabaseConfig = AdminSystem::Database::DatabaseConfig;
+using Database = AdminSystem::Database::Database;
+using AdminGroup = AdminSystem::Database::AdminGroup;
+using Admin = AdminSystem::Database::Admin;
 
 bool ConfigManager::LoadSettings(const std::string& path)
 {
@@ -114,7 +118,7 @@ bool ConfigManager::LoadAdminsConfig(const std::string& path)
         {
             try
             {
-                Database::Admin admin;
+                Admin admin;
                 if (entry.contains("steamId"))
                     admin.SteamId = std::stoll(entry["steamId"].get<std::string>());
                 if (entry.contains("name"))
@@ -148,7 +152,7 @@ bool ConfigManager::LoadJsonFile(const std::string& filePath, json& outJson)
 {
     try
     {
-        auto* resolver = CS2Kit::Core::GetGlobalPathResolver();
+        auto* resolver = GetGlobalPathResolver();
         auto resolvedPath = resolver ? resolver->ResolvePath(filePath) : std::filesystem::path(filePath);
 
         std::ifstream file(resolvedPath);
