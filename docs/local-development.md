@@ -11,7 +11,7 @@ This guide walks you through setting up a local development environment for the 
 ## 1. Clone the Repository
 
 ```powershell
-# Clone with all submodules (hl2sdk-cs2, hl2sdk-manifests, metamod-source)
+# Clone with all submodules (CS2-Kit and its nested SDK deps)
 git clone --recursive https://github.com/m9snoi/admin-system.git
 cd admin-system
 ```
@@ -96,7 +96,7 @@ vcpkg install
 # Dependencies are installed to: vcpkg_installed/
 ```
 
-This installs `libpqxx` and `nlohmann-json` to the `vcpkg_installed/` folder within the project.
+This installs `libpqxx` to the `vcpkg_installed/` folder within the project. (nlohmann/json is provided by CS2-Kit's vendor submodules.)
 
 > **Note:** The `vcpkg_installed/` folder is gitignored. Each developer runs `vcpkg install` to get dependencies locally.
 
@@ -110,7 +110,7 @@ cd C:\path\to\admin-system
 # Install Python dependencies (includes AMBuild)
 pdm install
 
-# Install C++ dependencies (libpqxx, nlohmann-json)
+# Install C++ dependencies (libpqxx)
 vcpkg install
 
 # Build and deploy (initializes submodules automatically)
@@ -183,13 +183,18 @@ docker compose up -d postgres
 
 ```text
 C:\path\to\admin-system\
-├── vendor\                   # Git submodules
-│   ├── hl2sdk-cs2\           # HL2SDK for CS2
-│   ├── hl2sdk-manifests\     # HL2SDK manifests
-│   └── mmsource-2.0\         # Metamod:Source 2.0
+├── vendor\
+│   └── cs2-kit\              # CS2-Kit library (only submodule)
+│       ├── include\CS2Kit\   # Public headers
+│       ├── src\              # Implementation
+│       └── vendor\           # Nested SDK submodules
+│           ├── hl2sdk-cs2\
+│           ├── hl2sdk-manifests\
+│           ├── mmsource-2.0\
+│           └── nlohmann\
 ├── .venv\                    # Python virtual environment (PDM)
 ├── objdir\                   # AMBuild output
-├── vcpkg_installed\          # vcpkg dependencies (project-local)
+├── vcpkg_installed\          # vcpkg dependencies (libpqxx)
 └── ...
 ```
 
@@ -217,7 +222,7 @@ Ensure submodules are initialized:
 git submodule update --init --recursive
 ```
 
-Verify the `vendor/` folder contains `hl2sdk-cs2`, `hl2sdk-manifests`, and `mmsource-2.0`.
+Verify the `vendor/cs2-kit/vendor/` folder contains `hl2sdk-cs2`, `hl2sdk-manifests`, and `mmsource-2.0`.
 
 ### vcpkg packages not found
 
@@ -254,4 +259,4 @@ scripts\generate-protos.ps1
 ## Next Steps
 
 - Configure [admins.json](../configs/admins.json) with your SteamID
-- Set up [database.json](../configs/database.json) with your PostgreSQL credentials
+- Set up [settings.json](../configs/settings.json) with your database and plugin configuration

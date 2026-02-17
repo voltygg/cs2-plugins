@@ -2,7 +2,7 @@
 
 A modern C++ admin system plugin for Counter-Strike 2 community servers, built on Metamod:Source.
 
-Built on top of **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable C++23 library for CS2 plugin development providing commands, menus, SDK wrappers, and utilities.
+Built on top of **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable C++23 library for CS2 plugin development providing commands, menus, SDK wrappers, and utilities. CS2-Kit is the only submodule — all SDK dependencies (hl2sdk-cs2, mmsource-2.0, etc.) are nested inside it.
 
 ## Features
 
@@ -22,7 +22,7 @@ Built on top of **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** — a reusabl
 
 1. Download the latest release from [Releases](#)
 2. Extract to your server's `csgo/` folder
-3. Configure database connection in `addons/admin-system/configs/database.json`
+3. Configure database and plugin settings in `addons/admin-system/configs/settings.json`
 4. Add admins in `addons/admin-system/configs/admins.json`
 5. Restart the server
 
@@ -46,39 +46,12 @@ Built on top of **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** — a reusabl
 
 ## Configuration
 
-### database.json
-
-```json
-{
-  "host": "localhost",
-  "port": 5432,
-  "database": "cs2_server",
-  "username": "admin_system",
-  "password": "your_password",
-  "schema": "admin_system",
-  "pool_size": 4
-}
-```
-
-### admins.json
-
-```json
-{
-  "admins": [
-    {
-      "steam_id": "76561198012345678",
-      "name": "Server Owner",
-      "groups": ["superadmin"],
-      "immunity": 100
-    }
-  ]
-}
-```
+All plugin configuration is in `configs/settings.json` (database, commands, punishments, etc.). Admin groups and entries are defined in `configs/admins.json`.
 
 ### Quick Start (Docker)
 
 ```bash
-# Clone with submodules
+# Clone with submodules (--recursive pulls CS2-Kit and its nested SDK submodules)
 git clone --recursive https://github.com/m9snoi/admin-system.git
 
 # Build Linux binary
