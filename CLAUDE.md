@@ -65,8 +65,6 @@ configs/
 ├── settings.json               # Plugin, database, commands, punishments config
 ├── admins.json                 # Groups + admins (merged)
 └── translations/               # en.json, ru.json
-gamedata/
-└── signatures.jsonc            # Engine signatures and offsets
 references/                     # Third-party project examples (read-only reference, do NOT modify or search extensively)
 ```
 
@@ -78,7 +76,7 @@ Include style: `#include <CS2Kit/Commands/Command.hpp>`
 
 ### Initialization Flow
 
-Plugin.cpp populates `CS2Kit::InitParams` with SDK interfaces (via `GET_V_IFACE` macros) and calls `CS2Kit::Initialize(params)`. This replaces the old adapter pattern — cs2-kit ships a built-in `ConsoleLogger` and internal path resolution, so the only adapter needed is `PlayerCaller` (implements `ICommandCaller` to bridge `Player*` into the command system).
+Plugin.cpp calls `CS2Kit::Initialize(ismm, error, maxlen, params)` which resolves all SDK interfaces internally via Metamod's `ISmmAPI`, loads built-in gamedata, sets `g_pCVar`, and initializes all subsystems. The only adapter needed is `PlayerCaller` (implements `ICommandCaller` to bridge `Player*` into the command system).
 
 Hook callbacks:
 - `Hook_GameFrame` → `CS2Kit::OnGameFrame()` (drives Scheduler + MenuManager)
@@ -115,7 +113,6 @@ Hook callbacks:
 
 - **`settings.json`**: All plugin configuration (plugin, database, commands, punishments, admin sections)
 - **`admins.json`**: Admin groups and admin entries (merged file)
-- **`signatures.jsonc`**: Engine signatures/offsets with platform-specific pattern+offset pairs
 
 ## Admin Flags
 

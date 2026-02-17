@@ -17,11 +17,6 @@
 
 #include <cstdio>
 #include <cstring>
-#include <engine/igameeventsystem.h>
-#include <icvar.h>
-#include <interfaces/interfaces.h>
-#include <networksystem/inetworkmessages.h>
-#include <schemasystem/schemasystem.h>
 
 using namespace AdminSystem::Admin;
 using namespace AdminSystem::Core;
@@ -55,30 +50,12 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     PLUGIN_SAVEVARS();
     _lateLoad = late;
 
-    // Initialize CS2Kit with SDK interfaces
+    // Initialize CS2Kit (resolves SDK interfaces, loads gamedata, inits subsystems)
     CS2Kit::InitParams params;
-    params.BaseDir = ismm->GetBaseDir();
     params.LogPrefix = "AdminSystem";
-    params.GameDataPath = "addons/admin-system/gamedata/signatures.jsonc";
 
-    GET_V_IFACE_ANY(GetServerFactory, params.ServerGameDLL, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
-    GET_V_IFACE_ANY(GetServerFactory, params.ServerGameClients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
-    GET_V_IFACE_ANY(GetEngineFactory, params.GameEventSystem, IGameEventSystem, GAMEEVENTSYSTEM_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, params.NetworkMessages, INetworkMessages, NETWORKMESSAGES_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, params.SchemaSystem, ISchemaSystem, SCHEMASYSTEM_INTERFACE_VERSION);
-    GET_V_IFACE_CURRENT(GetEngineFactory, params.GameResourceService, IGameResourceService,
-                        GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, params.CVar, ICvar, CVAR_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, params.Engine, IVEngineServer2, INTERFACEVERSION_VENGINESERVER);
-
-    // Required by HL2SDK's convar.cpp (ConCommandRef::GetName())
-    g_pCVar = params.CVar;
-
-    if (!CS2Kit::Initialize(params))
-    {
-        snprintf(error, maxlen, "Failed to initialize CS2Kit");
+    if (!CS2Kit::Initialize(ismm, error, maxlen, params))
         return false;
-    }
 
     Log::Info("Loading v{}...", ADMIN_SYSTEM_VERSION);
 
