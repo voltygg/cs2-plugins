@@ -67,3 +67,5 @@ __pycache__/
 .claude/settings.local.json
 
 references/
+
+.VSCodeCounter/

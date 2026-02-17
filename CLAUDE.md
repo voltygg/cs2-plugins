@@ -69,7 +69,7 @@ configs/
 └── translations/               # en.json, ru.json
 gamedata/
 └── signatures.json             # Engine signatures and offsets
-references/                     # Example projects, ignored from build
+references/                     # Third-party project examples (read-only reference, do NOT modify or search extensively)
 vendor/                         # Git submodules (hl2sdk-cs2, mmsource-2.0)
 ```
 
