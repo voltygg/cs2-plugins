@@ -10,12 +10,9 @@ namespace AdminSystem::Core
 {
 
 using namespace CS2Kit::Core;
-using namespace CS2Kit::Utils;
-using namespace AdminSystem::Admin;
 
 using json = nlohmann::json;
 using DatabaseConfig = AdminSystem::Database::DatabaseConfig;
-using Database = AdminSystem::Database::Database;
 
 /** General plugin settings loaded from the "plugin" and "punishments" sections of settings.json. */
 struct PluginConfig
