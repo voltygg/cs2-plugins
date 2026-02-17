@@ -19,40 +19,38 @@ EXTRA_INCLUDES = []
 VCPKG_TRIPLET = "x64-windows-static"
 
 # =============================================================================
-# SDK RESOLUTION - Generic, no changes needed
+# SDK RESOLUTION - Uses cs2-kit's vendor submodules
 # =============================================================================
 
-def resolve_env_path(env, folder=None):
-    """Resolve path from environment variable or by searching parent directories."""
-    if env in os.environ:
-        path = os.environ[env]
-        if os.path.isdir(path):
-            return path
-    if folder:
-        head = os.getcwd()
-        oldhead = None
-        while head and head != oldhead:
-            path = os.path.join(head, folder)
-            if os.path.isdir(path):
-                return path
-            oldhead = head
-            head, tail = os.path.split(head)
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+CS2KIT_VENDOR_DIR = os.path.join(PROJECT_ROOT, "vendor", "cs2-kit", "vendor")
+
+
+def resolve_vendor_path(folder):
+    """Resolve path from cs2-kit's vendor/ submodules."""
+    path = os.path.join(CS2KIT_VENDOR_DIR, folder)
+    if os.path.isdir(path):
+        return path
     return None
 
 
 def resolve_mms_root():
-    path = builder.options.mms_path or resolve_env_path("MMSOURCE20", "mmsource-2.0")
-    if not path:
-        path = resolve_env_path("MMSOURCE_DEV", "metamod-source")
+    path = builder.options.mms_path or resolve_vendor_path("mmsource-2.0")
     if not path or not os.path.isdir(path):
-        raise Exception("Could not find Metamod:Source 2.0. Set MMSOURCE20 environment variable.")
+        raise Exception(
+            "Could not find Metamod:Source 2.0. "
+            "Run 'git submodule update --init --recursive' first."
+        )
     return os.path.abspath(os.path.normpath(path))
 
 
 def resolve_hl2sdk_manifests_root():
-    path = builder.options.hl2sdk_manifests or resolve_env_path("HL2SDKMANIFESTS", "hl2sdk-manifests")
+    path = builder.options.hl2sdk_manifests or resolve_vendor_path("hl2sdk-manifests")
     if not path or not os.path.isdir(path):
-        raise Exception("Could not find HL2SDK manifests. Set HL2SDKMANIFESTS environment variable.")
+        raise Exception(
+            "Could not find HL2SDK manifests. "
+            "Run 'git submodule update --init --recursive' first."
+        )
     return os.path.abspath(os.path.normpath(path))
 
 
@@ -96,12 +94,13 @@ class PluginConfig:
 
     def find_sdk_path(self, sdk_name):
         dir_name = f"hl2sdk-{sdk_name}"
-        hl2sdk_root = builder.options.hl2sdk_root or resolve_env_path("HL2SDKROOT")
-        if hl2sdk_root:
-            sdk_path = os.path.abspath(os.path.normpath(os.path.join(hl2sdk_root, dir_name)))
+        if builder.options.hl2sdk_root:
+            sdk_path = os.path.abspath(os.path.normpath(
+                os.path.join(builder.options.hl2sdk_root, dir_name)
+            ))
             if os.path.exists(sdk_path):
                 return sdk_path
-        return resolve_env_path(f"HL2SDK{sdk_name.upper()}", dir_name)
+        return resolve_vendor_path(dir_name)
 
     def detect_sdks(self):
         sdk_list = [s for s in builder.options.sdks.split(",") if s]
@@ -174,7 +173,7 @@ class PluginConfig:
             "_CRT_SECURE_NO_DEPRECATE", "_CRT_SECURE_NO_WARNINGS",
             "_CRT_NONSTDC_NO_DEPRECATE", "NOMINMAX",
         ]
-        cxx.cflags += ["/W3", "/Zi", "/std:c++latest"]
+        cxx.cflags += ["/W3", "/std:c++latest", "/EHsc"]
         cxx.cxxflags += ["/TP"]
         cxx.linkflags += [
             "/SUBSYSTEM:WINDOWS",

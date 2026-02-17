@@ -59,13 +59,15 @@ __pycache__/
 .env
 .env.local
 *.local.json
-env.bat
-env.cmd
-env.ps1
-env.sh
 
 # PDM
 .pdm-python
 
 # Claude local settings
 .claude/settings.local.json
+
+references/
+
+.VSCodeCounter/
+
+.playwright-mcp/

@@ -120,9 +120,6 @@ if (Test-Path "configs") {
     $null = New-Item -ItemType Directory -Force -Path (Join-Path $PluginAddonPath "configs")
 }
 
-if (Test-Path "gamedata") {
-    $null = New-Item -ItemType Directory -Force -Path (Join-Path $PluginAddonPath "gamedata")
-}
 
 # =============================================================================
 # COPY PLUGIN BINARY AND DEBUG SYMBOLS
@@ -188,14 +185,14 @@ if (Test-Path $VdfPath) {
 if (Test-Path "configs") {
     Write-Host "Copying configuration files..." -ForegroundColor Yellow
 
-    # Get all config files
+    # Get all config files (top-level)
     $ConfigFiles = Get-ChildItem "configs" -File
 
     foreach ($configFile in $ConfigFiles) {
         $destPath = Join-Path $PluginAddonPath "configs\$($configFile.Name)"
 
-        # Skip database.json if it already exists (preserve existing config)
-        if ($configFile.Name -eq "database.json" -and (Test-Path $destPath)) {
+        # Skip settings.json if it already exists (preserves DB credentials and server config)
+        if ($configFile.Name -eq "settings.json" -and (Test-Path $destPath)) {
             Write-Host "  -> configs\$($configFile.Name) (skipped - already exists)" -ForegroundColor Cyan
             continue
         }
@@ -203,18 +200,30 @@ if (Test-Path "configs") {
         Copy-Item $configFile.FullName $destPath -Force
         Write-Host "  -> configs\$($configFile.Name)" -ForegroundColor Gray
     }
+
+    # Copy subdirectories (translations, etc.)
+    $ConfigDirs = Get-ChildItem "configs" -Directory
+    foreach ($dir in $ConfigDirs) {
+        $destDir = Join-Path $PluginAddonPath "configs\$($dir.Name)"
+        $null = New-Item -ItemType Directory -Force -Path $destDir
+        Copy-Item "$($dir.FullName)\*" $destDir -Recurse -Force
+        Write-Host "  -> configs\$($dir.Name)/" -ForegroundColor Gray
+    }
 }
 
 # =============================================================================
 # COPY GAMEDATA (SIGNATURES/OFFSETS)
 # =============================================================================
 
-if (Test-Path "gamedata") {
-    $gamedataFiles = Get-ChildItem "gamedata" -File -ErrorAction SilentlyContinue
+$CS2KitGamedata = "vendor\cs2-kit\gamedata"
+if (Test-Path $CS2KitGamedata) {
+    $gamedataFiles = Get-ChildItem $CS2KitGamedata -File -ErrorAction SilentlyContinue
     if ($gamedataFiles) {
-        Write-Host "Copying gamedata..." -ForegroundColor Yellow
-        Copy-Item "gamedata\*" (Join-Path $PluginAddonPath "gamedata\") -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "  -> gamedata/" -ForegroundColor Gray
+        Write-Host "Copying CS2-Kit gamedata..." -ForegroundColor Yellow
+        $CS2KitAddonPath = Join-Path $CsgoPath "addons\cs2-kit\gamedata"
+        $null = New-Item -ItemType Directory -Force -Path $CS2KitAddonPath
+        Copy-Item "$CS2KitGamedata\*" $CS2KitAddonPath -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "  -> addons\cs2-kit\gamedata\" -ForegroundColor Gray
     }
 }
 

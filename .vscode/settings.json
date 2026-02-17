@@ -1,42 +1,44 @@
 {
-  // Editor settings
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
 
-  // C++ settings
-  "C_Cpp.default.cppStandard": "c++20",
+  "C_Cpp.default.cppStandard": "c++23",
   "C_Cpp.default.cStandard": "c17",
   "C_Cpp.formatting": "clangFormat",
   "C_Cpp.clang_format_style": "file",
   "C_Cpp.clang_format_fallbackStyle": "Google",
   "C_Cpp.autocompleteAddParentheses": true,
+  "C_Cpp.intelliSenseEngine": "default",
 
-  // File associations
   "files.associations": {
     "AMBuilder": "python",
     "AMBuildScript": "python"
   },
-
-  // Exclude from search/watch
   "files.exclude": {
     "**/build": true,
     "**/objdir": true,
     "**/.vs": true,
-    "**/vcpkg_installed": true,
     "**/__pycache__": true,
     "**/.mypy_cache": true
   },
-
-  // JSON settings
-  "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.tabSize": 2
+  "search.exclude": {
+    "**/vendor": true,
+    "**/vcpkg_installed": true,
+    "**/references": true
   },
 
-  // Python (for AMBuild scripts)
+  "[json]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.codeActionsOnSave": {
@@ -48,7 +50,6 @@
   "mypy-type-checker.args": ["--config-file=${workspaceFolder}/pyproject.toml"],
   "python.analysis.typeCheckingMode": "basic",
 
-  // SQL
   "[sql]": {
     "editor.defaultFormatter": "mtxr.sqltools",
     "editor.tabSize": 2

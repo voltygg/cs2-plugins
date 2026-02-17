@@ -7,8 +7,10 @@
 import os
 import sys
 
-# Add AMBuild path from mmsource-2.0 if available
-mms_ambuild = os.path.join(os.path.dirname(__file__), "mmsource-2.0", "third_party", "ambuild")
+# Add AMBuild path from cs2-kit's vendor/mmsource-2.0 if available
+mms_ambuild = os.path.join(
+    os.path.dirname(__file__), "vendor", "cs2-kit", "vendor", "mmsource-2.0", "third_party", "ambuild"
+)
 if os.path.exists(mms_ambuild):
     sys.path.insert(0, mms_ambuild)
 

@@ -8,7 +8,21 @@ This guide walks you through setting up a local development environment for the 
 - Administrator access (for some installations)
 - Git for Windows
 
-## 1. Install Visual Studio 2026
+## 1. Clone the Repository
+
+```powershell
+# Clone with all submodules (CS2-Kit and its nested SDK deps)
+git clone --recursive https://github.com/m9snoi/admin-system.git
+cd admin-system
+```
+
+If you already cloned without `--recursive`, initialize submodules:
+
+```powershell
+git submodule update --init --recursive
+```
+
+## 2. Install Visual Studio 2026
 
 Download and install [Visual Studio 2026](https://visualstudio.microsoft.com/) with the following workloads:
 
@@ -20,7 +34,7 @@ Download and install [Visual Studio 2026](https://visualstudio.microsoft.com/) w
 
 After installation, ensure you can open the **x64 Native Tools Command Prompt for VS 2026** from the Start menu.
 
-## 2. Install Python with PDM
+## 3. Install Python with PDM
 
 ### Install Python via Windows Installer
 
@@ -47,7 +61,7 @@ pipx install pdm
 pdm --version
 ```
 
-## 3. Install Python Dependencies with PDM
+## 4. Install Python Dependencies with PDM
 
 Navigate to the project root and install dependencies:
 
@@ -65,7 +79,7 @@ This installs AMBuild (from the AlliedModders GitHub repository) and other build
 
 > **Note:** AMBuild is not available on PyPI. The `pyproject.toml` references it directly from GitHub via `git+https://github.com/alliedmodders/ambuild.git`.
 
-## 4. Install vcpkg Dependencies
+## 5. Install vcpkg Dependencies
 
 This project uses vcpkg in **manifest mode** with project-local installation. Visual Studio 2026 includes a bundled vcpkg, so no separate installation is required.
 
@@ -82,56 +96,9 @@ vcpkg install
 # Dependencies are installed to: vcpkg_installed/
 ```
 
-This installs `libpqxx` and `nlohmann-json` to the `vcpkg_installed/` folder within the project.
+This installs `libpqxx` to the `vcpkg_installed/` folder within the project. (nlohmann/json is provided by CS2-Kit's vendor submodules.)
 
 > **Note:** The `vcpkg_installed/` folder is gitignored. Each developer runs `vcpkg install` to get dependencies locally.
-
-## 5. Clone HL2SDK and Metamod:Source
-
-The plugin requires HL2SDK-CS2, HL2SDK manifests, and Metamod:Source 2.0.
-
-```powershell
-# Create SDK directory
-mkdir C:\dev\alliedmodders
-cd C:\dev\alliedmodders
-
-# Clone HL2SDK for CS2
-git clone https://github.com/alliedmodders/hl2sdk.git --branch cs2 hl2sdk-cs2
-
-# Clone HL2SDK manifests
-git clone https://github.com/nicedreamgame/hl2sdk-manifests.git hl2sdk-manifests
-
-# Clone Metamod:Source 2.0
-git clone https://github.com/alliedmodders/metamod-source.git --branch master mmsource-2.0
-```
-
-### Set Environment Variables
-
-Add these to your system environment variables:
-
-```powershell
-setx HL2SDKCS2 "C:\dev\alliedmodders\hl2sdk-cs2"
-setx HL2SDKMANIFESTS "C:\dev\alliedmodders\hl2sdk-manifests"
-setx MMSOURCE20 "C:\dev\alliedmodders\mmsource-2.0"
-```
-
-Or copy the example environment file and adjust paths as needed:
-
-**PowerShell** (copy `env.example.ps1` to `env.ps1`):
-
-```powershell
-$env:HL2SDKCS2 = "C:\dev\alliedmodders\hl2sdk-cs2"
-$env:HL2SDKMANIFESTS = "C:\dev\alliedmodders\hl2sdk-manifests"
-$env:MMSOURCE20 = "C:\dev\alliedmodders\mmsource-2.0"
-```
-
-**Bash/Git Bash** (copy `env.example.sh` to `env.sh`):
-
-```bash
-export HL2SDKCS2="C:/dev/alliedmodders/hl2sdk-cs2"
-export HL2SDKMANIFESTS="C:/dev/alliedmodders/hl2sdk-manifests"
-export MMSOURCE20="C:/dev/alliedmodders/mmsource-2.0"
-```
 
 ## 6. Build from Command Line
 
@@ -140,21 +107,22 @@ Open **x64 Native Tools Command Prompt for VS 2026** and run:
 ```powershell
 cd C:\path\to\admin-system
 
-# Source environment (PowerShell)
-. .\env.ps1
-
-# Or for Command Prompt, use env.bat:
-# call env.bat
-
 # Install Python dependencies (includes AMBuild)
 pdm install
 
-# Install C++ dependencies (libpqxx, nlohmann-json)
+# Install C++ dependencies (libpqxx)
 vcpkg install
 
+# Build and deploy (initializes submodules automatically)
+scripts\build.ps1
+```
+
+Or build manually:
+
+```powershell
 # Create build directory
-mkdir build
-cd build
+mkdir objdir
+cd objdir
 
 # Configure with AMBuild
 pdm run python ../configure.py
@@ -214,16 +182,19 @@ docker compose up -d postgres
 ## Directory Structure After Setup
 
 ```text
-C:\dev\alliedmodders\
-├── hl2sdk-cs2\              # HL2SDK for CS2
-├── hl2sdk-manifests\        # HL2SDK manifests
-└── mmsource-2.0\            # Metamod:Source 2.0
-
 C:\path\to\admin-system\
+├── vendor\
+│   └── cs2-kit\              # CS2-Kit library (only submodule)
+│       ├── include\CS2Kit\   # Public headers
+│       ├── src\              # Implementation
+│       └── vendor\           # Nested SDK submodules
+│           ├── hl2sdk-cs2\
+│           ├── hl2sdk-manifests\
+│           ├── mmsource-2.0\
+│           └── nlohmann\
 ├── .venv\                    # Python virtual environment (PDM)
-├── build\                    # AMBuild output
-├── build-vs\                 # Visual Studio solution
-├── vcpkg_installed\          # vcpkg dependencies (project-local)
+├── objdir\                   # AMBuild output
+├── vcpkg_installed\          # vcpkg dependencies (libpqxx)
 └── ...
 ```
 
@@ -245,12 +216,13 @@ If the install fails, ensure Git is in your PATH and you have internet access.
 
 ### "Cannot find HL2SDK"
 
-Verify environment variables are set:
+Ensure submodules are initialized:
 
 ```powershell
-echo %HL2SDKCS2%
-echo %MMSOURCE%
+git submodule update --init --recursive
 ```
+
+Verify the `vendor/cs2-kit/vendor/` folder contains `hl2sdk-cs2`, `hl2sdk-manifests`, and `mmsource-2.0`.
 
 ### vcpkg packages not found
 
@@ -265,20 +237,26 @@ Verify the `vcpkg_installed/` folder exists and contains the dependencies.
 
 ### Fatal error: 'network_connection.pb.h' file not found
 
-Run the [generate-protos.ps1](../scripts/generate-protos.ps1) or [generate-protos.sh](../scripts/generate-protos.sh) to generate protobuf files in the HL2SDK
+Run the [generate-protos.ps1](../scripts/generate-protos.ps1) to generate protobuf files in the HL2SDK:
+
+```powershell
+scripts\generate-protos.ps1
+```
 
 ## Quick Reference
 
 | Task | Command |
 |------|---------|
+| Clone with submodules | `git clone --recursive <repo-url>` |
+| Init submodules | `git submodule update --init --recursive` |
 | Install Python deps | `pdm install` |
 | Install C++ deps | `vcpkg install` |
-| Build (command line) | `pdm run ambuild` |
+| Build and deploy | `scripts\build.ps1` |
 | Generate VS solution | `pdm run python configure.py --gen=vs --vs-version 19` |
 | Start PostgreSQL | `docker compose up -d postgres` |
-| Clean build | `rmdir /s /q build && mkdir build` |
+| Clean build | `rmdir /s /q objdir && mkdir objdir` |
 
 ## Next Steps
 
 - Configure [admins.json](../configs/admins.json) with your SteamID
-- Set up [database.json](../configs/database.json) with your PostgreSQL credentials
+- Set up [settings.json](../configs/settings.json) with your database and plugin configuration

@@ -7,49 +7,50 @@
 import os
 
 # =============================================================================
-# SOURCE FILES - Add your .cpp files here
+# SOURCE FILES - Auto-discovered from src/ and vendor/cs2-kit/src/
 # =============================================================================
-SOURCES = [
-    # Core
-    "core/plugin.cpp",
-    "core/config.cpp",
+SRC_DIR = os.path.join(builder.sourcePath, "src")
+CS2KIT_DIR = os.path.join(builder.sourcePath, "vendor", "cs2-kit")
+CS2KIT_SRC_DIR = os.path.join(CS2KIT_DIR, "src")
+CS2KIT_INCLUDE_DIR = os.path.join(CS2KIT_DIR, "include")
 
-    # Utilities
-    "utils/steamid.cpp",
-    "utils/time.cpp",
-    "utils/string.cpp",
+SOURCES = []
+for root, dirs, files in os.walk(SRC_DIR):
+    for f in files:
+        if f.endswith(".cpp"):
+            SOURCES.append(os.path.relpath(os.path.join(root, f), SRC_DIR))
 
-    # Database
-    "database/database.cpp",
-    "database/entities/admin.cpp",
-    "database/entities/admin_group.cpp",
-    "database/entities/ban.cpp",
-    "database/entities/mute.cpp",
-    "database/entities/gag.cpp",
-    "database/repositories/admin_repository.cpp",
-    "database/repositories/ban_repository.cpp",
+# cs2-kit library sources (compiled inline for source inclusion approach)
+CS2KIT_SOURCES = []
+for root, dirs, files in os.walk(CS2KIT_SRC_DIR):
+    for f in files:
+        if f.endswith(".cpp"):
+            CS2KIT_SOURCES.append(os.path.join(root, f))
 
-    # Player
-    "player/player.cpp",
-    "player/player_manager.cpp",
-
-    # Admin
-    "admin/admin_manager.cpp",
-
-    # Commands
-    "commands/command.cpp",
-    "commands/command_manager.cpp",
-
-    # Punishments
-    "punishments/punishment_manager.cpp",
-]
+SOURCES.sort()
+CS2KIT_SOURCES.sort()
 
 # =============================================================================
 # LIBRARIES - Platform-specific libraries
 # =============================================================================
 WINDOWS_LIBS = [
-    "libpq.lib",
+    # libpqxx + libpq (static)
     "pqxx.lib",
+    "libpq.lib",
+    "libpgcommon.lib",
+    "libpgport.lib",
+    # OpenSSL (static, required by libpq)
+    "libssl.lib",
+    "libcrypto.lib",
+    # Compression (static, required by libpq)
+    "zlib.lib",
+    "lz4.lib",
+    # Windows system libs required by OpenSSL/libpq
+    "crypt32.lib",
+    "secur32.lib",
+    "wldap32.lib",
+    # Required by sigscanner (GetModuleInformation)
+    "psapi.lib",
 ]
 
 LINUX_LIBS = [
@@ -67,9 +68,24 @@ for sdk_target in Plugin.sdk_targets:
 
     binary = Plugin.create_library(builder, cxx, sdk)
 
-    # Add source files
+    # Add cs2-kit public include path (for #include <CS2Kit/...>)
+    binary.compiler.cxxincludes += [CS2KIT_INCLUDE_DIR]
+
+    # Add cs2-kit src/ for internal headers (needed by cs2-kit .cpp files compiled inline)
+    binary.compiler.cxxincludes += [CS2KIT_SRC_DIR]
+
+    # nlohmann/json (from cs2-kit submodule, fallback for non-vcpkg builds)
+    nlohmann_include = os.path.join(CS2KIT_DIR, "vendor", "nlohmann", "single_include")
+    if os.path.isdir(nlohmann_include):
+        binary.compiler.cxxincludes += [nlohmann_include]
+
+    # Add plugin source files
     for src in SOURCES:
         binary.sources += [os.path.join(builder.sourcePath, "src", src)]
+
+    # Add cs2-kit library source files (source inclusion approach)
+    for src in CS2KIT_SOURCES:
+        binary.sources += [src]
 
     # Link libraries
     if binary.compiler.like("msvc"):

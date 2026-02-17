@@ -1,0 +1,26 @@
+{
+  "adminPanel": "Админ Панель",
+  "playerManagement": "Управление игроками",
+  "serverManagement": "Управление сервером",
+  "playerActions": "Действия с игроком",
+  "selectDuration": "Выберите длительность",
+
+  "actionKick": "Кик",
+  "actionBan": "Бан",
+  "actionMute": "Мут",
+  "actionGag": "Гаг",
+  "actionWarn": "Предупреждение",
+  "actionChangemap": "Сменить карту",
+  "actionRestartRound": "Перезапустить раунд",
+
+  "duration5min": "5 минут",
+  "duration30min": "30 минут",
+  "duration1h": "1 час",
+  "duration1d": "1 день",
+  "duration7d": "7 дней",
+  "durationPerm": "Навсегда",
+
+  "noPlayers": "Нет доступных игроков",
+  "noPermission": "У вас нет прав для использования этой команды.",
+  "menuOpened": "Меню администратора открыто."
+}

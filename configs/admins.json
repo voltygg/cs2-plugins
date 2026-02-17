@@ -1,13 +1,62 @@
 {
-  "$schema": "./schemas/admins.schema.json",
+  "groups": [
+    {
+      "name": "superadmin",
+      "flags": "z",
+      "immunity": 100
+    },
+    {
+      "name": "headadmin",
+      "flags": "bcdefghijklmnopqr",
+      "immunity": 80
+    },
+    {
+      "name": "admin",
+      "flags": "bcdfopqr",
+      "immunity": 60
+    },
+    {
+      "name": "moderator",
+      "flags": "bcopqr",
+      "immunity": 40
+    },
+    {
+      "name": "vip",
+      "flags": "a",
+      "immunity": 5
+    }
+  ],
+  "flagDescriptions": {
+    "a": "Reserved slot access",
+    "b": "Generic admin",
+    "c": "Kick players",
+    "d": "Ban players",
+    "e": "Unban players",
+    "f": "Slay/harm players",
+    "g": "Change map",
+    "h": "Change cvars",
+    "i": "Execute configs",
+    "j": "Special chat",
+    "k": "Create votes",
+    "l": "Set password",
+    "m": "RCON access",
+    "n": "Cheat commands",
+    "o": "Mute players",
+    "p": "Gag players",
+    "q": "Warn players",
+    "r": "Admin menu access",
+    "s": "Custom 1",
+    "t": "Custom 2",
+    "u": "Custom 3",
+    "z": "Root (all permissions)"
+  },
   "admins": [
     {
-      "steam_id": "76561198153558892",
+      "steamId": "76561198153558892",
       "name": ".NET Player",
       "groups": ["superadmin"],
       "flags": "",
-      "immunity": 100,
-      "notes": "Server owner"
+      "immunity": 100
     }
   ]
 }

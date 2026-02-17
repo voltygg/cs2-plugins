@@ -1,0 +1,18 @@
+{
+  "plugin": {
+    "logLevel": "info"
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "admin_system",
+    "username": "postgres",
+    "password": "Test12345#",
+    "schema": "admin_system",
+    "sslMode": "prefer"
+  },
+  "punishments": {
+    "defaultBanReason": "Banned by administrator",
+    "warningThreshold": 3
+  }
+}
