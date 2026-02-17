@@ -5,6 +5,7 @@
       "includePath": [
         "${workspaceFolder}/src",
         "${workspaceFolder}/vendor/cs2-kit/include",
+        "${workspaceFolder}/vendor/cs2-kit/src",
         "${workspaceFolder}/vendor/cs2-kit/vendor/mmsource-2.0/core",
         "${workspaceFolder}/vendor/cs2-kit/vendor/mmsource-2.0/core/sourcehook",
         "${workspaceFolder}/vendor/cs2-kit/vendor/hl2sdk-cs2/common",
@@ -49,6 +50,7 @@
       "includePath": [
         "${workspaceFolder}/src",
         "${workspaceFolder}/vendor/cs2-kit/include",
+        "${workspaceFolder}/vendor/cs2-kit/src",
         "${workspaceFolder}/vendor/cs2-kit/vendor/mmsource-2.0/core",
         "${workspaceFolder}/vendor/cs2-kit/vendor/mmsource-2.0/core/sourcehook",
         "${workspaceFolder}/vendor/cs2-kit/vendor/hl2sdk-cs2/common",
