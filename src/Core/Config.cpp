@@ -1,8 +1,9 @@
 #include "Config.hpp"
 
 #include "../Admin/AdminManager.hpp"
-#include "../Utils/Log.hpp"
-#include "PluginContext.hpp"
+
+#include "../../vendor/cs2-kit/src/Core/IPathResolver.hpp"
+#include "../../vendor/cs2-kit/src/Utils/Log.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -10,7 +11,7 @@
 
 using json = nlohmann::json;
 using namespace AdminSystem::Admin;
-using namespace AdminSystem::Utils;
+using namespace CS2Kit::Utils;
 using namespace AdminSystem::Database;
 
 namespace AdminSystem::Core
@@ -147,7 +148,8 @@ bool ConfigManager::LoadJsonFile(const std::string& filePath, json& outJson)
 {
     try
     {
-        auto resolvedPath = PluginContext::Instance().ResolvePath(filePath);
+        auto* resolver = CS2Kit::Core::GetGlobalPathResolver();
+        auto resolvedPath = resolver ? resolver->ResolvePath(filePath) : std::filesystem::path(filePath);
 
         std::ifstream file(resolvedPath);
         if (!file.is_open())

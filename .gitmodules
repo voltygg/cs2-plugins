@@ -9,3 +9,6 @@
 	path = vendor/mmsource-2.0
 	url = https://github.com/alliedmodders/metamod-source
 	branch = master
+[submodule "vendor/cs2-kit"]
+	path = vendor/cs2-kit
+	url = https://github.com/suxrobGM/cs2-kit.git

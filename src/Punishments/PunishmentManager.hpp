@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Singleton.hpp"
+#include "../../vendor/cs2-kit/src/Core/Singleton.hpp"
 #include "../Database/Entities/Ban.hpp"
 #include "../Database/Entities/Mute.hpp"
 #include "../Database/Entities/Gag.hpp"
@@ -15,7 +15,7 @@ namespace AdminSystem::Punishments {
  * Manages active punishments (bans, mutes, gags, warnings).
  * Caches active punishments in memory and syncs with the database.
  */
-class PunishmentManager : public Core::Singleton<PunishmentManager> {
+class PunishmentManager : public CS2Kit::Core::Singleton<PunishmentManager> {
 public:
     explicit PunishmentManager(Token) {}
 

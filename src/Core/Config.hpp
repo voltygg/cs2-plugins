@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Database/Database.hpp"
-#include "Singleton.hpp"
+#include "../../vendor/cs2-kit/src/Core/Singleton.hpp"
 
 #include <nlohmann/json_fwd.hpp>
 #include <string>
@@ -21,7 +21,7 @@ struct PluginConfig
  * Loads and owns all JSON configuration (settings.json, admins.json).
  * Provides read-only access to parsed config structs.
  */
-class ConfigManager : public Singleton<ConfigManager>
+class ConfigManager : public CS2Kit::Core::Singleton<ConfigManager>
 {
 public:
     explicit ConfigManager(Token) {}

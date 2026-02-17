@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Singleton.hpp"
+#include "../../vendor/cs2-kit/src/Core/Singleton.hpp"
 #include "Player.hpp"
 
 #include <memory>
@@ -14,7 +14,7 @@ namespace AdminSystem::Players
  * Manages all connected players, indexed by slot and SteamID.
  * Main-thread-only (no mutex) — all access happens from game thread callbacks.
  */
-class PlayerManager : public Core::Singleton<PlayerManager>
+class PlayerManager : public CS2Kit::Core::Singleton<PlayerManager>
 {
 public:
     explicit PlayerManager(Token) {}

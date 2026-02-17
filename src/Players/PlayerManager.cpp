@@ -1,11 +1,11 @@
 #include "PlayerManager.hpp"
 
-#include "../Utils/StringUtils.hpp"
+#include "../../vendor/cs2-kit/src/Utils/StringUtils.hpp"
 
 namespace AdminSystem::Players
 {
 
-using namespace AdminSystem::Utils;
+using namespace CS2Kit::Utils;
 
 Player* PlayerManager::AddPlayer(int slot, int64_t steamId, const std::string& name, const std::string& ipAddress)
 {

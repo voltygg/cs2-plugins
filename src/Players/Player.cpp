@@ -1,8 +1,8 @@
 #include "Player.hpp"
 
-#include "../Utils/TimeUtils.hpp"
+#include "../../vendor/cs2-kit/src/Utils/TimeUtils.hpp"
 
-using namespace AdminSystem::Utils;
+using namespace CS2Kit::Utils;
 
 namespace AdminSystem::Players
 {

@@ -1,11 +1,11 @@
 #include "Ban.hpp"
 
-#include "../../Utils/TimeUtils.hpp"
+#include "../../../vendor/cs2-kit/src/Utils/TimeUtils.hpp"
 
 namespace AdminSystem::Database
 {
 
-using namespace AdminSystem::Utils;
+using namespace CS2Kit::Utils;
 
 bool Ban::IsExpired() const
 {

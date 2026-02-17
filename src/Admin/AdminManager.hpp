@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Singleton.hpp"
+#include "../../vendor/cs2-kit/src/Core/Singleton.hpp"
 #include "../Database/Entities/Admin.hpp"
 #include "../Database/Entities/AdminGroup.hpp"
 
@@ -15,7 +15,7 @@ namespace AdminSystem::Admin
  * Admins are loaded from JSON config and/or database. Flags are resolved into
  * uint32_t bitmasks for O(1) permission checks ('a'=bit0 ... 'z'=bit25).
  */
-class AdminManager : public Core::Singleton<AdminManager>
+class AdminManager : public CS2Kit::Core::Singleton<AdminManager>
 {
 public:
     explicit AdminManager(Token) {}

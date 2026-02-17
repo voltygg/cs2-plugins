@@ -1,23 +1,24 @@
 #include "AdminMenu.hpp"
 
-#include "../Menu/MenuBuilder.hpp"
-#include "../Menu/MenuManager.hpp"
 #include "../Players/PlayerManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
-#include "../Utils/Log.hpp"
-#include "../Utils/Translations.hpp"
 #include "AdminManager.hpp"
+
+#include "../../vendor/cs2-kit/src/Menu/MenuBuilder.hpp"
+#include "../../vendor/cs2-kit/src/Menu/MenuManager.hpp"
+#include "../../vendor/cs2-kit/src/Utils/Log.hpp"
+#include "../../vendor/cs2-kit/src/Utils/Translations.hpp"
 
 #include <format>
 
 using namespace AdminSystem::Database;
 using namespace AdminSystem::Players;
 using namespace AdminSystem::Punishments;
-using namespace AdminSystem::Utils;
+using namespace CS2Kit::Utils;
 
 // Import specific Menu types (not the whole namespace — it conflicts with the Menu struct)
-using AdminSystem::Menu::MenuBuilder;
-using AdminSystem::Menu::MenuManager;
+using CS2Kit::Menu::MenuBuilder;
+using CS2Kit::Menu::MenuManager;
 
 namespace AdminSystem::Admin
 {
@@ -26,7 +27,7 @@ namespace AdminSystem::Admin
 // Helper: Build a timed-punishment duration submenu (shared by Ban/Mute/Gag)
 //-----------------------------------------------------------------------------
 
-static std::shared_ptr<Menu::Menu> BuildTimedPunishmentMenu(
+static std::shared_ptr<CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
     int adminSlot, int targetSlot, const std::string& actionName,
     std::function<void(int slot, int target, int duration)> onDuration)
 {
@@ -89,7 +90,7 @@ static std::function<void(int, int, int)> MakePunishmentCallback(IssueFunc issue
 // Duration selection submenu (public API)
 //-----------------------------------------------------------------------------
 
-std::shared_ptr<Menu::Menu> BuildDurationMenu(int adminSlot, int targetSlot, const std::string& actionName,
+std::shared_ptr<CS2Kit::Menu::Menu> BuildDurationMenu(int adminSlot, int targetSlot, const std::string& actionName,
                                               std::function<void(int, int, int)> onDuration)
 {
     return BuildTimedPunishmentMenu(adminSlot, targetSlot, actionName, std::move(onDuration));
@@ -99,7 +100,7 @@ std::shared_ptr<Menu::Menu> BuildDurationMenu(int adminSlot, int targetSlot, con
 // Player actions submenu
 //-----------------------------------------------------------------------------
 
-std::shared_ptr<Menu::Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot)
+std::shared_ptr<CS2Kit::Menu::Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Translations::Instance();
     auto& adminMgr = AdminManager::Instance();
@@ -217,7 +218,7 @@ std::shared_ptr<Menu::Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot
 // Player list submenu
 //-----------------------------------------------------------------------------
 
-std::shared_ptr<Menu::Menu> BuildPlayerListMenu(int adminSlot)
+std::shared_ptr<CS2Kit::Menu::Menu> BuildPlayerListMenu(int adminSlot)
 {
     auto& tr = Translations::Instance();
     auto& plrMgr = PlayerManager::Instance();
@@ -248,7 +249,7 @@ std::shared_ptr<Menu::Menu> BuildPlayerListMenu(int adminSlot)
 // Server management submenu
 //-----------------------------------------------------------------------------
 
-std::shared_ptr<Menu::Menu> BuildServerMenu(int adminSlot)
+std::shared_ptr<CS2Kit::Menu::Menu> BuildServerMenu(int adminSlot)
 {
     auto& tr = Translations::Instance();
 
@@ -278,7 +279,7 @@ std::shared_ptr<Menu::Menu> BuildServerMenu(int adminSlot)
 // Main admin menu
 //-----------------------------------------------------------------------------
 
-std::shared_ptr<Menu::Menu> BuildAdminMainMenu(int adminSlot)
+std::shared_ptr<CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
 {
     auto& tr = Translations::Instance();
     auto& adminMgr = AdminManager::Instance();

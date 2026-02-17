@@ -2,24 +2,28 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/AdminMenu.hpp"
-#include "../Commands/Command.hpp"
-#include "../Commands/CommandManager.hpp"
-#include "../Database/Database.hpp"
-#include "../Menu/MenuManager.hpp"
 #include "../Players/PlayerManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
-#include "../Sdk/ConVarService.hpp"
-#include "../Sdk/Entity.hpp"
-#include "../Sdk/GameData.hpp"
-#include "../Sdk/GameEventService.hpp"
-#include "../Sdk/GameInterfaces.hpp"
-#include "../Sdk/Schema.hpp"
-#include "../Sdk/UserMessage.hpp"
-#include "../Utils/Log.hpp"
-#include "../Utils/Translations.hpp"
+#include "Adapters.hpp"
 #include "Config.hpp"
-#include "PluginContext.hpp"
-#include "Scheduler.hpp"
+
+#include "../../vendor/cs2-kit/src/Commands/Command.hpp"
+#include "../../vendor/cs2-kit/src/Commands/CommandManager.hpp"
+#include "../../vendor/cs2-kit/src/Core/ILogger.hpp"
+#include "../../vendor/cs2-kit/src/Core/IPathResolver.hpp"
+#include "../../vendor/cs2-kit/src/Core/Scheduler.hpp"
+#include "../../vendor/cs2-kit/src/Menu/MenuManager.hpp"
+#include "../../vendor/cs2-kit/src/Sdk/ConVarService.hpp"
+#include "../../vendor/cs2-kit/src/Sdk/Entity.hpp"
+#include "../../vendor/cs2-kit/src/Sdk/GameData.hpp"
+#include "../../vendor/cs2-kit/src/Sdk/GameEventService.hpp"
+#include "../../vendor/cs2-kit/src/Sdk/GameInterfaces.hpp"
+#include "../../vendor/cs2-kit/src/Sdk/Schema.hpp"
+#include "../../vendor/cs2-kit/src/Sdk/UserMessage.hpp"
+#include "../../vendor/cs2-kit/src/Utils/Log.hpp"
+#include "../../vendor/cs2-kit/src/Utils/Translations.hpp"
+
+#include "../Database/Database.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -31,17 +35,22 @@
 #include <schemasystem/schemasystem.h>
 
 using namespace AdminSystem::Admin;
-using namespace AdminSystem::Commands;
 using namespace AdminSystem::Core;
 using namespace AdminSystem::Database;
-using namespace AdminSystem::Menu;
 using namespace AdminSystem::Players;
 using namespace AdminSystem::Punishments;
-using namespace AdminSystem::Sdk;
-using namespace AdminSystem::Utils;
+using namespace CS2Kit::Commands;
+using namespace CS2Kit::Menu;
+using namespace CS2Kit::Sdk;
+using namespace CS2Kit::Utils;
 
 // Global plugin instance
 AdminSystemPlugin g_AdminSystemPlugin;
+
+// Adapter instances (file-scope, lifetime matches the plugin)
+static HL2SDKLogger g_logger;
+static PluginPathResolver g_pathResolver;
+static SdkMenuIO g_menuIO;
 
 // Metamod plugin expose
 PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
@@ -63,8 +72,10 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     PLUGIN_SAVEVARS();
     _lateLoad = late;
 
-    // Store base directory for all subsystems (replaces scattered extern g_SMAPI usage)
-    PluginContext::Instance().BaseDir = ismm->GetBaseDir();
+    // Initialize CS2Kit adapters
+    g_pathResolver.SetBaseDir(ismm->GetBaseDir());
+    CS2Kit::Core::SetGlobalLogger(&g_logger);
+    CS2Kit::Core::SetGlobalPathResolver(&g_pathResolver);
 
     Log::Info("Loading v{}...", ADMIN_SYSTEM_VERSION);
 
@@ -180,7 +191,7 @@ void* AdminSystemPlugin::OnMetamodQuery(const char* iface, int* ret)
 
 void AdminSystemPlugin::Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
-    Scheduler::Instance().OnGameFrame();
+    CS2Kit::Core::Scheduler::Instance().OnGameFrame();
     MenuManager::Instance().OnGameFrame();
 }
 
@@ -245,10 +256,6 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
     if (message.empty())
         return;
 
-    // Quick check: at least one prefix must match
-    auto& cmdMgr = CommandManager::Instance();
-    // Delegate prefix checking to HandleChatMessage
-
     // Get player slot from context
     int playerSlot = ctx.GetPlayerSlot().Get();
     if (playerSlot < 0 || playerSlot >= 64)
@@ -258,7 +265,9 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
     if (!player)
         return;
 
-    bool handled = cmdMgr.HandleChatMessage(player, message);
+    PlayerCaller caller(player);
+    auto& cmdMgr = CommandManager::Instance();
+    bool handled = cmdMgr.HandleChatMessage(&caller, message);
 
     if (handled)
     {
@@ -327,6 +336,15 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
         Log::Warn("Game event service init failed.");
     }
 
+    // 6c. Initialize menu I/O adapter
+    MenuManager::Instance().SetMenuIO(&g_menuIO);
+
+    // 6d. Set up command permission callback
+    CommandManager::Instance().SetPermissionCallback(
+        [](int64_t steamId, const std::string& permission) -> bool {
+            return AdminManager::Instance().HasAnyPermission(steamId, permission);
+        });
+
     // 7. Initialize database connection (optional -- plugin works without DB)
     Log::Info("Connecting to database...");
     auto& db = Database::Instance();
@@ -374,7 +392,12 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
                         .WithUsage("!admin")
                         .RequirePermission("a")
                         .WithArgs(0, 0)
-                        .OnExecute([](Player* admin, const std::vector<std::string>& /*args*/) -> CommandResult {
+                        .OnExecute([](ICommandCaller* caller, const std::vector<std::string>& /*args*/) -> CommandResult {
+                            auto* playerCaller = dynamic_cast<PlayerCaller*>(caller);
+                            if (!playerCaller || !playerCaller->GetPlayer())
+                                return {false, "Invalid caller"};
+
+                            auto* admin = playerCaller->GetPlayer();
                             Log::Info("!admin handler: slot={}, steamid={}", admin->GetSlot(), admin->GetSteamID());
                             auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
                             if (mainMenu)
@@ -398,7 +421,7 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 12. Load translations
     Log::Info("Loading translations...");
-    auto& translations = Translations::Instance();
+    auto& translations = CS2Kit::Utils::Translations::Instance();
     translations.Load("addons/admin-system/configs/translations");
 
     // 13. Initialize menu manager (singleton, ready to use)
@@ -413,7 +436,7 @@ void AdminSystemPlugin::ShutdownSubsystems()
     Log::Info("Shutting down subsystems...");
 
     // Cancel all scheduled timers
-    Scheduler::Instance().CancelAll();
+    CS2Kit::Core::Scheduler::Instance().CancelAll();
 
     // Clear player manager
     PlayerManager::Instance().Clear();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Singleton.hpp"
+#include "../../vendor/cs2-kit/src/Core/Singleton.hpp"
 
 #include <memory>
 #include <mutex>
@@ -28,7 +28,7 @@ struct DatabaseConfig
  * PostgreSQL database access layer. Thread-safe (mutex-protected) since
  * future async queries may run off the game thread.
  */
-class Database : public Core::Singleton<Database>
+class Database : public CS2Kit::Core::Singleton<Database>
 {
 public:
     explicit Database(Token) {}

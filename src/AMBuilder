@@ -7,16 +7,26 @@
 import os
 
 # =============================================================================
-# SOURCE FILES - Auto-discovered from src/ directory
+# SOURCE FILES - Auto-discovered from src/ and vendor/cs2-kit/src/
 # =============================================================================
 SRC_DIR = os.path.join(builder.sourcePath, "src")
+CS2KIT_SRC_DIR = os.path.join(builder.sourcePath, "vendor", "cs2-kit", "src")
 
 SOURCES = []
 for root, dirs, files in os.walk(SRC_DIR):
     for f in files:
         if f.endswith(".cpp"):
             SOURCES.append(os.path.relpath(os.path.join(root, f), SRC_DIR))
+
+# cs2-kit library sources (relative to SRC_DIR for build output)
+CS2KIT_SOURCES = []
+for root, dirs, files in os.walk(CS2KIT_SRC_DIR):
+    for f in files:
+        if f.endswith(".cpp"):
+            CS2KIT_SOURCES.append(os.path.join(root, f))
+
 SOURCES.sort()
+CS2KIT_SOURCES.sort()
 
 # =============================================================================
 # LIBRARIES - Platform-specific libraries
@@ -56,9 +66,16 @@ for sdk_target in Plugin.sdk_targets:
 
     binary = Plugin.create_library(builder, cxx, sdk)
 
-    # Add source files
+    # Add cs2-kit include path
+    binary.compiler.cxxincludes += [CS2KIT_SRC_DIR]
+
+    # Add plugin source files
     for src in SOURCES:
         binary.sources += [os.path.join(builder.sourcePath, "src", src)]
+
+    # Add cs2-kit library source files
+    for src in CS2KIT_SOURCES:
+        binary.sources += [src]
 
     # Link libraries
     if binary.compiler.like("msvc"):
