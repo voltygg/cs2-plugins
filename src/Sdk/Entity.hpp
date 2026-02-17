@@ -1,10 +1,13 @@
 #pragma once
 
+#include "../Core/Singleton.hpp"
+
 #include <cstdint>
 #include <string>
 
 class CGameEntitySystem;
 class CEntityInstance;
+class CEntityIdentity;
 
 namespace AdminSystem::Sdk
 {
@@ -29,15 +32,42 @@ constexpr uint64_t IN_LOOK_AT_WEAPON = 0x800000000ULL;
 
 constexpr int MaxPlayers = 64;
 
-/** Initialize the entity system by resolving CGameEntitySystem from GameResourceService. */
-bool InitEntitySystem();
-/** Get the global CGameEntitySystem pointer (nullptr if not initialized). */
-CGameEntitySystem* GetEntitySystem();
-/** Get the CCSPlayerController entity for a player slot (nullptr if invalid). */
-CEntityInstance* GetPlayerController(int slot);
-/** Read the current button bitmask for a player (traverses pawn -> movement services -> buttons). */
-uint64_t GetPlayerButtons(int slot);
-/** Check whether a player slot index is in the valid range [0, MaxPlayers). */
-bool IsPlayerSlotValid(int slot);
+/**
+ * Entity system access layer. Resolves CGameEntitySystem from GameResourceService,
+ * provides player controller lookup, entity handle resolution, and button state reading.
+ */
+class EntitySystem : public Core::Singleton<EntitySystem>
+{
+public:
+    explicit EntitySystem(Token) {}
+
+    /** Initialize the entity system by resolving CGameEntitySystem from GameResourceService. */
+    bool Initialize();
+
+    /** Get the global CGameEntitySystem pointer (nullptr if not initialized). */
+    CGameEntitySystem* GetEntitySystem();
+
+    /** Get the CCSPlayerController entity for a player slot (nullptr if invalid). */
+    CEntityInstance* GetPlayerController(int slot);
+
+    /** Resolve a CHandle (entity handle) to a CEntityInstance pointer. */
+    CEntityInstance* ResolveEntityHandle(uint32_t handle);
+
+    /** Read the current button bitmask for a player (traverses pawn -> movement services -> buttons). */
+    uint64_t GetPlayerButtons(int slot);
+
+    /** Check whether a player slot index has a valid controller entity. */
+    bool IsPlayerSlotValid(int slot);
+
+private:
+    void ResolveSchemaOffsets();
+    CEntityIdentity* GetEntityIdentityByIndex(CGameEntitySystem* pSys, int index);
+
+    int _offsetPlayerPawn = -1;
+    int _offsetMovementServices = -1;
+    int _offsetButtons = -1;
+    int _offsetButtonStates = -1;
+    bool _schemaOffsetsResolved = false;
+};
 
 }  // namespace AdminSystem::Sdk

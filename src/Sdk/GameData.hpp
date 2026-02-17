@@ -14,9 +14,9 @@ namespace AdminSystem::Sdk
  */
 class GameData : public Core::Singleton<GameData>
 {
-    friend class Core::Singleton<GameData>;
-
 public:
+    explicit GameData(Token) {}
+
     /** Load signatures and offsets from a gamedata directory (expects signatures.jsonc). */
     bool Load(const std::string& path);
 
@@ -30,8 +30,6 @@ public:
     void* ResolveSignature(const std::string& name) const;
 
 private:
-    GameData() = default;
-
     struct SignatureEntry
     {
         std::string Library;

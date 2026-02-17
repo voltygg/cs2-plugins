@@ -16,9 +16,9 @@ namespace AdminSystem::Punishments {
  * Caches active punishments in memory and syncs with the database.
  */
 class PunishmentManager : public Core::Singleton<PunishmentManager> {
-    friend class Core::Singleton<PunishmentManager>;
-
 public:
+    explicit PunishmentManager(Token) {}
+
     bool LoadActivePunishments();
     std::optional<Database::Ban> GetActiveBan(int64_t steamId);
     bool IsMuted(int64_t steamId);
@@ -33,8 +33,6 @@ public:
     void ExpireOldPunishments();
 
 private:
-    PunishmentManager() = default;
-
     std::unordered_set<int64_t> _mutedPlayers;
     std::unordered_set<int64_t> _gaggedPlayers;
     std::unordered_map<int64_t, Database::Ban> _activeBans;

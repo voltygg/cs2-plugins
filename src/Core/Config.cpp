@@ -2,8 +2,7 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Utils/Log.hpp"
-
-#include <ISmmPlugin.h>
+#include "PluginContext.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -13,9 +12,6 @@ using json = nlohmann::json;
 using namespace AdminSystem::Admin;
 using namespace AdminSystem::Utils;
 using namespace AdminSystem::Database;
-
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace AdminSystem::Core
 {
@@ -151,11 +147,7 @@ bool ConfigManager::LoadJsonFile(const std::string& filePath, json& outJson)
 {
     try
     {
-        std::filesystem::path resolvedPath(filePath);
-        if (resolvedPath.is_relative() && g_SMAPI)
-        {
-            resolvedPath = std::filesystem::path(g_SMAPI->GetBaseDir()) / filePath;
-        }
+        auto resolvedPath = PluginContext::Instance().ResolvePath(filePath);
 
         std::ifstream file(resolvedPath);
         if (!file.is_open())

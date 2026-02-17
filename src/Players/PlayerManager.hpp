@@ -16,9 +16,9 @@ namespace AdminSystem::Players
  */
 class PlayerManager : public Core::Singleton<PlayerManager>
 {
-    friend class Core::Singleton<PlayerManager>;
-
 public:
+    explicit PlayerManager(Token) {}
+
     Player* AddPlayer(int slot, int64_t steamId, const std::string& name, const std::string& ipAddress);
     void RemovePlayer(int slot);
     void Clear();
@@ -29,8 +29,6 @@ public:
     size_t GetPlayerCount() const;
 
 private:
-    PlayerManager() = default;
-
     std::unordered_map<int, std::unique_ptr<Player>> _playersBySlot;
     std::unordered_map<int64_t, Player*> _playersBySteamId;
 };

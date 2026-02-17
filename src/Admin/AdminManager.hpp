@@ -17,9 +17,9 @@ namespace AdminSystem::Admin
  */
 class AdminManager : public Core::Singleton<AdminManager>
 {
-    friend class Core::Singleton<AdminManager>;
-
 public:
+    explicit AdminManager(Token) {}
+
     bool LoadAdmins();
     bool LoadGroups();
     bool Reload();
@@ -43,8 +43,6 @@ public:
     }
 
 private:
-    AdminManager() = default;
-
     uint32_t ResolveFlags(const Database::Admin& admin);
     int ResolveImmunity(const Database::Admin& admin);
 

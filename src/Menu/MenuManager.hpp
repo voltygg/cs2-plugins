@@ -12,9 +12,9 @@ namespace AdminSystem::Menu {
  * Driven by OnGameFrame() — reads button state each tick for input.
  */
 class MenuManager : public Core::Singleton<MenuManager> {
-    friend class Core::Singleton<MenuManager>;
-
 public:
+    explicit MenuManager(Token) {}
+
     void OpenMenu(int slot, std::shared_ptr<Menu> menu);
     void CloseMenu(int slot);
     void CloseAllMenus(int slot);
@@ -23,8 +23,6 @@ public:
     void OnPlayerDisconnect(int slot);
 
 private:
-    MenuManager() = default;
-
     void HandleInput(int slot, uint64_t buttons, uint64_t prevButtons);
     void RenderMenu(int slot);
 

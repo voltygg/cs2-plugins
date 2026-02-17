@@ -8,14 +8,18 @@
 #include "../Menu/MenuManager.hpp"
 #include "../Players/PlayerManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
+#include "../Sdk/ConVarService.hpp"
 #include "../Sdk/Entity.hpp"
 #include "../Sdk/GameData.hpp"
+#include "../Sdk/GameEventService.hpp"
 #include "../Sdk/GameInterfaces.hpp"
 #include "../Sdk/Schema.hpp"
 #include "../Sdk/UserMessage.hpp"
 #include "../Utils/Log.hpp"
 #include "../Utils/Translations.hpp"
 #include "Config.hpp"
+#include "PluginContext.hpp"
+#include "Scheduler.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -59,6 +63,9 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     PLUGIN_SAVEVARS();
     _lateLoad = late;
 
+    // Store base directory for all subsystems (replaces scattered extern g_SMAPI usage)
+    PluginContext::Instance().BaseDir = ismm->GetBaseDir();
+
     Log::Info("Loading v{}...", ADMIN_SYSTEM_VERSION);
 
     // Get SDK interfaces - store in centralized GameInterfaces singleton
@@ -72,6 +79,7 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     GET_V_IFACE_CURRENT(GetEngineFactory, gi.GameResourceService, IGameResourceService,
                         GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
     GET_V_IFACE_ANY(GetEngineFactory, gi.CVar, ICvar, CVAR_INTERFACE_VERSION);
+    GET_V_IFACE_ANY(GetEngineFactory, gi.Engine, IVEngineServer2, INTERFACEVERSION_VENGINESERVER);
 
     // Also set the SDK global g_pCVar — required by ConCommandRef::GetName()
     // (convar.cpp from HL2SDK uses this global internally)
@@ -172,6 +180,7 @@ void* AdminSystemPlugin::OnMetamodQuery(const char* iface, int* ret)
 
 void AdminSystemPlugin::Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
 {
+    Scheduler::Instance().OnGameFrame();
     MenuManager::Instance().OnGameFrame();
 }
 
@@ -277,7 +286,7 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 3. Initialize SDK message system
     Log::Info("Initializing SDK message system...");
-    if (!InitMessageSystem())
+    if (!MessageSystem::Instance().Initialize())
     {
         Log::Error("Failed to initialize message system.");
         return false;
@@ -285,23 +294,37 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // 4. Initialize schema system (resolves entity field offsets at runtime)
     Log::Info("Initializing schema system...");
-    if (!InitSchemaSystem())
+    if (!SchemaService::Instance().Initialize())
     {
         Log::Warn("Schema system init failed (button detection may not work).");
     }
 
     // 5. Initialize entity system
     Log::Info("Initializing entity system...");
-    if (!InitEntitySystem())
+    if (!EntitySystem::Instance().Initialize())
     {
         Log::Warn("Entity system init failed (menus may not work).");
     }
 
     // 6. Resolve IGameEventManager2 via signature scanning
     Log::Info("Resolving game event manager...");
-    if (!InitGameEventManager())
+    if (!MessageSystem::Instance().InitGameEventManager())
     {
         Log::Warn("Game event manager not resolved (center HTML display will not work).");
+    }
+
+    // 6a. Initialize ConVar service
+    Log::Info("Initializing ConVar service...");
+    if (!ConVarService::Instance().Initialize())
+    {
+        Log::Warn("ConVar service init failed.");
+    }
+
+    // 6b. Initialize game event service
+    Log::Info("Initializing game event service...");
+    if (!GameEventService::Instance().Initialize())
+    {
+        Log::Warn("Game event service init failed.");
     }
 
     // 7. Initialize database connection (optional -- plugin works without DB)
@@ -388,6 +411,9 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 void AdminSystemPlugin::ShutdownSubsystems()
 {
     Log::Info("Shutting down subsystems...");
+
+    // Cancel all scheduled timers
+    Scheduler::Instance().CancelAll();
 
     // Clear player manager
     PlayerManager::Instance().Clear();

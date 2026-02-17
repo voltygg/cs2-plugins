@@ -5,7 +5,6 @@
 #include "GameInterfaces.hpp"
 #include "SigScanner.hpp"
 
-#include <ISmmPlugin.h>
 #include <igameevents.h>
 
 #include <engine/igameeventsystem.h>
@@ -16,17 +15,10 @@
 
 using namespace AdminSystem::Utils;
 
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
-
 namespace AdminSystem::Sdk
 {
 
-// GetLegacyGameEventListener function pointer - resolved via signature
-using GetLegacyGameEventListenerFn = IGameEventListener2* (*)(CPlayerSlot slot);
-static GetLegacyGameEventListenerFn sGetLegacyListener = nullptr;
-
-bool InitMessageSystem()
+bool MessageSystem::Initialize()
 {
     auto& interfaces = GameInterfaces::Instance();
 
@@ -46,7 +38,7 @@ bool InitMessageSystem()
     return true;
 }
 
-bool InitGameEventManager()
+bool MessageSystem::InitGameEventManager()
 {
     auto& interfaces = GameInterfaces::Instance();
     auto& gameData = GameData::Instance();
@@ -77,7 +69,7 @@ bool InitGameEventManager()
     void* legacyListenerAddr = gameData.FindSignature("LegacyGameEventListener");
     if (legacyListenerAddr)
     {
-        sGetLegacyListener = reinterpret_cast<GetLegacyGameEventListenerFn>(legacyListenerAddr);
+        _getLegacyListener = reinterpret_cast<GetLegacyGameEventListenerFn>(legacyListenerAddr);
         Log::Info("LegacyGameEventListener resolved.");
     }
     else
@@ -88,10 +80,7 @@ bool InitGameEventManager()
     return interfaces.GameEventManager != nullptr;
 }
 
-// Fresh event each frame, matching cs2-menus pattern exactly:
-// CreateEvent -> SetFields -> FireGameEvent -> FreeEvent, every frame, duration=5.
-
-void SendCenterHtml(int slot, const std::string& html)
+void MessageSystem::SendCenterHtml(int slot, const std::string& html)
 {
     auto* gameEventManager = GameInterfaces::Instance().GameEventManager;
     if (!gameEventManager || slot < 0 || slot >= 64)
@@ -105,9 +94,9 @@ void SendCenterHtml(int slot, const std::string& html)
     pEvent->SetInt("userid", slot);
     pEvent->SetInt("duration", 5);
 
-    if (sGetLegacyListener)
+    if (_getLegacyListener)
     {
-        IGameEventListener2* pListener = sGetLegacyListener(CPlayerSlot(slot));
+        IGameEventListener2* pListener = _getLegacyListener(CPlayerSlot(slot));
         if (pListener)
         {
             pListener->FireGameEvent(pEvent);
@@ -120,31 +109,30 @@ void SendCenterHtml(int slot, const std::string& html)
     gameEventManager->FireEvent(pEvent);
 }
 
-void SendChatMessage(int slot, const std::string& message)
+void MessageSystem::SendChatMessage(int slot, const std::string& message)
 {
     auto& interfaces = GameInterfaces::Instance();
     if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || slot < 0 || slot >= 64)
         return;
 
-    static INetworkMessageInternal* sSayText2Internal = nullptr;
-    if (!sSayText2Internal)
+    if (!_sayText2Internal)
     {
-        sSayText2Internal = interfaces.NetworkMessages->FindNetworkMessageById(UmSayText2);
-        if (!sSayText2Internal)
-            sSayText2Internal = interfaces.NetworkMessages->FindNetworkMessage("CUserMessageSayText2");
+        _sayText2Internal = interfaces.NetworkMessages->FindNetworkMessageById(UmSayText2);
+        if (!_sayText2Internal)
+            _sayText2Internal = interfaces.NetworkMessages->FindNetworkMessage("CUserMessageSayText2");
     }
 
-    if (!sSayText2Internal)
+    if (!_sayText2Internal)
         return;
 
-    CNetMessage* pMsg = sSayText2Internal->AllocateMessage();
+    CNetMessage* pMsg = _sayText2Internal->AllocateMessage();
     if (!pMsg)
         return;
 
     auto* pSayText = pMsg->ToPB<CUserMessageSayText2>();
     if (!pSayText)
     {
-        interfaces.NetworkMessages->DeallocateNetMessageAbstract(sSayText2Internal, pMsg);
+        interfaces.NetworkMessages->DeallocateNetMessageAbstract(_sayText2Internal, pMsg);
         return;
     }
     pSayText->set_entityindex(-1);
@@ -153,13 +141,13 @@ void SendChatMessage(int slot, const std::string& message)
 
     uint64_t clients = (1ULL << slot);
 
-    interfaces.GameEventSystem->PostEventAbstract(0, false, 1, &clients, sSayText2Internal, pMsg, 0,
+    interfaces.GameEventSystem->PostEventAbstract(0, false, 1, &clients, _sayText2Internal, pMsg, 0,
                                                   NetChannelBufType_t::BUF_RELIABLE);
 
-    interfaces.NetworkMessages->DeallocateNetMessageAbstract(sSayText2Internal, pMsg);
+    interfaces.NetworkMessages->DeallocateNetMessageAbstract(_sayText2Internal, pMsg);
 }
 
-void ClearCenterHtml(int slot)
+void MessageSystem::ClearCenterHtml(int slot)
 {
     SendCenterHtml(slot, " ");
 }

@@ -2,8 +2,6 @@
 
 #include "../Utils/Log.hpp"
 
-#include <ISmmPlugin.h>
-
 #include <sstream>
 #include <vector>
 
@@ -17,9 +15,6 @@
 #endif
 
 using namespace AdminSystem::Utils;
-
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace AdminSystem::Sdk
 {

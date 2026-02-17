@@ -15,9 +15,9 @@ namespace AdminSystem::Commands
  */
 class CommandManager : public Core::Singleton<CommandManager>
 {
-    friend class Core::Singleton<CommandManager>;
-
 public:
+    explicit CommandManager(Token) { _prefixes = {"!", "."}; }
+
     void Register(Command cmd);
     void Unregister(const std::string& name);
     bool HandleChatMessage(Players::Player* player, const std::string& message);
@@ -27,8 +27,6 @@ public:
     void SetPrefixes(const std::vector<std::string>& prefixes) { _prefixes = prefixes; }
 
 private:
-    CommandManager() { _prefixes = {"!", "."}; }
-
     std::vector<std::string> ParseArguments(const std::string& text) const;
 
     std::unordered_map<std::string, Command> _commands;

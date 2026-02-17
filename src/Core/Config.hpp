@@ -23,9 +23,9 @@ struct PluginConfig
  */
 class ConfigManager : public Singleton<ConfigManager>
 {
-    friend class Singleton<ConfigManager>;
-
 public:
+    explicit ConfigManager(Token) {}
+
     /** Load the consolidated settings.json (plugin, database, commands, punishments, admin). */
     bool LoadSettings(const std::string& path);
 
@@ -36,8 +36,6 @@ public:
     const Database::DatabaseConfig& GetDatabaseConfig() const { return _databaseConfig; }
 
 private:
-    ConfigManager() = default;
-
     bool LoadJsonFile(const std::string& filePath, nlohmann::json& outJson);
 
     PluginConfig _pluginConfig;

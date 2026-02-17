@@ -30,9 +30,9 @@ struct DatabaseConfig
  */
 class Database : public Core::Singleton<Database>
 {
-    friend class Core::Singleton<Database>;
-
 public:
+    explicit Database(Token) {}
+
     bool Initialize(const DatabaseConfig& config);
     void Shutdown();
     bool IsConnected() const;
@@ -43,8 +43,6 @@ public:
     pqxx::result ExecutePrepared(const std::string& name, const std::string& query, Args&&... params);
 
 private:
-    Database() = default;
-
     DatabaseConfig _config;
     std::string _connectionString;
     bool _initialized = false;

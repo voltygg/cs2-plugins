@@ -1,15 +1,11 @@
 #include "Translations.hpp"
 
+#include "../Core/PluginContext.hpp"
 #include "Log.hpp"
-
-#include <ISmmPlugin.h>
 
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
-
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace AdminSystem::Utils
 {
@@ -19,9 +15,7 @@ bool Translations::Load(const std::string& dirPath)
     _translations.clear();
     namespace fs = std::filesystem;
 
-    fs::path resolvedPath(dirPath);
-    if (resolvedPath.is_relative() && g_SMAPI)
-        resolvedPath = fs::path(g_SMAPI->GetBaseDir()) / dirPath;
+    auto resolvedPath = Core::PluginContext::Instance().ResolvePath(dirPath);
 
     if (!fs::exists(resolvedPath) || !fs::is_directory(resolvedPath))
     {

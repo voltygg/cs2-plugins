@@ -3,24 +3,14 @@
 #include "../Utils/Log.hpp"
 #include "GameInterfaces.hpp"
 
-#include <ISmmPlugin.h>
-
-#include <map>
 #include <schemasystem/schemasystem.h>
-#include <string>
 
 using namespace AdminSystem::Utils;
-
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace AdminSystem::Sdk
 {
 
-// Cache: className -> (fieldName -> offset)
-static std::map<std::string, std::map<std::string, int>> sOffsetCache;
-
-bool InitSchemaSystem()
+bool SchemaService::Initialize()
 {
     if (!GameInterfaces::Instance().SchemaSystem)
     {
@@ -32,15 +22,15 @@ bool InitSchemaSystem()
     return true;
 }
 
-int GetSchemaOffset(const char* className, const char* fieldName)
+int SchemaService::GetOffset(const char* className, const char* fieldName)
 {
     auto* schemaSystem = GameInterfaces::Instance().SchemaSystem;
     if (!schemaSystem)
         return -1;
 
     // Check cache first
-    auto classIt = sOffsetCache.find(className);
-    if (classIt != sOffsetCache.end())
+    auto classIt = _offsetCache.find(className);
+    if (classIt != _offsetCache.end())
     {
         auto fieldIt = classIt->second.find(fieldName);
         if (fieldIt != classIt->second.end())
@@ -78,7 +68,7 @@ int GetSchemaOffset(const char* className, const char* fieldName)
             int offset = field.m_nSingleInheritanceOffset;
 
             // Cache it
-            sOffsetCache[className][fieldName] = offset;
+            _offsetCache[className][fieldName] = offset;
 
             Log::Info("Schema: {}::{} = 0x{:X} ({})", className, fieldName, offset, offset);
             return offset;

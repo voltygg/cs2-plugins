@@ -1,18 +1,15 @@
 #include "GameData.hpp"
 
+#include "../Core/PluginContext.hpp"
 #include "../Utils/Log.hpp"
 #include "SigScanner.hpp"
-
-#include <ISmmPlugin.h>
 
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
+using namespace AdminSystem::Core;
 using namespace AdminSystem::Utils;
-
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace AdminSystem::Sdk
 {
@@ -21,7 +18,7 @@ bool GameData::Load(const std::string& path)
 {
     try
     {
-        auto fullPath = std::filesystem::path(g_SMAPI->GetBaseDir()) / path;
+        auto fullPath = PluginContext::Instance().ResolvePath(path);
         std::ifstream file(fullPath);
         if (!file.is_open())
         {

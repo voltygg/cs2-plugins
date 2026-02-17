@@ -8,8 +8,6 @@
 #include "../Utils/Translations.hpp"
 #include "AdminManager.hpp"
 
-#include <ISmmPlugin.h>
-
 #include <format>
 
 using namespace AdminSystem::Database;
@@ -20,9 +18,6 @@ using namespace AdminSystem::Utils;
 // Import specific Menu types (not the whole namespace — it conflicts with the Menu struct)
 using AdminSystem::Menu::MenuBuilder;
 using AdminSystem::Menu::MenuManager;
-
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace AdminSystem::Admin
 {

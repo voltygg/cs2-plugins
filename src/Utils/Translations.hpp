@@ -14,17 +14,15 @@ namespace AdminSystem::Utils
  */
 class Translations : public Core::Singleton<Translations>
 {
-    friend class Core::Singleton<Translations>;
-
 public:
+    explicit Translations(Token) {}
+
     bool Load(const std::string& dirPath);
     void SetLanguage(const std::string& lang);
     const std::string& GetLanguage() const;
     std::string Get(const std::string& key) const;
 
 private:
-    Translations() = default;
-
     std::unordered_map<std::string, std::unordered_map<std::string, std::string>> _translations;
     std::string _activeLang = "en";
 };

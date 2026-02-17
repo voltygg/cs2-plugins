@@ -5,8 +5,6 @@
 #include "GameInterfaces.hpp"
 #include "Schema.hpp"
 
-#include <ISmmPlugin.h>
-
 #include <entity2/concreteentitylist.h>
 #include <entity2/entityidentity.h>
 #include <entity2/entityinstance.h>
@@ -14,36 +12,27 @@
 
 using namespace AdminSystem::Utils;
 
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
-
 namespace AdminSystem::Sdk
 {
 
-// Schema-resolved offsets for the button access chain (cached after first lookup)
-static int sOffsetPlayerPawn = -1;        // CCSPlayerController::m_hPlayerPawn
-static int sOffsetMovementServices = -1;  // CBasePlayerPawn::m_pMovementServices
-static int sOffsetButtons = -1;           // CPlayer_MovementServices::m_nButtons
-static int sOffsetButtonStates = -1;      // CInButtonState::m_pButtonStates
-static bool sSchemaOffsetsResolved = false;
-
-static void ResolveSchemaOffsets()
+void EntitySystem::ResolveSchemaOffsets()
 {
-    if (sSchemaOffsetsResolved)
+    if (_schemaOffsetsResolved)
         return;
 
-    sOffsetPlayerPawn = GetSchemaOffset("CCSPlayerController", "m_hPlayerPawn");
-    sOffsetMovementServices = GetSchemaOffset("CBasePlayerPawn", "m_pMovementServices");
-    sOffsetButtons = GetSchemaOffset("CPlayer_MovementServices", "m_nButtons");
-    sOffsetButtonStates = GetSchemaOffset("CInButtonState", "m_pButtonStates");
+    auto& schema = SchemaService::Instance();
+    _offsetPlayerPawn = schema.GetOffset("CCSPlayerController", "m_hPlayerPawn");
+    _offsetMovementServices = schema.GetOffset("CBasePlayerPawn", "m_pMovementServices");
+    _offsetButtons = schema.GetOffset("CPlayer_MovementServices", "m_nButtons");
+    _offsetButtonStates = schema.GetOffset("CInButtonState", "m_pButtonStates");
 
-    sSchemaOffsetsResolved = true;
+    _schemaOffsetsResolved = true;
 
-    if (sOffsetPlayerPawn >= 0 && sOffsetMovementServices >= 0 && sOffsetButtons >= 0 && sOffsetButtonStates >= 0)
+    if (_offsetPlayerPawn >= 0 && _offsetMovementServices >= 0 && _offsetButtons >= 0 && _offsetButtonStates >= 0)
     {
         Log::Info("Button access chain resolved via schema:");
         Log::Info("  Controller + 0x{:X} -> Pawn + 0x{:X} -> MovementServices + 0x{:X} -> Buttons + 0x{:X}",
-                  sOffsetPlayerPawn, sOffsetMovementServices, sOffsetButtons, sOffsetButtonStates);
+                  _offsetPlayerPawn, _offsetMovementServices, _offsetButtons, _offsetButtonStates);
     }
     else
     {
@@ -51,7 +40,7 @@ static void ResolveSchemaOffsets()
     }
 }
 
-bool InitEntitySystem()
+bool EntitySystem::Initialize()
 {
     auto& interfaces = GameInterfaces::Instance();
 
@@ -91,7 +80,7 @@ bool InitEntitySystem()
     return true;
 }
 
-CGameEntitySystem* GetEntitySystem()
+CGameEntitySystem* EntitySystem::GetEntitySystem()
 {
     auto& interfaces = GameInterfaces::Instance();
 
@@ -108,10 +97,7 @@ CGameEntitySystem* GetEntitySystem()
     return interfaces.EntitySystem;
 }
 
-// Our own implementation of entity identity lookup via the chunk list.
-// Avoids calling CEntitySystem::GetEntityIdentity which is a non-virtual
-// function in the game binary that we can't link against.
-static CEntityIdentity* GetEntityIdentityByIndex(CGameEntitySystem* pSys, int index)
+CEntityIdentity* EntitySystem::GetEntityIdentityByIndex(CGameEntitySystem* pSys, int index)
 {
     if (!pSys || index < 0 || index >= MAX_TOTAL_ENTITIES)
         return nullptr;
@@ -126,9 +112,7 @@ static CEntityIdentity* GetEntityIdentityByIndex(CGameEntitySystem* pSys, int in
     return &pChunk[offset];
 }
 
-// Resolve a CHandle (entity handle) to a CEntityInstance pointer.
-// CHandle stores entity index in the low 15 bits.
-static CEntityInstance* ResolveEntityHandle(uint32_t handle)
+CEntityInstance* EntitySystem::ResolveEntityHandle(uint32_t handle)
 {
     if (handle == 0xFFFFFFFF)
         return nullptr;
@@ -146,7 +130,7 @@ static CEntityInstance* ResolveEntityHandle(uint32_t handle)
     return pIdentity->m_pInstance;
 }
 
-CEntityInstance* GetPlayerController(int slot)
+CEntityInstance* EntitySystem::GetPlayerController(int slot)
 {
     auto* pSys = GetEntitySystem();
     if (!pSys || slot < 0 || slot >= MaxPlayers)
@@ -160,13 +144,13 @@ CEntityInstance* GetPlayerController(int slot)
     return pIdentity->m_pInstance;
 }
 
-uint64_t GetPlayerButtons(int slot)
+uint64_t EntitySystem::GetPlayerButtons(int slot)
 {
     // Resolve schema offsets on first call (deferred because schema may not be ready at init)
-    if (!sSchemaOffsetsResolved)
+    if (!_schemaOffsetsResolved)
         ResolveSchemaOffsets();
 
-    if (sOffsetPlayerPawn < 0 || sOffsetMovementServices < 0 || sOffsetButtons < 0 || sOffsetButtonStates < 0)
+    if (_offsetPlayerPawn < 0 || _offsetMovementServices < 0 || _offsetButtons < 0 || _offsetButtonStates < 0)
         return 0;
 
     // Step 1: Get player controller entity
@@ -177,7 +161,7 @@ uint64_t GetPlayerButtons(int slot)
     auto* pCtrlBase = reinterpret_cast<uint8_t*>(pController);
 
     // Step 2: Read m_hPlayerPawn handle (CHandle<CCSPlayerPawn> = uint32)
-    uint32_t hPawn = *reinterpret_cast<uint32_t*>(pCtrlBase + sOffsetPlayerPawn);
+    uint32_t hPawn = *reinterpret_cast<uint32_t*>(pCtrlBase + _offsetPlayerPawn);
     CEntityInstance* pPawn = ResolveEntityHandle(hPawn);
     if (!pPawn)
         return 0;
@@ -185,7 +169,7 @@ uint64_t GetPlayerButtons(int slot)
     auto* pPawnBase = reinterpret_cast<uint8_t*>(pPawn);
 
     // Step 3: Read m_pMovementServices pointer
-    auto* pMovementServices = *reinterpret_cast<uint8_t**>(pPawnBase + sOffsetMovementServices);
+    auto* pMovementServices = *reinterpret_cast<uint8_t**>(pPawnBase + _offsetMovementServices);
     if (!pMovementServices)
         return 0;
 
@@ -194,12 +178,12 @@ uint64_t GetPlayerButtons(int slot)
     //   [0] = currently held buttons
     //   [1] = buttons that changed this frame
     //   [2] = scroll/other
-    auto* pButtonStates = reinterpret_cast<uint64_t*>(pMovementServices + sOffsetButtons + sOffsetButtonStates);
+    auto* pButtonStates = reinterpret_cast<uint64_t*>(pMovementServices + _offsetButtons + _offsetButtonStates);
 
     return pButtonStates[0];  // Current held buttons
 }
 
-bool IsPlayerSlotValid(int slot)
+bool EntitySystem::IsPlayerSlotValid(int slot)
 {
     return GetPlayerController(slot) != nullptr;
 }

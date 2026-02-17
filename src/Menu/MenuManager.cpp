@@ -5,14 +5,9 @@
 #include "../Utils/Log.hpp"
 #include "MenuRenderer.hpp"
 
-#include <ISmmPlugin.h>
-
 #include <chrono>
 
 using namespace AdminSystem::Utils;
-
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
 
 namespace AdminSystem::Menu
 {
@@ -61,7 +56,7 @@ void MenuManager::CloseMenu(int slot)
     if (state.MenuStack.empty())
     {
         // No more menus - clear the HUD
-        ClearCenterHtml(slot);
+        MessageSystem::Instance().ClearCenterHtml(slot);
         state.Reset();
     }
     else
@@ -78,7 +73,7 @@ void MenuManager::CloseAllMenus(int slot)
 
     auto& state = _states[slot];
     state.Reset();
-    ClearCenterHtml(slot);
+    MessageSystem::Instance().ClearCenterHtml(slot);
 }
 
 bool MenuManager::HasActiveMenu(int slot) const
@@ -98,8 +93,8 @@ void MenuManager::OnGameFrame()
             continue;
 
         // Read current button state
-        uint64_t buttons = GetPlayerButtons(slot);
-        uint64_t prev = state.PrevButtons;
+        auto buttons = EntitySystem::Instance().GetPlayerButtons(slot);
+        auto prev = state.PrevButtons;
         state.PrevButtons = buttons;
 
         // Handle input (edge-detected: newly pressed this frame)
@@ -121,7 +116,7 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
         return;
 
     // Debounce
-    int64_t now = GetCurrentTimeMs();
+    auto now = GetCurrentTimeMs();
     if (now - state.LastInputTime < InputDebounceMs)
         return;
 
@@ -186,8 +181,8 @@ void MenuManager::RenderMenu(int slot)
     if (!menu)
         return;
 
-    std::string html = RenderMenuHtml(menu, state.SelectedIndex);
-    SendCenterHtml(slot, html);
+    auto html = RenderMenuHtml(menu, state.SelectedIndex);
+    MessageSystem::Instance().SendCenterHtml(slot, html);
 }
 
 void MenuManager::OnPlayerDisconnect(int slot)
