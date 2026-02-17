@@ -1,27 +1,30 @@
 #include "Entity.hpp"
-#include "Schema.hpp"
+
+#include "../Utils/Log.hpp"
 #include "GameData.hpp"
 #include "GameInterfaces.hpp"
-#include "../Utils/Log.hpp"
+#include "Schema.hpp"
 
 #include <ISmmPlugin.h>
-#include <entity2/entitysystem.h>
-#include <entity2/entityinstance.h>
-#include <entity2/entityidentity.h>
+
 #include <entity2/concreteentitylist.h>
+#include <entity2/entityidentity.h>
+#include <entity2/entityinstance.h>
+#include <entity2/entitysystem.h>
 
 using namespace AdminSystem::Utils;
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace AdminSystem::Sdk {
+namespace AdminSystem::Sdk
+{
 
 // Schema-resolved offsets for the button access chain (cached after first lookup)
-static int sOffsetPlayerPawn = -1;       // CCSPlayerController::m_hPlayerPawn
-static int sOffsetMovementServices = -1; // CBasePlayerPawn::m_pMovementServices
-static int sOffsetButtons = -1;          // CPlayer_MovementServices::m_nButtons
-static int sOffsetButtonStates = -1;     // CInButtonState::m_pButtonStates
+static int sOffsetPlayerPawn = -1;        // CCSPlayerController::m_hPlayerPawn
+static int sOffsetMovementServices = -1;  // CBasePlayerPawn::m_pMovementServices
+static int sOffsetButtons = -1;           // CPlayer_MovementServices::m_nButtons
+static int sOffsetButtonStates = -1;      // CInButtonState::m_pButtonStates
 static bool sSchemaOffsetsResolved = false;
 
 static void ResolveSchemaOffsets()
@@ -36,12 +39,11 @@ static void ResolveSchemaOffsets()
 
     sSchemaOffsetsResolved = true;
 
-    if (sOffsetPlayerPawn >= 0 && sOffsetMovementServices >= 0 &&
-        sOffsetButtons >= 0 && sOffsetButtonStates >= 0)
+    if (sOffsetPlayerPawn >= 0 && sOffsetMovementServices >= 0 && sOffsetButtons >= 0 && sOffsetButtonStates >= 0)
     {
         Log::Info("Button access chain resolved via schema:");
         Log::Info("  Controller + 0x{:X} -> Pawn + 0x{:X} -> MovementServices + 0x{:X} -> Buttons + 0x{:X}",
-                         sOffsetPlayerPawn, sOffsetMovementServices, sOffsetButtons, sOffsetButtonStates);
+                  sOffsetPlayerPawn, sOffsetMovementServices, sOffsetButtons, sOffsetButtonStates);
     }
     else
     {
@@ -164,8 +166,7 @@ uint64_t GetPlayerButtons(int slot)
     if (!sSchemaOffsetsResolved)
         ResolveSchemaOffsets();
 
-    if (sOffsetPlayerPawn < 0 || sOffsetMovementServices < 0 ||
-        sOffsetButtons < 0 || sOffsetButtonStates < 0)
+    if (sOffsetPlayerPawn < 0 || sOffsetMovementServices < 0 || sOffsetButtons < 0 || sOffsetButtonStates < 0)
         return 0;
 
     // Step 1: Get player controller entity
@@ -193,10 +194,9 @@ uint64_t GetPlayerButtons(int slot)
     //   [0] = currently held buttons
     //   [1] = buttons that changed this frame
     //   [2] = scroll/other
-    auto* pButtonStates = reinterpret_cast<uint64_t*>(
-        pMovementServices + sOffsetButtons + sOffsetButtonStates);
+    auto* pButtonStates = reinterpret_cast<uint64_t*>(pMovementServices + sOffsetButtons + sOffsetButtonStates);
 
-    return pButtonStates[0]; // Current held buttons
+    return pButtonStates[0];  // Current held buttons
 }
 
 bool IsPlayerSlotValid(int slot)
@@ -204,4 +204,4 @@ bool IsPlayerSlotValid(int slot)
     return GetPlayerController(slot) != nullptr;
 }
 
-} // namespace AdminSystem::Sdk
+}  // namespace AdminSystem::Sdk

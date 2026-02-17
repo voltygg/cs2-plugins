@@ -2,19 +2,17 @@
 
 #include "Menu.hpp"
 
-namespace AdminSystem::Menu {
+namespace AdminSystem::Menu
+{
 
 /**
  * Fluent builder for constructing Menu instances.
  * Usage: MenuBuilder("Title").AddItem("Foo", handler).AddItem("Bar", handler, false).Build()
  */
-class MenuBuilder {
+class MenuBuilder
+{
 public:
-    explicit MenuBuilder(const std::string& title)
-        : _menu(std::make_shared<Menu>())
-    {
-        _menu->Title = title;
-    }
+    explicit MenuBuilder(const std::string& title) : _menu(std::make_shared<Menu>()) { _menu->Title = title; }
 
     MenuBuilder& AddItem(const std::string& title, std::function<void(int)> onSelect)
     {
@@ -28,18 +26,20 @@ public:
         return *this;
     }
 
-    MenuBuilder& AddSubmenu(const std::string& title, std::function<std::shared_ptr<Menu>(int)> factory, bool enabled = true)
+    MenuBuilder& AddSubmenu(const std::string& title, std::function<std::shared_ptr<Menu>(int)> factory,
+                            bool enabled = true)
     {
         auto fn = std::move(factory);
         _menu->Items.push_back({
             .Title = title,
-            .OnSelect = [fn](int slot) {
-                auto submenu = fn(slot);
-                if (submenu)
-                {
-                    // Note: caller should use MenuManager::Instance().OpenMenu(slot, submenu) in the factory
-                }
-            },
+            .OnSelect =
+                [fn](int slot) {
+                    auto submenu = fn(slot);
+                    if (submenu)
+                    {
+                        // Note: caller should use MenuManager::Instance().OpenMenu(slot, submenu) in the factory
+                    }
+                },
             .Enabled = enabled,
         });
         return *this;
@@ -69,4 +69,4 @@ private:
     std::shared_ptr<Menu> _menu;
 };
 
-} // namespace AdminSystem::Menu
+}  // namespace AdminSystem::Menu

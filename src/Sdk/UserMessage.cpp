@@ -1,23 +1,26 @@
 #include "UserMessage.hpp"
-#include "SigScanner.hpp"
+
+#include "../Utils/Log.hpp"
 #include "GameData.hpp"
 #include "GameInterfaces.hpp"
-#include "../Utils/Log.hpp"
+#include "SigScanner.hpp"
 
 #include <ISmmPlugin.h>
 #include <igameevents.h>
+
 #include <engine/igameeventsystem.h>
+#include <irecipientfilter.h>
 #include <networksystem/inetworkmessages.h>
 #include <networksystem/netmessage.h>
 #include <usermessages.pb.h>
-#include <irecipientfilter.h>
 
 using namespace AdminSystem::Utils;
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace AdminSystem::Sdk {
+namespace AdminSystem::Sdk
+{
 
 // GetLegacyGameEventListener function pointer - resolved via signature
 using GetLegacyGameEventListenerFn = IGameEventListener2* (*)(CPlayerSlot slot);
@@ -52,13 +55,13 @@ bool InitGameEventManager()
     void* eventManagerAddr = gameData.ResolveSignature("GameEventManager");
     if (eventManagerAddr)
     {
-        interfaces.GameEventManager = *reinterpret_cast<IGameEventManager2**>(
-            reinterpret_cast<uintptr_t>(eventManagerAddr));
+        interfaces.GameEventManager =
+            *reinterpret_cast<IGameEventManager2**>(reinterpret_cast<uintptr_t>(eventManagerAddr));
 
         if (interfaces.GameEventManager)
         {
             Log::Info("Game event manager resolved at {:#x}.",
-                             reinterpret_cast<uintptr_t>(interfaces.GameEventManager));
+                      reinterpret_cast<uintptr_t>(interfaces.GameEventManager));
         }
         else
         {
@@ -150,11 +153,8 @@ void SendChatMessage(int slot, const std::string& message)
 
     uint64_t clients = (1ULL << slot);
 
-    interfaces.GameEventSystem->PostEventAbstract(
-        0, false, 1, &clients,
-        sSayText2Internal, pMsg, 0,
-        NetChannelBufType_t::BUF_RELIABLE
-    );
+    interfaces.GameEventSystem->PostEventAbstract(0, false, 1, &clients, sSayText2Internal, pMsg, 0,
+                                                  NetChannelBufType_t::BUF_RELIABLE);
 
     interfaces.NetworkMessages->DeallocateNetMessageAbstract(sSayText2Internal, pMsg);
 }
@@ -164,4 +164,4 @@ void ClearCenterHtml(int slot)
     SendCenterHtml(slot, " ");
 }
 
-} // namespace AdminSystem::Sdk
+}  // namespace AdminSystem::Sdk

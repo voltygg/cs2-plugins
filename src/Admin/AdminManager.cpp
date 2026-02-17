@@ -1,14 +1,19 @@
 #include "AdminManager.hpp"
+
 #include "../Database/Repositories/AdminRepository.hpp"
+
 #include <algorithm>
 
-namespace AdminSystem::Admin {
+using namespace AdminSystem::Database;
+
+namespace AdminSystem::Admin
+{
 
 bool AdminManager::LoadAdmins()
 {
     try
     {
-        Database::AdminRepository repo;
+        AdminRepository repo;
         auto admins = repo.FindAll();
 
         _admins.clear();
@@ -37,7 +42,7 @@ bool AdminManager::LoadGroups()
 {
     try
     {
-        Database::AdminGroupRepository repo;
+        AdminGroupRepository repo;
         auto groups = repo.FindAll();
 
         _groups.clear();
@@ -219,4 +224,4 @@ int AdminManager::ResolveImmunity(const Database::Admin& admin)
     return maxImmunity;
 }
 
-} // namespace AdminSystem::Admin
+}  // namespace AdminSystem::Admin

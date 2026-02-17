@@ -3,10 +3,12 @@
 #include <string>
 #include <vector>
 
-namespace AdminSystem::Utils {
+namespace AdminSystem::Utils
+{
 
 /** Collection of static string manipulation utilities. */
-class StringUtils {
+class StringUtils
+{
 public:
     static std::string ToLower(const std::string& str);
     static std::string ToUpper(const std::string& str);
@@ -22,7 +24,8 @@ public:
     static bool IsNumeric(const std::string& str);
 
     /** How a command target string (e.g. "@all", "#3", "player name", SteamID) was parsed. */
-    enum class TargetType {
+    enum class TargetType
+    {
         All,
         Me,
         Index,
@@ -31,7 +34,8 @@ public:
     };
 
     /** Result of parsing a target string into type + value. */
-    struct TargetInfo {
+    struct TargetInfo
+    {
         TargetType Type;
         std::string Value;
     };
@@ -39,4 +43,4 @@ public:
     static TargetInfo ParseTarget(const std::string& target);
 };
 
-} // namespace AdminSystem::Utils
+}  // namespace AdminSystem::Utils

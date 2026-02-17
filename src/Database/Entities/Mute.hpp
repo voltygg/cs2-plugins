@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <string>
 
-namespace AdminSystem::Database {
+namespace AdminSystem::Database
+{
 
 /** Database entity for a voice mute punishment. Supports permanent and timed mutes. */
-struct Mute {
+struct Mute
+{
     int64_t Id = 0;
     int64_t TargetSteamId = 0;
     std::string TargetName;
@@ -25,4 +27,4 @@ struct Mute {
     bool IsExpired() const;
 };
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

@@ -1,20 +1,24 @@
 #include "Config.hpp"
+
 #include "../Admin/AdminManager.hpp"
 #include "../Utils/Log.hpp"
 
 #include <ISmmPlugin.h>
-#include <nlohmann/json.hpp>
+
 #include <filesystem>
 #include <fstream>
-
-extern ISmmAPI* g_SMAPI;
-extern SourceMM::ISmmPlugin* g_PLAPI;
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 using namespace AdminSystem::Admin;
 using namespace AdminSystem::Utils;
+using namespace AdminSystem::Database;
 
-namespace AdminSystem::Core {
+extern ISmmAPI* g_SMAPI;
+extern SourceMM::ISmmPlugin* g_PLAPI;
+
+namespace AdminSystem::Core
+{
 
 bool ConfigManager::LoadSettings(const std::string& path)
 {
@@ -34,13 +38,20 @@ bool ConfigManager::LoadSettings(const std::string& path)
     if (j.contains("database"))
     {
         auto& db = j["database"];
-        if (db.contains("host"))       _databaseConfig.Host = db["host"];
-        if (db.contains("port"))       _databaseConfig.Port = db["port"];
-        if (db.contains("database"))   _databaseConfig.DatabaseName = db["database"];
-        if (db.contains("username"))   _databaseConfig.Username = db["username"];
-        if (db.contains("password"))   _databaseConfig.Password = db["password"];
-        if (db.contains("schema"))     _databaseConfig.Schema = db["schema"];
-        if (db.contains("sslMode"))    _databaseConfig.SslMode = db["sslMode"];
+        if (db.contains("host"))
+            _databaseConfig.Host = db["host"];
+        if (db.contains("port"))
+            _databaseConfig.Port = db["port"];
+        if (db.contains("database"))
+            _databaseConfig.DatabaseName = db["database"];
+        if (db.contains("username"))
+            _databaseConfig.Username = db["username"];
+        if (db.contains("password"))
+            _databaseConfig.Password = db["password"];
+        if (db.contains("schema"))
+            _databaseConfig.Schema = db["schema"];
+        if (db.contains("sslMode"))
+            _databaseConfig.SslMode = db["sslMode"];
     }
 
     // Punishments section
@@ -73,10 +84,13 @@ bool ConfigManager::LoadAdminsConfig(const std::string& path)
         {
             try
             {
-                Database::AdminGroup group;
-                if (entry.contains("name"))      group.Name = entry["name"];
-                if (entry.contains("flags"))     group.Flags = entry["flags"];
-                if (entry.contains("immunity"))  group.Immunity = entry["immunity"];
+                AdminGroup group;
+                if (entry.contains("name"))
+                    group.Name = entry["name"];
+                if (entry.contains("flags"))
+                    group.Flags = entry["flags"];
+                if (entry.contains("immunity"))
+                    group.Immunity = entry["immunity"];
 
                 if (entry.contains("inherits") && entry["inherits"].is_array())
                 {
@@ -160,4 +174,4 @@ bool ConfigManager::LoadJsonFile(const std::string& filePath, json& outJson)
     }
 }
 
-} // namespace AdminSystem::Core
+}  // namespace AdminSystem::Core

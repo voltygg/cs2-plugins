@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <string>
 
-namespace AdminSystem::Database {
+namespace AdminSystem::Database
+{
 
 /** Database entity for an admin-issued warning against a player. */
-struct Warning {
+struct Warning
+{
     int64_t Id = 0;
     int64_t TargetSteamId = 0;
     std::string TargetName;
@@ -18,4 +20,4 @@ struct Warning {
     int64_t ExpiresAt = 0;
 };
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

@@ -1,15 +1,20 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
 
-namespace AdminSystem::Players { class Player; }
+namespace AdminSystem::Players
+{
+class Player;
+}
 
-namespace AdminSystem::Commands {
+namespace AdminSystem::Commands
+{
 
 /** Result returned by a command handler to indicate success/failure and an optional message. */
-struct CommandResult {
+struct CommandResult
+{
     bool Success = true;
     std::string Message;
 };
@@ -18,7 +23,8 @@ struct CommandResult {
 using CommandHandler = std::function<CommandResult(Players::Player*, const std::vector<std::string>&)>;
 
 /** A registered chat command with metadata, permission requirements, and handler callback. */
-struct Command {
+struct Command
+{
     std::string Name;
     std::vector<std::string> Aliases;
     std::string Description;
@@ -35,7 +41,8 @@ struct Command {
  * Fluent builder for constructing Command instances.
  * Usage: CommandBuilder("kick").WithAliases({"k"}).RequirePermission("c").OnExecute(...).Build()
  */
-class CommandBuilder {
+class CommandBuilder
+{
 public:
     explicit CommandBuilder(const std::string& name) { _command.Name = name; }
 
@@ -82,4 +89,4 @@ private:
     Command _command;
 };
 
-} // namespace AdminSystem::Commands
+}  // namespace AdminSystem::Commands

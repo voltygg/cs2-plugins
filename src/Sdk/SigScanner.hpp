@@ -3,7 +3,8 @@
 #include <cstdint>
 #include <string>
 
-namespace AdminSystem::Sdk {
+namespace AdminSystem::Sdk
+{
 
 /**
  * Scan a loaded module's memory for a byte pattern (hex string with '?' wildcards).
@@ -16,4 +17,4 @@ void* FindPattern(const char* moduleName, const std::string& pattern);
  */
 uintptr_t ResolveRelativeAddress(uintptr_t addr, int ripOffset, int ripSize);
 
-} // namespace AdminSystem::Sdk
+}  // namespace AdminSystem::Sdk

@@ -1,6 +1,7 @@
 #include "Admin.hpp"
 
-namespace AdminSystem::Database {
+namespace AdminSystem::Database
+{
 
 bool Admin::HasFlag(char flag) const
 {
@@ -23,4 +24,4 @@ uint32_t Admin::FlagToBit(char flag)
     return 0;
 }
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

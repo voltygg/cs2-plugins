@@ -2,7 +2,8 @@
 
 #include <string>
 
-namespace AdminSystem::Sdk {
+namespace AdminSystem::Sdk
+{
 
 /** Network message ID for the SayText2 user message. */
 constexpr int UmSayText2 = 118;
@@ -18,4 +19,4 @@ void SendChatMessage(int slot, const std::string& message);
 /** Clear any center HUD HTML for the given player. */
 void ClearCenterHtml(int slot);
 
-} // namespace AdminSystem::Sdk
+}  // namespace AdminSystem::Sdk

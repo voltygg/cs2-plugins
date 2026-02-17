@@ -6,7 +6,8 @@
 #include <format>
 #include <regex>
 
-namespace AdminSystem::Utils {
+namespace AdminSystem::Utils
+{
 
 int64_t TimeUtils::Now()
 {
@@ -31,19 +32,34 @@ int64_t TimeUtils::ParseDuration(const std::string& duration)
             int64_t value = std::stoll(matches[1].str());
             switch (matches[2].str()[0])
             {
-            case 's': return value;
-            case 'm': return value * SecondsPerMinute;
-            case 'h': return value * SecondsPerHour;
-            case 'd': return value * SecondsPerDay;
-            case 'w': return value * SecondsPerWeek;
-            default:  return 0;
+            case 's':
+                return value;
+            case 'm':
+                return value * SecondsPerMinute;
+            case 'h':
+                return value * SecondsPerHour;
+            case 'd':
+                return value * SecondsPerDay;
+            case 'w':
+                return value * SecondsPerWeek;
+            default:
+                return 0;
             }
         }
-        catch (...) { return 0; }
+        catch (...)
+        {
+            return 0;
+        }
     }
 
-    try { return std::stoll(duration); }
-    catch (...) { return 0; }
+    try
+    {
+        return std::stoll(duration);
+    }
+    catch (...)
+    {
+        return 0;
+    }
 }
 
 std::string TimeUtils::FormatDuration(int64_t seconds)
@@ -86,8 +102,7 @@ std::string TimeUtils::FormatTimestamp(int64_t timestamp)
 #else
     localtime_r(&time, &tm);
 #endif
-    return std::format("{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}",
-                       tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+    return std::format("{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
                        tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
 
@@ -105,4 +120,4 @@ int64_t TimeUtils::GetExpirationTime(int64_t durationSeconds)
     return Now() + durationSeconds;
 }
 
-} // namespace AdminSystem::Utils
+}  // namespace AdminSystem::Utils

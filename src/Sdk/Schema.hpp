@@ -2,7 +2,8 @@
 
 #include <cstdint>
 
-namespace AdminSystem::Sdk {
+namespace AdminSystem::Sdk
+{
 
 /** Initialize the schema system (requires GameInterfaces::SchemaSystem to be set). */
 bool InitSchemaSystem();
@@ -12,4 +13,4 @@ bool InitSchemaSystem();
  */
 int GetSchemaOffset(const char* className, const char* fieldName);
 
-} // namespace AdminSystem::Sdk
+}  // namespace AdminSystem::Sdk

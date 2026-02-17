@@ -1,11 +1,13 @@
 #include "StringUtils.hpp"
+
 #include "SteamId.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 
-namespace AdminSystem::Utils {
+namespace AdminSystem::Utils
+{
 
 std::string StringUtils::ToLower(const std::string& str)
 {
@@ -122,7 +124,8 @@ StringUtils::TargetInfo StringUtils::ParseTarget(const std::string& target)
             if (SteamId::IsValid(steamId64))
                 return {TargetType::SteamId, target};
         }
-        catch (...) {}
+        catch (...)
+        {}
     }
 
     if (StartsWith(target, "[U:1:"))
@@ -142,4 +145,4 @@ StringUtils::TargetInfo StringUtils::ParseTarget(const std::string& target)
     return {TargetType::Name, target};
 }
 
-} // namespace AdminSystem::Utils
+}  // namespace AdminSystem::Utils

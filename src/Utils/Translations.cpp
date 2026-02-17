@@ -1,15 +1,18 @@
 #include "Translations.hpp"
+
 #include "Log.hpp"
 
 #include <ISmmPlugin.h>
-#include <nlohmann/json.hpp>
+
 #include <filesystem>
 #include <fstream>
+#include <nlohmann/json.hpp>
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace AdminSystem::Utils {
+namespace AdminSystem::Utils
+{
 
 bool Translations::Load(const std::string& dirPath)
 {
@@ -94,4 +97,4 @@ std::string Translations::Get(const std::string& key) const
     return key;
 }
 
-} // namespace AdminSystem::Utils
+}  // namespace AdminSystem::Utils

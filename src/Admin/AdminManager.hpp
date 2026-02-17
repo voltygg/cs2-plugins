@@ -3,17 +3,20 @@
 #include "../Core/Singleton.hpp"
 #include "../Database/Entities/Admin.hpp"
 #include "../Database/Entities/AdminGroup.hpp"
-#include <unordered_map>
-#include <string>
 
-namespace AdminSystem::Admin {
+#include <string>
+#include <unordered_map>
+
+namespace AdminSystem::Admin
+{
 
 /**
  * Central authority for admin permissions, flag resolution, and immunity checks.
  * Admins are loaded from JSON config and/or database. Flags are resolved into
  * uint32_t bitmasks for O(1) permission checks ('a'=bit0 ... 'z'=bit25).
  */
-class AdminManager : public Core::Singleton<AdminManager> {
+class AdminManager : public Core::Singleton<AdminManager>
+{
     friend class Core::Singleton<AdminManager>;
 
 public:
@@ -52,4 +55,4 @@ private:
     std::unordered_map<int64_t, uint32_t> _resolvedFlags;
 };
 
-} // namespace AdminSystem::Admin
+}  // namespace AdminSystem::Admin

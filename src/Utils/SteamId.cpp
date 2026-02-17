@@ -3,7 +3,8 @@
 #include <format>
 #include <regex>
 
-namespace AdminSystem::Utils {
+namespace AdminSystem::Utils
+{
 
 std::string SteamId::ToSteamId3(int64_t steamId64)
 {
@@ -30,7 +31,10 @@ std::optional<int64_t> SteamId::FromSteamId3(const std::string& steamId3)
             uint32_t accountId = std::stoul(matches[1].str());
             return SteamId64Base + accountId;
         }
-        catch (...) { return std::nullopt; }
+        catch (...)
+        {
+            return std::nullopt;
+        }
     }
     return std::nullopt;
 }
@@ -48,7 +52,10 @@ std::optional<int64_t> SteamId::FromSteamId(const std::string& steamId)
             uint32_t accountId = accountNum * 2 + authServer;
             return SteamId64Base + accountId;
         }
-        catch (...) { return std::nullopt; }
+        catch (...)
+        {
+            return std::nullopt;
+        }
     }
     return std::nullopt;
 }
@@ -63,4 +70,4 @@ uint32_t SteamId::GetAccountId(int64_t steamId64)
     return static_cast<uint32_t>(steamId64 - SteamId64Base);
 }
 
-} // namespace AdminSystem::Utils
+}  // namespace AdminSystem::Utils

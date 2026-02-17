@@ -1,17 +1,20 @@
 #pragma once
 
-#include "Command.hpp"
 #include "../Core/Singleton.hpp"
+#include "Command.hpp"
+
 #include <unordered_map>
 #include <vector>
 
-namespace AdminSystem::Commands {
+namespace AdminSystem::Commands
+{
 
 /**
  * Dispatches chat commands (prefixed with ! or .) to registered handlers.
  * Handles prefix matching, argument parsing, and permission enforcement.
  */
-class CommandManager : public Core::Singleton<CommandManager> {
+class CommandManager : public Core::Singleton<CommandManager>
+{
     friend class Core::Singleton<CommandManager>;
 
 public:
@@ -32,4 +35,4 @@ private:
     std::vector<std::string> _prefixes;
 };
 
-} // namespace AdminSystem::Commands
+}  // namespace AdminSystem::Commands

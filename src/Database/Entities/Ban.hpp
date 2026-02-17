@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <string>
 
-namespace AdminSystem::Database {
+namespace AdminSystem::Database
+{
 
 /** Database entity for a player ban. Supports permanent and timed bans with removal tracking. */
-struct Ban {
+struct Ban
+{
     int64_t Id = 0;
     int64_t TargetSteamId = 0;
     std::string TargetName;
@@ -26,4 +28,4 @@ struct Ban {
     bool IsExpired() const;
 };
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

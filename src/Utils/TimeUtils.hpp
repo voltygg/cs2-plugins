@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <string>
 
-namespace AdminSystem::Utils {
+namespace AdminSystem::Utils
+{
 
 /** Static utilities for Unix timestamps, duration parsing/formatting, and expiration checks. */
-class TimeUtils {
+class TimeUtils
+{
 public:
     static int64_t Now();
     static int64_t ParseDuration(const std::string& duration);
@@ -22,4 +24,4 @@ private:
     static constexpr int64_t SecondsPerWeek = 604800;
 };
 
-} // namespace AdminSystem::Utils
+}  // namespace AdminSystem::Utils

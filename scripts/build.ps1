@@ -13,5 +13,10 @@ pdm run ambuild
 
 Set-Location -Path "../scripts"
 
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Build failed with exit code $LASTEXITCODE"
+    exit $LASTEXITCODE
+}
+
 # Run deploy script to copy built files to the output directory
 .\deploy.ps1

@@ -1,14 +1,17 @@
 #pragma once
 
-#include "Singleton.hpp"
 #include "../Database/Database.hpp"
+#include "Singleton.hpp"
+
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 
-namespace AdminSystem::Core {
+namespace AdminSystem::Core
+{
 
 /** General plugin settings loaded from the "plugin" and "punishments" sections of settings.json. */
-struct PluginConfig {
+struct PluginConfig
+{
     bool DebugMode = false;
     int MaxWarnings = 3;
     std::string DefaultBanReason = "Banned by administrator";
@@ -18,7 +21,8 @@ struct PluginConfig {
  * Loads and owns all JSON configuration (settings.json, admins.json).
  * Provides read-only access to parsed config structs.
  */
-class ConfigManager : public Singleton<ConfigManager> {
+class ConfigManager : public Singleton<ConfigManager>
+{
     friend class Singleton<ConfigManager>;
 
 public:
@@ -40,4 +44,4 @@ private:
     Database::DatabaseConfig _databaseConfig;
 };
 
-} // namespace AdminSystem::Core
+}  // namespace AdminSystem::Core

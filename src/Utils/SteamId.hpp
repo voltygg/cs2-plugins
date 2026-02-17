@@ -4,10 +4,12 @@
 #include <optional>
 #include <string>
 
-namespace AdminSystem::Utils {
+namespace AdminSystem::Utils
+{
 
 /** Static utilities for converting between SteamID formats (64-bit, SteamID2, SteamID3). */
-class SteamId {
+class SteamId
+{
 public:
     static std::string ToSteamId3(int64_t steamId64);
     static std::string ToSteamId(int64_t steamId64);
@@ -20,4 +22,4 @@ private:
     static constexpr int64_t SteamId64Base = 76561197960265728LL;
 };
 
-} // namespace AdminSystem::Utils
+}  // namespace AdminSystem::Utils

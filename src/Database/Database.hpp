@@ -1,15 +1,18 @@
 #pragma once
 
 #include "../Core/Singleton.hpp"
-#include <pqxx/pqxx>
-#include <memory>
-#include <string>
-#include <mutex>
 
-namespace AdminSystem::Database {
+#include <memory>
+#include <mutex>
+#include <pqxx/pqxx>
+#include <string>
+
+namespace AdminSystem::Database
+{
 
 /** PostgreSQL connection parameters loaded from the "database" section of settings.json. */
-struct DatabaseConfig {
+struct DatabaseConfig
+{
     std::string Host = "localhost";
     int Port = 5432;
     std::string DatabaseName = "cs2_server";
@@ -25,7 +28,8 @@ struct DatabaseConfig {
  * PostgreSQL database access layer. Thread-safe (mutex-protected) since
  * future async queries may run off the game thread.
  */
-class Database : public Core::Singleton<Database> {
+class Database : public Core::Singleton<Database>
+{
     friend class Core::Singleton<Database>;
 
 public:
@@ -35,7 +39,7 @@ public:
     std::unique_ptr<pqxx::connection> GetConnection();
     pqxx::result Execute(const std::string& query);
 
-    template<typename... Args>
+    template <typename... Args>
     pqxx::result ExecutePrepared(const std::string& name, const std::string& query, Args&&... params);
 
 private:
@@ -47,7 +51,7 @@ private:
     std::mutex _mutex;
 };
 
-template<typename... Args>
+template <typename... Args>
 pqxx::result Database::ExecutePrepared(const std::string& name, const std::string& query, Args&&... params)
 {
     auto conn = GetConnection();
@@ -61,4 +65,4 @@ pqxx::result Database::ExecutePrepared(const std::string& name, const std::strin
     return result;
 }
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

@@ -42,7 +42,7 @@ src/
 │   └── PlayerManager.hpp/cpp   # Player lifecycle tracking
 ├── Admin/
 │   ├── AdminManager.hpp/cpp    # Permissions, flags (bitmask), immunity
-│   └── AdminMenus.hpp/cpp      # Admin-specific menu builders
+│   └── AdminMenu.hpp/cpp       # Admin-specific menu builders
 ├── Commands/
 │   ├── Command.hpp/cpp         # Command struct + CommandBuilder (fluent API)
 │   └── CommandManager.hpp/cpp  # Registration, prefix handling, dispatch

@@ -1,7 +1,9 @@
 #include "AdminGroup.hpp"
+
 #include "Admin.hpp"
 
-namespace AdminSystem::Database {
+namespace AdminSystem::Database
+{
 
 bool AdminGroup::HasFlag(char flag) const
 {
@@ -17,4 +19,4 @@ void AdminGroup::BuildFlagBits()
         FlagBits |= Admin::FlagToBit(c);
 }
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

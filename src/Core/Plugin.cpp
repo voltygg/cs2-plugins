@@ -1,8 +1,7 @@
 #include "Plugin.hpp"
-#include "Config.hpp"
 
 #include "../Admin/AdminManager.hpp"
-#include "../Admin/AdminMenus.hpp"
+#include "../Admin/AdminMenu.hpp"
 #include "../Commands/Command.hpp"
 #include "../Commands/CommandManager.hpp"
 #include "../Database/Database.hpp"
@@ -16,16 +15,16 @@
 #include "../Sdk/UserMessage.hpp"
 #include "../Utils/Log.hpp"
 #include "../Utils/Translations.hpp"
-
-#include <engine/igameeventsystem.h>
-#include <networksystem/inetworkmessages.h>
-#include <schemasystem/schemasystem.h>
-#include <interfaces/interfaces.h>
-#include <icvar.h>
+#include "Config.hpp"
 
 #include <cstdio>
 #include <cstring>
+#include <engine/igameeventsystem.h>
 #include <filesystem>
+#include <icvar.h>
+#include <interfaces/interfaces.h>
+#include <networksystem/inetworkmessages.h>
+#include <schemasystem/schemasystem.h>
 
 using namespace AdminSystem::Admin;
 using namespace AdminSystem::Commands;
@@ -45,8 +44,10 @@ PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
 
 // SourceHook hook declarations (file scope)
 SH_DECL_HOOK3_void(IServerGameDLL, GameFrame, SH_NOATTRIB, 0, bool, bool, bool);
-SH_DECL_HOOK6_void(IServerGameClients, OnClientConnected, SH_NOATTRIB, 0, CPlayerSlot, const char*, uint64, const char*, const char*, bool);
-SH_DECL_HOOK5_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, CPlayerSlot, ENetworkDisconnectionReason, const char*, uint64, const char*);
+SH_DECL_HOOK6_void(IServerGameClients, OnClientConnected, SH_NOATTRIB, 0, CPlayerSlot, const char*, uint64, const char*,
+                   const char*, bool);
+SH_DECL_HOOK5_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, CPlayerSlot, ENetworkDisconnectionReason,
+                   const char*, uint64, const char*);
 SH_DECL_HOOK3_void(ICvar, DispatchConCommand, SH_NOATTRIB, 0, ConCommandRef, const CCommandContext&, const CCommand&);
 
 //-----------------------------------------------------------------------------
@@ -68,7 +69,8 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     GET_V_IFACE_ANY(GetEngineFactory, gi.GameEventSystem, IGameEventSystem, GAMEEVENTSYSTEM_INTERFACE_VERSION);
     GET_V_IFACE_ANY(GetEngineFactory, gi.NetworkMessages, INetworkMessages, NETWORKMESSAGES_INTERFACE_VERSION);
     GET_V_IFACE_ANY(GetEngineFactory, gi.SchemaSystem, ISchemaSystem, SCHEMASYSTEM_INTERFACE_VERSION);
-    GET_V_IFACE_CURRENT(GetEngineFactory, gi.GameResourceService, IGameResourceService, GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, gi.GameResourceService, IGameResourceService,
+                        GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
     GET_V_IFACE_ANY(GetEngineFactory, gi.CVar, ICvar, CVAR_INTERFACE_VERSION);
 
     // Also set the SDK global g_pCVar — required by ConCommandRef::GetName()
@@ -120,14 +122,38 @@ void AdminSystemPlugin::AllPluginsLoaded()
 // Plugin Info
 //-----------------------------------------------------------------------------
 
-const char* AdminSystemPlugin::GetAuthor()       { return ADMIN_SYSTEM_AUTHOR; }
-const char* AdminSystemPlugin::GetName()         { return "Admin System"; }
-const char* AdminSystemPlugin::GetDescription()  { return ADMIN_SYSTEM_DESCRIPTION; }
-const char* AdminSystemPlugin::GetURL()          { return ADMIN_SYSTEM_URL; }
-const char* AdminSystemPlugin::GetLicense()      { return "MIT"; }
-const char* AdminSystemPlugin::GetVersion()      { return ADMIN_SYSTEM_VERSION; }
-const char* AdminSystemPlugin::GetDate()         { return __DATE__; }
-const char* AdminSystemPlugin::GetLogTag()       { return "ADMIN"; }
+const char* AdminSystemPlugin::GetAuthor()
+{
+    return ADMIN_SYSTEM_AUTHOR;
+}
+const char* AdminSystemPlugin::GetName()
+{
+    return "Admin System";
+}
+const char* AdminSystemPlugin::GetDescription()
+{
+    return ADMIN_SYSTEM_DESCRIPTION;
+}
+const char* AdminSystemPlugin::GetURL()
+{
+    return ADMIN_SYSTEM_URL;
+}
+const char* AdminSystemPlugin::GetLicense()
+{
+    return "MIT";
+}
+const char* AdminSystemPlugin::GetVersion()
+{
+    return ADMIN_SYSTEM_VERSION;
+}
+const char* AdminSystemPlugin::GetDate()
+{
+    return __DATE__;
+}
+const char* AdminSystemPlugin::GetLogTag()
+{
+    return "ADMIN";
+}
 
 //-----------------------------------------------------------------------------
 // IMetamodListener
@@ -150,7 +176,7 @@ void AdminSystemPlugin::Hook_GameFrame(bool simulating, bool bFirstTick, bool bL
 }
 
 void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* pszName, uint64 xuid,
-                                                const char* pszNetworkID, const char* pszAddress, bool bFakePlayer)
+                                               const char* pszNetworkID, const char* pszAddress, bool bFakePlayer)
 {
     if (bFakePlayer)
         return;
@@ -170,8 +196,8 @@ void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* psz
     }
 }
 
-void AdminSystemPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason,
-                                               const char* pszName, uint64 xuid, const char* pszNetworkID)
+void AdminSystemPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* pszName,
+                                              uint64 xuid, const char* pszNetworkID)
 {
     int playerSlot = slot.Get();
 
@@ -319,28 +345,24 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
     auto& cmdMgr = CommandManager::Instance();
 
     // Register !admin command using CommandBuilder
-    cmdMgr.Register(
-        CommandBuilder("admin")
-            .WithAliases({"a", "menu"})
-            .WithDescription("Open the admin menu")
-            .WithUsage("!admin")
-            .RequirePermission("a")
-            .WithArgs(0, 0)
-            .OnExecute([](Player* admin,
-                          const std::vector<std::string>& /*args*/) -> CommandResult
-            {
-                Log::Info("!admin handler: slot={}, steamid={}", admin->GetSlot(), admin->GetSteamID());
-                auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
-                if (mainMenu)
-                {
-                    MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
-                    return {true, "Admin menu opened"};
-                }
-                Log::Error("!admin handler: BuildAdminMainMenu returned nullptr!");
-                return {false, "Failed to open admin menu"};
-            })
-            .Build()
-    );
+    cmdMgr.Register(CommandBuilder("admin")
+                        .WithAliases({"a", "menu"})
+                        .WithDescription("Open the admin menu")
+                        .WithUsage("!admin")
+                        .RequirePermission("a")
+                        .WithArgs(0, 0)
+                        .OnExecute([](Player* admin, const std::vector<std::string>& /*args*/) -> CommandResult {
+                            Log::Info("!admin handler: slot={}, steamid={}", admin->GetSlot(), admin->GetSteamID());
+                            auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
+                            if (mainMenu)
+                            {
+                                MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
+                                return {true, "Admin menu opened"};
+                            }
+                            Log::Error("!admin handler: BuildAdminMainMenu returned nullptr!");
+                            return {false, "Failed to open admin menu"};
+                        })
+                        .Build());
 
     // 11. Initialize punishment manager (requires DB)
     if (dbConnected)
@@ -391,14 +413,13 @@ void AdminSystemPlugin::RegisterHooks()
 {
     auto& gi = GameInterfaces::Instance();
 
-    SH_ADD_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL,
-                SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame), true);
+    SH_ADD_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame), true);
     SH_ADD_HOOK(IServerGameClients, OnClientConnected, gi.ServerGameClients,
                 SH_MEMBER(this, &AdminSystemPlugin::Hook_OnClientConnected), false);
     SH_ADD_HOOK(IServerGameClients, ClientDisconnect, gi.ServerGameClients,
                 SH_MEMBER(this, &AdminSystemPlugin::Hook_ClientDisconnect), true);
-    SH_ADD_HOOK(ICvar, DispatchConCommand, gi.CVar,
-                SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand), false);
+    SH_ADD_HOOK(ICvar, DispatchConCommand, gi.CVar, SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand),
+                false);
 
     Log::Info("Hooks registered.");
 }
@@ -407,14 +428,14 @@ void AdminSystemPlugin::UnregisterHooks()
 {
     auto& gi = GameInterfaces::Instance();
 
-    SH_REMOVE_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL,
-                   SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame), true);
+    SH_REMOVE_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame),
+                   true);
     SH_REMOVE_HOOK(IServerGameClients, OnClientConnected, gi.ServerGameClients,
                    SH_MEMBER(this, &AdminSystemPlugin::Hook_OnClientConnected), false);
     SH_REMOVE_HOOK(IServerGameClients, ClientDisconnect, gi.ServerGameClients,
                    SH_MEMBER(this, &AdminSystemPlugin::Hook_ClientDisconnect), true);
-    SH_REMOVE_HOOK(ICvar, DispatchConCommand, gi.CVar,
-                   SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand), false);
+    SH_REMOVE_HOOK(ICvar, DispatchConCommand, gi.CVar, SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand),
+                   false);
 
     Log::Info("Hooks unregistered.");
 }

@@ -1,7 +1,9 @@
 #include "PlayerManager.hpp"
+
 #include "../Utils/StringUtils.hpp"
 
-namespace AdminSystem::Players {
+namespace AdminSystem::Players
+{
 
 using namespace AdminSystem::Utils;
 
@@ -95,4 +97,4 @@ void PlayerManager::Clear()
     _playersBySteamId.clear();
 }
 
-} // namespace AdminSystem::Players
+}  // namespace AdminSystem::Players

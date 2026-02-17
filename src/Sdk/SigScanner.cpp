@@ -1,4 +1,5 @@
 #include "SigScanner.hpp"
+
 #include "../Utils/Log.hpp"
 
 #include <ISmmPlugin.h>
@@ -7,12 +8,12 @@
 #include <vector>
 
 #ifdef _WIN32
-#include <windows.h>
 #include <psapi.h>
+#include <windows.h>
 #else
+#include <cstring>
 #include <dlfcn.h>
 #include <link.h>
-#include <cstring>
 #endif
 
 using namespace AdminSystem::Utils;
@@ -20,7 +21,8 @@ using namespace AdminSystem::Utils;
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace AdminSystem::Sdk {
+namespace AdminSystem::Sdk
+{
 
 struct PatternByte
 {
@@ -157,7 +159,7 @@ static int DlIterateCallback(struct dl_phdr_info* info, size_t /*size*/, void* d
         }
         mod->size = maxAddr;
         mod->found = true;
-        return 1; // Stop iteration
+        return 1;  // Stop iteration
     }
     return 0;
 }
@@ -194,8 +196,8 @@ void* FindPattern(const char* moduleName, const std::string& pattern)
         return nullptr;
     }
 
-    Log::Info("SigScanner: Scanning '{}' (base={:#x}, size=0x{:X})...",
-                     fullName, reinterpret_cast<uintptr_t>(base), size);
+    Log::Info("SigScanner: Scanning '{}' (base={:#x}, size=0x{:X})...", fullName, reinterpret_cast<uintptr_t>(base),
+              size);
 
     auto patternBytes = ParsePattern(pattern);
     void* result = ScanMemory(base, size, patternBytes);
@@ -219,4 +221,4 @@ uintptr_t ResolveRelativeAddress(uintptr_t addr, int ripOffset, int ripSize)
     return addr + ripSize + relative;
 }
 
-} // namespace AdminSystem::Sdk
+}  // namespace AdminSystem::Sdk

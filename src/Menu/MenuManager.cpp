@@ -1,10 +1,12 @@
 #include "MenuManager.hpp"
-#include "MenuRenderer.hpp"
+
 #include "../Sdk/Entity.hpp"
 #include "../Sdk/UserMessage.hpp"
 #include "../Utils/Log.hpp"
+#include "MenuRenderer.hpp"
 
 #include <ISmmPlugin.h>
+
 #include <chrono>
 
 using namespace AdminSystem::Utils;
@@ -12,15 +14,15 @@ using namespace AdminSystem::Utils;
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace AdminSystem::Menu {
+namespace AdminSystem::Menu
+{
 
 using namespace AdminSystem::Sdk;
 
 static int64_t GetCurrentTimeMs()
 {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now().time_since_epoch()
-    ).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+        .count();
 }
 
 void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
@@ -36,8 +38,7 @@ void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
     auto* current = state.GetCurrentMenu();
     if (current)
     {
-        Log::Info("Menu opened for slot {} (title: {}, items: {})",
-                         slot, current->Title, current->Items.size());
+        Log::Info("Menu opened for slot {} (title: {}, items: {})", slot, current->Title, current->Items.size());
     }
 }
 
@@ -197,4 +198,4 @@ void MenuManager::OnPlayerDisconnect(int slot)
     _states[slot].Reset();
 }
 
-} // namespace AdminSystem::Menu
+}  // namespace AdminSystem::Menu

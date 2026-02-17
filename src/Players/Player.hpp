@@ -3,13 +3,15 @@
 #include <cstdint>
 #include <string>
 
-namespace AdminSystem::Players {
+namespace AdminSystem::Players
+{
 
 /**
  * Represents a connected player on the server.
  * Tracks identity (slot, SteamID, name, IP), connection time, and admin/punishment state.
  */
-class Player {
+class Player
+{
 public:
     Player(int slot, int64_t steamId, const std::string& name, const std::string& ipAddress);
 
@@ -39,4 +41,4 @@ private:
     bool _isGagged = false;
 };
 
-} // namespace AdminSystem::Players
+}  // namespace AdminSystem::Players

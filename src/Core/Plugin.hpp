@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ISmmPlugin.h>
+
 #include <eiface.h>
 #include <icvar.h>
 
@@ -14,7 +15,8 @@ constexpr const char* ADMIN_SYSTEM_URL = "https://github.com/m9snoi/admin-system
  * Handles plugin lifecycle (Load/Unload), SourceHook callbacks for game events
  * (GameFrame, client connect/disconnect, chat commands), and subsystem initialization.
  */
-class AdminSystemPlugin : public ISmmPlugin, public IMetamodListener {
+class AdminSystemPlugin : public ISmmPlugin, public IMetamodListener
+{
 public:
     bool Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late) override;
     bool Unload(char* error, size_t maxlen) override;
@@ -34,10 +36,10 @@ public:
     void* OnMetamodQuery(const char* iface, int* ret) override;
 
     void Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick);
-    void Hook_OnClientConnected(CPlayerSlot slot, const char* pszName, uint64 xuid,
-                                const char* pszNetworkID, const char* pszAddress, bool bFakePlayer);
-    void Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason,
-                               const char* pszName, uint64 xuid, const char* pszNetworkID);
+    void Hook_OnClientConnected(CPlayerSlot slot, const char* pszName, uint64 xuid, const char* pszNetworkID,
+                                const char* pszAddress, bool bFakePlayer);
+    void Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* pszName, uint64 xuid,
+                               const char* pszNetworkID);
     void Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args);
 
     bool IsLateLoad() const { return _lateLoad; }

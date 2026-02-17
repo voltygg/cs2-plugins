@@ -1,9 +1,11 @@
 #include "CommandManager.hpp"
+
 #include "../Admin/AdminManager.hpp"
 #include "../Players/PlayerManager.hpp"
 #include "../Utils/StringUtils.hpp"
 
-namespace AdminSystem::Commands {
+namespace AdminSystem::Commands
+{
 
 using namespace AdminSystem::Admin;
 using namespace AdminSystem::Utils;
@@ -28,8 +30,7 @@ bool CommandManager::HandleChatMessage(Players::Player* player, const std::strin
     size_t prefixLen = 0;
     for (const auto& prefix : _prefixes)
     {
-        if (message.size() >= prefix.size() &&
-            message.compare(0, prefix.size(), prefix) == 0)
+        if (message.size() >= prefix.size() && message.compare(0, prefix.size(), prefix) == 0)
         {
             hasPrefix = true;
             prefixLen = prefix.size();
@@ -124,4 +125,4 @@ std::vector<std::string> CommandManager::ParseArguments(const std::string& text)
     return StringUtils::Split(text, ' ');
 }
 
-} // namespace AdminSystem::Commands
+}  // namespace AdminSystem::Commands

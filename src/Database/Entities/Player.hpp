@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <string>
 
-namespace AdminSystem::Database {
+namespace AdminSystem::Database
+{
 
 /** Database entity tracking a player's connection history and total playtime. */
-struct PlayerRecord {
+struct PlayerRecord
+{
     int64_t Id = 0;
     int64_t SteamId = 0;
     std::string Name;
@@ -17,4 +19,4 @@ struct PlayerRecord {
     int64_t TotalPlaytime = 0;
 };
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

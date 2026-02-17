@@ -1,19 +1,21 @@
 #include "GameData.hpp"
-#include "SigScanner.hpp"
-#include "../Utils/Log.hpp"
 
-#include <nlohmann/json.hpp>
+#include "../Utils/Log.hpp"
+#include "SigScanner.hpp"
+
 #include <ISmmPlugin.h>
 
 #include <filesystem>
 #include <fstream>
+#include <nlohmann/json.hpp>
 
 using namespace AdminSystem::Utils;
 
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace AdminSystem::Sdk {
+namespace AdminSystem::Sdk
+{
 
 bool GameData::Load(const std::string& path)
 {
@@ -28,7 +30,7 @@ bool GameData::Load(const std::string& path)
         }
 
         auto json = nlohmann::json::parse(file,
-            /*cb=*/nullptr, /*allow_exceptions=*/true, /*ignore_comments=*/true);
+                                          /*cb=*/nullptr, /*allow_exceptions=*/true, /*ignore_comments=*/true);
 
 #ifdef _WIN32
         constexpr const char* platform = "windows";
@@ -110,4 +112,4 @@ void* GameData::ResolveSignature(const std::string& name) const
     return reinterpret_cast<void*>(addr);
 }
 
-} // namespace AdminSystem::Sdk
+}  // namespace AdminSystem::Sdk

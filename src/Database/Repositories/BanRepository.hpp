@@ -1,14 +1,17 @@
 #pragma once
 
 #include "../Entities/Ban.hpp"
-#include <pqxx/pqxx>
+
 #include <optional>
+#include <pqxx/pqxx>
 #include <vector>
 
-namespace AdminSystem::Database {
+namespace AdminSystem::Database
+{
 
 /** Repository for ban records -- lookup, creation, removal, expiration, and history queries. */
-class BanRepository {
+class BanRepository
+{
 public:
     std::optional<Ban> FindActiveBySteamId(int64_t steamId);
     std::optional<Ban> FindActiveByIp(const std::string& ip);
@@ -23,4 +26,4 @@ private:
     Ban ParseRow(const pqxx::row& row);
 };
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

@@ -1,11 +1,12 @@
 #include "Schema.hpp"
-#include "GameInterfaces.hpp"
+
 #include "../Utils/Log.hpp"
+#include "GameInterfaces.hpp"
 
 #include <ISmmPlugin.h>
-#include <schemasystem/schemasystem.h>
 
 #include <map>
+#include <schemasystem/schemasystem.h>
 #include <string>
 
 using namespace AdminSystem::Utils;
@@ -13,7 +14,8 @@ using namespace AdminSystem::Utils;
 extern ISmmAPI* g_SMAPI;
 extern SourceMM::ISmmPlugin* g_PLAPI;
 
-namespace AdminSystem::Sdk {
+namespace AdminSystem::Sdk
+{
 
 // Cache: className -> (fieldName -> offset)
 static std::map<std::string, std::map<std::string, int>> sOffsetCache;
@@ -87,4 +89,4 @@ int GetSchemaOffset(const char* className, const char* fieldName)
     return -1;
 }
 
-} // namespace AdminSystem::Sdk
+}  // namespace AdminSystem::Sdk

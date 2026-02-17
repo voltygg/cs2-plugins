@@ -1,9 +1,11 @@
 #include "Command.hpp"
+
 #include "../Utils/StringUtils.hpp"
 
-namespace AdminSystem::Commands {
-
 using namespace AdminSystem::Utils;
+
+namespace AdminSystem::Commands
+{
 
 bool Command::Matches(const std::string& cmd) const
 {
@@ -18,4 +20,4 @@ bool Command::Matches(const std::string& cmd) const
     return false;
 }
 
-} // namespace AdminSystem::Commands
+}  // namespace AdminSystem::Commands

@@ -3,12 +3,13 @@
 #include <format>
 #include <stdexcept>
 
-namespace AdminSystem::Database {
+namespace AdminSystem::Database
+{
 
 std::string DatabaseConfig::GetConnectionString() const
 {
-    return std::format("host={} port={} dbname={} user={} password={} sslmode={}",
-                       Host, Port, DatabaseName, Username, Password, SslMode);
+    return std::format("host={} port={} dbname={} user={} password={} sslmode={}", Host, Port, DatabaseName, Username,
+                       Password, SslMode);
 }
 
 bool Database::Initialize(const DatabaseConfig& config)
@@ -99,4 +100,4 @@ pqxx::result Database::Execute(const std::string& query)
     return result;
 }
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

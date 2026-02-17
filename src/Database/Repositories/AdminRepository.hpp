@@ -2,14 +2,17 @@
 
 #include "../Entities/Admin.hpp"
 #include "../Entities/AdminGroup.hpp"
-#include <pqxx/pqxx>
+
 #include <optional>
+#include <pqxx/pqxx>
 #include <vector>
 
-namespace AdminSystem::Database {
+namespace AdminSystem::Database
+{
 
 /** Repository for CRUD operations on the admins table. */
-class AdminRepository {
+class AdminRepository
+{
 public:
     std::optional<Admin> FindBySteamId(int64_t steamId);
     std::vector<Admin> FindAll();
@@ -20,7 +23,8 @@ private:
 };
 
 /** Repository for CRUD operations on the admin_groups table. */
-class AdminGroupRepository {
+class AdminGroupRepository
+{
 public:
     std::optional<AdminGroup> FindByName(const std::string& name);
     std::vector<AdminGroup> FindAll();
@@ -30,4 +34,4 @@ private:
     AdminGroup ParseRow(const pqxx::row& row);
 };
 
-} // namespace AdminSystem::Database
+}  // namespace AdminSystem::Database

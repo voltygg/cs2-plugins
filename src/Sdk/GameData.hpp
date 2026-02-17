@@ -1,16 +1,19 @@
 #pragma once
 
 #include "../Core/Singleton.hpp"
+
 #include <string>
 #include <unordered_map>
 
-namespace AdminSystem::Sdk {
+namespace AdminSystem::Sdk
+{
 
 /**
  * Centralized gamedata manager. Loads platform-specific byte-pattern signatures
  * and offsets from signatures.jsonc, then resolves them at runtime via signature scanning.
  */
-class GameData : public Core::Singleton<GameData> {
+class GameData : public Core::Singleton<GameData>
+{
     friend class Core::Singleton<GameData>;
 
 public:
@@ -29,7 +32,8 @@ public:
 private:
     GameData() = default;
 
-    struct SignatureEntry {
+    struct SignatureEntry
+    {
         std::string Library;
         std::string Pattern;
         int Offset = 0;
@@ -39,4 +43,4 @@ private:
     std::unordered_map<std::string, SignatureEntry> _signatures;
 };
 
-} // namespace AdminSystem::Sdk
+}  // namespace AdminSystem::Sdk

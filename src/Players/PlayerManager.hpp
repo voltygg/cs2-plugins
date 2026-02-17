@@ -1,18 +1,21 @@
 #pragma once
 
-#include "Player.hpp"
 #include "../Core/Singleton.hpp"
+#include "Player.hpp"
+
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
-namespace AdminSystem::Players {
+namespace AdminSystem::Players
+{
 
 /**
  * Manages all connected players, indexed by slot and SteamID.
  * Main-thread-only (no mutex) — all access happens from game thread callbacks.
  */
-class PlayerManager : public Core::Singleton<PlayerManager> {
+class PlayerManager : public Core::Singleton<PlayerManager>
+{
     friend class Core::Singleton<PlayerManager>;
 
 public:
@@ -32,4 +35,4 @@ private:
     std::unordered_map<int64_t, Player*> _playersBySteamId;
 };
 
-} // namespace AdminSystem::Players
+}  // namespace AdminSystem::Players
