@@ -2,6 +2,8 @@
 
 A modern C++ admin system plugin for Counter-Strike 2 community servers, built on Metamod:Source.
 
+Built on top of **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable C++23 library for CS2 plugin development providing commands, menus, SDK wrappers, and utilities.
+
 ## Features
 
 - **Player Management:** Kick, ban, mute, gag, warn
@@ -27,7 +29,7 @@ A modern C++ admin system plugin for Counter-Strike 2 community servers, built o
 ## Commands
 
 | Command | Permission | Description |
-|---------|------------|-------------|
+| --- | --- | --- |
 | `!kick <target> [reason]` | Kick | Kick a player |
 | `!ban <target> <duration> [reason]` | Ban | Ban a player |
 | `!unban <steamid>` | Unban | Remove a ban |
@@ -77,7 +79,7 @@ A modern C++ admin system plugin for Counter-Strike 2 community servers, built o
 
 ```bash
 # Clone with submodules
-git clone --recursive <https://github.com/m9snoi/admin-system.git>
+git clone --recursive https://github.com/m9snoi/admin-system.git
 
 # Build Linux binary
 docker compose run --rm build
@@ -89,7 +91,7 @@ Requires Visual Studio 2026, vcpkg, and Python 3.14+ with PDM.
 
 ```bash
 # Clone with submodules
-git clone --recursive <https://github.com/m9snoi/admin-system.git>
+git clone --recursive https://github.com/m9snoi/admin-system.git
 cd admin-system
 
 # Install dependencies

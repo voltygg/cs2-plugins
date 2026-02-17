@@ -4,13 +4,16 @@
 
 C++23 Metamod:Source plugin for CS2 community servers providing admin functionality: player management, punishments (ban/mute/gag/warn), and WASD center-HTML menus.
 
+Reusable engine abstractions (commands, menu, SDK wrappers, utilities) have been extracted into **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** (`vendor/cs2-kit/`), a standalone library. Admin-system consumes CS2-Kit as a vendored submodule compiled alongside plugin source.
+
 ## Tech Stack
 
 - **Language:** C++23
 - **Framework:** Metamod:Source 2.0 + hl2sdk-cs2
+- **Shared Library:** CS2-Kit (vendor/cs2-kit) — commands, menus, SDK wrappers, utilities
 - **Database:** PostgreSQL 18 via libpqxx
 - **UI:** WASD center-HTML menus (W/S navigate, E select, R close)
-- **Build System:** AMBuild (auto-discovers .cpp files from `src/`)
+- **Build System:** AMBuild (auto-discovers .cpp files from `src/` and `vendor/cs2-kit/src/`)
 
 ## Build Commands
 
@@ -29,48 +32,38 @@ src/
 ├── Core/
 │   ├── Plugin.hpp/cpp          # ISmmPlugin entry point, hooks, subsystem init
 │   ├── Config.hpp/cpp          # Loads settings.json + admins.json
-│   └── Singleton.hpp           # CRTP singleton base (header-only)
-├── Sdk/
-│   ├── Entity.hpp/cpp          # Entity system access
-│   ├── Schema.hpp/cpp          # Runtime schema field offset resolution
-│   ├── UserMessage.hpp/cpp     # Chat & center HTML message sending
-│   ├── SigScanner.hpp/cpp      # Signature scanning (byte pattern matching)
-│   ├── GameData.hpp/cpp        # Centralized signature/offset management
-│   └── GameInterfaces.hpp      # All SDK interface pointers (header-only)
+│   └── Adapters.hpp/cpp        # CS2-Kit interface implementations (ILogger, IPathResolver, IMenuIO, ICommandCaller)
 ├── Players/
 │   ├── Player.hpp/cpp          # Player data (slot, SteamID, name, flags)
 │   └── PlayerManager.hpp/cpp   # Player lifecycle tracking
 ├── Admin/
 │   ├── AdminManager.hpp/cpp    # Permissions, flags (bitmask), immunity
 │   └── AdminMenu.hpp/cpp       # Admin-specific menu builders
-├── Commands/
-│   ├── Command.hpp/cpp         # Command struct + CommandBuilder (fluent API)
-│   └── CommandManager.hpp/cpp  # Registration, prefix handling, dispatch
-├── Menu/                       # Generic reusable menu framework
-│   ├── Menu.hpp                # Data structures + MenuLayout (header/footer)
-│   ├── MenuBuilder.hpp         # Fluent builder pattern (header-only)
-│   ├── MenuManager.hpp/cpp     # Lifecycle, WASD input, menu stack
-│   └── MenuRenderer.hpp/cpp    # 3-section HTML rendering
 ├── Punishments/
 │   └── PunishmentManager.hpp/cpp
 ├── Database/
 │   ├── Database.hpp/cpp        # PostgreSQL connection pool
 │   ├── Entities/               # Admin, AdminGroup, Ban, Mute, Gag, Warning, Player
 │   └── Repositories/           # AdminRepository, BanRepository
-└── Utils/
-    ├── StringUtils.hpp/cpp     # String manipulation, target parsing
-    ├── SteamId.hpp/cpp         # SteamID conversions
-    ├── TimeUtils.hpp/cpp       # Time formatting
-    └── Translations.hpp/cpp    # JSON-based i18n
+vendor/
+├── cs2-kit/                    # Reusable CS2 plugin library (submodule)
+│   └── src/
+│       ├── Commands/           # Command system (Command, CommandBuilder, CommandManager, ICommandCaller)
+│       ├── Core/               # Singleton, Scheduler, ILogger, IPathResolver
+│       ├── Menu/               # Menu system (Menu, MenuBuilder, MenuManager, MenuRenderer, IMenuIO)
+│       ├── Sdk/                # SDK wrappers (GameInterfaces, GameData, Entity, Schema, SigScanner, ...)
+│       └── Utils/              # SteamId, StringUtils, TimeUtils, Translations, Log
+├── hl2sdk-cs2/                 # HL2SDK for Source 2
+├── hl2sdk-manifests/           # SDK manifest definitions
+└── mmsource-2.0/               # Metamod:Source 2.0
 
 configs/
 ├── settings.json               # Plugin, database, commands, punishments config
 ├── admins.json                 # Groups + admins (merged)
 └── translations/               # en.json, ru.json
 gamedata/
-└── signatures.json             # Engine signatures and offsets
+└── signatures.jsonc            # Engine signatures and offsets
 references/                     # Third-party project examples (read-only reference, do NOT modify or search extensively)
-vendor/                         # Git submodules (hl2sdk-cs2, mmsource-2.0)
 ```
 
 ## Code Conventions
@@ -91,60 +84,19 @@ vendor/                         # Git submodules (hl2sdk-cs2, mmsource-2.0)
 
 - **C++17 nested namespaces:** `namespace AdminSystem::Sdk { ... }`
 - **`.hpp` headers** (not `.h`)
-- **CRTP Singleton** (`Core::Singleton<T>`) for all singletons
+- **CRTP Singleton** (`CS2Kit::Core::Singleton<T>`) for all singletons
 - **No mutexes** (main-thread-only design; all Metamod hooks run on game thread)
 - **Designated initializers** for struct construction
 - **`std::format`** for string formatting
 - **`int64_t`** for SteamIDs
 - **`uint32_t` bitmask** for admin flags (a=bit0, b=bit1, ..., z=bit25)
-- **Builder pattern** for Menu and Command construction
-
-## Key Design Patterns
-
-### Singleton (CRTP)
-
-```cpp
-class MyManager : public Core::Singleton<MyManager> {
-    friend class Core::Singleton<MyManager>;
-private:
-    MyManager() = default;
-};
-```
-
-### MenuBuilder (fluent)
-
-```cpp
-auto menu = Menu::MenuBuilder("Title")
-    .AddItem("Option", [](int slot) { ... })
-    .AddSubmenu("Sub", [](int slot) { return BuildSubmenu(slot); })
-    .WithHeader([]() { return "<b>Custom Header</b>"; })
-    .Build();
-Menu::MenuManager::Instance().OpenMenu(slot, menu);
-```
-
-### CommandBuilder (fluent)
-
-```cpp
-cmdMgr.Register(
-    Commands::CommandBuilder("kick")
-        .WithAliases({"k"})
-        .RequirePermission("c")
-        .WithArgs(1, 2)
-        .OnExecute([](Player* p, auto args) -> CommandResult { ... })
-        .Build()
-);
-```
-
-### SDK Abstractions
-
-- **`GameInterfaces`**: Centralized holder for all SDK interface pointers (replaces scattered `extern` globals)
-- **`GameData`**: Loads `signatures.json`, provides `FindSignature()` / `ResolveSignature()` (replaces duplicate gamedata parsing)
+- **Builder pattern** for Menu and Command construction (via CS2-Kit)
 
 ## Config Files
 
 - **`settings.json`**: All plugin configuration (plugin, database, commands, punishments, admin sections)
 - **`admins.json`**: Admin groups and admin entries (merged file)
-- **`signatures.json`**: Engine signatures/offsets with platform-specific pattern+offset pairs
+- **`signatures.jsonc`**: Engine signatures/offsets with platform-specific pattern+offset pairs
 
 ## Admin Flags
 
