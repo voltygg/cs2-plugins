@@ -72,7 +72,7 @@ pdm install
 vcpkg install
 
 # Build and deploy
-scripts/build.ps1
+scripts/build.sh
 ```
 
 See [docs/local-development.md](docs/local-development.md) for full setup guide.

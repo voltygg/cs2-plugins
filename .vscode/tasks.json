@@ -63,12 +63,9 @@
     {
       "label": "Start CS2 Server",
       "type": "shell",
-      "command": "powershell",
+      "command": "bash",
       "args": [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "${workspaceFolder}/scripts/start-server.ps1"
+        "${workspaceFolder}/scripts/start-server.sh"
       ],
       "problemMatcher": [],
       "presentation": {

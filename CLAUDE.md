@@ -18,11 +18,11 @@ Reusable engine abstractions (commands, menu, SDK wrappers, utilities) live in *
 ## Build Commands
 
 ```bash
-# Local Windows (from x64 Native Tools Command Prompt)
-scripts/build.ps1
+# Local Windows (run via Git Bash from an x64 Native Tools shell)
+scripts/build.sh
 
 # Deploy to CS2 server
-scripts/deploy.ps1
+scripts/deploy.sh
 ```
 
 ## Project Structure
