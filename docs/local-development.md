@@ -113,8 +113,8 @@ pdm install
 # Install C++ dependencies (libpqxx)
 vcpkg install
 
-# Build and deploy (initializes submodules automatically)
-scripts\build.ps1
+# Build and deploy (run via Git Bash or WSL)
+./scripts/build.sh
 ```
 
 Or build manually:
@@ -237,10 +237,10 @@ Verify the `vcpkg_installed/` folder exists and contains the dependencies.
 
 ### Fatal error: 'network_connection.pb.h' file not found
 
-Run the [generate-protos.ps1](../scripts/generate-protos.ps1) to generate protobuf files in the HL2SDK:
+Run the [generate-protos.sh](../scripts/generate-protos.sh) to generate protobuf files in the HL2SDK:
 
-```powershell
-scripts\generate-protos.ps1
+```bash
+./scripts/generate-protos.sh
 ```
 
 ## Quick Reference
@@ -251,7 +251,7 @@ scripts\generate-protos.ps1
 | Init submodules | `git submodule update --init --recursive` |
 | Install Python deps | `pdm install` |
 | Install C++ deps | `vcpkg install` |
-| Build and deploy | `scripts\build.ps1` |
+| Build and deploy | `./scripts/build.sh` (Git Bash/WSL) |
 | Generate VS solution | `pdm run python configure.py --gen=vs --vs-version 19` |
 | Start PostgreSQL | `docker compose up -d postgres` |
 | Clean build | `rmdir /s /q objdir && mkdir objdir` |

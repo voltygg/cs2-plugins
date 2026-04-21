@@ -12,50 +12,31 @@ Generic deployment scripts for Metamod:Source 2.0 plugins that auto-detect plugi
 
 ## Usage
 
-### PowerShell (Windows)
-
-```powershell
-# Basic usage (auto-detect plugin, default server path)
-.\scripts\deploy.ps1
-
-# Custom server path
-.\scripts\deploy.ps1 -ServerPath "D:\CS2-Server"
-
-# Override plugin name
-.\scripts\deploy.ps1 -PluginName "my-custom-plugin"
-
-# Specify architecture
-.\scripts\deploy.ps1 -Architecture "x86"
-
-# All options combined
-.\scripts\deploy.ps1 -ServerPath "D:\CS2-Server" -PluginName "my-plugin" -Architecture "x86_64"
-```
-
-### Bash (Linux)
-
 ```bash
 # Basic usage (auto-detect plugin, default server path)
 ./scripts/deploy.sh
 
 # Custom server path
-./scripts/deploy.sh /opt/cs2-server
+./scripts/deploy.sh --server-path "D:/CS2-Server"
 
 # Override plugin name
-./scripts/deploy.sh --plugin-name my-custom-plugin
+./scripts/deploy.sh --plugin-name "my-custom-plugin"
 
 # Specify architecture
-./scripts/deploy.sh --arch x86
+./scripts/deploy.sh --architecture x86
 
 # All options combined
-./scripts/deploy.sh --plugin-name my-plugin --arch x86_64 /opt/cs2-server
+./scripts/deploy.sh --server-path "D:/CS2-Server" --plugin-name "my-plugin" --architecture x86_64
 
 # Get help
 ./scripts/deploy.sh --help
 ```
 
+On Windows, run from Git Bash or WSL. On Linux, run directly.
+
 ## How Plugin Name is Detected
 
-1. **Explicit parameter**: If `--plugin-name` / `-PluginName` is provided, use it
+1. **Explicit parameter**: If `--plugin-name` is provided, use it
 2. **AMBuildScript**: Extract from `PLUGIN_NAME = "plugin-name"` in `AMBuildScript`
 3. **Directory name**: Fallback to current directory name
 
@@ -102,7 +83,7 @@ csgo/
 
 These scripts are completely generic! To use with another plugin:
 
-1. Copy `scripts/deploy.ps1` and `scripts/deploy.sh` to your new plugin project
+1. Copy `scripts/deploy.sh` to your new plugin project
 2. Ensure your `AMBuildScript` has `PLUGIN_NAME = "your-plugin-name"`
 3. Create a `.vdf` file named `your-plugin-name.vdf`
 4. Run the deployment script
