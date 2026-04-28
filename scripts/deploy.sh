@@ -218,7 +218,7 @@ fi
 
 CS2KitGamedata="vendor/cs2-kit/gamedata"
 if [[ -d "$CS2KitGamedata" ]] && compgen -G "$CS2KitGamedata/*" >/dev/null; then
-    echo "Copying CS2-Kit gamedata..."
+    echo "Copying CS2Kit gamedata..."
     CS2KitAddonPath="$CsgoPath/addons/cs2-kit/gamedata"
     mkdir -p "$CS2KitAddonPath"
     cp -Rf "$CS2KitGamedata"/* "$CS2KitAddonPath/" 2>/dev/null || true

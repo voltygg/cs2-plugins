@@ -3,12 +3,14 @@
 #include "../Core/Config.hpp"
 #include "../Database/Repositories/AdminRepository.hpp"
 
+#include <CS2Kit/Utils/Log.hpp>
 #include <algorithm>
 
 namespace AdminSystem::Admin
 {
 
 namespace Db = AdminSystem::Database;
+namespace Log = CS2Kit::Utils::Log;
 using Db::Admin;
 using Db::AdminGroup;
 using Db::AdminGroupRepository;
@@ -30,16 +32,17 @@ bool AdminManager::LoadAdmins()
             _admins[admin.SteamId] = admin;
         }
 
-        // Resolve and cache flag bitmasks for all loaded admins
         for (auto& [steamId, admin] : _admins)
         {
             _resolvedFlags[steamId] = ResolveFlags(admin);
         }
 
+        Log::Info("Loaded {} admin(s) from database.", _admins.size());
         return true;
     }
-    catch (const std::exception&)
+    catch (const std::exception& ex)
     {
+        Log::Error("LoadAdmins failed: {}", ex.what());
         return false;
     }
 }
@@ -52,16 +55,18 @@ bool AdminManager::LoadGroups()
         auto groups = repo.FindAll();
 
         _groups.clear();
-        _resolvedStyles.clear();  // group changes can shift the resolved prefix for any admin
+        _resolvedStyles.clear();
         for (const auto& group : groups)
         {
             _groups[group.Name] = group;
         }
 
+        Log::Info("Loaded {} admin group(s) from database.", _groups.size());
         return true;
     }
-    catch (const std::exception&)
+    catch (const std::exception& ex)
     {
+        Log::Error("LoadGroups failed: {}", ex.what());
         return false;
     }
 }

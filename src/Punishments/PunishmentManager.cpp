@@ -162,9 +162,9 @@ bool PunishmentManager::IssueMute(Mute& mute)
         _activeMutes[mute.TargetSteamId] = mute;
         _mutedPlayers.insert(mute.TargetSteamId);
 
-        // TODO(voice-block): CS2-Kit doesn't expose a SVC_VoiceData hook today, so the mute is
+        // TODO(voice-block): CS2Kit doesn't expose a SVC_VoiceData hook today, so the mute is
         // persisted and visible in `!who` but voice still flows. Plug into voice transport when
-        // CS2-Kit gains that surface.
+        // CS2Kit gains that surface.
         ChatService::Instance().BroadcastPunishment("muted", mute.AdminName, mute.TargetName, mute.Reason,
                                                     mute.Duration);
         return true;

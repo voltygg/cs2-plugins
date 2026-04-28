@@ -8,7 +8,6 @@
 #include <CS2Kit/Utils/ChatColors.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
-
 #include <format>
 
 namespace AdminSystem::Core
@@ -29,8 +28,8 @@ void ChatService::NoPermission(int slot)
     Chat::Print(slot, msg);
 }
 
-void ChatService::BroadcastPunishment(std::string_view action, std::string_view adminName,
-                                      std::string_view targetName, std::string_view reason, int64_t durationSec)
+void ChatService::BroadcastPunishment(std::string_view action, std::string_view adminName, std::string_view targetName,
+                                      std::string_view reason, int64_t durationSec)
 {
     const auto& cfg = ConfigManager::Instance().GetChatConfig();
     if (!cfg.BroadcastPunishments)
@@ -39,13 +38,9 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
     std::string duration = (durationSec > 0) ? TimeUtils::FormatDuration(durationSec) : "permanent";
 
     // [ADMIN] {admin} {action} {target} for {reason} ({duration})
-    auto line = std::format("{}{} {}{}{} {}{}{} {} for {}{}{} ({})",
-                            ChatColors::Green, cfg.FallbackPrefix,
-                            ChatColors::Default, adminName, ChatColors::Default,
-                            ChatColors::Red, action, ChatColors::Default,
-                            targetName,
-                            ChatColors::Olive, reason, ChatColors::Default,
-                            duration);
+    auto line = std::format("{}{} {}{}{} {}{}{} {} for {}{}{} ({})", ChatColors::Green, cfg.FallbackPrefix,
+                            ChatColors::Default, adminName, ChatColors::Default, ChatColors::Red, action,
+                            ChatColors::Default, targetName, ChatColors::Olive, reason, ChatColors::Default, duration);
     Chat::PrintAll(line);
 }
 
@@ -72,7 +67,7 @@ void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view mes
     {
         // Team-only chat: filter to players on the admin's team. PlayerController exposes team via
         // schema; for now we broadcast to everyone (most servers run admin team chat as a notice
-        // anyway). Refine when CS2-Kit gains a stable team accessor on Player.
+        // anyway). Refine when CS2Kit gains a stable team accessor on Player.
         Chat::PrintAll(line);
     }
     else

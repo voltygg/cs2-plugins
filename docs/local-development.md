@@ -11,7 +11,7 @@ This guide walks you through setting up a local development environment for the 
 ## 1. Clone the Repository
 
 ```powershell
-# Clone with all submodules (CS2-Kit and its nested SDK deps)
+# Clone with all submodules (CS2Kit and its nested SDK deps)
 git clone --recursive https://github.com/m9snoi/admin-system.git
 cd admin-system
 ```
@@ -96,7 +96,7 @@ vcpkg install
 # Dependencies are installed to: vcpkg_installed/
 ```
 
-This installs `libpqxx` to the `vcpkg_installed/` folder within the project. (nlohmann/json is provided by CS2-Kit's vendor submodules.)
+This installs `libpqxx` to the `vcpkg_installed/` folder within the project. (nlohmann/json is provided by CS2Kit's vendor submodules.)
 
 > **Note:** The `vcpkg_installed/` folder is gitignored. Each developer runs `vcpkg install` to get dependencies locally.
 
@@ -184,7 +184,7 @@ docker compose up -d postgres
 ```text
 C:\path\to\admin-system\
 ├── vendor\
-│   └── cs2-kit\              # CS2-Kit library (only submodule)
+│   └── cs2-kit\              # CS2Kit library (only submodule)
 │       ├── include\CS2Kit\   # Public headers
 │       ├── src\              # Implementation
 │       └── vendor\           # Nested SDK submodules

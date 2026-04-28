@@ -4,13 +4,13 @@
 
 C++23 Metamod:Source plugin for CS2 community servers providing admin functionality: player management, punishments (ban/mute/gag/warn), and WASD center-HTML menus.
 
-Reusable engine abstractions (commands, menu, SDK wrappers, utilities) live in **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** (`vendor/cs2-kit/`), a standalone library with its own build system and SDK submodules. Admin-system consumes CS2-Kit via source inclusion (compiles `.cpp` files inline into the plugin binary).
+Reusable engine abstractions (commands, menu, SDK wrappers, utilities) live in **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** (`vendor/cs2-kit/`), a standalone library with its own build system and SDK submodules. Admin-system consumes CS2Kit via source inclusion (compiles `.cpp` files inline into the plugin binary).
 
 ## Tech Stack
 
 - **Language:** C++23
 - **Framework:** Metamod:Source 2.0 + hl2sdk-cs2
-- **Shared Library:** CS2-Kit (vendor/cs2-kit) — commands, menus, SDK wrappers, utilities
+- **Shared Library:** CS2Kit (vendor/cs2-kit) — commands, menus, SDK wrappers, utilities
 - **Database:** PostgreSQL 18 via libpqxx
 - **UI:** WASD center-HTML menus (W/S navigate, E select, R close)
 - **Build System:** AMBuild (auto-discovers .cpp files from `src/` and `vendor/cs2-kit/src/`)
@@ -66,7 +66,7 @@ database/
 references/                     # Third-party project examples (read-only reference, do NOT modify or search extensively)
 ```
 
-## CS2-Kit Integration
+## CS2Kit Integration
 
 Admin-system uses **source inclusion**: cs2-kit `.cpp` files are compiled directly into the plugin binary. The AMBuild auto-discovers sources from `vendor/cs2-kit/src/`. All SDK dependencies (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0, nlohmann/json) live inside cs2-kit's `vendor/` — admin-system has no duplicate submodules.
 
@@ -106,7 +106,15 @@ Hook callbacks:
 - **`std::format`** for string formatting
 - **`int64_t`** for SteamIDs
 - **`uint32_t` bitmask** for admin flags (a=bit0, b=bit1, ..., z=bit25)
-- **Builder pattern** for Menu and Command construction (via CS2-Kit)
+- **Builder pattern** for Menu and Command construction (via CS2Kit)
+
+### Comments
+
+Default to writing **no comments**. Names should carry the meaning. Add a comment only when the *why* is non-obvious — a hidden constraint, a workaround for a specific engine quirk, behavior that would surprise a reader. Keep them to **one or two short lines**. Don't restate what the code does, don't reference the current task or PR, and don't write multi-paragraph docstrings.
+
+### File Size
+
+Aim to keep source files under **~300-350 LOC**. When a file grows past that, split by responsibility (e.g. extract a sibling helper, move a sub-feature into its own translation unit). Headers stay small and focused; large monolithic `.cpp` files should be the exception, not the norm.
 
 ## Config Files
 

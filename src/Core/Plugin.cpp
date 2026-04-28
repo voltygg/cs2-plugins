@@ -212,17 +212,16 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
 
     bool isCommand = !message.empty() && (message.front() == '!' || message.front() == '.');
 
-    // Gagged players: drop the message before it reaches chat. Commands are still allowed
-    // since they may include unmute/help/etc. and don't broadcast to other players.
-    if (!isCommand && PunishmentManager::Instance().IsGagged(player->GetSteamID()))
+    // Try to dispatch as a registered command. Returns false for unknown commands
+    // (e.g. "!ads") so they can fall through to normal chat handling instead of
+    // being silently swallowed.
+    if (isCommand && CommandManager::Instance().HandleChatMessage(player, message))
     {
         RETURN_META(MRES_SUPERCEDE);
     }
 
-    if (isCommand)
+    if (PunishmentManager::Instance().IsGagged(player->GetSteamID()))
     {
-        CommandManager::Instance().HandleChatMessage(player, message);
-        // Suppress the original say so the bare "!ban Bob" doesn't show up in chat as a player line.
         RETURN_META(MRES_SUPERCEDE);
     }
 
@@ -255,11 +254,12 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
     // Pipe every command's result message into the player's chat as a colored reply.
     // Suppresses empty messages (e.g. !who, which already streamed its own lines).
-    CommandManager::Instance().SetResultCallback([](Player* caller, const Command& /*cmd*/, const CommandResult& result) {
-        if (!caller || result.Message.empty())
-            return;
-        ChatService::Instance().Reply(caller->GetSlot(), result.Message);
-    });
+    CommandManager::Instance().SetResultCallback(
+        [](Player* caller, const Command& /*cmd*/, const CommandResult& result) {
+            if (!caller || result.Message.empty())
+                return;
+            ChatService::Instance().Reply(caller->GetSlot(), result.Message);
+        });
 
     // 3. Initialize database connection (optional)
     Log::Info("Connecting to database...");
@@ -294,26 +294,25 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
     Log::Info("Initializing commands...");
     auto& cmdMgr = CommandManager::Instance();
 
-    cmdMgr.Register(
-        CommandBuilder("admin")
-            .WithAliases({"a", "menu"})
-            .WithDescription("Open the admin menu")
-            .WithUsage("!admin")
-            .RequirePermission("r")
-            .WithArgs(0, 0)
-            .OnExecute([](Player* admin, const std::vector<std::string>& /*args*/) -> CommandResult {
-                if (!admin)
-                    return {false, "Invalid caller"};
+    cmdMgr.Register(CommandBuilder("admin")
+                        .WithAliases({"a", "menu"})
+                        .WithDescription("Open the admin menu")
+                        .WithUsage("!admin")
+                        .RequirePermission("r")
+                        .WithArgs(0, 0)
+                        .OnExecute([](Player* admin, const std::vector<std::string>& /*args*/) -> CommandResult {
+                            if (!admin)
+                                return {false, "Invalid caller"};
 
-                auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
-                if (mainMenu)
-                {
-                    MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
-                    return {true, ""};  // menu UI is the feedback; no chat reply needed
-                }
-                return {false, "Failed to open admin menu"};
-            })
-            .Build());
+                            auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
+                            if (mainMenu)
+                            {
+                                MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
+                                return {true, ""};  // menu UI is the feedback; no chat reply needed
+                            }
+                            return {false, "Failed to open admin menu"};
+                        })
+                        .Build());
 
     AdminSystem::Commands::RegisterAdminCommands(cmdMgr);
 

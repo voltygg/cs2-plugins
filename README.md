@@ -2,7 +2,7 @@
 
 A modern C++ admin system plugin for Counter-Strike 2 community servers, built on Metamod:Source.
 
-Built on top of **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable C++23 library for CS2 plugin development providing commands, menus, SDK wrappers, and utilities. CS2-Kit is the only submodule — all SDK dependencies (hl2sdk-cs2, mmsource-2.0, etc.) are nested inside it.
+Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable C++23 library for CS2 plugin development providing commands, menus, SDK wrappers, and utilities. CS2Kit is the only submodule — all SDK dependencies (hl2sdk-cs2, mmsource-2.0, etc.) are nested inside it.
 
 ## Features
 
@@ -52,7 +52,7 @@ Runtime configuration lives in `configs/settings.json` (database, punishments, c
 ### Quick Start (Docker)
 
 ```bash
-# Clone with submodules (--recursive pulls CS2-Kit and its nested SDK submodules)
+# Clone with submodules (--recursive pulls CS2Kit and its nested SDK submodules)
 git clone --recursive https://github.com/m9snoi/admin-system.git
 
 # Build Linux binary

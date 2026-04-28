@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+ScriptDir="$(cd "$(dirname "$0")" && pwd)"
+cd "$ScriptDir/.."
 
 # Initialize submodules if not already done
 # git submodule update --init --recursive
@@ -13,4 +14,4 @@ pdm run python configure.py
 (cd objdir && pdm run ambuild)
 
 # Run deploy script to copy built files to the output directory
-"$(dirname "$0")/deploy.sh"
+"$ScriptDir/deploy.sh"
