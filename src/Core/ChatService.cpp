@@ -35,12 +35,20 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
     if (!cfg.BroadcastPunishments)
         return;
 
-    std::string duration = (durationSec > 0) ? TimeUtils::FormatDuration(durationSec) : "permanent";
+    // Only ban/mute/gag carry a duration; kick/warn/un* are instantaneous and shouldn't show "(permanent)".
+    bool isTimedAction = (action == "banned" || action == "muted" || action == "gagged");
+    std::string durationSuffix;
+    if (isTimedAction)
+    {
+        std::string duration = (durationSec > 0) ? TimeUtils::FormatDuration(durationSec) : "permanent";
+        durationSuffix = std::format(" ({})", duration);
+    }
 
-    // [ADMIN] {admin} {action} {target} for {reason} ({duration})
-    auto line = std::format("{}{} {}{}{} {}{}{} {} for {}{}{} ({})", ChatColors::Green, cfg.FallbackPrefix,
-                            ChatColors::Default, adminName, ChatColors::Default, ChatColors::Red, action,
-                            ChatColors::Default, targetName, ChatColors::Olive, reason, ChatColors::Default, duration);
+    // [ADMIN] {admin} {action} {target} for {reason}{durationSuffix}
+    auto line =
+        std::format("{}{} {}{}{} {}{}{} {} for {}{}{}{}", ChatColors::Green, cfg.FallbackPrefix, ChatColors::Default,
+                    adminName, ChatColors::Default, ChatColors::Red, action, ChatColors::Default, targetName,
+                    ChatColors::Olive, reason, ChatColors::Default, durationSuffix);
     Chat::PrintAll(line);
 }
 

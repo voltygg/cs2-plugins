@@ -29,6 +29,8 @@ using namespace CS2Kit::Commands;
 using namespace CS2Kit::Menu;
 using namespace CS2Kit::Players;
 using namespace CS2Kit::Utils;
+using namespace CS2Kit::Core;
+using namespace CS2Kit::Sdk;
 
 // Global plugin instance
 AdminSystemPlugin g_AdminSystemPlugin;
@@ -150,22 +152,23 @@ void AdminSystemPlugin::Hook_GameFrame(bool simulating, bool bFirstTick, bool bL
 void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* pszName, uint64 xuid,
                                                const char* pszNetworkID, const char* pszAddress, bool bFakePlayer)
 {
-    if (bFakePlayer)
-        return;
-
     int playerSlot = slot.Get();
     int64_t steamId = static_cast<int64_t>(xuid);
 
     auto& plrMgr = PlayerManager::Instance();
     plrMgr.AddPlayer(playerSlot, steamId, pszName ? pszName : "", pszAddress ? pszAddress : "");
 
+    // Bots have no real SteamID, so they can't be banned/muted/gagged — but we still want them
+    // in PlayerManager so they show up in the admin menu and are kickable for testing.
+    if (bFakePlayer)
+        return;
+
     // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so we defer
     // to the next game frame via the scheduler — the player is fully connected by then.
     if (auto ban = PunishmentManager::Instance().GetActiveBan(steamId))
     {
         std::string reason = ban->Reason;
-        CS2Kit::Core::Scheduler::Instance().NextTick(
-            [playerSlot, reason]() { CS2Kit::Sdk::PlayerController(playerSlot).Kick(reason.c_str()); });
+        Scheduler::Instance().NextTick([playerSlot, reason]() { PlayerController(playerSlot).Kick(reason.c_str()); });
     }
 }
 
@@ -302,7 +305,9 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
                         .WithArgs(0, 0)
                         .OnExecute([](Player* admin, const std::vector<std::string>& /*args*/) -> CommandResult {
                             if (!admin)
+                            {
                                 return {false, "Invalid caller"};
+                            }
 
                             auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
                             if (mainMenu)
@@ -326,8 +331,7 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 
         // Sweep expired bans/mutes/gags every minute so timed punishments self-clear without
         // requiring a server restart or manual intervention.
-        CS2Kit::Core::Scheduler::Instance().Repeat(60'000,
-                                                   []() { PunishmentManager::Instance().ExpireOldPunishments(); });
+        Scheduler::Instance().Repeat(60'000, []() { PunishmentManager::Instance().ExpireOldPunishments(); });
     }
 
     // 7. Load translations
@@ -357,7 +361,7 @@ bool AdminSystemPlugin::LoadConfigs()
 
 void AdminSystemPlugin::RegisterHooks()
 {
-    auto& gi = CS2Kit::Sdk::GameInterfaces::Instance();
+    auto& gi = GameInterfaces::Instance();
 
     SH_ADD_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame), true);
     SH_ADD_HOOK(IServerGameClients, OnClientConnected, gi.ServerGameClients,
@@ -372,7 +376,7 @@ void AdminSystemPlugin::RegisterHooks()
 
 void AdminSystemPlugin::UnregisterHooks()
 {
-    auto& gi = CS2Kit::Sdk::GameInterfaces::Instance();
+    auto& gi = GameInterfaces::Instance();
 
     SH_REMOVE_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame),
                    true);
