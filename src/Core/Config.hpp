@@ -20,6 +20,7 @@ struct PluginConfig
     bool DebugMode = false;
     int MaxWarnings = 3;
     std::string DefaultBanReason = "Banned by administrator";
+    std::string Locale = "en";
 };
 
 /** Chat formatting settings loaded from the "chat" section of settings.json. */

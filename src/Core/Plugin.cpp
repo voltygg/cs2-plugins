@@ -254,6 +254,10 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
         return false;
     }
 
+    auto locale = ConfigManager::Instance().GetPluginConfig().Locale;
+    Log::Info("Translations: Setting language to {}...", locale);
+    Translations::Instance().SetLanguage(locale);
+
     // 2. Set up command permission and result callbacks
     CommandManager::Instance().SetPermissionCallback([](int64_t steamId, const std::string& permission) -> bool {
         return AdminManager::Instance().HasAnyPermission(steamId, permission);

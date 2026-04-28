@@ -27,6 +27,8 @@ bool ConfigManager::LoadSettings(const std::string& path)
         auto& p = j["plugin"];
         if (p.contains("logLevel"))
             _pluginConfig.DebugMode = (p["logLevel"] == "debug");
+        if (p.contains("locale"))
+            _pluginConfig.Locale = p["locale"];
     }
 
     // Database section

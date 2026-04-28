@@ -1,6 +1,7 @@
 {
   "plugin": {
-    "logLevel": "info"
+    "logLevel": "info",
+    "locale": "ru"
   },
   "database": {
     "host": "localhost",
