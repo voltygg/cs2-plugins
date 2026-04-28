@@ -35,6 +35,7 @@
   "actionLaunch": "Launch",
   "actionSmite": "Smite",
   "actionSwap": "Swap Players",
+  "actionHide": "Hide (Self)",
 
   "effectStateOn": "ON",
   "effectStateOff": "OFF",
@@ -46,6 +47,8 @@
   "broadcastSmote": "smote",
   "broadcastLaunched": "launched",
   "broadcastSwapped": "swapped",
+  "broadcastHideOn": "went stealth",
+  "broadcastHideOff": "came back",
 
   "selectSwapTarget": "Select swap partner",
 

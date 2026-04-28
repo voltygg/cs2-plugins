@@ -46,7 +46,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
     }
 
     {
-        bool hasPerm = adminMgr.HasAnyPermission(adminSid, "sz");
+        bool hasPerm = adminMgr.HasAnyPermission(adminSid, "bsz");
         int slot = adminSlot;
         builder.AddItem(
             tr.Get("categoryControl"),

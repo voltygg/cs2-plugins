@@ -4,6 +4,9 @@
 #include "../Actions/Teleport.hpp"
 #include "../Actions/Vitals.hpp"
 #include "../AdminManager.hpp"
+#include "../Effects/EffectId.hpp"
+#include "../Effects/EffectManager.hpp"
+#include "../Effects/Hide.hpp"
 #include "PlayerPicker.hpp"
 #include "PresetSubmenu.hpp"
 
@@ -18,6 +21,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
+using AdminSystem::Admin::Effects::EffectId;
+using AdminSystem::Admin::Effects::EffectManager;
 using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Menu::MenuManager;
 using CS2Kit::Players::PlayerManager;
@@ -65,11 +70,45 @@ void AddFlagToggle(MenuBuilder& builder, const std::string& base, bool enabled, 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
 {
     auto& tr = Translations::Instance();
-    return BuildPlayerPicker(adminSlot, tr.Get("categoryControl"), [](int admin, int target) {
-        auto actions = BuildControlActionsMenu(admin, target);
-        if (actions)
-            MenuManager::Instance().OpenMenu(admin, actions);
-    });
+    auto& adminMgr = AdminManager::Instance();
+    auto& plrMgr = PlayerManager::Instance();
+
+    auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
+    if (!admin)
+        return nullptr;
+
+    int64_t adminSid = admin->GetSteamID();
+    bool hasB = adminMgr.HasPermission(adminSid, 'b');
+
+    MenuBuilder builder(tr.Get("categoryControl"));
+
+    // Self-only Hide toggle sits at the top of the Control list before player picks.
+    int slot = adminSlot;
+    builder.AddDynamicItem(
+        [slot]() {
+            bool on = EffectManager::Instance().IsActive(slot, EffectId::Hide);
+            return std::format("{}: {}", Translations::Instance().Get("actionHide"),
+                               Translations::Instance().Get(on ? "effectStateOn" : "effectStateOff"));
+        },
+        [slot](int /*s*/) { Effects::ToggleHide(slot); }, hasB);
+
+    auto players = plrMgr.GetAllPlayers();
+    for (auto* p : players)
+    {
+        if (!p)
+            continue;
+        int targetSlot = p->GetSlot();
+        int admin2 = adminSlot;
+        builder.AddItem(p->GetName(), [admin2, targetSlot](int /*s*/) {
+            auto actions = BuildControlActionsMenu(admin2, targetSlot);
+            if (actions)
+                MenuManager::Instance().OpenMenu(admin2, actions);
+        });
+    }
+    if (players.empty())
+        builder.AddItem(tr.Get("noPlayers"), [](int) {}, false);
+
+    return builder.Build();
 }
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int targetSlot)
@@ -99,8 +138,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     AddSubmenu(builder, tr.Get("actionHealth"), hasH, adminSlot, targetSlot, &BuildHealthPresetMenu);
     AddSubmenu(builder, tr.Get("actionArmor"), hasH, adminSlot, targetSlot, &BuildArmorPresetMenu);
 
-    AddFlagToggle(builder, tr.Get("actionGodmode"), hasH, adminSlot, targetSlot, FL_GODMODE,
-                  &Actions::DoToggleGodmode);
+    AddFlagToggle(builder, tr.Get("actionGodmode"), hasH, adminSlot, targetSlot, FL_GODMODE, &Actions::DoToggleGodmode);
 
     AddSimple(builder, tr.Get("actionBury"), hasS, adminSlot, targetSlot, &Actions::DoBury);
     AddSimple(builder, tr.Get("actionUnbury"), hasS, adminSlot, targetSlot, &Actions::DoUnbury);

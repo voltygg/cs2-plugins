@@ -35,6 +35,7 @@
   "actionLaunch": "Запустить",
   "actionSmite": "Молния",
   "actionSwap": "Поменять игроков",
+  "actionHide": "Невидимка (себя)",
 
   "effectStateOn": "ВКЛ",
   "effectStateOff": "ВЫКЛ",
@@ -46,6 +47,8 @@
   "broadcastSmote": "поразил молнией",
   "broadcastLaunched": "запустил",
   "broadcastSwapped": "поменял местами",
+  "broadcastHideOn": "ушёл в невидимку",
+  "broadcastHideOff": "вернулся из невидимки",
 
   "selectSwapTarget": "Выберите второго игрока",
 
