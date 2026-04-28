@@ -7,9 +7,7 @@ CREATE SCHEMA IF NOT EXISTS admin_system;
 SET
   search_path TO admin_system;
 
--- =============================================================================
--- TABLES
--- =============================================================================
+-- ------- TABLES -----
 -- Admin groups table
 CREATE TABLE IF NOT EXISTS admin_groups (
   id BIGSERIAL PRIMARY KEY,
@@ -17,6 +15,10 @@ CREATE TABLE IF NOT EXISTS admin_groups (
   flags VARCHAR(64) NOT NULL DEFAULT '',
   immunity INTEGER NOT NULL DEFAULT 0,
   inherits TEXT [ ] DEFAULT ARRAY [ ] :: TEXT [ ],
+  chat_prefix VARCHAR(64) NOT NULL DEFAULT '',
+  prefix_color VARCHAR(32) NOT NULL DEFAULT '',
+  name_color VARCHAR(32) NOT NULL DEFAULT '',
+  message_color VARCHAR(32) NOT NULL DEFAULT '',
   created_at BIGINT NOT NULL DEFAULT EXTRACT(
     EPOCH
     FROM
@@ -178,9 +180,7 @@ CREATE TABLE IF NOT EXISTS migrations (
   ) :: BIGINT
 );
 
--- =============================================================================
--- INDEXES
--- =============================================================================
+-- ------- INDEXES -----
 -- Admins indexes
 CREATE INDEX IF NOT EXISTS idx_admins_steam_id ON admins(steam_id);
 
@@ -226,20 +226,18 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_target_steam_id ON audit_log(target_ste
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
 
--- =============================================================================
--- DEFAULT DATA
--- =============================================================================
+-- ------- DEFAULT DATA -----
 -- Insert default superadmin group
 INSERT INTO
-  admin_groups (name, flags, immunity, inherits)
+  admin_groups (name, flags, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
 VALUES
-  ('superadmin', 'z', 100, ARRAY [ ] :: TEXT [ ]) ON CONFLICT (name) DO NOTHING;
+  ('superadmin', 'z', 100, ARRAY [ ] :: TEXT [ ], '[ROOT]', 'red', 'lightblue', 'default') ON CONFLICT (name) DO NOTHING;
 
 -- Insert default moderator group
 INSERT INTO
-  admin_groups (name, flags, immunity, inherits)
+  admin_groups (name, flags, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
 VALUES
-  ('moderator', 'bci', 50, ARRAY [ ] :: TEXT [ ]) ON CONFLICT (name) DO NOTHING;
+  ('moderator', 'bci', 50, ARRAY [ ] :: TEXT [ ], '[MOD]', 'green', 'default', 'default') ON CONFLICT (name) DO NOTHING;
 
 -- Insert schema version
 INSERT INTO

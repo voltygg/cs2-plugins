@@ -1,7 +1,5 @@
 #include "Config.hpp"
 
-#include "../Admin/AdminManager.hpp"
-
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <filesystem>
@@ -13,13 +11,9 @@ namespace AdminSystem::Core
 
 using namespace CS2Kit::Core;
 using namespace CS2Kit::Utils;
-using namespace AdminSystem::Admin;
 
 using json = nlohmann::json;
 using DatabaseConfig = AdminSystem::Database::DatabaseConfig;
-using Database = AdminSystem::Database::Database;
-using AdminGroup = AdminSystem::Database::AdminGroup;
-using Admin = AdminSystem::Database::Admin;
 
 bool ConfigManager::LoadSettings(const std::string& path)
 {
@@ -65,86 +59,25 @@ bool ConfigManager::LoadSettings(const std::string& path)
             _pluginConfig.MaxWarnings = pun["warningThreshold"];
     }
 
+    // Chat section
+    if (j.contains("chat"))
+    {
+        auto& chat = j["chat"];
+        if (chat.contains("broadcastPunishments"))
+            _chatConfig.BroadcastPunishments = chat["broadcastPunishments"];
+        if (chat.contains("tagAdminChatMessages"))
+            _chatConfig.TagAdminChatMessages = chat["tagAdminChatMessages"];
+        if (chat.contains("fallbackPrefix"))
+            _chatConfig.FallbackPrefix = chat["fallbackPrefix"];
+        if (chat.contains("fallbackPrefixColor"))
+            _chatConfig.FallbackPrefixColor = chat["fallbackPrefixColor"];
+        if (chat.contains("fallbackNameColor"))
+            _chatConfig.FallbackNameColor = chat["fallbackNameColor"];
+        if (chat.contains("fallbackMessageColor"))
+            _chatConfig.FallbackMessageColor = chat["fallbackMessageColor"];
+    }
+
     Log::Info("Loaded settings from {}", path);
-    return true;
-}
-
-bool ConfigManager::LoadAdminsConfig(const std::string& path)
-{
-    json j;
-    if (!LoadJsonFile(path, j))
-        return false;
-
-    auto& adminMgr = AdminManager::Instance();
-
-    // Load groups
-    if (j.contains("groups") && j["groups"].is_array())
-    {
-        int groupCount = 0;
-        for (const auto& entry : j["groups"])
-        {
-            try
-            {
-                AdminGroup group;
-                if (entry.contains("name"))
-                    group.Name = entry["name"];
-                if (entry.contains("flags"))
-                    group.Flags = entry["flags"];
-                if (entry.contains("immunity"))
-                    group.Immunity = entry["immunity"];
-
-                if (entry.contains("inherits") && entry["inherits"].is_array())
-                {
-                    for (const auto& parent : entry["inherits"])
-                        group.Inherits.push_back(parent.get<std::string>());
-                }
-
-                adminMgr.AddGroup(group);
-                ++groupCount;
-            }
-            catch (const std::exception& e)
-            {
-                Log::Warn("Failed to parse group entry: {}", e.what());
-            }
-        }
-        Log::Info("Loaded {} group(s) from config.", groupCount);
-    }
-
-    // Load admins
-    if (j.contains("admins") && j["admins"].is_array())
-    {
-        int adminCount = 0;
-        for (const auto& entry : j["admins"])
-        {
-            try
-            {
-                Admin admin;
-                if (entry.contains("steamId"))
-                    admin.SteamId = std::stoll(entry["steamId"].get<std::string>());
-                if (entry.contains("name"))
-                    admin.Name = entry["name"].get<std::string>();
-                if (entry.contains("flags"))
-                    admin.Flags = entry["flags"].get<std::string>();
-                if (entry.contains("immunity"))
-                    admin.Immunity = entry["immunity"].get<int32_t>();
-
-                if (entry.contains("groups") && entry["groups"].is_array())
-                {
-                    for (const auto& group : entry["groups"])
-                        admin.Groups.push_back(group.get<std::string>());
-                }
-
-                adminMgr.AddAdmin(admin);
-                ++adminCount;
-            }
-            catch (const std::exception& e)
-            {
-                Log::Warn("Failed to parse admin entry: {}", e.what());
-            }
-        }
-        Log::Info("Loaded {} admin(s) from config.", adminCount);
-    }
-
     return true;
 }
 

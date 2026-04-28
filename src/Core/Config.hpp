@@ -22,29 +22,44 @@ struct PluginConfig
     std::string DefaultBanReason = "Banned by administrator";
 };
 
+/** Chat formatting settings loaded from the "chat" section of settings.json. */
+struct ChatConfig
+{
+    /** If true, every issued punishment broadcasts a colored line to all players. */
+    bool BroadcastPunishments = true;
+
+    /** If true, an admin's chat is intercepted and re-emitted with their group's colored prefix. */
+    bool TagAdminChatMessages = true;
+
+    /** Prefix used when an admin doesn't belong to any group with `ChatPrefix` set. */
+    std::string FallbackPrefix = "[ADMIN]";
+    std::string FallbackPrefixColor = "red";
+    std::string FallbackNameColor = "default";
+    std::string FallbackMessageColor = "default";
+};
+
 /**
- * Loads and owns all JSON configuration (settings.json, admins.json).
- * Provides read-only access to parsed config structs.
+ * Loads and owns settings.json. All admin/group data is owned by the database
+ * (`admins` and `admin_groups` tables) — this manager only exposes plugin/DB/chat config.
  */
 class ConfigManager : public Singleton<ConfigManager>
 {
 public:
     explicit ConfigManager(Token) {}
 
-    /** Load the consolidated settings.json (plugin, database, commands, punishments, admin). */
+    /** Load settings.json (plugin, database, punishments, chat sections). */
     bool LoadSettings(const std::string& path);
-
-    /** Load admins.json (groups + admins merged). */
-    bool LoadAdminsConfig(const std::string& path);
 
     const PluginConfig& GetPluginConfig() const { return _pluginConfig; }
     const DatabaseConfig& GetDatabaseConfig() const { return _databaseConfig; }
+    const ChatConfig& GetChatConfig() const { return _chatConfig; }
 
 private:
     bool LoadJsonFile(const std::string& filePath, json& outJson);
 
     PluginConfig _pluginConfig;
     DatabaseConfig _databaseConfig;
+    ChatConfig _chatConfig;
 };
 
 }  // namespace AdminSystem::Core

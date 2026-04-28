@@ -1,11 +1,13 @@
 #include "AdminMenu.hpp"
 
+#include "../Core/ChatService.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "AdminManager.hpp"
 
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
@@ -22,9 +24,7 @@ using namespace CS2Kit::Utils;
 using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Menu::MenuManager;
 
-//-----------------------------------------------------------------------------
-// Helper: Build a timed-punishment duration submenu (shared by Ban/Mute/Gag)
-//-----------------------------------------------------------------------------
+// ------- Helper: Build a timed-punishment duration submenu (shared by Ban/Mute/Gag) -----
 
 static std::shared_ptr<Menu> BuildTimedPunishmentMenu(
     int adminSlot, int targetSlot, const std::string& actionName,
@@ -58,9 +58,7 @@ static std::shared_ptr<Menu> BuildTimedPunishmentMenu(
     return builder.Build();
 }
 
-//-----------------------------------------------------------------------------
-// Helper: Create a punishment callback for Ban/Mute/Gag to reduce duplication
-//-----------------------------------------------------------------------------
+// ------- Helper: Create a punishment callback for Ban/Mute/Gag to reduce duplication -----
 
 template <typename PunishmentT, typename IssueFunc>
 static std::function<void(int, int, int)> MakePunishmentCallback(IssueFunc issueFunc)
@@ -85,9 +83,7 @@ static std::function<void(int, int, int)> MakePunishmentCallback(IssueFunc issue
     };
 }
 
-//-----------------------------------------------------------------------------
-// Duration selection submenu (public API)
-//-----------------------------------------------------------------------------
+// ------- Duration selection submenu (public API) -----
 
 std::shared_ptr<Menu> BuildDurationMenu(int adminSlot, int targetSlot, const std::string& actionName,
                                         std::function<void(int, int, int)> onDuration)
@@ -95,9 +91,7 @@ std::shared_ptr<Menu> BuildDurationMenu(int adminSlot, int targetSlot, const std
     return BuildTimedPunishmentMenu(adminSlot, targetSlot, actionName, std::move(onDuration));
 }
 
-//-----------------------------------------------------------------------------
-// Player actions submenu
-//-----------------------------------------------------------------------------
+// ------- Player actions submenu -----
 
 std::shared_ptr<Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot)
 {
@@ -132,7 +126,10 @@ std::shared_ptr<Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot)
                 auto* t = plrMgr.GetPlayerBySlot(tgt);
                 if (a && t)
                 {
-                    Log::Info("{} kicked {}", a->GetName(), t->GetName());
+                    const char* reason = "Kicked via admin menu";
+                    CS2Kit::Sdk::PlayerController(t->GetSlot()).Kick(reason);
+                    AdminSystem::Core::ChatService::Instance().BroadcastPunishment("kicked", a->GetName(),
+                                                                                   t->GetName(), reason, 0);
                 }
                 MenuManager::Instance().CloseAllMenus(slot);
             },
@@ -141,14 +138,14 @@ std::shared_ptr<Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot)
 
     // Ban (opens duration submenu)
     {
-        bool hasPerm = adminMgr.HasPermission(adminSid, 'b') && canTarget;
+        bool hasPerm = adminMgr.HasPermission(adminSid, 'd') && canTarget;
         int tgt = targetSlot;
         builder.AddItem(
             tr.Get("actionBan"),
             [tgt](int slot) {
                 auto durMenu = BuildTimedPunishmentMenu(
                     slot, tgt, Translations::Instance().Get("actionBan"),
-                    MakePunishmentCallback<Ban>([](PunishmentManager& pm, const Ban& ban) { pm.IssueBan(ban); }));
+                    MakePunishmentCallback<Ban>([](PunishmentManager& pm, Ban& ban) { pm.IssueBan(ban); }));
                 MenuManager::Instance().OpenMenu(slot, durMenu);
             },
             hasPerm);
@@ -156,14 +153,14 @@ std::shared_ptr<Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot)
 
     // Mute (opens duration submenu)
     {
-        bool hasPerm = adminMgr.HasPermission(adminSid, 'i') && canTarget;
+        bool hasPerm = adminMgr.HasPermission(adminSid, 'o') && canTarget;
         int tgt = targetSlot;
         builder.AddItem(
             tr.Get("actionMute"),
             [tgt](int slot) {
                 auto durMenu = BuildTimedPunishmentMenu(
                     slot, tgt, Translations::Instance().Get("actionMute"),
-                    MakePunishmentCallback<Mute>([](PunishmentManager& pm, const Mute& mute) { pm.IssueMute(mute); }));
+                    MakePunishmentCallback<Mute>([](PunishmentManager& pm, Mute& mute) { pm.IssueMute(mute); }));
                 MenuManager::Instance().OpenMenu(slot, durMenu);
             },
             hasPerm);
@@ -171,14 +168,14 @@ std::shared_ptr<Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot)
 
     // Gag (opens duration submenu)
     {
-        bool hasPerm = adminMgr.HasPermission(adminSid, 'i') && canTarget;
+        bool hasPerm = adminMgr.HasPermission(adminSid, 'p') && canTarget;
         int tgt = targetSlot;
         builder.AddItem(
             tr.Get("actionGag"),
             [tgt](int slot) {
                 auto durMenu = BuildTimedPunishmentMenu(
                     slot, tgt, Translations::Instance().Get("actionGag"),
-                    MakePunishmentCallback<Gag>([](PunishmentManager& pm, const Gag& gag) { pm.IssueGag(gag); }));
+                    MakePunishmentCallback<Gag>([](PunishmentManager& pm, Gag& gag) { pm.IssueGag(gag); }));
                 MenuManager::Instance().OpenMenu(slot, durMenu);
             },
             hasPerm);
@@ -186,7 +183,7 @@ std::shared_ptr<Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot)
 
     // Warn
     {
-        bool hasPerm = adminMgr.HasPermission(adminSid, 'i') && canTarget;
+        bool hasPerm = adminMgr.HasPermission(adminSid, 'q') && canTarget;
         int tgt = targetSlot;
         builder.AddItem(
             tr.Get("actionWarn"),
@@ -213,9 +210,7 @@ std::shared_ptr<Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot)
     return builder.Build();
 }
 
-//-----------------------------------------------------------------------------
-// Player list submenu
-//-----------------------------------------------------------------------------
+// ------- Player list submenu -----
 
 std::shared_ptr<Menu> BuildPlayerListMenu(int adminSlot)
 {
@@ -244,9 +239,7 @@ std::shared_ptr<Menu> BuildPlayerListMenu(int adminSlot)
     return builder.Build();
 }
 
-//-----------------------------------------------------------------------------
-// Server management submenu
-//-----------------------------------------------------------------------------
+// ------- Server management submenu -----
 
 std::shared_ptr<Menu> BuildServerMenu(int adminSlot)
 {
@@ -274,9 +267,7 @@ std::shared_ptr<Menu> BuildServerMenu(int adminSlot)
     return builder.Build();
 }
 
-//-----------------------------------------------------------------------------
-// Main admin menu
-//-----------------------------------------------------------------------------
+// ------- Main admin menu -----
 
 std::shared_ptr<Menu> BuildAdminMainMenu(int adminSlot)
 {
@@ -294,7 +285,7 @@ std::shared_ptr<Menu> BuildAdminMainMenu(int adminSlot)
 
     // Player Management
     {
-        bool hasPerm = adminMgr.HasAnyPermission(adminSid, "bcdi");
+        bool hasPerm = adminMgr.HasAnyPermission(adminSid, "cdopq");
         int slot = adminSlot;
         builder.AddItem(
             tr.Get("playerManagement"),

@@ -16,7 +16,7 @@ public:
     std::optional<Ban> FindActiveBySteamId(int64_t steamId);
     std::optional<Ban> FindActiveByIp(const std::string& ip);
     std::vector<Ban> FindAllActive();
-    bool Create(const Ban& ban);
+    bool Create(Ban& ban);
     bool Update(const Ban& ban);
     bool Remove(int64_t banId, int64_t removedBy, const std::string& reason);
     int ExpireOldBans();

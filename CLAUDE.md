@@ -31,7 +31,7 @@ scripts/deploy.sh
 src/
 ├── Core/
 │   ├── Plugin.hpp/cpp          # ISmmPlugin entry point, hooks, CS2Kit::Initialize()
-│   └── Config.hpp/cpp          # Loads settings.json + admins.json
+│   └── Config.hpp/cpp          # Loads settings.json (admin groups & entries live in the DB)
 ├── Admin/
 │   ├── AdminManager.hpp/cpp    # Permissions, flags (bitmask), immunity
 │   └── AdminMenu.hpp/cpp       # Admin-specific menu builders
@@ -59,9 +59,10 @@ vendor/
         └── nlohmann/           # nlohmann/json (single-include)
 
 configs/
-├── settings.json               # Plugin, database, commands, punishments config
-├── admins.json                 # Groups + admins (merged)
+├── settings.json               # Plugin, database, punishments, chat config
 └── translations/               # en.json, ru.json
+database/
+└── schema.sql                  # PostgreSQL schema; admin_groups + admins seeded here
 references/                     # Third-party project examples (read-only reference, do NOT modify or search extensively)
 ```
 
@@ -109,8 +110,8 @@ Hook callbacks:
 
 ## Config Files
 
-- **`settings.json`**: All plugin configuration (plugin, database, commands, punishments, admin sections)
-- **`admins.json`**: Admin groups and admin entries (merged file)
+- **`configs/settings.json`**: Plugin/database/punishments/chat configuration. All non-admin runtime knobs live here.
+- **`database/schema.sql`**: Owns the `admin_groups` and `admins` tables. Groups (with their chat prefix/colors) and individual admins are managed in PostgreSQL -- no JSON admin file. Use `!admin_reload` to pick up DB changes without a restart.
 
 ## Admin Flags
 

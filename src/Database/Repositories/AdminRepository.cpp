@@ -2,8 +2,35 @@
 
 #include "../Database.hpp"
 
+#include <pqxx/array>
+
 namespace AdminSystem::Database
 {
+
+namespace
+{
+/**
+ * Parse a libpqxx text-array field (e.g. `{foo,bar,baz}`) into a std::vector<std::string>.
+ * Returns empty on null. libpqxx's `array_parser` walks the textual representation token by token.
+ */
+std::vector<std::string> ParseTextArray(const pqxx::field& field)
+{
+    std::vector<std::string> out;
+    if (field.is_null())
+        return out;
+
+    pqxx::array_parser parser(field.c_str());
+    while (true)
+    {
+        auto [type, value] = parser.get_next();
+        if (type == pqxx::array_parser::juncture::done)
+            break;
+        if (type == pqxx::array_parser::juncture::string_value)
+            out.push_back(std::move(value));
+    }
+    return out;
+}
+}  // namespace
 
 // AdminRepository implementation
 
@@ -72,10 +99,7 @@ Admin AdminRepository::ParseRow(const pqxx::row& row)
     admin.Immunity = row["immunity"].as<int32_t>();
     admin.CreatedAt = row["created_at"].as<int64_t>();
     admin.UpdatedAt = row["updated_at"].as<int64_t>();
-
-    // Parse groups array (PostgreSQL text array)
-    // TODO: Implement proper array parsing
-    admin.Groups = {};
+    admin.Groups = ParseTextArray(row["groups"]);
 
     admin.BuildFlagBits();
     return admin;
@@ -147,10 +171,11 @@ AdminGroup AdminGroupRepository::ParseRow(const pqxx::row& row)
     group.Immunity = row["immunity"].as<int32_t>();
     group.CreatedAt = row["created_at"].as<int64_t>();
     group.UpdatedAt = row["updated_at"].as<int64_t>();
-
-    // Parse inherits array (PostgreSQL text array)
-    // TODO: Implement proper array parsing
-    group.Inherits = {};
+    group.Inherits = ParseTextArray(row["inherits"]);
+    group.ChatPrefix = row["chat_prefix"].c_str();
+    group.PrefixColor = row["prefix_color"].c_str();
+    group.NameColor = row["name_color"].c_str();
+    group.MessageColor = row["message_color"].c_str();
 
     group.BuildFlagBits();
     return group;

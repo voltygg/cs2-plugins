@@ -1,5 +1,6 @@
 #include "AdminManager.hpp"
 
+#include "../Core/Config.hpp"
 #include "../Database/Repositories/AdminRepository.hpp"
 
 #include <algorithm>
@@ -7,7 +8,11 @@
 namespace AdminSystem::Admin
 {
 
-using namespace AdminSystem::Database;
+namespace Db = AdminSystem::Database;
+using Db::Admin;
+using Db::AdminGroup;
+using Db::AdminGroupRepository;
+using Db::AdminRepository;
 
 bool AdminManager::LoadAdmins()
 {
@@ -18,6 +23,7 @@ bool AdminManager::LoadAdmins()
 
         _admins.clear();
         _resolvedFlags.clear();
+        _resolvedStyles.clear();
 
         for (const auto& admin : admins)
         {
@@ -46,6 +52,7 @@ bool AdminManager::LoadGroups()
         auto groups = repo.FindAll();
 
         _groups.clear();
+        _resolvedStyles.clear();  // group changes can shift the resolved prefix for any admin
         for (const auto& group : groups)
         {
             _groups[group.Name] = group;
@@ -173,17 +180,70 @@ void AdminManager::AddAdmin(const Database::Admin& admin)
 {
     _admins[admin.SteamId] = admin;
     _resolvedFlags[admin.SteamId] = ResolveFlags(admin);
+    _resolvedStyles.erase(admin.SteamId);
 }
 
 void AdminManager::AddGroup(const Database::AdminGroup& group)
 {
     _groups[group.Name] = group;
+    _resolvedStyles.clear();  // any admin in this group may now resolve to a different prefix
 }
 
 void AdminManager::RemoveAdmin(int64_t steamId)
 {
     _admins.erase(steamId);
     _resolvedFlags.erase(steamId);
+    _resolvedStyles.erase(steamId);
+}
+
+AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
+{
+    if (auto it = _resolvedStyles.find(steamId); it != _resolvedStyles.end())
+    {
+        return it->second;
+    }
+
+    AdminChatStyle style;
+
+    auto adminIt = _admins.find(steamId);
+    if (adminIt == _admins.end())
+    {
+        return style;  // Non-admin: empty style.
+    }
+
+    // Pick the highest-immunity group that has a non-empty ChatPrefix. This way an admin in
+    // both "moderator" and "headadmin" gets the headadmin tag, while an admin in only "vip"
+    // (no prefix) falls through to the configured default.
+    const Database::AdminGroup* chosen = nullptr;
+    for (const auto& groupName : adminIt->second.Groups)
+    {
+        auto groupIt = _groups.find(groupName);
+        if (groupIt == _groups.end())
+            continue;
+        if (groupIt->second.ChatPrefix.empty())
+            continue;
+        if (!chosen || groupIt->second.Immunity > chosen->Immunity)
+            chosen = &groupIt->second;
+    }
+
+    if (chosen)
+    {
+        style.Prefix = chosen->ChatPrefix;
+        style.PrefixColor = chosen->PrefixColor;
+        style.NameColor = chosen->NameColor;
+        style.MessageColor = chosen->MessageColor;
+    }
+    else
+    {
+        const auto& fallback = AdminSystem::Core::ConfigManager::Instance().GetChatConfig();
+        style.Prefix = fallback.FallbackPrefix;
+        style.PrefixColor = fallback.FallbackPrefixColor;
+        style.NameColor = fallback.FallbackNameColor;
+        style.MessageColor = fallback.FallbackMessageColor;
+    }
+
+    _resolvedStyles[steamId] = style;
+    return style;
 }
 
 uint32_t AdminManager::ResolveFlags(const Database::Admin& admin)

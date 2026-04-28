@@ -14,5 +14,13 @@
   "punishments": {
     "defaultBanReason": "Banned by administrator",
     "warningThreshold": 3
+  },
+  "chat": {
+    "broadcastPunishments": true,
+    "tagAdminChatMessages": true,
+    "fallbackPrefix": "[ADMIN]",
+    "fallbackPrefixColor": "red",
+    "fallbackNameColor": "default",
+    "fallbackMessageColor": "default"
   }
 }

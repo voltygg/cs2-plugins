@@ -23,8 +23,9 @@ Built on top of **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** — a reusabl
 1. Download the latest release from [Releases](#)
 2. Extract to your server's `csgo/` folder
 3. Configure database and plugin settings in `addons/admin-system/configs/settings.json`
-4. Add admins in `addons/admin-system/configs/admins.json`
-5. Restart the server
+4. Initialize the schema: `psql -d admin_system -f database/schema.sql`
+5. Edit `database/seed-admin.sql` with your SteamID64 and run it: `psql -d admin_system -f database/seed-admin.sql`
+6. Restart the server (or run `!admin_reload` if it was already running)
 
 ## Commands
 
@@ -46,7 +47,7 @@ Built on top of **[CS2-Kit](https://github.com/suxrobGM/cs2-kit)** — a reusabl
 
 ## Configuration
 
-All plugin configuration is in `configs/settings.json` (database, commands, punishments, etc.). Admin groups and entries are defined in `configs/admins.json`.
+Runtime configuration lives in `configs/settings.json` (database, punishments, chat). Admin groups (with their chat prefix and colors) and individual admins live in the `admin_groups` and `admins` PostgreSQL tables -- see `database/schema.sql`. Run `!admin_reload` after editing those tables to refresh in-memory state without restarting.
 
 ### Quick Start (Docker)
 

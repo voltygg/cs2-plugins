@@ -76,18 +76,20 @@ std::vector<Ban> BanRepository::FindAllActive()
     return bans;
 }
 
-bool BanRepository::Create(const Ban& ban)
+bool BanRepository::Create(Ban& ban)
 {
     try
     {
-        Database::Instance().ExecutePrepared(
+        auto result = Database::Instance().ExecutePrepared(
             "create_ban",
             "INSERT INTO bans (target_steam_id, target_name, target_ip, admin_steam_id, admin_name, reason, "
             "created_at, expires_at, duration, is_active) "
-            "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+            "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
             ban.TargetSteamId, ban.TargetName, ban.TargetIp, ban.AdminSteamId, ban.AdminName, ban.Reason, ban.CreatedAt,
             ban.ExpiresAt, ban.Duration, ban.IsActive);
 
+        if (!result.empty())
+            ban.Id = result[0]["id"].as<int64_t>();
         return true;
     }
     catch (const std::exception& e)

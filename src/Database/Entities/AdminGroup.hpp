@@ -15,6 +15,13 @@ struct AdminGroup
     std::string Flags;
     int32_t Immunity = 0;
     std::vector<std::string> Inherits;
+
+    /** Optional chat styling, applied when an admin in this group speaks. Empty = no override. */
+    std::string ChatPrefix;     /**< E.g., "[ADMIN]". Empty disables prefixing for this group. */
+    std::string PrefixColor;    /**< Color name (see CS2Kit::Utils::ChatColors::ParseNamed). */
+    std::string NameColor;      /**< Color name for the speaker's display name. */
+    std::string MessageColor;   /**< Color name for the spoken message body. */
+
     int64_t CreatedAt = 0;
     int64_t UpdatedAt = 0;
 
