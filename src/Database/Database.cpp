@@ -48,7 +48,7 @@ bool Database::Initialize(const DatabaseConfig& config)
     }
 }
 
-void Database::Shutdown()
+void Database::CloseConnection()
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _initialized = false;

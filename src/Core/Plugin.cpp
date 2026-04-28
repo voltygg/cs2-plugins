@@ -3,15 +3,14 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/AdminMenu.hpp"
 #include "../Database/Database.hpp"
-#include "../Players/PlayerManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "Config.hpp"
-#include "PlayerCaller.hpp"
 
 #include <CS2Kit/CS2Kit.hpp>
 #include <CS2Kit/Commands/Command.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
@@ -21,10 +20,10 @@
 using namespace AdminSystem::Admin;
 using namespace AdminSystem::Core;
 using namespace AdminSystem::Database;
-using namespace AdminSystem::Players;
 using namespace AdminSystem::Punishments;
 using namespace CS2Kit::Commands;
 using namespace CS2Kit::Menu;
+using namespace CS2Kit::Players;
 using namespace CS2Kit::Utils;
 
 // Global plugin instance
@@ -163,13 +162,6 @@ void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* psz
 
     auto& plrMgr = PlayerManager::Instance();
     plrMgr.AddPlayer(playerSlot, steamId, pszName ? pszName : "", pszAddress ? pszAddress : "");
-
-    auto& adminMgr = AdminManager::Instance();
-    auto* player = plrMgr.GetPlayerBySlot(playerSlot);
-    if (player)
-    {
-        player->SetAdmin(adminMgr.IsAdmin(steamId));
-    }
 }
 
 void AdminSystemPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* pszName,
@@ -213,9 +205,8 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
     if (!player)
         return;
 
-    PlayerCaller caller(player);
     auto& cmdMgr = CommandManager::Instance();
-    bool handled = cmdMgr.HandleChatMessage(&caller, message);
+    bool handled = cmdMgr.HandleChatMessage(player, message);
 
     if (handled)
     {
@@ -284,12 +275,10 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
             .WithUsage("!admin")
             .RequirePermission("a")
             .WithArgs(0, 0)
-            .OnExecute([](ICommandCaller* caller, const std::vector<std::string>& /*args*/) -> CommandResult {
-                auto* playerCaller = dynamic_cast<PlayerCaller*>(caller);
-                if (!playerCaller || !playerCaller->GetPlayer())
+            .OnExecute([](Player* admin, const std::vector<std::string>& /*args*/) -> CommandResult {
+                if (!admin)
                     return {false, "Invalid caller"};
 
-                auto* admin = playerCaller->GetPlayer();
                 Log::Info("!admin handler: slot={}, steamid={}", admin->GetSlot(), admin->GetSteamID());
                 auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
                 if (mainMenu)
@@ -324,7 +313,7 @@ void AdminSystemPlugin::ShutdownSubsystems()
 {
     Log::Info("Shutting down subsystems...");
     PlayerManager::Instance().Clear();
-    Database::Instance().Shutdown();
+    Database::Instance().CloseConnection();
     Log::Info("Subsystems shut down.");
 }
 

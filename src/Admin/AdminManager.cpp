@@ -84,13 +84,17 @@ bool AdminManager::HasPermission(int64_t steamId, char flag)
 {
     auto it = _resolvedFlags.find(steamId);
     if (it == _resolvedFlags.end())
+    {
         return false;
+    }
 
     uint32_t resolved = it->second;
 
     // Root flag ('z') grants all permissions
     if ((resolved & FlagToBit('z')) != 0)
+    {
         return true;
+    }
 
     return (resolved & FlagToBit(flag)) != 0;
 }
@@ -99,18 +103,24 @@ bool AdminManager::HasAllPermissions(int64_t steamId, const std::string& flags)
 {
     auto it = _resolvedFlags.find(steamId);
     if (it == _resolvedFlags.end())
+    {
         return false;
+    }
 
     uint32_t resolved = it->second;
 
     // Root flag grants all permissions
     if ((resolved & FlagToBit('z')) != 0)
+    {
         return true;
+    }
 
     for (char flag : flags)
     {
         if ((resolved & FlagToBit(flag)) == 0)
+        {
             return false;
+        }
     }
 
     return true;

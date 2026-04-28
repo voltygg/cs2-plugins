@@ -1,4 +1,5 @@
 [submodule "vendor/cs2-kit"]
 	path = vendor/cs2-kit
 	url = https://github.com/suxrobGM/cs2-kit.git
-    branch = main
+	branch = main
+	update = merge

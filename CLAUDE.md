@@ -31,11 +31,7 @@ scripts/deploy.sh
 src/
 ├── Core/
 │   ├── Plugin.hpp/cpp          # ISmmPlugin entry point, hooks, CS2Kit::Initialize()
-│   ├── Config.hpp/cpp          # Loads settings.json + admins.json
-│   └── PlayerCaller.hpp/cpp    # ICommandCaller adapter (wraps Player* for command system)
-├── Players/
-│   ├── Player.hpp/cpp          # Player data (slot, SteamID, name, flags)
-│   └── PlayerManager.hpp/cpp   # Player lifecycle tracking
+│   └── Config.hpp/cpp          # Loads settings.json + admins.json
 ├── Admin/
 │   ├── AdminManager.hpp/cpp    # Permissions, flags (bitmask), immunity
 │   └── AdminMenu.hpp/cpp       # Admin-specific menu builders
@@ -52,6 +48,7 @@ vendor/
     │   ├── Commands/           # Command, CommandBuilder, CommandManager, ICommandCaller
     │   ├── Core/               # Singleton, Scheduler, ILogger, ConsoleLogger, Paths
     │   ├── Menu/               # Menu, MenuBuilder, MenuManager, MenuRenderer
+    │   ├── Players/            # Player (identity + connection), PlayerManager (slot/steamid lookup)
     │   ├── Sdk/                # GameInterfaces, GameData, Entity, Schema, SigScanner, ...
     │   └── Utils/              # SteamId, StringUtils, TimeUtils, Translations, Log
     ├── src/                    # Implementation (.cpp files)
@@ -76,9 +73,10 @@ Include style: `#include <CS2Kit/Commands/Command.hpp>`
 
 ### Initialization Flow
 
-Plugin.cpp calls `CS2Kit::Initialize(ismm, error, maxlen, params)` which resolves all SDK interfaces internally via Metamod's `ISmmAPI`, loads built-in gamedata, sets `g_pCVar`, and initializes all subsystems. The only adapter needed is `PlayerCaller` (implements `ICommandCaller` to bridge `Player*` into the command system).
+Plugin.cpp calls `CS2Kit::Initialize(ismm, error, maxlen, params)` which resolves all SDK interfaces internally via Metamod's `ISmmAPI`, loads built-in gamedata, sets `g_pCVar`, and initializes all subsystems. The plugin drives the player lifecycle by calling `PlayerManager::AddPlayer`/`RemovePlayer` from its connect/disconnect hooks; command handlers receive `CS2Kit::Players::Player*` directly.
 
 Hook callbacks:
+
 - `Hook_GameFrame` → `CS2Kit::OnGameFrame()` (drives Scheduler + MenuManager)
 - `Hook_ClientDisconnect` → `CS2Kit::OnPlayerDisconnect(slot)` (cleans menu state)
 - `Hook_DispatchConCommand` → dispatches chat messages to `CommandManager`

@@ -1,11 +1,11 @@
 #include "PunishmentManager.hpp"
 
-#include "../Players/PlayerManager.hpp"
+#include <CS2Kit/Players/PlayerManager.hpp>
 
 namespace AdminSystem::Punishments
 {
 
-using namespace AdminSystem::Players;
+using namespace CS2Kit::Players;
 
 bool PunishmentManager::LoadActivePunishments()
 {
@@ -96,14 +96,6 @@ bool PunishmentManager::IssueMute(const Database::Mute& mute)
         // Add to cache
         _mutedPlayers.insert(mute.TargetSteamId);
 
-        // Update player if online
-        auto& playerMgr = PlayerManager::Instance();
-        auto* player = playerMgr.GetPlayerBySteamId(mute.TargetSteamId);
-        if (player)
-        {
-            player->SetMuted(true);
-        }
-
         return true;
     }
     catch (const std::exception& e)
@@ -120,14 +112,6 @@ bool PunishmentManager::IssueGag(const Database::Gag& gag)
 
         // Add to cache
         _gaggedPlayers.insert(gag.TargetSteamId);
-
-        // Update player if online
-        auto& playerMgr = PlayerManager::Instance();
-        auto* player = playerMgr.GetPlayerBySteamId(gag.TargetSteamId);
-        if (player)
-        {
-            player->SetGagged(true);
-        }
 
         return true;
     }

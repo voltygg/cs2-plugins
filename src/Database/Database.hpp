@@ -33,12 +33,17 @@ class Database : public Singleton<Database>
 public:
     explicit Database(Token) {}
 
+    /** Initializes the database connection. */
     bool Initialize(const DatabaseConfig& config);
-    void Shutdown();
+
+    void CloseConnection();
     bool IsConnected() const;
     std::unique_ptr<pqxx::connection> GetConnection();
+
+    /** Executes a simple query. */
     pqxx::result Execute(const std::string& query);
 
+    /** Executes a prepared statement with parameters. */
     template <typename... Args>
     pqxx::result ExecutePrepared(const std::string& name, const std::string& query, Args&&... params);
 
@@ -54,7 +59,9 @@ pqxx::result Database::ExecutePrepared(const std::string& name, const std::strin
 {
     auto conn = GetConnection();
     if (!conn)
+    {
         throw std::runtime_error("Failed to get database connection");
+    }
 
     pqxx::work txn(*conn);
     conn->prepare(name, query);

@@ -1,11 +1,11 @@
 #include "AdminMenu.hpp"
 
-#include "../Players/PlayerManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "AdminManager.hpp"
 
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
@@ -14,8 +14,8 @@ namespace AdminSystem::Admin
 {
 
 using namespace AdminSystem::Database;
-using namespace AdminSystem::Players;
 using namespace AdminSystem::Punishments;
+using namespace CS2Kit::Players;
 using namespace CS2Kit::Utils;
 
 // Import specific Menu types (not the whole namespace — it conflicts with the Menu struct)
