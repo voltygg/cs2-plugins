@@ -29,41 +29,20 @@ scripts/deploy.sh
 
 ```text
 src/
-├── Core/
-│   ├── Plugin.hpp/cpp          # ISmmPlugin entry point, hooks, CS2Kit::Initialize()
-│   └── Config.hpp/cpp          # Loads settings.json (admin groups & entries live in the DB)
+├── Core/                  Plugin entry, ChatService, Config
 ├── Admin/
-│   ├── AdminManager.hpp/cpp    # Permissions, flags (bitmask), immunity
-│   └── AdminMenu.hpp/cpp       # Admin-specific menu builders
-├── Punishments/
-│   └── PunishmentManager.hpp/cpp
-├── Database/
-│   ├── Database.hpp/cpp        # PostgreSQL connection pool
-│   ├── Entities/               # Admin, AdminGroup, Ban, Mute, Gag, Warning, Player
-│   └── Repositories/           # AdminRepository, BanRepository
-vendor/
-└── cs2-kit/                    # Reusable CS2 plugin library (only submodule)
-    ├── include/CS2Kit/         # Public headers (#include <CS2Kit/...>)
-    │   ├── CS2Kit.hpp          # Initialization API (InitParams, Initialize/Shutdown)
-    │   ├── Commands/           # Command, CommandBuilder, CommandManager, ICommandCaller
-    │   ├── Core/               # Singleton, Scheduler, ILogger, ConsoleLogger, Paths
-    │   ├── Menu/               # Menu, MenuBuilder, MenuManager, MenuRenderer
-    │   ├── Players/            # Player (identity + connection), PlayerManager (slot/steamid lookup)
-    │   ├── Sdk/                # GameInterfaces, GameData, Entity, Schema, SigScanner, ...
-    │   └── Utils/              # SteamId, StringUtils, TimeUtils, Translations, Log
-    ├── src/                    # Implementation (.cpp files)
-    └── vendor/                 # SDK submodules (shared, no duplicates in admin-system)
-        ├── hl2sdk-cs2/         # HL2SDK for Source 2
-        ├── hl2sdk-manifests/   # SDK manifest definitions
-        ├── mmsource-2.0/       # Metamod:Source 2.0
-        └── nlohmann/           # nlohmann/json (single-include)
-
-configs/
-├── settings.json               # Plugin, database, punishments, chat config
-└── translations/               # en.json, ru.json
-database/
-└── schema.sql                  # PostgreSQL schema; admin_groups + admins seeded here
-references/                     # Third-party project examples (read-only reference, do NOT modify or search extensively)
+│   ├── AdminManager       Permissions, immunity, self-target allowed
+│   ├── AdminMenu          Top-level dispatcher (Punish / Control / Effects)
+│   ├── Actions/           Stateless one-shots: Movement, Vitals, Launch, Teleport, Team
+│   ├── Effects/           Stateful per-target with Cancel: EffectManager, Ghost, Disco, Smite
+│   └── Menu/              Per-category builders + PlayerPicker + PresetSubmenu
+├── Punishments/           PunishmentManager
+├── Commands/              Chat-command registrations
+└── Database/              PostgreSQL pool, Entities/, Repositories/
+vendor/cs2-kit/            Reusable C++23 library (the only submodule). See its own CLAUDE.md.
+configs/                   settings.json + translations/{en,ru}.json
+database/schema.sql        admin_groups + admins seeded here
+references/                Read-only reference plugins — do NOT modify.
 ```
 
 ## CS2Kit Integration
@@ -120,14 +99,6 @@ Aim to keep source files under **~300-350 LOC**. When a file grows past that, sp
 
 - **`configs/settings.json`**: Plugin/database/punishments/chat configuration. All non-admin runtime knobs live here.
 - **`database/schema.sql`**: Owns the `admin_groups` and `admins` tables. Groups (with their chat prefix/colors) and individual admins are managed in PostgreSQL -- no JSON admin file. Use `!admin_reload` to pick up DB changes without a restart.
-
-## Admin Flags
-
-Single char a-z, stored as `uint32_t` bitmask for O(1) checks:
-
-- `a` = reserved slot, `b` = generic admin, `c` = kick, `d` = ban
-- `o` = mute, `p` = gag, `q` = warn, `r` = admin menu access
-- `z` = root (all permissions)
 
 ## Database
 

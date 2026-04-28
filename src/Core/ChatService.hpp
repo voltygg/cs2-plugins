@@ -37,6 +37,13 @@ public:
                              std::string_view reason, int64_t durationSec);
 
     /**
+     * Broadcast a non-punishment admin action, e.g. "[ADMIN] Bob slapped Alice".
+     * The verb is read from `translationKey`; both `adminName` and `targetName` are interpolated.
+     * Pass an empty `targetName` for self-targeted or server-wide actions.
+     */
+    void BroadcastAction(const std::string& translationKey, std::string_view adminName, std::string_view targetName);
+
+    /**
      * Re-emit an admin's regular chat with their group's colored prefix attached.
      * Caller is expected to SUPERCEDE the original say/say_team in the chat hook.
      */

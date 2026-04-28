@@ -8,16 +8,7 @@ namespace AdminSystem::Admin
 
 using namespace CS2Kit::Menu;
 
-/** Build the top-level admin panel menu (Player Management, Server Management). */
-std::shared_ptr<Menu> BuildAdminMainMenu(int adminSlot);
-/** Build a menu listing all connected players for the admin to act on. */
-std::shared_ptr<Menu> BuildPlayerListMenu(int adminSlot);
-/** Build the per-player actions menu (Kick, Ban, Mute, Gag, Warn). */
-std::shared_ptr<Menu> BuildPlayerActionsMenu(int adminSlot, int targetSlot);
-/** Build a duration selection submenu for timed punishments. */
-std::shared_ptr<Menu> BuildDurationMenu(int adminSlot, int targetSlot, const std::string& actionName,
-                                        std::function<void(int, int, int)> onDuration);
-/** Build the server management submenu (changemap, restart round, etc.). */
-std::shared_ptr<Menu> BuildServerMenu(int adminSlot);
+/** Build the top-level admin panel menu (Punish / Control / Effects / Mini-games / Round). */
+std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot);
 
 }  // namespace AdminSystem::Admin

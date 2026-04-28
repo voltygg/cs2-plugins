@@ -2,6 +2,7 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/AdminMenu.hpp"
+#include "../Admin/Effects/EffectManager.hpp"
 #include "../Commands/AdminCommands.hpp"
 #include "../Database/Database.hpp"
 #include "../Punishments/PunishmentManager.hpp"
@@ -14,6 +15,7 @@
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
@@ -25,6 +27,7 @@ using namespace AdminSystem::Admin;
 using namespace AdminSystem::Core;
 using namespace AdminSystem::Database;
 using namespace AdminSystem::Punishments;
+using namespace AdminSystem::Admin::Effects;
 using namespace CS2Kit::Commands;
 using namespace CS2Kit::Menu;
 using namespace CS2Kit::Players;
@@ -176,6 +179,7 @@ void AdminSystemPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconne
                                               uint64 xuid, const char* pszNetworkID)
 {
     int playerSlot = slot.Get();
+    AdminSystem::Admin::Effects::EffectManager::Instance().CancelAllForSlot(playerSlot);
     CS2Kit::OnPlayerDisconnect(playerSlot);
     PlayerManager::Instance().RemovePlayer(playerSlot);
 }
@@ -339,6 +343,20 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
     auto& translations = Translations::Instance();
     translations.Load("addons/admin-system/configs/translations");
 
+    // 8. Register game event listeners. EffectManager owns its own hard-cancel paths;
+    //    other subsystems subscribe additional handlers as needed.
+    auto& events = GameEventService::Instance();
+    events.Listen("player_death", [](IGameEvent* e) {
+        if (!e)
+            return;
+        // userid in CS2 events maps to the slot index for the legacy event system.
+        int victim = e->GetInt("userid", -1);
+        if (victim >= 0)
+            EffectManager::Instance().CancelAllForSlot(victim);
+    });
+    events.Listen("round_end", [](IGameEvent*) { EffectManager::Instance().CancelAllForRoundEnd(); });
+    events.Listen("round_prestart", [](IGameEvent*) { EffectManager::Instance().CancelAllForRoundEnd(); });
+
     Log::Info("All subsystems initialized.");
     return true;
 }
@@ -346,6 +364,7 @@ bool AdminSystemPlugin::InitializeSubsystems(bool late)
 void AdminSystemPlugin::ShutdownSubsystems()
 {
     Log::Info("Shutting down subsystems...");
+    EffectManager::Instance().CancelAll();
     PlayerManager::Instance().Clear();
     Database::Instance().CloseConnection();
     Log::Info("Subsystems shut down.");

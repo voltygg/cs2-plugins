@@ -6,9 +6,11 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable
 
 ## Features
 
-- **Player Management:** Kick, ban, mute, gag, warn
-- **Admin System:** Permission flags, groups, immunity levels
-- **WASD Menus:** In-game center-HTML menus with W/S/E/R navigation
+- **Punish:** Kick, ban, mute, gag, warn
+- **Control:** Slay, Bring, Goto, Freeze, Noclip, Health/Armor presets, Godmode (FL_GODMODE), Bury/Unbury, Change Team
+- **Effects:** Ghost (translucent render), Disco (color cycling), Launch (high-velocity yeet + 3 s fall protect), Smite (theatrical instakill), Swap (exchange two players' positions). Blind reserved (awaits Fade user-message infra).
+- **Admin System:** Permission flags (`s` control, `h` survival/cheats, `f` fun), groups, immunity levels. Self-targeting always allowed.
+- **WASD Menus:** Top-level category dispatcher → player picker → actions. Toggle entries (Ghost, Disco, Godmode) show live `: ON / : OFF` state via dynamic-title menu items.
 - **Database:** PostgreSQL with async queries
 - **Chat Commands:** `!kick`, `!ban`, `!mute`, `!gag`, `!warn` and more
 

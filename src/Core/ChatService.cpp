@@ -52,6 +52,27 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
     Chat::PrintAll(line);
 }
 
+void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
+                                  std::string_view targetName)
+{
+    const auto& cfg = ConfigManager::Instance().GetChatConfig();
+    if (!cfg.BroadcastPunishments)
+        return;
+
+    auto verb = Translations::Instance().Get(translationKey);
+    if (verb.empty())
+        verb = translationKey;  // Fallback: render the key literally so a missing translation is obvious.
+
+    std::string line;
+    if (targetName.empty())
+        line = std::format("{}{} {}{}{} {}{}", ChatColors::Green, cfg.FallbackPrefix, ChatColors::Default, adminName,
+                           ChatColors::Default, ChatColors::Olive, verb);
+    else
+        line = std::format("{}{} {}{}{} {}{}{} {}", ChatColors::Green, cfg.FallbackPrefix, ChatColors::Default,
+                           adminName, ChatColors::Default, ChatColors::Olive, verb, ChatColors::Default, targetName);
+    Chat::PrintAll(line);
+}
+
 void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view message, bool teamOnly)
 {
     if (!admin)

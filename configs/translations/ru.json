@@ -5,6 +5,10 @@
   "playerActions": "Действия с игроком",
   "selectDuration": "Выберите длительность",
 
+  "categoryPunish": "Наказания",
+  "categoryControl": "Управление",
+  "categoryEffects": "Эффекты",
+
   "actionKick": "Кик",
   "actionBan": "Бан",
   "actionMute": "Мут",
@@ -12,6 +16,57 @@
   "actionWarn": "Предупреждение",
   "actionChangemap": "Сменить карту",
   "actionRestartRound": "Перезапустить раунд",
+
+  "actionSlay": "Убить",
+  "actionBring": "Притянуть",
+  "actionGoto": "Телепорт к игроку",
+  "actionFreeze": "Заморозить",
+  "actionNoclip": "Ноуклип",
+  "actionHealth": "Здоровье",
+  "actionArmor": "Броня",
+  "actionGodmode": "Бессмертие",
+  "actionBury": "Закопать",
+  "actionUnbury": "Раскопать",
+  "actionChangeTeam": "Сменить команду",
+
+  "actionGhost": "Призрак",
+  "actionBlind": "Ослепить",
+  "actionDisco": "Дискотека",
+  "actionLaunch": "Запустить",
+  "actionSmite": "Молния",
+  "actionSwap": "Поменять игроков",
+
+  "effectStateOn": "ВКЛ",
+  "effectStateOff": "ВЫКЛ",
+
+  "broadcastGhostOn": "превратил в призрака",
+  "broadcastGhostOff": "вернул из призрака",
+  "broadcastDiscoOn": "устроил дискотеку для",
+  "broadcastDiscoOff": "закончил дискотеку для",
+  "broadcastSmote": "поразил молнией",
+  "broadcastLaunched": "запустил",
+  "broadcastSwapped": "поменял местами",
+
+  "selectSwapTarget": "Выберите второго игрока",
+
+  "teamCt": "Спецназ",
+  "teamT": "Террористы",
+  "teamSpec": "Наблюдатели",
+
+  "broadcastSlain": "убил",
+  "broadcastBrought": "притянул",
+  "broadcastGoto": "телепортировался к",
+  "broadcastFreezeOn": "заморозил",
+  "broadcastFreezeOff": "разморозил",
+  "broadcastNoclipOn": "включил ноуклип",
+  "broadcastNoclipOff": "выключил ноуклип",
+  "broadcastHealed": "изменил здоровье",
+  "broadcastArmored": "изменил броню",
+  "broadcastGodmodeOn": "сделал бессмертным",
+  "broadcastGodmodeOff": "вернул смертность",
+  "broadcastBuried": "закопал",
+  "broadcastUnburied": "раскопал",
+  "broadcastTeamChanged": "сменил команду",
 
   "duration5min": "5 минут",
   "duration30min": "30 минут",
@@ -22,5 +77,6 @@
 
   "noPlayers": "Нет доступных игроков",
   "noPermission": "У вас нет прав для использования этой команды.",
+  "notImplemented": "(скоро будет)",
   "menuOpened": "Меню администратора открыто."
 }
