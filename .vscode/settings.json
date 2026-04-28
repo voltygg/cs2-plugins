@@ -52,5 +52,10 @@
     "editor.defaultFormatter": "adpyke.vscode-sql-formatter",
     "editor.tabSize": 2
   },
-  "sql-formatter.dialect": "pl/sql"
+  "sql-formatter.dialect": "pl/sql",
+  "VSCodeCounter.exclude": [
+    "references",
+    "vendor/cs2-kit/vendor",
+    "vcpkg_installed"
+  ]
 }
