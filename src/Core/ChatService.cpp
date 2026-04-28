@@ -1,8 +1,10 @@
 #include "ChatService.hpp"
 
 #include "../Admin/AdminManager.hpp"
+#include "../Punishments/PunishmentManager.hpp"
 #include "Config.hpp"
 
+#include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/Chat.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
@@ -16,6 +18,8 @@ namespace AdminSystem::Core
 using namespace CS2Kit::Players;
 using namespace CS2Kit::Utils;
 using AdminSystem::Admin::AdminManager;
+using AdminSystem::Punishments::PunishmentManager;
+using CS2Kit::Commands::CommandManager;
 
 void ChatService::Reply(int slot, std::string_view message)
 {
@@ -103,6 +107,31 @@ void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view mes
     {
         Chat::PrintAll(line);
     }
+}
+
+bool ChatService::HandleSay(Player* player, std::string_view message, bool isSayTeam)
+{
+    if (!player || message.empty())
+        return false;
+
+    bool isCommand = (message.front() == '!' || message.front() == '.');
+
+    // Try to dispatch as a registered command. Returns false for unknown commands
+    // (e.g. "!ads") so they fall through to normal chat instead of being silently swallowed.
+    if (isCommand && CommandManager::Instance().HandleChatMessage(player, std::string(message)))
+        return true;
+
+    if (PunishmentManager::Instance().IsGagged(player->GetSteamID()))
+        return true;
+
+    const auto& chatCfg = ConfigManager::Instance().GetChatConfig();
+    if (chatCfg.TagAdminChatMessages && AdminManager::Instance().IsAdmin(player->GetSteamID()))
+    {
+        RebroadcastAdminChat(player, message, isSayTeam);
+        return true;
+    }
+
+    return false;
 }
 
 }  // namespace AdminSystem::Core

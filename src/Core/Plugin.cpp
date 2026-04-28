@@ -1,35 +1,22 @@
 #include "Plugin.hpp"
 
-#include "../Admin/AdminManager.hpp"
-#include "../Admin/AdminMenu.hpp"
 #include "../Admin/Effects/EffectManager.hpp"
-#include "../Commands/AdminCommands.hpp"
-#include "../Database/Database.hpp"
 #include "../Punishments/PunishmentManager.hpp"
+#include "Bootstrap.hpp"
 #include "ChatService.hpp"
-#include "Config.hpp"
 
 #include <CS2Kit/CS2Kit.hpp>
-#include <CS2Kit/Commands/Command.hpp>
-#include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
 #include <cstdio>
 #include <cstring>
 
-using namespace AdminSystem::Admin;
 using namespace AdminSystem::Core;
-using namespace AdminSystem::Database;
-using namespace AdminSystem::Punishments;
 using namespace AdminSystem::Admin::Effects;
-using namespace CS2Kit::Commands;
-using namespace CS2Kit::Menu;
+using namespace AdminSystem::Punishments;
 using namespace CS2Kit::Players;
 using namespace CS2Kit::Utils;
 using namespace CS2Kit::Core;
@@ -56,7 +43,6 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     PLUGIN_SAVEVARS();
     _lateLoad = late;
 
-    // Initialize CS2Kit (resolves SDK interfaces, loads gamedata, inits subsystems)
     CS2Kit::InitParams params;
     params.LogPrefix = "AdminSystem";
 
@@ -65,8 +51,7 @@ bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
 
     Log::Info("Loading v{}...", ADMIN_SYSTEM_VERSION);
 
-    // Initialize admin-system-specific subsystems
-    if (!InitializeSubsystems(late))
+    if (!Bootstrap::Initialize())
     {
         snprintf(error, maxlen, "Failed to initialize subsystems");
         return false;
@@ -82,7 +67,7 @@ bool AdminSystemPlugin::Unload(char* error, size_t maxlen)
     Log::Info("Unloading...");
 
     UnregisterHooks();
-    ShutdownSubsystems();
+    Bootstrap::Shutdown();
     CS2Kit::Shutdown();
 
     Log::Info("Unloaded.");
@@ -158,8 +143,7 @@ void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* psz
     int playerSlot = slot.Get();
     int64_t steamId = static_cast<int64_t>(xuid);
 
-    auto& plrMgr = PlayerManager::Instance();
-    plrMgr.AddPlayer(playerSlot, steamId, pszName ? pszName : "", pszAddress ? pszAddress : "");
+    PlayerManager::Instance().AddPlayer(playerSlot, steamId, pszName ? pszName : "", pszAddress ? pszAddress : "");
 
     // Bots have no real SteamID, so they can't be banned/muted/gagged — but we still want them
     // in PlayerManager so they show up in the admin menu and are kickable for testing.
@@ -179,7 +163,7 @@ void AdminSystemPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconne
                                               uint64 xuid, const char* pszNetworkID)
 {
     int playerSlot = slot.Get();
-    AdminSystem::Admin::Effects::EffectManager::Instance().CancelAllForSlot(playerSlot);
+    EffectManager::Instance().CancelAllForSlot(playerSlot);
     CS2Kit::OnPlayerDisconnect(playerSlot);
     PlayerManager::Instance().RemovePlayer(playerSlot);
 }
@@ -192,7 +176,6 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
 
     bool isSay = (strcmp(cmdName, "say") == 0);
     bool isSayTeam = (strcmp(cmdName, "say_team") == 0);
-
     if (!isSay && !isSayTeam)
         return;
 
@@ -200,12 +183,8 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
         return;
 
     std::string message = args.Arg(1);
-
     if (message.size() >= 2 && message.front() == '"' && message.back() == '"')
-    {
         message = message.substr(1, message.size() - 2);
-    }
-
     if (message.empty())
         return;
 
@@ -217,170 +196,11 @@ void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
     if (!player)
         return;
 
-    bool isCommand = !message.empty() && (message.front() == '!' || message.front() == '.');
-
-    // Try to dispatch as a registered command. Returns false for unknown commands
-    // (e.g. "!ads") so they can fall through to normal chat handling instead of
-    // being silently swallowed.
-    if (isCommand && CommandManager::Instance().HandleChatMessage(player, message))
-    {
+    if (ChatService::Instance().HandleSay(player, message, isSayTeam))
         RETURN_META(MRES_SUPERCEDE);
-    }
-
-    if (PunishmentManager::Instance().IsGagged(player->GetSteamID()))
-    {
-        RETURN_META(MRES_SUPERCEDE);
-    }
-
-    // Admin-tagged chat: replace plain say/say_team with a colored, prefixed broadcast when the
-    // speaker is an admin in a group with a chat prefix (or the configured fallback).
-    const auto& chatCfg = ConfigManager::Instance().GetChatConfig();
-    if (chatCfg.TagAdminChatMessages && AdminManager::Instance().IsAdmin(player->GetSteamID()))
-    {
-        ChatService::Instance().RebroadcastAdminChat(player, message, isSayTeam);
-        RETURN_META(MRES_SUPERCEDE);
-    }
 }
 
-// ------- Private Methods -----
-
-bool AdminSystemPlugin::InitializeSubsystems(bool late)
-{
-    // 1. Load configuration files
-    Log::Info("Loading configurations...");
-    if (!LoadConfigs())
-    {
-        Log::Warn("Failed to load some configs.");
-        return false;
-    }
-
-    auto locale = ConfigManager::Instance().GetPluginConfig().Locale;
-    Log::Info("Translations: Setting language to {}...", locale);
-    Translations::Instance().SetLanguage(locale);
-
-    // 2. Set up command permission and result callbacks
-    CommandManager::Instance().SetPermissionCallback([](int64_t steamId, const std::string& permission) -> bool {
-        return AdminManager::Instance().HasAnyPermission(steamId, permission);
-    });
-
-    // Pipe every command's result message into the player's chat as a colored reply.
-    // Suppresses empty messages (e.g. !who, which already streamed its own lines).
-    CommandManager::Instance().SetResultCallback(
-        [](Player* caller, const Command& /*cmd*/, const CommandResult& result) {
-            if (!caller || result.Message.empty())
-                return;
-            ChatService::Instance().Reply(caller->GetSlot(), result.Message);
-        });
-
-    // 3. Initialize database connection (optional)
-    Log::Info("Connecting to database...");
-    auto& db = Database::Instance();
-    auto& configMgr = ConfigManager::Instance();
-
-    bool dbConnected = db.Initialize(configMgr.GetDatabaseConfig());
-    if (!dbConnected)
-    {
-        Log::Warn("Database not available. Running without DB features.");
-    }
-
-    // 4. Load admin groups and admins from the database. Without DB access, no permissions
-    //    are resolved and only console can issue commands -- same constraint as punishments.
-    if (dbConnected)
-    {
-        Log::Info("Loading admins from database...");
-        auto& adminMgr = AdminManager::Instance();
-        if (!adminMgr.LoadGroups())
-            Log::Warn("Failed to load admin groups from DB.");
-        if (!adminMgr.LoadAdmins())
-            Log::Warn("Failed to load admins from DB.");
-    }
-    else
-    {
-        Log::Warn("Database unavailable -- admins/groups not loaded; chat commands will reject all callers.");
-    }
-
-    Log::Info("Player manager ready.");
-
-    // 5. Register commands
-    Log::Info("Initializing commands...");
-    auto& cmdMgr = CommandManager::Instance();
-
-    cmdMgr.Register(CommandBuilder("admin")
-                        .WithAliases({"a", "menu"})
-                        .WithDescription("Open the admin menu")
-                        .WithUsage("!admin")
-                        .RequirePermission("r")
-                        .WithArgs(0, 0)
-                        .OnExecute([](Player* admin, const std::vector<std::string>& /*args*/) -> CommandResult {
-                            if (!admin)
-                            {
-                                return {false, "Invalid caller"};
-                            }
-
-                            auto mainMenu = BuildAdminMainMenu(admin->GetSlot());
-                            if (mainMenu)
-                            {
-                                MenuManager::Instance().OpenMenu(admin->GetSlot(), mainMenu);
-                                return {true, ""};  // menu UI is the feedback; no chat reply needed
-                            }
-                            return {false, "Failed to open admin menu"};
-                        })
-                        .Build());
-
-    AdminSystem::Commands::RegisterAdminCommands(cmdMgr);
-
-    // 6. Initialize punishment manager (requires DB)
-    if (dbConnected)
-    {
-        Log::Info("Loading active punishments...");
-        auto& punishmentMgr = PunishmentManager::Instance();
-        if (!punishmentMgr.LoadActivePunishments())
-            Log::Warn("Failed to load active punishments.");
-
-        // Sweep expired bans/mutes/gags every minute so timed punishments self-clear without
-        // requiring a server restart or manual intervention.
-        Scheduler::Instance().Repeat(60'000, []() { PunishmentManager::Instance().ExpireOldPunishments(); });
-    }
-
-    // 7. Load translations
-    Log::Info("Loading translations...");
-    auto& translations = Translations::Instance();
-    translations.Load("addons/admin-system/configs/translations");
-
-    // 8. Register game event listeners. EffectManager owns its own hard-cancel paths;
-    //    other subsystems subscribe additional handlers as needed.
-    auto& events = GameEventService::Instance();
-    events.Listen("player_death", [](IGameEvent* e) {
-        if (!e)
-            return;
-        // userid in CS2 events maps to the slot index for the legacy event system.
-        int victim = e->GetInt("userid", -1);
-        if (victim >= 0)
-            EffectManager::Instance().CancelAllForSlot(victim);
-    });
-    events.Listen("round_end", [](IGameEvent*) { EffectManager::Instance().CancelAllForRoundEnd(); });
-    events.Listen("round_prestart", [](IGameEvent*) { EffectManager::Instance().CancelAllForRoundEnd(); });
-
-    Log::Info("All subsystems initialized.");
-    return true;
-}
-
-void AdminSystemPlugin::ShutdownSubsystems()
-{
-    Log::Info("Shutting down subsystems...");
-    EffectManager::Instance().CancelAll();
-    PlayerManager::Instance().Clear();
-    Database::Instance().CloseConnection();
-    Log::Info("Subsystems shut down.");
-}
-
-bool AdminSystemPlugin::LoadConfigs()
-{
-    auto& configMgr = ConfigManager::Instance();
-    if (!configMgr.LoadSettings("addons/admin-system/configs/settings.json"))
-        Log::Warn("Failed to load settings.json");
-    return true;
-}
+// ------- Hook Registration -----
 
 void AdminSystemPlugin::RegisterHooks()
 {

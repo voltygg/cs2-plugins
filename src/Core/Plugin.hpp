@@ -45,9 +45,6 @@ public:
     bool IsLateLoad() const { return _lateLoad; }
 
 private:
-    bool InitializeSubsystems(bool late);
-    void ShutdownSubsystems();
-    bool LoadConfigs();
     void RegisterHooks();
     void UnregisterHooks();
 

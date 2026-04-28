@@ -48,6 +48,14 @@ public:
      * Caller is expected to SUPERCEDE the original say/say_team in the chat hook.
      */
     void RebroadcastAdminChat(const CS2Kit::Players::Player* admin, std::string_view message, bool teamOnly);
+
+    /**
+     * Apply admin-system semantics to a player's say/say_team message:
+     * dispatch registered chat commands, drop messages from gagged players, and rebroadcast
+     * admin chat with a colored prefix. Returns true when the original message should be
+     * superseded (the hook caller must skip the engine's default broadcast).
+     */
+    bool HandleSay(CS2Kit::Players::Player* player, std::string_view message, bool isSayTeam);
 };
 
 }  // namespace AdminSystem::Core
