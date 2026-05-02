@@ -10,7 +10,6 @@
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
-
 #include <cctype>
 #include <charconv>
 #include <format>
@@ -51,11 +50,20 @@ int ParseDuration(std::string_view text)
     {
         switch (suffix)
         {
-            case 's': multiplier = 1; break;
-            case 'm': multiplier = 60; break;
-            case 'h': multiplier = 3600; break;
-            case 'd': multiplier = 86400; break;
-            default: return -1;
+        case 's':
+            multiplier = 1;
+            break;
+        case 'm':
+            multiplier = 60;
+            break;
+        case 'h':
+            multiplier = 3600;
+            break;
+        case 'd':
+            multiplier = 86400;
+            break;
+        default:
+            return -1;
         }
         text.remove_suffix(1);
     }
