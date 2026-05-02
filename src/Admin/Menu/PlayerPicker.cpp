@@ -25,12 +25,12 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(
         int targetSlot = p->GetSlot();
         int admin = adminSlot;
         auto cb = onPick;
-        builder.AddItem(p->GetName(), [admin, targetSlot, cb](int /*slot*/) { cb(admin, targetSlot); });
+        builder.AddButton(p->GetName(), [admin, targetSlot, cb](int /*slot*/) { cb(admin, targetSlot); });
     }
 
     if (players.empty())
     {
-        builder.AddItem(tr.Get("noPlayers"), [](int) {}, false);
+        builder.AddButton(tr.Get("noPlayers"), [](int) {}, false);
     }
 
     return builder.Build();

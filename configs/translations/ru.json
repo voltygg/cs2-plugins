@@ -77,6 +77,8 @@
   "duration1d": "1 день",
   "duration7d": "7 дней",
   "durationPerm": "Навсегда",
+  "durationCustom": "Свой...",
+  "durationCustomPrompt": "Введите длительность (например 30s, 5m, 2h, 7d или 'perm')",
 
   "noPlayers": "Нет доступных игроков",
   "noPermission": "У вас нет прав для использования этой команды.",

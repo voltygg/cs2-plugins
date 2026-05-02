@@ -6,7 +6,6 @@
 #include "Menu/AdminMenu_Punish.hpp"
 
 #include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 
@@ -14,7 +13,6 @@ namespace AdminSystem::Admin
 {
 
 using CS2Kit::Menu::MenuBuilder;
-using CS2Kit::Menu::MenuManager;
 using CS2Kit::Players::PlayerManager;
 using CS2Kit::Utils::Translations;
 
@@ -30,48 +28,17 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
 
     int64_t adminSid = adminPlayer->GetSteamID();
 
-    MenuBuilder builder(tr.Get("adminPanel"));
-
-    {
-        bool hasPerm = adminMgr.HasAnyPermission(adminSid, "cdopq");
-        int slot = adminSlot;
-        builder.AddItem(
-            tr.Get("categoryPunish"),
-            [slot](int s) {
-                auto m = Menu::BuildPunishMenu(slot);
-                if (m)
-                    MenuManager::Instance().OpenMenu(s, m);
-            },
-            hasPerm);
-    }
-
-    {
-        bool hasPerm = adminMgr.HasAnyPermission(adminSid, "bsz");
-        int slot = adminSlot;
-        builder.AddItem(
-            tr.Get("categoryControl"),
-            [slot](int s) {
-                auto m = Menu::BuildControlMenu(slot);
-                if (m)
-                    MenuManager::Instance().OpenMenu(s, m);
-            },
-            hasPerm);
-    }
-
-    {
-        bool hasPerm = adminMgr.HasAnyPermission(adminSid, "fz");
-        int slot = adminSlot;
-        builder.AddItem(
-            tr.Get("categoryEffects"),
-            [slot](int s) {
-                auto m = Menu::BuildEffectsMenu(slot);
-                if (m)
-                    MenuManager::Instance().OpenMenu(s, m);
-            },
-            hasPerm);
-    }
-
-    return builder.Build();
+    return MenuBuilder(tr.Get("adminPanel"))
+        .AddSubmenu(
+            tr.Get("categoryPunish"), [adminSlot](int) { return Menu::BuildPunishMenu(adminSlot); },
+            adminMgr.HasAnyPermission(adminSid, "cdopq"))
+        .AddSubmenu(
+            tr.Get("categoryControl"), [adminSlot](int) { return Menu::BuildControlMenu(adminSlot); },
+            adminMgr.HasAnyPermission(adminSid, "bsz"))
+        .AddSubmenu(
+            tr.Get("categoryEffects"), [adminSlot](int) { return Menu::BuildEffectsMenu(adminSlot); },
+            adminMgr.HasAnyPermission(adminSid, "fz"))
+        .Build();
 }
 
 }  // namespace AdminSystem::Admin

@@ -28,28 +28,20 @@ using Effects::EffectManager;
 namespace
 {
 
-std::string ToggleLabel(const std::string& base, bool on)
+void AddEffectToggle(MenuBuilder& builder, const std::string& base, bool enabled, int admin, int target, EffectId id,
+                     void (*action)(int, int))
 {
     auto& tr = Translations::Instance();
-    return std::format("{}: {}", base, tr.Get(on ? "effectStateOn" : "effectStateOff"));
-}
-
-void AddToggle(MenuBuilder& builder, const std::string& base, bool enabled, int admin, int target, EffectId id,
-               void (*action)(int, int))
-{
-    builder.AddDynamicItem(
-        [base, target, id]() { return ToggleLabel(base, EffectManager::Instance().IsActive(target, id)); },
-        [admin, target, action](int /*slot*/) { action(admin, target); },
-        enabled);
+    builder.AddToggle(
+        base, tr.Get("effectStateOn"), tr.Get("effectStateOff"),
+        [target, id](int) { return EffectManager::Instance().IsActive(target, id); },
+        [admin, target, action](int) { action(admin, target); }, enabled);
 }
 
 void AddSimple(MenuBuilder& builder, const std::string& label, bool enabled, int admin, int target,
                void (*action)(int, int))
 {
-    builder.AddItem(
-        label,
-        [admin, target, action](int /*slot*/) { action(admin, target); },
-        enabled);
+    builder.AddButton(label, [admin, target, action](int /*slot*/) { action(admin, target); }, enabled);
 }
 
 }  // namespace
@@ -82,29 +74,27 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("categoryEffects"), target->GetName()));
 
-    AddToggle(builder, tr.Get("actionGhost"), hasF, adminSlot, targetSlot, EffectId::Ghost, &Effects::ToggleGhost);
-    AddToggle(builder, tr.Get("actionDisco"), hasF, adminSlot, targetSlot, EffectId::Disco, &Effects::ToggleDisco);
-    builder.AddItem(tr.Get("actionBlind"), [](int) {}, false);  // Awaits Fade user-message infra.
+    AddEffectToggle(builder, tr.Get("actionGhost"), hasF, adminSlot, targetSlot, EffectId::Ghost,
+                    &Effects::ToggleGhost);
+    AddEffectToggle(builder, tr.Get("actionDisco"), hasF, adminSlot, targetSlot, EffectId::Disco,
+                    &Effects::ToggleDisco);
+    builder.AddButton(tr.Get("actionBlind"), [](int) {}, false);  // Awaits Fade user-message infra.
     AddSimple(builder, tr.Get("actionLaunch"), hasS, adminSlot, targetSlot, &Actions::DoLaunch);
     AddSimple(builder, tr.Get("actionSmite"), hasF, adminSlot, targetSlot, &Effects::DoSmite);
 
     // Swap opens a second player picker, then runs DoSwap.
-    {
-        int admin = adminSlot;
-        int first = targetSlot;
-        builder.AddItem(
-            tr.Get("actionSwap"),
-            [admin, first](int slot) {
-                auto picker = BuildPlayerPicker(admin, Translations::Instance().Get("selectSwapTarget"),
-                                                [first](int a, int second) {
-                                                    Actions::DoSwap(a, first, second);
-                                                    MenuManager::Instance().CloseAllMenus(a);
-                                                });
-                if (picker)
-                    MenuManager::Instance().OpenMenu(slot, picker);
-            },
-            hasS);
-    }
+    builder.AddButton(
+        tr.Get("actionSwap"),
+        [adminSlot, targetSlot](int slot) {
+            auto picker = BuildPlayerPicker(adminSlot, Translations::Instance().Get("selectSwapTarget"),
+                                            [first = targetSlot](int a, int second) {
+                                                Actions::DoSwap(a, first, second);
+                                                MenuManager::Instance().CloseAllMenus(a);
+                                            });
+            if (picker)
+                MenuManager::Instance().OpenMenu(slot, picker);
+        },
+        hasS);
 
     return builder.Build();
 }

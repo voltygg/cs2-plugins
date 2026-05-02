@@ -30,7 +30,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildHealthPresetMenu(int adminSlot, int t
     {
         int admin = adminSlot;
         int target = targetSlot;
-        builder.AddItem(std::format("{} HP", hp), [admin, target, hp](int slot) {
+        builder.AddButton(std::format("{} HP", hp), [admin, target, hp](int slot) {
             Actions::DoSetHealth(admin, target, hp);
             MenuManager::Instance().CloseAllMenus(slot);
         });
@@ -47,7 +47,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildArmorPresetMenu(int adminSlot, int ta
     {
         int admin = adminSlot;
         int target = targetSlot;
-        builder.AddItem(std::format("{} AP", armor), [admin, target, armor](int slot) {
+        builder.AddButton(std::format("{} AP", armor), [admin, target, armor](int slot) {
             Actions::DoSetArmor(admin, target, armor);
             MenuManager::Instance().CloseAllMenus(slot);
         });
@@ -62,15 +62,15 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildTeamPickerMenu(int adminSlot, int tar
 
     int admin = adminSlot;
     int target = targetSlot;
-    builder.AddItem(tr.Get("teamCt"), [admin, target](int slot) {
+    builder.AddButton(tr.Get("teamCt"), [admin, target](int slot) {
         Actions::DoChangeTeam(admin, target, Actions::TeamCt);
         MenuManager::Instance().CloseAllMenus(slot);
     });
-    builder.AddItem(tr.Get("teamT"), [admin, target](int slot) {
+    builder.AddButton(tr.Get("teamT"), [admin, target](int slot) {
         Actions::DoChangeTeam(admin, target, Actions::TeamT);
         MenuManager::Instance().CloseAllMenus(slot);
     });
-    builder.AddItem(tr.Get("teamSpec"), [admin, target](int slot) {
+    builder.AddButton(tr.Get("teamSpec"), [admin, target](int slot) {
         Actions::DoChangeTeam(admin, target, Actions::TeamSpec);
         MenuManager::Instance().CloseAllMenus(slot);
     });

@@ -6,6 +6,7 @@
 
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/ChatInputCapture.hpp>
 #include <CS2Kit/Utils/Chat.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
@@ -113,6 +114,11 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
 {
     if (!player || message.empty())
         return false;
+
+    // Menu free-text input: if a chat capture is pending for this player, the line is
+    // their menu answer, not a chat message. Always supersede so it isn't broadcast.
+    if (CS2Kit::Sdk::ChatInputCapture::Instance().TryConsume(player->GetSlot(), message))
+        return true;
 
     bool isCommand = (message.front() == '!' || message.front() == '.');
 

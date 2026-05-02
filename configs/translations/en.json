@@ -77,6 +77,8 @@
   "duration1d": "1 Day",
   "duration7d": "7 Days",
   "durationPerm": "Permanent",
+  "durationCustom": "Custom...",
+  "durationCustomPrompt": "Enter duration (e.g. 30s, 5m, 2h, 7d, or 'perm')",
 
   "noPlayers": "No players available",
   "noPermission": "You do not have permission to use this command.",
