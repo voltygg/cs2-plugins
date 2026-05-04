@@ -179,6 +179,9 @@ bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSl
         {
             if (PunishmentManager::Instance().IsVoiceMuted(sender->GetSteamID()))
             {
+                // Tell the muted player they're being suppressed; ChatService rate-limits this
+                // so the per-receiver explosion of hook calls collapses to one chat line.
+                ChatService::Instance().NotifyVoiceMuted(sender);
                 RETURN_META_VALUE_NEWPARAMS(MRES_HANDLED, false, &IVEngineServer2::SetClientListening,
                                             (iReceiver, iSender, false));
             }

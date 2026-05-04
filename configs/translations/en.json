@@ -83,5 +83,33 @@
   "noPlayers": "No players available",
   "noPermission": "You do not have permission to use this command.",
   "notImplemented": "(coming soon)",
-  "menuOpened": "Admin menu opened."
+  "menuOpened": "Admin menu opened.",
+
+  "categoryChatSettings": "Chat Settings",
+  "chatDisplayPrefix": "Display Prefix",
+  "chatNameColor": "Name Color",
+  "chatMessageColor": "Message Color",
+
+  "colorGroupDefault": "(group default)",
+  "colorDefault": "Default",
+  "colorDarkRed": "Dark Red",
+  "colorLightPurple": "Light Purple",
+  "colorGreen": "Green",
+  "colorOlive": "Olive",
+  "colorLime": "Lime",
+  "colorRed": "Red",
+  "colorGray": "Gray",
+  "colorYellow": "Yellow",
+  "colorSilver": "Silver",
+  "colorLightBlue": "Light Blue",
+  "colorDarkBlue": "Dark Blue",
+  "colorPurple": "Purple",
+  "colorLightRed": "Light Red",
+  "colorGold": "Gold",
+
+  "muteNoticeText": "You are text-muted.",
+  "muteNoticeVoice": "You are voice-muted.",
+  "muteNoticeReason": "Reason",
+  "muteNoticeExpiresIn": "expires in",
+  "muteNoticePermanent": "permanent"
 }

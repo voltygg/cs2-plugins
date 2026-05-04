@@ -5,12 +5,14 @@
 
 #include <CS2Kit/Utils/Log.hpp>
 #include <algorithm>
+#include <utility>
 
 namespace AdminSystem::Admin
 {
 
 namespace Db = AdminSystem::Database;
 namespace Log = CS2Kit::Utils::Log;
+using Core::ConfigManager;
 using Db::Admin;
 using Db::AdminGroup;
 using Db::AdminGroupRepository;
@@ -245,15 +247,44 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
     }
     else
     {
-        const auto& fallback = AdminSystem::Core::ConfigManager::Instance().GetChatConfig();
+        const auto& fallback = ConfigManager::Instance().GetChatConfig();
         style.Prefix = fallback.FallbackPrefix;
         style.PrefixColor = fallback.FallbackPrefixColor;
         style.NameColor = fallback.FallbackNameColor;
         style.MessageColor = fallback.FallbackMessageColor;
     }
 
+    // Per-admin overrides win over group/fallback. Empty strings keep the inherited value
+    // so admins can override individual slots without losing the rest of their group's styling.
+    const auto& adminRow = adminIt->second;
+    if (!adminRow.NameColor.empty())
+        style.NameColor = adminRow.NameColor;
+    if (!adminRow.MessageColor.empty())
+        style.MessageColor = adminRow.MessageColor;
+    style.DisplayPrefix = adminRow.DisplayPrefix;
+
     _resolvedStyles[steamId] = style;
     return style;
+}
+
+bool AdminManager::UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
+                                   const std::string& messageColor)
+{
+    auto it = _admins.find(steamId);
+    if (it == _admins.end())
+        return false;
+
+    Database::AdminRepository repo;
+    if (!repo.UpdateChatStyle(steamId, displayPrefix, nameColor, messageColor))
+        return false;
+
+    auto& admin = it->second;
+    admin.DisplayPrefix = displayPrefix;
+    admin.NameColor = nameColor;
+    admin.MessageColor = messageColor;
+
+    _resolvedStyles.erase(steamId);
+    return true;
 }
 
 uint32_t AdminManager::ResolveFlags(const Database::Admin& admin)

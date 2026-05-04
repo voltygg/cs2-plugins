@@ -2,6 +2,7 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
+#include "ChatFormat.hpp"
 #include "Config.hpp"
 
 #include <CS2Kit/Commands/CommandManager.hpp>
@@ -21,6 +22,16 @@ using namespace CS2Kit::Utils;
 using AdminSystem::Admin::AdminManager;
 using AdminSystem::Punishments::PunishmentManager;
 using CS2Kit::Commands::CommandManager;
+
+namespace
+{
+
+// Rate limit (seconds) for "you are muted" notifications. The voice hook fires per receiver
+// every voice keypress, and chat-spam quickly produces dozens of say events; once per minute
+// is enough to be informative without becoming the spam itself.
+constexpr int64_t kMuteNoticeIntervalSec = 60;
+
+}  // namespace
 
 void ChatService::Reply(int slot, std::string_view message)
 {
@@ -127,17 +138,71 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
     if (isCommand && CommandManager::Instance().HandleChatMessage(player, std::string(message)))
         return true;
 
-    if (PunishmentManager::Instance().IsTextMuted(player->GetSteamID()))
+    int64_t steamId = player->GetSteamID();
+    if (PunishmentManager::Instance().IsTextMuted(steamId))
+    {
+        int slot = player->GetSlot();
+        int64_t now = TimeUtils::Now();
+        auto& last = _textMuteNoticeAt[slot];
+
+        if (now - last >= kMuteNoticeIntervalSec)
+        {
+            last = now;
+            auto mute = PunishmentManager::Instance().GetActiveTextMute(steamId);
+            auto& tr = Translations::Instance();
+            if (mute)
+            {
+                Chat::Print(slot,
+                            std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNoticeText"), ChatColors::Default,
+                                        ChatColors::Olive, ChatFormat::FormatExpiry(mute->ExpiresAt)));
+                if (!mute->Reason.empty())
+                    Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNoticeReason"),
+                                                  ChatColors::Default, mute->Reason));
+            }
+            else
+            {
+                Chat::Print(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNoticeText")));
+            }
+        }
         return true;
+    }
 
     const auto& chatCfg = ConfigManager::Instance().GetChatConfig();
-    if (chatCfg.TagAdminChatMessages && AdminManager::Instance().IsAdmin(player->GetSteamID()))
+    if (chatCfg.TagAdminChatMessages && AdminManager::Instance().IsAdmin(steamId))
     {
         RebroadcastAdminChat(player, message, isSayTeam);
         return true;
     }
 
     return false;
+}
+
+void ChatService::NotifyVoiceMuted(Player* player)
+{
+    if (!player)
+        return;
+
+    int slot = player->GetSlot();
+    int64_t now = TimeUtils::Now();
+    auto& last = _voiceMuteNoticeAt[slot];
+    if (now - last < kMuteNoticeIntervalSec)
+        return;
+    last = now;
+
+    auto mute = PunishmentManager::Instance().GetActiveVoiceMute(player->GetSteamID());
+    auto& tr = Translations::Instance();
+    if (mute)
+    {
+        Chat::Print(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNoticeVoice"), ChatColors::Default,
+                                      ChatColors::Olive, ChatFormat::FormatExpiry(mute->ExpiresAt)));
+        if (!mute->Reason.empty())
+            Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNoticeReason"),
+                                          ChatColors::Default, mute->Reason));
+    }
+    else
+    {
+        Chat::Print(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNoticeVoice")));
+    }
 }
 
 }  // namespace AdminSystem::Core

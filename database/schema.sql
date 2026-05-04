@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS admins (
   groups TEXT [ ] DEFAULT ARRAY [ ] :: TEXT [ ],
   flags VARCHAR(64) NOT NULL DEFAULT '',
   immunity INTEGER NOT NULL DEFAULT 0,
+  -- Per-admin chat overrides. Empty colors fall back to the admin's group; display_prefix
+  -- lets an admin hide their group prefix without losing their group's coloring.
+  display_prefix BOOLEAN NOT NULL DEFAULT TRUE,
+  name_color VARCHAR(32) NOT NULL DEFAULT '',
+  message_color VARCHAR(32) NOT NULL DEFAULT '',
   created_at BIGINT NOT NULL DEFAULT EXTRACT(
     EPOCH
     FROM
@@ -223,15 +228,27 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC
 -- ------- DEFAULT DATA -----
 -- Insert default superadmin group
 INSERT INTO
-  admin_groups (name, flags, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
+  admin_groups (
+    name,
+    flags,
+    immunity,
+    inherits,
+    chat_prefix,
+    prefix_color,
+    name_color,
+    message_color
+  )
 VALUES
-  ('superadmin', 'z', 100, ARRAY [ ] :: TEXT [ ], '[ROOT]', 'red', 'lightblue', 'default') ON CONFLICT (name) DO NOTHING;
-
--- Insert default moderator group
-INSERT INTO
-  admin_groups (name, flags, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
-VALUES
-  ('moderator', 'bci', 50, ARRAY [ ] :: TEXT [ ], '[MOD]', 'green', 'default', 'default') ON CONFLICT (name) DO NOTHING;
+  (
+    'superadmin',
+    'z',
+    100,
+    ARRAY [ ] :: TEXT [ ],
+    '[ROOT]',
+    'red',
+    'lightblue',
+    'default'
+  ) ON CONFLICT (name) DO NOTHING;
 
 -- Insert schema version
 INSERT INTO

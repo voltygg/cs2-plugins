@@ -89,6 +89,24 @@ bool AdminRepository::Delete(int64_t steamId)
     }
 }
 
+bool AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
+                                       const std::string& messageColor)
+{
+    try
+    {
+        Database::Instance().ExecutePrepared(
+            "update_admin_chat_style",
+            "UPDATE admins SET display_prefix = $2, name_color = $3, message_color = $4, "
+            "updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE steam_id = $1",
+            steamId, displayPrefix, nameColor, messageColor);
+        return true;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+}
+
 Admin AdminRepository::ParseRow(const pqxx::row& row)
 {
     Admin admin;
@@ -100,6 +118,9 @@ Admin AdminRepository::ParseRow(const pqxx::row& row)
     admin.CreatedAt = row["created_at"].as<int64_t>();
     admin.UpdatedAt = row["updated_at"].as<int64_t>();
     admin.Groups = ParseTextArray(row["groups"]);
+    admin.DisplayPrefix = row["display_prefix"].as<bool>(true);
+    admin.NameColor = row["name_color"].c_str();
+    admin.MessageColor = row["message_color"].c_str();
 
     admin.BuildFlagBits();
     return admin;

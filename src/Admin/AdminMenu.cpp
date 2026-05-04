@@ -1,6 +1,7 @@
 #include "AdminMenu.hpp"
 
 #include "AdminManager.hpp"
+#include "Menu/AdminMenu_ChatSettings.hpp"
 #include "Menu/AdminMenu_Control.hpp"
 #include "Menu/AdminMenu_Effects.hpp"
 #include "Menu/AdminMenu_Punish.hpp"
@@ -38,6 +39,9 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
         .AddSubmenu(
             tr.Get("categoryEffects"), [adminSlot](int) { return Menu::BuildEffectsMenu(adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "fz"))
+        .AddSubmenu(
+            tr.Get("categoryChatSettings"), [adminSlot](int) { return Menu::BuildChatSettingsMenu(adminSlot); },
+            adminMgr.IsAdmin(adminSid))
         .Build();
 }
 

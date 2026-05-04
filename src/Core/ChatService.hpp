@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 namespace AdminSystem::Core
 {
@@ -56,6 +57,19 @@ public:
      * superseded (the hook caller must skip the engine's default broadcast).
      */
     bool HandleSay(CS2Kit::Players::Player* player, std::string_view message, bool isSayTeam);
+
+    /**
+     * Notify a voice-muted player that the engine is suppressing their microphone. Rate-limited
+     * to avoid spam: the SetClientListening hook fires once per (receiver, sender) pair every
+     * time the player keys voice, which can easily hit dozens of calls in a single press.
+     */
+    void NotifyVoiceMuted(CS2Kit::Players::Player* player);
+
+private:
+    /** Last-notified timestamps per slot for the voice-mute notice (keyed by slot, value = epoch sec). */
+    std::unordered_map<int, int64_t> _voiceMuteNoticeAt;
+    /** Last-notified timestamps per slot for the text-mute notice. */
+    std::unordered_map<int, int64_t> _textMuteNoticeAt;
 };
 
 }  // namespace AdminSystem::Core

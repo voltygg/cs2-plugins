@@ -18,6 +18,10 @@ public:
     std::vector<Admin> FindAll();
     bool Delete(int64_t steamId);
 
+    /** Persist the per-admin chat overrides set via the admin chat-settings menu. */
+    bool UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
+                         const std::string& messageColor);
+
 private:
     Admin ParseRow(const pqxx::row& row);
 };

@@ -16,6 +16,12 @@ struct Admin
     std::vector<std::string> Groups;
     std::string Flags;
     int32_t Immunity = 0;
+
+    /** Per-admin chat overrides. Empty color strings fall back to the admin's group. */
+    bool DisplayPrefix = true;
+    std::string NameColor;
+    std::string MessageColor;
+
     int64_t CreatedAt = 0;
     int64_t UpdatedAt = 0;
 

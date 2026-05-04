@@ -83,5 +83,33 @@
   "noPlayers": "Нет доступных игроков",
   "noPermission": "У вас нет прав для использования этой команды.",
   "notImplemented": "(скоро будет)",
-  "menuOpened": "Меню администратора открыто."
+  "menuOpened": "Меню администратора открыто.",
+
+  "categoryChatSettings": "Настройки чата",
+  "chatDisplayPrefix": "Показывать префикс",
+  "chatNameColor": "Цвет имени",
+  "chatMessageColor": "Цвет сообщения",
+
+  "colorGroupDefault": "(по умолчанию)",
+  "colorDefault": "Стандартный",
+  "colorDarkRed": "Тёмно-красный",
+  "colorLightPurple": "Светло-фиолетовый",
+  "colorGreen": "Зелёный",
+  "colorOlive": "Оливковый",
+  "colorLime": "Салатовый",
+  "colorRed": "Красный",
+  "colorGray": "Серый",
+  "colorYellow": "Жёлтый",
+  "colorSilver": "Серебряный",
+  "colorLightBlue": "Голубой",
+  "colorDarkBlue": "Тёмно-синий",
+  "colorPurple": "Фиолетовый",
+  "colorLightRed": "Светло-красный",
+  "colorGold": "Золотой",
+
+  "muteNoticeText": "Вам запрещено писать в чат.",
+  "muteNoticeVoice": "Вам запрещено говорить в голосовом чате.",
+  "muteNoticeReason": "Причина",
+  "muteNoticeExpiresIn": "истекает через",
+  "muteNoticePermanent": "навсегда"
 }

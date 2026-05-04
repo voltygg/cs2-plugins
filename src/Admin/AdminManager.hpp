@@ -22,8 +22,9 @@ struct AdminChatStyle
     std::string PrefixColor;  /**< Color name; resolved via ChatColors::ParseNamed. */
     std::string NameColor;    /**< Color name for the speaker's display name. */
     std::string MessageColor; /**< Color name for the message body. */
+    bool DisplayPrefix = true; /**< Per-admin toggle; suppresses the prefix when false. */
 
-    bool HasPrefix() const { return !Prefix.empty(); }
+    bool HasPrefix() const { return DisplayPrefix && !Prefix.empty(); }
 };
 
 /**
@@ -58,6 +59,14 @@ public:
      * empty `AdminChatStyle` (HasPrefix() == false) for non-admins.
      */
     AdminChatStyle GetChatStyle(int64_t steamId);
+
+    /**
+     * Persist + apply per-admin chat-style overrides. Empty color strings revert that slot
+     * back to the admin's group default. Returns false if the admin is unknown or the DB
+     * write failed; the in-memory cache is only updated on a successful write.
+     */
+    bool UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
+                         const std::string& messageColor);
 
     /** Convert a single flag character ('a'-'z') to a bitmask bit. */
     static uint32_t FlagToBit(char flag)
