@@ -2,9 +2,6 @@
 -- Edit the steam_id, name, and group(s) below for your server, then:
 --   psql -d admin_system -f database/seed-admin.sql
 -- Pick up the new admin without restarting the server with `!admin_reload` in chat.
-SET
-  search_path TO admin_system;
-
 INSERT INTO
   admins (steam_id, name, groups, flags, immunity)
 VALUES

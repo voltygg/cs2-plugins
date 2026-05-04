@@ -51,7 +51,7 @@ public:
 
     /**
      * Apply admin-system semantics to a player's say/say_team message:
-     * dispatch registered chat commands, drop messages from gagged players, and rebroadcast
+     * dispatch registered chat commands, drop messages from text-muted players, and rebroadcast
      * admin chat with a colored prefix. Returns true when the original message should be
      * superseded (the hook caller must skip the engine's default broadcast).
      */

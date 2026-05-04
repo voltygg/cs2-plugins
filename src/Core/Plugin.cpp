@@ -35,6 +35,7 @@ SH_DECL_HOOK6_void(IServerGameClients, OnClientConnected, SH_NOATTRIB, 0, CPlaye
 SH_DECL_HOOK5_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, CPlayerSlot, ENetworkDisconnectionReason,
                    const char*, uint64, const char*);
 SH_DECL_HOOK3_void(ICvar, DispatchConCommand, SH_NOATTRIB, 0, ConCommandRef, const CCommandContext&, const CCommand&);
+SH_DECL_HOOK3(IVEngineServer2, SetClientListening, SH_NOATTRIB, 0, bool, CPlayerSlot, CPlayerSlot, bool);
 
 // ------- ISmmPlugin Interface Implementation -----
 
@@ -145,7 +146,7 @@ void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* psz
 
     PlayerManager::Instance().AddPlayer(playerSlot, steamId, pszName ? pszName : "", pszAddress ? pszAddress : "");
 
-    // Bots have no real SteamID, so they can't be banned/muted/gagged — but we still want them
+    // Bots have no real SteamID, so they can't be banned/muted — but we still want them
     // in PlayerManager so they show up in the admin menu and are kickable for testing.
     if (bFakePlayer)
         return;
@@ -166,6 +167,24 @@ void AdminSystemPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconne
     EffectManager::Instance().CancelAllForSlot(playerSlot);
     CS2Kit::OnPlayerDisconnect(playerSlot);
     PlayerManager::Instance().RemovePlayer(playerSlot);
+}
+
+// Engine asks us per (receiver, sender) whether the receiver should hear the sender. If the
+// sender has an active voice mute, force `bListen = false` so the engine drops the channel.
+bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen)
+{
+    if (bListen)
+    {
+        if (auto* sender = PlayerManager::Instance().GetPlayerBySlot(iSender.Get()))
+        {
+            if (PunishmentManager::Instance().IsVoiceMuted(sender->GetSteamID()))
+            {
+                RETURN_META_VALUE_NEWPARAMS(MRES_HANDLED, false, &IVEngineServer2::SetClientListening,
+                                            (iReceiver, iSender, false));
+            }
+        }
+    }
+    RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
 void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args)
@@ -213,6 +232,8 @@ void AdminSystemPlugin::RegisterHooks()
                 SH_MEMBER(this, &AdminSystemPlugin::Hook_ClientDisconnect), true);
     SH_ADD_HOOK(ICvar, DispatchConCommand, gi.CVar, SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand),
                 false);
+    SH_ADD_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
+                SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
 
     Log::Info("Hooks registered.");
 }
@@ -229,6 +250,8 @@ void AdminSystemPlugin::UnregisterHooks()
                    SH_MEMBER(this, &AdminSystemPlugin::Hook_ClientDisconnect), true);
     SH_REMOVE_HOOK(ICvar, DispatchConCommand, gi.CVar, SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand),
                    false);
+    SH_REMOVE_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
+                   SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
 
     Log::Info("Hooks unregistered.");
 }

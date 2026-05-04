@@ -3,11 +3,12 @@
 #include "../Core/ChatService.hpp"
 #include "../Core/Config.hpp"
 #include "../Database/Repositories/BanRepository.hpp"
-#include "../Database/Repositories/GagRepository.hpp"
-#include "../Database/Repositories/MuteRepository.hpp"
+#include "../Database/Repositories/TextMuteRepository.hpp"
+#include "../Database/Repositories/VoiceMuteRepository.hpp"
 #include "../Database/Repositories/WarningRepository.hpp"
 
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
@@ -21,36 +22,66 @@ using namespace CS2Kit::Utils;
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
 
+namespace
+{
+
+// Push the engine's per-pair voice channel state for `senderSteamId` to all currently
+// connected listeners. Our SetClientListening hook will still enforce the cached
+// IsVoiceMuted() decision; this just forces the engine to re-evaluate any channels
+// that were already negotiated before the (un)mute landed.
+void RefreshVoiceChannel(int64_t senderSteamId, bool muted)
+{
+    auto* engine = CS2Kit::Sdk::GameInterfaces::Instance().Engine;
+    if (!engine)
+        return;
+
+    auto* sender = PlayerManager::Instance().GetPlayerBySteamId(senderSteamId);
+    if (!sender)
+        return;
+
+    int senderSlot = sender->GetSlot();
+    for (int i = 0; i < 64; ++i)
+    {
+        if (i == senderSlot)
+            continue;
+        if (!PlayerManager::Instance().GetPlayerBySlot(i))
+            continue;
+        engine->SetClientListening(CPlayerSlot(i), CPlayerSlot(senderSlot), !muted);
+    }
+}
+
+}  // namespace
+
 bool PunishmentManager::LoadActivePunishments()
 {
     try
     {
         BanRepository banRepo;
-        MuteRepository muteRepo;
-        GagRepository gagRepo;
+        VoiceMuteRepository voiceRepo;
+        TextMuteRepository textRepo;
 
         _activeBans.clear();
         for (const auto& ban : banRepo.FindAllActive())
             _activeBans[ban.TargetSteamId] = ban;
 
-        _activeMutes.clear();
-        _mutedPlayers.clear();
-        for (const auto& mute : muteRepo.FindAllActive())
+        _activeVoiceMutes.clear();
+        _voiceMutedPlayers.clear();
+        for (const auto& mute : voiceRepo.FindAllActive())
         {
-            _activeMutes[mute.TargetSteamId] = mute;
-            _mutedPlayers.insert(mute.TargetSteamId);
+            _activeVoiceMutes[mute.TargetSteamId] = mute;
+            _voiceMutedPlayers.insert(mute.TargetSteamId);
         }
 
-        _activeGags.clear();
-        _gaggedPlayers.clear();
-        for (const auto& gag : gagRepo.FindAllActive())
+        _activeTextMutes.clear();
+        _textMutedPlayers.clear();
+        for (const auto& mute : textRepo.FindAllActive())
         {
-            _activeGags[gag.TargetSteamId] = gag;
-            _gaggedPlayers.insert(gag.TargetSteamId);
+            _activeTextMutes[mute.TargetSteamId] = mute;
+            _textMutedPlayers.insert(mute.TargetSteamId);
         }
 
-        Log::Info("Loaded active punishments: {} ban(s), {} mute(s), {} gag(s).", _activeBans.size(),
-                  _activeMutes.size(), _activeGags.size());
+        Log::Info("Loaded active punishments: {} ban(s), {} voice mute(s), {} text mute(s).", _activeBans.size(),
+                  _activeVoiceMutes.size(), _activeTextMutes.size());
         return true;
     }
     catch (const std::exception& e)
@@ -73,42 +104,43 @@ std::optional<Ban> PunishmentManager::GetActiveBan(int64_t steamId)
     return it->second;
 }
 
-std::optional<Mute> PunishmentManager::GetActiveMute(int64_t steamId)
+std::optional<VoiceMute> PunishmentManager::GetActiveVoiceMute(int64_t steamId)
 {
-    auto it = _activeMutes.find(steamId);
-    if (it == _activeMutes.end())
+    auto it = _activeVoiceMutes.find(steamId);
+    if (it == _activeVoiceMutes.end())
         return std::nullopt;
     if (it->second.IsExpired())
     {
-        _activeMutes.erase(it);
-        _mutedPlayers.erase(steamId);
+        _activeVoiceMutes.erase(it);
+        _voiceMutedPlayers.erase(steamId);
+        RefreshVoiceChannel(steamId, false);
         return std::nullopt;
     }
     return it->second;
 }
 
-std::optional<Gag> PunishmentManager::GetActiveGag(int64_t steamId)
+std::optional<TextMute> PunishmentManager::GetActiveTextMute(int64_t steamId)
 {
-    auto it = _activeGags.find(steamId);
-    if (it == _activeGags.end())
+    auto it = _activeTextMutes.find(steamId);
+    if (it == _activeTextMutes.end())
         return std::nullopt;
     if (it->second.IsExpired())
     {
-        _activeGags.erase(it);
-        _gaggedPlayers.erase(steamId);
+        _activeTextMutes.erase(it);
+        _textMutedPlayers.erase(steamId);
         return std::nullopt;
     }
     return it->second;
 }
 
-bool PunishmentManager::IsMuted(int64_t steamId)
+bool PunishmentManager::IsVoiceMuted(int64_t steamId)
 {
-    return _mutedPlayers.count(steamId) > 0;
+    return _voiceMutedPlayers.count(steamId) > 0;
 }
 
-bool PunishmentManager::IsGagged(int64_t steamId)
+bool PunishmentManager::IsTextMuted(int64_t steamId)
 {
-    return _gaggedPlayers.count(steamId) > 0;
+    return _textMutedPlayers.count(steamId) > 0;
 }
 
 bool PunishmentManager::IssueBan(Ban& ban)
@@ -146,7 +178,7 @@ bool PunishmentManager::IssueBan(Ban& ban)
     }
 }
 
-bool PunishmentManager::IssueMute(Mute& mute)
+bool PunishmentManager::IssueVoiceMute(VoiceMute& mute)
 {
     try
     {
@@ -155,49 +187,48 @@ bool PunishmentManager::IssueMute(Mute& mute)
         if (mute.Duration > 0 && mute.ExpiresAt == 0)
             mute.ExpiresAt = TimeUtils::GetExpirationTime(mute.Duration);
 
-        MuteRepository repo;
+        VoiceMuteRepository repo;
         if (!repo.Create(mute))
             return false;
 
-        _activeMutes[mute.TargetSteamId] = mute;
-        _mutedPlayers.insert(mute.TargetSteamId);
+        _activeVoiceMutes[mute.TargetSteamId] = mute;
+        _voiceMutedPlayers.insert(mute.TargetSteamId);
+        RefreshVoiceChannel(mute.TargetSteamId, true);
 
-        // TODO(voice-block): CS2Kit doesn't expose a SVC_VoiceData hook today, so the mute is
-        // persisted and visible in `!who` but voice still flows. Plug into voice transport when
-        // CS2Kit gains that surface.
-        ChatService::Instance().BroadcastPunishment("muted", mute.AdminName, mute.TargetName, mute.Reason,
+        ChatService::Instance().BroadcastPunishment("voice-muted", mute.AdminName, mute.TargetName, mute.Reason,
                                                     mute.Duration);
         return true;
     }
     catch (const std::exception& e)
     {
-        Log::Warn("IssueMute exception: {}", e.what());
+        Log::Warn("IssueVoiceMute exception: {}", e.what());
         return false;
     }
 }
 
-bool PunishmentManager::IssueGag(Gag& gag)
+bool PunishmentManager::IssueTextMute(TextMute& mute)
 {
     try
     {
-        if (gag.CreatedAt == 0)
-            gag.CreatedAt = TimeUtils::Now();
-        if (gag.Duration > 0 && gag.ExpiresAt == 0)
-            gag.ExpiresAt = TimeUtils::GetExpirationTime(gag.Duration);
+        if (mute.CreatedAt == 0)
+            mute.CreatedAt = TimeUtils::Now();
+        if (mute.Duration > 0 && mute.ExpiresAt == 0)
+            mute.ExpiresAt = TimeUtils::GetExpirationTime(mute.Duration);
 
-        GagRepository repo;
-        if (!repo.Create(gag))
+        TextMuteRepository repo;
+        if (!repo.Create(mute))
             return false;
 
-        _activeGags[gag.TargetSteamId] = gag;
-        _gaggedPlayers.insert(gag.TargetSteamId);
+        _activeTextMutes[mute.TargetSteamId] = mute;
+        _textMutedPlayers.insert(mute.TargetSteamId);
 
-        ChatService::Instance().BroadcastPunishment("gagged", gag.AdminName, gag.TargetName, gag.Reason, gag.Duration);
+        ChatService::Instance().BroadcastPunishment("text-muted", mute.AdminName, mute.TargetName, mute.Reason,
+                                                    mute.Duration);
         return true;
     }
     catch (const std::exception& e)
     {
-        Log::Warn("IssueGag exception: {}", e.what());
+        Log::Warn("IssueTextMute exception: {}", e.what());
         return false;
     }
 }
@@ -258,38 +289,41 @@ bool PunishmentManager::RemoveBan(int64_t banId, int64_t removedBy, const std::s
     return true;
 }
 
-bool PunishmentManager::RemoveMute(int64_t muteId, int64_t removedBy, const std::string& reason)
+bool PunishmentManager::RemoveVoiceMute(int64_t muteId, int64_t removedBy, const std::string& reason)
 {
-    MuteRepository repo;
+    VoiceMuteRepository repo;
     if (!repo.Remove(muteId, removedBy, reason))
         return false;
 
-    for (auto it = _activeMutes.begin(); it != _activeMutes.end(); ++it)
+    for (auto it = _activeVoiceMutes.begin(); it != _activeVoiceMutes.end(); ++it)
     {
         if (it->second.Id == muteId)
         {
-            _mutedPlayers.erase(it->first);
-            ChatService::Instance().BroadcastPunishment("unmuted", "Admin", it->second.TargetName, reason, 0);
-            _activeMutes.erase(it);
+            int64_t target = it->first;
+            std::string targetName = it->second.TargetName;
+            _voiceMutedPlayers.erase(target);
+            _activeVoiceMutes.erase(it);
+            RefreshVoiceChannel(target, false);
+            ChatService::Instance().BroadcastPunishment("voice-unmuted", "Admin", targetName, reason, 0);
             return true;
         }
     }
     return true;
 }
 
-bool PunishmentManager::RemoveGag(int64_t gagId, int64_t removedBy, const std::string& reason)
+bool PunishmentManager::RemoveTextMute(int64_t muteId, int64_t removedBy, const std::string& reason)
 {
-    GagRepository repo;
-    if (!repo.Remove(gagId, removedBy, reason))
+    TextMuteRepository repo;
+    if (!repo.Remove(muteId, removedBy, reason))
         return false;
 
-    for (auto it = _activeGags.begin(); it != _activeGags.end(); ++it)
+    for (auto it = _activeTextMutes.begin(); it != _activeTextMutes.end(); ++it)
     {
-        if (it->second.Id == gagId)
+        if (it->second.Id == muteId)
         {
-            _gaggedPlayers.erase(it->first);
-            ChatService::Instance().BroadcastPunishment("ungagged", "Admin", it->second.TargetName, reason, 0);
-            _activeGags.erase(it);
+            _textMutedPlayers.erase(it->first);
+            ChatService::Instance().BroadcastPunishment("text-unmuted", "Admin", it->second.TargetName, reason, 0);
+            _activeTextMutes.erase(it);
             return true;
         }
     }
@@ -309,27 +343,27 @@ bool PunishmentManager::RemoveBanBySteamId(int64_t steamId, int64_t removedBy, c
     return false;
 }
 
-bool PunishmentManager::RemoveMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
+bool PunishmentManager::RemoveVoiceMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    auto it = _activeMutes.find(steamId);
-    if (it != _activeMutes.end())
-        return RemoveMute(it->second.Id, removedBy, reason);
+    auto it = _activeVoiceMutes.find(steamId);
+    if (it != _activeVoiceMutes.end())
+        return RemoveVoiceMute(it->second.Id, removedBy, reason);
 
-    MuteRepository repo;
+    VoiceMuteRepository repo;
     if (auto found = repo.FindActiveBySteamId(steamId))
-        return RemoveMute(found->Id, removedBy, reason);
+        return RemoveVoiceMute(found->Id, removedBy, reason);
     return false;
 }
 
-bool PunishmentManager::RemoveGagBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
+bool PunishmentManager::RemoveTextMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    auto it = _activeGags.find(steamId);
-    if (it != _activeGags.end())
-        return RemoveGag(it->second.Id, removedBy, reason);
+    auto it = _activeTextMutes.find(steamId);
+    if (it != _activeTextMutes.end())
+        return RemoveTextMute(it->second.Id, removedBy, reason);
 
-    GagRepository repo;
+    TextMuteRepository repo;
     if (auto found = repo.FindActiveBySteamId(steamId))
-        return RemoveGag(found->Id, removedBy, reason);
+        return RemoveTextMute(found->Id, removedBy, reason);
     return false;
 }
 
@@ -338,15 +372,25 @@ void PunishmentManager::ExpireOldPunishments()
     try
     {
         BanRepository banRepo;
-        MuteRepository muteRepo;
-        GagRepository gagRepo;
+        VoiceMuteRepository voiceRepo;
+        TextMuteRepository textRepo;
 
         banRepo.ExpireOldBans();
-        muteRepo.ExpireOldMutes();
-        gagRepo.ExpireOldGags();
+        voiceRepo.ExpireOldVoiceMutes();
+        textRepo.ExpireOldTextMutes();
+
+        // Snapshot the muted set before reload so we can detect voice mutes that
+        // expired this sweep and refresh their voice channels.
+        auto previouslyMuted = _voiceMutedPlayers;
 
         // Cheaper than tracking individual expirations: just rebuild caches from the DB.
         LoadActivePunishments();
+
+        for (int64_t steamId : previouslyMuted)
+        {
+            if (!_voiceMutedPlayers.count(steamId))
+                RefreshVoiceChannel(steamId, false);
+        }
     }
     catch (const std::exception& e)
     {

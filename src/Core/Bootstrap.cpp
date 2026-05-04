@@ -84,7 +84,7 @@ void RegisterPunishmentTasks()
     if (!PunishmentManager::Instance().LoadActivePunishments())
         Log::Warn("Failed to load active punishments.");
 
-    // Sweep expired bans/mutes/gags every minute so timed punishments self-clear without
+    // Sweep expired bans/voice-mutes/text-mutes every minute so timed punishments self-clear without
     // requiring a server restart or manual intervention.
     Scheduler::Instance().Repeat(60'000, []() { PunishmentManager::Instance().ExpireOldPunishments(); });
 }

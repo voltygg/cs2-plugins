@@ -214,21 +214,23 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
         adminMgr.HasPermission(adminSid, 'd') && canTarget);
 
     builder.AddButton(
-        tr.Get("actionMute"),
+        tr.Get("actionVoiceMute"),
         [targetSlot](int slot) {
             auto durMenu = BuildTimedPunishmentMenu(
-                slot, targetSlot, Translations::Instance().Get("actionMute"),
-                MakePunishmentCallback<Mute>([](PunishmentManager& pm, Mute& mute) { pm.IssueMute(mute); }));
+                slot, targetSlot, Translations::Instance().Get("actionVoiceMute"),
+                MakePunishmentCallback<VoiceMute>(
+                    [](PunishmentManager& pm, VoiceMute& mute) { pm.IssueVoiceMute(mute); }));
             MenuManager::Instance().OpenMenu(slot, durMenu);
         },
         adminMgr.HasPermission(adminSid, 'o') && canTarget);
 
     builder.AddButton(
-        tr.Get("actionGag"),
+        tr.Get("actionTextMute"),
         [targetSlot](int slot) {
             auto durMenu = BuildTimedPunishmentMenu(
-                slot, targetSlot, Translations::Instance().Get("actionGag"),
-                MakePunishmentCallback<Gag>([](PunishmentManager& pm, Gag& gag) { pm.IssueGag(gag); }));
+                slot, targetSlot, Translations::Instance().Get("actionTextMute"),
+                MakePunishmentCallback<TextMute>(
+                    [](PunishmentManager& pm, TextMute& mute) { pm.IssueTextMute(mute); }));
             MenuManager::Instance().OpenMenu(slot, durMenu);
         },
         adminMgr.HasPermission(adminSid, 'p') && canTarget);

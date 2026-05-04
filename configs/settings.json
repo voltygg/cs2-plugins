@@ -9,7 +9,6 @@
     "database": "admin_system",
     "username": "postgres",
     "password": "Test12345#",
-    "schema": "admin_system",
     "sslMode": "prefer"
   },
   "punishments": {

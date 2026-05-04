@@ -11,8 +11,8 @@
 
   "actionKick": "Kick",
   "actionBan": "Ban",
-  "actionMute": "Mute",
-  "actionGag": "Gag",
+  "actionVoiceMute": "Voice Mute",
+  "actionTextMute": "Text Mute",
   "actionWarn": "Warn",
   "actionChangemap": "Change Map",
   "actionRestartRound": "Restart Round",

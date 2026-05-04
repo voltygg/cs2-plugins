@@ -7,7 +7,6 @@
 
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
-
 #include <format>
 
 namespace AdminSystem::Commands
@@ -21,8 +20,8 @@ using namespace AdminSystem::Commands::Helpers;
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
 using AdminSystem::Database::Ban;
-using AdminSystem::Database::Gag;
-using AdminSystem::Database::Mute;
+using AdminSystem::Database::TextMute;
+using AdminSystem::Database::VoiceMute;
 using AdminSystem::Database::Warning;
 using AdminSystem::Punishments::PunishmentManager;
 
@@ -88,7 +87,7 @@ CommandResult HandleUnban(Player* admin, const std::vector<std::string>& args)
     return {true, std::format("Unbanned {}.", steamId)};
 }
 
-CommandResult HandleMute(Player* admin, const std::vector<std::string>& args)
+CommandResult HandleVoiceMute(Player* admin, const std::vector<std::string>& args)
 {
     std::string err;
     Player* target = ResolveSingle(args[0], admin, err);
@@ -103,17 +102,17 @@ CommandResult HandleMute(Player* admin, const std::vector<std::string>& args)
         return {false, "Duration must be a non-negative number of minutes (0 = permanent)."};
     }
 
-    Mute mute;
-    FillPunishment(mute, target, admin, JoinReason(args, 2, "Muted by admin"), durationSec);
+    VoiceMute mute;
+    FillPunishment(mute, target, admin, JoinReason(args, 2, "Voice-muted by admin"), durationSec);
 
-    if (!PunishmentManager::Instance().IssueMute(mute))
+    if (!PunishmentManager::Instance().IssueVoiceMute(mute))
     {
-        return {false, "Failed to issue mute (database error)."};
+        return {false, "Failed to issue voice mute (database error)."};
     }
-    return {true, std::format("Muted {}.", target->GetName())};
+    return {true, std::format("Voice-muted {}.", target->GetName())};
 }
 
-CommandResult HandleUnmute(Player* admin, const std::vector<std::string>& args)
+CommandResult HandleVoiceUnmute(Player* admin, const std::vector<std::string>& args)
 {
     std::string err;
     Player* target = ResolveSingle(args[0], admin, err);
@@ -122,15 +121,15 @@ CommandResult HandleUnmute(Player* admin, const std::vector<std::string>& args)
         return {false, err};
     }
 
-    if (!PunishmentManager::Instance().RemoveMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
-                                                           "Unmuted by admin"))
+    if (!PunishmentManager::Instance().RemoveVoiceMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
+                                                                "Voice-unmuted by admin"))
     {
-        return {false, std::format("{} is not muted.", target->GetName())};
+        return {false, std::format("{} is not voice-muted.", target->GetName())};
     }
-    return {true, std::format("Unmuted {}.", target->GetName())};
+    return {true, std::format("Voice-unmuted {}.", target->GetName())};
 }
 
-CommandResult HandleGag(Player* admin, const std::vector<std::string>& args)
+CommandResult HandleTextMute(Player* admin, const std::vector<std::string>& args)
 {
     std::string err;
     Player* target = ResolveSingle(args[0], admin, err);
@@ -145,17 +144,17 @@ CommandResult HandleGag(Player* admin, const std::vector<std::string>& args)
         return {false, "Duration must be a non-negative number of minutes (0 = permanent)."};
     }
 
-    Gag gag;
-    FillPunishment(gag, target, admin, JoinReason(args, 2, "Gagged by admin"), durationSec);
+    TextMute mute;
+    FillPunishment(mute, target, admin, JoinReason(args, 2, "Text-muted by admin"), durationSec);
 
-    if (!PunishmentManager::Instance().IssueGag(gag))
+    if (!PunishmentManager::Instance().IssueTextMute(mute))
     {
-        return {false, "Failed to issue gag (database error)."};
+        return {false, "Failed to issue text mute (database error)."};
     }
-    return {true, std::format("Gagged {}.", target->GetName())};
+    return {true, std::format("Text-muted {}.", target->GetName())};
 }
 
-CommandResult HandleUngag(Player* admin, const std::vector<std::string>& args)
+CommandResult HandleTextUnmute(Player* admin, const std::vector<std::string>& args)
 {
     std::string err;
     Player* target = ResolveSingle(args[0], admin, err);
@@ -164,12 +163,12 @@ CommandResult HandleUngag(Player* admin, const std::vector<std::string>& args)
         return {false, err};
     }
 
-    if (!PunishmentManager::Instance().RemoveGagBySteamId(target->GetSteamID(), admin->GetSteamID(),
-                                                          "Ungagged by admin"))
+    if (!PunishmentManager::Instance().RemoveTextMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
+                                                               "Text-unmuted by admin"))
     {
-        return {false, std::format("{} is not gagged.", target->GetName())};
+        return {false, std::format("{} is not text-muted.", target->GetName())};
     }
-    return {true, std::format("Ungagged {}.", target->GetName())};
+    return {true, std::format("Text-unmuted {}.", target->GetName())};
 }
 
 CommandResult HandleWarn(Player* admin, const std::vector<std::string>& args)
@@ -219,36 +218,41 @@ void RegisterPunishmentCommands(CommandManager& mgr)
                      .OnExecute(HandleUnban)
                      .Build());
 
-    mgr.Register(CommandBuilder("mute")
+    mgr.Register(CommandBuilder("voice_mute")
+                     .WithAliases({"vmute"})
                      .WithDescription("Voice-mute a player for the given number of minutes (0 = permanent).")
-                     .WithUsage("!mute <target> <minutes> [reason]")
+                     .WithUsage("!voice_mute <target> <minutes> [reason]")
                      .RequirePermission("o")
                      .WithArgs(2)
-                     .OnExecute(HandleMute)
+                     .OnExecute(HandleVoiceMute)
                      .Build());
 
-    mgr.Register(CommandBuilder("unmute")
+    mgr.Register(CommandBuilder("voice_unmute")
+                     .WithAliases({"vunmute"})
                      .WithDescription("Lift an active voice mute on the target.")
-                     .WithUsage("!unmute <target>")
+                     .WithUsage("!voice_unmute <target>")
                      .RequirePermission("o")
                      .WithArgs(1, 1)
-                     .OnExecute(HandleUnmute)
+                     .OnExecute(HandleVoiceUnmute)
                      .Build());
 
-    mgr.Register(CommandBuilder("gag")
-                     .WithDescription("Chat-gag a player for the given number of minutes (0 = permanent).")
-                     .WithUsage("!gag <target> <minutes> [reason]")
-                     .RequirePermission("p")
-                     .WithArgs(2)
-                     .OnExecute(HandleGag)
-                     .Build());
+    mgr.Register(
+        CommandBuilder("text_mute")
+            .WithAliases({"tmute"})
+            .WithDescription("Text-mute (chat-block) a player for the given number of minutes (0 = permanent).")
+            .WithUsage("!text_mute <target> <minutes> [reason]")
+            .RequirePermission("p")
+            .WithArgs(2)
+            .OnExecute(HandleTextMute)
+            .Build());
 
-    mgr.Register(CommandBuilder("ungag")
-                     .WithDescription("Lift an active chat gag on the target.")
-                     .WithUsage("!ungag <target>")
+    mgr.Register(CommandBuilder("text_unmute")
+                     .WithAliases({"tunmute"})
+                     .WithDescription("Lift an active text mute on the target.")
+                     .WithUsage("!text_unmute <target>")
                      .RequirePermission("p")
                      .WithArgs(1, 1)
-                     .OnExecute(HandleUngag)
+                     .OnExecute(HandleTextUnmute)
                      .Build());
 
     mgr.Register(CommandBuilder("warn")

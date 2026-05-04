@@ -26,7 +26,7 @@ bool ParseDurationMinutes(const std::string& arg, int64_t& outSeconds);
 
 /**
  * Fill the common target/admin/reason fields on a punishment entity, plus `Duration`
- * when the entity has one (Ban/Mute/Gag do; Warning does not). The Ban entity also has
+ * when the entity has one (Ban/VoiceMute/TextMute do; Warning does not). The Ban entity also has
  * TargetIp; callers set that one separately to keep this template simple.
  */
 template <typename T>

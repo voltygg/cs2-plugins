@@ -1,13 +1,13 @@
-#include "Mute.hpp"
+#include "TextMute.hpp"
 
 #include <CS2Kit/Utils/TimeUtils.hpp>
-
-using namespace CS2Kit::Utils;
 
 namespace AdminSystem::Database
 {
 
-bool Mute::IsExpired() const
+using namespace CS2Kit::Utils;
+
+bool TextMute::IsExpired() const
 {
     return !IsPermanent() && TimeUtils::IsExpired(ExpiresAt);
 }

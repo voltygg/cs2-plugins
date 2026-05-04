@@ -6,8 +6,8 @@
 namespace AdminSystem::Database
 {
 
-/** Database entity for a chat gag punishment. Supports permanent and timed gags. */
-struct Gag
+/** Database entity for a text-chat mute. Supports permanent and timed mutes. */
+struct TextMute
 {
     int64_t Id = 0;
     int64_t TargetSteamId = 0;

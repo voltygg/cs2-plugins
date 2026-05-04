@@ -18,7 +18,6 @@ struct DatabaseConfig
     std::string DatabaseName = "cs2_server";
     std::string Username = "admin_system";
     std::string Password;
-    std::string Schema = "admin_system";
     std::string SslMode = "prefer";
 
     std::string GetConnectionString() const;
@@ -48,7 +47,6 @@ public:
     pqxx::result ExecutePrepared(const std::string& name, const std::string& query, Args&&... params);
 
 private:
-    DatabaseConfig _config;
     std::string _connectionString;
     bool _initialized = false;
     std::mutex _mutex;

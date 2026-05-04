@@ -45,8 +45,6 @@ bool ConfigManager::LoadSettings(const std::string& path)
             _databaseConfig.Username = db["username"];
         if (db.contains("password"))
             _databaseConfig.Password = db["password"];
-        if (db.contains("schema"))
-            _databaseConfig.Schema = db["schema"];
         if (db.contains("sslMode"))
             _databaseConfig.SslMode = db["sslMode"];
     }

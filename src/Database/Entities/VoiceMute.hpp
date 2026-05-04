@@ -6,8 +6,8 @@
 namespace AdminSystem::Database
 {
 
-/** Database entity for a voice mute punishment. Supports permanent and timed mutes. */
-struct Mute
+/** Database entity for a voice-chat mute. Supports permanent and timed mutes. */
+struct VoiceMute
 {
     int64_t Id = 0;
     int64_t TargetSteamId = 0;

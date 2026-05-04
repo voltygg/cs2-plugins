@@ -11,8 +11,8 @@
 
   "actionKick": "Кик",
   "actionBan": "Бан",
-  "actionMute": "Мут",
-  "actionGag": "Гаг",
+  "actionVoiceMute": "Войс-мут",
+  "actionTextMute": "Текст-мут",
   "actionWarn": "Предупреждение",
   "actionChangemap": "Сменить карту",
   "actionRestartRound": "Перезапустить раунд",

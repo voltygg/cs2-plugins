@@ -1,4 +1,4 @@
-#include "MuteRepository.hpp"
+#include "TextMuteRepository.hpp"
 
 #include "../Database.hpp"
 
@@ -9,12 +9,12 @@ namespace AdminSystem::Database
 
 using namespace CS2Kit::Utils;
 
-std::optional<Mute> MuteRepository::FindActiveBySteamId(int64_t steamId)
+std::optional<TextMute> TextMuteRepository::FindActiveBySteamId(int64_t steamId)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared("find_active_mute_by_steamid",
-                                                           "SELECT * FROM mutes WHERE target_steam_id = $1 AND "
+        auto result = Database::Instance().ExecutePrepared("find_active_text_mute_by_steamid",
+                                                           "SELECT * FROM text_mutes WHERE target_steam_id = $1 AND "
                                                            "is_active = true AND (expires_at = 0 OR expires_at > $2)",
                                                            steamId, TimeUtils::Now());
         if (result.empty())
@@ -27,14 +27,14 @@ std::optional<Mute> MuteRepository::FindActiveBySteamId(int64_t steamId)
     }
 }
 
-std::vector<Mute> MuteRepository::FindAllActive()
+std::vector<TextMute> TextMuteRepository::FindAllActive()
 {
-    std::vector<Mute> mutes;
+    std::vector<TextMute> mutes;
     try
     {
         auto result = Database::Instance().ExecutePrepared(
-            "find_all_active_mutes", "SELECT * FROM mutes WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)",
-            TimeUtils::Now());
+            "find_all_active_text_mutes",
+            "SELECT * FROM text_mutes WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)", TimeUtils::Now());
         for (const auto& row : result)
             mutes.push_back(ParseRow(row));
     }
@@ -44,13 +44,13 @@ std::vector<Mute> MuteRepository::FindAllActive()
     return mutes;
 }
 
-bool MuteRepository::Create(Mute& mute)
+bool TextMuteRepository::Create(TextMute& mute)
 {
     try
     {
         auto result = Database::Instance().ExecutePrepared(
-            "create_mute",
-            "INSERT INTO mutes (target_steam_id, target_name, admin_steam_id, admin_name, reason, "
+            "create_text_mute",
+            "INSERT INTO text_mutes (target_steam_id, target_name, admin_steam_id, admin_name, reason, "
             "created_at, expires_at, duration, is_active) "
             "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
             mute.TargetSteamId, mute.TargetName, mute.AdminSteamId, mute.AdminName, mute.Reason, mute.CreatedAt,
@@ -65,13 +65,14 @@ bool MuteRepository::Create(Mute& mute)
     }
 }
 
-bool MuteRepository::Remove(int64_t muteId, int64_t removedBy, const std::string& reason)
+bool TextMuteRepository::Remove(int64_t muteId, int64_t removedBy, const std::string& reason)
 {
     try
     {
         Database::Instance().ExecutePrepared(
-            "remove_mute",
-            "UPDATE mutes SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 WHERE id = $1",
+            "remove_text_mute",
+            "UPDATE text_mutes SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 "
+            "WHERE id = $1",
             muteId, TimeUtils::Now(), removedBy, reason);
         return true;
     }
@@ -81,13 +82,13 @@ bool MuteRepository::Remove(int64_t muteId, int64_t removedBy, const std::string
     }
 }
 
-int MuteRepository::ExpireOldMutes()
+int TextMuteRepository::ExpireOldTextMutes()
 {
     try
     {
         auto result = Database::Instance().ExecutePrepared(
-            "expire_old_mutes",
-            "UPDATE mutes SET is_active = false WHERE is_active = true AND expires_at > 0 AND expires_at <= $1",
+            "expire_old_text_mutes",
+            "UPDATE text_mutes SET is_active = false WHERE is_active = true AND expires_at > 0 AND expires_at <= $1",
             TimeUtils::Now());
         return result.affected_rows();
     }
@@ -97,13 +98,14 @@ int MuteRepository::ExpireOldMutes()
     }
 }
 
-std::vector<Mute> MuteRepository::GetHistory(int64_t steamId)
+std::vector<TextMute> TextMuteRepository::GetHistory(int64_t steamId)
 {
-    std::vector<Mute> mutes;
+    std::vector<TextMute> mutes;
     try
     {
         auto result = Database::Instance().ExecutePrepared(
-            "get_mute_history", "SELECT * FROM mutes WHERE target_steam_id = $1 ORDER BY created_at DESC", steamId);
+            "get_text_mute_history", "SELECT * FROM text_mutes WHERE target_steam_id = $1 ORDER BY created_at DESC",
+            steamId);
         for (const auto& row : result)
             mutes.push_back(ParseRow(row));
     }
@@ -113,9 +115,9 @@ std::vector<Mute> MuteRepository::GetHistory(int64_t steamId)
     return mutes;
 }
 
-Mute MuteRepository::ParseRow(const pqxx::row& row)
+TextMute TextMuteRepository::ParseRow(const pqxx::row& row)
 {
-    Mute mute;
+    TextMute mute;
     mute.Id = row["id"].as<int64_t>();
     mute.TargetSteamId = row["target_steam_id"].as<int64_t>();
     mute.TargetName = row["target_name"].c_str();

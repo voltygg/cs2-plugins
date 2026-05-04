@@ -23,7 +23,6 @@ bool Database::Initialize(const DatabaseConfig& config)
 
     try
     {
-        _config = config;
         _connectionString = config.GetConnectionString();
 
         // Test connection
@@ -32,11 +31,6 @@ bool Database::Initialize(const DatabaseConfig& config)
         {
             return false;
         }
-
-        // Set schema search path
-        pqxx::work txn(*conn);
-        txn.exec(std::format("SET search_path TO {}", config.Schema));
-        txn.commit();
 
         _initialized = true;
         return true;
@@ -70,14 +64,7 @@ std::unique_ptr<pqxx::connection> Database::GetConnection()
 
     try
     {
-        auto conn = std::make_unique<pqxx::connection>(_connectionString);
-
-        // Set schema search path
-        pqxx::work txn(*conn);
-        txn.exec(std::format("SET search_path TO {}", _config.Schema));
-        txn.commit();
-
-        return conn;
+        return std::make_unique<pqxx::connection>(_connectionString);
     }
     catch (const std::exception& e)
     {

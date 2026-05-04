@@ -40,8 +40,8 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
     if (!cfg.BroadcastPunishments)
         return;
 
-    // Only ban/mute/gag carry a duration; kick/warn/un* are instantaneous and shouldn't show "(permanent)".
-    bool isTimedAction = (action == "banned" || action == "muted" || action == "gagged");
+    // Only ban/voice-mute/text-mute carry a duration; kick/warn/un* are instantaneous.
+    bool isTimedAction = (action == "banned" || action == "voice-muted" || action == "text-muted");
     std::string durationSuffix;
     if (isTimedAction)
     {
@@ -127,7 +127,7 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
     if (isCommand && CommandManager::Instance().HandleChatMessage(player, std::string(message)))
         return true;
 
-    if (PunishmentManager::Instance().IsGagged(player->GetSteamID()))
+    if (PunishmentManager::Instance().IsTextMuted(player->GetSteamID()))
         return true;
 
     const auto& chatCfg = ConfigManager::Instance().GetChatConfig();

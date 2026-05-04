@@ -1,12 +1,6 @@
 -- CS2 Admin System Database Schema
 -- PostgreSQL 16+
--- Schema: admin_system
--- Create schema
-CREATE SCHEMA IF NOT EXISTS admin_system;
-
-SET
-  search_path TO admin_system;
-
+-- Schema: public (default)
 -- ------- TABLES -----
 -- Admin groups table
 CREATE TABLE IF NOT EXISTS admin_groups (
@@ -93,8 +87,8 @@ CREATE TABLE IF NOT EXISTS bans (
   removed_reason TEXT DEFAULT ''
 );
 
--- Mutes table (voice communication blocks)
-CREATE TABLE IF NOT EXISTS mutes (
+-- Voice mutes table (in-game voice chat blocks)
+CREATE TABLE IF NOT EXISTS voice_mutes (
   id BIGSERIAL PRIMARY KEY,
   target_steam_id BIGINT NOT NULL,
   target_name VARCHAR(128) NOT NULL,
@@ -114,8 +108,8 @@ CREATE TABLE IF NOT EXISTS mutes (
   removed_reason TEXT DEFAULT ''
 );
 
--- Gags table (text chat blocks)
-CREATE TABLE IF NOT EXISTS gags (
+-- Text mutes table (text chat blocks)
+CREATE TABLE IF NOT EXISTS text_mutes (
   id BIGSERIAL PRIMARY KEY,
   target_steam_id BIGINT NOT NULL,
   target_name VARCHAR(128) NOT NULL,
@@ -200,19 +194,19 @@ CREATE INDEX IF NOT EXISTS idx_bans_expires_at ON bans(expires_at);
 
 CREATE INDEX IF NOT EXISTS idx_bans_active_lookup ON bans(target_steam_id, is_active, expires_at);
 
--- Mutes indexes
-CREATE INDEX IF NOT EXISTS idx_mutes_target_steam_id ON mutes(target_steam_id);
+-- Voice mutes indexes
+CREATE INDEX IF NOT EXISTS idx_voice_mutes_target_steam_id ON voice_mutes(target_steam_id);
 
-CREATE INDEX IF NOT EXISTS idx_mutes_is_active ON mutes(is_active);
+CREATE INDEX IF NOT EXISTS idx_voice_mutes_is_active ON voice_mutes(is_active);
 
-CREATE INDEX IF NOT EXISTS idx_mutes_active_lookup ON mutes(target_steam_id, is_active, expires_at);
+CREATE INDEX IF NOT EXISTS idx_voice_mutes_active_lookup ON voice_mutes(target_steam_id, is_active, expires_at);
 
--- Gags indexes
-CREATE INDEX IF NOT EXISTS idx_gags_target_steam_id ON gags(target_steam_id);
+-- Text mutes indexes
+CREATE INDEX IF NOT EXISTS idx_text_mutes_target_steam_id ON text_mutes(target_steam_id);
 
-CREATE INDEX IF NOT EXISTS idx_gags_is_active ON gags(is_active);
+CREATE INDEX IF NOT EXISTS idx_text_mutes_is_active ON text_mutes(is_active);
 
-CREATE INDEX IF NOT EXISTS idx_gags_active_lookup ON gags(target_steam_id, is_active, expires_at);
+CREATE INDEX IF NOT EXISTS idx_text_mutes_active_lookup ON text_mutes(target_steam_id, is_active, expires_at);
 
 -- Warnings indexes
 CREATE INDEX IF NOT EXISTS idx_warnings_target_steam_id ON warnings(target_steam_id);

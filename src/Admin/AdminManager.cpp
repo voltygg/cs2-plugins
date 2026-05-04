@@ -175,7 +175,7 @@ bool AdminManager::CanTarget(int64_t adminSteamId, int64_t targetSteamId)
         return true;
 
     // Self-targeting always allowed — admins can apply fun effects to themselves,
-    // and self-punishments (mute/gag/kick) are harmless / occasionally useful for testing.
+    // and self-punishments (voice-mute/text-mute/kick) are harmless / occasionally useful for testing.
     if (adminSteamId == targetSteamId)
         return true;
 

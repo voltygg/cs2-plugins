@@ -41,6 +41,7 @@ public:
     void Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* pszName, uint64 xuid,
                                const char* pszNetworkID);
     void Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args);
+    bool Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen);
 
     bool IsLateLoad() const { return _lateLoad; }
 
