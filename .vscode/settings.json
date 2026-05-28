@@ -25,7 +25,8 @@
     "**/.mypy_cache": true
   },
   "search.exclude": {
-    "**/vendor": true,
+    "vendor/cs2-kit/vendor": true,
+    "vendor/cs2-kit/build": true,
     "**/vcpkg_installed": true,
     "**/references": true
   },

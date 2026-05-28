@@ -17,7 +17,7 @@ void DoSmite(int adminSlot, int targetSlot)
     if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
         return;
 
-    Broadcast(ctx, "broadcastSmote");
+    Broadcast(ctx, "broadcast.smote");
 
     int slot = targetSlot;
     Scheduler::Instance().Delay(250, [slot]() {

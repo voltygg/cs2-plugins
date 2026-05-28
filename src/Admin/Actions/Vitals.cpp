@@ -16,7 +16,7 @@ void DoSlay(int adminSlot, int targetSlot)
     }
 
     ctx.TargetCtrl.Slay();
-    Broadcast(ctx, "broadcastSlain");
+    Broadcast(ctx, "broadcast.slain");
 }
 
 void DoSetHealth(int adminSlot, int targetSlot, int health)
@@ -28,7 +28,7 @@ void DoSetHealth(int adminSlot, int targetSlot, int health)
     }
 
     ctx.TargetCtrl.SetPawnField<int>("CBaseEntity", "m_iHealth", health);
-    Broadcast(ctx, "broadcastHealed");
+    Broadcast(ctx, "broadcast.healed");
 }
 
 void DoSetArmor(int adminSlot, int targetSlot, int armor)
@@ -40,7 +40,7 @@ void DoSetArmor(int adminSlot, int targetSlot, int armor)
     }
 
     ctx.TargetCtrl.SetPawnField<int>("CCSPlayerPawn", "m_ArmorValue", armor);
-    Broadcast(ctx, "broadcastArmored");
+    Broadcast(ctx, "broadcast.armored");
 }
 
 void DoToggleGodmode(int adminSlot, int targetSlot)
@@ -55,7 +55,7 @@ void DoToggleGodmode(int adminSlot, int targetSlot)
     bool turningOn = (flags & CS2Kit::Sdk::FL_GODMODE) == 0;
     uint32_t newFlags = turningOn ? (flags | CS2Kit::Sdk::FL_GODMODE) : (flags & ~CS2Kit::Sdk::FL_GODMODE);
     ctx.TargetCtrl.SetPawnField<uint32_t>("CBaseEntity", "m_fFlags", newFlags);
-    Broadcast(ctx, turningOn ? "broadcastGodmodeOn" : "broadcastGodmodeOff");
+    Broadcast(ctx, turningOn ? "broadcast.godmodeOn" : "broadcast.godmodeOff");
 }
 
 }  // namespace AdminSystem::Admin::Actions

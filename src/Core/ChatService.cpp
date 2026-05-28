@@ -40,7 +40,7 @@ void ChatService::Reply(int slot, std::string_view message)
 
 void ChatService::NoPermission(int slot)
 {
-    auto msg = std::format("{}{}", ChatColors::Red, Translations::Instance().Get("noPermission"));
+    auto msg = std::format("{}{}", ChatColors::Red, Translations::Instance().Get("common.noPermission"));
     Chat::Print(slot, msg);
 }
 
@@ -153,15 +153,15 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
             if (mute)
             {
                 Chat::Print(slot,
-                            std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNoticeText"), ChatColors::Default,
+                            std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.text"), ChatColors::Default,
                                         ChatColors::Olive, ChatFormat::FormatExpiry(mute->ExpiresAt)));
                 if (!mute->Reason.empty())
-                    Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNoticeReason"),
+                    Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason"),
                                                   ChatColors::Default, mute->Reason));
             }
             else
             {
-                Chat::Print(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNoticeText")));
+                Chat::Print(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.text")));
             }
         }
         return true;
@@ -193,15 +193,15 @@ void ChatService::NotifyVoiceMuted(Player* player)
     auto& tr = Translations::Instance();
     if (mute)
     {
-        Chat::Print(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNoticeVoice"), ChatColors::Default,
+        Chat::Print(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice"), ChatColors::Default,
                                       ChatColors::Olive, ChatFormat::FormatExpiry(mute->ExpiresAt)));
         if (!mute->Reason.empty())
-            Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNoticeReason"),
+            Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason"),
                                           ChatColors::Default, mute->Reason));
     }
     else
     {
-        Chat::Print(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNoticeVoice")));
+        Chat::Print(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.voice")));
     }
 }
 

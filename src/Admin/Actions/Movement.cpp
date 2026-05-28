@@ -41,7 +41,7 @@ void DoNoclip(int adminSlot, int targetSlot)
     auto current = ctx.TargetCtrl.GetPawnField<uint8_t>("CBaseEntity", "m_MoveType");
     bool turningOn = (current != MoveTypeNoclip);
     SetMoveType(ctx.TargetCtrl, turningOn ? MoveTypeNoclip : MoveTypeWalk);
-    Broadcast(ctx, turningOn ? "broadcastNoclipOn" : "broadcastNoclipOff");
+    Broadcast(ctx, turningOn ? "broadcast.noclipOn" : "broadcast.noclipOff");
 }
 
 void DoFreeze(int adminSlot, int targetSlot)
@@ -53,7 +53,7 @@ void DoFreeze(int adminSlot, int targetSlot)
     auto current = ctx.TargetCtrl.GetPawnField<uint8_t>("CBaseEntity", "m_MoveType");
     bool turningOn = (current != MoveTypeNone);
     SetMoveType(ctx.TargetCtrl, turningOn ? MoveTypeNone : MoveTypeWalk);
-    Broadcast(ctx, turningOn ? "broadcastFreezeOn" : "broadcastFreezeOff");
+    Broadcast(ctx, turningOn ? "broadcast.freezeOn" : "broadcast.freezeOff");
 }
 
 void DoBury(int adminSlot, int targetSlot)
@@ -62,7 +62,7 @@ void DoBury(int adminSlot, int targetSlot)
     if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
         return;
     ShiftZ(ctx.TargetCtrl, -BuryDepth);
-    Broadcast(ctx, "broadcastBuried");
+    Broadcast(ctx, "broadcast.buried");
 }
 
 void DoUnbury(int adminSlot, int targetSlot)
@@ -71,7 +71,7 @@ void DoUnbury(int adminSlot, int targetSlot)
     if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
         return;
     ShiftZ(ctx.TargetCtrl, BuryDepth);
-    Broadcast(ctx, "broadcastUnburied");
+    Broadcast(ctx, "broadcast.unburied");
 }
 
 }  // namespace AdminSystem::Admin::Actions

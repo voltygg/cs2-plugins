@@ -53,7 +53,7 @@ void AddFlagToggle(MenuBuilder& builder, const std::string& base, bool enabled, 
 {
     auto& tr = Translations::Instance();
     builder.AddToggle(
-        base, tr.Get("effectStateOn"), tr.Get("effectStateOff"),
+        base, tr.Get("effectState.on"), tr.Get("effectState.off"),
         [target, flag](int) {
             PlayerController pc(target);
             return pc.IsValid() && (pc.GetPawnField<uint32_t>("CBaseEntity", "m_fFlags") & flag) != 0;
@@ -99,11 +99,11 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
     int64_t adminSid = admin->GetSteamID();
     bool hasB = adminMgr.HasPermission(adminSid, 'b');
 
-    MenuBuilder builder(tr.Get("categoryControl"));
+    MenuBuilder builder(tr.Get("category.control"));
 
     // Self-only Hide toggle sits at the top of the Control list before player picks.
     builder.AddToggle(
-        tr.Get("actionHide"), tr.Get("effectStateOn"), tr.Get("effectStateOff"),
+        tr.Get("action.hide"), tr.Get("effectState.on"), tr.Get("effectState.off"),
         [adminSlot](int) { return EffectManager::Instance().IsActive(adminSlot, EffectId::Hide); },
         [adminSlot](int) { Effects::ToggleHide(adminSlot); }, hasB);
 
@@ -120,7 +120,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
         });
     }
     if (players.empty())
-        builder.AddButton(tr.Get("noPlayers"), [](int) {}, false);
+        builder.AddButton(tr.Get("common.noPlayers"), [](int) {}, false);
 
     return builder.Build();
 }
@@ -142,26 +142,26 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     bool hasS = canTarget && adminMgr.HasPermission(adminSid, 's');
     bool hasH = canTarget && adminMgr.HasPermission(adminSid, 'h');
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("categoryControl"), target->GetName()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("category.control"), target->GetName()));
 
-    AddSimple(builder, tr.Get("actionSlay"), hasS, adminSlot, targetSlot, &Actions::DoSlay);
-    AddSimple(builder, tr.Get("actionBring"), hasS, adminSlot, targetSlot, &Actions::DoBring);
-    AddSimple(builder, tr.Get("actionGoto"), hasS, adminSlot, targetSlot, &Actions::DoGoto);
-    AddSimple(builder, tr.Get("actionFreeze"), hasS, adminSlot, targetSlot, &Actions::DoFreeze);
-    AddSimple(builder, tr.Get("actionNoclip"), hasS, adminSlot, targetSlot, &Actions::DoNoclip);
+    AddSimple(builder, tr.Get("action.slay"), hasS, adminSlot, targetSlot, &Actions::DoSlay);
+    AddSimple(builder, tr.Get("action.bring"), hasS, adminSlot, targetSlot, &Actions::DoBring);
+    AddSimple(builder, tr.Get("action.goto"), hasS, adminSlot, targetSlot, &Actions::DoGoto);
+    AddSimple(builder, tr.Get("action.freeze"), hasS, adminSlot, targetSlot, &Actions::DoFreeze);
+    AddSimple(builder, tr.Get("action.noclip"), hasS, adminSlot, targetSlot, &Actions::DoNoclip);
 
     // HP/Armor are inline Choice rows: A/D cycles preset values, E applies and closes.
     // The full preset submenus are still reachable via PresetSubmenu helpers when needed.
-    AddPresetChoice(builder, tr.Get("actionHealth"), "HP", hasH, adminSlot, targetSlot, &Actions::DoSetHealth,
+    AddPresetChoice(builder, tr.Get("action.health"), "HP", hasH, adminSlot, targetSlot, &Actions::DoSetHealth,
                     HealthPresets);
-    AddPresetChoice(builder, tr.Get("actionArmor"), "AP", hasH, adminSlot, targetSlot, &Actions::DoSetArmor,
+    AddPresetChoice(builder, tr.Get("action.armor"), "AP", hasH, adminSlot, targetSlot, &Actions::DoSetArmor,
                     ArmorPresets);
 
-    AddFlagToggle(builder, tr.Get("actionGodmode"), hasH, adminSlot, targetSlot, FL_GODMODE, &Actions::DoToggleGodmode);
+    AddFlagToggle(builder, tr.Get("action.godmode"), hasH, adminSlot, targetSlot, FL_GODMODE, &Actions::DoToggleGodmode);
 
-    AddSimple(builder, tr.Get("actionBury"), hasS, adminSlot, targetSlot, &Actions::DoBury);
-    AddSimple(builder, tr.Get("actionUnbury"), hasS, adminSlot, targetSlot, &Actions::DoUnbury);
-    AddSubmenuLink(builder, tr.Get("actionChangeTeam"), hasS, adminSlot, targetSlot, &BuildTeamPickerMenu);
+    AddSimple(builder, tr.Get("action.bury"), hasS, adminSlot, targetSlot, &Actions::DoBury);
+    AddSimple(builder, tr.Get("action.unbury"), hasS, adminSlot, targetSlot, &Actions::DoUnbury);
+    AddSubmenuLink(builder, tr.Get("action.changeTeam"), hasS, adminSlot, targetSlot, &BuildTeamPickerMenu);
 
     return builder.Build();
 }

@@ -287,6 +287,20 @@ bool AdminManager::UpdateChatStyle(int64_t steamId, bool displayPrefix, const st
     return true;
 }
 
+bool AdminManager::UpdateLanguage(int64_t steamId, const std::string& lang)
+{
+    auto it = _admins.find(steamId);
+    if (it == _admins.end())
+        return false;
+
+    Database::AdminRepository repo;
+    if (!repo.UpdateLanguage(steamId, lang))
+        return false;
+
+    it->second.Language = lang;
+    return true;
+}
+
 uint32_t AdminManager::ResolveFlags(const Database::Admin& admin)
 {
     uint32_t bits = 0;

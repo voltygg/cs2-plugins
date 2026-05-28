@@ -15,7 +15,7 @@ void DoBring(int adminSlot, int targetSlot)
     Vector dest = ctx.AdminCtrl.GetAbsOrigin();
     Vector zeroVel{0.0f, 0.0f, 0.0f};
     ctx.TargetCtrl.Teleport(&dest, nullptr, &zeroVel);
-    Broadcast(ctx, "broadcastBrought");
+    Broadcast(ctx, "broadcast.brought");
 }
 
 void DoGoto(int adminSlot, int targetSlot)
@@ -26,7 +26,7 @@ void DoGoto(int adminSlot, int targetSlot)
     Vector dest = ctx.TargetCtrl.GetAbsOrigin();
     Vector zeroVel{0.0f, 0.0f, 0.0f};
     ctx.AdminCtrl.Teleport(&dest, nullptr, &zeroVel);
-    Broadcast(ctx, "broadcastGoto");
+    Broadcast(ctx, "broadcast.goto");
 }
 
 void DoSwap(int adminSlot, int firstSlot, int secondSlot)
@@ -48,7 +48,7 @@ void DoSwap(int adminSlot, int firstSlot, int secondSlot)
     ctxB.TargetCtrl.Teleport(&posA, nullptr, &zeroVel);
 
     // Two broadcasts so each player's name appears as the actor in the swap line.
-    Broadcast(ctxA, "broadcastSwapped");
+    Broadcast(ctxA, "broadcast.swapped");
 }
 
 }  // namespace AdminSystem::Admin::Actions

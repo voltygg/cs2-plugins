@@ -91,11 +91,11 @@ static std::shared_ptr<::CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
     };
 
     static const DurationEntry Durations[] = {
-        {"duration5min", 300}, {"duration30min", 1800}, {"duration1h", 3600},
-        {"duration1d", 86400}, {"duration7d", 604800},  {"durationPerm", 0},
+        {"duration.5min", 300}, {"duration.30min", 1800}, {"duration.1h", 3600},
+        {"duration.1d", 86400}, {"duration.7d", 604800},  {"duration.perm", 0},
     };
 
-    MenuBuilder builder(std::format("{}: {}", actionName, tr.Get("selectDuration")));
+    MenuBuilder builder(std::format("{}: {}", actionName, tr.Get("panel.selectDuration")));
 
     for (const auto& dur : Durations)
     {
@@ -112,7 +112,7 @@ static std::shared_ptr<::CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
         int target = targetSlot;
         auto callback = onDuration;
         builder.AddInput(
-            tr.Get("durationCustom"), tr.Get("durationCustomPrompt"), [](int) { return std::string{}; },
+            tr.Get("duration.custom"), tr.Get("duration.customPrompt"), [](int) { return std::string{}; },
             [callback, target](int slot, std::string_view text) -> bool {
                 int seconds = ParseDuration(text);
                 if (seconds < 0)
@@ -159,7 +159,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildDurationMenu(int adminSlot, int targe
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishMenu(int adminSlot)
 {
     auto& tr = Translations::Instance();
-    return BuildPlayerPicker(adminSlot, tr.Get("categoryPunish"), [](int admin, int target) {
+    return BuildPlayerPicker(adminSlot, tr.Get("category.punish"), [](int admin, int target) {
         auto actions = BuildPunishActionsMenu(admin, target);
         if (actions)
             MenuManager::Instance().OpenMenu(admin, actions);
@@ -184,10 +184,10 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
     int64_t targetSid = target->GetSteamID();
     bool canTarget = adminMgr.CanTarget(adminSid, targetSid);
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("categoryPunish"), target->GetName()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("category.punish"), target->GetName()));
 
     builder.AddButton(
-        tr.Get("actionKick"),
+        tr.Get("action.kick"),
         [targetSlot](int slot) {
             auto& plrMgr = PlayerManager::Instance();
             auto* a = plrMgr.GetPlayerBySlot(slot);
@@ -204,20 +204,20 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
         adminMgr.HasPermission(adminSid, 'c') && canTarget);
 
     builder.AddButton(
-        tr.Get("actionBan"),
+        tr.Get("action.ban"),
         [targetSlot](int slot) {
             auto durMenu = BuildTimedPunishmentMenu(
-                slot, targetSlot, Translations::Instance().Get("actionBan"),
+                slot, targetSlot, Translations::Instance().Get("action.ban"),
                 MakePunishmentCallback<Ban>([](PunishmentManager& pm, Ban& ban) { pm.IssueBan(ban); }));
             MenuManager::Instance().OpenMenu(slot, durMenu);
         },
         adminMgr.HasPermission(adminSid, 'd') && canTarget);
 
     builder.AddButton(
-        tr.Get("actionVoiceMute"),
+        tr.Get("action.voiceMute"),
         [targetSlot](int slot) {
             auto durMenu = BuildTimedPunishmentMenu(
-                slot, targetSlot, Translations::Instance().Get("actionVoiceMute"),
+                slot, targetSlot, Translations::Instance().Get("action.voiceMute"),
                 MakePunishmentCallback<VoiceMute>(
                     [](PunishmentManager& pm, VoiceMute& mute) { pm.IssueVoiceMute(mute); }));
             MenuManager::Instance().OpenMenu(slot, durMenu);
@@ -225,10 +225,10 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
         adminMgr.HasPermission(adminSid, 'o') && canTarget);
 
     builder.AddButton(
-        tr.Get("actionTextMute"),
+        tr.Get("action.textMute"),
         [targetSlot](int slot) {
             auto durMenu = BuildTimedPunishmentMenu(
-                slot, targetSlot, Translations::Instance().Get("actionTextMute"),
+                slot, targetSlot, Translations::Instance().Get("action.textMute"),
                 MakePunishmentCallback<TextMute>(
                     [](PunishmentManager& pm, TextMute& mute) { pm.IssueTextMute(mute); }));
             MenuManager::Instance().OpenMenu(slot, durMenu);
@@ -236,7 +236,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
         adminMgr.HasPermission(adminSid, 'p') && canTarget);
 
     builder.AddButton(
-        tr.Get("actionWarn"),
+        tr.Get("action.warn"),
         [targetSlot](int slot) {
             auto& plrMgr = PlayerManager::Instance();
             auto* a = plrMgr.GetPlayerBySlot(slot);

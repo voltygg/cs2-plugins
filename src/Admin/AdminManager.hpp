@@ -68,6 +68,12 @@ public:
     bool UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                          const std::string& messageColor);
 
+    /**
+     * Persist + apply an admin's panel language. Returns false if the admin is unknown or the
+     * DB write failed; the in-memory row is only updated on a successful write.
+     */
+    bool UpdateLanguage(int64_t steamId, const std::string& lang);
+
     /** Convert a single flag character ('a'-'z') to a bitmask bit. */
     static uint32_t FlagToBit(char flag)
     {

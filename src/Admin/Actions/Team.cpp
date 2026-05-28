@@ -13,7 +13,7 @@ void DoChangeTeam(int adminSlot, int targetSlot, int team)
     if (team < TeamSpec || team > TeamCt)
         return;
     ctx.TargetCtrl.ChangeTeam(team);
-    Broadcast(ctx, "broadcastTeamChanged");
+    Broadcast(ctx, "broadcast.teamChanged");
 }
 
 }  // namespace AdminSystem::Admin::Actions

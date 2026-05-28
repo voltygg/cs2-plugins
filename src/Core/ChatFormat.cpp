@@ -13,13 +13,13 @@ using CS2Kit::Utils::Translations;
 std::string FormatExpiry(int64_t expiresAt)
 {
     if (expiresAt <= 0)
-        return Translations::Instance().Get("muteNoticePermanent");
+        return Translations::Instance().Get("muteNotice.permanent");
 
     int64_t remaining = expiresAt - TimeUtils::Now();
     if (remaining <= 0)
         return TimeUtils::FormatDuration(0);
 
-    return std::format("{} {}", Translations::Instance().Get("muteNoticeExpiresIn"),
+    return std::format("{} {}", Translations::Instance().Get("muteNotice.expiresIn"),
                        TimeUtils::FormatDuration(remaining));
 }
 

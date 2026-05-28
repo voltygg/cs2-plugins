@@ -21,7 +21,7 @@ void ToggleGhost(int adminSlot, int targetSlot)
     if (mgr.IsActive(targetSlot, EffectId::Ghost))
     {
         mgr.Cancel(targetSlot, EffectId::Ghost);
-        Broadcast(ctx, "broadcastGhostOff");
+        Broadcast(ctx, "broadcast.ghostOff");
         return;
     }
 
@@ -35,7 +35,7 @@ void ToggleGhost(int adminSlot, int targetSlot)
     };
 
     mgr.Apply(targetSlot, EffectId::Ghost, /*timerHandle*/ 0, std::move(cancel), /*roundScoped*/ false);
-    Broadcast(ctx, "broadcastGhostOn");
+    Broadcast(ctx, "broadcast.ghostOn");
 }
 
 }  // namespace AdminSystem::Admin::Effects

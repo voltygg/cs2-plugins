@@ -107,6 +107,23 @@ bool AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const
     }
 }
 
+bool AdminRepository::UpdateLanguage(int64_t steamId, const std::string& lang)
+{
+    try
+    {
+        Database::Instance().ExecutePrepared(
+            "update_admin_language",
+            "UPDATE admins SET language = $2, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
+            "WHERE steam_id = $1",
+            steamId, lang);
+        return true;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+}
+
 Admin AdminRepository::ParseRow(const pqxx::row& row)
 {
     Admin admin;
@@ -121,6 +138,7 @@ Admin AdminRepository::ParseRow(const pqxx::row& row)
     admin.DisplayPrefix = row["display_prefix"].as<bool>(true);
     admin.NameColor = row["name_color"].c_str();
     admin.MessageColor = row["message_color"].c_str();
+    admin.Language = row["language"].c_str();
 
     admin.BuildFlagBits();
     return admin;

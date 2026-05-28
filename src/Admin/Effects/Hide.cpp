@@ -31,7 +31,7 @@ void ToggleHide(int adminSlot)
     if (mgr.IsActive(adminSlot, EffectId::Hide))
     {
         mgr.Cancel(adminSlot, EffectId::Hide);
-        Broadcast(ctx, "broadcastHideOff");
+        Broadcast(ctx, "broadcast.hideOff");
         return;
     }
 
@@ -52,7 +52,7 @@ void ToggleHide(int adminSlot)
     };
 
     mgr.Apply(adminSlot, EffectId::Hide, /*timerHandle*/ 0, std::move(cancel), /*roundScoped*/ false);
-    Broadcast(ctx, "broadcastHideOn");
+    Broadcast(ctx, "broadcast.hideOn");
 }
 
 }  // namespace AdminSystem::Admin::Effects

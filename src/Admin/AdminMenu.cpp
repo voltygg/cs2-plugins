@@ -29,18 +29,18 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
 
     int64_t adminSid = adminPlayer->GetSteamID();
 
-    return MenuBuilder(tr.Get("adminPanel"))
+    return MenuBuilder(tr.Get("panel.admin"))
         .AddSubmenu(
-            tr.Get("categoryPunish"), [adminSlot](int) { return Menu::BuildPunishMenu(adminSlot); },
+            tr.Get("category.punish"), [adminSlot](int) { return Menu::BuildPunishMenu(adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "cdopq"))
         .AddSubmenu(
-            tr.Get("categoryControl"), [adminSlot](int) { return Menu::BuildControlMenu(adminSlot); },
+            tr.Get("category.control"), [adminSlot](int) { return Menu::BuildControlMenu(adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "bsz"))
         .AddSubmenu(
-            tr.Get("categoryEffects"), [adminSlot](int) { return Menu::BuildEffectsMenu(adminSlot); },
+            tr.Get("category.effects"), [adminSlot](int) { return Menu::BuildEffectsMenu(adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "fz"))
         .AddSubmenu(
-            tr.Get("categoryChatSettings"), [adminSlot](int) { return Menu::BuildChatSettingsMenu(adminSlot); },
+            tr.Get("category.chatSettings"), [adminSlot](int) { return Menu::BuildChatSettingsMenu(adminSlot); },
             adminMgr.IsAdmin(adminSid))
         .Build();
 }

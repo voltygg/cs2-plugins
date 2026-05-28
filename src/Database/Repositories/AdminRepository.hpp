@@ -22,6 +22,9 @@ public:
     bool UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                          const std::string& messageColor);
 
+    /** Persist the per-admin panel language set via the admin chat-settings menu. */
+    bool UpdateLanguage(int64_t steamId, const std::string& lang);
+
 private:
     Admin ParseRow(const pqxx::row& row);
 };

@@ -40,7 +40,7 @@ void ToggleDisco(int adminSlot, int targetSlot)
     if (mgr.IsActive(targetSlot, EffectId::Disco))
     {
         mgr.Cancel(targetSlot, EffectId::Disco);
-        Broadcast(ctx, "broadcastDiscoOff");
+        Broadcast(ctx, "broadcast.discoOff");
         return;
     }
 
@@ -74,7 +74,7 @@ void ToggleDisco(int adminSlot, int targetSlot)
         EffectManager::Instance().Cancel(slot, EffectId::Disco);
     });
 
-    Broadcast(ctx, "broadcastDiscoOn");
+    Broadcast(ctx, "broadcast.discoOn");
 }
 
 }  // namespace AdminSystem::Admin::Effects

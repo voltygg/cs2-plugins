@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS admins (
   display_prefix BOOLEAN NOT NULL DEFAULT TRUE,
   name_color VARCHAR(32) NOT NULL DEFAULT '',
   message_color VARCHAR(32) NOT NULL DEFAULT '',
+  -- Per-admin language for the in-game admin panel. Defaults to English regardless of the
+  -- server-wide plugin.locale, so each admin opts into their own panel language.
+  language VARCHAR(5) NOT NULL DEFAULT 'en',
   created_at BIGINT NOT NULL DEFAULT EXTRACT(
     EPOCH
     FROM

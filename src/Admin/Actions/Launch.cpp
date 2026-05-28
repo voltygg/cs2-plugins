@@ -56,7 +56,7 @@ void DoLaunch(int adminSlot, int targetSlot)
         pc.SetPawnField<uint32_t>("CBaseEntity", "m_fFlags", flags & ~CS2Kit::Sdk::FL_GODMODE);
     });
 
-    Broadcast(ctx, "broadcastLaunched");
+    Broadcast(ctx, "broadcast.launched");
 }
 
 }  // namespace AdminSystem::Admin::Actions

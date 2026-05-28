@@ -24,7 +24,7 @@ const int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildHealthPresetMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Translations::Instance();
-    MenuBuilder builder(tr.Get("actionHealth"));
+    MenuBuilder builder(tr.Get("action.health"));
 
     for (int hp : HealthPresets)
     {
@@ -41,7 +41,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildHealthPresetMenu(int adminSlot, int t
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildArmorPresetMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Translations::Instance();
-    MenuBuilder builder(tr.Get("actionArmor"));
+    MenuBuilder builder(tr.Get("action.armor"));
 
     for (int armor : ArmorPresets)
     {
@@ -58,19 +58,19 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildArmorPresetMenu(int adminSlot, int ta
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildTeamPickerMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Translations::Instance();
-    MenuBuilder builder(tr.Get("actionChangeTeam"));
+    MenuBuilder builder(tr.Get("action.changeTeam"));
 
     int admin = adminSlot;
     int target = targetSlot;
-    builder.AddButton(tr.Get("teamCt"), [admin, target](int slot) {
+    builder.AddButton(tr.Get("team.ct"), [admin, target](int slot) {
         Actions::DoChangeTeam(admin, target, Actions::TeamCt);
         MenuManager::Instance().CloseAllMenus(slot);
     });
-    builder.AddButton(tr.Get("teamT"), [admin, target](int slot) {
+    builder.AddButton(tr.Get("team.t"), [admin, target](int slot) {
         Actions::DoChangeTeam(admin, target, Actions::TeamT);
         MenuManager::Instance().CloseAllMenus(slot);
     });
-    builder.AddButton(tr.Get("teamSpec"), [admin, target](int slot) {
+    builder.AddButton(tr.Get("team.spec"), [admin, target](int slot) {
         Actions::DoChangeTeam(admin, target, Actions::TeamSpec);
         MenuManager::Instance().CloseAllMenus(slot);
     });
