@@ -9,6 +9,10 @@
     {
       "name": "libpqxx",
       "version>=": "7.10.0"
+    },
+    {
+      "name": "curl",
+      "features": ["ssl"]
     }
   ]
 }

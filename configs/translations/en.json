@@ -37,7 +37,9 @@
     "launch": "Launch",
     "smite": "Smite",
     "swap": "Swap Players",
-    "hide": "Hide (Self)"
+    "hide": "Hide (Self)",
+    "callCheck": "Call for Cheat Check",
+    "cancelCheck": "Cancel Cheat Check"
   },
   "effectState": {
     "on": "ON",
@@ -66,7 +68,10 @@
     "godmodeOff": "made mortal again",
     "buried": "buried",
     "unburied": "unburied",
-    "teamChanged": "moved team of"
+    "teamChanged": "moved team of",
+    "cheatCheckCalled": "called a cheat check on",
+    "cheatCheckCleared": "cleared the cheat check on",
+    "cheatCheckTimedOut": "cheat check timed out for"
   },
   "common": {
     "selectSwapTarget": "Select swap partner",
@@ -113,6 +118,20 @@
     "purple": "Purple",
     "lightRed": "Light Red",
     "gold": "Gold"
+  },
+  "cheatCheck": {
+    "panelTitle": "CHEAT CHECK",
+    "instructions": "An admin has requested a cheat check.",
+    "joinHere": "Join here:",
+    "creatingRoom": "Creating your verification room...",
+    "provideLink": "Send your Discord/Telegram link with: !cc <link>",
+    "timeRemaining": "Time remaining",
+    "willKick": "You will be kicked if you do not comply.",
+    "linkReceived": "Verification link received",
+    "linkInvalid": "Invalid link. Use a full https:// URL, e.g. !cc https://discord.gg/...",
+    "noActiveCheck": "You have no active cheat check.",
+    "checkerUrl": "Cheat-check room (checker):",
+    "apiFailed": "Failed to create a verification room; falling back."
   },
   "muteNotice": {
     "text": "You are text-muted.",

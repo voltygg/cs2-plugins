@@ -259,4 +259,4 @@ Run the [generate-protos.sh](../scripts/generate-protos.sh) to generate protobuf
 ## Next Steps
 
 - Configure [admins.json](../configs/admins.json) with your SteamID
-- Set up [settings.json](../configs/settings.json) with your database and plugin configuration
+- Set up [settings.jsonc](../configs/settings.jsonc) with your database and plugin configuration

@@ -35,7 +35,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
             adminMgr.HasAnyPermission(adminSid, "cdopq"))
         .AddSubmenu(
             tr.Get("category.control"), [adminSlot](int) { return Menu::BuildControlMenu(adminSlot); },
-            adminMgr.HasAnyPermission(adminSid, "bsz"))
+            adminMgr.HasAnyPermission(adminSid, "bskz"))
         .AddSubmenu(
             tr.Get("category.effects"), [adminSlot](int) { return Menu::BuildEffectsMenu(adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "fz"))

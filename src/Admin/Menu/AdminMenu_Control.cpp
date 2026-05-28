@@ -1,5 +1,6 @@
 #include "AdminMenu_Control.hpp"
 
+#include "../Actions/CheatCheck.hpp"
 #include "../Actions/Movement.hpp"
 #include "../Actions/Teleport.hpp"
 #include "../Actions/Vitals.hpp"
@@ -141,6 +142,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     bool canTarget = adminMgr.CanTarget(adminSid, targetSid);
     bool hasS = canTarget && adminMgr.HasPermission(adminSid, 's');
     bool hasH = canTarget && adminMgr.HasPermission(adminSid, 'h');
+    bool hasK = canTarget && adminMgr.HasPermission(adminSid, 'k');
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control"), target->GetName()));
 
@@ -162,6 +164,9 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     AddSimple(builder, tr.Get("action.bury"), hasS, adminSlot, targetSlot, &Actions::DoBury);
     AddSimple(builder, tr.Get("action.unbury"), hasS, adminSlot, targetSlot, &Actions::DoUnbury);
     AddSubmenuLink(builder, tr.Get("action.changeTeam"), hasS, adminSlot, targetSlot, &BuildTeamPickerMenu);
+
+    AddSimple(builder, tr.Get("action.callCheck"), hasK, adminSlot, targetSlot, &Actions::DoCallCheck);
+    AddSimple(builder, tr.Get("action.cancelCheck"), hasK, adminSlot, targetSlot, &Actions::DoCancelCheck);
 
     return builder.Build();
 }

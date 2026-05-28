@@ -40,7 +40,7 @@ src/
 ├── Commands/              Chat-command registrations
 └── Database/              PostgreSQL pool, Entities/, Repositories/
 vendor/cs2-kit/            Reusable C++23 library (the only submodule). See its own CLAUDE.md.
-configs/                   settings.json + translations/{en,ru}.json
+configs/                   settings.jsonc + translations/{en,ru}.json
 database/schema.sql        admin_groups + admins seeded here
 references/                Read-only reference plugins — do NOT modify.
 ```
@@ -58,7 +58,7 @@ Source inclusion (see Project Overview): all SDK dependencies live inside cs2-ki
 - `OnPlayerConnect` — ban-on-connect kick. `OnPlayerDisconnect` — cancel effects. `OnPlayerChat` — `ChatService::HandleSay`.
 - `OnRegisterHooks` — the one custom hook, `SetClientListening` (voice-mute suppression).
 
-Config loads via `CS2Kit::Utils::Json::TryDeserializeFile<Settings>` — the `Settings` struct (in Config.hpp) mirrors settings.json and auto-deserializes via nlohmann macros. A missing/unparseable settings.json (or a wrong-typed value) is fatal; missing keys keep their defaults. Use `!admin_reload` to pick up DB changes.
+Config loads via `CS2Kit::Utils::Json::TryDeserializeFile<Settings>` — the `Settings` struct (in Config.hpp) mirrors settings.jsonc and auto-deserializes via nlohmann macros. The loader tolerates JSONC comments. A missing/unparseable settings.jsonc (or a wrong-typed value) is fatal; missing keys keep their defaults. Use `!admin_reload` to pick up DB changes.
 
 ## Code Conventions
 
@@ -96,7 +96,7 @@ Aim to keep source files under **~300-350 LOC**. When a file grows past that, sp
 
 ## Config Files
 
-- **`configs/settings.json`**: Plugin/database/punishments/chat configuration. All non-admin runtime knobs live here.
+- **`configs/settings.jsonc`**: Plugin/database/punishments/chat/cheat-check configuration (JSONC — comments allowed). All non-admin runtime knobs live here.
 - **`database/schema.sql`**: Owns the `admin_groups` and `admins` tables. Groups (with their chat prefix/colors) and individual admins are managed in PostgreSQL -- no JSON admin file. Use `!admin_reload` to pick up DB changes without a restart.
 
 ## Database

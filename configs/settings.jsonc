@@ -1,0 +1,67 @@
+{
+  "plugin": {
+    // Log verbosity: "trace" | "debug" | "info" | "warn" | "error".
+    "logLevel": "info",
+    // Default panel/translation language: matches a file in configs/translations (e.g. "en", "ru").
+    "locale": "ru"
+  },
+  "database": {
+    // PostgreSQL host.
+    "host": "localhost",
+    // PostgreSQL port.
+    "port": 5432,
+    // Database name.
+    "database": "admin_system",
+    // Database user.
+    "username": "postgres",
+    // Database password.
+    "password": "Test12345#",
+    // libpq SSL mode: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full".
+    "sslMode": "prefer"
+  },
+  "punishments": {
+    // Reason recorded when an admin bans without specifying one.
+    "defaultBanReason": "Banned by administrator",
+    // Number of warnings before escalation logic triggers.
+    "warningThreshold": 3
+  },
+  "chat": {
+    // If true, every issued punishment broadcasts a colored line to all players.
+    "broadcastPunishments": true,
+    // If true, an admin's chat is re-emitted with their group's colored prefix.
+    "tagAdminChatMessages": true,
+    // Prefix used when an admin has no group prefix set.
+    "fallbackPrefix": "[ADMIN]",
+    // Color of the fallback prefix.
+    "fallbackPrefixColor": "red",
+    // Color of the admin's name in tagged chat.
+    "fallbackNameColor": "default",
+    // Color of the admin's message body in tagged chat.
+    "fallbackMessageColor": "default"
+  },
+  "cheatCheck": {
+    // Active delivery mode: "fixedLink" | "websiteAutoRoom" | "playerProvided".
+    "mode": "fixedLink",
+    // Seconds the suspect has to comply before the timeout action fires.
+    "timeoutSec": 120,
+    // If true, auto-kick on timeout; if false, just unfreeze and notify the admin.
+    "autoKick": true,
+    // Kick reason shown to the player when autoKick triggers.
+    "kickReason": "Failed to comply with cheat check",
+    // How often (ms) the center-HTML panel is re-sent + countdown updated (CS2 clears it after ~5s).
+    "panelRefreshMs": 1000,
+    // "fixedLink" mode: the single URL shown to the suspect. Also the fallback for websiteAutoRoom.
+    "fixedLink": {
+      "url": "https://discord.gg/your-invite"
+    },
+    // "websiteAutoRoom" mode: the plugin POSTs here to create a per-check room.
+    "websiteAutoRoom": {
+      // Room-creation endpoint.
+      "createRoomUrl": "https://your-site.example/api/cheatcheck/rooms",
+      // Sent as "Authorization: Bearer <apiKey>"; leave empty to omit the header.
+      "apiKey": "",
+      // HTTP request timeout in milliseconds.
+      "timeoutMs": 8000
+    }
+  }
+}

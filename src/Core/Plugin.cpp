@@ -1,10 +1,12 @@
 #include "Plugin.hpp"
 
 #include "../Admin/AdminManager.hpp"
+#include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/Effects/EffectManager.hpp"
 #include "../Commands/AdminCommands.hpp"
 #include "../Database/Database.hpp"
 #include "../Punishments/PunishmentManager.hpp"
+#include "../Web/HttpClient.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
 
@@ -30,7 +32,9 @@ using namespace CS2Kit::Players;
 using namespace CS2Kit::Sdk;
 using namespace CS2Kit::Utils;
 using namespace CS2Kit::Menu;
+using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 using AdminSystem::Database::Database;
+using AdminSystem::Web::HttpClient;
 
 AdminSystemPlugin g_AdminSystemPlugin;
 PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
@@ -44,9 +48,9 @@ namespace
 
 bool LoadConfigs()
 {
-    if (!ConfigManager::Instance().LoadSettings("addons/admin-system/configs/settings.json"))
+    if (!ConfigManager::Instance().LoadSettings("addons/admin-system/configs/settings.jsonc"))
     {
-        Log::Error("Failed to load settings.json -- aborting load.");
+        Log::Error("Failed to load settings.jsonc -- aborting load.");
         return false;
     }
     return true;
@@ -164,6 +168,13 @@ bool AdminSystemPlugin::OnLoad(bool late)
 
     RegisterGameEventListeners();
 
+    // Async HTTP for cheat-check website rooms. Completions are drained on the game thread.
+    HttpClient::Instance().Start();
+    Defer([] { HttpClient::Instance().Stop(); });
+    uint64_t drainTimer = Scheduler::Instance().Repeat(100, [] { HttpClient::Instance().Drain(); });
+    Defer([drainTimer] { Scheduler::Instance().Cancel(drainTimer); });
+
+    Defer([] { CheatCheckManager::Instance().CancelAll(); });
     Defer([] { EffectManager::Instance().CancelAll(); });
     Defer([] { PlayerManager::Instance().Clear(); });
 
@@ -190,7 +201,10 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
 void AdminSystemPlugin::OnPlayerDisconnect(Player* player)
 {
     if (player)
+    {
         EffectManager::Instance().CancelAllForSlot(player->GetSlot());
+        CheatCheckManager::Instance().CancelAllForSlot(player->GetSlot());
+    }
 }
 
 bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)

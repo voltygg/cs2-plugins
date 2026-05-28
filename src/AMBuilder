@@ -39,16 +39,20 @@ WINDOWS_LIBS = [
     "libpq.lib",
     "libpgcommon.lib",
     "libpgport.lib",
-    # OpenSSL (static, required by libpq)
+    # libcurl (static, HTTPS via OpenSSL — reuses the ssl/crypto/zlib/wldap32/crypt32 libs below)
+    "libcurl.lib",
+    # OpenSSL (static, required by libpq + libcurl)
     "libssl.lib",
     "libcrypto.lib",
     # Compression (static, required by libpq)
     "zlib.lib",
     "lz4.lib",
-    # Windows system libs required by OpenSSL/libpq
+    # Windows system libs required by OpenSSL/libpq/libcurl
     "crypt32.lib",
     "secur32.lib",
     "wldap32.lib",
+    # if_nametoindex (IPv6 scope ids) pulled in by libcurl
+    "iphlpapi.lib",
     # Required by sigscanner (GetModuleInformation)
     "psapi.lib",
 ]
@@ -56,6 +60,7 @@ WINDOWS_LIBS = [
 LINUX_LIBS = [
     "pqxx",
     "pq",
+    "curl",
 ]
 
 # =============================================================================

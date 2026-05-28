@@ -53,15 +53,47 @@ struct ChatSettings
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ChatSettings, broadcastPunishments, tagAdminChatMessages, fallbackPrefix,
                                                 fallbackPrefixColor, fallbackNameColor, fallbackMessageColor)
 
-/** Root of settings.json. Mirrors the JSON object so the whole file deserializes in one call. */
+/** "cheatCheck.fixedLink" sub-section. */
+struct CheatCheckFixedLink
+{
+    std::string url;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckFixedLink, url)
+
+/** "cheatCheck.websiteAutoRoom" sub-section. */
+struct CheatCheckWebsiteAutoRoom
+{
+    std::string createRoomUrl;
+    std::string apiKey;
+    int timeoutMs = 8000;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckWebsiteAutoRoom, createRoomUrl, apiKey, timeoutMs)
+
+/** "cheatCheck" section of settings.jsonc. */
+struct CheatCheckSettings
+{
+    /** "fixedLink" | "websiteAutoRoom" | "playerProvided". */
+    std::string mode = "fixedLink";
+    int timeoutSec = 120;
+    bool autoKick = true;
+    std::string kickReason = "Failed to comply with cheat check";
+    int panelRefreshMs = 1000;
+    CheatCheckFixedLink fixedLink;
+    CheatCheckWebsiteAutoRoom websiteAutoRoom;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckSettings, mode, timeoutSec, autoKick, kickReason,
+                                                panelRefreshMs, fixedLink, websiteAutoRoom)
+
+/** Root of settings.jsonc. Mirrors the JSON object so the whole file deserializes in one call. */
 struct Settings
 {
     PluginSettings plugin;
     DatabaseConfig database;
     PunishmentSettings punishments;
     ChatSettings chat;
+    CheatCheckSettings cheatCheck;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, database, punishments, chat)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, database, punishments, chat, cheatCheck)
 
 /**
  * Loads and owns settings.json. All admin/group data is owned by the database
@@ -80,6 +112,7 @@ public:
     const DatabaseConfig& GetDatabase() const { return _settings.database; }
     const PunishmentSettings& GetPunishments() const { return _settings.punishments; }
     const ChatSettings& GetChat() const { return _settings.chat; }
+    const CheatCheckSettings& GetCheatCheck() const { return _settings.cheatCheck; }
 
 private:
     Settings _settings;

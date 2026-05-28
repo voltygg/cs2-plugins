@@ -191,8 +191,8 @@ if [[ -d "configs" ]]; then
         name="$(basename "$configFile")"
         destPath="$PluginAddonPath/configs/$name"
 
-        # Skip settings.json if it already exists (preserves DB creds + server config)
-        if [[ "$name" == "settings.json" && -f "$destPath" ]]; then
+        # Skip settings.jsonc if it already exists (preserves DB creds + server config)
+        if [[ "$name" == "settings.jsonc" && -f "$destPath" ]]; then
             echo "  -> configs/$name (skipped - already exists)"
             continue
         fi
