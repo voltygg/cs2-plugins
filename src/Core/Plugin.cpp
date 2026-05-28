@@ -10,6 +10,7 @@
 
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/GameEventService.hpp>
@@ -28,6 +29,7 @@ using namespace CS2Kit::Core;
 using namespace CS2Kit::Players;
 using namespace CS2Kit::Sdk;
 using namespace CS2Kit::Utils;
+using namespace CS2Kit::Menu;
 using AdminSystem::Database::Database;
 
 AdminSystemPlugin g_AdminSystemPlugin;
@@ -143,6 +145,9 @@ bool AdminSystemPlugin::OnLoad(bool late)
     Translations::Instance().SetLanguage(locale);
 
     InstallCommandCallbacks();
+
+    // Freeze the player while an admin menu is open so WASD navigation doesn't also walk them around.
+    MenuManager::Instance().SetFreezePlayer(true);
 
     bool dbConnected = ConnectDatabaseAndLoadAdmins();
     if (dbConnected)
