@@ -168,11 +168,11 @@ bool AdminSystemPlugin::OnLoad(bool late)
 
     RegisterGameEventListeners();
 
-    // Async HTTP for cheat-check website rooms. Completions are drained on the game thread.
+    // Async HTTP for cheat-check website rooms. Completions are dispatched on the game thread.
     HttpClient::Instance().Start();
     Defer([] { HttpClient::Instance().Stop(); });
-    uint64_t drainTimer = Scheduler::Instance().Repeat(100, [] { HttpClient::Instance().Drain(); });
-    Defer([drainTimer] { Scheduler::Instance().Cancel(drainTimer); });
+    uint64_t dispatchTimer = Scheduler::Instance().Repeat(100, [] { HttpClient::Instance().DispatchCompletions(); });
+    Defer([dispatchTimer] { Scheduler::Instance().Cancel(dispatchTimer); });
 
     Defer([] { CheatCheckManager::Instance().CancelAll(); });
     Defer([] { EffectManager::Instance().CancelAll(); });

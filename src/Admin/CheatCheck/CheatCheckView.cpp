@@ -1,0 +1,145 @@
+#include "CheatCheckView.hpp"
+
+#include "../../Core/ChatService.hpp"
+#include "../../Core/Config.hpp"
+
+#include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <CS2Kit/Utils/ChatColors.hpp>
+#include <CS2Kit/Utils/TimeUtils.hpp>
+#include <CS2Kit/Utils/Translations.hpp>
+#include <format>
+#include <string>
+
+namespace AdminSystem::Admin::CheatCheck::View
+{
+
+using AdminSystem::Core::ChatService;
+using AdminSystem::Core::ConfigManager;
+using CS2Kit::Players::PlayerManager;
+using CS2Kit::Sdk::MessageSystem;
+using CS2Kit::Utils::TimeUtils;
+using CS2Kit::Utils::Translations;
+namespace ChatColors = CS2Kit::Utils::ChatColors;
+
+namespace
+{
+
+enum class PanelState
+{
+    CreatingRoom,  // awaiting async room creation
+    ProvideLink,   // playerProvided mode, suspect hasn't submitted yet
+    HasUrl,        // a URL is ready to show
+    Generic,       // no URL and nothing pending
+};
+
+PanelState PanelStateFor(const PendingCheck& pc)
+{
+    if (pc.AwaitingUrl)
+        return PanelState::CreatingRoom;
+    if (pc.Mode == CheatCheckMode::PlayerProvided && pc.ResolvedUrl.empty())
+        return PanelState::ProvideLink;
+    if (!pc.ResolvedUrl.empty())
+        return PanelState::HasUrl;
+    return PanelState::Generic;
+}
+
+std::string EscapeHtml(const std::string& text)
+{
+    std::string out;
+    out.reserve(text.size());
+    for (char c : text)
+    {
+        switch (c)
+        {
+        case '&':
+            out += "&amp;";
+            break;
+        case '<':
+            out += "&lt;";
+            break;
+        case '>':
+            out += "&gt;";
+            break;
+        case '"':
+            out += "&quot;";
+            break;
+        case '\'':
+            out += "&#39;";
+            break;
+        default:
+            out += c;
+            break;
+        }
+    }
+    return out;
+}
+
+}  // namespace
+
+void RenderPanel(int slot, const PendingCheck& pc)
+{
+    if (!PlayerManager::Instance().GetPlayerBySlot(slot))
+        return;
+
+    Translations::SlotScope scope(slot);
+    auto& tr = Translations::Instance();
+
+    int64_t remain = pc.DeadlineSec - TimeUtils::Now();
+    int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
+
+    std::string body;
+    switch (PanelStateFor(pc))
+    {
+    case PanelState::CreatingRoom:
+        body = tr.Get("cheatCheck.creatingRoom");
+        break;
+    case PanelState::ProvideLink:
+        body = tr.Get("cheatCheck.provideLink");
+        break;
+    case PanelState::HasUrl:
+        body = std::format("{}<br>{}", tr.Get("cheatCheck.joinHere"), EscapeHtml(pc.ResolvedUrl));
+        break;
+    case PanelState::Generic:
+        body = tr.Get("cheatCheck.instructions");
+        break;
+    }
+
+    std::string html =
+        std::format("<font color='#ff4040' size='5'>{}</font><br>{}<br><font color='#ffd040'>{}: {}s</font>",
+                    tr.Get("cheatCheck.panelTitle"), body, tr.Get("cheatCheck.timeRemaining"), remainSec);
+
+    if (ConfigManager::Instance().GetCheatCheck().autoKick)
+        html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick"));
+
+    MessageSystem::Instance().SendCenterHtml(slot, html);
+}
+
+void Render(int slot, const PendingCheck& pc)
+{
+    Translations::SlotScope scope(slot);
+    auto& tr = Translations::Instance();
+    auto& chat = ChatService::Instance();
+
+    chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle")));
+
+    switch (PanelStateFor(pc))
+    {
+    case PanelState::CreatingRoom:
+        chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.creatingRoom")));
+        break;
+    case PanelState::ProvideLink:
+        chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.provideLink")));
+        break;
+    case PanelState::HasUrl:
+        chat.Reply(slot, std::format("{}{} {}{}", ChatColors::Default, tr.Get("cheatCheck.joinHere"), ChatColors::Olive,
+                                     pc.ResolvedUrl));
+        break;
+    case PanelState::Generic:
+        break;
+    }
+
+    RenderPanel(slot, pc);
+}
+
+}  // namespace AdminSystem::Admin::CheatCheck::View

@@ -17,7 +17,6 @@
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
-
 #include <format>
 #include <memory>
 
@@ -159,14 +158,16 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     AddPresetChoice(builder, tr.Get("action.armor"), "AP", hasH, adminSlot, targetSlot, &Actions::DoSetArmor,
                     ArmorPresets);
 
-    AddFlagToggle(builder, tr.Get("action.godmode"), hasH, adminSlot, targetSlot, FL_GODMODE, &Actions::DoToggleGodmode);
+    AddFlagToggle(builder, tr.Get("action.godmode"), hasH, adminSlot, targetSlot, FL_GODMODE,
+                  &Actions::DoToggleGodmode);
 
     AddSimple(builder, tr.Get("action.bury"), hasS, adminSlot, targetSlot, &Actions::DoBury);
     AddSimple(builder, tr.Get("action.unbury"), hasS, adminSlot, targetSlot, &Actions::DoUnbury);
     AddSubmenuLink(builder, tr.Get("action.changeTeam"), hasS, adminSlot, targetSlot, &BuildTeamPickerMenu);
 
     AddSimple(builder, tr.Get("action.callCheck"), hasK, adminSlot, targetSlot, &Actions::DoCallCheck);
-    AddSimple(builder, tr.Get("action.cancelCheck"), hasK, adminSlot, targetSlot, &Actions::DoCancelCheck);
+    AddSimple(builder, tr.Get("action.cancelCheck"), hasK, adminSlot, targetSlot,
+              [](int a, int t) { Actions::DoCancelCheck(a, t); });
 
     return builder.Build();
 }

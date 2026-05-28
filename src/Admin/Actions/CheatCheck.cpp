@@ -15,13 +15,13 @@ void DoCallCheck(int adminSlot, int targetSlot)
     CheatCheck::CheatCheckManager::Instance().StartCheck(adminSlot, targetSlot);
 }
 
-void DoCancelCheck(int adminSlot, int targetSlot)
+bool DoCancelCheck(int adminSlot, int targetSlot)
 {
     auto ctx = Resolve(adminSlot, targetSlot, 'k');
     if (!ctx.Valid())
-        return;
+        return false;
 
-    CheatCheck::CheatCheckManager::Instance().Cancel(targetSlot);
+    return CheatCheck::CheatCheckManager::Instance().Cancel(targetSlot);
 }
 
 }  // namespace AdminSystem::Admin::Actions

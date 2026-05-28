@@ -130,6 +130,7 @@
     "linkReceived": "Verification link received",
     "linkInvalid": "Invalid link. Use a full https:// URL, e.g. !cc https://discord.gg/...",
     "noActiveCheck": "You have no active cheat check.",
+    "cancelled": "Cancelled cheat check on",
     "checkerUrl": "Cheat-check room (checker):",
     "apiFailed": "Failed to create a verification room; falling back."
   },

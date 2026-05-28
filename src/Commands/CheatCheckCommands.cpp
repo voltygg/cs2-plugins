@@ -43,8 +43,13 @@ CommandResult HandleCheatCheckCancel(Player* admin, const std::vector<std::strin
     if (!target)
         return {false, err};
 
-    AdminSystem::Admin::Actions::DoCancelCheck(admin->GetSlot(), target->GetSlot());
-    return {true, std::format("Cancelled cheat check on {}.", target->GetName())};
+    Translations::SlotScope scope(admin->GetSlot());
+    auto& tr = Translations::Instance();
+
+    if (!AdminSystem::Admin::Actions::DoCancelCheck(admin->GetSlot(), target->GetSlot()))
+        return {false, tr.Get("cheatCheck.noActiveCheck")};
+
+    return {true, std::format("{} {}", tr.Get("cheatCheck.cancelled"), target->GetName())};
 }
 
 }  // namespace

@@ -15,8 +15,8 @@ namespace AdminSystem::Web
 
 /**
  * Async HTTP client. A single worker thread performs blocking libcurl requests off the game
- * thread; completions are queued and replayed on the game thread via `Drain()` so callbacks may
- * safely touch engine state. No engine API may be called from the completion before `Drain()`.
+ * thread; completions are queued and replayed on the game thread via `DispatchCompletions()` so
+ * callbacks may safely touch engine state. No engine API may be called from the completion before it.
  */
 class HttpClient : public CS2Kit::Core::Singleton<HttpClient>
 {
@@ -31,13 +31,13 @@ public:
 
     /**
      * Enqueue an async POST. `headers` are full "Key: Value" lines. `onComplete` runs on the game
-     * thread on a later `Drain()`. No-op if the client isn't running.
+     * thread on a later `DispatchCompletions()`. No-op if the client isn't running.
      */
     void Post(std::string url, std::string body, std::vector<std::string> headers, long timeoutMs,
               HttpCompletion onComplete);
 
     /** Invoke all ready completions on the calling (game) thread. */
-    void Drain();
+    void DispatchCompletions();
 
 private:
     struct Job

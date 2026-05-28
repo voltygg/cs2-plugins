@@ -63,7 +63,7 @@ void HttpClient::Post(std::string url, std::string body, std::vector<std::string
     _jobCv.notify_one();
 }
 
-void HttpClient::Drain()
+void HttpClient::DispatchCompletions()
 {
     std::vector<Completion> ready;
     {
@@ -88,8 +88,8 @@ void HttpClient::WorkerLoop()
         {
             std::unique_lock<std::mutex> lock(_jobMutex);
             _jobCv.wait(lock, [this] { return !_running || !_jobs.empty(); });
-            if (!_running && _jobs.empty())
-                return;
+            if (!_running)
+                return;  // shutdown: drop any queued jobs, only the in-flight request (if any) finishes
             job = std::move(_jobs.front());
             _jobs.pop();
         }
