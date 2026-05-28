@@ -247,7 +247,7 @@ bool PunishmentManager::IssueWarning(Warning& warning)
         ChatService::Instance().BroadcastPunishment("warned", warning.AdminName, warning.TargetName, warning.Reason, 0);
 
         int active = repo.CountActive(warning.TargetSteamId);
-        int threshold = ConfigManager::Instance().GetPluginConfig().MaxWarnings;
+        int threshold = ConfigManager::Instance().GetPunishments().warningThreshold;
         if (threshold > 0 && active >= threshold)
         {
             Log::Info("Warning threshold ({}) reached for {} -- escalating to ban.", threshold, warning.TargetSteamId);
@@ -258,7 +258,7 @@ bool PunishmentManager::IssueWarning(Warning& warning)
             autoBan.TargetName = warning.TargetName;
             autoBan.AdminSteamId = warning.AdminSteamId;
             autoBan.AdminName = warning.AdminName;
-            autoBan.Reason = ConfigManager::Instance().GetPluginConfig().DefaultBanReason;
+            autoBan.Reason = ConfigManager::Instance().GetPunishments().defaultBanReason;
             autoBan.Duration = 0;  // permanent escalation
             IssueBan(autoBan);
         }

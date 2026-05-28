@@ -3,64 +3,86 @@
 #include "../Database/Database.hpp"
 
 #include <CS2Kit/Core/Singleton.hpp>
-#include <nlohmann/json_fwd.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
+
+namespace AdminSystem::Database
+{
+// DatabaseConfig lives in this namespace; the mapper must too, so ADL finds it.
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DatabaseConfig, host, port, database, username, password, sslMode)
+}  // namespace AdminSystem::Database
 
 namespace AdminSystem::Core
 {
 
 using namespace CS2Kit::Core;
 
-using json = nlohmann::json;
 using DatabaseConfig = AdminSystem::Database::DatabaseConfig;
 
-/** General plugin settings loaded from the "plugin" and "punishments" sections of settings.json. */
-struct PluginConfig
+/** "plugin" section of settings.json. */
+struct PluginSettings
 {
-    bool DebugMode = false;
-    int MaxWarnings = 3;
-    std::string DefaultBanReason = "Banned by administrator";
-    std::string Locale = "en";
+    std::string logLevel = "info";
+    std::string locale = "en";
 };
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PluginSettings, logLevel, locale)
 
-/** Chat formatting settings loaded from the "chat" section of settings.json. */
-struct ChatConfig
+/** "punishments" section of settings.json. */
+struct PunishmentSettings
+{
+    std::string defaultBanReason = "Banned by administrator";
+    int warningThreshold = 3;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentSettings, defaultBanReason, warningThreshold)
+
+/** "chat" section of settings.json. */
+struct ChatSettings
 {
     /** If true, every issued punishment broadcasts a colored line to all players. */
-    bool BroadcastPunishments = true;
+    bool broadcastPunishments = true;
 
     /** If true, an admin's chat is intercepted and re-emitted with their group's colored prefix. */
-    bool TagAdminChatMessages = true;
+    bool tagAdminChatMessages = true;
 
-    /** Prefix used when an admin doesn't belong to any group with `ChatPrefix` set. */
-    std::string FallbackPrefix = "[ADMIN]";
-    std::string FallbackPrefixColor = "red";
-    std::string FallbackNameColor = "default";
-    std::string FallbackMessageColor = "default";
+    /** Prefix used when an admin doesn't belong to any group with a prefix set. */
+    std::string fallbackPrefix = "[ADMIN]";
+    std::string fallbackPrefixColor = "red";
+    std::string fallbackNameColor = "default";
+    std::string fallbackMessageColor = "default";
 };
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ChatSettings, broadcastPunishments, tagAdminChatMessages, fallbackPrefix,
+                                                fallbackPrefixColor, fallbackNameColor, fallbackMessageColor)
+
+/** Root of settings.json. Mirrors the JSON object so the whole file deserializes in one call. */
+struct Settings
+{
+    PluginSettings plugin;
+    DatabaseConfig database;
+    PunishmentSettings punishments;
+    ChatSettings chat;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, database, punishments, chat)
 
 /**
  * Loads and owns settings.json. All admin/group data is owned by the database
- * (`admins` and `admin_groups` tables) — this manager only exposes plugin/DB/chat config.
+ * (`admins` and `admin_groups` tables) — this manager only exposes plugin/DB/punishment/chat config.
  */
 class ConfigManager : public Singleton<ConfigManager>
 {
 public:
     explicit ConfigManager(Token) {}
 
-    /** Load settings.json (plugin, database, punishments, chat sections). */
+    /** Load settings.json. Returns false if the file is missing, unparseable, or has a wrong-typed value. */
     bool LoadSettings(const std::string& path);
 
-    const PluginConfig& GetPluginConfig() const { return _pluginConfig; }
-    const DatabaseConfig& GetDatabaseConfig() const { return _databaseConfig; }
-    const ChatConfig& GetChatConfig() const { return _chatConfig; }
+    const Settings& Get() const { return _settings; }
+    const PluginSettings& GetPlugin() const { return _settings.plugin; }
+    const DatabaseConfig& GetDatabase() const { return _settings.database; }
+    const PunishmentSettings& GetPunishments() const { return _settings.punishments; }
+    const ChatSettings& GetChat() const { return _settings.chat; }
 
 private:
-    bool LoadJsonFile(const std::string& filePath, json& outJson);
-
-    PluginConfig _pluginConfig;
-    DatabaseConfig _databaseConfig;
-    ChatConfig _chatConfig;
+    Settings _settings;
 };
 
 }  // namespace AdminSystem::Core

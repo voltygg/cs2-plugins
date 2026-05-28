@@ -247,11 +247,11 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
     }
     else
     {
-        const auto& fallback = ConfigManager::Instance().GetChatConfig();
-        style.Prefix = fallback.FallbackPrefix;
-        style.PrefixColor = fallback.FallbackPrefixColor;
-        style.NameColor = fallback.FallbackNameColor;
-        style.MessageColor = fallback.FallbackMessageColor;
+        const auto& fallback = ConfigManager::Instance().GetChat();
+        style.Prefix = fallback.fallbackPrefix;
+        style.PrefixColor = fallback.fallbackPrefixColor;
+        style.NameColor = fallback.fallbackNameColor;
+        style.MessageColor = fallback.fallbackMessageColor;
     }
 
     // Per-admin overrides win over group/fallback. Empty strings keep the inherited value

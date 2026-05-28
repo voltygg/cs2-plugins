@@ -58,7 +58,7 @@ CommandResult HandleBan(Player* admin, const std::vector<std::string>& args)
         return {false, "Duration must be a non-negative number of minutes (0 = permanent)."};
     }
 
-    std::string reason = JoinReason(args, 2, ConfigManager::Instance().GetPluginConfig().DefaultBanReason);
+    std::string reason = JoinReason(args, 2, ConfigManager::Instance().GetPunishments().defaultBanReason);
 
     Ban ban;
     FillPunishment(ban, target, admin, reason, durationSec);

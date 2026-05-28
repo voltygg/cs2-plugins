@@ -47,8 +47,8 @@ void ChatService::NoPermission(int slot)
 void ChatService::BroadcastPunishment(std::string_view action, std::string_view adminName, std::string_view targetName,
                                       std::string_view reason, int64_t durationSec)
 {
-    const auto& cfg = ConfigManager::Instance().GetChatConfig();
-    if (!cfg.BroadcastPunishments)
+    const auto& cfg = ConfigManager::Instance().GetChat();
+    if (!cfg.broadcastPunishments)
         return;
 
     // Only ban/voice-mute/text-mute carry a duration; kick/warn/un* are instantaneous.
@@ -62,7 +62,7 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
 
     // [ADMIN] {admin} {action} {target} for {reason}{durationSuffix}
     auto line =
-        std::format("{}{} {}{}{} {}{}{} {} for {}{}{}{}", ChatColors::Green, cfg.FallbackPrefix, ChatColors::Default,
+        std::format("{}{} {}{}{} {}{}{} {} for {}{}{}{}", ChatColors::Green, cfg.fallbackPrefix, ChatColors::Default,
                     adminName, ChatColors::Default, ChatColors::Red, action, ChatColors::Default, targetName,
                     ChatColors::Olive, reason, ChatColors::Default, durationSuffix);
     Chat::PrintAll(line);
@@ -71,8 +71,8 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
                                   std::string_view targetName)
 {
-    const auto& cfg = ConfigManager::Instance().GetChatConfig();
-    if (!cfg.BroadcastPunishments)
+    const auto& cfg = ConfigManager::Instance().GetChat();
+    if (!cfg.broadcastPunishments)
         return;
 
     auto verb = Translations::Instance().Get(translationKey);
@@ -81,10 +81,10 @@ void ChatService::BroadcastAction(const std::string& translationKey, std::string
 
     std::string line;
     if (targetName.empty())
-        line = std::format("{}{} {}{}{} {}{}", ChatColors::Green, cfg.FallbackPrefix, ChatColors::Default, adminName,
+        line = std::format("{}{} {}{}{} {}{}", ChatColors::Green, cfg.fallbackPrefix, ChatColors::Default, adminName,
                            ChatColors::Default, ChatColors::Olive, verb);
     else
-        line = std::format("{}{} {}{}{} {}{}{} {}", ChatColors::Green, cfg.FallbackPrefix, ChatColors::Default,
+        line = std::format("{}{} {}{}{} {}{}{} {}", ChatColors::Green, cfg.fallbackPrefix, ChatColors::Default,
                            adminName, ChatColors::Default, ChatColors::Olive, verb, ChatColors::Default, targetName);
     Chat::PrintAll(line);
 }
@@ -167,8 +167,8 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
         return true;
     }
 
-    const auto& chatCfg = ConfigManager::Instance().GetChatConfig();
-    if (chatCfg.TagAdminChatMessages && AdminManager::Instance().IsAdmin(steamId))
+    const auto& chatCfg = ConfigManager::Instance().GetChat();
+    if (chatCfg.tagAdminChatMessages && AdminManager::Instance().IsAdmin(steamId))
     {
         RebroadcastAdminChat(player, message, isSayTeam);
         return true;

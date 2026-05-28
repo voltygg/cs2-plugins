@@ -8,8 +8,8 @@ namespace AdminSystem::Database
 
 std::string DatabaseConfig::GetConnectionString() const
 {
-    return std::format("host={} port={} dbname={} user={} password={} sslmode={}", Host, Port, DatabaseName, Username,
-                       Password, SslMode);
+    return std::format("host={} port={} dbname={} user={} password={} sslmode={}", host, port, database, username,
+                       password, sslMode);
 }
 
 bool Database::Initialize(const DatabaseConfig& config)

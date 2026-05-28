@@ -1,176 +1,211 @@
 #include "Plugin.hpp"
 
+#include "../Admin/AdminManager.hpp"
 #include "../Admin/Effects/EffectManager.hpp"
+#include "../Commands/AdminCommands.hpp"
+#include "../Database/Database.hpp"
 #include "../Punishments/PunishmentManager.hpp"
-#include "Bootstrap.hpp"
 #include "ChatService.hpp"
+#include "Config.hpp"
 
-#include <CS2Kit/CS2Kit.hpp>
+#include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-#include <cstdio>
-#include <cstring>
+#include <CS2Kit/Utils/Translations.hpp>
+#include <string>
 
 using namespace AdminSystem::Core;
+using namespace AdminSystem::Admin;
 using namespace AdminSystem::Admin::Effects;
 using namespace AdminSystem::Punishments;
-using namespace CS2Kit::Players;
-using namespace CS2Kit::Utils;
+using namespace CS2Kit::Commands;
 using namespace CS2Kit::Core;
+using namespace CS2Kit::Players;
 using namespace CS2Kit::Sdk;
+using namespace CS2Kit::Utils;
+using AdminSystem::Database::Database;
 
-// Global plugin instance
 AdminSystemPlugin g_AdminSystemPlugin;
-
-// Metamod plugin expose
 PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
 
-// SourceHook hook declarations (file scope)
-SH_DECL_HOOK3_void(IServerGameDLL, GameFrame, SH_NOATTRIB, 0, bool, bool, bool);
-SH_DECL_HOOK6_void(IServerGameClients, OnClientConnected, SH_NOATTRIB, 0, CPlayerSlot, const char*, uint64, const char*,
-                   const char*, bool);
-SH_DECL_HOOK5_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, CPlayerSlot, ENetworkDisconnectionReason,
-                   const char*, uint64, const char*);
-SH_DECL_HOOK3_void(ICvar, DispatchConCommand, SH_NOATTRIB, 0, ConCommandRef, const CCommandContext&, const CCommand&);
 SH_DECL_HOOK3(IVEngineServer2, SetClientListening, SH_NOATTRIB, 0, bool, CPlayerSlot, CPlayerSlot, bool);
 
-// ------- ISmmPlugin Interface Implementation -----
+// ------- Subsystem wiring -----
 
-bool AdminSystemPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late)
+namespace
 {
-    PLUGIN_SAVEVARS();
-    _lateLoad = late;
 
-    CS2Kit::InitParams params;
-    params.LogPrefix = "AdminSystem";
-
-    if (!CS2Kit::Initialize(ismm, error, maxlen, params))
-        return false;
-
-    Log::Info("Loading v{}...", ADMIN_SYSTEM_VERSION);
-
-    if (!Bootstrap::Initialize())
+bool LoadConfigs()
+{
+    if (!ConfigManager::Instance().LoadSettings("addons/admin-system/configs/settings.json"))
     {
-        snprintf(error, maxlen, "Failed to initialize subsystems");
+        Log::Error("Failed to load settings.json -- aborting load.");
+        return false;
+    }
+    return true;
+}
+
+void InstallCommandCallbacks()
+{
+    auto& cmdMgr = CommandManager::Instance();
+
+    cmdMgr.SetPermissionCallback([](int64_t steamId, const std::string& permission) -> bool {
+        return AdminManager::Instance().HasAnyPermission(steamId, permission);
+    });
+
+    // Pipe every command's result message into the player's chat as a colored reply.
+    // Suppresses empty messages (e.g. !who, which already streamed its own lines).
+    cmdMgr.SetResultCallback([](Player* caller, const Command& /*cmd*/, const CommandResult& result) {
+        if (!caller || result.Message.empty())
+            return;
+        ChatService::Instance().Reply(caller->GetSlot(), result.Message);
+    });
+}
+
+bool ConnectDatabaseAndLoadAdmins()
+{
+    Log::Info("Connecting to database...");
+    auto& db = Database::Instance();
+
+    if (!db.Initialize(ConfigManager::Instance().GetDatabase()))
+    {
+        Log::Warn("Database unavailable -- admins/groups not loaded; chat commands will reject all callers.");
         return false;
     }
 
-    RegisterHooks();
-    Log::Info("Loaded successfully{}.", late ? " (late)" : "");
+    Log::Info("Loading admins from database...");
+    auto& adminMgr = AdminManager::Instance();
+    if (!adminMgr.LoadGroups())
+        Log::Warn("Failed to load admin groups from DB.");
+    if (!adminMgr.LoadAdmins())
+        Log::Warn("Failed to load admins from DB.");
     return true;
 }
 
-bool AdminSystemPlugin::Unload(char* error, size_t maxlen)
+void RegisterPunishmentTasks()
 {
-    Log::Info("Unloading...");
+    Log::Info("Loading active punishments...");
+    if (!PunishmentManager::Instance().LoadActivePunishments())
+        Log::Warn("Failed to load active punishments.");
 
-    UnregisterHooks();
-    Bootstrap::Shutdown();
-    CS2Kit::Shutdown();
+    // Sweep expired bans/voice-mutes/text-mutes every minute so timed punishments self-clear without
+    // requiring a server restart or manual intervention.
+    Scheduler::Instance().Repeat(60'000, []() { PunishmentManager::Instance().ExpireOldPunishments(); });
+}
 
-    Log::Info("Unloaded.");
+void RegisterGameEventListeners()
+{
+    auto& events = GameEventService::Instance();
+    events.Listen("player_death", [](IGameEvent* e) {
+        if (!e)
+            return;
+        // userid in CS2 events maps to the slot index for the legacy event system.
+        int victim = e->GetInt("userid", -1);
+        if (victim >= 0)
+            EffectManager::Instance().CancelAllForSlot(victim);
+    });
+    events.Listen("round_end", [](IGameEvent*) { EffectManager::Instance().CancelAllForRoundEnd(); });
+    events.Listen("round_prestart", [](IGameEvent*) { EffectManager::Instance().CancelAllForRoundEnd(); });
+}
+
+}  // namespace
+
+// ------- Plugin lifecycle -----
+
+PluginInfo AdminSystemPlugin::Info() const
+{
+    return PluginInfo{
+        .Name = "Admin System",
+        .Author = "Sukhrob Ilyosbekov",
+        .Description = "Admin System for CS2",
+        .Url = "https://github.com/m9snoi-net/admin-system",
+        .License = "MIT",
+        .Version = "1.0.0",
+        .LogTag = "ADMIN",
+    };
+}
+
+bool AdminSystemPlugin::OnLoad(bool late)
+{
+    Log::Info("Loading v{}...", Info().Version);
+
+    Log::Info("Loading configurations...");
+    if (!LoadConfigs())
+        return false;
+
+    auto locale = ConfigManager::Instance().GetPlugin().locale;
+    Log::Info("Translations: Setting language to {}...", locale);
+    Translations::Instance().SetLanguage(locale);
+
+    InstallCommandCallbacks();
+
+    bool dbConnected = ConnectDatabaseAndLoadAdmins();
+    if (dbConnected)
+        Defer([] { Database::Instance().CloseConnection(); });
+
+    Log::Info("Initializing commands...");
+    AdminSystem::Commands::RegisterAdminCommands(CommandManager::Instance());
+
+    if (dbConnected)
+        RegisterPunishmentTasks();
+
+    Log::Info("Loading translations...");
+    Translations::Instance().Load("addons/admin-system/configs/translations");
+
+    RegisterGameEventListeners();
+
+    Defer([] { EffectManager::Instance().CancelAll(); });
+    Defer([] { PlayerManager::Instance().Clear(); });
+
+    Log::Info("All subsystems initialized.");
     return true;
 }
 
-bool AdminSystemPlugin::Pause(char* error, size_t maxlen)
+void AdminSystemPlugin::OnPlayerConnect(Player* player)
 {
-    return true;
-}
-
-bool AdminSystemPlugin::Unpause(char* error, size_t maxlen)
-{
-    return true;
-}
-
-void AdminSystemPlugin::AllPluginsLoaded() {}
-
-// ------- Plugin Info -----
-
-const char* AdminSystemPlugin::GetAuthor()
-{
-    return ADMIN_SYSTEM_AUTHOR;
-}
-const char* AdminSystemPlugin::GetName()
-{
-    return "Admin System";
-}
-const char* AdminSystemPlugin::GetDescription()
-{
-    return ADMIN_SYSTEM_DESCRIPTION;
-}
-const char* AdminSystemPlugin::GetURL()
-{
-    return ADMIN_SYSTEM_URL;
-}
-const char* AdminSystemPlugin::GetLicense()
-{
-    return "MIT";
-}
-const char* AdminSystemPlugin::GetVersion()
-{
-    return ADMIN_SYSTEM_VERSION;
-}
-const char* AdminSystemPlugin::GetDate()
-{
-    return __DATE__;
-}
-const char* AdminSystemPlugin::GetLogTag()
-{
-    return "ADMIN";
-}
-
-// ------- IMetamodListener -----
-
-void* AdminSystemPlugin::OnMetamodQuery(const char* iface, int* ret)
-{
-    if (ret)
-        *ret = META_IFACE_FAILED;
-    return nullptr;
-}
-
-// ------- SourceHook Callbacks -----
-
-void AdminSystemPlugin::Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
-{
-    CS2Kit::OnGameFrame();
-}
-
-void AdminSystemPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* pszName, uint64 xuid,
-                                               const char* pszNetworkID, const char* pszAddress, bool bFakePlayer)
-{
-    int playerSlot = slot.Get();
-    int64_t steamId = static_cast<int64_t>(xuid);
-
-    PlayerManager::Instance().AddPlayer(playerSlot, steamId, pszName ? pszName : "", pszAddress ? pszAddress : "");
-
-    // Bots have no real SteamID, so they can't be banned/muted — but we still want them
-    // in PlayerManager so they show up in the admin menu and are kickable for testing.
-    if (bFakePlayer)
+    if (!player)
         return;
 
     // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so we defer
-    // to the next game frame via the scheduler — the player is fully connected by then.
-    if (auto ban = PunishmentManager::Instance().GetActiveBan(steamId))
+    // to the next game frame via the scheduler -- the player is fully connected by then. Bots have
+    // no real SteamID and never match an active ban.
+    if (auto ban = PunishmentManager::Instance().GetActiveBan(player->GetSteamID()))
     {
+        int slot = player->GetSlot();
         std::string reason = ban->Reason;
-        Scheduler::Instance().NextTick([playerSlot, reason]() { PlayerController(playerSlot).Kick(reason.c_str()); });
+        Scheduler::Instance().NextTick([slot, reason]() { PlayerController(slot).Kick(reason.c_str()); });
     }
 }
 
-void AdminSystemPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* pszName,
-                                              uint64 xuid, const char* pszNetworkID)
+void AdminSystemPlugin::OnPlayerDisconnect(Player* player)
 {
-    int playerSlot = slot.Get();
-    EffectManager::Instance().CancelAllForSlot(playerSlot);
-    CS2Kit::OnPlayerDisconnect(playerSlot);
-    PlayerManager::Instance().RemovePlayer(playerSlot);
+    if (player)
+        EffectManager::Instance().CancelAllForSlot(player->GetSlot());
 }
 
-// Engine asks us per (receiver, sender) whether the receiver should hear the sender. If the
-// sender has an active voice mute, force `bListen = false` so the engine drops the channel.
+bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)
+{
+    return ChatService::Instance().HandleSay(player, std::string(message), teamChat);
+}
+
+void AdminSystemPlugin::OnRegisterHooks()
+{
+    auto& gi = GameInterfaces::Instance();
+    SH_ADD_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
+                SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
+
+    Defer([this] {
+        auto& g = GameInterfaces::Instance();
+        SH_REMOVE_HOOK(IVEngineServer2, SetClientListening, g.Engine,
+                       SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
+    });
+}
+
 bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen)
 {
     if (bListen)
@@ -188,73 +223,4 @@ bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSl
         }
     }
     RETURN_META_VALUE(MRES_IGNORED, true);
-}
-
-void AdminSystemPlugin::Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args)
-{
-    const char* cmdName = cmd.GetName();
-    if (!cmdName)
-        return;
-
-    bool isSay = (strcmp(cmdName, "say") == 0);
-    bool isSayTeam = (strcmp(cmdName, "say_team") == 0);
-    if (!isSay && !isSayTeam)
-        return;
-
-    if (args.ArgC() < 2)
-        return;
-
-    std::string message = args.Arg(1);
-    if (message.size() >= 2 && message.front() == '"' && message.back() == '"')
-        message = message.substr(1, message.size() - 2);
-    if (message.empty())
-        return;
-
-    int playerSlot = ctx.GetPlayerSlot().Get();
-    if (playerSlot < 0 || playerSlot >= 64)
-        return;
-
-    auto* player = PlayerManager::Instance().GetPlayerBySlot(playerSlot);
-    if (!player)
-        return;
-
-    if (ChatService::Instance().HandleSay(player, message, isSayTeam))
-        RETURN_META(MRES_SUPERCEDE);
-}
-
-// ------- Hook Registration -----
-
-void AdminSystemPlugin::RegisterHooks()
-{
-    auto& gi = GameInterfaces::Instance();
-
-    SH_ADD_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame), true);
-    SH_ADD_HOOK(IServerGameClients, OnClientConnected, gi.ServerGameClients,
-                SH_MEMBER(this, &AdminSystemPlugin::Hook_OnClientConnected), false);
-    SH_ADD_HOOK(IServerGameClients, ClientDisconnect, gi.ServerGameClients,
-                SH_MEMBER(this, &AdminSystemPlugin::Hook_ClientDisconnect), true);
-    SH_ADD_HOOK(ICvar, DispatchConCommand, gi.CVar, SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand),
-                false);
-    SH_ADD_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
-                SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
-
-    Log::Info("Hooks registered.");
-}
-
-void AdminSystemPlugin::UnregisterHooks()
-{
-    auto& gi = GameInterfaces::Instance();
-
-    SH_REMOVE_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &AdminSystemPlugin::Hook_GameFrame),
-                   true);
-    SH_REMOVE_HOOK(IServerGameClients, OnClientConnected, gi.ServerGameClients,
-                   SH_MEMBER(this, &AdminSystemPlugin::Hook_OnClientConnected), false);
-    SH_REMOVE_HOOK(IServerGameClients, ClientDisconnect, gi.ServerGameClients,
-                   SH_MEMBER(this, &AdminSystemPlugin::Hook_ClientDisconnect), true);
-    SH_REMOVE_HOOK(ICvar, DispatchConCommand, gi.CVar, SH_MEMBER(this, &AdminSystemPlugin::Hook_DispatchConCommand),
-                   false);
-    SH_REMOVE_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
-                   SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
-
-    Log::Info("Hooks unregistered.");
 }

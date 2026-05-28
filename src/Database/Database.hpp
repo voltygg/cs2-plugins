@@ -10,15 +10,16 @@ namespace AdminSystem::Database
 {
 using namespace CS2Kit::Core;
 
-/** PostgreSQL connection parameters loaded from the "database" section of settings.json. */
+/** PostgreSQL connection parameters loaded from the "database" section of settings.json.
+ *  Field names match the JSON keys so they auto-deserialize via CS2Kit::Utils::Json. */
 struct DatabaseConfig
 {
-    std::string Host = "localhost";
-    int Port = 5432;
-    std::string DatabaseName = "cs2_server";
-    std::string Username = "admin_system";
-    std::string Password;
-    std::string SslMode = "prefer";
+    std::string host = "localhost";
+    int port = 5432;
+    std::string database = "cs2_server";
+    std::string username = "admin_system";
+    std::string password;
+    std::string sslMode = "prefer";
 
     std::string GetConnectionString() const;
 };

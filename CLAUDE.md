@@ -29,7 +29,7 @@ scripts/deploy.sh
 
 ```text
 src/
-├── Core/                  Plugin entry, ChatService, Config
+├── Core/                  Plugin entry (derives CS2Kit::MetamodPluginBase), ChatService, Config
 ├── Admin/
 │   ├── AdminManager       Permissions, immunity, self-target allowed
 │   ├── AdminMenu          Top-level dispatcher (Punish / Control / Effects)
@@ -47,19 +47,18 @@ references/                Read-only reference plugins — do NOT modify.
 
 ## CS2Kit Integration
 
-Admin-system uses **source inclusion**: cs2-kit `.cpp` files are compiled directly into the plugin binary. The AMBuild auto-discovers sources from `vendor/cs2-kit/src/`. All SDK dependencies (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0, nlohmann/json) live inside cs2-kit's `vendor/` — admin-system has no duplicate submodules.
-
-Include style: `#include <CS2Kit/Commands/Command.hpp>`
+Source inclusion (see Project Overview): all SDK dependencies live inside cs2-kit's `vendor/`, so admin-system has no duplicate submodules. Include style: `#include <CS2Kit/Commands/Command.hpp>`.
 
 ### Initialization Flow
 
-Plugin.cpp calls `CS2Kit::Initialize(ismm, error, maxlen, params)` which resolves all SDK interfaces internally via Metamod's `ISmmAPI`, loads built-in gamedata, sets `g_pCVar`, and initializes all subsystems. The plugin drives the player lifecycle by calling `PlayerManager::AddPlayer`/`RemovePlayer` from its connect/disconnect hooks; command handlers receive `CS2Kit::Players::Player*` directly.
+`AdminSystemPlugin` (Plugin.cpp) derives from `CS2Kit::Core::MetamodPluginBase`, which owns the ISmmPlugin boilerplate, the four standard SourceHook hooks (GameFrame, client connect/disconnect, chat dispatch), the `PlayerManager` add/remove lifecycle, and `CS2Kit::Initialize`/`Shutdown`. The plugin only provides:
 
-Hook callbacks:
+- `Info()` — plugin metadata (name, version, log tag).
+- `OnLoad(late)` — subsystem wiring (configs, DB+admins, commands, punishments, translations, game-event listeners), formerly the separate Bootstrap module. Returns false on fatal config error. Cleanup is registered via `Defer()` and runs LIFO on unload/failed load.
+- `OnPlayerConnect` — ban-on-connect kick. `OnPlayerDisconnect` — cancel effects. `OnPlayerChat` — `ChatService::HandleSay`.
+- `OnRegisterHooks` — the one custom hook, `SetClientListening` (voice-mute suppression).
 
-- `Hook_GameFrame` → `CS2Kit::OnGameFrame()` (drives Scheduler + MenuManager)
-- `Hook_ClientDisconnect` → `CS2Kit::OnPlayerDisconnect(slot)` (cleans menu state)
-- `Hook_DispatchConCommand` → dispatches chat messages to `CommandManager`
+Config loads via `CS2Kit::Utils::Json::TryDeserializeFile<Settings>` — the `Settings` struct (in Config.hpp) mirrors settings.json and auto-deserializes via nlohmann macros. A missing/unparseable settings.json (or a wrong-typed value) is fatal; missing keys keep their defaults. Use `!admin_reload` to pick up DB changes.
 
 ## Code Conventions
 
@@ -68,7 +67,7 @@ Hook callbacks:
 | Element | Convention | Example |
 | ------- | ---------- | ------- |
 | Namespaces | `PascalCase`, nested | `AdminSystem::Players` |
-| Classes/Structs | `PascalCase` | `PlayerManager`, `MenuItem` |
+| Classes/Structs | `PascalCase` | `PlayerManager`, `MenuOption` |
 | Methods | `PascalCase` | `GetPlayer()`, `HandleInput()` |
 | Member variables | `_camelCase` | `_admins`, `_states` |
 | Constants | `PascalCase` | `MaxPlayers`, `InputDebounceMs` |
