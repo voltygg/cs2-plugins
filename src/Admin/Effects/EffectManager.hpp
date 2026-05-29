@@ -27,7 +27,7 @@ struct ActiveEffect
 class EffectManager : public CS2Kit::Core::Singleton<EffectManager>
 {
 public:
-    explicit EffectManager(Token) {}
+    EffectManager() = default;
 
     bool IsActive(int slot, EffectId id) const;
 

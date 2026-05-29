@@ -21,7 +21,7 @@ namespace AdminSystem::Web
 class HttpClient : public CS2Kit::Core::Singleton<HttpClient>
 {
 public:
-    explicit HttpClient(Token) {}
+    HttpClient() = default;
 
     /** Init libcurl and spawn the worker thread. Idempotent. */
     void Start();

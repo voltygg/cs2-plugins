@@ -1,18 +1,36 @@
 #pragma once
 
 #include <CS2Kit/Core/MetamodPluginBase.hpp>
+
+#include <memory>
 #include <string_view>
 
 /**
  * Admin System plugin. The Metamod lifecycle, standard hooks, and player tracking are
  * owned by CS2Kit::Core::MetamodPluginBase; this class provides plugin metadata, subsystem
  * wiring (OnLoad), the gameplay callbacks, and the one custom hook (voice-mute listening).
+ *
+ * The plugin owns its service managers (see Managers) for one Load/Unload cycle, so their
+ * state cannot leak across `meta unload`/`meta reload`. Reach them via Sys().
  */
 class AdminSystemPlugin : public CS2Kit::Core::MetamodPluginBase
 {
+public:
+    /** Plugin-owned service managers. Constructed in OnLoad, destroyed in OnDestroyInstances. */
+    struct Managers;
+
+    ~AdminSystemPlugin();
+
+    /** The single plugin instance. */
+    static AdminSystemPlugin& Get();
+
+    /** The live managers. Valid only between OnLoad and unload. */
+    Managers& M();
+
 protected:
     CS2Kit::Core::PluginInfo Info() const override;
     bool OnLoad(bool late) override;
+    void OnDestroyInstances() override;
     void OnPlayerConnect(CS2Kit::Players::Player* player) override;
     void OnPlayerDisconnect(CS2Kit::Players::Player* player) override;
     bool OnPlayerChat(CS2Kit::Players::Player* player, std::string_view message, bool teamChat) override;
@@ -22,8 +40,14 @@ public:
     // Engine asks per (receiver, sender) whether the receiver should hear the sender; we drop
     // the channel when the sender is voice-muted.
     bool Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen);
+
+private:
+    std::unique_ptr<Managers> _managers;
 };
 
 extern AdminSystemPlugin g_AdminSystemPlugin;
+
+/** Shorthand for the plugin's live managers (AdminSystemPlugin::Get().M()). */
+AdminSystemPlugin::Managers& Sys();
 
 PLUGIN_GLOBALVARS();

@@ -19,7 +19,7 @@ using namespace CS2Kit::Core;
 class ChatService : public Singleton<ChatService>
 {
 public:
-    explicit ChatService(Token) {}
+    ChatService() = default;
 
     /**
      * Send a single-line reply to one player. Color codes inside `message` are honored;

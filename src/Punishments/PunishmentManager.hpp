@@ -22,7 +22,7 @@ using namespace CS2Kit::Core;
 class PunishmentManager : public Singleton<PunishmentManager>
 {
 public:
-    explicit PunishmentManager(Token) {}
+    PunishmentManager() = default;
 
     bool LoadActivePunishments();
     std::optional<Database::Ban> GetActiveBan(int64_t steamId);

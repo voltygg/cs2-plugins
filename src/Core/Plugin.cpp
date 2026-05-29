@@ -41,6 +41,36 @@ PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
 
 SH_DECL_HOOK3(IVEngineServer2, SetClientListening, SH_NOATTRIB, 0, bool, CPlayerSlot, CPlayerSlot, bool);
 
+// Plugin-owned services, declared in dependency order (destroyed in reverse via reset()).
+struct AdminSystemPlugin::Managers
+{
+    ConfigManager Config;
+    Database Db;
+    AdminManager Admins;
+    PunishmentManager Punishments;
+    ChatService Chat;
+    EffectManager Effects;
+    CheatCheckManager CheatCheck;
+    HttpClient Http;
+};
+
+AdminSystemPlugin::~AdminSystemPlugin() = default;
+
+AdminSystemPlugin& AdminSystemPlugin::Get()
+{
+    return g_AdminSystemPlugin;
+}
+
+AdminSystemPlugin::Managers& AdminSystemPlugin::M()
+{
+    return *_managers;
+}
+
+AdminSystemPlugin::Managers& Sys()
+{
+    return g_AdminSystemPlugin.M();
+}
+
 // ------- Subsystem wiring -----
 
 namespace
@@ -140,6 +170,10 @@ bool AdminSystemPlugin::OnLoad(bool late)
 {
     Log::Info("Loading v{}...", Info().Version);
 
+    // Construct the plugin's services up front so every Instance()/Sys() access below resolves
+    // to a freshly-built manager (no state carried over from a previous load).
+    _managers = std::make_unique<Managers>();
+
     Log::Info("Loading configurations...");
     if (!LoadConfigs())
         return false;
@@ -180,6 +214,13 @@ bool AdminSystemPlugin::OnLoad(bool late)
 
     Log::Info("All subsystems initialized.");
     return true;
+}
+
+void AdminSystemPlugin::OnDestroyInstances()
+{
+    // Runs after Defer() cleanups (which still saw live managers) and before the kit's services
+    // are destroyed. Dropping these here is what gives a meta reload clean state.
+    _managers.reset();
 }
 
 void AdminSystemPlugin::OnPlayerConnect(Player* player)

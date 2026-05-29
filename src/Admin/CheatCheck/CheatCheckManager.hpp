@@ -24,7 +24,7 @@ constexpr int MaxSlots = CS2Kit::Sdk::MaxPlayers;
 class CheatCheckManager : public CS2Kit::Core::Singleton<CheatCheckManager>
 {
 public:
-    explicit CheatCheckManager(Token) {}
+    CheatCheckManager() = default;
 
     enum class SubmitResult
     {

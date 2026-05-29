@@ -102,7 +102,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, database, puni
 class ConfigManager : public Singleton<ConfigManager>
 {
 public:
-    explicit ConfigManager(Token) {}
+    ConfigManager() = default;
 
     /** Load settings.json. Returns false if the file is missing, unparseable, or has a wrong-typed value. */
     bool LoadSettings(const std::string& path);

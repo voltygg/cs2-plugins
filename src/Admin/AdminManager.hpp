@@ -35,7 +35,7 @@ struct AdminChatStyle
 class AdminManager : public Singleton<AdminManager>
 {
 public:
-    explicit AdminManager(Token) {}
+    AdminManager() = default;
 
     bool LoadAdmins();
     bool LoadGroups();

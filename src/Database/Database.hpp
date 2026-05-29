@@ -31,7 +31,7 @@ struct DatabaseConfig
 class Database : public Singleton<Database>
 {
 public:
-    explicit Database(Token) {}
+    Database() = default;
 
     /** Initializes the database connection. */
     bool Initialize(const DatabaseConfig& config);
