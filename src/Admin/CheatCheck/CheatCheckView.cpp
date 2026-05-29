@@ -13,6 +13,8 @@
 #include <format>
 #include <string>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::CheatCheck::View
 {
 
@@ -81,11 +83,11 @@ std::string EscapeHtml(const std::string& text)
 
 void RenderPanel(int slot, const PendingCheck& pc)
 {
-    if (!CS2Kit::Core::Kit().Players.GetPlayerBySlot(slot))
+    if (!Kit().Players.GetPlayerBySlot(slot))
         return;
 
     Translations::SlotScope scope(slot);
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
 
     int64_t remain = pc.DeadlineSec - TimeUtils::Now();
     int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
@@ -114,13 +116,13 @@ void RenderPanel(int slot, const PendingCheck& pc)
     if (Sys().Config.GetCheatCheck().autoKick)
         html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick"));
 
-    CS2Kit::Core::Kit().Messages.SendCenterHtml(slot, html);
+    Kit().Messages.SendCenterHtml(slot, html);
 }
 
 void Render(int slot, const PendingCheck& pc)
 {
     Translations::SlotScope scope(slot);
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     auto& chat = Sys().Chat;
 
     chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle")));

@@ -7,6 +7,8 @@
 
 #include <CS2Kit/Players/PlayerManager.hpp>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::Actions
 {
 
@@ -18,7 +20,7 @@ ActionContext Resolve(int adminSlot, int targetSlot, char requiredFlag)
 {
     ActionContext ctx{nullptr, nullptr, PlayerController(adminSlot), PlayerController(targetSlot)};
 
-    auto& plrMgr = CS2Kit::Core::Kit().Players;
+    auto& plrMgr = Kit().Players;
     ctx.Admin = plrMgr.GetPlayerBySlot(adminSlot);
     ctx.Target = plrMgr.GetPlayerBySlot(targetSlot);
 

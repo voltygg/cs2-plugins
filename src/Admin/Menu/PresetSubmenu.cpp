@@ -9,6 +9,8 @@
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::Menu
 {
 
@@ -24,7 +26,7 @@ const int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildHealthPresetMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     MenuBuilder builder(tr.Get("action.health"));
 
     for (int hp : HealthPresets)
@@ -33,7 +35,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildHealthPresetMenu(int adminSlot, int t
         int target = targetSlot;
         builder.AddButton(std::format("{} HP", hp), [admin, target, hp](int slot) {
             Actions::DoSetHealth(admin, target, hp);
-            CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+            Kit().Menus.CloseAllMenus(slot);
         });
     }
     return builder.Build();
@@ -41,7 +43,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildHealthPresetMenu(int adminSlot, int t
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildArmorPresetMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     MenuBuilder builder(tr.Get("action.armor"));
 
     for (int armor : ArmorPresets)
@@ -50,7 +52,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildArmorPresetMenu(int adminSlot, int ta
         int target = targetSlot;
         builder.AddButton(std::format("{} AP", armor), [admin, target, armor](int slot) {
             Actions::DoSetArmor(admin, target, armor);
-            CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+            Kit().Menus.CloseAllMenus(slot);
         });
     }
     return builder.Build();
@@ -58,22 +60,22 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildArmorPresetMenu(int adminSlot, int ta
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildTeamPickerMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     MenuBuilder builder(tr.Get("action.changeTeam"));
 
     int admin = adminSlot;
     int target = targetSlot;
     builder.AddButton(tr.Get("team.ct"), [admin, target](int slot) {
         Actions::DoChangeTeam(admin, target, Actions::TeamCt);
-        CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+        Kit().Menus.CloseAllMenus(slot);
     });
     builder.AddButton(tr.Get("team.t"), [admin, target](int slot) {
         Actions::DoChangeTeam(admin, target, Actions::TeamT);
-        CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+        Kit().Menus.CloseAllMenus(slot);
     });
     builder.AddButton(tr.Get("team.spec"), [admin, target](int slot) {
         Actions::DoChangeTeam(admin, target, Actions::TeamSpec);
-        CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+        Kit().Menus.CloseAllMenus(slot);
     });
     return builder.Build();
 }

@@ -3,6 +3,8 @@
 
 #include <CS2Kit/Core/Scheduler.hpp>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::Effects
 {
 
@@ -48,7 +50,7 @@ void EffectManager::Cancel(int slot, EffectId id)
     if (entry.CancelFn)
         entry.CancelFn();
     if (entry.TimerHandle != 0)
-        CS2Kit::Core::Kit().Scheduler.Cancel(entry.TimerHandle);
+        Kit().Scheduler.Cancel(entry.TimerHandle);
     entry = ActiveEffect{};
 }
 

@@ -55,6 +55,8 @@ AdminSystem::Managers& AdminSystemPlugin::M()
     return *_managers;
 }
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem
 {
 Managers& Sys()
@@ -80,7 +82,7 @@ bool LoadConfigs()
 
 void InstallCommandCallbacks()
 {
-    auto& cmdMgr = CS2Kit::Core::Kit().Commands;
+    auto& cmdMgr = Kit().Commands;
 
     cmdMgr.SetPermissionCallback([](int64_t steamId, const std::string& permission) -> bool {
         return Sys().Admins.HasAnyPermission(steamId, permission);
@@ -123,12 +125,12 @@ void RegisterPunishmentTasks()
 
     // Sweep expired bans/voice-mutes/text-mutes every minute so timed punishments self-clear without
     // requiring a server restart or manual intervention.
-    CS2Kit::Core::Kit().Scheduler.Repeat(60'000, []() { Sys().Punishments.ExpireOldPunishments(); });
+    Kit().Scheduler.Repeat(60'000, []() { Sys().Punishments.ExpireOldPunishments(); });
 }
 
 void RegisterGameEventListeners()
 {
-    auto& events = CS2Kit::Core::Kit().Events;
+    auto& events = Kit().Events;
     events.Listen("player_death", [](IGameEvent* e) {
         if (!e)
             return;
@@ -172,37 +174,37 @@ bool AdminSystemPlugin::OnLoad(bool late)
 
     auto locale = Sys().Config.GetPlugin().locale;
     Log::Info("Translations: Setting language to {}...", locale);
-    CS2Kit::Core::Kit().Translations.SetLanguage(locale);
+    Kit().Translations.SetLanguage(locale);
 
     InstallCommandCallbacks();
 
     // Freeze the player while an admin menu is open so WASD navigation doesn't also walk them around.
-    CS2Kit::Core::Kit().Menus.SetFreezePlayer(true);
+    Kit().Menus.SetFreezePlayer(true);
 
     bool dbConnected = ConnectDatabaseAndLoadAdmins();
     if (dbConnected)
         Defer([] { Sys().Db.CloseConnection(); });
 
     Log::Info("Initializing commands...");
-    AdminSystem::Commands::RegisterAdminCommands(CS2Kit::Core::Kit().Commands);
+    AdminSystem::Commands::RegisterAdminCommands(Kit().Commands);
 
     if (dbConnected)
         RegisterPunishmentTasks();
 
     Log::Info("Loading translations...");
-    CS2Kit::Core::Kit().Translations.Load("addons/admin-system/configs/translations");
+    Kit().Translations.Load("addons/admin-system/configs/translations");
 
     RegisterGameEventListeners();
 
     // Async HTTP for cheat-check website rooms. Completions are dispatched on the game thread.
     Sys().Http.Start();
     Defer([] { Sys().Http.Stop(); });
-    uint64_t dispatchTimer = CS2Kit::Core::Kit().Scheduler.Repeat(100, [] { Sys().Http.DispatchCompletions(); });
-    Defer([dispatchTimer] { CS2Kit::Core::Kit().Scheduler.Cancel(dispatchTimer); });
+    uint64_t dispatchTimer = Kit().Scheduler.Repeat(100, [] { Sys().Http.DispatchCompletions(); });
+    Defer([dispatchTimer] { Kit().Scheduler.Cancel(dispatchTimer); });
 
     Defer([] { Sys().CheatCheck.CancelAll(); });
     Defer([] { Sys().Effects.CancelAll(); });
-    Defer([] { CS2Kit::Core::Kit().Players.Clear(); });
+    Defer([] { Kit().Players.Clear(); });
 
     Log::Info("All subsystems initialized.");
     return true;
@@ -227,7 +229,7 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
     {
         int slot = player->GetSlot();
         std::string reason = ban->Reason;
-        CS2Kit::Core::Kit().Scheduler.NextTick([slot, reason]() { PlayerController(slot).Kick(reason.c_str()); });
+        Kit().Scheduler.NextTick([slot, reason]() { PlayerController(slot).Kick(reason.c_str()); });
     }
 }
 
@@ -247,12 +249,12 @@ bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, b
 
 void AdminSystemPlugin::OnRegisterHooks()
 {
-    auto& gi = CS2Kit::Core::Kit().Interfaces;
+    auto& gi = Kit().Interfaces;
     SH_ADD_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
                 SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
 
     Defer([this] {
-        auto& g = CS2Kit::Core::Kit().Interfaces;
+        auto& g = Kit().Interfaces;
         SH_REMOVE_HOOK(IVEngineServer2, SetClientListening, g.Engine,
                        SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
     });
@@ -262,7 +264,7 @@ bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSl
 {
     if (bListen)
     {
-        if (auto* sender = CS2Kit::Core::Kit().Players.GetPlayerBySlot(iSender.Get()))
+        if (auto* sender = Kit().Players.GetPlayerBySlot(iSender.Get()))
         {
             if (Sys().Punishments.IsVoiceMuted(sender->GetSteamID()))
             {

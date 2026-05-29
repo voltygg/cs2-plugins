@@ -2,7 +2,6 @@
 
 #include "../Database/Database.hpp"
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -99,7 +98,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, database, puni
  * Loads and owns settings.json. All admin/group data is owned by the database
  * (`admins` and `admin_groups` tables) — this manager only exposes plugin/DB/punishment/chat config.
  */
-class ConfigManager : public Singleton<ConfigManager>
+class ConfigManager
 {
 public:
     ConfigManager() = default;

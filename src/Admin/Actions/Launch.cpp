@@ -8,6 +8,8 @@
 #include <mathlib/vector.h>
 #include <random>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::Actions
 {
 
@@ -46,7 +48,7 @@ void DoLaunch(int adminSlot, int targetSlot)
 
     int slot = targetSlot;
 
-    CS2Kit::Core::Kit().Scheduler.Delay(FallProtectMs, [slot]() {
+    Kit().Scheduler.Delay(FallProtectMs, [slot]() {
         PlayerController pc(slot);
         if (!pc.IsValid())
         {

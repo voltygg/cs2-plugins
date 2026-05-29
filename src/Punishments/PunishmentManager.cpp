@@ -15,6 +15,8 @@
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Punishments
 {
 
@@ -33,11 +35,11 @@ namespace
 // that were already negotiated before the (un)mute landed.
 void RefreshVoiceChannel(int64_t senderSteamId, bool muted)
 {
-    auto* engine = CS2Kit::Core::Kit().Interfaces.Engine;
+    auto* engine = Kit().Interfaces.Engine;
     if (!engine)
         return;
 
-    auto* sender = CS2Kit::Core::Kit().Players.GetPlayerBySteamId(senderSteamId);
+    auto* sender = Kit().Players.GetPlayerBySteamId(senderSteamId);
     if (!sender)
         return;
 
@@ -46,7 +48,7 @@ void RefreshVoiceChannel(int64_t senderSteamId, bool muted)
     {
         if (i == senderSlot)
             continue;
-        if (!CS2Kit::Core::Kit().Players.GetPlayerBySlot(i))
+        if (!Kit().Players.GetPlayerBySlot(i))
             continue;
         engine->SetClientListening(CPlayerSlot(i), CPlayerSlot(senderSlot), !muted);
     }
@@ -164,7 +166,7 @@ bool PunishmentManager::IssueBan(Ban& ban)
         _activeBans[ban.TargetSteamId] = ban;
 
         // Kick the player if currently connected.
-        if (auto* player = CS2Kit::Core::Kit().Players.GetPlayerBySteamId(ban.TargetSteamId))
+        if (auto* player = Kit().Players.GetPlayerBySteamId(ban.TargetSteamId))
         {
             CS2Kit::Sdk::PlayerController controller(player->GetSlot());
             controller.Kick(ban.Reason.c_str());

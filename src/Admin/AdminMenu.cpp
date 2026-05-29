@@ -12,6 +12,8 @@
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin
 {
 
@@ -21,9 +23,9 @@ using CS2Kit::Utils::Translations;
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     auto& adminMgr = Sys().Admins;
-    auto& plrMgr = CS2Kit::Core::Kit().Players;
+    auto& plrMgr = Kit().Players;
 
     auto* adminPlayer = plrMgr.GetPlayerBySlot(adminSlot);
     if (!adminPlayer)

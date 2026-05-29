@@ -17,6 +17,8 @@
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::Menu
 {
 
@@ -33,7 +35,7 @@ namespace
 void AddEffectToggle(MenuBuilder& builder, const std::string& base, bool enabled, int admin, int target, EffectId id,
                      void (*action)(int, int))
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     builder.AddToggle(
         base, tr.Get("effectState.on"), tr.Get("effectState.off"),
         [target, id](int) { return Sys().Effects.IsActive(target, id); },
@@ -50,19 +52,19 @@ void AddSimple(MenuBuilder& builder, const std::string& label, bool enabled, int
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsMenu(int adminSlot)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     return BuildPlayerPicker(adminSlot, tr.Get("category.effects"), [](int admin, int target) {
         auto actions = BuildEffectsActionsMenu(admin, target);
         if (actions)
-            CS2Kit::Core::Kit().Menus.OpenMenu(admin, actions);
+            Kit().Menus.OpenMenu(admin, actions);
     });
 }
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     auto& adminMgr = Sys().Admins;
-    auto& plrMgr = CS2Kit::Core::Kit().Players;
+    auto& plrMgr = Kit().Players;
 
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
     auto* target = plrMgr.GetPlayerBySlot(targetSlot);
@@ -88,13 +90,13 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
     builder.AddButton(
         tr.Get("action.swap"),
         [adminSlot, targetSlot](int slot) {
-            auto picker = BuildPlayerPicker(adminSlot, CS2Kit::Core::Kit().Translations.Get("common.selectSwapTarget"),
+            auto picker = BuildPlayerPicker(adminSlot, Kit().Translations.Get("common.selectSwapTarget"),
                                             [first = targetSlot](int a, int second) {
                                                 Actions::DoSwap(a, first, second);
-                                                CS2Kit::Core::Kit().Menus.CloseAllMenus(a);
+                                                Kit().Menus.CloseAllMenus(a);
                                             });
             if (picker)
-                CS2Kit::Core::Kit().Menus.OpenMenu(slot, picker);
+                Kit().Menus.OpenMenu(slot, picker);
         },
         hasS);
 

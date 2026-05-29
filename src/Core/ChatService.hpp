@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <cstdint>
 #include <string>
@@ -16,7 +15,7 @@ using namespace CS2Kit::Core;
  * Renders admin-system chat semantics on top of CS2Kit's chat helpers:
  * styled per-command replies, punishment broadcasts, and prefix-tagged admin chat.
  */
-class ChatService : public Singleton<ChatService>
+class ChatService
 {
 public:
     ChatService() = default;

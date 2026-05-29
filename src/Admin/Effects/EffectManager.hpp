@@ -2,7 +2,6 @@
 
 #include "EffectId.hpp"
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <array>
 #include <cstdint>
 #include <functional>
@@ -24,7 +23,7 @@ struct ActiveEffect
     std::function<void()> CancelFn;
 };
 
-class EffectManager : public CS2Kit::Core::Singleton<EffectManager>
+class EffectManager
 {
 public:
     EffectManager() = default;

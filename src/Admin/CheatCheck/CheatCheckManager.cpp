@@ -17,6 +17,8 @@
 #include <format>
 #include <nlohmann/json.hpp>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::CheatCheck
 {
 
@@ -47,7 +49,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     if (!ValidSlot(adminSlot) || !ValidSlot(targetSlot))
         return false;
 
-    auto& plrMgr = CS2Kit::Core::Kit().Players;
+    auto& plrMgr = Kit().Players;
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
     auto* target = plrMgr.GetPlayerBySlot(targetSlot);
     if (!admin || !target)
@@ -77,7 +79,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     targetCtrl.SetMoveType(MoveType::None);
 
     int interval = cfg.panelRefreshMs > 0 ? cfg.panelRefreshMs : 1000;
-    pc.TickTimer = CS2Kit::Core::Kit().Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
+    pc.TickTimer = Kit().Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
 
     ResolveUrl(targetSlot);
     View::Render(targetSlot, pc);
@@ -109,7 +111,7 @@ void CheatCheckManager::RequestRoom(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
     const auto& room = Sys().Config.GetCheatCheck().websiteAutoRoom;
-    auto* target = CS2Kit::Core::Kit().Players.GetPlayerBySlot(targetSlot);
+    auto* target = Kit().Players.GetPlayerBySlot(targetSlot);
 
     if (!target || room.createRoomUrl.empty())
     {
@@ -171,7 +173,7 @@ void CheatCheckManager::OnRoomFailed(int targetSlot)
     FallbackToFixed(pc);
 
     ReplyToAdmin(
-        pc, [] { return std::format("{}{}", ChatColors::Red, CS2Kit::Core::Kit().Translations.Get("cheatCheck.apiFailed")); });
+        pc, [] { return std::format("{}{}", ChatColors::Red, Kit().Translations.Get("cheatCheck.apiFailed")); });
 
     View::Render(targetSlot, pc);
 }
@@ -179,7 +181,7 @@ void CheatCheckManager::OnRoomFailed(int targetSlot)
 void CheatCheckManager::RelayCheckerUrl(int targetSlot, const std::string& checkerUrl)
 {
     ReplyToAdmin(_checks[targetSlot], [&checkerUrl] {
-        auto& tr = CS2Kit::Core::Kit().Translations;
+        auto& tr = Kit().Translations;
         return std::format("{}{} {}{}", ChatColors::Green, tr.Get("cheatCheck.checkerUrl"), ChatColors::Olive,
                            checkerUrl);
     });
@@ -214,10 +216,10 @@ CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSl
 
     pc.ResolvedUrl = link;
 
-    auto* caller = CS2Kit::Core::Kit().Players.GetPlayerBySlot(callerSlot);
+    auto* caller = Kit().Players.GetPlayerBySlot(callerSlot);
     std::string name = caller ? caller->GetName() : std::string();
     ReplyToAdmin(pc, [&] {
-        auto& tr = CS2Kit::Core::Kit().Translations;
+        auto& tr = Kit().Translations;
         return std::format("{}{} {}{}: {}{}", ChatColors::Green, tr.Get("cheatCheck.linkReceived"), ChatColors::Default,
                            name, ChatColors::Olive, link);
     });
@@ -236,7 +238,7 @@ void CheatCheckManager::FallbackToFixed(PendingCheck& pc)
 
 void CheatCheckManager::ReplyToAdmin(const PendingCheck& pc, const std::function<std::string()>& buildMessage)
 {
-    auto* adminPlayer = CS2Kit::Core::Kit().Players.GetPlayerBySlot(pc.AdminSlot);
+    auto* adminPlayer = Kit().Players.GetPlayerBySlot(pc.AdminSlot);
     if (!adminPlayer || adminPlayer->GetSteamID() != pc.AdminSteamId)
         return;
 
@@ -248,8 +250,8 @@ void CheatCheckManager::ResetCheck(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
     if (pc.TickTimer)
-        CS2Kit::Core::Kit().Scheduler.Cancel(pc.TickTimer);
-    CS2Kit::Core::Kit().Messages.ClearCenterHtml(targetSlot);
+        Kit().Scheduler.Cancel(pc.TickTimer);
+    Kit().Messages.ClearCenterHtml(targetSlot);
     pc = PendingCheck{};
 }
 
@@ -258,7 +260,7 @@ bool CheatCheckManager::Cancel(int targetSlot)
     if (!ValidSlot(targetSlot) || !_checks[targetSlot].Active)
         return false;
 
-    auto* target = CS2Kit::Core::Kit().Players.GetPlayerBySlot(targetSlot);
+    auto* target = Kit().Players.GetPlayerBySlot(targetSlot);
     std::string targetName = target ? target->GetName() : std::string();
 
     const MoveType restore = _checks[targetSlot].PriorMoveType;
@@ -274,7 +276,7 @@ void CheatCheckManager::Expire(int targetSlot)
     const auto& cfg = Sys().Config.GetCheatCheck();
     const bool kick = cfg.autoKick;
 
-    auto* target = CS2Kit::Core::Kit().Players.GetPlayerBySlot(targetSlot);
+    auto* target = Kit().Players.GetPlayerBySlot(targetSlot);
     std::string targetName = target ? target->GetName() : std::string();
 
     const MoveType restore = _checks[targetSlot].PriorMoveType;

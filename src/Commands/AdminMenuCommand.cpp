@@ -8,6 +8,8 @@
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Commands
 {
 
@@ -28,14 +30,14 @@ CommandResult HandleAdminMenu(Player* admin, const std::vector<std::string>& /*a
 
     // Register this admin's panel language so the menu builds and renders in it.
     const auto* row = Sys().Admins.GetAdmin(admin->GetSteamID());
-    CS2Kit::Core::Kit().Translations.SetPlayerLanguage(slot, row ? row->Language : std::string("en"));
+    Kit().Translations.SetPlayerLanguage(slot, row ? row->Language : std::string("en"));
 
     Translations::SlotScope langScope(slot);
     auto menu = AdminSystem::Admin::BuildAdminMainMenu(slot);
     if (!menu)
         return {false, "Failed to open admin menu"};
 
-    CS2Kit::Core::Kit().Menus.OpenMenu(slot, menu);
+    Kit().Menus.OpenMenu(slot, menu);
     return {true, ""};  // menu UI is the feedback; no chat reply needed
 }
 

@@ -9,6 +9,8 @@
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Commands
 {
 
@@ -24,7 +26,7 @@ namespace
 CommandResult HandleCheatCheckLink(Player* caller, const std::vector<std::string>& args)
 {
     Translations::SlotScope scope(caller->GetSlot());
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
 
     switch (Sys().CheatCheck.SubmitPlayerLink(caller->GetSlot(), args[0]))
     {
@@ -46,7 +48,7 @@ CommandResult HandleCheatCheckCancel(Player* admin, const std::vector<std::strin
         return {false, err};
 
     Translations::SlotScope scope(admin->GetSlot());
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
 
     if (!AdminSystem::Admin::Actions::DoCancelCheck(admin->GetSlot(), target->GetSlot()))
         return {false, tr.Get("cheatCheck.noActiveCheck")};

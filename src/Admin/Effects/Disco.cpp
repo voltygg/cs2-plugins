@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <memory>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::Effects
 {
 
@@ -51,7 +53,7 @@ void ToggleDisco(int adminSlot, int targetSlot)
 
     int slot = targetSlot;
     auto idx = std::make_shared<size_t>(0);
-    uint64_t timer = CS2Kit::Core::Kit().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
+    uint64_t timer = Kit().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
         CS2Kit::Sdk::PlayerController pc(slot);
         if (!pc.IsValid() || !pc.IsAlive())
             return;
@@ -72,7 +74,7 @@ void ToggleDisco(int adminSlot, int targetSlot)
 
     mgr.Apply(targetSlot, EffectId::Disco, timer, std::move(cancel), /*roundScoped*/ true);
 
-    CS2Kit::Core::Kit().Scheduler.Delay(DiscoDurationSec * 1000, [slot]() {
+    Kit().Scheduler.Delay(DiscoDurationSec * 1000, [slot]() {
         Sys().Effects.Cancel(slot, EffectId::Disco);
     });
 

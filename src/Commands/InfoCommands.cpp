@@ -9,6 +9,8 @@
 
 #include <format>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Commands
 {
 
@@ -22,7 +24,7 @@ namespace
 
 CommandResult HandleWho(Player* admin, const std::vector<std::string>& /*args*/)
 {
-    auto& plrMgr = CS2Kit::Core::Kit().Players;
+    auto& plrMgr = Kit().Players;
     auto& adminMgr = Sys().Admins;
     auto players = plrMgr.GetAllPlayers();
 

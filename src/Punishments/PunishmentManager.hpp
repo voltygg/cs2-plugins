@@ -5,7 +5,6 @@
 #include "../Database/Entities/VoiceMute.hpp"
 #include "../Database/Entities/Warning.hpp"
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -19,7 +18,7 @@ using namespace CS2Kit::Core;
  * Manages active punishments (bans, voice mutes, text mutes, warnings).
  * Caches active punishments in memory and syncs with the database.
  */
-class PunishmentManager : public Singleton<PunishmentManager>
+class PunishmentManager
 {
 public:
     PunishmentManager() = default;

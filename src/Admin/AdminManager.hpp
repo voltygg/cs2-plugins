@@ -3,7 +3,6 @@
 #include "../Database/Entities/Admin.hpp"
 #include "../Database/Entities/AdminGroup.hpp"
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <string>
 #include <unordered_map>
 
@@ -32,7 +31,7 @@ struct AdminChatStyle
  * Admins are loaded from JSON config and/or database. Flags are resolved into
  * uint32_t bitmasks for O(1) permission checks ('a'=bit0 ... 'z'=bit25).
  */
-class AdminManager : public Singleton<AdminManager>
+class AdminManager
 {
 public:
     AdminManager() = default;

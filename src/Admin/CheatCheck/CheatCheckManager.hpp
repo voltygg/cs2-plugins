@@ -3,7 +3,6 @@
 #include "../../Web/HttpResult.hpp"
 #include "PendingCheck.hpp"
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
 #include <array>
@@ -21,7 +20,7 @@ constexpr int MaxSlots = CS2Kit::Sdk::MaxPlayers;
  * chat link, runs a countdown, and auto-kicks (or unfreezes) on timeout. All methods run on the
  * game thread; async HTTP completions are marshalled back via HttpClient::DispatchCompletions before reaching here.
  */
-class CheatCheckManager : public CS2Kit::Core::Singleton<CheatCheckManager>
+class CheatCheckManager
 {
 public:
     CheatCheckManager() = default;

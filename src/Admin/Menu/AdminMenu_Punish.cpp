@@ -18,6 +18,8 @@
 #include <string>
 #include <string_view>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::Menu
 {
 
@@ -84,7 +86,7 @@ static std::shared_ptr<::CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
     int adminSlot, int targetSlot, const std::string& actionName,
     std::function<void(int slot, int target, int duration)> onDuration)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
 
     struct DurationEntry
     {
@@ -105,7 +107,7 @@ static std::shared_ptr<::CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
         auto callback = onDuration;
         builder.AddButton(tr.Get(dur.Key), [callback, target, secs = dur.Seconds](int slot) {
             callback(slot, target, secs);
-            CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+            Kit().Menus.CloseAllMenus(slot);
         });
     }
 
@@ -120,7 +122,7 @@ static std::shared_ptr<::CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
                 if (seconds < 0)
                     return false;  // re-prompt
                 callback(slot, target, seconds);
-                CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+                Kit().Menus.CloseAllMenus(slot);
                 return true;
             },
             32);
@@ -133,7 +135,7 @@ template <typename PunishmentT, typename IssueFunc>
 static std::function<void(int, int, int)> MakePunishmentCallback(IssueFunc issueFunc)
 {
     return [issueFunc](int adminSlot, int target, int duration) {
-        auto& plrMgr = CS2Kit::Core::Kit().Players;
+        auto& plrMgr = Kit().Players;
         auto* a = plrMgr.GetPlayerBySlot(adminSlot);
         auto* t = plrMgr.GetPlayerBySlot(target);
         if (a && t)
@@ -160,19 +162,19 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildDurationMenu(int adminSlot, int targe
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishMenu(int adminSlot)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     return BuildPlayerPicker(adminSlot, tr.Get("category.punish"), [](int admin, int target) {
         auto actions = BuildPunishActionsMenu(admin, target);
         if (actions)
-            CS2Kit::Core::Kit().Menus.OpenMenu(admin, actions);
+            Kit().Menus.OpenMenu(admin, actions);
     });
 }
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     auto& adminMgr = Sys().Admins;
-    auto& plrMgr = CS2Kit::Core::Kit().Players;
+    auto& plrMgr = Kit().Players;
 
     auto* target = plrMgr.GetPlayerBySlot(targetSlot);
     if (!target)
@@ -191,7 +193,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
     builder.AddButton(
         tr.Get("action.kick"),
         [targetSlot](int slot) {
-            auto& plrMgr = CS2Kit::Core::Kit().Players;
+            auto& plrMgr = Kit().Players;
             auto* a = plrMgr.GetPlayerBySlot(slot);
             auto* t = plrMgr.GetPlayerBySlot(targetSlot);
             if (a && t)
@@ -201,7 +203,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
                 Sys().Chat.BroadcastPunishment("kicked", a->GetName(), t->GetName(),
                                                                                reason, 0);
             }
-            CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+            Kit().Menus.CloseAllMenus(slot);
         },
         adminMgr.HasPermission(adminSid, 'c') && canTarget);
 
@@ -209,9 +211,9 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
         tr.Get("action.ban"),
         [targetSlot](int slot) {
             auto durMenu = BuildTimedPunishmentMenu(
-                slot, targetSlot, CS2Kit::Core::Kit().Translations.Get("action.ban"),
+                slot, targetSlot, Kit().Translations.Get("action.ban"),
                 MakePunishmentCallback<Ban>([](PunishmentManager& pm, Ban& ban) { pm.IssueBan(ban); }));
-            CS2Kit::Core::Kit().Menus.OpenMenu(slot, durMenu);
+            Kit().Menus.OpenMenu(slot, durMenu);
         },
         adminMgr.HasPermission(adminSid, 'd') && canTarget);
 
@@ -219,10 +221,10 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
         tr.Get("action.voiceMute"),
         [targetSlot](int slot) {
             auto durMenu = BuildTimedPunishmentMenu(
-                slot, targetSlot, CS2Kit::Core::Kit().Translations.Get("action.voiceMute"),
+                slot, targetSlot, Kit().Translations.Get("action.voiceMute"),
                 MakePunishmentCallback<VoiceMute>(
                     [](PunishmentManager& pm, VoiceMute& mute) { pm.IssueVoiceMute(mute); }));
-            CS2Kit::Core::Kit().Menus.OpenMenu(slot, durMenu);
+            Kit().Menus.OpenMenu(slot, durMenu);
         },
         adminMgr.HasPermission(adminSid, 'o') && canTarget);
 
@@ -230,17 +232,17 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
         tr.Get("action.textMute"),
         [targetSlot](int slot) {
             auto durMenu = BuildTimedPunishmentMenu(
-                slot, targetSlot, CS2Kit::Core::Kit().Translations.Get("action.textMute"),
+                slot, targetSlot, Kit().Translations.Get("action.textMute"),
                 MakePunishmentCallback<TextMute>(
                     [](PunishmentManager& pm, TextMute& mute) { pm.IssueTextMute(mute); }));
-            CS2Kit::Core::Kit().Menus.OpenMenu(slot, durMenu);
+            Kit().Menus.OpenMenu(slot, durMenu);
         },
         adminMgr.HasPermission(adminSid, 'p') && canTarget);
 
     builder.AddButton(
         tr.Get("action.warn"),
         [targetSlot](int slot) {
-            auto& plrMgr = CS2Kit::Core::Kit().Players;
+            auto& plrMgr = Kit().Players;
             auto* a = plrMgr.GetPlayerBySlot(slot);
             auto* t = plrMgr.GetPlayerBySlot(targetSlot);
             if (a && t)
@@ -253,7 +255,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
                 warn.Reason = "Admin menu";
                 Sys().Punishments.IssueWarning(warn);
             }
-            CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+            Kit().Menus.CloseAllMenus(slot);
         },
         adminMgr.HasPermission(adminSid, 'q') && canTarget);
 

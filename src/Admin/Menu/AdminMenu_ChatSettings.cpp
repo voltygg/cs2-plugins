@@ -14,6 +14,8 @@
 #include <string_view>
 #include <unordered_map>
 
+using CS2Kit::Core::Kit;
+
 namespace AdminSystem::Admin::Menu
 {
 
@@ -61,7 +63,7 @@ int IndexForColor(std::string_view color)
 
 std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices()
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = Kit().Translations;
     const auto& keys = ColorLabelKeys();
 
     std::vector<ChoiceOption<std::string>::Choice> choices;
@@ -140,14 +142,14 @@ void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t stea
 std::string LanguageLabel(const std::string& code)
 {
     std::string key = "lang." + code;
-    std::string label = CS2Kit::Core::Kit().Translations.Get(key);
+    std::string label = Kit().Translations.Get(key);
     return label == key ? code : label;
 }
 
 // Sorted so the choice order is stable across the rebuild we trigger on commit.
 std::vector<std::string> AvailableLanguagesSorted()
 {
-    auto langs = CS2Kit::Core::Kit().Translations.GetAvailableLanguages();
+    auto langs = Kit().Translations.GetAvailableLanguages();
     std::sort(langs.begin(), langs.end());
     return langs;
 }
@@ -175,15 +177,15 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<in
     *pendingIdx = IndexForLanguage(langs, admin ? admin->Language : std::string("en"));
 
     builder.AddChoice<std::string>(
-        CS2Kit::Core::Kit().Translations.Get("chat.panelLanguage"), std::move(choices),
+        Kit().Translations.Get("chat.panelLanguage"), std::move(choices),
         [pendingIdx](int) { return *pendingIdx; }, [pendingIdx](int, int newIdx) { *pendingIdx = newIdx; },
         [steamId](int menuSlot, const std::string& lang) {
             Sys().Admins.UpdateLanguage(steamId, lang);
-            CS2Kit::Core::Kit().Translations.SetPlayerLanguage(menuSlot, lang);
+            Kit().Translations.SetPlayerLanguage(menuSlot, lang);
             // Rebuild so the baked labels re-render in the new language. Use the by-value
             // menuSlot (not a capture): CloseMenu frees this option and its captures, so
             // nothing read after it may live in the lambda's closure.
-            auto& mgr = CS2Kit::Core::Kit().Menus;
+            auto& mgr = Kit().Menus;
             mgr.CloseMenu(menuSlot);
             mgr.OpenMenu(menuSlot, BuildChatSettingsMenu(menuSlot));
         });
@@ -193,8 +195,8 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<in
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildChatSettingsMenu(int adminSlot)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
-    auto* admin = CS2Kit::Core::Kit().Players.GetPlayerBySlot(adminSlot);
+    auto& tr = Kit().Translations;
+    auto* admin = Kit().Players.GetPlayerBySlot(adminSlot);
     if (!admin)
         return nullptr;
     int64_t steamId = admin->GetSteamID();

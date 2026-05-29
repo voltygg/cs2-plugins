@@ -2,7 +2,6 @@
 
 #include "HttpResult.hpp"
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
@@ -18,7 +17,7 @@ namespace AdminSystem::Web
  * thread; completions are queued and replayed on the game thread via `DispatchCompletions()` so
  * callbacks may safely touch engine state. No engine API may be called from the completion before it.
  */
-class HttpClient : public CS2Kit::Core::Singleton<HttpClient>
+class HttpClient
 {
 public:
     HttpClient() = default;
