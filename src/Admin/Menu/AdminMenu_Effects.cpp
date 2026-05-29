@@ -73,8 +73,8 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
 
     int64_t adminSid = admin->GetSteamID();
     int64_t targetSid = target->GetSteamID();
-    bool hasF = adminMgr.CanTarget(adminSid, targetSid) && adminMgr.HasPermission(adminSid, 'f');
-    bool hasS = adminMgr.CanTarget(adminSid, targetSid) && adminMgr.HasPermission(adminSid, 's');
+    bool hasF = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Fun);
+    bool hasS = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Control);
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects"), target->GetName()));
 

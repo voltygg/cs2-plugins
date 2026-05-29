@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Core/Permissions.hpp"
 #include "../Database/Entities/Admin.hpp"
 #include "../Database/Entities/AdminGroup.hpp"
 
@@ -42,6 +43,7 @@ public:
     bool IsAdmin(int64_t steamId);
     const Database::Admin* GetAdmin(int64_t steamId);
     bool HasPermission(int64_t steamId, char flag);
+    bool HasPermission(int64_t steamId, Permission flag) { return HasPermission(steamId, static_cast<char>(flag)); }
     bool HasAllPermissions(int64_t steamId, const std::string& flags);
     bool HasAnyPermission(int64_t steamId, const std::string& flags);
     int GetImmunity(int64_t steamId);
@@ -49,6 +51,12 @@ public:
      * Check if an admin can target a specific player based on their immunity levels.
      */
     bool CanTarget(int64_t adminSteamId, int64_t targetSteamId);
+
+    /** True if the admin both holds @p flag and outranks the target (HasPermission && CanTarget). */
+    bool CanExecuteOn(int64_t adminSteamId, int64_t targetSteamId, Permission flag)
+    {
+        return HasPermission(adminSteamId, flag) && CanTarget(adminSteamId, targetSteamId);
+    }
     void AddAdmin(const Database::Admin& admin);
     void AddGroup(const Database::AdminGroup& group);
     void RemoveAdmin(int64_t steamId);

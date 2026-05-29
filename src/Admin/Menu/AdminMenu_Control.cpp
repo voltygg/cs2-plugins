@@ -60,7 +60,7 @@ void AddFlagToggle(MenuBuilder& builder, const std::string& base, bool enabled, 
         base, tr.Get("effectState.on"), tr.Get("effectState.off"),
         [target, flag](int) {
             PlayerController pc(target);
-            return pc.IsValid() && (pc.GetPawnField<uint32_t>("CBaseEntity", "m_fFlags") & flag) != 0;
+            return pc.IsValid() && (pc.GetFlags() & flag) != 0;
         },
         [admin, target, action](int) { action(admin, target); }, enabled);
 }
@@ -101,7 +101,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
         return nullptr;
 
     int64_t adminSid = admin->GetSteamID();
-    bool hasB = adminMgr.HasPermission(adminSid, 'b');
+    bool hasB = adminMgr.HasPermission(adminSid, Permission::Hide);
 
     MenuBuilder builder(tr.Get("category.control"));
 
@@ -142,10 +142,9 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
 
     int64_t adminSid = admin->GetSteamID();
     int64_t targetSid = target->GetSteamID();
-    bool canTarget = adminMgr.CanTarget(adminSid, targetSid);
-    bool hasS = canTarget && adminMgr.HasPermission(adminSid, 's');
-    bool hasH = canTarget && adminMgr.HasPermission(adminSid, 'h');
-    bool hasK = canTarget && adminMgr.HasPermission(adminSid, 'k');
+    bool hasS = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Control);
+    bool hasH = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Health);
+    bool hasK = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::CheatCheck);
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control"), target->GetName()));
 

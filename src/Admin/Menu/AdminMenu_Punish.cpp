@@ -186,7 +186,6 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
 
     int64_t adminSid = admin->GetSteamID();
     int64_t targetSid = target->GetSteamID();
-    bool canTarget = adminMgr.CanTarget(adminSid, targetSid);
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.punish"), target->GetName()));
 
@@ -205,7 +204,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
             }
             Kit().Menus.CloseAllMenus(slot);
         },
-        adminMgr.HasPermission(adminSid, 'c') && canTarget);
+        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Kick));
 
     builder.AddButton(
         tr.Get("action.ban"),
@@ -215,7 +214,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
                 MakePunishmentCallback<Ban>([](PunishmentManager& pm, Ban& ban) { pm.IssueBan(ban); }));
             Kit().Menus.OpenMenu(slot, durMenu);
         },
-        adminMgr.HasPermission(adminSid, 'd') && canTarget);
+        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Ban));
 
     builder.AddButton(
         tr.Get("action.voiceMute"),
@@ -226,7 +225,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
                     [](PunishmentManager& pm, VoiceMute& mute) { pm.IssueVoiceMute(mute); }));
             Kit().Menus.OpenMenu(slot, durMenu);
         },
-        adminMgr.HasPermission(adminSid, 'o') && canTarget);
+        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::VoiceMute));
 
     builder.AddButton(
         tr.Get("action.textMute"),
@@ -237,7 +236,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
                     [](PunishmentManager& pm, TextMute& mute) { pm.IssueTextMute(mute); }));
             Kit().Menus.OpenMenu(slot, durMenu);
         },
-        adminMgr.HasPermission(adminSid, 'p') && canTarget);
+        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::TextMute));
 
     builder.AddButton(
         tr.Get("action.warn"),
@@ -257,7 +256,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
             }
             Kit().Menus.CloseAllMenus(slot);
         },
-        adminMgr.HasPermission(adminSid, 'q') && canTarget);
+        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Warn));
 
     return builder.Build();
 }

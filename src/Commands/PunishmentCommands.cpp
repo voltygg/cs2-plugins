@@ -3,6 +3,7 @@
 
 #include "../Core/ChatService.hpp"
 #include "../Core/Config.hpp"
+#include "../Core/Permissions.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "CommandHelpers.hpp"
 
@@ -198,7 +199,7 @@ void RegisterPunishmentCommands(CommandManager& mgr)
     mgr.Register(CommandBuilder("kick")
                      .WithDescription("Kick a player.")
                      .WithUsage("!kick <target> [reason]")
-                     .RequirePermission("c")
+                     .RequirePermission(Flag(Permission::Kick))
                      .WithArgs(1)
                      .OnExecute(HandleKick)
                      .Build());
@@ -206,7 +207,7 @@ void RegisterPunishmentCommands(CommandManager& mgr)
     mgr.Register(CommandBuilder("ban")
                      .WithDescription("Ban a player for the given number of minutes (0 = permanent).")
                      .WithUsage("!ban <target> <minutes> [reason]")
-                     .RequirePermission("d")
+                     .RequirePermission(Flag(Permission::Ban))
                      .WithArgs(2)
                      .OnExecute(HandleBan)
                      .Build());
@@ -214,7 +215,7 @@ void RegisterPunishmentCommands(CommandManager& mgr)
     mgr.Register(CommandBuilder("unban")
                      .WithDescription("Lift an active ban for the given SteamID.")
                      .WithUsage("!unban <steamId> [reason]")
-                     .RequirePermission("e")
+                     .RequirePermission(Flag(Permission::Unban))
                      .WithArgs(1)
                      .OnExecute(HandleUnban)
                      .Build());
@@ -223,7 +224,7 @@ void RegisterPunishmentCommands(CommandManager& mgr)
                      .WithAliases({"vmute"})
                      .WithDescription("Voice-mute a player for the given number of minutes (0 = permanent).")
                      .WithUsage("!voice_mute <target> <minutes> [reason]")
-                     .RequirePermission("o")
+                     .RequirePermission(Flag(Permission::VoiceMute))
                      .WithArgs(2)
                      .OnExecute(HandleVoiceMute)
                      .Build());
@@ -232,7 +233,7 @@ void RegisterPunishmentCommands(CommandManager& mgr)
                      .WithAliases({"vunmute"})
                      .WithDescription("Lift an active voice mute on the target.")
                      .WithUsage("!voice_unmute <target>")
-                     .RequirePermission("o")
+                     .RequirePermission(Flag(Permission::VoiceMute))
                      .WithArgs(1, 1)
                      .OnExecute(HandleVoiceUnmute)
                      .Build());
@@ -242,7 +243,7 @@ void RegisterPunishmentCommands(CommandManager& mgr)
             .WithAliases({"tmute"})
             .WithDescription("Text-mute (chat-block) a player for the given number of minutes (0 = permanent).")
             .WithUsage("!text_mute <target> <minutes> [reason]")
-            .RequirePermission("p")
+            .RequirePermission(Flag(Permission::TextMute))
             .WithArgs(2)
             .OnExecute(HandleTextMute)
             .Build());
@@ -251,7 +252,7 @@ void RegisterPunishmentCommands(CommandManager& mgr)
                      .WithAliases({"tunmute"})
                      .WithDescription("Lift an active text mute on the target.")
                      .WithUsage("!text_unmute <target>")
-                     .RequirePermission("p")
+                     .RequirePermission(Flag(Permission::TextMute))
                      .WithArgs(1, 1)
                      .OnExecute(HandleTextUnmute)
                      .Build());
@@ -259,7 +260,7 @@ void RegisterPunishmentCommands(CommandManager& mgr)
     mgr.Register(CommandBuilder("warn")
                      .WithDescription("Issue a warning. Auto-escalates to a ban once the threshold is reached.")
                      .WithUsage("!warn <target> [reason]")
-                     .RequirePermission("q")
+                     .RequirePermission(Flag(Permission::Warn))
                      .WithArgs(1)
                      .OnExecute(HandleWarn)
                      .Build());
