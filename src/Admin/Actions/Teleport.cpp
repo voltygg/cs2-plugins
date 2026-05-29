@@ -1,44 +1,39 @@
 #include "Teleport.hpp"
 
-#include "ActionContext.hpp"
-
 #include <mathlib/vector.h>
 
 namespace AdminSystem::Admin::Actions
 {
 
-using OptKey = std::optional<std::string>;
-
-void DoBring(int adminSlot, int targetSlot)
+namespace
 {
-    RunAction(adminSlot, targetSlot, 's', [](const ActionContext& ctx) -> OptKey {
-        if (!ctx.AdminCtrl.IsValid() || !ctx.TargetCtrl.IsAlive())
-            return std::nullopt;
-        Vector dest = ctx.AdminCtrl.GetAbsOrigin();
-        Vector zeroVel{0.0f, 0.0f, 0.0f};
-        ctx.TargetCtrl.Teleport(&dest, nullptr, &zeroVel);
-        return "broadcast.brought";
-    });
-}
+const Vector ZeroVelocity{0.0f, 0.0f, 0.0f};
+}  // namespace
 
-void DoGoto(int adminSlot, int targetSlot)
-{
-    RunAction(adminSlot, targetSlot, 's', [](const ActionContext& ctx) -> OptKey {
-        if (!ctx.AdminCtrl.IsValid() || !ctx.TargetCtrl.IsAlive())
-            return std::nullopt;
-        Vector dest = ctx.TargetCtrl.GetAbsOrigin();
-        Vector zeroVel{0.0f, 0.0f, 0.0f};
-        ctx.AdminCtrl.Teleport(&dest, nullptr, &zeroVel);
-        return "broadcast.goto";
-    });
-}
+const Action Bring{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+                       if (!ctx.AdminCtrl.IsValid())
+                           return std::nullopt;
+                       Vector dest = ctx.AdminCtrl.GetAbsOrigin();
+                       Vector zero = ZeroVelocity;
+                       ctx.TargetCtrl.Teleport(&dest, nullptr, &zero);
+                       return "broadcast.brought";
+                   }};
 
-void DoSwap(int adminSlot, int firstSlot, int secondSlot)
+const Action Goto{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+                      if (!ctx.AdminCtrl.IsValid())
+                          return std::nullopt;
+                      Vector dest = ctx.TargetCtrl.GetAbsOrigin();
+                      Vector zero = ZeroVelocity;
+                      ctx.AdminCtrl.Teleport(&dest, nullptr, &zero);
+                      return "broadcast.goto";
+                  }};
+
+void Swap(int adminSlot, int firstSlot, int secondSlot)
 {
     if (firstSlot == secondSlot)
         return;
-    auto ctxA = Resolve(adminSlot, firstSlot, 's');
-    auto ctxB = Resolve(adminSlot, secondSlot, 's');
+    auto ctxA = Resolve(adminSlot, firstSlot, static_cast<char>(Permission::Control));
+    auto ctxB = Resolve(adminSlot, secondSlot, static_cast<char>(Permission::Control));
     if (!ctxA.Valid() || !ctxB.Valid())
         return;
     if (!ctxA.TargetCtrl.IsAlive() || !ctxB.TargetCtrl.IsAlive())
@@ -46,12 +41,11 @@ void DoSwap(int adminSlot, int firstSlot, int secondSlot)
 
     Vector posA = ctxA.TargetCtrl.GetAbsOrigin();
     Vector posB = ctxB.TargetCtrl.GetAbsOrigin();
-    Vector zeroVel{0.0f, 0.0f, 0.0f};
+    Vector zero = ZeroVelocity;
 
-    ctxA.TargetCtrl.Teleport(&posB, nullptr, &zeroVel);
-    ctxB.TargetCtrl.Teleport(&posA, nullptr, &zeroVel);
+    ctxA.TargetCtrl.Teleport(&posB, nullptr, &zero);
+    ctxB.TargetCtrl.Teleport(&posA, nullptr, &zero);
 
-    // Two broadcasts so each player's name appears as the actor in the swap line.
     Broadcast(ctxA, "broadcast.swapped");
 }
 

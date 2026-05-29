@@ -7,18 +7,18 @@
 namespace AdminSystem::Admin::Actions
 {
 
-void DoCallCheck(int adminSlot, int targetSlot)
+void CallCheck(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 'k');
+    auto ctx = Resolve(adminSlot, targetSlot, static_cast<char>(Permission::CheatCheck));
     if (!ctx.Valid())
         return;
 
     Sys().CheatCheck.StartCheck(adminSlot, targetSlot);
 }
 
-bool DoCancelCheck(int adminSlot, int targetSlot)
+bool CancelCheck(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 'k');
+    auto ctx = Resolve(adminSlot, targetSlot, static_cast<char>(Permission::CheatCheck));
     if (!ctx.Valid())
         return false;
 

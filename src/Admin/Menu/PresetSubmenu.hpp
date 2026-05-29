@@ -6,8 +6,6 @@
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildHealthPresetMenu(int adminSlot, int targetSlot);
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildArmorPresetMenu(int adminSlot, int targetSlot);
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildTeamPickerMenu(int adminSlot, int targetSlot);
 
 }  // namespace AdminSystem::Admin::Menu

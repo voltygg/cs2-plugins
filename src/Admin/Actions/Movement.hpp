@@ -1,11 +1,13 @@
 #pragma once
 
+#include "ActionContext.hpp"
+
 namespace AdminSystem::Admin::Actions
 {
 
-void DoNoclip(int adminSlot, int targetSlot);
-void DoFreeze(int adminSlot, int targetSlot);
-void DoBury(int adminSlot, int targetSlot);
-void DoUnbury(int adminSlot, int targetSlot);
+extern const Action Noclip;
+extern const Action Freeze;
+extern const Action Bury;
+extern const Action Unbury;
 
 }  // namespace AdminSystem::Admin::Actions

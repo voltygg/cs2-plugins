@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../Core/Permissions.hpp"
+
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <functional>
@@ -9,6 +11,9 @@
 
 namespace AdminSystem::Admin::Actions
 {
+
+/** A translation key returned by an action body, or nullopt to skip the broadcast. */
+using OptKey = std::optional<std::string>;
 
 struct ActionContext
 {
@@ -34,14 +39,30 @@ ActionContext Resolve(int adminSlot, int targetSlot, char requiredFlag);
 void Broadcast(const ActionContext& ctx, const std::string& translationKey);
 
 /**
- * @brief Resolve admin+target (permission + immunity), run @p body when the context is valid,
- * and broadcast the translation key it returns — or skip the broadcast if it returns nullopt.
+ * @brief A single-target admin action expressed as data.
  *
- * Folds the `Resolve -> if (!Valid()) return -> ... -> Broadcast` shape every single-target
- * action repeats. The body performs any extra guard (IsAlive, etc.) and picks the key, so
- * conditional verbs (godmode on/off) and no-op cases (dead target) stay in one place.
+ * Bodies receive a valid, permission/immunity-checked @ref ActionContext, mutate the
+ * target, and return the broadcast key (or nullopt to stay silent). The dispatcher owns
+ * the `Resolve -> guard -> Broadcast` shape, so an action is just its flag, its guards,
+ * and its effect — no per-action wrapper function. Menus and commands invoke them through
+ * @ref Run.
  */
-void RunAction(int adminSlot, int targetSlot, char requiredFlag,
-               const std::function<std::optional<std::string>(const ActionContext&)>& body);
+struct Action
+{
+    Permission Flag;
+    bool RequireAlive = false; /**< Skip silently if the target is dead. */
+    std::function<OptKey(const ActionContext&)> Body;
+};
+
+/** Like @ref Action but carries an integer the menu/command supplies (health, team, ...). */
+struct ParamAction
+{
+    Permission Flag;
+    bool RequireAlive = false;
+    std::function<OptKey(const ActionContext&, int param)> Body;
+};
+
+void Run(int adminSlot, int targetSlot, const Action& action);
+void Run(int adminSlot, int targetSlot, int param, const ParamAction& action);
 
 }  // namespace AdminSystem::Admin::Actions

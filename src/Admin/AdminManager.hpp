@@ -51,7 +51,7 @@ public:
     bool CanTarget(int64_t adminSteamId, int64_t targetSteamId);
 
     /** True if the admin both holds @p flag and outranks the target (HasPermission && CanTarget). */
-    bool CanExecuteOn(int64_t adminSteamId, int64_t targetSteamId, Permission flag)
+    bool CanActOn(int64_t adminSteamId, int64_t targetSteamId, Permission flag)
     {
         return HasPermission(adminSteamId, flag) && CanTarget(adminSteamId, targetSteamId);
     }
@@ -90,6 +90,12 @@ public:
     }
 
 private:
+    /** True if a resolved bitmask carries @p flag, or the root flag ('z') that grants everything. */
+    static bool HasBit(uint32_t resolved, char flag)
+    {
+        return (resolved & FlagToBit('z')) != 0 || (resolved & FlagToBit(flag)) != 0;
+    }
+
     uint32_t ResolveFlags(const Database::Admin& admin);
     int ResolveImmunity(const Database::Admin& admin);
 

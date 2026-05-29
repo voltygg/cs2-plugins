@@ -204,7 +204,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
             }
             Kit().Menus.CloseAllMenus(slot);
         },
-        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Kick));
+        adminMgr.CanActOn(adminSid, targetSid, Permission::Kick));
 
     builder.AddButton(
         tr.Get("action.ban"),
@@ -214,7 +214,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
                 MakePunishmentCallback<Ban>([](PunishmentManager& pm, Ban& ban) { pm.IssueBan(ban); }));
             Kit().Menus.OpenMenu(slot, durMenu);
         },
-        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Ban));
+        adminMgr.CanActOn(adminSid, targetSid, Permission::Ban));
 
     builder.AddButton(
         tr.Get("action.voiceMute"),
@@ -225,7 +225,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
                     [](PunishmentManager& pm, VoiceMute& mute) { pm.IssueVoiceMute(mute); }));
             Kit().Menus.OpenMenu(slot, durMenu);
         },
-        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::VoiceMute));
+        adminMgr.CanActOn(adminSid, targetSid, Permission::VoiceMute));
 
     builder.AddButton(
         tr.Get("action.textMute"),
@@ -236,7 +236,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
                     [](PunishmentManager& pm, TextMute& mute) { pm.IssueTextMute(mute); }));
             Kit().Menus.OpenMenu(slot, durMenu);
         },
-        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::TextMute));
+        adminMgr.CanActOn(adminSid, targetSid, Permission::TextMute));
 
     builder.AddButton(
         tr.Get("action.warn"),
@@ -256,7 +256,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
             }
             Kit().Menus.CloseAllMenus(slot);
         },
-        adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Warn));
+        adminMgr.CanActOn(adminSid, targetSid, Permission::Warn));
 
     return builder.Build();
 }

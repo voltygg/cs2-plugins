@@ -2,9 +2,6 @@
 #include "../../Core/Managers.hpp"
 #include <CS2Kit/Core/Services.hpp>
 
-#include "../Actions/ActionContext.hpp"
-#include "EffectManager.hpp"
-
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <array>
 #include <cstdint>
@@ -15,9 +12,7 @@ using CS2Kit::Core::Kit;
 namespace AdminSystem::Admin::Effects
 {
 
-using AdminSystem::Admin::Actions::Broadcast;
-using AdminSystem::Admin::Actions::Resolve;
-using CS2Kit::Core::Scheduler;
+using Actions::ActionContext;
 
 namespace
 {
@@ -34,17 +29,13 @@ constexpr int DiscoIntervalMs = 200;
 constexpr int DiscoDurationSec = 15;
 }  // namespace
 
-void ToggleDisco(int adminSlot, int targetSlot)
-{
-    auto ctx = Resolve(adminSlot, targetSlot, 'f');
-    if (!ctx.Valid())
-        return;
-
-    bool on = Sys().Effects.Toggle(targetSlot, EffectId::Disco, [&]() -> EffectSetup {
+const EffectToggle Disco{
+    Permission::Fun, EffectId::Disco, "broadcast.discoOn", "broadcast.discoOff",
+    [](const ActionContext& ctx) -> EffectSetup {
         uint8_t savedMode = ctx.TargetCtrl.GetRenderMode();
         uint32_t savedColor = ctx.TargetCtrl.GetRenderColor();
+        int slot = ctx.Target->GetSlot();
 
-        int slot = targetSlot;
         auto idx = std::make_shared<size_t>(0);
         uint64_t timer = Kit().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
             CS2Kit::Sdk::PlayerController pc(slot);
@@ -65,9 +56,6 @@ void ToggleDisco(int adminSlot, int targetSlot)
         };
 
         return {timer, std::move(cancel), /*roundScoped*/ true};
-    });
-
-    Broadcast(ctx, on ? "broadcast.discoOn" : "broadcast.discoOff");
-}
+    }};
 
 }  // namespace AdminSystem::Admin::Effects

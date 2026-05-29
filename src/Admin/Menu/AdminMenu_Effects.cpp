@@ -3,12 +3,12 @@
 #include <CS2Kit/Core/Services.hpp>
 
 #include "../Actions/Launch.hpp"
+#include "../Actions/Smite.hpp"
 #include "../Actions/Teleport.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/Disco.hpp"
-#include "../Effects/EffectManager.hpp"
 #include "../Effects/Ghost.hpp"
-#include "../Effects/Smite.hpp"
+#include "MenuHelpers.hpp"
 #include "PlayerPicker.hpp"
 
 #include <CS2Kit/Menu/MenuBuilder.hpp>
@@ -23,32 +23,8 @@ namespace AdminSystem::Admin::Menu
 {
 
 using CS2Kit::Menu::MenuBuilder;
-using CS2Kit::Menu::MenuManager;
 using CS2Kit::Players::PlayerManager;
 using CS2Kit::Utils::Translations;
-using Effects::EffectId;
-using Effects::EffectManager;
-
-namespace
-{
-
-void AddEffectToggle(MenuBuilder& builder, const std::string& base, bool enabled, int admin, int target, EffectId id,
-                     void (*action)(int, int))
-{
-    auto& tr = Kit().Translations;
-    builder.AddToggle(
-        base, tr.Get("effectState.on"), tr.Get("effectState.off"),
-        [target, id](int) { return Sys().Effects.IsActive(target, id); },
-        [admin, target, action](int) { action(admin, target); }, enabled);
-}
-
-void AddSimple(MenuBuilder& builder, const std::string& label, bool enabled, int admin, int target,
-               void (*action)(int, int))
-{
-    builder.AddButton(label, [admin, target, action](int /*slot*/) { action(admin, target); }, enabled);
-}
-
-}  // namespace
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsMenu(int adminSlot)
 {
@@ -73,26 +49,24 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
 
     int64_t adminSid = admin->GetSteamID();
     int64_t targetSid = target->GetSteamID();
-    bool hasF = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Fun);
-    bool hasS = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Control);
+    bool hasF = adminMgr.CanActOn(adminSid, targetSid, Permission::Fun);
+    bool hasS = adminMgr.CanActOn(adminSid, targetSid, Permission::Control);
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects"), target->GetName()));
 
-    AddEffectToggle(builder, tr.Get("action.ghost"), hasF, adminSlot, targetSlot, EffectId::Ghost,
-                    &Effects::ToggleGhost);
-    AddEffectToggle(builder, tr.Get("action.disco"), hasF, adminSlot, targetSlot, EffectId::Disco,
-                    &Effects::ToggleDisco);
+    AddEffectToggle(builder, tr.Get("action.ghost"), hasF, adminSlot, targetSlot, Effects::Ghost);
+    AddEffectToggle(builder, tr.Get("action.disco"), hasF, adminSlot, targetSlot, Effects::Disco);
     builder.AddButton(tr.Get("action.blind"), [](int) {}, false);  // Awaits Fade user-message infra.
-    AddSimple(builder, tr.Get("action.launch"), hasS, adminSlot, targetSlot, &Actions::DoLaunch);
-    AddSimple(builder, tr.Get("action.smite"), hasF, adminSlot, targetSlot, &Effects::DoSmite);
+    AddAction(builder, tr.Get("action.launch"), hasS, adminSlot, targetSlot, Actions::Launch);
+    AddAction(builder, tr.Get("action.smite"), hasF, adminSlot, targetSlot, Actions::Smite);
 
-    // Swap opens a second player picker, then runs DoSwap.
+    // Swap opens a second player picker, then runs the dual-target Swap.
     builder.AddButton(
         tr.Get("action.swap"),
         [adminSlot, targetSlot](int slot) {
             auto picker = BuildPlayerPicker(adminSlot, Kit().Translations.Get("common.selectSwapTarget"),
                                             [first = targetSlot](int a, int second) {
-                                                Actions::DoSwap(a, first, second);
+                                                Actions::Swap(a, first, second);
                                                 Kit().Menus.CloseAllMenus(a);
                                             });
             if (picker)

@@ -51,13 +51,25 @@ void Broadcast(const ActionContext& ctx, const std::string& translationKey)
     Sys().Chat.BroadcastAction(translationKey, ctx.Admin->GetName(), ctx.Target->GetName());
 }
 
-void RunAction(int adminSlot, int targetSlot, char requiredFlag,
-               const std::function<std::optional<std::string>(const ActionContext&)>& body)
+void Run(int adminSlot, int targetSlot, const Action& action)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, requiredFlag);
+    auto ctx = Resolve(adminSlot, targetSlot, static_cast<char>(action.Flag));
     if (!ctx.Valid())
         return;
-    if (auto key = body(ctx))
+    if (action.RequireAlive && !ctx.TargetCtrl.IsAlive())
+        return;
+    if (auto key = action.Body(ctx))
+        Broadcast(ctx, *key);
+}
+
+void Run(int adminSlot, int targetSlot, int param, const ParamAction& action)
+{
+    auto ctx = Resolve(adminSlot, targetSlot, static_cast<char>(action.Flag));
+    if (!ctx.Valid())
+        return;
+    if (action.RequireAlive && !ctx.TargetCtrl.IsAlive())
+        return;
+    if (auto key = action.Body(ctx, param))
         Broadcast(ctx, *key);
 }
 

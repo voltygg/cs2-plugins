@@ -1,5 +1,6 @@
 #include "AdminSelfCommands.hpp"
 
+#include "../Admin/Effects/EffectAction.hpp"
 #include "../Admin/Effects/Hide.hpp"
 
 namespace AdminSystem::Commands
@@ -13,7 +14,8 @@ namespace
 
 CommandResult HandleHide(Player* admin, const std::vector<std::string>& /*args*/)
 {
-    AdminSystem::Admin::Effects::ToggleHide(admin->GetSlot());
+    int slot = admin->GetSlot();
+    AdminSystem::Admin::Effects::Run(slot, slot, AdminSystem::Admin::Effects::Hide);
     return {true, ""};
 }
 

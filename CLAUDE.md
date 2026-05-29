@@ -33,8 +33,8 @@ src/
 ├── Admin/
 │   ├── AdminManager       Permissions, immunity, self-target allowed
 │   ├── AdminMenu          Top-level dispatcher (Punish / Control / Effects)
-│   ├── Actions/           Stateless one-shots: Movement, Vitals, Launch, Teleport, Team
-│   ├── Effects/           Stateful per-target with Cancel: EffectManager, Ghost, Disco, Smite
+│   ├── Actions/           Data-driven one-shots (Action/ParamAction descriptors + Run dispatch): Movement, Vitals, Launch, Teleport, Team, Smite, CheatCheck
+│   ├── Effects/           Stateful per-target with Cancel (EffectToggle descriptors + Run): EffectManager, Ghost, Disco, Hide
 │   └── Menu/              Per-category builders + PlayerPicker + PresetSubmenu
 ├── Punishments/           PunishmentManager
 ├── Commands/              Chat-command registrations

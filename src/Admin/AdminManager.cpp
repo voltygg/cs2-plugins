@@ -98,44 +98,19 @@ const Database::Admin* AdminManager::GetAdmin(int64_t steamId)
 bool AdminManager::HasPermission(int64_t steamId, char flag)
 {
     auto it = _resolvedFlags.find(steamId);
-    if (it == _resolvedFlags.end())
-    {
-        return false;
-    }
-
-    uint32_t resolved = it->second;
-
-    // Root flag ('z') grants all permissions
-    if ((resolved & FlagToBit('z')) != 0)
-    {
-        return true;
-    }
-
-    return (resolved & FlagToBit(flag)) != 0;
+    return it != _resolvedFlags.end() && HasBit(it->second, flag);
 }
 
 bool AdminManager::HasAllPermissions(int64_t steamId, const std::string& flags)
 {
     auto it = _resolvedFlags.find(steamId);
     if (it == _resolvedFlags.end())
-    {
         return false;
-    }
-
-    uint32_t resolved = it->second;
-
-    // Root flag grants all permissions
-    if ((resolved & FlagToBit('z')) != 0)
-    {
-        return true;
-    }
 
     for (char flag : flags)
     {
-        if ((resolved & FlagToBit(flag)) == 0)
-        {
+        if (!HasBit(it->second, flag))
             return false;
-        }
     }
 
     return true;
@@ -147,15 +122,9 @@ bool AdminManager::HasAnyPermission(int64_t steamId, const std::string& flags)
     if (it == _resolvedFlags.end())
         return false;
 
-    uint32_t resolved = it->second;
-
-    // Root flag grants all permissions
-    if ((resolved & FlagToBit('z')) != 0)
-        return true;
-
     for (char flag : flags)
     {
-        if ((resolved & FlagToBit(flag)) != 0)
+        if (HasBit(it->second, flag))
             return true;
     }
 

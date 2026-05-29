@@ -50,7 +50,7 @@ CommandResult HandleCheatCheckCancel(Player* admin, const std::vector<std::strin
     Translations::SlotScope scope(admin->GetSlot());
     auto& tr = Kit().Translations;
 
-    if (!AdminSystem::Admin::Actions::DoCancelCheck(admin->GetSlot(), target->GetSlot()))
+    if (!AdminSystem::Admin::Actions::CancelCheck(admin->GetSlot(), target->GetSlot()))
         return {false, tr.Get("cheatCheck.noActiveCheck")};
 
     return {true, std::format("{} {}", tr.Get("cheatCheck.cancelled"), target->GetName())};

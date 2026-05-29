@@ -8,16 +8,14 @@
 #include "../Actions/Vitals.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/EffectId.hpp"
-#include "../Effects/EffectManager.hpp"
 #include "../Effects/Hide.hpp"
-#include "PlayerPicker.hpp"
+#include "MenuHelpers.hpp"
 #include "PresetSubmenu.hpp"
 
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 #include <memory>
@@ -28,67 +26,10 @@ namespace AdminSystem::Admin::Menu
 {
 
 using AdminSystem::Admin::Effects::EffectId;
-using AdminSystem::Admin::Effects::EffectManager;
-using CS2Kit::Menu::ChoiceOption;
 using CS2Kit::Menu::MenuBuilder;
-using CS2Kit::Menu::MenuManager;
 using CS2Kit::Players::PlayerManager;
 using CS2Kit::Utils::Translations;
 using namespace CS2Kit::Sdk;
-
-namespace
-{
-
-void AddSimple(MenuBuilder& builder, const std::string& label, bool enabled, int admin, int target,
-               void (*action)(int, int))
-{
-    builder.AddButton(label, [admin, target, action](int /*slot*/) { action(admin, target); }, enabled);
-}
-
-void AddSubmenuLink(MenuBuilder& builder, const std::string& label, bool enabled, int admin, int target,
-                    std::shared_ptr<::CS2Kit::Menu::Menu> (*factory)(int, int))
-{
-    builder.AddSubmenu(label, [admin, target, factory](int) { return factory(admin, target); }, enabled);
-}
-
-// Toggle whose ON/OFF state is read from a m_fFlags bit on the target's pawn.
-void AddFlagToggle(MenuBuilder& builder, const std::string& base, bool enabled, int admin, int target, uint32_t flag,
-                   void (*action)(int, int))
-{
-    auto& tr = Kit().Translations;
-    builder.AddToggle(
-        base, tr.Get("effectState.on"), tr.Get("effectState.off"),
-        [target, flag](int) {
-            PlayerController pc(target);
-            return pc.IsValid() && (pc.GetFlags() & flag) != 0;
-        },
-        [admin, target, action](int) { action(admin, target); }, enabled);
-}
-
-const int HealthPresets[] = {1, 50, 100, 200, 500, 999};
-const int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
-
-template <typename PresetArray>
-void AddPresetChoice(MenuBuilder& builder, const std::string& title, const std::string& unit, bool enabled, int admin,
-                     int target, void (*action)(int, int, int), const PresetArray& presets)
-{
-    using Choice = ChoiceOption<int>::Choice;
-    std::vector<Choice> choices;
-    choices.reserve(std::size(presets));
-    for (int v : presets)
-        choices.push_back({std::format("{} {}", v, unit), v});
-
-    auto idx = std::make_shared<int>(0);
-    builder.AddChoice<int>(
-        title, std::move(choices), [idx](int) { return *idx; }, [idx](int, int newIdx) { *idx = newIdx; },
-        [admin, target, action](int slot, const int& value) {
-            action(admin, target, value);
-            Kit().Menus.CloseAllMenus(slot);
-        },
-        enabled);
-}
-
-}  // namespace
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
 {
@@ -109,7 +50,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
     builder.AddToggle(
         tr.Get("action.hide"), tr.Get("effectState.on"), tr.Get("effectState.off"),
         [adminSlot](int) { return Sys().Effects.IsActive(adminSlot, EffectId::Hide); },
-        [adminSlot](int) { Effects::ToggleHide(adminSlot); }, hasB);
+        [adminSlot](int) { Effects::Run(adminSlot, adminSlot, Effects::Hide); }, hasB);
 
     auto players = plrMgr.GetAllPlayers();
     for (auto* p : players)
@@ -142,35 +83,38 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
 
     int64_t adminSid = admin->GetSteamID();
     int64_t targetSid = target->GetSteamID();
-    bool hasS = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Control);
-    bool hasH = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::Health);
-    bool hasK = adminMgr.CanExecuteOn(adminSid, targetSid, Permission::CheatCheck);
+    bool hasS = adminMgr.CanActOn(adminSid, targetSid, Permission::Control);
+    bool hasH = adminMgr.CanActOn(adminSid, targetSid, Permission::Health);
+    bool hasK = adminMgr.CanActOn(adminSid, targetSid, Permission::CheatCheck);
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control"), target->GetName()));
 
-    AddSimple(builder, tr.Get("action.slay"), hasS, adminSlot, targetSlot, &Actions::DoSlay);
-    AddSimple(builder, tr.Get("action.bring"), hasS, adminSlot, targetSlot, &Actions::DoBring);
-    AddSimple(builder, tr.Get("action.goto"), hasS, adminSlot, targetSlot, &Actions::DoGoto);
-    AddSimple(builder, tr.Get("action.freeze"), hasS, adminSlot, targetSlot, &Actions::DoFreeze);
-    AddSimple(builder, tr.Get("action.noclip"), hasS, adminSlot, targetSlot, &Actions::DoNoclip);
+    AddAction(builder, tr.Get("action.slay"), hasS, adminSlot, targetSlot, Actions::Slay);
+    AddAction(builder, tr.Get("action.bring"), hasS, adminSlot, targetSlot, Actions::Bring);
+    AddAction(builder, tr.Get("action.goto"), hasS, adminSlot, targetSlot, Actions::Goto);
+    AddAction(builder, tr.Get("action.freeze"), hasS, adminSlot, targetSlot, Actions::Freeze);
+    AddAction(builder, tr.Get("action.noclip"), hasS, adminSlot, targetSlot, Actions::Noclip);
 
     // HP/Armor are inline Choice rows: A/D cycles preset values, E applies and closes.
-    // The full preset submenus are still reachable via PresetSubmenu helpers when needed.
-    AddPresetChoice(builder, tr.Get("action.health"), "HP", hasH, adminSlot, targetSlot, &Actions::DoSetHealth,
+    AddPresetChoice(builder, tr.Get("action.health"), "HP", hasH, adminSlot, targetSlot, Actions::SetHealth,
                     HealthPresets);
-    AddPresetChoice(builder, tr.Get("action.armor"), "AP", hasH, adminSlot, targetSlot, &Actions::DoSetArmor,
-                    ArmorPresets);
+    AddPresetChoice(builder, tr.Get("action.armor"), "AP", hasH, adminSlot, targetSlot, Actions::SetArmor, ArmorPresets);
 
     AddFlagToggle(builder, tr.Get("action.godmode"), hasH, adminSlot, targetSlot, CS2Kit::Sdk::FL_GODMODE,
-                  &Actions::DoToggleGodmode);
+                  Actions::Godmode);
 
-    AddSimple(builder, tr.Get("action.bury"), hasS, adminSlot, targetSlot, &Actions::DoBury);
-    AddSimple(builder, tr.Get("action.unbury"), hasS, adminSlot, targetSlot, &Actions::DoUnbury);
-    AddSubmenuLink(builder, tr.Get("action.changeTeam"), hasS, adminSlot, targetSlot, &BuildTeamPickerMenu);
+    AddAction(builder, tr.Get("action.bury"), hasS, adminSlot, targetSlot, Actions::Bury);
+    AddAction(builder, tr.Get("action.unbury"), hasS, adminSlot, targetSlot, Actions::Unbury);
+    builder.AddSubmenu(
+        tr.Get("action.changeTeam"), [adminSlot, targetSlot](int) { return BuildTeamPickerMenu(adminSlot, targetSlot); },
+        hasS);
 
-    AddSimple(builder, tr.Get("action.callCheck"), hasK, adminSlot, targetSlot, &Actions::DoCallCheck);
-    AddSimple(builder, tr.Get("action.cancelCheck"), hasK, adminSlot, targetSlot,
-              [](int a, int t) { Actions::DoCancelCheck(a, t); });
+    // CheatCheck call/cancel are orchestration (no broadcast / bool result), so they stay plain functions.
+    builder.AddButton(
+        tr.Get("action.callCheck"), [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasK);
+    builder.AddButton(
+        tr.Get("action.cancelCheck"), [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); },
+        hasK);
 
     return builder.Build();
 }

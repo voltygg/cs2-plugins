@@ -1,11 +1,13 @@
 #pragma once
 
+#include "ActionContext.hpp"
+
 namespace AdminSystem::Admin::Actions
 {
 
-void DoSlay(int adminSlot, int targetSlot);
-void DoSetHealth(int adminSlot, int targetSlot, int health);
-void DoSetArmor(int adminSlot, int targetSlot, int armor);
-void DoToggleGodmode(int adminSlot, int targetSlot);
+extern const Action Slay;
+extern const Action Godmode;
+extern const ParamAction SetHealth;
+extern const ParamAction SetArmor;
 
 }  // namespace AdminSystem::Admin::Actions

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "EffectAction.hpp"
+
 namespace AdminSystem::Admin::Effects
 {
 
-/** Toggle Ghost: translucent render + reduced alpha. Re-applying cancels. */
-void ToggleGhost(int adminSlot, int targetSlot);
+/** Toggle Ghost: invisible render. Re-applying cancels and restores visibility. */
+extern const EffectToggle Ghost;
 
 }  // namespace AdminSystem::Admin::Effects
