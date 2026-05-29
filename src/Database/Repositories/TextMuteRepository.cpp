@@ -1,4 +1,5 @@
 #include "TextMuteRepository.hpp"
+#include "../../Core/Managers.hpp"
 
 #include "../Database.hpp"
 
@@ -13,7 +14,7 @@ std::optional<TextMute> TextMuteRepository::FindActiveBySteamId(int64_t steamId)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared("find_active_text_mute_by_steamid",
+        auto result = Sys().Db.ExecutePrepared("find_active_text_mute_by_steamid",
                                                            "SELECT * FROM text_mutes WHERE target_steam_id = $1 AND "
                                                            "is_active = true AND (expires_at = 0 OR expires_at > $2)",
                                                            steamId, TimeUtils::Now());
@@ -32,7 +33,7 @@ std::vector<TextMute> TextMuteRepository::FindAllActive()
     std::vector<TextMute> mutes;
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "find_all_active_text_mutes",
             "SELECT * FROM text_mutes WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)", TimeUtils::Now());
         for (const auto& row : result)
@@ -48,7 +49,7 @@ bool TextMuteRepository::Create(TextMute& mute)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "create_text_mute",
             "INSERT INTO text_mutes (target_steam_id, target_name, admin_steam_id, admin_name, reason, "
             "created_at, expires_at, duration, is_active) "
@@ -69,7 +70,7 @@ bool TextMuteRepository::Remove(int64_t muteId, int64_t removedBy, const std::st
 {
     try
     {
-        Database::Instance().ExecutePrepared(
+        Sys().Db.ExecutePrepared(
             "remove_text_mute",
             "UPDATE text_mutes SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 "
             "WHERE id = $1",
@@ -86,7 +87,7 @@ int TextMuteRepository::ExpireOldTextMutes()
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "expire_old_text_mutes",
             "UPDATE text_mutes SET is_active = false WHERE is_active = true AND expires_at > 0 AND expires_at <= $1",
             TimeUtils::Now());
@@ -103,7 +104,7 @@ std::vector<TextMute> TextMuteRepository::GetHistory(int64_t steamId)
     std::vector<TextMute> mutes;
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "get_text_mute_history", "SELECT * FROM text_mutes WHERE target_steam_id = $1 ORDER BY created_at DESC",
             steamId);
         for (const auto& row : result)

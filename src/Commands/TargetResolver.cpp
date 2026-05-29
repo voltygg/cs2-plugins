@@ -1,4 +1,6 @@
 #include "TargetResolver.hpp"
+#include "../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../Admin/AdminManager.hpp"
 
@@ -18,8 +20,8 @@ std::vector<ResolvedTarget> Resolve(const std::string& token, Player* caller)
     if (token.empty())
         return out;
 
-    auto& mgr = PlayerManager::Instance();
-    auto& admins = AdminManager::Instance();
+    auto& mgr = CS2Kit::Core::Kit().Players;
+    auto& admins = Sys().Admins;
 
     auto check = [&](Player* p) {
         if (!p)

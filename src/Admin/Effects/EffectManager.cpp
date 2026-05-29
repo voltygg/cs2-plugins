@@ -1,4 +1,5 @@
 #include "EffectManager.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include <CS2Kit/Core/Scheduler.hpp>
 
@@ -47,7 +48,7 @@ void EffectManager::Cancel(int slot, EffectId id)
     if (entry.CancelFn)
         entry.CancelFn();
     if (entry.TimerHandle != 0)
-        Scheduler::Instance().Cancel(entry.TimerHandle);
+        CS2Kit::Core::Kit().Scheduler.Cancel(entry.TimerHandle);
     entry = ActiveEffect{};
 }
 

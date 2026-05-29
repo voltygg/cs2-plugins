@@ -1,4 +1,5 @@
 #include "AdminRepository.hpp"
+#include "../../Core/Managers.hpp"
 
 #include "../Database.hpp"
 
@@ -38,7 +39,7 @@ std::optional<Admin> AdminRepository::FindBySteamId(int64_t steamId)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared("find_admin_by_steamid",
+        auto result = Sys().Db.ExecutePrepared("find_admin_by_steamid",
                                                            "SELECT * FROM admins WHERE steam_id = $1", steamId);
 
         if (result.empty())
@@ -60,7 +61,7 @@ std::vector<Admin> AdminRepository::FindAll()
 
     try
     {
-        auto result = Database::Instance().Execute("SELECT * FROM admins");
+        auto result = Sys().Db.Execute("SELECT * FROM admins");
 
         for (const auto& row : result)
         {
@@ -79,7 +80,7 @@ bool AdminRepository::Delete(int64_t steamId)
 {
     try
     {
-        Database::Instance().ExecutePrepared("delete_admin", "DELETE FROM admins WHERE steam_id = $1", steamId);
+        Sys().Db.ExecutePrepared("delete_admin", "DELETE FROM admins WHERE steam_id = $1", steamId);
 
         return true;
     }
@@ -94,7 +95,7 @@ bool AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const
 {
     try
     {
-        Database::Instance().ExecutePrepared(
+        Sys().Db.ExecutePrepared(
             "update_admin_chat_style",
             "UPDATE admins SET display_prefix = $2, name_color = $3, message_color = $4, "
             "updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE steam_id = $1",
@@ -111,7 +112,7 @@ bool AdminRepository::UpdateLanguage(int64_t steamId, const std::string& lang)
 {
     try
     {
-        Database::Instance().ExecutePrepared(
+        Sys().Db.ExecutePrepared(
             "update_admin_language",
             "UPDATE admins SET language = $2, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
             "WHERE steam_id = $1",
@@ -150,7 +151,7 @@ std::optional<AdminGroup> AdminGroupRepository::FindByName(const std::string& na
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared("find_group_by_name",
+        auto result = Sys().Db.ExecutePrepared("find_group_by_name",
                                                            "SELECT * FROM admin_groups WHERE name = $1", name);
 
         if (result.empty())
@@ -172,7 +173,7 @@ std::vector<AdminGroup> AdminGroupRepository::FindAll()
 
     try
     {
-        auto result = Database::Instance().Execute("SELECT * FROM admin_groups");
+        auto result = Sys().Db.Execute("SELECT * FROM admin_groups");
 
         for (const auto& row : result)
         {
@@ -191,7 +192,7 @@ bool AdminGroupRepository::Delete(const std::string& name)
 {
     try
     {
-        Database::Instance().ExecutePrepared("delete_group", "DELETE FROM admin_groups WHERE name = $1", name);
+        Sys().Db.ExecutePrepared("delete_group", "DELETE FROM admin_groups WHERE name = $1", name);
 
         return true;
     }

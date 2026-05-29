@@ -1,4 +1,6 @@
 #include "Disco.hpp"
+#include "../../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../Actions/ActionContext.hpp"
 #include "EffectManager.hpp"
@@ -36,7 +38,7 @@ void ToggleDisco(int adminSlot, int targetSlot)
     if (!ctx.Valid())
         return;
 
-    auto& mgr = EffectManager::Instance();
+    auto& mgr = Sys().Effects;
     if (mgr.IsActive(targetSlot, EffectId::Disco))
     {
         mgr.Cancel(targetSlot, EffectId::Disco);
@@ -49,7 +51,7 @@ void ToggleDisco(int adminSlot, int targetSlot)
 
     int slot = targetSlot;
     auto idx = std::make_shared<size_t>(0);
-    uint64_t timer = Scheduler::Instance().Repeat(DiscoIntervalMs, [slot, idx]() {
+    uint64_t timer = CS2Kit::Core::Kit().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
         CS2Kit::Sdk::PlayerController pc(slot);
         if (!pc.IsValid() || !pc.IsAlive())
             return;
@@ -70,8 +72,8 @@ void ToggleDisco(int adminSlot, int targetSlot)
 
     mgr.Apply(targetSlot, EffectId::Disco, timer, std::move(cancel), /*roundScoped*/ true);
 
-    Scheduler::Instance().Delay(DiscoDurationSec * 1000, [slot]() {
-        EffectManager::Instance().Cancel(slot, EffectId::Disco);
+    CS2Kit::Core::Kit().Scheduler.Delay(DiscoDurationSec * 1000, [slot]() {
+        Sys().Effects.Cancel(slot, EffectId::Disco);
     });
 
     Broadcast(ctx, "broadcast.discoOn");

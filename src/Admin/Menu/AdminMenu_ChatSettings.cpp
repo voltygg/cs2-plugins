@@ -1,4 +1,6 @@
 #include "AdminMenu_ChatSettings.hpp"
+#include "../../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../AdminManager.hpp"
 
@@ -59,7 +61,7 @@ int IndexForColor(std::string_view color)
 
 std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices()
 {
-    auto& tr = Translations::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
     const auto& keys = ColorLabelKeys();
 
     std::vector<ChoiceOption<std::string>::Choice> choices;
@@ -91,7 +93,7 @@ enum class ColorSlot
 // want the override slot itself, so "default" stays selected after a rebroadcast).
 std::string CurrentSlotColor(int64_t steamId, ColorSlot slot)
 {
-    const auto* admin = AdminManager::Instance().GetAdmin(steamId);
+    const auto* admin = Sys().Admins.GetAdmin(steamId);
     if (!admin)
         return "";
     switch (slot)
@@ -114,7 +116,7 @@ void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t stea
         title, std::move(choices), [pendingIdx](int) { return *pendingIdx; },
         [pendingIdx](int, int newIdx) { *pendingIdx = newIdx; },
         [steamId, slot](int /*menuSlot*/, const std::string& value) {
-            auto& mgr = AdminManager::Instance();
+            auto& mgr = Sys().Admins;
             const auto* admin = mgr.GetAdmin(steamId);
             if (!admin)
                 return;
@@ -138,14 +140,14 @@ void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t stea
 std::string LanguageLabel(const std::string& code)
 {
     std::string key = "lang." + code;
-    std::string label = Translations::Instance().Get(key);
+    std::string label = CS2Kit::Core::Kit().Translations.Get(key);
     return label == key ? code : label;
 }
 
 // Sorted so the choice order is stable across the rebuild we trigger on commit.
 std::vector<std::string> AvailableLanguagesSorted()
 {
-    auto langs = Translations::Instance().GetAvailableLanguages();
+    auto langs = CS2Kit::Core::Kit().Translations.GetAvailableLanguages();
     std::sort(langs.begin(), langs.end());
     return langs;
 }
@@ -169,19 +171,19 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<in
         choices.push_back({LanguageLabel(code), code});
     }
 
-    const auto* admin = AdminManager::Instance().GetAdmin(steamId);
+    const auto* admin = Sys().Admins.GetAdmin(steamId);
     *pendingIdx = IndexForLanguage(langs, admin ? admin->Language : std::string("en"));
 
     builder.AddChoice<std::string>(
-        Translations::Instance().Get("chat.panelLanguage"), std::move(choices),
+        CS2Kit::Core::Kit().Translations.Get("chat.panelLanguage"), std::move(choices),
         [pendingIdx](int) { return *pendingIdx; }, [pendingIdx](int, int newIdx) { *pendingIdx = newIdx; },
         [steamId](int menuSlot, const std::string& lang) {
-            AdminManager::Instance().UpdateLanguage(steamId, lang);
-            Translations::Instance().SetPlayerLanguage(menuSlot, lang);
+            Sys().Admins.UpdateLanguage(steamId, lang);
+            CS2Kit::Core::Kit().Translations.SetPlayerLanguage(menuSlot, lang);
             // Rebuild so the baked labels re-render in the new language. Use the by-value
             // menuSlot (not a capture): CloseMenu frees this option and its captures, so
             // nothing read after it may live in the lambda's closure.
-            auto& mgr = MenuManager::Instance();
+            auto& mgr = CS2Kit::Core::Kit().Menus;
             mgr.CloseMenu(menuSlot);
             mgr.OpenMenu(menuSlot, BuildChatSettingsMenu(menuSlot));
         });
@@ -191,8 +193,8 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<in
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildChatSettingsMenu(int adminSlot)
 {
-    auto& tr = Translations::Instance();
-    auto* admin = PlayerManager::Instance().GetPlayerBySlot(adminSlot);
+    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto* admin = CS2Kit::Core::Kit().Players.GetPlayerBySlot(adminSlot);
     if (!admin)
         return nullptr;
     int64_t steamId = admin->GetSteamID();
@@ -204,11 +206,11 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildChatSettingsMenu(int adminSlot)
     builder.AddToggle(
         tr.Get("chat.displayPrefix"), tr.Get("effectState.on"), tr.Get("effectState.off"),
         [steamId](int) {
-            const auto* a = AdminManager::Instance().GetAdmin(steamId);
+            const auto* a = Sys().Admins.GetAdmin(steamId);
             return a ? a->DisplayPrefix : true;
         },
         [steamId](int) {
-            auto& mgr = AdminManager::Instance();
+            auto& mgr = Sys().Admins;
             const auto* a = mgr.GetAdmin(steamId);
             if (!a)
                 return;

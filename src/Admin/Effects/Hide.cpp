@@ -1,4 +1,5 @@
 #include "Hide.hpp"
+#include "../../Core/Managers.hpp"
 
 #include "../Actions/ActionContext.hpp"
 #include "EffectManager.hpp"
@@ -27,7 +28,7 @@ void ToggleHide(int adminSlot)
     if (!ctx.Valid())
         return;
 
-    auto& mgr = EffectManager::Instance();
+    auto& mgr = Sys().Effects;
     if (mgr.IsActive(adminSlot, EffectId::Hide))
     {
         mgr.Cancel(adminSlot, EffectId::Hide);

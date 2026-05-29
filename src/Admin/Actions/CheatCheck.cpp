@@ -1,4 +1,5 @@
 #include "CheatCheck.hpp"
+#include "../../Core/Managers.hpp"
 
 #include "../CheatCheck/CheatCheckManager.hpp"
 #include "ActionContext.hpp"
@@ -12,7 +13,7 @@ void DoCallCheck(int adminSlot, int targetSlot)
     if (!ctx.Valid())
         return;
 
-    CheatCheck::CheatCheckManager::Instance().StartCheck(adminSlot, targetSlot);
+    Sys().CheatCheck.StartCheck(adminSlot, targetSlot);
 }
 
 bool DoCancelCheck(int adminSlot, int targetSlot)
@@ -21,7 +22,7 @@ bool DoCancelCheck(int adminSlot, int targetSlot)
     if (!ctx.Valid())
         return false;
 
-    return CheatCheck::CheatCheckManager::Instance().Cancel(targetSlot);
+    return Sys().CheatCheck.Cancel(targetSlot);
 }
 
 }  // namespace AdminSystem::Admin::Actions

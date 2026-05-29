@@ -1,4 +1,5 @@
 #include "BanRepository.hpp"
+#include "../../Core/Managers.hpp"
 
 #include "../Database.hpp"
 
@@ -13,7 +14,7 @@ std::optional<Ban> BanRepository::FindActiveBySteamId(int64_t steamId)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared("find_active_ban_by_steamid",
+        auto result = Sys().Db.ExecutePrepared("find_active_ban_by_steamid",
                                                            "SELECT * FROM bans WHERE target_steam_id = $1 AND "
                                                            "is_active = true AND (expires_at = 0 OR expires_at > $2)",
                                                            steamId, TimeUtils::Now());
@@ -35,7 +36,7 @@ std::optional<Ban> BanRepository::FindActiveByIp(const std::string& ip)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared("find_active_ban_by_ip",
+        auto result = Sys().Db.ExecutePrepared("find_active_ban_by_ip",
                                                            "SELECT * FROM bans WHERE target_ip = $1 AND "
                                                            "is_active = true AND (expires_at = 0 OR expires_at > $2)",
                                                            ip, TimeUtils::Now());
@@ -59,7 +60,7 @@ std::vector<Ban> BanRepository::FindAllActive()
 
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "find_all_active_bans", "SELECT * FROM bans WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)",
             TimeUtils::Now());
 
@@ -80,7 +81,7 @@ bool BanRepository::Create(Ban& ban)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "create_ban",
             "INSERT INTO bans (target_steam_id, target_name, target_ip, admin_steam_id, admin_name, reason, "
             "created_at, expires_at, duration, is_active) "
@@ -102,7 +103,7 @@ bool BanRepository::Update(const Ban& ban)
 {
     try
     {
-        Database::Instance().ExecutePrepared("update_ban",
+        Sys().Db.ExecutePrepared("update_ban",
                                              "UPDATE bans SET target_name = $2, is_active = $3, removed_at = $4, "
                                              "removed_by = $5, removed_reason = $6 WHERE id = $1",
                                              ban.Id, ban.TargetName, ban.IsActive, ban.RemovedAt, ban.RemovedBy,
@@ -120,7 +121,7 @@ bool BanRepository::Remove(int64_t banId, int64_t removedBy, const std::string& 
 {
     try
     {
-        Database::Instance().ExecutePrepared(
+        Sys().Db.ExecutePrepared(
             "remove_ban",
             "UPDATE bans SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 WHERE id = $1",
             banId, TimeUtils::Now(), removedBy, reason);
@@ -137,7 +138,7 @@ int BanRepository::ExpireOldBans()
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "expire_old_bans",
             "UPDATE bans SET is_active = false WHERE is_active = true AND expires_at > 0 AND expires_at <= $1",
             TimeUtils::Now());
@@ -156,7 +157,7 @@ std::vector<Ban> BanRepository::GetHistory(int64_t steamId)
 
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "get_ban_history", "SELECT * FROM bans WHERE target_steam_id = $1 ORDER BY created_at DESC", steamId);
 
         for (const auto& row : result)

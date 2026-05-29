@@ -5,27 +5,29 @@
 #include <memory>
 #include <string_view>
 
+namespace AdminSystem
+{
+struct Managers;
+}
+
 /**
  * Admin System plugin. The Metamod lifecycle, standard hooks, and player tracking are
  * owned by CS2Kit::Core::MetamodPluginBase; this class provides plugin metadata, subsystem
  * wiring (OnLoad), the gameplay callbacks, and the one custom hook (voice-mute listening).
  *
- * The plugin owns its service managers (see Managers) for one Load/Unload cycle, so their
- * state cannot leak across `meta unload`/`meta reload`. Reach them via Sys().
+ * The plugin owns its service managers (AdminSystem::Managers) for one Load/Unload cycle, so
+ * their state cannot leak across `meta unload`/`meta reload`. Reach them via AdminSystem::Sys().
  */
 class AdminSystemPlugin : public CS2Kit::Core::MetamodPluginBase
 {
 public:
-    /** Plugin-owned service managers. Constructed in OnLoad, destroyed in OnDestroyInstances. */
-    struct Managers;
-
     ~AdminSystemPlugin();
 
     /** The single plugin instance. */
     static AdminSystemPlugin& Get();
 
     /** The live managers. Valid only between OnLoad and unload. */
-    Managers& M();
+    AdminSystem::Managers& M();
 
 protected:
     CS2Kit::Core::PluginInfo Info() const override;
@@ -42,12 +44,9 @@ public:
     bool Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen);
 
 private:
-    std::unique_ptr<Managers> _managers;
+    std::unique_ptr<AdminSystem::Managers> _managers;
 };
 
 extern AdminSystemPlugin g_AdminSystemPlugin;
-
-/** Shorthand for the plugin's live managers (AdminSystemPlugin::Get().M()). */
-AdminSystemPlugin::Managers& Sys();
 
 PLUGIN_GLOBALVARS();

@@ -1,4 +1,6 @@
 #include "ChatService.hpp"
+#include "Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../Admin/AdminManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
@@ -40,14 +42,14 @@ void ChatService::Reply(int slot, std::string_view message)
 
 void ChatService::NoPermission(int slot)
 {
-    auto msg = std::format("{}{}", ChatColors::Red, Translations::Instance().Get("common.noPermission"));
+    auto msg = std::format("{}{}", ChatColors::Red, CS2Kit::Core::Kit().Translations.Get("common.noPermission"));
     Chat::Print(slot, msg);
 }
 
 void ChatService::BroadcastPunishment(std::string_view action, std::string_view adminName, std::string_view targetName,
                                       std::string_view reason, int64_t durationSec)
 {
-    const auto& cfg = ConfigManager::Instance().GetChat();
+    const auto& cfg = Sys().Config.GetChat();
     if (!cfg.broadcastPunishments)
         return;
 
@@ -71,11 +73,11 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
                                   std::string_view targetName)
 {
-    const auto& cfg = ConfigManager::Instance().GetChat();
+    const auto& cfg = Sys().Config.GetChat();
     if (!cfg.broadcastPunishments)
         return;
 
-    auto verb = Translations::Instance().Get(translationKey);
+    auto verb = CS2Kit::Core::Kit().Translations.Get(translationKey);
     if (verb.empty())
         verb = translationKey;  // Fallback: render the key literally so a missing translation is obvious.
 
@@ -94,7 +96,7 @@ void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view mes
     if (!admin)
         return;
 
-    auto style = AdminManager::Instance().GetChatStyle(admin->GetSteamID());
+    auto style = Sys().Admins.GetChatStyle(admin->GetSteamID());
 
     auto prefixColor = ChatColors::ParseNamed(style.PrefixColor);
     auto nameColor = ChatColors::ParseNamed(style.NameColor);
@@ -128,18 +130,18 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
 
     // Menu free-text input: if a chat capture is pending for this player, the line is
     // their menu answer, not a chat message. Always supersede so it isn't broadcast.
-    if (CS2Kit::Sdk::ChatInputCapture::Instance().TryConsume(player->GetSlot(), message))
+    if (CS2Kit::Core::Kit().ChatInput.TryConsume(player->GetSlot(), message))
         return true;
 
     bool isCommand = (message.front() == '!' || message.front() == '.');
 
     // Try to dispatch as a registered command. Returns false for unknown commands
     // (e.g. "!ads") so they fall through to normal chat instead of being silently swallowed.
-    if (isCommand && CommandManager::Instance().HandleChatMessage(player, std::string(message)))
+    if (isCommand && CS2Kit::Core::Kit().Commands.HandleChatMessage(player, std::string(message)))
         return true;
 
     int64_t steamId = player->GetSteamID();
-    if (PunishmentManager::Instance().IsTextMuted(steamId))
+    if (Sys().Punishments.IsTextMuted(steamId))
     {
         int slot = player->GetSlot();
         int64_t now = TimeUtils::Now();
@@ -148,8 +150,8 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
         if (now - last >= kMuteNoticeIntervalSec)
         {
             last = now;
-            auto mute = PunishmentManager::Instance().GetActiveTextMute(steamId);
-            auto& tr = Translations::Instance();
+            auto mute = Sys().Punishments.GetActiveTextMute(steamId);
+            auto& tr = CS2Kit::Core::Kit().Translations;
             if (mute)
             {
                 Chat::Print(slot,
@@ -167,8 +169,8 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
         return true;
     }
 
-    const auto& chatCfg = ConfigManager::Instance().GetChat();
-    if (chatCfg.tagAdminChatMessages && AdminManager::Instance().IsAdmin(steamId))
+    const auto& chatCfg = Sys().Config.GetChat();
+    if (chatCfg.tagAdminChatMessages && Sys().Admins.IsAdmin(steamId))
     {
         RebroadcastAdminChat(player, message, isSayTeam);
         return true;
@@ -189,8 +191,8 @@ void ChatService::NotifyVoiceMuted(Player* player)
         return;
     last = now;
 
-    auto mute = PunishmentManager::Instance().GetActiveVoiceMute(player->GetSteamID());
-    auto& tr = Translations::Instance();
+    auto mute = Sys().Punishments.GetActiveVoiceMute(player->GetSteamID());
+    auto& tr = CS2Kit::Core::Kit().Translations;
     if (mute)
     {
         Chat::Print(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice"), ChatColors::Default,

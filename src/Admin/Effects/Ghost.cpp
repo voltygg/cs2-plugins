@@ -1,4 +1,5 @@
 #include "Ghost.hpp"
+#include "../../Core/Managers.hpp"
 
 #include "../Actions/ActionContext.hpp"
 #include "EffectManager.hpp"
@@ -17,7 +18,7 @@ void ToggleGhost(int adminSlot, int targetSlot)
     if (!ctx.Valid())
         return;
 
-    auto& mgr = EffectManager::Instance();
+    auto& mgr = Sys().Effects;
     if (mgr.IsActive(targetSlot, EffectId::Ghost))
     {
         mgr.Cancel(targetSlot, EffectId::Ghost);

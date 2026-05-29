@@ -1,4 +1,6 @@
 #include "AdminMenu.hpp"
+#include "../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "AdminManager.hpp"
 #include "Menu/AdminMenu_ChatSettings.hpp"
@@ -19,9 +21,9 @@ using CS2Kit::Utils::Translations;
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
 {
-    auto& tr = Translations::Instance();
-    auto& adminMgr = AdminManager::Instance();
-    auto& plrMgr = PlayerManager::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& adminMgr = Sys().Admins;
+    auto& plrMgr = CS2Kit::Core::Kit().Players;
 
     auto* adminPlayer = plrMgr.GetPlayerBySlot(adminSlot);
     if (!adminPlayer)

@@ -1,4 +1,6 @@
 #include "AdminMenu_Control.hpp"
+#include "../../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../Actions/CheatCheck.hpp"
 #include "../Actions/Movement.hpp"
@@ -51,7 +53,7 @@ void AddSubmenuLink(MenuBuilder& builder, const std::string& label, bool enabled
 void AddFlagToggle(MenuBuilder& builder, const std::string& base, bool enabled, int admin, int target, uint32_t flag,
                    void (*action)(int, int))
 {
-    auto& tr = Translations::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
     builder.AddToggle(
         base, tr.Get("effectState.on"), tr.Get("effectState.off"),
         [target, flag](int) {
@@ -79,7 +81,7 @@ void AddPresetChoice(MenuBuilder& builder, const std::string& title, const std::
         title, std::move(choices), [idx](int) { return *idx; }, [idx](int, int newIdx) { *idx = newIdx; },
         [admin, target, action](int slot, const int& value) {
             action(admin, target, value);
-            MenuManager::Instance().CloseAllMenus(slot);
+            CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
         },
         enabled);
 }
@@ -88,9 +90,9 @@ void AddPresetChoice(MenuBuilder& builder, const std::string& title, const std::
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
 {
-    auto& tr = Translations::Instance();
-    auto& adminMgr = AdminManager::Instance();
-    auto& plrMgr = PlayerManager::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& adminMgr = Sys().Admins;
+    auto& plrMgr = CS2Kit::Core::Kit().Players;
 
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
     if (!admin)
@@ -104,7 +106,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
     // Self-only Hide toggle sits at the top of the Control list before player picks.
     builder.AddToggle(
         tr.Get("action.hide"), tr.Get("effectState.on"), tr.Get("effectState.off"),
-        [adminSlot](int) { return EffectManager::Instance().IsActive(adminSlot, EffectId::Hide); },
+        [adminSlot](int) { return Sys().Effects.IsActive(adminSlot, EffectId::Hide); },
         [adminSlot](int) { Effects::ToggleHide(adminSlot); }, hasB);
 
     auto players = plrMgr.GetAllPlayers();
@@ -116,7 +118,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
         builder.AddButton(p->GetName(), [adminSlot, targetSlot](int /*s*/) {
             auto actions = BuildControlActionsMenu(adminSlot, targetSlot);
             if (actions)
-                MenuManager::Instance().OpenMenu(adminSlot, actions);
+                CS2Kit::Core::Kit().Menus.OpenMenu(adminSlot, actions);
         });
     }
     if (players.empty())
@@ -127,9 +129,9 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = Translations::Instance();
-    auto& adminMgr = AdminManager::Instance();
-    auto& plrMgr = PlayerManager::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& adminMgr = Sys().Admins;
+    auto& plrMgr = CS2Kit::Core::Kit().Players;
 
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
     auto* target = plrMgr.GetPlayerBySlot(targetSlot);

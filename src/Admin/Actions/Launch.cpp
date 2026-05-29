@@ -1,4 +1,5 @@
 #include "Launch.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "ActionContext.hpp"
 
@@ -45,7 +46,7 @@ void DoLaunch(int adminSlot, int targetSlot)
 
     int slot = targetSlot;
 
-    Scheduler::Instance().Delay(FallProtectMs, [slot]() {
+    CS2Kit::Core::Kit().Scheduler.Delay(FallProtectMs, [slot]() {
         PlayerController pc(slot);
         if (!pc.IsValid())
         {

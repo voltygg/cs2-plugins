@@ -1,4 +1,6 @@
 #include "CheatCheckView.hpp"
+#include "../../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Config.hpp"
@@ -79,11 +81,11 @@ std::string EscapeHtml(const std::string& text)
 
 void RenderPanel(int slot, const PendingCheck& pc)
 {
-    if (!PlayerManager::Instance().GetPlayerBySlot(slot))
+    if (!CS2Kit::Core::Kit().Players.GetPlayerBySlot(slot))
         return;
 
     Translations::SlotScope scope(slot);
-    auto& tr = Translations::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
 
     int64_t remain = pc.DeadlineSec - TimeUtils::Now();
     int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
@@ -109,17 +111,17 @@ void RenderPanel(int slot, const PendingCheck& pc)
         std::format("<font color='#ff4040' size='5'>{}</font><br>{}<br><font color='#ffd040'>{}: {}s</font>",
                     tr.Get("cheatCheck.panelTitle"), body, tr.Get("cheatCheck.timeRemaining"), remainSec);
 
-    if (ConfigManager::Instance().GetCheatCheck().autoKick)
+    if (Sys().Config.GetCheatCheck().autoKick)
         html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick"));
 
-    MessageSystem::Instance().SendCenterHtml(slot, html);
+    CS2Kit::Core::Kit().Messages.SendCenterHtml(slot, html);
 }
 
 void Render(int slot, const PendingCheck& pc)
 {
     Translations::SlotScope scope(slot);
-    auto& tr = Translations::Instance();
-    auto& chat = ChatService::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& chat = Sys().Chat;
 
     chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle")));
 

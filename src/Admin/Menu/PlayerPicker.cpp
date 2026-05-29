@@ -1,4 +1,5 @@
 #include "PlayerPicker.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -14,8 +15,8 @@ using CS2Kit::Utils::Translations;
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(
     int adminSlot, const std::string& title, std::function<void(int adminSlot, int targetSlot)> onPick)
 {
-    auto& tr = Translations::Instance();
-    auto& plrMgr = PlayerManager::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& plrMgr = CS2Kit::Core::Kit().Players;
 
     MenuBuilder builder(title);
 

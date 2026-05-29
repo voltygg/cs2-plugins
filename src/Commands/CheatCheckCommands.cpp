@@ -1,4 +1,6 @@
 #include "CheatCheckCommands.hpp"
+#include "../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../Admin/Actions/CheatCheck.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
@@ -22,9 +24,9 @@ namespace
 CommandResult HandleCheatCheckLink(Player* caller, const std::vector<std::string>& args)
 {
     Translations::SlotScope scope(caller->GetSlot());
-    auto& tr = Translations::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
 
-    switch (CheatCheckManager::Instance().SubmitPlayerLink(caller->GetSlot(), args[0]))
+    switch (Sys().CheatCheck.SubmitPlayerLink(caller->GetSlot(), args[0]))
     {
     case CheatCheckManager::SubmitResult::Relayed:
         return {true, tr.Get("cheatCheck.linkReceived")};
@@ -44,7 +46,7 @@ CommandResult HandleCheatCheckCancel(Player* admin, const std::vector<std::strin
         return {false, err};
 
     Translations::SlotScope scope(admin->GetSlot());
-    auto& tr = Translations::Instance();
+    auto& tr = CS2Kit::Core::Kit().Translations;
 
     if (!AdminSystem::Admin::Actions::DoCancelCheck(admin->GetSlot(), target->GetSlot()))
         return {false, tr.Get("cheatCheck.noActiveCheck")};

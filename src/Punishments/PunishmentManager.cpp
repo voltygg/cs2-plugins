@@ -1,4 +1,6 @@
 #include "PunishmentManager.hpp"
+#include "../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../Core/ChatService.hpp"
 #include "../Core/Config.hpp"
@@ -31,11 +33,11 @@ namespace
 // that were already negotiated before the (un)mute landed.
 void RefreshVoiceChannel(int64_t senderSteamId, bool muted)
 {
-    auto* engine = CS2Kit::Sdk::GameInterfaces::Instance().Engine;
+    auto* engine = CS2Kit::Core::Kit().Interfaces.Engine;
     if (!engine)
         return;
 
-    auto* sender = PlayerManager::Instance().GetPlayerBySteamId(senderSteamId);
+    auto* sender = CS2Kit::Core::Kit().Players.GetPlayerBySteamId(senderSteamId);
     if (!sender)
         return;
 
@@ -44,7 +46,7 @@ void RefreshVoiceChannel(int64_t senderSteamId, bool muted)
     {
         if (i == senderSlot)
             continue;
-        if (!PlayerManager::Instance().GetPlayerBySlot(i))
+        if (!CS2Kit::Core::Kit().Players.GetPlayerBySlot(i))
             continue;
         engine->SetClientListening(CPlayerSlot(i), CPlayerSlot(senderSlot), !muted);
     }
@@ -162,13 +164,13 @@ bool PunishmentManager::IssueBan(Ban& ban)
         _activeBans[ban.TargetSteamId] = ban;
 
         // Kick the player if currently connected.
-        if (auto* player = PlayerManager::Instance().GetPlayerBySteamId(ban.TargetSteamId))
+        if (auto* player = CS2Kit::Core::Kit().Players.GetPlayerBySteamId(ban.TargetSteamId))
         {
             CS2Kit::Sdk::PlayerController controller(player->GetSlot());
             controller.Kick(ban.Reason.c_str());
         }
 
-        ChatService::Instance().BroadcastPunishment("banned", ban.AdminName, ban.TargetName, ban.Reason, ban.Duration);
+        Sys().Chat.BroadcastPunishment("banned", ban.AdminName, ban.TargetName, ban.Reason, ban.Duration);
         return true;
     }
     catch (const std::exception& e)
@@ -195,7 +197,7 @@ bool PunishmentManager::IssueVoiceMute(VoiceMute& mute)
         _voiceMutedPlayers.insert(mute.TargetSteamId);
         RefreshVoiceChannel(mute.TargetSteamId, true);
 
-        ChatService::Instance().BroadcastPunishment("voice-muted", mute.AdminName, mute.TargetName, mute.Reason,
+        Sys().Chat.BroadcastPunishment("voice-muted", mute.AdminName, mute.TargetName, mute.Reason,
                                                     mute.Duration);
         return true;
     }
@@ -222,7 +224,7 @@ bool PunishmentManager::IssueTextMute(TextMute& mute)
         _activeTextMutes[mute.TargetSteamId] = mute;
         _textMutedPlayers.insert(mute.TargetSteamId);
 
-        ChatService::Instance().BroadcastPunishment("text-muted", mute.AdminName, mute.TargetName, mute.Reason,
+        Sys().Chat.BroadcastPunishment("text-muted", mute.AdminName, mute.TargetName, mute.Reason,
                                                     mute.Duration);
         return true;
     }
@@ -244,10 +246,10 @@ bool PunishmentManager::IssueWarning(Warning& warning)
         if (!repo.Create(warning))
             return false;
 
-        ChatService::Instance().BroadcastPunishment("warned", warning.AdminName, warning.TargetName, warning.Reason, 0);
+        Sys().Chat.BroadcastPunishment("warned", warning.AdminName, warning.TargetName, warning.Reason, 0);
 
         int active = repo.CountActive(warning.TargetSteamId);
-        int threshold = ConfigManager::Instance().GetPunishments().warningThreshold;
+        int threshold = Sys().Config.GetPunishments().warningThreshold;
         if (threshold > 0 && active >= threshold)
         {
             Log::Info("Warning threshold ({}) reached for {} -- escalating to ban.", threshold, warning.TargetSteamId);
@@ -258,7 +260,7 @@ bool PunishmentManager::IssueWarning(Warning& warning)
             autoBan.TargetName = warning.TargetName;
             autoBan.AdminSteamId = warning.AdminSteamId;
             autoBan.AdminName = warning.AdminName;
-            autoBan.Reason = ConfigManager::Instance().GetPunishments().defaultBanReason;
+            autoBan.Reason = Sys().Config.GetPunishments().defaultBanReason;
             autoBan.Duration = 0;  // permanent escalation
             IssueBan(autoBan);
         }
@@ -281,7 +283,7 @@ bool PunishmentManager::RemoveBan(int64_t banId, int64_t removedBy, const std::s
     {
         if (it->second.Id == banId)
         {
-            ChatService::Instance().BroadcastPunishment("unbanned", "Admin", it->second.TargetName, reason, 0);
+            Sys().Chat.BroadcastPunishment("unbanned", "Admin", it->second.TargetName, reason, 0);
             _activeBans.erase(it);
             return true;
         }
@@ -304,7 +306,7 @@ bool PunishmentManager::RemoveVoiceMute(int64_t muteId, int64_t removedBy, const
             _voiceMutedPlayers.erase(target);
             _activeVoiceMutes.erase(it);
             RefreshVoiceChannel(target, false);
-            ChatService::Instance().BroadcastPunishment("voice-unmuted", "Admin", targetName, reason, 0);
+            Sys().Chat.BroadcastPunishment("voice-unmuted", "Admin", targetName, reason, 0);
             return true;
         }
     }
@@ -322,7 +324,7 @@ bool PunishmentManager::RemoveTextMute(int64_t muteId, int64_t removedBy, const 
         if (it->second.Id == muteId)
         {
             _textMutedPlayers.erase(it->first);
-            ChatService::Instance().BroadcastPunishment("text-unmuted", "Admin", it->second.TargetName, reason, 0);
+            Sys().Chat.BroadcastPunishment("text-unmuted", "Admin", it->second.TargetName, reason, 0);
             _activeTextMutes.erase(it);
             return true;
         }

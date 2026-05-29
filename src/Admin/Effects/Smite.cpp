@@ -1,4 +1,5 @@
 #include "Smite.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../Actions/ActionContext.hpp"
 
@@ -20,7 +21,7 @@ void DoSmite(int adminSlot, int targetSlot)
     Broadcast(ctx, "broadcast.smote");
 
     int slot = targetSlot;
-    Scheduler::Instance().Delay(250, [slot]() {
+    CS2Kit::Core::Kit().Scheduler.Delay(250, [slot]() {
         CS2Kit::Sdk::PlayerController pc(slot);
         if (pc.IsValid() && pc.IsAlive())
             pc.Slay();

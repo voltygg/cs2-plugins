@@ -1,4 +1,6 @@
 #include "InfoCommands.hpp"
+#include "../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../Admin/AdminManager.hpp"
 #include "../Core/ChatService.hpp"
@@ -20,8 +22,8 @@ namespace
 
 CommandResult HandleWho(Player* admin, const std::vector<std::string>& /*args*/)
 {
-    auto& plrMgr = PlayerManager::Instance();
-    auto& adminMgr = AdminManager::Instance();
+    auto& plrMgr = CS2Kit::Core::Kit().Players;
+    auto& adminMgr = Sys().Admins;
     auto players = plrMgr.GetAllPlayers();
 
     if (players.empty())
@@ -30,7 +32,7 @@ CommandResult HandleWho(Player* admin, const std::vector<std::string>& /*args*/)
     }
 
     int slot = admin->GetSlot();
-    auto& chat = ChatService::Instance();
+    auto& chat = Sys().Chat;
     chat.Reply(slot, std::format("Online players ({}):", players.size()));
     for (auto* p : players)
     {
@@ -48,7 +50,7 @@ CommandResult HandleWho(Player* admin, const std::vector<std::string>& /*args*/)
 
 CommandResult HandleAdminReload(Player* /*admin*/, const std::vector<std::string>& /*args*/)
 {
-    bool ok = AdminManager::Instance().Reload();
+    bool ok = Sys().Admins.Reload();
     return {ok, ok ? "Admins and groups reloaded from database." : "Reload failed (check logs)."};
 }
 

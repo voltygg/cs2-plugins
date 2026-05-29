@@ -1,4 +1,5 @@
 #include "WarningRepository.hpp"
+#include "../../Core/Managers.hpp"
 
 #include "../Database.hpp"
 
@@ -13,7 +14,7 @@ bool WarningRepository::Create(Warning& warning)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "create_warning",
             "INSERT INTO warnings (target_steam_id, target_name, admin_steam_id, admin_name, reason, "
             "created_at, is_active, expires_at) "
@@ -34,7 +35,7 @@ int WarningRepository::CountActive(int64_t steamId)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "count_active_warnings",
             "SELECT COUNT(*) AS total FROM warnings WHERE target_steam_id = $1 AND is_active = true "
             "AND (expires_at = 0 OR expires_at > $2)",
@@ -53,7 +54,7 @@ int WarningRepository::Clear(int64_t steamId)
 {
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "clear_warnings", "UPDATE warnings SET is_active = false WHERE target_steam_id = $1 AND is_active = true",
             steamId);
         return result.affected_rows();
@@ -69,7 +70,7 @@ std::vector<Warning> WarningRepository::GetHistory(int64_t steamId)
     std::vector<Warning> warnings;
     try
     {
-        auto result = Database::Instance().ExecutePrepared(
+        auto result = Sys().Db.ExecutePrepared(
             "get_warning_history", "SELECT * FROM warnings WHERE target_steam_id = $1 ORDER BY created_at DESC",
             steamId);
         for (const auto& row : result)

@@ -1,4 +1,6 @@
 #include "ActionContext.hpp"
+#include "../../Core/Managers.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include "../../Core/ChatService.hpp"
 #include "../AdminManager.hpp"
@@ -16,14 +18,14 @@ ActionContext Resolve(int adminSlot, int targetSlot, char requiredFlag)
 {
     ActionContext ctx{nullptr, nullptr, PlayerController(adminSlot), PlayerController(targetSlot)};
 
-    auto& plrMgr = PlayerManager::Instance();
+    auto& plrMgr = CS2Kit::Core::Kit().Players;
     ctx.Admin = plrMgr.GetPlayerBySlot(adminSlot);
     ctx.Target = plrMgr.GetPlayerBySlot(targetSlot);
 
     if (!ctx.Admin || !ctx.Target)
         return ctx;
 
-    auto& adminMgr = AdminManager::Instance();
+    auto& adminMgr = Sys().Admins;
     int64_t adminSid = ctx.Admin->GetSteamID();
     int64_t targetSid = ctx.Target->GetSteamID();
 
@@ -44,7 +46,7 @@ void Broadcast(const ActionContext& ctx, const std::string& translationKey)
 {
     if (!ctx.Admin || !ctx.Target)
         return;
-    ChatService::Instance().BroadcastAction(translationKey, ctx.Admin->GetName(), ctx.Target->GetName());
+    Sys().Chat.BroadcastAction(translationKey, ctx.Admin->GetName(), ctx.Target->GetName());
 }
 
 }  // namespace AdminSystem::Admin::Actions

@@ -1,4 +1,5 @@
 #include "AdminManager.hpp"
+#include "../Core/Managers.hpp"
 
 #include "../Core/Config.hpp"
 #include "../Database/Repositories/AdminRepository.hpp"
@@ -247,7 +248,7 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
     }
     else
     {
-        const auto& fallback = ConfigManager::Instance().GetChat();
+        const auto& fallback = Sys().Config.GetChat();
         style.Prefix = fallback.fallbackPrefix;
         style.PrefixColor = fallback.fallbackPrefixColor;
         style.NameColor = fallback.fallbackNameColor;
