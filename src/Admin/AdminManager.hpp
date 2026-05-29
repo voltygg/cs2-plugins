@@ -10,8 +10,6 @@
 namespace AdminSystem::Admin
 {
 
-using namespace CS2Kit::Core;
-
 /**
  * Resolved chat styling for a single admin, derived from their highest-immunity group
  * that has a non-empty ChatPrefix (with config-driven fallback when none does).

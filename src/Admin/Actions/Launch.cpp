@@ -43,13 +43,13 @@ void DoLaunch(int adminSlot, int targetSlot)
                                     Rand(-LaunchHorizontal, LaunchHorizontal), LaunchUpward});
 
         // FL_GODMODE on m_fFlags is the working CS2 invincibility path (legacy m_takedamage is no-op).
-        ctx.TargetCtrl.SetFlags(ctx.TargetCtrl.GetFlags() | FL_GODMODE);
+        ctx.TargetCtrl.SetFlags(ctx.TargetCtrl.GetFlags() | CS2Kit::Sdk::FL_GODMODE);
 
         int slot = targetSlot;
         Kit().Scheduler.Delay(FallProtectMs, [slot]() {
             PlayerController pc(slot);
             if (pc.IsValid())
-                pc.SetFlags(pc.GetFlags() & ~FL_GODMODE);
+                pc.SetFlags(pc.GetFlags() & ~CS2Kit::Sdk::FL_GODMODE);
         });
 
         return "broadcast.launched";

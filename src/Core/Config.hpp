@@ -14,8 +14,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DatabaseConfig, host, port, data
 namespace AdminSystem::Core
 {
 
-using namespace CS2Kit::Core;
-
 using DatabaseConfig = AdminSystem::Database::DatabaseConfig;
 
 /** "plugin" section of settings.json. */

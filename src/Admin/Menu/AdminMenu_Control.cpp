@@ -161,7 +161,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     AddPresetChoice(builder, tr.Get("action.armor"), "AP", hasH, adminSlot, targetSlot, &Actions::DoSetArmor,
                     ArmorPresets);
 
-    AddFlagToggle(builder, tr.Get("action.godmode"), hasH, adminSlot, targetSlot, FL_GODMODE,
+    AddFlagToggle(builder, tr.Get("action.godmode"), hasH, adminSlot, targetSlot, CS2Kit::Sdk::FL_GODMODE,
                   &Actions::DoToggleGodmode);
 
     AddSimple(builder, tr.Get("action.bury"), hasS, adminSlot, targetSlot, &Actions::DoBury);

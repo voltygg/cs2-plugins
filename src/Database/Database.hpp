@@ -7,7 +7,6 @@
 
 namespace AdminSystem::Database
 {
-using namespace CS2Kit::Core;
 
 /** PostgreSQL connection parameters loaded from the "database" section of settings.json.
  *  Field names match the JSON keys so they auto-deserialize via CS2Kit::Utils::Json. */

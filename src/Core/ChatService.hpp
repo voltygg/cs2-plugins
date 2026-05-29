@@ -9,8 +9,6 @@
 namespace AdminSystem::Core
 {
 
-using namespace CS2Kit::Core;
-
 /**
  * Renders admin-system chat semantics on top of CS2Kit's chat helpers:
  * styled per-command replies, punishment broadcasts, and prefix-tagged admin chat.

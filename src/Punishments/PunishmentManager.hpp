@@ -12,8 +12,6 @@
 namespace AdminSystem::Punishments
 {
 
-using namespace CS2Kit::Core;
-
 /**
  * Manages active punishments (bans, voice mutes, text mutes, warnings).
  * Caches active punishments in memory and syncs with the database.

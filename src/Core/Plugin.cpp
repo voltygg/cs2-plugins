@@ -36,6 +36,7 @@ using namespace CS2Kit::Utils;
 using namespace CS2Kit::Menu;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 using AdminSystem::Database::Database;
+using AdminSystem::Sys;
 using AdminSystem::Web::HttpClient;
 
 AdminSystemPlugin g_AdminSystemPlugin;
