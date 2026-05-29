@@ -51,4 +51,14 @@ void Broadcast(const ActionContext& ctx, const std::string& translationKey)
     Sys().Chat.BroadcastAction(translationKey, ctx.Admin->GetName(), ctx.Target->GetName());
 }
 
+void RunAction(int adminSlot, int targetSlot, char requiredFlag,
+               const std::function<std::optional<std::string>(const ActionContext&)>& body)
+{
+    auto ctx = Resolve(adminSlot, targetSlot, requiredFlag);
+    if (!ctx.Valid())
+        return;
+    if (auto key = body(ctx))
+        Broadcast(ctx, *key);
+}
+
 }  // namespace AdminSystem::Admin::Actions

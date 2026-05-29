@@ -40,6 +40,20 @@ void EffectManager::Apply(int slot, EffectId id, uint64_t timerHandle, std::func
     entry.CancelFn = std::move(cancelFn);
 }
 
+bool EffectManager::Toggle(int slot, EffectId id, const std::function<EffectSetup()>& enable)
+{
+    if (!ValidSlot(slot))
+        return false;
+    if (IsActive(slot, id))
+    {
+        Cancel(slot, id);
+        return false;
+    }
+    EffectSetup setup = enable();
+    Apply(slot, id, setup.TimerHandle, std::move(setup.CancelFn), setup.RoundScoped);
+    return true;
+}
+
 void EffectManager::Cancel(int slot, EffectId id)
 {
     if (!ValidSlot(slot))

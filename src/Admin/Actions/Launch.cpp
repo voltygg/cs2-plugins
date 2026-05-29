@@ -32,34 +32,28 @@ float Rand(float lo, float hi)
 
 void DoLaunch(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 's');
-    if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
-        return;
+    RunAction(adminSlot, targetSlot, 's', [targetSlot](const ActionContext& ctx) -> std::optional<std::string> {
+        if (!ctx.TargetCtrl.IsAlive())
+            return std::nullopt;
 
-    // Write velocity directly on the pawn rather than through the Teleport vfunc.
-    // Teleport(nullptr origin, ...) was crashing the server in CS2 builds we tested;
-    // m_vecAbsVelocity is the conventional path for velocity-only changes.
-    Vector vel{Rand(-LaunchHorizontal, LaunchHorizontal), Rand(-LaunchHorizontal, LaunchHorizontal), LaunchUpward};
-    ctx.TargetCtrl.SetPawnField<Vector>("CBaseEntity", "m_vecAbsVelocity", vel);
+        // Write velocity directly on the pawn rather than through the Teleport vfunc.
+        // Teleport(nullptr origin, ...) was crashing the server in CS2 builds we tested;
+        // m_vecAbsVelocity is the conventional path for velocity-only changes.
+        ctx.TargetCtrl.SetVelocity({Rand(-LaunchHorizontal, LaunchHorizontal),
+                                    Rand(-LaunchHorizontal, LaunchHorizontal), LaunchUpward});
 
-    // FL_GODMODE on m_fFlags is the working CS2 invincibility path (legacy m_takedamage is no-op).
-    auto savedFlags = ctx.TargetCtrl.GetPawnField<uint32_t>("CBaseEntity", "m_fFlags");
-    ctx.TargetCtrl.SetPawnField<uint32_t>("CBaseEntity", "m_fFlags", savedFlags | CS2Kit::Sdk::FL_GODMODE);
+        // FL_GODMODE on m_fFlags is the working CS2 invincibility path (legacy m_takedamage is no-op).
+        ctx.TargetCtrl.SetFlags(ctx.TargetCtrl.GetFlags() | FL_GODMODE);
 
-    int slot = targetSlot;
+        int slot = targetSlot;
+        Kit().Scheduler.Delay(FallProtectMs, [slot]() {
+            PlayerController pc(slot);
+            if (pc.IsValid())
+                pc.SetFlags(pc.GetFlags() & ~FL_GODMODE);
+        });
 
-    Kit().Scheduler.Delay(FallProtectMs, [slot]() {
-        PlayerController pc(slot);
-        if (!pc.IsValid())
-        {
-            return;
-        }
-
-        auto flags = pc.GetPawnField<uint32_t>("CBaseEntity", "m_fFlags");
-        pc.SetPawnField<uint32_t>("CBaseEntity", "m_fFlags", flags & ~CS2Kit::Sdk::FL_GODMODE);
+        return "broadcast.launched";
     });
-
-    Broadcast(ctx, "broadcast.launched");
 }
 
 }  // namespace AdminSystem::Admin::Actions

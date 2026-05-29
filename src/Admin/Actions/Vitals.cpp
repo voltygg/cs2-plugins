@@ -7,55 +7,48 @@
 namespace AdminSystem::Admin::Actions
 {
 
+using OptKey = std::optional<std::string>;
+
 void DoSlay(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 's');
-    if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
-    {
-        return;
-    }
-
-    ctx.TargetCtrl.Slay();
-    Broadcast(ctx, "broadcast.slain");
+    RunAction(adminSlot, targetSlot, 's', [](const ActionContext& ctx) -> OptKey {
+        if (!ctx.TargetCtrl.IsAlive())
+            return std::nullopt;
+        ctx.TargetCtrl.Slay();
+        return "broadcast.slain";
+    });
 }
 
 void DoSetHealth(int adminSlot, int targetSlot, int health)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 'h');
-    if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
-    {
-        return;
-    }
-
-    ctx.TargetCtrl.SetPawnField<int>("CBaseEntity", "m_iHealth", health);
-    Broadcast(ctx, "broadcast.healed");
+    RunAction(adminSlot, targetSlot, 'h', [health](const ActionContext& ctx) -> OptKey {
+        if (!ctx.TargetCtrl.IsAlive())
+            return std::nullopt;
+        ctx.TargetCtrl.SetHealth(health);
+        return "broadcast.healed";
+    });
 }
 
 void DoSetArmor(int adminSlot, int targetSlot, int armor)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 'h');
-    if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
-    {
-        return;
-    }
-
-    ctx.TargetCtrl.SetPawnField<int>("CCSPlayerPawn", "m_ArmorValue", armor);
-    Broadcast(ctx, "broadcast.armored");
+    RunAction(adminSlot, targetSlot, 'h', [armor](const ActionContext& ctx) -> OptKey {
+        if (!ctx.TargetCtrl.IsAlive())
+            return std::nullopt;
+        ctx.TargetCtrl.SetArmor(armor);
+        return "broadcast.armored";
+    });
 }
 
 void DoToggleGodmode(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 'h');
-    if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
-    {
-        return;
-    }
-
-    auto flags = ctx.TargetCtrl.GetPawnField<uint32_t>("CBaseEntity", "m_fFlags");
-    bool turningOn = (flags & CS2Kit::Sdk::FL_GODMODE) == 0;
-    uint32_t newFlags = turningOn ? (flags | CS2Kit::Sdk::FL_GODMODE) : (flags & ~CS2Kit::Sdk::FL_GODMODE);
-    ctx.TargetCtrl.SetPawnField<uint32_t>("CBaseEntity", "m_fFlags", newFlags);
-    Broadcast(ctx, turningOn ? "broadcast.godmodeOn" : "broadcast.godmodeOff");
+    RunAction(adminSlot, targetSlot, 'h', [](const ActionContext& ctx) -> OptKey {
+        if (!ctx.TargetCtrl.IsAlive())
+            return std::nullopt;
+        uint32_t flags = ctx.TargetCtrl.GetFlags();
+        bool turningOn = (flags & CS2Kit::Sdk::FL_GODMODE) == 0;
+        ctx.TargetCtrl.SetFlags(turningOn ? (flags | CS2Kit::Sdk::FL_GODMODE) : (flags & ~CS2Kit::Sdk::FL_GODMODE));
+        return turningOn ? "broadcast.godmodeOn" : "broadcast.godmodeOff";
+    });
 }
 
 }  // namespace AdminSystem::Admin::Actions

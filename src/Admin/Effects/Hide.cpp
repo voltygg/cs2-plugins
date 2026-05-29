@@ -28,32 +28,25 @@ void ToggleHide(int adminSlot)
     if (!ctx.Valid())
         return;
 
-    auto& mgr = Sys().Effects;
-    if (mgr.IsActive(adminSlot, EffectId::Hide))
-    {
-        mgr.Cancel(adminSlot, EffectId::Hide);
-        Broadcast(ctx, "broadcast.hideOff");
-        return;
-    }
+    bool on = Sys().Effects.Toggle(adminSlot, EffectId::Hide, [&]() -> EffectSetup {
+        int savedTeam = ctx.AdminCtrl.GetTeam();
+        std::string savedName = ctx.AdminCtrl.GetPlayerName();
 
-    int savedTeam = ctx.AdminCtrl.GetTeam();
-    std::string savedName = ctx.AdminCtrl.GetPlayerName();
+        ctx.AdminCtrl.SetPlayerName("");
+        ctx.AdminCtrl.ChangeTeam(TeamSpectator);
 
-    ctx.AdminCtrl.SetPlayerName("");
-    ctx.AdminCtrl.ChangeTeam(TeamSpectator);
+        int slot = adminSlot;
+        return {0, [slot, savedTeam, savedName]() {
+                    PlayerController pc(slot);
+                    if (!pc.IsValid())
+                        return;
+                    pc.SetPlayerName(savedName);
+                    if (pc.GetTeam() != savedTeam)
+                        pc.ChangeTeam(savedTeam);
+                }, false};
+    });
 
-    int slot = adminSlot;
-    auto cancel = [slot, savedTeam, savedName]() {
-        PlayerController pc(slot);
-        if (!pc.IsValid())
-            return;
-        pc.SetPlayerName(savedName);
-        if (pc.GetTeam() != savedTeam)
-            pc.ChangeTeam(savedTeam);
-    };
-
-    mgr.Apply(adminSlot, EffectId::Hide, /*timerHandle*/ 0, std::move(cancel), /*roundScoped*/ false);
-    Broadcast(ctx, "broadcast.hideOn");
+    Broadcast(ctx, on ? "broadcast.hideOn" : "broadcast.hideOff");
 }
 
 }  // namespace AdminSystem::Admin::Effects

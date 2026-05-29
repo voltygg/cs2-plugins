@@ -23,6 +23,14 @@ struct ActiveEffect
     std::function<void()> CancelFn;
 };
 
+/** What an effect's enable step hands back to @ref EffectManager::Toggle to register it. */
+struct EffectSetup
+{
+    uint64_t TimerHandle = 0;       /**< Scheduler handle owned by the effect, or 0. */
+    std::function<void()> CancelFn; /**< Undo the effect's state (restore render, team, etc.). */
+    bool RoundScoped = false;       /**< Auto-cancel on round end. */
+};
+
 class EffectManager
 {
 public:
@@ -40,6 +48,14 @@ public:
      * @param roundScoped  True for effects that should auto-cancel on round_end.
      */
     void Apply(int slot, EffectId id, uint64_t timerHandle, std::function<void()> cancelFn, bool roundScoped = false);
+
+    /**
+     * @brief Toggle an effect. If it is active, cancel it and return false. Otherwise run
+     * @p enable (which sets up the effect and returns its @ref EffectSetup), register it, and
+     * return true. Lets callers collapse the IsActive/Cancel/Apply dance to one call and pick
+     * the broadcast line from the bool: `Broadcast(ctx, on ? "...On" : "...Off")`.
+     */
+    bool Toggle(int slot, EffectId id, const std::function<EffectSetup()>& enable);
 
     void Cancel(int slot, EffectId id);
     void CancelAllForSlot(int slot);

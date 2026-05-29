@@ -18,25 +18,17 @@ void ToggleGhost(int adminSlot, int targetSlot)
     if (!ctx.Valid())
         return;
 
-    auto& mgr = Sys().Effects;
-    if (mgr.IsActive(targetSlot, EffectId::Ghost))
-    {
-        mgr.Cancel(targetSlot, EffectId::Ghost);
-        Broadcast(ctx, "broadcast.ghostOff");
-        return;
-    }
+    bool on = Sys().Effects.Toggle(targetSlot, EffectId::Ghost, [&]() -> EffectSetup {
+        ctx.TargetCtrl.SetVisible(false);
+        int slot = targetSlot;
+        return {0, [slot]() {
+                    PlayerController pc(slot);
+                    if (pc.IsValid())
+                        pc.SetVisible(true);
+                }, false};
+    });
 
-    ctx.TargetCtrl.SetVisible(false);
-
-    int slot = targetSlot;
-    auto cancel = [slot]() {
-        PlayerController pc(slot);
-        if (pc.IsValid())
-            pc.SetVisible(true);
-    };
-
-    mgr.Apply(targetSlot, EffectId::Ghost, /*timerHandle*/ 0, std::move(cancel), /*roundScoped*/ false);
-    Broadcast(ctx, "broadcast.ghostOn");
+    Broadcast(ctx, on ? "broadcast.ghostOn" : "broadcast.ghostOff");
 }
 
 }  // namespace AdminSystem::Admin::Effects

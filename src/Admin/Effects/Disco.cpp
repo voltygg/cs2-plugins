@@ -40,45 +40,34 @@ void ToggleDisco(int adminSlot, int targetSlot)
     if (!ctx.Valid())
         return;
 
-    auto& mgr = Sys().Effects;
-    if (mgr.IsActive(targetSlot, EffectId::Disco))
-    {
-        mgr.Cancel(targetSlot, EffectId::Disco);
-        Broadcast(ctx, "broadcast.discoOff");
-        return;
-    }
+    bool on = Sys().Effects.Toggle(targetSlot, EffectId::Disco, [&]() -> EffectSetup {
+        uint8_t savedMode = ctx.TargetCtrl.GetRenderMode();
+        uint32_t savedColor = ctx.TargetCtrl.GetRenderColor();
 
-    auto savedMode = ctx.TargetCtrl.GetPawnField<uint8_t>("CBaseModelEntity", "m_nRenderMode");
-    auto savedColor = ctx.TargetCtrl.GetPawnField<uint32_t>("CBaseModelEntity", "m_clrRender");
+        int slot = targetSlot;
+        auto idx = std::make_shared<size_t>(0);
+        uint64_t timer = Kit().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
+            CS2Kit::Sdk::PlayerController pc(slot);
+            if (!pc.IsValid() || !pc.IsAlive())
+                return;
+            pc.SetRender(RenderModeTransTexture, Palette[*idx]);
+            *idx = (*idx + 1) % Palette.size();
+        });
 
-    int slot = targetSlot;
-    auto idx = std::make_shared<size_t>(0);
-    uint64_t timer = Kit().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
-        CS2Kit::Sdk::PlayerController pc(slot);
-        if (!pc.IsValid() || !pc.IsAlive())
-            return;
-        pc.SetPawnField<uint8_t>("CBaseModelEntity", "m_nRenderMode", RenderModeTransTexture);
-        pc.SetPawnField<uint32_t>("CBaseModelEntity", "m_clrRender", Palette[*idx]);
-        *idx = (*idx + 1) % Palette.size();
+        // Auto-cancel after the duration; this routes through EffectManager so the cancel fn runs.
+        Kit().Scheduler.Delay(DiscoDurationSec * 1000, [slot]() { Sys().Effects.Cancel(slot, EffectId::Disco); });
+
+        auto cancel = [slot, savedMode, savedColor]() {
+            CS2Kit::Sdk::PlayerController pc(slot);
+            if (pc.IsValid())
+                pc.SetRender(savedMode == 0 ? RenderModeNormal : savedMode,
+                             savedColor == 0 ? ColorOpaqueWhite : savedColor);
+        };
+
+        return {timer, std::move(cancel), /*roundScoped*/ true};
     });
 
-    auto cancel = [slot, savedMode, savedColor]() {
-        CS2Kit::Sdk::PlayerController pc(slot);
-        if (!pc.IsValid())
-            return;
-        pc.SetPawnField<uint8_t>("CBaseModelEntity", "m_nRenderMode",
-                                 savedMode == 0 ? RenderModeNormal : savedMode);
-        pc.SetPawnField<uint32_t>("CBaseModelEntity", "m_clrRender",
-                                  savedColor == 0 ? ColorOpaqueWhite : savedColor);
-    };
-
-    mgr.Apply(targetSlot, EffectId::Disco, timer, std::move(cancel), /*roundScoped*/ true);
-
-    Kit().Scheduler.Delay(DiscoDurationSec * 1000, [slot]() {
-        Sys().Effects.Cancel(slot, EffectId::Disco);
-    });
-
-    Broadcast(ctx, "broadcast.discoOn");
+    Broadcast(ctx, on ? "broadcast.discoOn" : "broadcast.discoOff");
 }
 
 }  // namespace AdminSystem::Admin::Effects

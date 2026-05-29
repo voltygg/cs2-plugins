@@ -7,26 +7,30 @@
 namespace AdminSystem::Admin::Actions
 {
 
+using OptKey = std::optional<std::string>;
+
 void DoBring(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 's');
-    if (!ctx.Valid() || !ctx.AdminCtrl.IsValid() || !ctx.TargetCtrl.IsAlive())
-        return;
-    Vector dest = ctx.AdminCtrl.GetAbsOrigin();
-    Vector zeroVel{0.0f, 0.0f, 0.0f};
-    ctx.TargetCtrl.Teleport(&dest, nullptr, &zeroVel);
-    Broadcast(ctx, "broadcast.brought");
+    RunAction(adminSlot, targetSlot, 's', [](const ActionContext& ctx) -> OptKey {
+        if (!ctx.AdminCtrl.IsValid() || !ctx.TargetCtrl.IsAlive())
+            return std::nullopt;
+        Vector dest = ctx.AdminCtrl.GetAbsOrigin();
+        Vector zeroVel{0.0f, 0.0f, 0.0f};
+        ctx.TargetCtrl.Teleport(&dest, nullptr, &zeroVel);
+        return "broadcast.brought";
+    });
 }
 
 void DoGoto(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 's');
-    if (!ctx.Valid() || !ctx.AdminCtrl.IsValid() || !ctx.TargetCtrl.IsAlive())
-        return;
-    Vector dest = ctx.TargetCtrl.GetAbsOrigin();
-    Vector zeroVel{0.0f, 0.0f, 0.0f};
-    ctx.AdminCtrl.Teleport(&dest, nullptr, &zeroVel);
-    Broadcast(ctx, "broadcast.goto");
+    RunAction(adminSlot, targetSlot, 's', [](const ActionContext& ctx) -> OptKey {
+        if (!ctx.AdminCtrl.IsValid() || !ctx.TargetCtrl.IsAlive())
+            return std::nullopt;
+        Vector dest = ctx.TargetCtrl.GetAbsOrigin();
+        Vector zeroVel{0.0f, 0.0f, 0.0f};
+        ctx.AdminCtrl.Teleport(&dest, nullptr, &zeroVel);
+        return "broadcast.goto";
+    });
 }
 
 void DoSwap(int adminSlot, int firstSlot, int secondSlot)

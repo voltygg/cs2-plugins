@@ -22,44 +22,44 @@ void ShiftZ(const CS2Kit::Sdk::PlayerController& pc, float deltaZ)
 }
 }  // namespace
 
+using OptKey = std::optional<std::string>;
+
 void DoNoclip(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 's');
-    if (!ctx.Valid())
-        return;
-
-    bool turningOn = (ctx.TargetCtrl.GetMoveType() != MoveType::NoClip);
-    ctx.TargetCtrl.SetMoveType(turningOn ? MoveType::NoClip : MoveType::Walk);
-    Broadcast(ctx, turningOn ? "broadcast.noclipOn" : "broadcast.noclipOff");
+    RunAction(adminSlot, targetSlot, 's', [](const ActionContext& ctx) -> OptKey {
+        bool turningOn = (ctx.TargetCtrl.GetMoveType() != MoveType::NoClip);
+        ctx.TargetCtrl.SetMoveType(turningOn ? MoveType::NoClip : MoveType::Walk);
+        return turningOn ? "broadcast.noclipOn" : "broadcast.noclipOff";
+    });
 }
 
 void DoFreeze(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 's');
-    if (!ctx.Valid())
-        return;
-
-    bool turningOn = (ctx.TargetCtrl.GetMoveType() != MoveType::None);
-    ctx.TargetCtrl.SetMoveType(turningOn ? MoveType::None : MoveType::Walk);
-    Broadcast(ctx, turningOn ? "broadcast.freezeOn" : "broadcast.freezeOff");
+    RunAction(adminSlot, targetSlot, 's', [](const ActionContext& ctx) -> OptKey {
+        bool turningOn = (ctx.TargetCtrl.GetMoveType() != MoveType::None);
+        ctx.TargetCtrl.SetMoveType(turningOn ? MoveType::None : MoveType::Walk);
+        return turningOn ? "broadcast.freezeOn" : "broadcast.freezeOff";
+    });
 }
 
 void DoBury(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 's');
-    if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
-        return;
-    ShiftZ(ctx.TargetCtrl, -BuryDepth);
-    Broadcast(ctx, "broadcast.buried");
+    RunAction(adminSlot, targetSlot, 's', [](const ActionContext& ctx) -> OptKey {
+        if (!ctx.TargetCtrl.IsAlive())
+            return std::nullopt;
+        ShiftZ(ctx.TargetCtrl, -BuryDepth);
+        return "broadcast.buried";
+    });
 }
 
 void DoUnbury(int adminSlot, int targetSlot)
 {
-    auto ctx = Resolve(adminSlot, targetSlot, 's');
-    if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
-        return;
-    ShiftZ(ctx.TargetCtrl, BuryDepth);
-    Broadcast(ctx, "broadcast.unburied");
+    RunAction(adminSlot, targetSlot, 's', [](const ActionContext& ctx) -> OptKey {
+        if (!ctx.TargetCtrl.IsAlive())
+            return std::nullopt;
+        ShiftZ(ctx.TargetCtrl, BuryDepth);
+        return "broadcast.unburied";
+    });
 }
 
 }  // namespace AdminSystem::Admin::Actions
