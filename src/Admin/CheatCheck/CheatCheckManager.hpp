@@ -61,7 +61,6 @@ private:
     void FallbackToFixed(PendingCheck& pc);  // drop awaiting state, use the configured fixed link if any
 
     // Reply to the admin who called the check, guarding against a disconnected/replaced admin slot.
-    // `buildMessage` runs inside the admin's translation scope so per-admin language is honored.
     void ReplyToAdmin(const PendingCheck& pc, const std::function<std::string()>& buildMessage);
 
     bool ValidSlot(int slot) const { return slot >= 0 && slot < MaxSlots; }

@@ -44,11 +44,11 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
     int64_t adminSid = admin->GetSteamID();
     bool hasB = adminMgr.HasPermission(adminSid, Permission::Hide);
 
-    MenuBuilder builder(tr.Get("category.control"));
+    MenuBuilder builder(tr.Get("category.control", adminSlot));
 
     // Self-only Hide toggle sits at the top of the Control list before player picks.
     builder.AddToggle(
-        tr.Get("action.hide"), tr.Get("effectState.on"), tr.Get("effectState.off"),
+        tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
         [adminSlot](int) { return Sys().Effects.IsActive(adminSlot, EffectId::Hide); },
         [adminSlot](int) { Effects::Run(adminSlot, adminSlot, Effects::Hide); }, hasB);
 
@@ -65,7 +65,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
         });
     }
     if (players.empty())
-        builder.AddButton(tr.Get("common.noPlayers"), [](int) {}, false);
+        builder.AddButton(tr.Get("common.noPlayers", adminSlot), [](int) {}, false);
 
     return builder.Build();
 }
@@ -87,34 +87,34 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     bool hasH = adminMgr.CanActOn(adminSid, targetSid, Permission::Health);
     bool hasK = adminMgr.CanActOn(adminSid, targetSid, Permission::CheatCheck);
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("category.control"), target->GetName()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));
 
-    AddAction(builder, tr.Get("action.slay"), hasS, adminSlot, targetSlot, Actions::Slay);
-    AddAction(builder, tr.Get("action.bring"), hasS, adminSlot, targetSlot, Actions::Bring);
-    AddAction(builder, tr.Get("action.goto"), hasS, adminSlot, targetSlot, Actions::Goto);
-    AddAction(builder, tr.Get("action.freeze"), hasS, adminSlot, targetSlot, Actions::Freeze);
-    AddAction(builder, tr.Get("action.noclip"), hasS, adminSlot, targetSlot, Actions::Noclip);
+    AddAction(builder, tr.Get("action.slay", adminSlot), hasS, adminSlot, targetSlot, Actions::Slay);
+    AddAction(builder, tr.Get("action.bring", adminSlot), hasS, adminSlot, targetSlot, Actions::Bring);
+    AddAction(builder, tr.Get("action.goto", adminSlot), hasS, adminSlot, targetSlot, Actions::Goto);
+    AddAction(builder, tr.Get("action.freeze", adminSlot), hasS, adminSlot, targetSlot, Actions::Freeze);
+    AddAction(builder, tr.Get("action.noclip", adminSlot), hasS, adminSlot, targetSlot, Actions::Noclip);
 
     // HP/Armor are inline Choice rows: A/D cycles preset values, E applies and closes.
-    AddPresetChoice(builder, tr.Get("action.health"), "HP", hasH, adminSlot, targetSlot, Actions::SetHealth,
+    AddPresetChoice(builder, tr.Get("action.health", adminSlot), "HP", hasH, adminSlot, targetSlot, Actions::SetHealth,
                     HealthPresets);
-    AddPresetChoice(builder, tr.Get("action.armor"), "AP", hasH, adminSlot, targetSlot, Actions::SetArmor, ArmorPresets);
+    AddPresetChoice(builder, tr.Get("action.armor", adminSlot), "AP", hasH, adminSlot, targetSlot, Actions::SetArmor,
+                    ArmorPresets);
 
-    AddFlagToggle(builder, tr.Get("action.godmode"), hasH, adminSlot, targetSlot, CS2Kit::Sdk::FL_GODMODE,
+    AddFlagToggle(builder, tr.Get("action.godmode", adminSlot), hasH, adminSlot, targetSlot, CS2Kit::Sdk::FL_GODMODE,
                   Actions::Godmode);
 
-    AddAction(builder, tr.Get("action.bury"), hasS, adminSlot, targetSlot, Actions::Bury);
-    AddAction(builder, tr.Get("action.unbury"), hasS, adminSlot, targetSlot, Actions::Unbury);
+    AddAction(builder, tr.Get("action.bury", adminSlot), hasS, adminSlot, targetSlot, Actions::Bury);
+    AddAction(builder, tr.Get("action.unbury", adminSlot), hasS, adminSlot, targetSlot, Actions::Unbury);
     builder.AddSubmenu(
-        tr.Get("action.changeTeam"), [adminSlot, targetSlot](int) { return BuildTeamPickerMenu(adminSlot, targetSlot); },
-        hasS);
+        tr.Get("action.changeTeam", adminSlot),
+        [adminSlot, targetSlot](int) { return BuildTeamPickerMenu(adminSlot, targetSlot); }, hasS);
 
     // CheatCheck call/cancel are orchestration (no broadcast / bool result), so they stay plain functions.
-    builder.AddButton(
-        tr.Get("action.callCheck"), [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasK);
-    builder.AddButton(
-        tr.Get("action.cancelCheck"), [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); },
-        hasK);
+    builder.AddButton(tr.Get("action.callCheck", adminSlot),
+                      [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasK);
+    builder.AddButton(tr.Get("action.cancelCheck", adminSlot),
+                      [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); }, hasK);
 
     return builder.Build();
 }

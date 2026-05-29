@@ -6,7 +6,6 @@
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "CommandHelpers.hpp"
 
-#include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 
 using CS2Kit::Core::Kit;
@@ -18,25 +17,24 @@ using namespace CS2Kit::Commands;
 using namespace CS2Kit::Players;
 using namespace AdminSystem::Commands::Helpers;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
-using CS2Kit::Utils::Translations;
 
 namespace
 {
 
 CommandResult HandleCheatCheckLink(Player* caller, const std::vector<std::string>& args)
 {
-    Translations::SlotScope scope(caller->GetSlot());
+    int slot = caller->GetSlot();
     auto& tr = Kit().Translations;
 
-    switch (Sys().CheatCheck.SubmitPlayerLink(caller->GetSlot(), args[0]))
+    switch (Sys().CheatCheck.SubmitPlayerLink(slot, args[0]))
     {
     case CheatCheckManager::SubmitResult::Relayed:
-        return {true, tr.Get("cheatCheck.linkReceived")};
+        return {true, tr.Get("cheatCheck.linkReceived", slot)};
     case CheatCheckManager::SubmitResult::Invalid:
-        return {false, tr.Get("cheatCheck.linkInvalid")};
+        return {false, tr.Get("cheatCheck.linkInvalid", slot)};
     case CheatCheckManager::SubmitResult::NoActiveCheck:
     default:
-        return {false, tr.Get("cheatCheck.noActiveCheck")};
+        return {false, tr.Get("cheatCheck.noActiveCheck", slot)};
     }
 }
 
@@ -47,13 +45,13 @@ CommandResult HandleCheatCheckCancel(Player* admin, const std::vector<std::strin
     if (!target)
         return {false, err};
 
-    Translations::SlotScope scope(admin->GetSlot());
+    int slot = admin->GetSlot();
     auto& tr = Kit().Translations;
 
-    if (!AdminSystem::Admin::Actions::CancelCheck(admin->GetSlot(), target->GetSlot()))
-        return {false, tr.Get("cheatCheck.noActiveCheck")};
+    if (!AdminSystem::Admin::Actions::CancelCheck(slot, target->GetSlot()))
+        return {false, tr.Get("cheatCheck.noActiveCheck", slot)};
 
-    return {true, std::format("{} {}", tr.Get("cheatCheck.cancelled"), target->GetName())};
+    return {true, std::format("{} {}", tr.Get("cheatCheck.cancelled", slot), target->GetName())};
 }
 
 }  // namespace

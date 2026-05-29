@@ -30,7 +30,6 @@ using CS2Kit::Sdk::MessageSystem;
 using CS2Kit::Sdk::MoveType;
 using CS2Kit::Sdk::PlayerController;
 using CS2Kit::Utils::TimeUtils;
-using CS2Kit::Utils::Translations;
 namespace ChatColors = CS2Kit::Utils::ChatColors;
 
 namespace
@@ -172,18 +171,19 @@ void CheatCheckManager::OnRoomFailed(int targetSlot)
     auto& pc = _checks[targetSlot];
     FallbackToFixed(pc);
 
-    ReplyToAdmin(
-        pc, [] { return std::format("{}{}", ChatColors::Red, Kit().Translations.Get("cheatCheck.apiFailed")); });
+    ReplyToAdmin(pc, [adminSlot = pc.AdminSlot] {
+        return std::format("{}{}", ChatColors::Red, Kit().Translations.Get("cheatCheck.apiFailed", adminSlot));
+    });
 
     View::Render(targetSlot, pc);
 }
 
 void CheatCheckManager::RelayCheckerUrl(int targetSlot, const std::string& checkerUrl)
 {
-    ReplyToAdmin(_checks[targetSlot], [&checkerUrl] {
+    ReplyToAdmin(_checks[targetSlot], [&checkerUrl, adminSlot = _checks[targetSlot].AdminSlot] {
         auto& tr = Kit().Translations;
-        return std::format("{}{} {}{}", ChatColors::Green, tr.Get("cheatCheck.checkerUrl"), ChatColors::Olive,
-                           checkerUrl);
+        return std::format("{}{} {}{}", ChatColors::Green, tr.Get("cheatCheck.checkerUrl", adminSlot),
+                           ChatColors::Olive, checkerUrl);
     });
 }
 
@@ -218,10 +218,10 @@ CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSl
 
     auto* caller = Kit().Players.GetPlayerBySlot(callerSlot);
     std::string name = caller ? caller->GetName() : std::string();
-    ReplyToAdmin(pc, [&] {
+    ReplyToAdmin(pc, [&name, &link, adminSlot = pc.AdminSlot] {
         auto& tr = Kit().Translations;
-        return std::format("{}{} {}{}: {}{}", ChatColors::Green, tr.Get("cheatCheck.linkReceived"), ChatColors::Default,
-                           name, ChatColors::Olive, link);
+        return std::format("{}{} {}{}: {}{}", ChatColors::Green, tr.Get("cheatCheck.linkReceived", adminSlot),
+                           ChatColors::Default, name, ChatColors::Olive, link);
     });
 
     View::RenderPanel(callerSlot, pc);
@@ -242,7 +242,6 @@ void CheatCheckManager::ReplyToAdmin(const PendingCheck& pc, const std::function
     if (!adminPlayer || adminPlayer->GetSteamID() != pc.AdminSteamId)
         return;
 
-    Translations::SlotScope scope(pc.AdminSlot);
     Sys().Chat.Reply(pc.AdminSlot, buildMessage());
 }
 

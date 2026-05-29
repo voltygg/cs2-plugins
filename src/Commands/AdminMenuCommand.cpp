@@ -6,7 +6,6 @@
 #include "../Admin/AdminMenu.hpp"
 
 #include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
 
 using CS2Kit::Core::Kit;
 
@@ -16,7 +15,6 @@ namespace AdminSystem::Commands
 using namespace CS2Kit::Commands;
 using namespace CS2Kit::Menu;
 using namespace CS2Kit::Players;
-using CS2Kit::Utils::Translations;
 
 namespace
 {
@@ -28,11 +26,7 @@ CommandResult HandleAdminMenu(Player* admin, const std::vector<std::string>& /*a
 
     int slot = admin->GetSlot();
 
-    // Register this admin's panel language so the menu builds and renders in it.
-    const auto* row = Sys().Admins.GetAdmin(admin->GetSteamID());
-    Kit().Translations.SetPlayerLanguage(slot, row ? row->Language : std::string("en"));
-
-    Translations::SlotScope langScope(slot);
+    // Panel language is registered at connect (see AdminSystemPlugin::OnPlayerConnect).
     auto menu = AdminSystem::Admin::BuildAdminMainMenu(slot);
     if (!menu)
         return {false, "Failed to open admin menu"};

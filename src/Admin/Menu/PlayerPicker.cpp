@@ -33,7 +33,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(
 
     if (players.empty())
     {
-        builder.AddButton(tr.Get("common.noPlayers"), [](int) {}, false);
+        builder.AddButton(tr.Get("common.noPlayers", adminSlot), [](int) {}, false);
     }
 
     return builder.Build();

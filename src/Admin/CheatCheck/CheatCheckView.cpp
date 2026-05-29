@@ -9,7 +9,6 @@
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 #include <string>
 
@@ -23,7 +22,6 @@ using AdminSystem::Core::ConfigManager;
 using CS2Kit::Players::PlayerManager;
 using CS2Kit::Sdk::MessageSystem;
 using CS2Kit::Utils::TimeUtils;
-using CS2Kit::Utils::Translations;
 namespace ChatColors = CS2Kit::Utils::ChatColors;
 
 namespace
@@ -86,7 +84,6 @@ void RenderPanel(int slot, const PendingCheck& pc)
     if (!Kit().Players.GetPlayerBySlot(slot))
         return;
 
-    Translations::SlotScope scope(slot);
     auto& tr = Kit().Translations;
 
     int64_t remain = pc.DeadlineSec - TimeUtils::Now();
@@ -96,48 +93,47 @@ void RenderPanel(int slot, const PendingCheck& pc)
     switch (PanelStateFor(pc))
     {
     case PanelState::CreatingRoom:
-        body = tr.Get("cheatCheck.creatingRoom");
+        body = tr.Get("cheatCheck.creatingRoom", slot);
         break;
     case PanelState::ProvideLink:
-        body = tr.Get("cheatCheck.provideLink");
+        body = tr.Get("cheatCheck.provideLink", slot);
         break;
     case PanelState::HasUrl:
-        body = std::format("{}<br>{}", tr.Get("cheatCheck.joinHere"), EscapeHtml(pc.ResolvedUrl));
+        body = std::format("{}<br>{}", tr.Get("cheatCheck.joinHere", slot), EscapeHtml(pc.ResolvedUrl));
         break;
     case PanelState::Generic:
-        body = tr.Get("cheatCheck.instructions");
+        body = tr.Get("cheatCheck.instructions", slot);
         break;
     }
 
     std::string html =
         std::format("<font color='#ff4040' size='5'>{}</font><br>{}<br><font color='#ffd040'>{}: {}s</font>",
-                    tr.Get("cheatCheck.panelTitle"), body, tr.Get("cheatCheck.timeRemaining"), remainSec);
+                    tr.Get("cheatCheck.panelTitle", slot), body, tr.Get("cheatCheck.timeRemaining", slot), remainSec);
 
     if (Sys().Config.GetCheatCheck().autoKick)
-        html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick"));
+        html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick", slot));
 
     Kit().Messages.SendCenterHtml(slot, html);
 }
 
 void Render(int slot, const PendingCheck& pc)
 {
-    Translations::SlotScope scope(slot);
     auto& tr = Kit().Translations;
     auto& chat = Sys().Chat;
 
-    chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle")));
+    chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle", slot)));
 
     switch (PanelStateFor(pc))
     {
     case PanelState::CreatingRoom:
-        chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.creatingRoom")));
+        chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.creatingRoom", slot)));
         break;
     case PanelState::ProvideLink:
-        chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.provideLink")));
+        chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.provideLink", slot)));
         break;
     case PanelState::HasUrl:
-        chat.Reply(slot, std::format("{}{} {}{}", ChatColors::Default, tr.Get("cheatCheck.joinHere"), ChatColors::Olive,
-                                     pc.ResolvedUrl));
+        chat.Reply(slot, std::format("{}{} {}{}", ChatColors::Default, tr.Get("cheatCheck.joinHere", slot),
+                                     ChatColors::Olive, pc.ResolvedUrl));
         break;
     case PanelState::Generic:
         break;

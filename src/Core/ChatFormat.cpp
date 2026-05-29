@@ -13,16 +13,16 @@ namespace AdminSystem::Core::ChatFormat
 using CS2Kit::Utils::TimeUtils;
 using CS2Kit::Utils::Translations;
 
-std::string FormatExpiry(int64_t expiresAt)
+std::string FormatExpiry(int64_t expiresAt, int slot)
 {
     if (expiresAt <= 0)
-        return Kit().Translations.Get("muteNotice.permanent");
+        return Kit().Translations.Get("muteNotice.permanent", slot);
 
     int64_t remaining = expiresAt - TimeUtils::Now();
     if (remaining <= 0)
         return TimeUtils::FormatDuration(0);
 
-    return std::format("{} {}", Kit().Translations.Get("muteNotice.expiresIn"),
+    return std::format("{} {}", Kit().Translations.Get("muteNotice.expiresIn", slot),
                        TimeUtils::FormatDuration(remaining));
 }
 

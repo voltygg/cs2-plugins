@@ -223,6 +223,11 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
     if (!player)
         return;
 
+    // Register the admin's panel language up front so every slot-aware Translations::Get (menus,
+    // cheat-check, mute notices) renders in their language without per-command setup.
+    if (const auto* row = Sys().Admins.GetAdmin(player->GetSteamID()))
+        Kit().Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
+
     // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so we defer
     // to the next game frame via the scheduler -- the player is fully connected by then. Bots have
     // no real SteamID and never match an active ban.

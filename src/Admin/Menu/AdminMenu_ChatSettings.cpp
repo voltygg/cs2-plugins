@@ -61,7 +61,7 @@ int IndexForColor(std::string_view color)
     return 0;
 }
 
-std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices()
+std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(int viewerSlot)
 {
     auto& tr = Kit().Translations;
     const auto& keys = ColorLabelKeys();
@@ -71,13 +71,13 @@ std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices()
 
     // First entry is always "(group default)" — empty DB value, distinct from
     // ChatColors::Default which is itself a real overrideable color.
-    choices.push_back({tr.Get("color.groupDefault"), std::string{}});
+    choices.push_back({tr.Get("color.groupDefault", viewerSlot), std::string{}});
 
     for (const auto& entry : ChatColors::Palette)
     {
         std::string label;
         if (auto it = keys.find(entry.Name); it != keys.end())
-            label = tr.Get(std::string(it->second));
+            label = tr.Get(std::string(it->second), viewerSlot);
         else
             label = std::string(entry.Name);  // Fallback if a new color lacks a translation key.
         choices.push_back({std::move(label), std::string(entry.Name)});
@@ -109,9 +109,9 @@ std::string CurrentSlotColor(int64_t steamId, ColorSlot slot)
 }
 
 void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t steamId, ColorSlot slot,
-                    std::shared_ptr<int> pendingIdx)
+                    std::shared_ptr<int> pendingIdx, int viewerSlot)
 {
-    auto choices = BuildColorChoices();
+    auto choices = BuildColorChoices(viewerSlot);
     *pendingIdx = IndexForColor(CurrentSlotColor(steamId, slot));
 
     builder.AddChoice<std::string>(
@@ -139,10 +139,10 @@ void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t stea
 
 // Friendly name for a language code, keyed as `lang.<code>` so a new translations/<code>.json
 // only needs a matching `lang.<code>` entry — no code change. Falls back to the raw code.
-std::string LanguageLabel(const std::string& code)
+std::string LanguageLabel(const std::string& code, int viewerSlot)
 {
     std::string key = "lang." + code;
-    std::string label = Kit().Translations.Get(key);
+    std::string label = Kit().Translations.Get(key, viewerSlot);
     return label == key ? code : label;
 }
 
@@ -161,7 +161,7 @@ int IndexForLanguage(const std::vector<std::string>& langs, const std::string& c
     return it != langs.end() ? static_cast<int>(it - langs.begin()) : 0;
 }
 
-void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<int> pendingIdx)
+void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<int> pendingIdx, int viewerSlot)
 {
     auto langs = AvailableLanguagesSorted();
 
@@ -170,14 +170,14 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<in
 
     for (const auto& code : langs)
     {
-        choices.push_back({LanguageLabel(code), code});
+        choices.push_back({LanguageLabel(code, viewerSlot), code});
     }
 
     const auto* admin = Sys().Admins.GetAdmin(steamId);
     *pendingIdx = IndexForLanguage(langs, admin ? admin->Language : std::string("en"));
 
     builder.AddChoice<std::string>(
-        Kit().Translations.Get("chat.panelLanguage"), std::move(choices),
+        Kit().Translations.Get("chat.panelLanguage", viewerSlot), std::move(choices),
         [pendingIdx](int) { return *pendingIdx; }, [pendingIdx](int, int newIdx) { *pendingIdx = newIdx; },
         [steamId](int menuSlot, const std::string& lang) {
             Sys().Admins.UpdateLanguage(steamId, lang);
@@ -201,12 +201,13 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildChatSettingsMenu(int adminSlot)
         return nullptr;
     int64_t steamId = admin->GetSteamID();
 
-    MenuBuilder builder(tr.Get("category.chatSettings"));
+    MenuBuilder builder(tr.Get("category.chatSettings", adminSlot));
 
     // Display Prefix toggle — flips the bool and persists immediately so the next chat line
     // reflects the change without needing an explicit "Save" row.
     builder.AddToggle(
-        tr.Get("chat.displayPrefix"), tr.Get("effectState.on"), tr.Get("effectState.off"),
+        tr.Get("chat.displayPrefix", adminSlot), tr.Get("effectState.on", adminSlot),
+        tr.Get("effectState.off", adminSlot),
         [steamId](int) {
             const auto* a = Sys().Admins.GetAdmin(steamId);
             return a ? a->DisplayPrefix : true;
@@ -220,11 +221,13 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildChatSettingsMenu(int adminSlot)
         });
 
     // Each color picker keeps its own pending index; commit on E persists that single slot.
-    AddColorChoice(builder, tr.Get("chat.nameColor"), steamId, ColorSlot::Name, std::make_shared<int>(0));
-    AddColorChoice(builder, tr.Get("chat.messageColor"), steamId, ColorSlot::Message, std::make_shared<int>(0));
+    AddColorChoice(builder, tr.Get("chat.nameColor", adminSlot), steamId, ColorSlot::Name, std::make_shared<int>(0),
+                   adminSlot);
+    AddColorChoice(builder, tr.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message,
+                   std::make_shared<int>(0), adminSlot);
 
     // Panel language — commit on E persists and rebuilds the menu in the chosen language.
-    AddLanguageChoice(builder, steamId, std::make_shared<int>(0));
+    AddLanguageChoice(builder, steamId, std::make_shared<int>(0), adminSlot);
 
     return builder.Build();
 }

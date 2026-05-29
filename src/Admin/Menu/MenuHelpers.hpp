@@ -37,7 +37,7 @@ inline void AddEffectToggle(CS2Kit::Menu::MenuBuilder& builder, const std::strin
     auto& tr = CS2Kit::Core::Kit().Translations;
     const Effects::EffectToggle* e = &effect;
     builder.AddToggle(
-        label, tr.Get("effectState.on"), tr.Get("effectState.off"),
+        label, tr.Get("effectState.on", admin), tr.Get("effectState.off", admin),
         [target, id = effect.Id](int) { return Sys().Effects.IsActive(target, id); },
         [admin, target, e](int) { Effects::Run(admin, target, *e); }, enabled);
 }
@@ -49,7 +49,7 @@ inline void AddFlagToggle(CS2Kit::Menu::MenuBuilder& builder, const std::string&
     auto& tr = CS2Kit::Core::Kit().Translations;
     const Actions::Action* a = &action;
     builder.AddToggle(
-        label, tr.Get("effectState.on"), tr.Get("effectState.off"),
+        label, tr.Get("effectState.on", admin), tr.Get("effectState.off", admin),
         [target, flag](int) {
             CS2Kit::Sdk::PlayerController pc(target);
             return pc.IsValid() && (pc.GetFlags() & flag) != 0;

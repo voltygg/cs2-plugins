@@ -29,7 +29,7 @@ using CS2Kit::Utils::Translations;
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsMenu(int adminSlot)
 {
     auto& tr = Kit().Translations;
-    return BuildPlayerPicker(adminSlot, tr.Get("category.effects"), [](int admin, int target) {
+    return BuildPlayerPicker(adminSlot, tr.Get("category.effects", adminSlot), [](int admin, int target) {
         auto actions = BuildEffectsActionsMenu(admin, target);
         if (actions)
             Kit().Menus.OpenMenu(admin, actions);
@@ -52,19 +52,19 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
     bool hasF = adminMgr.CanActOn(adminSid, targetSid, Permission::Fun);
     bool hasS = adminMgr.CanActOn(adminSid, targetSid, Permission::Control);
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects"), target->GetName()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->GetName()));
 
-    AddEffectToggle(builder, tr.Get("action.ghost"), hasF, adminSlot, targetSlot, Effects::Ghost);
-    AddEffectToggle(builder, tr.Get("action.disco"), hasF, adminSlot, targetSlot, Effects::Disco);
-    builder.AddButton(tr.Get("action.blind"), [](int) {}, false);  // Awaits Fade user-message infra.
-    AddAction(builder, tr.Get("action.launch"), hasS, adminSlot, targetSlot, Actions::Launch);
-    AddAction(builder, tr.Get("action.smite"), hasF, adminSlot, targetSlot, Actions::Smite);
+    AddEffectToggle(builder, tr.Get("action.ghost", adminSlot), hasF, adminSlot, targetSlot, Effects::Ghost);
+    AddEffectToggle(builder, tr.Get("action.disco", adminSlot), hasF, adminSlot, targetSlot, Effects::Disco);
+    builder.AddButton(tr.Get("action.blind", adminSlot), [](int) {}, false);  // Awaits Fade user-message infra.
+    AddAction(builder, tr.Get("action.launch", adminSlot), hasS, adminSlot, targetSlot, Actions::Launch);
+    AddAction(builder, tr.Get("action.smite", adminSlot), hasF, adminSlot, targetSlot, Actions::Smite);
 
     // Swap opens a second player picker, then runs the dual-target Swap.
     builder.AddButton(
-        tr.Get("action.swap"),
+        tr.Get("action.swap", adminSlot),
         [adminSlot, targetSlot](int slot) {
-            auto picker = BuildPlayerPicker(adminSlot, Kit().Translations.Get("common.selectSwapTarget"),
+            auto picker = BuildPlayerPicker(adminSlot, Kit().Translations.Get("common.selectSwapTarget", adminSlot),
                                             [first = targetSlot](int a, int second) {
                                                 Actions::Swap(a, first, second);
                                                 Kit().Menus.CloseAllMenus(a);

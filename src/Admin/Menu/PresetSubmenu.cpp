@@ -20,7 +20,7 @@ using CS2Kit::Utils::Translations;
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildTeamPickerMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Kit().Translations;
-    MenuBuilder builder(tr.Get("action.changeTeam"));
+    MenuBuilder builder(tr.Get("action.changeTeam", adminSlot));
 
     auto addTeam = [&](const std::string& label, int team) {
         builder.AddButton(label, [adminSlot, targetSlot, team](int slot) {
@@ -29,9 +29,9 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildTeamPickerMenu(int adminSlot, int tar
         });
     };
 
-    addTeam(tr.Get("team.ct"), Actions::TeamCt);
-    addTeam(tr.Get("team.t"), Actions::TeamT);
-    addTeam(tr.Get("team.spec"), Actions::TeamSpec);
+    addTeam(tr.Get("team.ct", adminSlot), Actions::TeamCt);
+    addTeam(tr.Get("team.t", adminSlot), Actions::TeamT);
+    addTeam(tr.Get("team.spec", adminSlot), Actions::TeamSpec);
 
     return builder.Build();
 }
