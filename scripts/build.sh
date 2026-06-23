@@ -8,10 +8,10 @@ cd "$ScriptDir/.."
 # git submodule update --init --recursive
 
 # Configure with AMBuild (creates objdir folder)
-pdm run python configure.py
+uv run python configure.py
 
 # Build from the objdir folder
-(cd objdir && pdm run ambuild)
+(cd objdir && uv run ambuild)
 
 # Run deploy script to copy built files to the output directory
 "$ScriptDir/deploy.sh"

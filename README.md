@@ -63,7 +63,7 @@ docker compose run --rm build
 
 ### Windows Build
 
-Requires Visual Studio 2026, vcpkg, and Python 3.14+ with PDM.
+Requires Visual Studio 2026, vcpkg, and Python 3.14+ with uv.
 
 ```bash
 # Clone with submodules
@@ -71,7 +71,7 @@ git clone --recursive https://github.com/m9snoi/admin-system.git
 cd admin-system
 
 # Install dependencies
-pdm install
+uv sync
 vcpkg install
 
 # Build and deploy

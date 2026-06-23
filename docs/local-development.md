@@ -34,48 +34,37 @@ Download and install [Visual Studio 2026](https://visualstudio.microsoft.com/) w
 
 After installation, ensure you can open the **x64 Native Tools Command Prompt for VS 2026** from the Start menu.
 
-## 3. Install Python with PDM
+## 3. Install Python with uv
 
-### Install Python via Windows Installer
+### Install uv
 
-1. Download Python 3.14+ from [python.org](https://www.python.org/downloads/)
-2. Run the installer and **check "Add Python to PATH"**
-3. Verify installation:
-
-   ```powershell
-   python --version
-   ```
-
-### Install PDM (Python Package Manager)
-
-PDM is a modern Python package manager with PEP 582 support.
+uv is a fast Python package and project manager. It can install and manage Python itself, so a separate Python installation is optional.
 
 ```powershell
-# Install PDM via pip
-pip install pdm
+# Install uv via the standalone installer (recommended)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# Or via pipx (recommended for CLI tools)
-pipx install pdm
+# Or via pip / pipx
+pip install uv
 
 # Verify installation
-pdm --version
+uv --version
 ```
 
-## 4. Install Python Dependencies with PDM
+> **Note:** `uv sync` (next step) provisions a compatible Python 3.14+ interpreter automatically if one isn't already on PATH. To pin/install it explicitly: `uv python install 3.14`.
+
+## 4. Install Python Dependencies with uv
 
 Navigate to the project root and install dependencies:
 
 ```powershell
 cd C:\path\to\admin-system
 
-# Install dependencies (creates .venv automatically)
-pdm install
-
-# Activate the virtual environment (optional, PDM handles this)
-pdm venv activate
+# Install dependencies from uv.lock (creates .venv automatically)
+uv sync
 ```
 
-This installs AMBuild (from the AlliedModders GitHub repository) and other build dependencies defined in `pyproject.toml`.
+This installs AMBuild (from the AlliedModders GitHub repository) and other build dependencies defined in `pyproject.toml`, into a project-local `.venv`. Prefix commands with `uv run` to execute them inside that environment (e.g. `uv run ambuild`), or activate it with `.venv\Scripts\activate`.
 
 > **Note:** AMBuild is not available on PyPI. The `pyproject.toml` references it directly from GitHub via `git+https://github.com/alliedmodders/ambuild.git`.
 
@@ -108,7 +97,7 @@ Open **x64 Native Tools Command Prompt for VS 2026** and run:
 cd C:\path\to\admin-system
 
 # Install Python dependencies (includes AMBuild)
-pdm install
+uv sync
 
 # Install C++ dependencies (libpqxx)
 vcpkg install
@@ -125,10 +114,10 @@ mkdir objdir
 cd objdir
 
 # Configure with AMBuild
-pdm run python ../configure.py
+uv run python ../configure.py
 
 # Build
-pdm run ambuild
+uv run ambuild
 ```
 
 Output files will be in `objdir/src/`.
@@ -143,7 +132,7 @@ mkdir build-vs
 cd build-vs
 
 # Generate VS 2026 solution (--vs-version 19 = VS 2026)
-pdm run python ../configure.py --gen=vs --vs-version 19
+uv run python ../configure.py --gen=vs --vs-version 19
 ```
 
 Open the generated `.sln` file in Visual Studio 2026.
@@ -192,7 +181,7 @@ C:\path\to\admin-system\
 │           ├── hl2sdk-manifests\
 │           ├── mmsource-2.0\
 │           └── nlohmann\
-├── .venv\                    # Python virtual environment (PDM)
+├── .venv\                    # Python virtual environment (uv)
 ├── objdir\                   # AMBuild output
 ├── vcpkg_installed\          # vcpkg dependencies (libpqxx)
 └── ...
@@ -202,14 +191,14 @@ C:\path\to\admin-system\
 
 ### "AMBuild not found"
 
-Ensure PDM dependencies are installed. AMBuild is fetched from GitHub:
+Ensure uv dependencies are installed. AMBuild is fetched from GitHub:
 
 ```powershell
 # Re-install dependencies (fetches AMBuild from GitHub)
-pdm install
+uv sync
 
 # Verify AMBuild is available
-pdm run ambuild --help
+uv run ambuild --help
 ```
 
 If the install fails, ensure Git is in your PATH and you have internet access.
@@ -249,10 +238,10 @@ Run the [generate-protos.sh](../scripts/generate-protos.sh) to generate protobuf
 |------|---------|
 | Clone with submodules | `git clone --recursive <repo-url>` |
 | Init submodules | `git submodule update --init --recursive` |
-| Install Python deps | `pdm install` |
+| Install Python deps | `uv sync` |
 | Install C++ deps | `vcpkg install` |
 | Build and deploy | `./scripts/build.sh` (Git Bash/WSL) |
-| Generate VS solution | `pdm run python configure.py --gen=vs --vs-version 19` |
+| Generate VS solution | `uv run python configure.py --gen=vs --vs-version 19` |
 | Start PostgreSQL | `docker compose up -d postgres` |
 | Clean build | `rmdir /s /q objdir && mkdir objdir` |
 
