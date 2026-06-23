@@ -1,10 +1,10 @@
 #include "CheatCheckView.hpp"
-#include "../../Core/Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Config.hpp"
+#include "../../Core/Managers.hpp"
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
@@ -82,7 +82,9 @@ std::string EscapeHtml(const std::string& text)
 void RenderPanel(int slot, const PendingCheck& pc)
 {
     if (!Kit().Players.GetPlayerBySlot(slot))
+    {
         return;
+    }
 
     auto& tr = Kit().Translations;
 
@@ -106,12 +108,24 @@ void RenderPanel(int slot, const PendingCheck& pc)
         break;
     }
 
-    std::string html =
+    const auto& cfg = Sys().Config.GetCheatCheck();
+
+    // Operator-configured (trusted) banner image rendered atop the panel; CS2 fetches it client-side.
+    std::string html;
+    if (!cfg.bannerImageUrl.empty())
+    {
+        html = std::format("<img src='{}' width='{}' height='{}'/><br>", cfg.bannerImageUrl, cfg.bannerWidth,
+                           cfg.bannerHeight);
+    }
+
+    html +=
         std::format("<font color='#ff4040' size='5'>{}</font><br>{}<br><font color='#ffd040'>{}: {}s</font>",
                     tr.Get("cheatCheck.panelTitle", slot), body, tr.Get("cheatCheck.timeRemaining", slot), remainSec);
 
-    if (Sys().Config.GetCheatCheck().autoKick)
+    if (cfg.autoKick)
+    {
         html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick", slot));
+    }
 
     Kit().Messages.SendCenterHtml(slot, html);
 }

@@ -1,13 +1,15 @@
 #include "CheatCheckManager.hpp"
-#include "../../Core/Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Config.hpp"
+#include "../../Core/Managers.hpp"
 #include "../../Web/HttpClient.hpp"
+#include "../Actions/Team.hpp"
+#include "CheatCheckRoomApi.hpp"
 #include "CheatCheckView.hpp"
 
 #include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
@@ -15,7 +17,6 @@
 #include <CS2Kit/Utils/TimeUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
-#include <nlohmann/json.hpp>
 
 using CS2Kit::Core::Kit;
 
@@ -55,14 +56,15 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
         return false;
 
     PlayerController targetCtrl(targetSlot);
+    const auto& cfg = Sys().Config.GetCheatCheck();
 
-    // Re-call: keep the original movetype (target is already frozen, so reading it now yields None).
+    // Re-call: keep the original movetype/team (target is already frozen/spectated, so reading now is stale).
+    // PriorTeam is 0 (sentinel) unless we actually move them, so the restore decision survives a config reload.
     const bool wasActive = _checks[targetSlot].Active;
     const MoveType priorMove = wasActive ? _checks[targetSlot].PriorMoveType : targetCtrl.GetMoveType();
+    const int priorTeam = wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? targetCtrl.GetTeam() : 0);
     if (wasActive)
         ResetCheck(targetSlot);
-
-    const auto& cfg = Sys().Config.GetCheatCheck();
 
     auto& pc = _checks[targetSlot];
     pc.Active = true;
@@ -74,8 +76,11 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     pc.AwaitingUrl = false;
     pc.RequestSeq = _seq++;
     pc.PriorMoveType = priorMove;
+    pc.PriorTeam = priorTeam;
 
     targetCtrl.SetMoveType(MoveType::None);
+    if (cfg.moveToSpectator)
+        targetCtrl.ChangeTeam(Actions::TeamSpec);
 
     int interval = cfg.panelRefreshMs > 0 ? cfg.panelRefreshMs : 1000;
     pc.TickTimer = Kit().Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
@@ -109,30 +114,27 @@ void CheatCheckManager::ResolveUrl(int targetSlot)
 void CheatCheckManager::RequestRoom(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
-    const auto& room = Sys().Config.GetCheatCheck().websiteAutoRoom;
     auto* target = Kit().Players.GetPlayerBySlot(targetSlot);
 
-    if (!target || room.createRoomUrl.empty())
+    std::optional<RoomRequest> request;
+    if (target)
     {
-        // No endpoint to call: fall back synchronously. StartCheck renders the panel/chat afterward,
-        // so we only set state here (calling OnRoomFailed would double-send the instructions).
+        auto* admin = Kit().Players.GetPlayerBySlot(pc.AdminSlot);
+        request = BuildRoomRequest(Sys().Config.GetCheatCheck().websiteAutoRoom, target->GetSteamID(),
+                                   target->GetName(), pc.AdminSteamId, admin ? admin->GetName() : std::string_view{});
+    }
+
+    if (!request)
+    {
+        // No endpoint to call (or the target vanished): fall back synchronously. StartCheck renders the
+        // panel/chat afterward, so we only set state here (OnRoomFailed would double-send the instructions).
         FallbackToFixed(pc);
         return;
     }
 
-    const nlohmann::json body = {
-        {"steamId", std::to_string(target->GetSteamID())},
-        {"playerName", target->GetName()},
-        {"adminSteamId", std::to_string(pc.AdminSteamId)},
-    };
-
-    std::vector<std::string> headers = {"Content-Type: application/json"};
-    if (!room.apiKey.empty())
-        headers.push_back("Authorization: Bearer " + room.apiKey);
-
     const uint64_t seq = pc.RequestSeq;
     Sys().Http.Post(
-        room.createRoomUrl, body.dump(), std::move(headers), room.timeoutMs,
+        std::move(request->Url), std::move(request->Body), std::move(request->Headers), request->TimeoutMs,
         [this, targetSlot, seq](const Web::HttpResult& result) { OnRoomResponse(targetSlot, seq, result); });
 }
 
@@ -144,23 +146,14 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const Web::
     if (!pc.Active || pc.RequestSeq != seq)  // stale: cancelled, expired, re-called, or slot reused
         return;
 
-    if (result.Ok && result.StatusCode >= 200 && result.StatusCode < 300)
+    if (auto urls = ParseRoomResponse(Sys().Config.GetCheatCheck().websiteAutoRoom, result))
     {
-        auto json = nlohmann::json::parse(result.Body, nullptr, /*allow_exceptions=*/false);
-        if (json.is_object())
-        {
-            std::string playerUrl = json.value("playerUrl", std::string());
-            std::string checkerUrl = json.value("checkerUrl", std::string());
-            if (!playerUrl.empty())
-            {
-                pc.ResolvedUrl = std::move(playerUrl);
-                pc.AwaitingUrl = false;
-                if (!checkerUrl.empty())
-                    RelayCheckerUrl(targetSlot, checkerUrl);
-                View::Render(targetSlot, pc);
-                return;
-            }
-        }
+        pc.ResolvedUrl = std::move(urls->PlayerUrl);
+        pc.AwaitingUrl = false;
+        if (!urls->CheckerUrl.empty())
+            RelayCheckerUrl(targetSlot, urls->CheckerUrl);
+        View::Render(targetSlot, pc);
+        return;
     }
 
     OnRoomFailed(targetSlot);
@@ -263,8 +256,9 @@ bool CheatCheckManager::Cancel(int targetSlot)
     std::string targetName = target ? target->GetName() : std::string();
 
     const MoveType restore = _checks[targetSlot].PriorMoveType;
+    const int restoreTeam = _checks[targetSlot].PriorTeam;
     ResetCheck(targetSlot);
-    Unfreeze(targetSlot, restore);
+    Unfreeze(targetSlot, restore, restoreTeam);
 
     Sys().Chat.BroadcastAction("broadcast.cheatCheckCleared", "", targetName);
     return true;
@@ -279,21 +273,26 @@ void CheatCheckManager::Expire(int targetSlot)
     std::string targetName = target ? target->GetName() : std::string();
 
     const MoveType restore = _checks[targetSlot].PriorMoveType;
+    const int restoreTeam = _checks[targetSlot].PriorTeam;
     ResetCheck(targetSlot);  // deactivate before the kick triggers disconnect cleanup
 
     if (kick)
         PlayerController(targetSlot).Kick(cfg.kickReason.c_str());
     else
-        Unfreeze(targetSlot, restore);
+        Unfreeze(targetSlot, restore, restoreTeam);
 
     Sys().Chat.BroadcastAction("broadcast.cheatCheckTimedOut", "", targetName);
 }
 
-void CheatCheckManager::Unfreeze(int targetSlot, MoveType restore)
+void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int restoreTeam)
 {
     PlayerController pc(targetSlot);
-    if (pc.IsValid())
-        pc.SetMoveType(restore);
+    if (!pc.IsValid())
+        return;
+    // restoreTeam is a real playing team (T/CT) only if we actually pulled them to spectator at start.
+    if (restoreTeam >= Actions::TeamT)
+        pc.ChangeTeam(restoreTeam);
+    pc.SetMoveType(restoreMove);
 }
 
 void CheatCheckManager::CancelAllForSlot(int slot)
@@ -308,7 +307,7 @@ void CheatCheckManager::CancelAll()
     {
         if (!_checks[slot].Active)
             continue;
-        Unfreeze(slot, _checks[slot].PriorMoveType);
+        Unfreeze(slot, _checks[slot].PriorMoveType, _checks[slot].PriorTeam);
         ResetCheck(slot);
     }
 }

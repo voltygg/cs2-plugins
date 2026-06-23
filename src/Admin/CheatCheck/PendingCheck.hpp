@@ -22,6 +22,7 @@ struct PendingCheck
     bool AwaitingUrl = false;
     uint64_t RequestSeq = 0;                                            // staleness guard for async HTTP completions
     CS2Kit::Sdk::MoveType PriorMoveType = CS2Kit::Sdk::MoveType::Walk;  // restored on unfreeze
+    int PriorTeam = 0;                                                  // team before force-to-spectator; restored on unfreeze
 };
 
 }  // namespace AdminSystem::Admin::CheatCheck

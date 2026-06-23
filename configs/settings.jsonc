@@ -50,16 +50,42 @@
     "kickReason": "Failed to comply with cheat check",
     // How often (ms) the center-HTML panel is re-sent + countdown updated (CS2 clears it after ~5s).
     "panelRefreshMs": 1000,
+    // Also force the suspect to spectator (not just freeze) so they can't keep playing.
+    "moveToSpectator": true,
+    // Optional online image (https) shown atop the panel; leave empty for no banner.
+    "bannerImageUrl": "",
+    "bannerWidth": 320,
+    "bannerHeight": 180,
     // "fixedLink" mode: the single URL shown to the suspect. Also the fallback for websiteAutoRoom.
     "fixedLink": {
       "url": "https://discord.gg/your-invite"
     },
     // "websiteAutoRoom" mode: the plugin POSTs here to create a per-check room.
+    // Backend-agnostic — shipped pre-filled for the meat-app API; edit for your own backend.
     "websiteAutoRoom": {
       // Room-creation endpoint.
-      "createRoomUrl": "https://your-site.example/api/cheatcheck/rooms",
-      // Sent as "Authorization: Bearer <apiKey>"; leave empty to omit the header.
+      "createRoomUrl": "http://localhost:4000/api/rooms",
+      // Your API key. meat-app keys are mk_... and need the JOIN_ROOM_AS_ADMIN permission.
       "apiKey": "",
+      // Auth header NAME. For Bearer APIs use "Authorization" + authScheme "Bearer".
+      "authHeader": "X-API-Key",
+      // Value prefix before the key; "" sends the key verbatim (e.g. "X-API-Key: mk_...").
+      "authScheme": "",
+      // Body POSTed to your API. Any string value may contain these placeholders, substituted
+      // per check: {steamId} {playerName} {adminSteamId} {adminName}.
+      "requestBody": {
+        "purpose": "CHEAT_CHECK",
+        "title": "Cheat check: {playerName}",
+        "isLocked": false,
+        "metadata": { "reason": "Suspect {playerName} ({steamId}) - by {adminName}" }
+      },
+      // Dot-path into the JSON response holding the suspect's room id/URL (meat-app returns "code").
+      "playerUrlField": "code",
+      // {value} is replaced by playerUrlField; leave empty to use the field value as the URL directly.
+      "playerUrlTemplate": "http://localhost:3000/rooms/{value}",
+      // Optional checker URL relayed to the calling admin.
+      "checkerUrlField": "code",
+      "checkerUrlTemplate": "http://localhost:3000/rooms/{value}",
       // HTTP request timeout in milliseconds.
       "timeoutMs": 8000
     }

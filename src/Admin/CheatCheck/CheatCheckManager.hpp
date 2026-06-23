@@ -51,7 +51,7 @@ private:
     void Tick(int targetSlot);
     void Expire(int targetSlot);
     void ResetCheck(int targetSlot);  // cancel timer + clear panel + reset state, silently
-    void Unfreeze(int targetSlot, CS2Kit::Sdk::MoveType restore);
+    void Unfreeze(int targetSlot, CS2Kit::Sdk::MoveType restoreMove, int restoreTeam);
     void ResolveUrl(int targetSlot);
     void RequestRoom(int targetSlot);
     void OnRoomResponse(int targetSlot, uint64_t seq, const Web::HttpResult& result);

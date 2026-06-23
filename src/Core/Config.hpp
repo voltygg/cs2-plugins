@@ -57,14 +57,24 @@ struct CheatCheckFixedLink
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckFixedLink, url)
 
-/** "cheatCheck.websiteAutoRoom" sub-section. */
+/** "cheatCheck.websiteAutoRoom" sub-section: a backend-agnostic create-room API. See the field
+ *  comments and CheatCheckRoomApi for the request/response templating contract. */
 struct CheatCheckWebsiteAutoRoom
 {
     std::string createRoomUrl;
     std::string apiKey;
+    std::string authHeader = "Authorization";  // header name; e.g. "X-API-Key"
+    std::string authScheme = "Bearer";         // value prefix; "" sends the key verbatim
+    nlohmann::json requestBody;                 // body template, placeholders substituted per check
+    std::string playerUrlField = "playerUrl";  // dot-path into the JSON response
+    std::string playerUrlTemplate;             // {value} -> playerUrlField; empty uses the field as-is
+    std::string checkerUrlField = "checkerUrl";
+    std::string checkerUrlTemplate;            // optional; relayed to the calling admin
     int timeoutMs = 8000;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckWebsiteAutoRoom, createRoomUrl, apiKey, timeoutMs)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckWebsiteAutoRoom, createRoomUrl, apiKey, authHeader, authScheme,
+                                                requestBody, playerUrlField, playerUrlTemplate, checkerUrlField,
+                                                checkerUrlTemplate, timeoutMs)
 
 /** "cheatCheck" section of settings.jsonc. */
 struct CheatCheckSettings
@@ -75,11 +85,16 @@ struct CheatCheckSettings
     bool autoKick = true;
     std::string kickReason = "Failed to comply with cheat check";
     int panelRefreshMs = 1000;
+    bool moveToSpectator = true;  // force the suspect to spectator so they can't keep playing
+    std::string bannerImageUrl;   // optional online image shown atop the panel ("" => none)
+    int bannerWidth = 320;
+    int bannerHeight = 180;
     CheatCheckFixedLink fixedLink;
     CheatCheckWebsiteAutoRoom websiteAutoRoom;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckSettings, mode, timeoutSec, autoKick, kickReason,
-                                                panelRefreshMs, fixedLink, websiteAutoRoom)
+                                                panelRefreshMs, moveToSpectator, bannerImageUrl, bannerWidth,
+                                                bannerHeight, fixedLink, websiteAutoRoom)
 
 /** Root of settings.jsonc. Mirrors the JSON object so the whole file deserializes in one call. */
 struct Settings
