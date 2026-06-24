@@ -142,30 +142,6 @@ if [[ -f "$PdbPath" ]]; then
 fi
 
 # =============================================================================
-# COPY VCPKG RUNTIME DEPENDENCIES
-# =============================================================================
-
-VcpkgBinPath="$(pwd)/vcpkg_installed/x64-windows/bin"
-if [[ -d "$VcpkgBinPath" ]]; then
-    echo "Copying vcpkg runtime dependencies..."
-    RuntimeDlls=(
-        "pqxx.dll"
-        "libpq.dll"
-        "libssl-3-x64.dll"
-        "libcrypto-3-x64.dll"
-        "zlib1.dll"
-        "lz4.dll"
-    )
-    for dll in "${RuntimeDlls[@]}"; do
-        dllSrc="$VcpkgBinPath/$dll"
-        if [[ -f "$dllSrc" ]]; then
-            cp -f "$dllSrc" "$BinPath/$dll"
-            echo "  -> addons/$DetectedPluginName/bin/win64/$dll"
-        fi
-    done
-fi
-
-# =============================================================================
 # COPY VDF PLUGIN REGISTRATION
 # =============================================================================
 

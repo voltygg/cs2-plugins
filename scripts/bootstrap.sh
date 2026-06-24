@@ -21,8 +21,9 @@ git submodule update --init --recursive --depth 1
 echo "==> [2/4] Installing Python build deps (AMBuild) via uv"
 uv sync
 
-echo "==> [3/4] Installing C++ deps (libpqxx, libcurl, ...) via vcpkg"
-vcpkg install
+echo "==> [3/4] Installing C++ deps (libpqxx, libcurl, nlohmann-json) via vcpkg"
+# Static triplet (matches /MT and the AMBuildScripts): deps link into the DLL, nothing to ship alongside.
+vcpkg install --triplet x64-windows-static
 
 echo "==> [4/4] Building the plugin (configure + ambuild generate protobuf headers)"
 "$ScriptDir/build.sh"
