@@ -1,11 +1,11 @@
 #include "Plugin.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/Effects/EffectManager.hpp"
 #include "../Commands/AdminCommands.hpp"
 #include "../Database/Database.hpp"
+#include "../Database/Migrator.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "../Web/HttpClient.hpp"
 #include "ChatService.hpp"
@@ -14,6 +14,7 @@
 
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -34,9 +35,9 @@ using namespace CS2Kit::Players;
 using namespace CS2Kit::Sdk;
 using namespace CS2Kit::Utils;
 using namespace CS2Kit::Menu;
+using AdminSystem::Sys;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 using AdminSystem::Database::Database;
-using AdminSystem::Sys;
 using AdminSystem::Web::HttpClient;
 
 AdminSystemPlugin g_AdminSystemPlugin;
@@ -105,7 +106,13 @@ bool ConnectDatabaseAndLoadAdmins()
 
     if (!db.Initialize(Sys().Config.GetDatabase()))
     {
-        Log::Warn("Database unavailable -- admins/groups not loaded; chat commands will reject all callers.");
+        Log::Warn("Database unavailable - admins/groups not loaded; chat commands will reject all callers.");
+        return false;
+    }
+
+    if (!AdminSystem::Database::RunMigrations(db, "addons/admin-system/configs/migrations"))
+    {
+        Log::Warn("Database migrations failed - not loading admins against an out-of-date schema.");
         return false;
     }
 

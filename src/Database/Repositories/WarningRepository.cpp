@@ -3,17 +3,18 @@
 
 #include "../Database.hpp"
 
+#include <CS2Kit/Database/DbResult.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 
 namespace AdminSystem::Database
 {
 
 using namespace CS2Kit::Utils;
+using CS2Kit::Database::TryOr;
 
 bool WarningRepository::Create(Warning& warning)
 {
-    try
-    {
+    return TryOr(false, "WarningRepository::Create", [&] {
         auto result = Sys().Db.ExecutePrepared(
             "create_warning",
             "INSERT INTO warnings (target_steam_id, target_name, admin_steam_id, admin_name, reason, "
@@ -24,17 +25,12 @@ bool WarningRepository::Create(Warning& warning)
         if (!result.empty())
             warning.Id = result[0]["id"].as<int64_t>();
         return true;
-    }
-    catch (const std::exception&)
-    {
-        return false;
-    }
+    });
 }
 
 int WarningRepository::CountActive(int64_t steamId)
 {
-    try
-    {
+    return TryOr(0, "WarningRepository::CountActive", [&]() -> int {
         auto result = Sys().Db.ExecutePrepared(
             "count_active_warnings",
             "SELECT COUNT(*) AS total FROM warnings WHERE target_steam_id = $1 AND is_active = true "
@@ -43,43 +39,30 @@ int WarningRepository::CountActive(int64_t steamId)
         if (result.empty())
             return 0;
         return result[0]["total"].as<int>();
-    }
-    catch (const std::exception&)
-    {
-        return 0;
-    }
+    });
 }
 
 int WarningRepository::Clear(int64_t steamId)
 {
-    try
-    {
+    return TryOr(0, "WarningRepository::Clear", [&]() -> int {
         auto result = Sys().Db.ExecutePrepared(
             "clear_warnings", "UPDATE warnings SET is_active = false WHERE target_steam_id = $1 AND is_active = true",
             steamId);
         return result.affected_rows();
-    }
-    catch (const std::exception&)
-    {
-        return 0;
-    }
+    });
 }
 
 std::vector<Warning> WarningRepository::GetHistory(int64_t steamId)
 {
-    std::vector<Warning> warnings;
-    try
-    {
+    return TryOr(std::vector<Warning>{}, "WarningRepository::GetHistory", [&] {
+        std::vector<Warning> warnings;
         auto result = Sys().Db.ExecutePrepared(
             "get_warning_history", "SELECT * FROM warnings WHERE target_steam_id = $1 ORDER BY created_at DESC",
             steamId);
         for (const auto& row : result)
             warnings.push_back(ParseRow(row));
-    }
-    catch (const std::exception&)
-    {
-    }
-    return warnings;
+        return warnings;
+    });
 }
 
 Warning WarningRepository::ParseRow(const pqxx::row& row)

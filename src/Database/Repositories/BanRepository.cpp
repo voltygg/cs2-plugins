@@ -3,84 +3,57 @@
 
 #include "../Database.hpp"
 
+#include <CS2Kit/Database/DbResult.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 
 namespace AdminSystem::Database
 {
 
 using namespace CS2Kit::Utils;
+using CS2Kit::Database::TryOr;
 
 std::optional<Ban> BanRepository::FindActiveBySteamId(int64_t steamId)
 {
-    try
-    {
+    return TryOr<std::optional<Ban>>(std::nullopt, "BanRepository::FindActiveBySteamId", [&]() -> std::optional<Ban> {
         auto result = Sys().Db.ExecutePrepared("find_active_ban_by_steamid",
-                                                           "SELECT * FROM bans WHERE target_steam_id = $1 AND "
-                                                           "is_active = true AND (expires_at = 0 OR expires_at > $2)",
-                                                           steamId, TimeUtils::Now());
-
+                                               "SELECT * FROM bans WHERE target_steam_id = $1 AND "
+                                               "is_active = true AND (expires_at = 0 OR expires_at > $2)",
+                                               steamId, TimeUtils::Now());
         if (result.empty())
-        {
             return std::nullopt;
-        }
-
         return ParseRow(result[0]);
-    }
-    catch (const std::exception& e)
-    {
-        return std::nullopt;
-    }
+    });
 }
 
 std::optional<Ban> BanRepository::FindActiveByIp(const std::string& ip)
 {
-    try
-    {
+    return TryOr<std::optional<Ban>>(std::nullopt, "BanRepository::FindActiveByIp", [&]() -> std::optional<Ban> {
         auto result = Sys().Db.ExecutePrepared("find_active_ban_by_ip",
-                                                           "SELECT * FROM bans WHERE target_ip = $1 AND "
-                                                           "is_active = true AND (expires_at = 0 OR expires_at > $2)",
-                                                           ip, TimeUtils::Now());
-
+                                               "SELECT * FROM bans WHERE target_ip = $1 AND "
+                                               "is_active = true AND (expires_at = 0 OR expires_at > $2)",
+                                               ip, TimeUtils::Now());
         if (result.empty())
-        {
             return std::nullopt;
-        }
-
         return ParseRow(result[0]);
-    }
-    catch (const std::exception& e)
-    {
-        return std::nullopt;
-    }
+    });
 }
 
 std::vector<Ban> BanRepository::FindAllActive()
 {
-    std::vector<Ban> bans;
-
-    try
-    {
+    return TryOr(std::vector<Ban>{}, "BanRepository::FindAllActive", [&] {
+        std::vector<Ban> bans;
         auto result = Sys().Db.ExecutePrepared(
             "find_all_active_bans", "SELECT * FROM bans WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)",
             TimeUtils::Now());
-
         for (const auto& row : result)
-        {
             bans.push_back(ParseRow(row));
-        }
-    }
-    catch (const std::exception& e)
-    {
-        // Log error
-    }
-
-    return bans;
+        return bans;
+    });
 }
 
 bool BanRepository::Create(Ban& ban)
 {
-    try
-    {
+    return TryOr(false, "BanRepository::Create", [&] {
         auto result = Sys().Db.ExecutePrepared(
             "create_ban",
             "INSERT INTO bans (target_steam_id, target_name, target_ip, admin_steam_id, admin_name, reason, "
@@ -88,89 +61,55 @@ bool BanRepository::Create(Ban& ban)
             "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
             ban.TargetSteamId, ban.TargetName, ban.TargetIp, ban.AdminSteamId, ban.AdminName, ban.Reason, ban.CreatedAt,
             ban.ExpiresAt, ban.Duration, ban.IsActive);
-
         if (!result.empty())
             ban.Id = result[0]["id"].as<int64_t>();
         return true;
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
+    });
 }
 
 bool BanRepository::Update(const Ban& ban)
 {
-    try
-    {
+    return TryOr(false, "BanRepository::Update", [&] {
         Sys().Db.ExecutePrepared("update_ban",
-                                             "UPDATE bans SET target_name = $2, is_active = $3, removed_at = $4, "
-                                             "removed_by = $5, removed_reason = $6 WHERE id = $1",
-                                             ban.Id, ban.TargetName, ban.IsActive, ban.RemovedAt, ban.RemovedBy,
-                                             ban.RemovedReason);
-
+                                 "UPDATE bans SET target_name = $2, is_active = $3, removed_at = $4, "
+                                 "removed_by = $5, removed_reason = $6 WHERE id = $1",
+                                 ban.Id, ban.TargetName, ban.IsActive, ban.RemovedAt, ban.RemovedBy, ban.RemovedReason);
         return true;
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
+    });
 }
 
 bool BanRepository::Remove(int64_t banId, int64_t removedBy, const std::string& reason)
 {
-    try
-    {
+    return TryOr(false, "BanRepository::Remove", [&] {
         Sys().Db.ExecutePrepared(
             "remove_ban",
             "UPDATE bans SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 WHERE id = $1",
             banId, TimeUtils::Now(), removedBy, reason);
-
         return true;
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
+    });
 }
 
 int BanRepository::ExpireOldBans()
 {
-    try
-    {
+    return TryOr(0, "BanRepository::ExpireOldBans", [&]() -> int {
         auto result = Sys().Db.ExecutePrepared(
             "expire_old_bans",
             "UPDATE bans SET is_active = false WHERE is_active = true AND expires_at > 0 AND expires_at <= $1",
             TimeUtils::Now());
-
         return result.affected_rows();
-    }
-    catch (const std::exception& e)
-    {
-        return 0;
-    }
+    });
 }
 
 std::vector<Ban> BanRepository::GetHistory(int64_t steamId)
 {
-    std::vector<Ban> bans;
-
-    try
-    {
+    return TryOr(std::vector<Ban>{}, "BanRepository::GetHistory", [&] {
+        std::vector<Ban> bans;
         auto result = Sys().Db.ExecutePrepared(
             "get_ban_history", "SELECT * FROM bans WHERE target_steam_id = $1 ORDER BY created_at DESC", steamId);
-
         for (const auto& row : result)
-        {
             bans.push_back(ParseRow(row));
-        }
-    }
-    catch (const std::exception& e)
-    {
-        // Log error
-    }
-
-    return bans;
+        return bans;
+    });
 }
 
 Ban BanRepository::ParseRow(const pqxx::row& row)

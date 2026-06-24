@@ -41,7 +41,7 @@ src/
 └── Database/              PostgreSQL pool, Entities/, Repositories/
 vendor/cs2-kit/            Reusable C++23 library (the only submodule). See its own CLAUDE.md.
 configs/                   settings.jsonc + translations/{en,ru}.json
-database/schema.sql        admin_groups + admins seeded here
+configs/migrations/        Versioned schema (NNNN_*.sql), auto-applied on load; database/seed-admin.sql seeds an admin
 references/                Read-only reference plugins — do NOT modify.
 ```
 
@@ -97,11 +97,11 @@ Aim to keep source files under **~300-350 LOC**. When a file grows past that, sp
 ## Config Files
 
 - **`configs/settings.jsonc`**: Plugin/database/punishments/chat/cheat-check configuration (JSONC — comments allowed). All non-admin runtime knobs live here.
-- **`database/schema.sql`**: Owns the `admin_groups` and `admins` tables. Groups (with their chat prefix/colors) and individual admins are managed in PostgreSQL -- no JSON admin file. Use `!admin_reload` to pick up DB changes without a restart.
+- **`configs/migrations/`**: Versioned SQL migrations (`NNNN_*.sql`) applied automatically on plugin load by the migration runner; the schema owns `admin_groups` and `admins`. Groups and individual admins are managed in PostgreSQL -- no JSON admin file. Use `!admin_reload` to pick up DB changes without a restart. `database/seed-admin.sql` is an optional manual superadmin seed. To change the schema, add the next `configs/migrations/NNNN_*.sql` (forward-only).
 
 ## Database
 
-- PostgreSQL with schema: `admin_system`
-- Tables: admins, admin_groups, players, bans, mutes, gags, warnings, audit_log
+- PostgreSQL; tables live in the default `public` schema
+- Tables: admins, admin_groups, players, bans, voice_mutes, text_mutes, warnings, schema_migrations
 - Prepared statements for all queries
 - Mutex only in Database class (future async support)

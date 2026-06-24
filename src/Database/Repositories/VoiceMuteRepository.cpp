@@ -3,17 +3,18 @@
 
 #include "../Database.hpp"
 
+#include <CS2Kit/Database/DbResult.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 
 namespace AdminSystem::Database
 {
 
 using namespace CS2Kit::Utils;
+using CS2Kit::Database::TryOr;
 
 std::optional<VoiceMute> VoiceMuteRepository::FindActiveBySteamId(int64_t steamId)
 {
-    try
-    {
+    return TryOr<std::optional<VoiceMute>>(std::nullopt, "VoiceMuteRepository::FindActiveBySteamId", [&]() -> std::optional<VoiceMute> {
         auto result = Sys().Db.ExecutePrepared("find_active_voice_mute_by_steamid",
                                                            "SELECT * FROM voice_mutes WHERE target_steam_id = $1 AND "
                                                            "is_active = true AND (expires_at = 0 OR expires_at > $2)",
@@ -21,35 +22,26 @@ std::optional<VoiceMute> VoiceMuteRepository::FindActiveBySteamId(int64_t steamI
         if (result.empty())
             return std::nullopt;
         return ParseRow(result[0]);
-    }
-    catch (const std::exception&)
-    {
-        return std::nullopt;
-    }
+    });
 }
 
 std::vector<VoiceMute> VoiceMuteRepository::FindAllActive()
 {
-    std::vector<VoiceMute> mutes;
-    try
-    {
+    return TryOr(std::vector<VoiceMute>{}, "VoiceMuteRepository::FindAllActive", [&] {
+        std::vector<VoiceMute> mutes;
         auto result = Sys().Db.ExecutePrepared(
             "find_all_active_voice_mutes",
             "SELECT * FROM voice_mutes WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)",
             TimeUtils::Now());
         for (const auto& row : result)
             mutes.push_back(ParseRow(row));
-    }
-    catch (const std::exception&)
-    {
-    }
-    return mutes;
+        return mutes;
+    });
 }
 
 bool VoiceMuteRepository::Create(VoiceMute& mute)
 {
-    try
-    {
+    return TryOr(false, "VoiceMuteRepository::Create", [&] {
         auto result = Sys().Db.ExecutePrepared(
             "create_voice_mute",
             "INSERT INTO voice_mutes (target_steam_id, target_name, admin_steam_id, admin_name, reason, "
@@ -60,61 +52,43 @@ bool VoiceMuteRepository::Create(VoiceMute& mute)
         if (!result.empty())
             mute.Id = result[0]["id"].as<int64_t>();
         return true;
-    }
-    catch (const std::exception&)
-    {
-        return false;
-    }
+    });
 }
 
 bool VoiceMuteRepository::Remove(int64_t muteId, int64_t removedBy, const std::string& reason)
 {
-    try
-    {
+    return TryOr(false, "VoiceMuteRepository::Remove", [&] {
         Sys().Db.ExecutePrepared(
             "remove_voice_mute",
             "UPDATE voice_mutes SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 "
             "WHERE id = $1",
             muteId, TimeUtils::Now(), removedBy, reason);
         return true;
-    }
-    catch (const std::exception&)
-    {
-        return false;
-    }
+    });
 }
 
 int VoiceMuteRepository::ExpireOldVoiceMutes()
 {
-    try
-    {
+    return TryOr(0, "VoiceMuteRepository::ExpireOldVoiceMutes", [&]() -> int {
         auto result = Sys().Db.ExecutePrepared(
             "expire_old_voice_mutes",
             "UPDATE voice_mutes SET is_active = false WHERE is_active = true AND expires_at > 0 AND expires_at <= $1",
             TimeUtils::Now());
         return result.affected_rows();
-    }
-    catch (const std::exception&)
-    {
-        return 0;
-    }
+    });
 }
 
 std::vector<VoiceMute> VoiceMuteRepository::GetHistory(int64_t steamId)
 {
-    std::vector<VoiceMute> mutes;
-    try
-    {
+    return TryOr(std::vector<VoiceMute>{}, "VoiceMuteRepository::GetHistory", [&] {
+        std::vector<VoiceMute> mutes;
         auto result = Sys().Db.ExecutePrepared(
             "get_voice_mute_history", "SELECT * FROM voice_mutes WHERE target_steam_id = $1 ORDER BY created_at DESC",
             steamId);
         for (const auto& row : result)
             mutes.push_back(ParseRow(row));
-    }
-    catch (const std::exception&)
-    {
-    }
-    return mutes;
+        return mutes;
+    });
 }
 
 VoiceMute VoiceMuteRepository::ParseRow(const pqxx::row& row)
