@@ -1,0 +1,48 @@
+# Initial CI scaffold -- NOT yet validated against a real GitHub Actions run.
+# Treat this as a starting point: the Docker build path mirrors `docker compose
+# run --rm build` locally, but the action/runner specifics (Docker availability,
+# protoc paths, build time) should be confirmed and tuned on the first run.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Build (Docker)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (recursive submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build plugin via Docker
+        run: docker compose run --rm build
+
+  lint:
+    name: Lint (ruff + clang-format)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (recursive submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Ruff check (build tooling)
+        run: uvx ruff check .
+
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+
+      - name: clang-format dry-run (plugin + cs2-kit sources)
+        run: |
+          find src vendor/cs2-kit/src \
+            -type f \( -name '*.cpp' -o -name '*.hpp' \) \
+            -print0 | xargs -0 clang-format --dry-run --Werror

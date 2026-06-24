@@ -7,17 +7,17 @@ services:
       - objdir-cache:/app/objdir
     command: >
       bash -c "
-        vendor/hl2sdk-cs2/devtools/bin/protoc
-          --proto_path=vendor/hl2sdk-cs2/common
-          --proto_path=vendor/hl2sdk-cs2/thirdparty/protobuf-3.21.8/src
-          --cpp_out=vendor/hl2sdk-cs2/public
-          vendor/hl2sdk-cs2/common/*.proto &&
-        vendor/hl2sdk-cs2/devtools/bin/protoc
-          --proto_path=vendor/hl2sdk-cs2/common
-          --proto_path=vendor/hl2sdk-cs2/game/shared
-          --proto_path=vendor/hl2sdk-cs2/thirdparty/protobuf-3.21.8/src
-          --cpp_out=vendor/hl2sdk-cs2/game/shared
-          vendor/hl2sdk-cs2/game/shared/*.proto &&
+        vendor/cs2-kit/vendor/hl2sdk-cs2/devtools/bin/protoc
+          --proto_path=vendor/cs2-kit/vendor/hl2sdk-cs2/common
+          --proto_path=vendor/cs2-kit/vendor/hl2sdk-cs2/thirdparty/protobuf-3.21.8/src
+          --cpp_out=vendor/cs2-kit/vendor/hl2sdk-cs2/public
+          vendor/cs2-kit/vendor/hl2sdk-cs2/common/*.proto &&
+        vendor/cs2-kit/vendor/hl2sdk-cs2/devtools/bin/protoc
+          --proto_path=vendor/cs2-kit/vendor/hl2sdk-cs2/common
+          --proto_path=vendor/cs2-kit/vendor/hl2sdk-cs2/game/shared
+          --proto_path=vendor/cs2-kit/vendor/hl2sdk-cs2/thirdparty/protobuf-3.21.8/src
+          --cpp_out=vendor/cs2-kit/vendor/hl2sdk-cs2/game/shared
+          vendor/cs2-kit/vendor/hl2sdk-cs2/game/shared/*.proto &&
         mkdir -p objdir && cd objdir &&
         CC=clang CXX=clang++ python3 ../configure.py &&
         ambuild
