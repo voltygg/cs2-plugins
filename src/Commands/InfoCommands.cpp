@@ -4,6 +4,7 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Core/ChatService.hpp"
+#include "../Core/Permissions.hpp"
 
 #include <CS2Kit/Players/PlayerManager.hpp>
 
@@ -64,7 +65,7 @@ void RegisterInfoCommands(CommandManager& mgr)
                      .WithAliases({"players"})
                      .WithDescription("List online players, their group prefix, and immunity.")
                      .WithUsage("!who")
-                     .RequirePermission("b")
+                     .RequirePermission(Flag(Permission::Hide))
                      .WithArgs(0, 0)
                      .OnExecute(HandleWho)
                      .Build());
@@ -73,7 +74,7 @@ void RegisterInfoCommands(CommandManager& mgr)
                      .WithAliases({"reload_admins"})
                      .WithDescription("Reload admins and groups from the database without restarting.")
                      .WithUsage("!admin_reload")
-                     .RequirePermission("z")
+                     .RequirePermission(Flag(Permission::Root))
                      .WithArgs(0, 0)
                      .OnExecute(HandleAdminReload)
                      .Build());

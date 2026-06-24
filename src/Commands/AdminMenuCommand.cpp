@@ -4,6 +4,7 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/AdminMenu.hpp"
+#include "../Core/Permissions.hpp"
 
 #include <CS2Kit/Menu/MenuManager.hpp>
 
@@ -43,7 +44,7 @@ void RegisterAdminMenuCommand(CommandManager& mgr)
                      .WithAliases({"a", "menu"})
                      .WithDescription("Open the admin menu")
                      .WithUsage("!admin")
-                     .RequirePermission("r")
+                     .RequirePermission(Flag(Permission::AdminMenu))
                      .WithArgs(0, 0)
                      .OnExecute(HandleAdminMenu)
                      .Build());

@@ -2,6 +2,7 @@
 
 #include "../Admin/Effects/EffectAction.hpp"
 #include "../Admin/Effects/Hide.hpp"
+#include "../Core/Permissions.hpp"
 
 namespace AdminSystem::Commands
 {
@@ -26,7 +27,7 @@ void RegisterAdminSelfCommands(CommandManager& mgr)
     mgr.Register(CommandBuilder("hide")
                      .WithDescription("Toggle stealth-spectator mode on yourself.")
                      .WithUsage("!hide")
-                     .RequirePermission("b")
+                     .RequirePermission(Flag(Permission::Hide))
                      .WithArgs(0, 0)
                      .OnExecute(HandleHide)
                      .Build());

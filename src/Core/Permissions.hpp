@@ -23,6 +23,7 @@ enum class Permission : char
     Health = 'h',   // health / armor / godmode
     Hide = 'b',
     CheatCheck = 'k',
+    AdminMenu = 'r',
     Root = 'z',
 };
 
