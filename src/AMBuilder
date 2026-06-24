@@ -79,11 +79,6 @@ for sdk_target in Plugin.sdk_targets:
     # Add cs2-kit src/ for internal headers (needed by cs2-kit .cpp files compiled inline)
     binary.compiler.cxxincludes += [CS2KIT_SRC_DIR]
 
-    # nlohmann/json (from cs2-kit submodule, fallback for non-vcpkg builds)
-    nlohmann_include = os.path.join(CS2KIT_DIR, "vendor", "nlohmann", "single_include")
-    if os.path.isdir(nlohmann_include):
-        binary.compiler.cxxincludes += [nlohmann_include]
-
     # Add plugin source files
     for src in SOURCES:
         binary.sources += [os.path.join(builder.sourcePath, "src", src)]

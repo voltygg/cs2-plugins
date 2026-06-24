@@ -13,6 +13,7 @@
     {
       "name": "curl",
       "features": ["ssl"]
-    }
+    },
+    "nlohmann-json"
   ]
 }
