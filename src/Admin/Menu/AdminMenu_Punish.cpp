@@ -9,14 +9,15 @@
 
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
-#include <cctype>
-#include <charconv>
 #include <format>
+#include <iterator>
 #include <string>
-#include <string_view>
+#include <utility>
+#include <vector>
 
 using CS2Kit::Core::Kit;
 
@@ -31,57 +32,6 @@ using namespace CS2Kit::Utils;
 using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Menu::MenuManager;
 
-namespace
-{
-
-// Parse "30s", "5m", "2h", "7d" or a bare integer (interpreted as seconds).
-// Returns -1 on parse failure, 0 for a permanent ban request, otherwise the duration in seconds.
-int ParseDuration(std::string_view text)
-{
-    while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())))
-        text.remove_prefix(1);
-    while (!text.empty() && std::isspace(static_cast<unsigned char>(text.back())))
-        text.remove_suffix(1);
-
-    if (text.empty())
-        return -1;
-    if (text == "0" || text == "perm" || text == "permanent")
-        return 0;
-
-    int multiplier = 1;
-    char suffix = text.back();
-    if (!std::isdigit(static_cast<unsigned char>(suffix)))
-    {
-        switch (suffix)
-        {
-        case 's':
-            multiplier = 1;
-            break;
-        case 'm':
-            multiplier = 60;
-            break;
-        case 'h':
-            multiplier = 3600;
-            break;
-        case 'd':
-            multiplier = 86400;
-            break;
-        default:
-            return -1;
-        }
-        text.remove_suffix(1);
-    }
-
-    int value = 0;
-    auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
-    if (ec != std::errc{} || ptr != text.data() + text.size() || value < 0)
-        return -1;
-
-    return value * multiplier;
-}
-
-}  // namespace
-
 static std::shared_ptr<::CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
     int adminSlot, int targetSlot, const std::string& actionName,
     std::function<void(int slot, int target, int duration)> onDuration)
@@ -90,7 +40,7 @@ static std::shared_ptr<::CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
 
     struct DurationEntry
     {
-        std::string Key;
+        const char* Key;
         int Seconds;
     };
 
@@ -99,37 +49,21 @@ static std::shared_ptr<::CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
         {"duration.1d", 86400}, {"duration.7d", 604800},  {"duration.perm", 0},
     };
 
-    MenuBuilder builder(std::format("{}: {}", actionName, tr.Get("panel.selectDuration", adminSlot)));
-
+    std::vector<std::pair<std::string, int>> presets;
+    presets.reserve(std::size(Durations));
     for (const auto& dur : Durations)
-    {
-        int target = targetSlot;
-        auto callback = onDuration;
-        builder.AddButton(tr.Get(dur.Key, adminSlot), [callback, target, secs = dur.Seconds](int slot) {
-            callback(slot, target, secs);
-            Kit().Menus.CloseAllMenus(slot);
-        });
-    }
+        presets.emplace_back(tr.Get(dur.Key, adminSlot), dur.Seconds);
 
-    // Custom duration row — opens a chat-input prompt; accepts "5m"/"2h"/"7d" or seconds.
-    {
-        int target = targetSlot;
-        auto callback = onDuration;
-        builder.AddInput(
-            tr.Get("duration.custom", adminSlot), tr.Get("duration.customPrompt", adminSlot),
-            [](int) { return std::string{}; },
-            [callback, target](int slot, std::string_view text) -> bool {
-                int seconds = ParseDuration(text);
-                if (seconds < 0)
-                    return false;  // re-prompt
-                callback(slot, target, seconds);
-                Kit().Menus.CloseAllMenus(slot);
-                return true;
-            },
-            32);
-    }
+    // The preset is content-agnostic, so it fires onPick(viewerSlot, seconds) only — the plugin
+    // applies the punishment and closes the menu stack here to preserve the prior behavior.
+    auto onPick = [target = targetSlot, callback = std::move(onDuration)](int slot, int seconds) {
+        callback(slot, target, seconds);
+        Kit().Menus.CloseAllMenus(slot);
+    };
 
-    return builder.Build();
+    return ::CS2Kit::Menu::BuildDurationPicker(
+        adminSlot, std::format("{}: {}", actionName, tr.Get("panel.selectDuration", adminSlot)), presets,
+        std::move(onPick), tr.Get("duration.custom", adminSlot), tr.Get("duration.customPrompt", adminSlot), 32);
 }
 
 template <typename PunishmentT, typename IssueFunc>

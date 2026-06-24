@@ -1,42 +1,21 @@
 #include "PlayerPicker.hpp"
 #include <CS2Kit/Core/Services.hpp>
 
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
+#include <utility>
 
 using CS2Kit::Core::Kit;
 
 namespace AdminSystem::Admin::Menu
 {
 
-using CS2Kit::Menu::MenuBuilder;
-using CS2Kit::Players::PlayerManager;
-using CS2Kit::Utils::Translations;
-
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(
     int adminSlot, const std::string& title, std::function<void(int adminSlot, int targetSlot)> onPick)
 {
     auto& tr = Kit().Translations;
-    auto& plrMgr = Kit().Players;
-
-    MenuBuilder builder(title);
-
-    auto players = plrMgr.GetAllPlayers();
-    for (auto* p : players)
-    {
-        int targetSlot = p->GetSlot();
-        int admin = adminSlot;
-        auto cb = onPick;
-        builder.AddButton(p->GetName(), [admin, targetSlot, cb](int /*slot*/) { cb(admin, targetSlot); });
-    }
-
-    if (players.empty())
-    {
-        builder.AddButton(tr.Get("common.noPlayers", adminSlot), [](int) {}, false);
-    }
-
-    return builder.Build();
+    return ::CS2Kit::Menu::BuildPlayerPicker(adminSlot, title, std::move(onPick),
+                                             tr.Get("common.noPlayers", adminSlot));
 }
 
 }  // namespace AdminSystem::Admin::Menu
