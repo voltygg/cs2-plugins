@@ -25,7 +25,7 @@ std::vector<ResolvedTarget> Resolve(const std::string& token, Player* caller)
     auto& mgr = Kit().Players;
     auto& admins = Sys().Admins;
 
-    auto check = [&](Player* p) {
+    auto add = [&](Player* p) {
         if (!p)
             return;
         ResolvedTarget r;
@@ -34,20 +34,30 @@ std::vector<ResolvedTarget> Resolve(const std::string& token, Player* caller)
         out.push_back(r);
     };
 
-    if (token.size() > 1 && token[0] == '#' && StringUtils::IsNumeric(token.substr(1)))
+    const auto info = StringUtils::ParseTarget(token);
+    switch (info.Type)
     {
-        int slot = std::stoi(token.substr(1));
-        check(mgr.GetPlayerBySlot(slot));
-        return out;
+    case StringUtils::TargetType::All:
+        for (auto* p : mgr.GetAllPlayers())
+            add(p);
+        break;
+    case StringUtils::TargetType::Me:
+        add(caller);
+        break;
+    case StringUtils::TargetType::Index:
+        add(mgr.GetPlayerBySlot(std::stoi(info.Value)));
+        break;
+    case StringUtils::TargetType::SteamId:
+        add(mgr.GetPlayerBySteamId(std::stoll(info.Value)));
+        break;
+    case StringUtils::TargetType::Name:
+    {
+        const auto needle = StringUtils::ToLower(info.Value);
+        for (auto* p : mgr.GetAllPlayers())
+            if (p && StringUtils::ToLower(p->GetName()).find(needle) != std::string::npos)
+                add(p);
+        break;
     }
-
-    auto needle = StringUtils::ToLower(token);
-    for (auto* p : mgr.GetAllPlayers())
-    {
-        if (!p)
-            continue;
-        if (StringUtils::ToLower(p->GetName()).find(needle) != std::string::npos)
-            check(p);
     }
     return out;
 }
