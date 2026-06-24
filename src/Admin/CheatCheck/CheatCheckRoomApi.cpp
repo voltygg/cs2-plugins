@@ -59,7 +59,8 @@ std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoo
     };
 }
 
-std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg, const Web::HttpResult& result)
+std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg,
+                                          const CS2Kit::Http::HttpResult& result)
 {
     if (!result.Ok || result.StatusCode < 200 || result.StatusCode >= 300)
         return std::nullopt;

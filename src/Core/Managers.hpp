@@ -5,9 +5,10 @@
 #include "../Admin/Effects/EffectManager.hpp"
 #include "../Database/Database.hpp"
 #include "../Punishments/PunishmentManager.hpp"
-#include "../Web/HttpClient.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
+
+#include <CS2Kit/Http/HttpClient.hpp>
 
 namespace AdminSystem
 {
@@ -26,7 +27,7 @@ struct Managers
     Core::ChatService Chat;
     Admin::Effects::EffectManager Effects;
     Admin::CheatCheck::CheatCheckManager CheatCheck;
-    Web::HttpClient Http;
+    CS2Kit::Http::HttpClient Http;
 };
 
 /** The plugin's live managers. Valid only between OnLoad and unload. */

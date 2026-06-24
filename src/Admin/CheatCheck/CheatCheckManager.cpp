@@ -3,13 +3,13 @@
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Config.hpp"
 #include "../../Core/Managers.hpp"
-#include "../../Web/HttpClient.hpp"
 #include "../Actions/Team.hpp"
 #include "CheatCheckRoomApi.hpp"
 #include "CheatCheckView.hpp"
 
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
@@ -135,10 +135,10 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     const uint64_t seq = pc.RequestSeq;
     Sys().Http.Post(
         std::move(request->Url), std::move(request->Body), std::move(request->Headers), request->TimeoutMs,
-        [this, targetSlot, seq](const Web::HttpResult& result) { OnRoomResponse(targetSlot, seq, result); });
+        [this, targetSlot, seq](const CS2Kit::Http::HttpResult& result) { OnRoomResponse(targetSlot, seq, result); });
 }
 
-void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const Web::HttpResult& result)
+void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::Http::HttpResult& result)
 {
     if (!ValidSlot(targetSlot))
         return;

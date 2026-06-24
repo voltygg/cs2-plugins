@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../Web/HttpResult.hpp"
-
+#include <CS2Kit/Http/HttpResult.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -45,6 +44,7 @@ std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoo
  * Parse the create-room response into player/checker URLs per the config's field + template rules.
  * Returns nullopt on transport/HTTP/parse failure or when no player URL could be resolved.
  */
-std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg, const Web::HttpResult& result);
+std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg,
+                                          const CS2Kit::Http::HttpResult& result);
 
 }  // namespace AdminSystem::Admin::CheatCheck

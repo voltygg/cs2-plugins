@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../Web/HttpResult.hpp"
 #include "PendingCheck.hpp"
 
+#include <CS2Kit/Http/HttpResult.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
 #include <array>
@@ -54,7 +54,7 @@ private:
     void Unfreeze(int targetSlot, CS2Kit::Sdk::MoveType restoreMove, int restoreTeam);
     void ResolveUrl(int targetSlot);
     void RequestRoom(int targetSlot);
-    void OnRoomResponse(int targetSlot, uint64_t seq, const Web::HttpResult& result);
+    void OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::Http::HttpResult& result);
     void OnRoomFailed(int targetSlot);
     void RelayCheckerUrl(int targetSlot, const std::string& checkerUrl);
 

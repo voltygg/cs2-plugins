@@ -7,13 +7,13 @@
 #include "../Database/Database.hpp"
 #include "../Database/Migrator.hpp"
 #include "../Punishments/PunishmentManager.hpp"
-#include "../Web/HttpClient.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
 #include "Managers.hpp"
 
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/Player.hpp>
@@ -38,7 +38,7 @@ using namespace CS2Kit::Menu;
 using AdminSystem::Sys;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 using AdminSystem::Database::Database;
-using AdminSystem::Web::HttpClient;
+using CS2Kit::Http::HttpClient;
 
 AdminSystemPlugin g_AdminSystemPlugin;
 PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
