@@ -54,6 +54,23 @@ public:
     void ExpireOldPunishments();
 
 private:
+    // Shared body for the three Remove*BySteamId methods: try the in-memory cache first,
+    // then fall back to a DB lookup so we can act on offline / never-cached players.
+    using RemoveByIdFn = bool (PunishmentManager::*)(int64_t, int64_t, const std::string&);
+
+    template <typename TEntity, typename Repo>
+    bool RemoveBySteamIdImpl(std::unordered_map<int64_t, TEntity>& cache, Repo& repo, int64_t steamId,
+                             int64_t removedBy, const std::string& reason, RemoveByIdFn remove)
+    {
+        auto it = cache.find(steamId);
+        if (it != cache.end())
+            return (this->*remove)(it->second.Id, removedBy, reason);
+
+        if (auto found = repo.FindActiveBySteamId(steamId))
+            return (this->*remove)(found->Id, removedBy, reason);
+        return false;
+    }
+
     std::unordered_map<int64_t, Database::Ban> _activeBans;             /**< keyed by TargetSteamId */
     std::unordered_map<int64_t, Database::VoiceMute> _activeVoiceMutes; /**< keyed by TargetSteamId */
     std::unordered_map<int64_t, Database::TextMute> _activeTextMutes;   /**< keyed by TargetSteamId */

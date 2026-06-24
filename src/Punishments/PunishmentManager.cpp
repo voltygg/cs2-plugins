@@ -336,39 +336,21 @@ bool PunishmentManager::RemoveTextMute(int64_t muteId, int64_t removedBy, const 
 
 bool PunishmentManager::RemoveBanBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    auto it = _activeBans.find(steamId);
-    if (it != _activeBans.end())
-        return RemoveBan(it->second.Id, removedBy, reason);
-
-    // Fall back to a DB lookup so we can unban offline / never-cached players.
     BanRepository repo;
-    if (auto found = repo.FindActiveBySteamId(steamId))
-        return RemoveBan(found->Id, removedBy, reason);
-    return false;
+    return RemoveBySteamIdImpl(_activeBans, repo, steamId, removedBy, reason, &PunishmentManager::RemoveBan);
 }
 
 bool PunishmentManager::RemoveVoiceMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    auto it = _activeVoiceMutes.find(steamId);
-    if (it != _activeVoiceMutes.end())
-        return RemoveVoiceMute(it->second.Id, removedBy, reason);
-
     VoiceMuteRepository repo;
-    if (auto found = repo.FindActiveBySteamId(steamId))
-        return RemoveVoiceMute(found->Id, removedBy, reason);
-    return false;
+    return RemoveBySteamIdImpl(_activeVoiceMutes, repo, steamId, removedBy, reason,
+                               &PunishmentManager::RemoveVoiceMute);
 }
 
 bool PunishmentManager::RemoveTextMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    auto it = _activeTextMutes.find(steamId);
-    if (it != _activeTextMutes.end())
-        return RemoveTextMute(it->second.Id, removedBy, reason);
-
     TextMuteRepository repo;
-    if (auto found = repo.FindActiveBySteamId(steamId))
-        return RemoveTextMute(found->Id, removedBy, reason);
-    return false;
+    return RemoveBySteamIdImpl(_activeTextMutes, repo, steamId, removedBy, reason, &PunishmentManager::RemoveTextMute);
 }
 
 void PunishmentManager::ExpireOldPunishments()
