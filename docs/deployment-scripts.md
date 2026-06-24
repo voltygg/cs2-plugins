@@ -1,32 +1,32 @@
 # Deployment Scripts
 
-Generic deployment scripts for Metamod:Source 2.0 plugins that auto-detect plugin name from `AMBuildScript`.
+Deployment script for the Metamod:Source 2.0 plugins in this monorepo. It deploys every plugin under `plugins/` (or a single one via `--plugin-name`) to a CS2 server, plus the shared cs2-kit gamedata.
 
 ## Features
 
-- **Auto-Detection**: Automatically detects plugin name from `PLUGIN_NAME` in `AMBuildScript`
+- **Multi-plugin**: Deploys every plugin under `plugins/` by default, or a single one with `--plugin-name`
 - **Cross-Platform**: Works on both Windows and Linux
-- **Flexible**: Can override plugin name and architecture
-- **Smart Copying**: Only copies directories that exist (configs, assets, gamedata)
-- **Safe**: Preserves existing `database.json` to prevent overwriting production configs
+- **Flexible**: Can target a single plugin and override architecture
+- **Smart Copying**: Only copies directories that exist (configs, translations, gamedata)
+- **Safe**: Preserves an existing `settings.jsonc` on the server (holds DB creds + per-server config)
 
 ## Usage
 
 ```bash
-# Basic usage (auto-detect plugin, default server path)
+# Basic usage (all plugins under plugins/, default server path)
 ./scripts/deploy.sh
 
 # Custom server path
 ./scripts/deploy.sh --server-path "D:/CS2-Server"
 
-# Override plugin name
-./scripts/deploy.sh --plugin-name "my-custom-plugin"
+# Deploy a single plugin
+./scripts/deploy.sh --plugin-name "admin-system"
 
 # Specify architecture
 ./scripts/deploy.sh --architecture x86
 
 # All options combined
-./scripts/deploy.sh --server-path "D:/CS2-Server" --plugin-name "my-plugin" --architecture x86_64
+./scripts/deploy.sh --server-path "D:/CS2-Server" --plugin-name "admin-system" --architecture x86_64
 
 # Get help
 ./scripts/deploy.sh --help
@@ -34,72 +34,72 @@ Generic deployment scripts for Metamod:Source 2.0 plugins that auto-detect plugi
 
 On Windows, run from Git Bash or WSL. On Linux, run directly.
 
-## How Plugin Name is Detected
+## Which Plugins Are Deployed
 
-1. **Explicit parameter**: If `--plugin-name` is provided, use it
-2. **AMBuildScript**: Extract from `PLUGIN_NAME = "plugin-name"` in `AMBuildScript`
-3. **Directory name**: Fallback to current directory name
+1. **`--plugin-name`**: If provided, deploy only that plugin from `plugins/<name>/` (errors if it has no built binary).
+2. **All plugins**: Otherwise, deploy every directory under `plugins/`. A plugin with no built binary yet is skipped with a notice.
 
 ## Expected Project Structure
 
-```
-your-plugin/
-├── AMBuildScript              # Contains PLUGIN_NAME = "your-plugin"
-├── your-plugin.vdf            # Metamod plugin registration (optional)
-├── configs/                   # Configuration files (optional)
-│   ├── config.json
-│   ├── database.json
-│   └── ...
-├── gamedata/                  # Signatures/offsets (optional)
-│   └── plugin.games.txt
+```text
+admin-system/                       # monorepo root
+├── AMBuildScript                   # discovers plugins/*/src/AMBuilder, builds one binary each
+├── vcpkg.json                      # root C++ deps (union across all plugins)
+├── plugins/
+│   └── admin-system/
+│       ├── admin-system.vdf        # Metamod plugin registration
+│       ├── configs/                # settings.jsonc + migrations/ + translations/
+│       └── src/
+│           └── AMBuilder           # this plugin's sources + link libs
+├── vendor/cs2-kit/gamedata/        # shared signatures/offsets (deployed once)
 └── objdir/
-    └── src/
-        └── your-plugin/
-            ├── windows-x86_64/
-            │   ├── your-plugin.dll
-            │   └── your-plugin.pdb
-            └── linux-x86_64/
-                ├── your-plugin.so
-                └── your-plugin.so.dbg
+    └── plugins/
+        └── admin-system/
+            └── src/
+                └── admin-system/
+                    ├── windows-x86_64/
+                    │   ├── admin-system.dll
+                    │   └── admin-system.pdb
+                    └── linux-x86_64/
+                        ├── admin-system.so
+                        └── admin-system.so.dbg
 ```
 
 ## Deployment Target Structure
 
 Files are deployed to the following structure in your CS2 server:
 
-```
+```text
 csgo/
 └── addons/
     ├── metamod/
-    │   ├── your-plugin.dll (or .so)
-    │   ├── your-plugin.vdf
-    │   └── your-plugin.pdb (or .so.dbg)
-    └── your-plugin/
-        ├── configs/
-        └── gamedata/
+    │   └── <plugin>.vdf
+    ├── <plugin>/
+    │   ├── bin/win64/<plugin>.dll (+ .pdb)
+    │   └── configs/
+    └── cs2-kit/
+        └── gamedata/               # shared, copied once for all plugins
 ```
 
-## Reusing for Other Plugins
+## Adding Another Plugin
 
-These scripts are completely generic! To use with another plugin:
+1. Create `plugins/<new>/src/` with its own `AMBuilder` (copy admin-system's and adjust the link libs), plus `plugins/<new>/configs/` and `plugins/<new>/<new>.vdf`.
+2. Append any new C++ deps to the root `vcpkg.json`.
+3. `scripts/build.sh` builds it (the root `AMBuildScript` discovers it automatically), and `scripts/deploy.sh` ships it — no script edits needed.
 
-1. Copy `scripts/deploy.sh` to your new plugin project
-2. Ensure your `AMBuildScript` has `PLUGIN_NAME = "your-plugin-name"`
-3. Create a `.vdf` file named `your-plugin-name.vdf`
-4. Run the deployment script
-
-Example `.vdf` file:
+Example `.vdf` file (`plugins/<new>/<new>.vdf`):
 
 ```vdf
-"Plugin"
+"Metamod Plugin"
 {
-    "file"  "../metamod/your-plugin-name"
+    "alias"  "<new>"
+    "file"   "addons/<new>/bin/win64/<new>"
 }
 ```
 
 ## Notes
 
-- The script preserves existing `database.json` to prevent overwriting production database credentials
-- Debug symbols (.pdb/.so.dbg) are automatically copied if they exist
-- Empty directories (like assets with only `.gitkeep`) are skipped
-- The script validates the server path before deploying
+- The script preserves an existing `settings.jsonc` on the server to avoid overwriting DB credentials / per-server config.
+- Debug symbols (.pdb/.so.dbg) are automatically copied if they exist.
+- Empty directories are skipped.
+- The script validates the server path before deploying.

@@ -31,5 +31,5 @@ echo "==> [4/4] Building the plugin (configure + ambuild generate protobuf heade
 echo
 echo "============================================================"
 echo "  Bootstrap complete - the plugin built successfully."
-echo "  Output: objdir/src/   (deploy with scripts/deploy.sh)"
+echo "  Output: objdir/plugins/   (deploy with scripts/deploy.sh)"
 echo "============================================================"

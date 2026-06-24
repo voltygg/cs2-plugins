@@ -4,7 +4,9 @@
 
 C++23 Metamod:Source plugin for CS2 community servers providing admin functionality: player management, punishments (ban/mute/gag/warn), and WASD center-HTML menus.
 
-Reusable engine abstractions (commands, menu, SDK wrappers, utilities) live in **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** (`vendor/cs2-kit/`), a standalone library with its own build system and SDK submodules. Admin-system consumes CS2Kit via source inclusion (compiles `.cpp` files inline into the plugin binary).
+Reusable engine abstractions (commands, menu, SDK wrappers, utilities) live in **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** (`vendor/cs2-kit/`), a standalone library with its own build system and SDK submodules. Each plugin consumes CS2Kit via source inclusion (compiles `.cpp` files inline into the plugin binary).
+
+This repository is a **monorepo of plugins**: each lives under `plugins/<name>/` (its own `src/`, `configs/`, `<name>.vdf`), all sharing the single `vendor/cs2-kit` submodule and one root build that discovers each `plugins/<name>/src/AMBuilder`. `admin-system` is the first; add another by creating `plugins/<new>/` and appending deps to the root `vcpkg.json`.
 
 ## Tech Stack
 
@@ -13,7 +15,7 @@ Reusable engine abstractions (commands, menu, SDK wrappers, utilities) live in *
 - **Shared Library:** CS2Kit (vendor/cs2-kit) — commands, menus, SDK wrappers, utilities
 - **Database:** PostgreSQL 18 via libpqxx
 - **UI:** WASD center-HTML menus (W/S navigate, E select, R close)
-- **Build System:** AMBuild (auto-discovers .cpp files from `src/` and `vendor/cs2-kit/src/`)
+- **Build System:** AMBuild (auto-discovers .cpp files from each `plugins/<name>/src/` and `vendor/cs2-kit/src/`)
 
 ## Build Commands
 
@@ -28,20 +30,27 @@ scripts/deploy.sh
 ## Project Structure
 
 ```text
-src/
-├── Core/                  Plugin entry (derives CS2Kit::MetamodPluginBase), ChatService, Config
-├── Admin/
-│   ├── AdminManager       Permissions, immunity, self-target allowed
-│   ├── AdminMenu          Top-level dispatcher (Punish / Control / Effects)
-│   ├── Actions/           Data-driven one-shots (Action/ParamAction descriptors + Run dispatch): Movement, Vitals, Launch, Teleport, Team, Smite, CheatCheck
-│   ├── Effects/           Stateful per-target with Cancel (EffectToggle descriptors + Run): EffectManager, Ghost, Disco, Hide
-│   └── Menu/              Per-category builders + PlayerPicker + PresetSubmenu
-├── Punishments/           PunishmentManager
-├── Commands/              Chat-command registrations
-└── Database/              PostgreSQL pool, Entities/, Repositories/
+plugins/admin-system/      One plugin (the first). Add more siblings under plugins/.
+├── src/
+│   ├── AMBuilder          This plugin's sources + link libs (discovered by root AMBuildScript)
+│   ├── Core/              Plugin entry (derives CS2Kit::MetamodPluginBase), ChatService, Config
+│   ├── Admin/
+│   │   ├── AdminManager   Permissions, immunity, self-target allowed
+│   │   ├── AdminMenu      Top-level dispatcher (Punish / Control / Effects)
+│   │   ├── Actions/       Data-driven one-shots (Action/ParamAction descriptors + Run dispatch): Movement, Vitals, Launch, Teleport, Team, Smite, CheatCheck
+│   │   ├── Effects/       Stateful per-target with Cancel (EffectToggle descriptors + Run): EffectManager, Ghost, Disco, Hide
+│   │   └── Menu/          Per-category builders + PlayerPicker + PresetSubmenu
+│   ├── Punishments/       PunishmentManager
+│   ├── Commands/          Chat-command registrations
+│   └── Database/          PostgreSQL pool, Entities/, Repositories/
+├── configs/               settings.jsonc + migrations/ + translations/{en,ru}.json
+├── database/              seed-admin.sql (optional manual superadmin seed)
+└── admin-system.vdf       Metamod plugin registration
+AMBuildScript              Root build: resolve SDK/MMS once, discover plugins/*, build each
+configure.py               AMBuild entry point
+vcpkg.json                 Root C++ deps (union across all plugins)
+scripts/                   build.sh / deploy.sh / bootstrap.sh (operate on all plugins)
 vendor/cs2-kit/            Reusable C++23 library (the only submodule). See its own CLAUDE.md.
-configs/                   settings.jsonc + translations/{en,ru}.json
-configs/migrations/        Versioned schema (NNNN_*.sql), auto-applied on load; database/seed-admin.sql seeds an admin
 references/                Read-only reference plugins — do NOT modify.
 ```
 
@@ -96,8 +105,8 @@ Aim to keep source files under **~300-350 LOC**. When a file grows past that, sp
 
 ## Config Files
 
-- **`configs/settings.jsonc`**: Plugin/database/punishments/chat/cheat-check configuration (JSONC — comments allowed). All non-admin runtime knobs live here.
-- **`configs/migrations/`**: Versioned SQL migrations (`NNNN_*.sql`) applied automatically on plugin load by the migration runner; the schema owns `admin_groups` and `admins`. Groups and individual admins are managed in PostgreSQL -- no JSON admin file. Use `!admin_reload` to pick up DB changes without a restart. `database/seed-admin.sql` is an optional manual superadmin seed. To change the schema, add the next `configs/migrations/NNNN_*.sql` (forward-only).
+- **`plugins/admin-system/configs/settings.jsonc`**: Plugin/database/punishments/chat/cheat-check configuration (JSONC — comments allowed). All non-admin runtime knobs live here.
+- **`plugins/admin-system/configs/migrations/`**: Versioned SQL migrations (`NNNN_*.sql`) applied automatically on plugin load by the migration runner; the schema owns `admin_groups` and `admins`. Groups and individual admins are managed in PostgreSQL -- no JSON admin file. Use `!admin_reload` to pick up DB changes without a restart. `plugins/admin-system/database/seed-admin.sql` is an optional manual superadmin seed. To change the schema, add the next `configs/migrations/NNNN_*.sql` (forward-only).
 
 ## Database
 

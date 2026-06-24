@@ -25,8 +25,8 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable
 1. Download the latest release from [Releases](#)
 2. Extract to your server's `csgo/` folder
 3. Configure database and plugin settings in `addons/admin-system/configs/settings.jsonc`
-4. (Optional) The plugin applies the schema automatically on load. To pre-create it manually: `psql -d admin_system -f configs/migrations/0001_initial_schema.sql`
-5. Edit `database/seed-admin.sql` with your SteamID64 and run it: `psql -d admin_system -f database/seed-admin.sql`
+4. (Optional) The plugin applies the schema automatically on load. To pre-create it manually: `psql -d admin_system -f plugins/admin-system/configs/migrations/0001_initial_schema.sql`
+5. Edit `plugins/admin-system/database/seed-admin.sql` with your SteamID64 and run it: `psql -d admin_system -f plugins/admin-system/database/seed-admin.sql`
 6. Restart the server (or run `!admin_reload` if it was already running)
 
 ## Commands
@@ -49,7 +49,7 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable
 
 ## Configuration
 
-Runtime configuration lives in `configs/settings.jsonc` (database, punishments, chat, cheat-check). Admin groups (with their chat prefix and colors) and individual admins live in the `admin_groups` and `admins` PostgreSQL tables -- see `configs/migrations/`. Run `!admin_reload` after editing those tables to refresh in-memory state without restarting.
+Runtime configuration lives in `plugins/admin-system/configs/settings.jsonc` (database, punishments, chat, cheat-check). Admin groups (with their chat prefix and colors) and individual admins live in the `admin_groups` and `admins` PostgreSQL tables -- see `plugins/admin-system/configs/migrations/`. Run `!admin_reload` after editing those tables to refresh in-memory state without restarting.
 
 ### Quick Start (Docker)
 

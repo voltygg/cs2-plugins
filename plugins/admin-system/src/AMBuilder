@@ -7,9 +7,10 @@
 import os
 
 # =============================================================================
-# SOURCE FILES - Auto-discovered from src/ and vendor/cs2-kit/src/
+# SOURCE FILES - Auto-discovered from this plugin's src/ and vendor/cs2-kit/src/
 # =============================================================================
-SRC_DIR = os.path.join(builder.sourcePath, "src")
+# currentSourcePath is this plugin's src/; PluginName is injected by AMBuildScript.
+SRC_DIR = builder.currentSourcePath
 CS2KIT_DIR = os.path.join(builder.sourcePath, "vendor", "cs2-kit")
 CS2KIT_SRC_DIR = os.path.join(CS2KIT_DIR, "src")
 CS2KIT_INCLUDE_DIR = os.path.join(CS2KIT_DIR, "include")
@@ -71,7 +72,7 @@ for sdk_target in Plugin.sdk_targets:
     sdk = sdk_target.sdk
     cxx = sdk_target.cxx
 
-    binary = Plugin.create_library(builder, cxx, sdk)
+    binary = Plugin.create_library(builder, cxx, sdk, PluginName)
 
     # Add cs2-kit public include path (for #include <CS2Kit/...>)
     binary.compiler.cxxincludes += [CS2KIT_INCLUDE_DIR]
@@ -81,7 +82,7 @@ for sdk_target in Plugin.sdk_targets:
 
     # Add plugin source files
     for src in SOURCES:
-        binary.sources += [os.path.join(builder.sourcePath, "src", src)]
+        binary.sources += [os.path.join(SRC_DIR, src)]
 
     # Add cs2-kit library source files (source inclusion approach)
     for src in CS2KIT_SOURCES:

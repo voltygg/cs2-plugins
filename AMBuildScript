@@ -8,9 +8,8 @@
 import os
 
 # =============================================================================
-# PLUGIN CONFIGURATION - Edit these for your plugin
+# SHARED BUILD CONFIGURATION - Applies to every plugin under plugins/
 # =============================================================================
-PLUGIN_NAME = "admin-system"
 
 # Additional include paths (relative to source root)
 EXTRA_INCLUDES = []
@@ -75,7 +74,6 @@ class PluginConfig:
         self.mms_root = mms_root
         self.all_targets = []
         self.target_archs = set()
-        self.plugin_name = PLUGIN_NAME
 
         # Detect target architectures
         target_archs = builder.options.targets.split(",") if builder.options.targets else ["x86_64"]
@@ -209,9 +207,9 @@ class PluginConfig:
         elif cxx.target.platform == "windows":
             cxx.defines += ["WIN32", "_WINDOWS"]
 
-    def create_library(self, context, compiler, sdk):
+    def create_library(self, context, compiler, sdk, plugin_name):
         """Create a library binary with SDK and Metamod includes configured."""
-        binary = compiler.Library(self.plugin_name)
+        binary = compiler.Library(plugin_name)
         cxx = binary.compiler
         mms_core = os.path.join(self.mms_root, "core")
 
@@ -259,4 +257,16 @@ Plugin = PluginConfig()
 Plugin.detect_sdks()
 Plugin.configure()
 
-builder.Build(["src/AMBuilder"], {"Plugin": Plugin})
+PLUGINS_DIR = os.path.join(PROJECT_ROOT, "plugins")
+plugin_names = sorted(
+    d for d in os.listdir(PLUGINS_DIR)
+    if os.path.isfile(os.path.join(PLUGINS_DIR, d, "src", "AMBuilder"))
+)
+if not plugin_names:
+    raise Exception(f"No plugins found under {PLUGINS_DIR} (expected plugins/<name>/src/AMBuilder).")
+
+for name in plugin_names:
+    builder.Build(
+        [os.path.join("plugins", name, "src", "AMBuilder")],
+        {"Plugin": Plugin, "PluginName": name},
+    )

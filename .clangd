@@ -1,6 +1,6 @@
-# clangd configuration for the Admin System plugin.
-# Mirrors the compile flags and include set produced by src/AMBuilder so the
-# language server resolves SDK / CS2Kit headers the same way the real build does.
+# clangd configuration for the plugins in this monorepo.
+# Mirrors the AMBuilder compile flags / include set so the language server resolves
+# SDK / CS2Kit headers like the real build. Add a -I line per new plugin's src/.
 # If clangd still can't find a header, make sure submodules and vcpkg deps are
 # installed (see CONTRIBUTING.md / docs/local-development.md).
 
@@ -13,7 +13,7 @@ CompileFlags:
     - -DCOMPILER_MSVC
     - -DPLATFORM_64BITS
     # Plugin + CS2Kit sources
-    - -Isrc
+    - -Iplugins/admin-system/src
     - -Ivendor/cs2-kit/include
     - -Ivendor/cs2-kit/src
     # hl2sdk-cs2

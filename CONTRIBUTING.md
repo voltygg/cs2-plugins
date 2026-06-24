@@ -1,8 +1,9 @@
 # Contributing to Admin System
 
-A C++23 Metamod:Source plugin for CS2 community servers. Reusable engine
-abstractions live in the **cs2-kit** submodule (`vendor/cs2-kit/`); the plugin
-itself is everything under `src/`. This guide gets you building and shipping a
+A monorepo of C++23 Metamod:Source plugins for CS2 community servers. Reusable
+engine abstractions live in the **cs2-kit** submodule (`vendor/cs2-kit/`); each
+plugin lives under `plugins/<name>/` (with its sources in `plugins/<name>/src/`)
+— `admin-system` is the first. This guide gets you building and shipping a
 change quickly. For the full Windows walkthrough see
 [docs/local-development.md](docs/local-development.md).
 
@@ -31,13 +32,20 @@ scripts/build.sh        # configure + ambuild + deploy (run from the x64 Native 
 Or develop in Visual Studio: generate a solution with
 `uv run python configure.py --gen=vs --vs-version 19` and open the `.sln`.
 
-Build output lands in `objdir/src/`.
+Build output lands in `objdir/plugins/<name>/src/`.
 
 ### Adding a source file
 
-The build auto-discovers sources. To add code, just **drop a `.cpp` under
-`src/`** (or `vendor/cs2-kit/src/` for shared code) — `src/AMBuilder` walks
-those trees and picks it up.
+The build auto-discovers sources. To add code, just **drop a `.cpp` under a
+plugin's `plugins/<name>/src/`** (or `vendor/cs2-kit/src/` for shared code) —
+that plugin's `src/AMBuilder` walks those trees and picks it up.
+
+### Adding a new plugin
+
+Create `plugins/<new>/src/` with its own `AMBuilder` (copy admin-system's and
+adjust the link libs), plus `plugins/<new>/configs/` and `plugins/<new>/<new>.vdf`.
+The root `AMBuildScript` discovers it automatically (no root edits); append any
+new C++ deps to the root `vcpkg.json`.
 
 > Adding a **new** file means re-running configure so AMBuild sees it:
 > `scripts/build.sh` does this for you (it always runs `configure.py`). If you

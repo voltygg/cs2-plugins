@@ -120,7 +120,7 @@ uv run python ../configure.py
 uv run ambuild
 ```
 
-Output files will be in `objdir/src/`.
+Output files will be in `objdir/plugins/<name>/src/` (e.g. `objdir/plugins/admin-system/src/admin-system/windows-x86_64/`).
 
 ## 7. Generate Visual Studio Solution
 
@@ -246,7 +246,7 @@ you build outside Docker and hit this error, run the two `protoc` commands from 
 
 ## Next Steps
 
-- Add yourself as an admin: edit [database/seed-admin.sql](../database/seed-admin.sql) with your
+- Add yourself as an admin: edit [seed-admin.sql](../plugins/admin-system/database/seed-admin.sql) with your
   SteamID64 and run it against your database. Admins live in the `admins` / `admin_groups` PostgreSQL
   tables, not a JSON file.
-- Set up [settings.jsonc](../configs/settings.jsonc) with your database and plugin configuration
+- Set up [settings.jsonc](../plugins/admin-system/configs/settings.jsonc) with your database and plugin configuration
