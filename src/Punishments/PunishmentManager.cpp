@@ -5,8 +5,7 @@
 #include "../Core/ChatService.hpp"
 #include "../Core/Config.hpp"
 #include "../Database/Repositories/BanRepository.hpp"
-#include "../Database/Repositories/TextMuteRepository.hpp"
-#include "../Database/Repositories/VoiceMuteRepository.hpp"
+#include "../Database/Repositories/MuteRepository.hpp"
 #include "../Database/Repositories/WarningRepository.hpp"
 
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -61,8 +60,8 @@ bool PunishmentManager::LoadActivePunishments()
     try
     {
         BanRepository banRepo;
-        VoiceMuteRepository voiceRepo;
-        TextMuteRepository textRepo;
+        MuteRepository<VoiceMute> voiceRepo{"voice_mutes", "voice_mute"};
+        MuteRepository<TextMute> textRepo{"text_mutes", "text_mute"};
 
         _activeBans.clear();
         for (const auto& ban : banRepo.FindAllActive())
@@ -191,7 +190,7 @@ bool PunishmentManager::IssueVoiceMute(VoiceMute& mute)
         if (mute.Duration > 0 && mute.ExpiresAt == 0)
             mute.ExpiresAt = TimeUtils::GetExpirationTime(mute.Duration);
 
-        VoiceMuteRepository repo;
+        MuteRepository<VoiceMute> repo{"voice_mutes", "voice_mute"};
         if (!repo.Create(mute))
             return false;
 
@@ -219,7 +218,7 @@ bool PunishmentManager::IssueTextMute(TextMute& mute)
         if (mute.Duration > 0 && mute.ExpiresAt == 0)
             mute.ExpiresAt = TimeUtils::GetExpirationTime(mute.Duration);
 
-        TextMuteRepository repo;
+        MuteRepository<TextMute> repo{"text_mutes", "text_mute"};
         if (!repo.Create(mute))
             return false;
 
@@ -295,7 +294,7 @@ bool PunishmentManager::RemoveBan(int64_t banId, int64_t removedBy, const std::s
 
 bool PunishmentManager::RemoveVoiceMute(int64_t muteId, int64_t removedBy, const std::string& reason)
 {
-    VoiceMuteRepository repo;
+    MuteRepository<VoiceMute> repo{"voice_mutes", "voice_mute"};
     if (!repo.Remove(muteId, removedBy, reason))
         return false;
 
@@ -317,7 +316,7 @@ bool PunishmentManager::RemoveVoiceMute(int64_t muteId, int64_t removedBy, const
 
 bool PunishmentManager::RemoveTextMute(int64_t muteId, int64_t removedBy, const std::string& reason)
 {
-    TextMuteRepository repo;
+    MuteRepository<TextMute> repo{"text_mutes", "text_mute"};
     if (!repo.Remove(muteId, removedBy, reason))
         return false;
 
@@ -342,14 +341,14 @@ bool PunishmentManager::RemoveBanBySteamId(int64_t steamId, int64_t removedBy, c
 
 bool PunishmentManager::RemoveVoiceMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    VoiceMuteRepository repo;
+    MuteRepository<VoiceMute> repo{"voice_mutes", "voice_mute"};
     return RemoveBySteamIdImpl(_activeVoiceMutes, repo, steamId, removedBy, reason,
                                &PunishmentManager::RemoveVoiceMute);
 }
 
 bool PunishmentManager::RemoveTextMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    TextMuteRepository repo;
+    MuteRepository<TextMute> repo{"text_mutes", "text_mute"};
     return RemoveBySteamIdImpl(_activeTextMutes, repo, steamId, removedBy, reason, &PunishmentManager::RemoveTextMute);
 }
 
@@ -358,12 +357,12 @@ void PunishmentManager::ExpireOldPunishments()
     try
     {
         BanRepository banRepo;
-        VoiceMuteRepository voiceRepo;
-        TextMuteRepository textRepo;
+        MuteRepository<VoiceMute> voiceRepo{"voice_mutes", "voice_mute"};
+        MuteRepository<TextMute> textRepo{"text_mutes", "text_mute"};
 
         banRepo.ExpireOldBans();
-        voiceRepo.ExpireOldVoiceMutes();
-        textRepo.ExpireOldTextMutes();
+        voiceRepo.ExpireOld();
+        textRepo.ExpireOld();
 
         // Snapshot the muted set before reload so we can detect voice mutes that
         // expired this sweep and refresh their voice channels.
