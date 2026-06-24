@@ -1,4 +1,4 @@
-#include "Vitals.hpp"
+#include "Descriptors.hpp"
 
 #include <CS2Kit/Sdk/Entity.hpp>
 

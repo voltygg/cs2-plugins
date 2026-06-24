@@ -2,12 +2,9 @@
 #include "../../Core/Managers.hpp"
 #include <CS2Kit/Core/Services.hpp>
 
-#include "../Actions/Launch.hpp"
-#include "../Actions/Smite.hpp"
-#include "../Actions/Teleport.hpp"
+#include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
-#include "../Effects/Disco.hpp"
-#include "../Effects/Ghost.hpp"
+#include "../Effects/Descriptors.hpp"
 #include "MenuHelpers.hpp"
 #include "PlayerPicker.hpp"
 

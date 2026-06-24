@@ -1,0 +1,57 @@
+#pragma once
+
+#include "ActionContext.hpp"
+
+namespace AdminSystem::Admin::Actions
+{
+
+// Vitals
+extern const Action Slay;
+extern const Action Godmode;
+extern const ParamAction SetHealth;
+extern const ParamAction SetArmor;
+
+// Movement
+extern const Action Noclip;
+extern const Action Freeze;
+extern const Action Bury;
+extern const Action Unbury;
+
+// Teleport
+extern const Action Bring;
+extern const Action Goto;
+
+/** Exchange origins between two targets. The picker for the second target is built
+ *  by the menu layer; this entry point assumes both are already resolved. */
+void Swap(int adminSlot, int firstSlot, int secondSlot);
+
+// Team
+constexpr int TeamSpec = 1;
+constexpr int TeamT = 2;
+constexpr int TeamCt = 3;
+
+/** Param is the destination team (TeamSpec/TeamT/TeamCt); out-of-range values are ignored. */
+extern const ParamAction ChangeTeam;
+
+// Launch
+/**
+ * @brief Launch: high upward velocity with a 3-second godmode window so the target
+ * survives the fall.
+ */
+extern const Action Launch;
+
+// Smite
+/**
+ * Theatrical instakill: broadcast, then Slay after a 250 ms beat. Per Phase 0 fallback for
+ * the missing particle API — no lightning bolt visual until ParticleService lands; the chat
+ * broadcast carries the drama in the meantime. Requires the Fun flag.
+ */
+extern const Action Smite;
+
+// CheatCheck
+void CallCheck(int adminSlot, int targetSlot);
+
+/** Returns false if the action was rejected (immunity/permission) or no check was active. */
+bool CancelCheck(int adminSlot, int targetSlot);
+
+}  // namespace AdminSystem::Admin::Actions

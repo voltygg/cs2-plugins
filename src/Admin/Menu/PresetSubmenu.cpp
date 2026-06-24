@@ -2,7 +2,7 @@
 #include <CS2Kit/Core/Services.hpp>
 
 #include "../Actions/ActionContext.hpp"
-#include "../Actions/Team.hpp"
+#include "../Actions/Descriptors.hpp"
 
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>

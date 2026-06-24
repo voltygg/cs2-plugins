@@ -2,13 +2,9 @@
 #include "../../Core/Managers.hpp"
 #include <CS2Kit/Core/Services.hpp>
 
-#include "../Actions/CheatCheck.hpp"
-#include "../Actions/Movement.hpp"
-#include "../Actions/Teleport.hpp"
-#include "../Actions/Vitals.hpp"
+#include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
-#include "../Effects/EffectId.hpp"
-#include "../Effects/Hide.hpp"
+#include "../Effects/Descriptors.hpp"
 #include "MenuHelpers.hpp"
 #include "PresetSubmenu.hpp"
 

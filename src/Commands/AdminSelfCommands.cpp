@@ -1,7 +1,7 @@
 #include "AdminSelfCommands.hpp"
 
+#include "../Admin/Effects/Descriptors.hpp"
 #include "../Admin/Effects/EffectAction.hpp"
-#include "../Admin/Effects/Hide.hpp"
 #include "../Core/Permissions.hpp"
 
 namespace AdminSystem::Commands
