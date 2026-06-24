@@ -56,7 +56,6 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
 
     AddEffectToggle(builder, tr.Get("action.ghost", adminSlot), hasF, adminSlot, targetSlot, Effects::Ghost);
     AddEffectToggle(builder, tr.Get("action.disco", adminSlot), hasF, adminSlot, targetSlot, Effects::Disco);
-    builder.AddButton(tr.Get("action.blind", adminSlot), [](int) {}, false);  // Awaits Fade user-message infra.
     AddAction(builder, tr.Get("action.launch", adminSlot), hasS, adminSlot, targetSlot, Actions::Launch);
     AddAction(builder, tr.Get("action.smite", adminSlot), hasF, adminSlot, targetSlot, Actions::Smite);
 

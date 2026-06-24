@@ -93,7 +93,7 @@ void ChatService::BroadcastAction(const std::string& translationKey, std::string
     Chat::PrintAll(line);
 }
 
-void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view message, bool teamOnly)
+void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view message, bool /*teamOnly*/)
 {
     if (!admin)
         return;
@@ -112,17 +112,9 @@ void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view mes
     else
         line = std::format("{}{}{}: {}{}", nameColor, admin->GetName(), ChatColors::Default, messageColor, message);
 
-    if (teamOnly)
-    {
-        // Team-only chat: filter to players on the admin's team. PlayerController exposes team via
-        // schema; for now we broadcast to everyone (most servers run admin team chat as a notice
-        // anyway). Refine when CS2Kit gains a stable team accessor on Player.
-        Chat::PrintAll(line);
-    }
-    else
-    {
-        Chat::PrintAll(line);
-    }
+    // Team-only filtering isn't implemented yet (no stable team accessor on Player), so admin chat
+    // currently broadcasts to everyone regardless of say vs say_team.
+    Chat::PrintAll(line);
 }
 
 bool ChatService::HandleSay(Player* player, std::string_view message, bool isSayTeam)

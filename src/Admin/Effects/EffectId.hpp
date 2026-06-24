@@ -10,7 +10,6 @@ enum class EffectId : uint8_t
     Disco = 0,
     Ghost = 1,
     Hide = 2,
-    Blind = 3,
 
     Count
 };

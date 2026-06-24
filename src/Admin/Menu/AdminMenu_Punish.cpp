@@ -155,12 +155,6 @@ static std::function<void(int, int, int)> MakePunishmentCallback(IssueFunc issue
     };
 }
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildDurationMenu(int adminSlot, int targetSlot, const std::string& actionName,
-                                                        std::function<void(int, int, int)> onDuration)
-{
-    return BuildTimedPunishmentMenu(adminSlot, targetSlot, actionName, std::move(onDuration));
-}
-
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishMenu(int adminSlot)
 {
     auto& tr = Kit().Translations;

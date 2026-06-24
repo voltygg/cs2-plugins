@@ -226,11 +226,10 @@ Verify the `vcpkg_installed/` folder exists and contains the dependencies.
 
 ### Fatal error: 'network_connection.pb.h' file not found
 
-Run the [generate-protos.sh](../scripts/generate-protos.sh) to generate protobuf files in the HL2SDK:
-
-```bash
-./scripts/generate-protos.sh
-```
+Protobuf headers are generated automatically by the Docker build (`docker compose run --rm build`). If
+you build outside Docker and hit this error, run the two `protoc` commands from the `build` service in
+[docker-compose.yml](../docker-compose.yml) manually — they generate the `*.pb.h` headers under
+`vendor/hl2sdk-cs2/`.
 
 ## Quick Reference
 
@@ -247,5 +246,7 @@ Run the [generate-protos.sh](../scripts/generate-protos.sh) to generate protobuf
 
 ## Next Steps
 
-- Configure [admins.json](../configs/admins.json) with your SteamID
+- Add yourself as an admin: edit [database/seed-admin.sql](../database/seed-admin.sql) with your
+  SteamID64 and run it against your database. Admins live in the `admins` / `admin_groups` PostgreSQL
+  tables, not a JSON file.
 - Set up [settings.jsonc](../configs/settings.jsonc) with your database and plugin configuration
