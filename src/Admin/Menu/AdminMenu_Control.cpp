@@ -84,28 +84,27 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     int64_t adminSid = admin->GetSteamID();
     int64_t targetSid = target->GetSteamID();
     bool hasS = adminMgr.CanActOn(adminSid, targetSid, Permission::Control);
-    bool hasH = adminMgr.CanActOn(adminSid, targetSid, Permission::Health);
     bool hasK = adminMgr.CanActOn(adminSid, targetSid, Permission::CheatCheck);
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));
 
-    AddAction(builder, tr.Get("action.slay", adminSlot), hasS, adminSlot, targetSlot, Actions::Slay);
-    AddAction(builder, tr.Get("action.bring", adminSlot), hasS, adminSlot, targetSlot, Actions::Bring);
-    AddAction(builder, tr.Get("action.goto", adminSlot), hasS, adminSlot, targetSlot, Actions::Goto);
-    AddAction(builder, tr.Get("action.freeze", adminSlot), hasS, adminSlot, targetSlot, Actions::Freeze);
-    AddAction(builder, tr.Get("action.noclip", adminSlot), hasS, adminSlot, targetSlot, Actions::Noclip);
+    AddAction(builder, tr.Get("action.slay", adminSlot), adminSlot, targetSlot, Actions::Slay);
+    AddAction(builder, tr.Get("action.bring", adminSlot), adminSlot, targetSlot, Actions::Bring);
+    AddAction(builder, tr.Get("action.goto", adminSlot), adminSlot, targetSlot, Actions::Goto);
+    AddAction(builder, tr.Get("action.freeze", adminSlot), adminSlot, targetSlot, Actions::Freeze);
+    AddAction(builder, tr.Get("action.noclip", adminSlot), adminSlot, targetSlot, Actions::Noclip);
 
     // HP/Armor are inline Choice rows: A/D cycles preset values, E applies and closes.
-    AddPresetChoice(builder, tr.Get("action.health", adminSlot), "HP", hasH, adminSlot, targetSlot, Actions::SetHealth,
+    AddPresetChoice(builder, tr.Get("action.health", adminSlot), "HP", adminSlot, targetSlot, Actions::SetHealth,
                     HealthPresets);
-    AddPresetChoice(builder, tr.Get("action.armor", adminSlot), "AP", hasH, adminSlot, targetSlot, Actions::SetArmor,
+    AddPresetChoice(builder, tr.Get("action.armor", adminSlot), "AP", adminSlot, targetSlot, Actions::SetArmor,
                     ArmorPresets);
 
-    AddFlagToggle(builder, tr.Get("action.godmode", adminSlot), hasH, adminSlot, targetSlot, CS2Kit::Sdk::FL_GODMODE,
+    AddFlagToggle(builder, tr.Get("action.godmode", adminSlot), adminSlot, targetSlot, CS2Kit::Sdk::FL_GODMODE,
                   Actions::Godmode);
 
-    AddAction(builder, tr.Get("action.bury", adminSlot), hasS, adminSlot, targetSlot, Actions::Bury);
-    AddAction(builder, tr.Get("action.unbury", adminSlot), hasS, adminSlot, targetSlot, Actions::Unbury);
+    AddAction(builder, tr.Get("action.bury", adminSlot), adminSlot, targetSlot, Actions::Bury);
+    AddAction(builder, tr.Get("action.unbury", adminSlot), adminSlot, targetSlot, Actions::Unbury);
     builder.AddSubmenu(
         tr.Get("action.changeTeam", adminSlot),
         [adminSlot, targetSlot](int) { return BuildTeamPickerMenu(adminSlot, targetSlot); }, hasS);

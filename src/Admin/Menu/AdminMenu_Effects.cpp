@@ -49,15 +49,14 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
 
     int64_t adminSid = admin->GetSteamID();
     int64_t targetSid = target->GetSteamID();
-    bool hasF = adminMgr.CanActOn(adminSid, targetSid, Permission::Fun);
     bool hasS = adminMgr.CanActOn(adminSid, targetSid, Permission::Control);
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->GetName()));
 
-    AddEffectToggle(builder, tr.Get("action.ghost", adminSlot), hasF, adminSlot, targetSlot, Effects::Ghost);
-    AddEffectToggle(builder, tr.Get("action.disco", adminSlot), hasF, adminSlot, targetSlot, Effects::Disco);
-    AddAction(builder, tr.Get("action.launch", adminSlot), hasS, adminSlot, targetSlot, Actions::Launch);
-    AddAction(builder, tr.Get("action.smite", adminSlot), hasF, adminSlot, targetSlot, Actions::Smite);
+    AddEffectToggle(builder, tr.Get("action.ghost", adminSlot), adminSlot, targetSlot, Effects::Ghost);
+    AddEffectToggle(builder, tr.Get("action.disco", adminSlot), adminSlot, targetSlot, Effects::Disco);
+    AddAction(builder, tr.Get("action.launch", adminSlot), adminSlot, targetSlot, Actions::Launch);
+    AddAction(builder, tr.Get("action.smite", adminSlot), adminSlot, targetSlot, Actions::Smite);
 
     // Swap opens a second player picker, then runs the dual-target Swap.
     builder.AddButton(
