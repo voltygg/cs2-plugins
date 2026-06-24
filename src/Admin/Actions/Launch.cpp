@@ -36,14 +36,20 @@ const Action Launch{Permission::Control, /*requireAlive*/ true, [](const ActionC
                                                     Rand(-LaunchHorizontal, LaunchHorizontal), LaunchUpward});
 
                         // FL_GODMODE on m_fFlags is the working CS2 invincibility path (legacy m_takedamage is no-op).
-                        ctx.TargetCtrl.SetFlags(ctx.TargetCtrl.GetFlags() | CS2Kit::Sdk::FL_GODMODE);
+                        // Only toggle it for fall protection if the target wasn't already in godmode, otherwise the
+                        // delayed clear below would silently strip an admin-applied Godmode.
+                        uint32_t flags = ctx.TargetCtrl.GetFlags();
+                        if ((flags & CS2Kit::Sdk::FL_GODMODE) == 0)
+                        {
+                            ctx.TargetCtrl.SetFlags(flags | CS2Kit::Sdk::FL_GODMODE);
 
-                        int slot = ctx.Target->GetSlot();
-                        Kit().Scheduler.Delay(FallProtectMs, [slot]() {
-                            PlayerController pc(slot);
-                            if (pc.IsValid())
-                                pc.SetFlags(pc.GetFlags() & ~CS2Kit::Sdk::FL_GODMODE);
-                        });
+                            int slot = ctx.Target->GetSlot();
+                            Kit().Scheduler.Delay(FallProtectMs, [slot]() {
+                                PlayerController pc(slot);
+                                if (pc.IsValid())
+                                    pc.SetFlags(pc.GetFlags() & ~CS2Kit::Sdk::FL_GODMODE);
+                            });
+                        }
 
                         return "broadcast.launched";
                     }};

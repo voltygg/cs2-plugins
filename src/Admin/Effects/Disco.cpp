@@ -45,9 +45,6 @@ const EffectToggle Disco{
             *idx = (*idx + 1) % Palette.size();
         });
 
-        // Auto-cancel after the duration; this routes through EffectManager so the cancel fn runs.
-        Kit().Scheduler.Delay(DiscoDurationSec * 1000, [slot]() { Sys().Effects.Cancel(slot, EffectId::Disco); });
-
         auto cancel = [slot, savedMode, savedColor]() {
             CS2Kit::Sdk::PlayerController pc(slot);
             if (pc.IsValid())
@@ -55,7 +52,9 @@ const EffectToggle Disco{
                              savedColor == 0 ? ColorOpaqueWhite : savedColor);
         };
 
-        return {timer, std::move(cancel), /*roundScoped*/ true};
+        // EffectManager owns the auto-expire timer (DurationMs); a self-scheduled Delay here would
+        // survive an early cancel and could clobber a re-applied Disco on the same slot.
+        return {timer, std::move(cancel), /*roundScoped*/ true, /*durationMs*/ DiscoDurationSec * 1000};
     }};
 
 }  // namespace AdminSystem::Admin::Effects

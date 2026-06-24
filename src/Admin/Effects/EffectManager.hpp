@@ -20,6 +20,7 @@ struct ActiveEffect
     bool Active = false;
     bool RoundScoped = false;
     uint64_t TimerHandle = 0;
+    uint64_t DurationHandle = 0; /**< Auto-expire timer, owned here and cancelled with the effect. */
     std::function<void()> CancelFn;
 };
 
@@ -29,6 +30,7 @@ struct EffectSetup
     uint64_t TimerHandle = 0;       /**< Scheduler handle owned by the effect, or 0. */
     std::function<void()> CancelFn; /**< Undo the effect's state (restore render, team, etc.). */
     bool RoundScoped = false;       /**< Auto-cancel on round end. */
+    int DurationMs = 0; /**< >0 auto-cancels the effect after this long; the timer is owned by EffectManager. */
 };
 
 class EffectManager
@@ -47,7 +49,8 @@ public:
      *                     pawn state and Cancel(timerHandle) itself if applicable.
      * @param roundScoped  True for effects that should auto-cancel on round_end.
      */
-    void Apply(int slot, EffectId id, uint64_t timerHandle, std::function<void()> cancelFn, bool roundScoped = false);
+    void Apply(int slot, EffectId id, uint64_t timerHandle, std::function<void()> cancelFn, bool roundScoped = false,
+               int durationMs = 0);
 
     /**
      * @brief Toggle an effect. If it is active, cancel it and return false. Otherwise run

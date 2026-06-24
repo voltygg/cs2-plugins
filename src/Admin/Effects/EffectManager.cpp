@@ -25,19 +25,31 @@ bool EffectManager::IsActive(int slot, EffectId id) const
     return _effects[slot][static_cast<size_t>(id)].Active;
 }
 
-void EffectManager::Apply(int slot, EffectId id, uint64_t timerHandle, std::function<void()> cancelFn, bool roundScoped)
+void EffectManager::Apply(int slot, EffectId id, uint64_t timerHandle, std::function<void()> cancelFn, bool roundScoped,
+                          int durationMs)
 {
     if (!ValidSlot(slot))
         return;
 
     auto& entry = _effects[slot][static_cast<size_t>(id)];
-    if (entry.Active && entry.CancelFn)
-        entry.CancelFn();
+    if (entry.Active)
+    {
+        if (entry.CancelFn)
+            entry.CancelFn();
+        if (entry.TimerHandle != 0)
+            Kit().Scheduler.Cancel(entry.TimerHandle);
+        if (entry.DurationHandle != 0)
+            Kit().Scheduler.Cancel(entry.DurationHandle);
+    }
 
     entry.Active = true;
     entry.RoundScoped = roundScoped;
     entry.TimerHandle = timerHandle;
     entry.CancelFn = std::move(cancelFn);
+    // Own the auto-expire timer here (not in the effect) so cancelling the effect always cancels it too --
+    // a self-scheduled duration timer would survive an early cancel and later clobber a re-applied effect.
+    entry.DurationHandle =
+        durationMs > 0 ? Kit().Scheduler.Delay(durationMs, [this, slot, id]() { Cancel(slot, id); }) : 0;
 }
 
 bool EffectManager::Toggle(int slot, EffectId id, const std::function<EffectSetup()>& enable)
@@ -50,7 +62,7 @@ bool EffectManager::Toggle(int slot, EffectId id, const std::function<EffectSetu
         return false;
     }
     EffectSetup setup = enable();
-    Apply(slot, id, setup.TimerHandle, std::move(setup.CancelFn), setup.RoundScoped);
+    Apply(slot, id, setup.TimerHandle, std::move(setup.CancelFn), setup.RoundScoped, setup.DurationMs);
     return true;
 }
 
@@ -65,6 +77,8 @@ void EffectManager::Cancel(int slot, EffectId id)
         entry.CancelFn();
     if (entry.TimerHandle != 0)
         Kit().Scheduler.Cancel(entry.TimerHandle);
+    if (entry.DurationHandle != 0)
+        Kit().Scheduler.Cancel(entry.DurationHandle);
     entry = ActiveEffect{};
 }
 
