@@ -12,7 +12,7 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable
 - **Admin System:** Permission flags (`s` control, `h` survival/cheats, `f` fun), groups, immunity levels. Self-targeting always allowed.
 - **WASD Menus:** Top-level category dispatcher → player picker → actions. Toggle entries (Ghost, Disco, Godmode) show live `: ON / : OFF` state via dynamic-title menu items.
 - **Database:** PostgreSQL with async queries
-- **Chat Commands:** `!kick`, `!ban`, `!mute`, `!gag`, `!warn` and more
+- **Chat Commands:** `!kick`, `!ban`, `!voice_mute`, `!text_mute`, `!warn` and more
 
 ## Requirements
 
@@ -36,10 +36,10 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** — a reusable
 | `!kick <target> [reason]` | Kick | Kick a player |
 | `!ban <target> <duration> [reason]` | Ban | Ban a player |
 | `!unban <steamid>` | Unban | Remove a ban |
-| `!mute <target> <duration> [reason]` | Mute | Mute voice |
-| `!unmute <target>` | Mute | Unmute voice |
-| `!gag <target> <duration> [reason]` | Gag | Gag text chat |
-| `!ungag <target>` | Gag | Ungag text chat |
+| `!voice_mute <target> <duration> [reason]` | VoiceMute | Mute voice |
+| `!voice_unmute <target>` | VoiceMute | Unmute voice |
+| `!text_mute <target> <duration> [reason]` | TextMute | Block text chat |
+| `!text_unmute <target>` | TextMute | Unblock text chat |
 | `!warn <target> <reason>` | Warn | Issue a warning |
 | `!admin` | AdminMenu | Open admin menu |
 
