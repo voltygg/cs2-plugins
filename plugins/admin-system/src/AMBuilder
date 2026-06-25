@@ -1,98 +1,17 @@
-# vim: set ts=8 sts=4 sw=4 tw=99 et ft=python:
 # ruff: noqa: F821
 # mypy: ignore-errors
 #
-# Source AMBuilder - Define your plugin sources and dependencies here
+# admin-system — player management, punishments, and WASD admin menus.
+# Plugin + cs2-kit sources are auto-discovered; just declare the libs to link.
 
-import os
-
-# =============================================================================
-# SOURCE FILES - Auto-discovered from this plugin's src/ and vendor/cs2-kit/src/
-# =============================================================================
-# currentSourcePath is this plugin's src/; PluginName is injected by AMBuildScript.
-SRC_DIR = builder.currentSourcePath
-CS2KIT_DIR = os.path.join(builder.sourcePath, "vendor", "cs2-kit")
-CS2KIT_SRC_DIR = os.path.join(CS2KIT_DIR, "src")
-CS2KIT_INCLUDE_DIR = os.path.join(CS2KIT_DIR, "include")
-
-SOURCES = []
-for root, dirs, files in os.walk(SRC_DIR):
-    for f in files:
-        if f.endswith(".cpp"):
-            SOURCES.append(os.path.relpath(os.path.join(root, f), SRC_DIR))
-
-# cs2-kit library sources (compiled inline for source inclusion approach)
-CS2KIT_SOURCES = []
-for root, dirs, files in os.walk(CS2KIT_SRC_DIR):
-    for f in files:
-        if f.endswith(".cpp"):
-            CS2KIT_SOURCES.append(os.path.join(root, f))
-
-SOURCES.sort()
-CS2KIT_SOURCES.sort()
-
-# =============================================================================
-# LIBRARIES - Platform-specific libraries
-# =============================================================================
-WINDOWS_LIBS = [
-    # libpqxx + libpq (static)
-    "pqxx.lib",
-    "libpq.lib",
-    "libpgcommon.lib",
-    "libpgport.lib",
-    # libcurl (static, HTTPS via OpenSSL — reuses the ssl/crypto/zlib/wldap32/crypt32 libs below)
-    "libcurl.lib",
-    # OpenSSL (static, required by libpq + libcurl)
-    "libssl.lib",
-    "libcrypto.lib",
-    # Compression (static, required by libpq)
-    "zlib.lib",
-    "lz4.lib",
-    # Windows system libs required by OpenSSL/libpq/libcurl
-    "crypt32.lib",
-    "secur32.lib",
-    "wldap32.lib",
-    # if_nametoindex (IPv6 scope ids) pulled in by libcurl
-    "iphlpapi.lib",
-    # Required by sigscanner (GetModuleInformation)
-    "psapi.lib",
-]
-
-LINUX_LIBS = [
-    "pqxx",
-    "pq",
-    "curl",
-]
-
-# =============================================================================
-# BUILD - No changes needed below
-# =============================================================================
-
-for sdk_target in Plugin.sdk_targets:
-    sdk = sdk_target.sdk
-    cxx = sdk_target.cxx
-
-    binary = Plugin.create_library(builder, cxx, sdk, PluginName)
-
-    # Add cs2-kit public include path (for #include <CS2Kit/...>)
-    binary.compiler.cxxincludes += [CS2KIT_INCLUDE_DIR]
-
-    # Add cs2-kit src/ for internal headers (needed by cs2-kit .cpp files compiled inline)
-    binary.compiler.cxxincludes += [CS2KIT_SRC_DIR]
-
-    # Add plugin source files
-    for src in SOURCES:
-        binary.sources += [os.path.join(SRC_DIR, src)]
-
-    # Add cs2-kit library source files (source inclusion approach)
-    for src in CS2KIT_SOURCES:
-        binary.sources += [src]
-
-    # Link libraries
-    if binary.compiler.like("msvc"):
-        binary.compiler.linkflags += WINDOWS_LIBS
-    else:
-        for lib in LINUX_LIBS:
-            binary.compiler.linkflags += [f"-l{lib}"]
-
-    Plugin.binaries += [builder.Add(binary)]
+Plugin.add_plugin(builder, PluginName,
+    windows_libs=[
+        # PostgreSQL: libpqxx + libpq and their static transitive deps.
+        "pqxx.lib", "libpq.lib", "libpgcommon.lib", "libpgport.lib",
+        # libcurl + OpenSSL + compression (static).
+        "libcurl.lib", "libssl.lib", "libcrypto.lib", "zlib.lib", "lz4.lib",
+        # System libs pulled in by OpenSSL/libpq/libcurl and the sigscanner.
+        "crypt32.lib", "secur32.lib", "wldap32.lib", "iphlpapi.lib", "psapi.lib",
+    ],
+    linux_libs=["pqxx", "pq", "curl"],
+)

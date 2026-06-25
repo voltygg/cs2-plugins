@@ -1,36 +1,37 @@
-# vim: set ts=8 sts=4 sw=4 tw=99 et ft=python:
 # ruff: noqa: F821
 # mypy: ignore-errors
 #
-# Generic Metamod:Source 2 Plugin Build Script
-# Note: 'builder' is injected at runtime by AMBuild
+# Root build for the cs2-plugins monorepo: resolve the SDK/Metamod once, then
+# build every plugins/<name>/src/AMBuilder. 'builder' is injected by AMBuild.
 
 import os
 
-# =============================================================================
-# SHARED BUILD CONFIGURATION - Applies to every plugin under plugins/
-# =============================================================================
-
-# Additional include paths (relative to source root)
-EXTRA_INCLUDES = []
-
-# vcpkg triplet (for Windows vcpkg dependencies)
-VCPKG_TRIPLET = "x64-windows-static"
-
-# =============================================================================
-# SDK RESOLUTION - Uses cs2-kit's vendor submodules
-# =============================================================================
+VCPKG_TRIPLET = "x64-windows-static"  # Windows vcpkg dependency triplet
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-CS2KIT_VENDOR_DIR = os.path.join(PROJECT_ROOT, "vendor", "cs2-kit", "vendor")
+CS2KIT_ROOT_DIR = os.path.join(PROJECT_ROOT, "vendor", "cs2-kit")
+CS2KIT_VENDOR_DIR = os.path.join(CS2KIT_ROOT_DIR, "vendor")
+CS2KIT_INCLUDE_DIR = os.path.join(CS2KIT_ROOT_DIR, "include")
+CS2KIT_SRC_DIR = os.path.join(CS2KIT_ROOT_DIR, "src")
+
+
+def discover_cpp(root):
+    """All .cpp files under `root`, sorted for deterministic builds."""
+    return sorted(
+        os.path.join(r, f)
+        for r, _, files in os.walk(root)
+        for f in files if f.endswith(".cpp")
+    )
+
+
+# cs2-kit is compiled inline into every plugin (source inclusion).
+CS2KIT_SOURCES = discover_cpp(CS2KIT_SRC_DIR)
 
 
 def resolve_vendor_path(folder):
-    """Resolve path from cs2-kit's vendor/ submodules."""
+    """Resolve a path from cs2-kit's vendor/ submodules."""
     path = os.path.join(CS2KIT_VENDOR_DIR, folder)
-    if os.path.isdir(path):
-        return path
-    return None
+    return path if os.path.isdir(path) else None
 
 
 def resolve_mms_root():
@@ -53,19 +54,19 @@ def resolve_hl2sdk_manifests_root():
     return os.path.abspath(os.path.normpath(path))
 
 
-# Resolve paths and load SDK helpers
 mms_root = resolve_mms_root()
 hl2sdk_manifests_root = resolve_hl2sdk_manifests_root()
 SdkHelpers = builder.Eval(
     os.path.join(hl2sdk_manifests_root, "SdkHelpers.ambuild"), {"Project": "metamod"}
 )
 
+# cs2-kit owns the list of SDK .proto files it (and every consumer) needs.
+Protobuf = builder.Eval(os.path.join(CS2KIT_ROOT_DIR, "Protobuf.ambuild"))
 
-# =============================================================================
-# PLUGIN CONFIG CLASS
-# =============================================================================
 
 class PluginConfig:
+    """Shared SDK + compiler setup; builds each plugin via add_plugin()."""
+
     def __init__(self):
         self.sdks = {}
         self.sdk_manifests = []
@@ -75,7 +76,6 @@ class PluginConfig:
         self.all_targets = []
         self.target_archs = set()
 
-        # Detect target architectures
         target_archs = builder.options.targets.split(",") if builder.options.targets else ["x86_64"]
         for arch in target_archs:
             try:
@@ -207,28 +207,21 @@ class PluginConfig:
         elif cxx.target.platform == "windows":
             cxx.defines += ["WIN32", "_WINDOWS"]
 
-    def create_library(self, context, compiler, sdk, plugin_name):
-        """Create a library binary with SDK and Metamod includes configured."""
-        binary = compiler.Library(plugin_name)
+    def create_library(self, context, sdk_target, plugin_name):
+        """A plugin binary with SDK includes, Metamod, protobuf, and vcpkg wired up."""
+        sdk = sdk_target.sdk
+        binary = sdk_target.cxx.Library(plugin_name)
         cxx = binary.compiler
         mms_core = os.path.join(self.mms_root, "core")
 
-        # Metamod includes
-        cxx.cxxincludes += [
-            os.path.join(context.currentSourcePath),
-            mms_core,
-            os.path.join(mms_core, "sourcehook"),
-        ]
+        # SDK/cs2-kit protobuf headers (.pb.h/.pb.cc) — required by every plugin.
+        Protobuf.attach(context, binary, sdk_target)
 
-        # Extra project includes
-        for inc in EXTRA_INCLUDES:
-            cxx.cxxincludes += [os.path.join(builder.sourcePath, inc)]
+        cxx.cxxincludes += [context.currentSourcePath, mms_core, os.path.join(mms_core, "sourcehook")]
 
-        # SDK defines
         for other_sdk in self.sdk_manifests:
             cxx.defines += [f"SE_{other_sdk['define']}={other_sdk['code']}"]
 
-        # Source 2 setup
         if sdk["source2"]:
             cxx.defines += ["META_IS_SOURCE2"]
             binary.sources += [
@@ -236,10 +229,9 @@ class PluginConfig:
                 os.path.join(sdk["path"], "tier1", "convar.cpp"),
             ]
 
-        # SDK configuration (includes, libs)
         SdkHelpers.configureCxx(context, binary, sdk)
 
-        # vcpkg (Windows)
+        # vcpkg static deps (Windows).
         if cxx.like("msvc"):
             vcpkg_path = os.path.join(builder.sourcePath, "vcpkg_installed", VCPKG_TRIPLET)
             if os.path.isdir(vcpkg_path):
@@ -248,11 +240,26 @@ class PluginConfig:
 
         return binary
 
+    def add_plugin(self, context, name, windows_libs=None, linux_libs=None, includes=None):
+        """Build one plugin from its own src/ plus inlined cs2-kit. A plugin's
+        AMBuilder only calls this and declares the libraries it links."""
+        for sdk_target in self.sdk_targets:
+            binary = self.create_library(context, sdk_target, name)
+            cxx = binary.compiler
 
-# =============================================================================
-# BUILD
-# =============================================================================
+            cxx.cxxincludes += [CS2KIT_INCLUDE_DIR, CS2KIT_SRC_DIR, *(includes or [])]
+            binary.sources += discover_cpp(context.currentSourcePath)
+            binary.sources += CS2KIT_SOURCES
 
+            if cxx.like("msvc"):
+                cxx.linkflags += windows_libs or []
+            else:
+                cxx.linkflags += [f"-l{lib}" for lib in linux_libs or []]
+
+            self.binaries += [context.Add(binary)]
+
+
+# Build every plugin discovered at plugins/<name>/src/AMBuilder.
 Plugin = PluginConfig()
 Plugin.detect_sdks()
 Plugin.configure()
