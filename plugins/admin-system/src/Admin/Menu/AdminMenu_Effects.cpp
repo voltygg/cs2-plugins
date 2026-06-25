@@ -14,7 +14,7 @@
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -25,19 +25,19 @@ using CS2Kit::Utils::Translations;
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsMenu(int adminSlot)
 {
-    auto& tr = Kit().Translations;
+    auto& tr = Engine().Translations;
     return BuildPlayerPicker(adminSlot, tr.Get("category.effects", adminSlot), [](int admin, int target) {
         auto actions = BuildEffectsActionsMenu(admin, target);
         if (actions)
-            Kit().Menus.OpenMenu(admin, actions);
+            Engine().Menus.OpenMenu(admin, actions);
     });
 }
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = Kit().Translations;
-    auto& adminMgr = Sys().Admins;
-    auto& plrMgr = Kit().Players;
+    auto& tr = Engine().Translations;
+    auto& adminMgr = App().Admins;
+    auto& plrMgr = Engine().Players;
 
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
     auto* target = plrMgr.GetPlayerBySlot(targetSlot);
@@ -59,13 +59,13 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
     builder.AddButton(
         tr.Get("action.swap", adminSlot),
         [adminSlot, targetSlot](int slot) {
-            auto picker = BuildPlayerPicker(adminSlot, Kit().Translations.Get("common.selectSwapTarget", adminSlot),
+            auto picker = BuildPlayerPicker(adminSlot, Engine().Translations.Get("common.selectSwapTarget", adminSlot),
                                             [first = targetSlot](int a, int second) {
                                                 Actions::Swap(a, first, second);
-                                                Kit().Menus.CloseAllMenus(a);
+                                                Engine().Menus.CloseAllMenus(a);
                                             });
             if (picker)
-                Kit().Menus.OpenMenu(slot, picker);
+                Engine().Menus.OpenMenu(slot, picker);
         },
         hasS);
 

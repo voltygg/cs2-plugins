@@ -16,7 +16,7 @@ struct Managers;
  * wiring (OnLoad), the gameplay callbacks, and the one custom hook (voice-mute listening).
  *
  * The plugin owns its service managers (AdminSystem::Managers) for one Load/Unload cycle, so
- * their state cannot leak across `meta unload`/`meta reload`. Reach them via AdminSystem::Sys().
+ * their state cannot leak across `meta unload`/`meta reload`. Reach them via AdminSystem::App().
  */
 class AdminSystemPlugin : public CS2Kit::Core::MetamodPluginBase
 {
@@ -25,9 +25,6 @@ public:
 
     /** The single plugin instance. */
     static AdminSystemPlugin& Get();
-
-    /** The live managers. Valid only between OnLoad and unload. */
-    AdminSystem::Managers& M();
 
 protected:
     CS2Kit::Core::PluginInfo Info() const override;

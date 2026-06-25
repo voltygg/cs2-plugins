@@ -35,7 +35,7 @@ public:
     {
         return CS2Kit::Database::TryOr<std::optional<TEntity>>(
             std::nullopt, Label("FindActiveBySteamId"), [&]() -> std::optional<TEntity> {
-                auto result = Sys().Db.ExecutePrepared(
+                auto result = App().Db.ExecutePrepared(
                     Stmt("find_active_by_steamid"),
                     std::format("SELECT * FROM {} WHERE target_steam_id = $1 AND "
                                 "is_active = true AND (expires_at = 0 OR expires_at > $2)",
@@ -51,7 +51,7 @@ public:
     {
         return CS2Kit::Database::TryOr(std::vector<TEntity>{}, Label("FindAllActive"), [&] {
             std::vector<TEntity> mutes;
-            auto result = Sys().Db.ExecutePrepared(
+            auto result = App().Db.ExecutePrepared(
                 Stmt("find_all_active"),
                 std::format("SELECT * FROM {} WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)", _table),
                 CS2Kit::Utils::TimeUtils::Now());
@@ -64,7 +64,7 @@ public:
     bool Create(TEntity& mute)
     {
         return CS2Kit::Database::TryOr(false, Label("Create"), [&] {
-            auto result = Sys().Db.ExecutePrepared(
+            auto result = App().Db.ExecutePrepared(
                 Stmt("create"),
                 std::format("INSERT INTO {} (target_steam_id, target_name, admin_steam_id, admin_name, reason, "
                             "created_at, expires_at, duration, is_active) "
@@ -81,7 +81,7 @@ public:
     bool Remove(int64_t muteId, int64_t removedBy, const std::string& reason)
     {
         return CS2Kit::Database::TryOr(false, Label("Remove"), [&] {
-            Sys().Db.ExecutePrepared(
+            App().Db.ExecutePrepared(
                 Stmt("remove"),
                 std::format("UPDATE {} SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 "
                             "WHERE id = $1",
@@ -94,7 +94,7 @@ public:
     int ExpireOld()
     {
         return CS2Kit::Database::TryOr(0, Label("ExpireOld"), [&]() -> int {
-            auto result = Sys().Db.ExecutePrepared(
+            auto result = App().Db.ExecutePrepared(
                 Stmt("expire_old"),
                 std::format("UPDATE {} SET is_active = false WHERE is_active = true AND expires_at > 0 AND "
                             "expires_at <= $1",
@@ -108,7 +108,7 @@ public:
     {
         return CS2Kit::Database::TryOr(std::vector<TEntity>{}, Label("GetHistory"), [&] {
             std::vector<TEntity> mutes;
-            auto result = Sys().Db.ExecutePrepared(
+            auto result = App().Db.ExecutePrepared(
                 Stmt("get_history"),
                 std::format("SELECT * FROM {} WHERE target_steam_id = $1 ORDER BY created_at DESC", _table), steamId);
             for (const auto& row : result)

@@ -9,7 +9,7 @@
 
 #include <format>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Commands
 {
@@ -25,9 +25,9 @@ namespace
 CommandResult HandleCheatCheckLink(Player* caller, const std::vector<std::string>& args)
 {
     int slot = caller->GetSlot();
-    auto& tr = Kit().Translations;
+    auto& tr = Engine().Translations;
 
-    switch (Sys().CheatCheck.SubmitPlayerLink(slot, args[0]))
+    switch (App().CheatCheck.SubmitPlayerLink(slot, args[0]))
     {
     case CheatCheckManager::SubmitResult::Relayed:
         return {true, tr.Get("cheatCheck.linkReceived", slot)};
@@ -47,7 +47,7 @@ CommandResult HandleCheatCheckCancel(Player* admin, const std::vector<std::strin
         return {false, err};
 
     int slot = admin->GetSlot();
-    auto& tr = Kit().Translations;
+    auto& tr = Engine().Translations;
 
     if (!AdminSystem::Admin::Actions::CancelCheck(slot, target->GetSlot()))
         return {false, tr.Get("cheatCheck.noActiveCheck", slot)};

@@ -8,7 +8,7 @@
 
 #include <CS2Kit/Menu/MenuManager.hpp>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Commands
 {
@@ -32,7 +32,7 @@ CommandResult HandleAdminMenu(Player* admin, const std::vector<std::string>& /*a
     if (!menu)
         return {false, "Failed to open admin menu"};
 
-    Kit().Menus.OpenMenu(slot, menu);
+    Engine().Menus.OpenMenu(slot, menu);
     return {true, ""};  // menu UI is the feedback; no chat reply needed
 }
 

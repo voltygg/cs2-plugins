@@ -3,7 +3,7 @@
 
 #include <CS2Kit/Core/Scheduler.hpp>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Admin::Effects
 {
@@ -37,9 +37,9 @@ void EffectManager::Apply(int slot, EffectId id, uint64_t timerHandle, std::func
         if (entry.CancelFn)
             entry.CancelFn();
         if (entry.TimerHandle != 0)
-            Kit().Scheduler.Cancel(entry.TimerHandle);
+            Engine().Scheduler.Cancel(entry.TimerHandle);
         if (entry.DurationHandle != 0)
-            Kit().Scheduler.Cancel(entry.DurationHandle);
+            Engine().Scheduler.Cancel(entry.DurationHandle);
     }
 
     entry.Active = true;
@@ -49,7 +49,7 @@ void EffectManager::Apply(int slot, EffectId id, uint64_t timerHandle, std::func
     // Own the auto-expire timer here (not in the effect) so cancelling the effect always cancels it too --
     // a self-scheduled duration timer would survive an early cancel and later clobber a re-applied effect.
     entry.DurationHandle =
-        durationMs > 0 ? Kit().Scheduler.Delay(durationMs, [this, slot, id]() { Cancel(slot, id); }) : 0;
+        durationMs > 0 ? Engine().Scheduler.Delay(durationMs, [this, slot, id]() { Cancel(slot, id); }) : 0;
 }
 
 bool EffectManager::Toggle(int slot, EffectId id, const std::function<EffectSetup()>& enable)
@@ -76,9 +76,9 @@ void EffectManager::Cancel(int slot, EffectId id)
     if (entry.CancelFn)
         entry.CancelFn();
     if (entry.TimerHandle != 0)
-        Kit().Scheduler.Cancel(entry.TimerHandle);
+        Engine().Scheduler.Cancel(entry.TimerHandle);
     if (entry.DurationHandle != 0)
-        Kit().Scheduler.Cancel(entry.DurationHandle);
+        Engine().Scheduler.Cancel(entry.DurationHandle);
     entry = ActiveEffect{};
 }
 

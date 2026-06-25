@@ -5,7 +5,7 @@
 #include <CS2Kit/Utils/Translations.hpp>
 #include <utility>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -13,7 +13,7 @@ namespace AdminSystem::Admin::Menu
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(
     int adminSlot, const std::string& title, std::function<void(int adminSlot, int targetSlot)> onPick)
 {
-    auto& tr = Kit().Translations;
+    auto& tr = Engine().Translations;
     return ::CS2Kit::Menu::BuildPlayerPicker(adminSlot, title, std::move(onPick),
                                              tr.Get("common.noPlayers", adminSlot));
 }

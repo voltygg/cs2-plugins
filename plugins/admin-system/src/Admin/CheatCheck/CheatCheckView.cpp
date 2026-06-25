@@ -12,7 +12,7 @@
 #include <format>
 #include <string>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Admin::CheatCheck::View
 {
@@ -81,12 +81,12 @@ std::string EscapeHtml(const std::string& text)
 
 void RenderPanel(int slot, const PendingCheck& pc)
 {
-    if (!Kit().Players.GetPlayerBySlot(slot))
+    if (!Engine().Players.GetPlayerBySlot(slot))
     {
         return;
     }
 
-    auto& tr = Kit().Translations;
+    auto& tr = Engine().Translations;
 
     int64_t remain = pc.DeadlineSec - TimeUtils::Now();
     int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
@@ -108,7 +108,7 @@ void RenderPanel(int slot, const PendingCheck& pc)
         break;
     }
 
-    const auto& cfg = Sys().Config.GetCheatCheck();
+    const auto& cfg = App().Config.GetCheatCheck();
 
     // Operator-configured (trusted) banner image rendered atop the panel; CS2 fetches it client-side.
     std::string html;
@@ -127,13 +127,13 @@ void RenderPanel(int slot, const PendingCheck& pc)
         html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick", slot));
     }
 
-    Kit().Messages.SendCenterHtml(slot, html);
+    Engine().Messages.SendCenterHtml(slot, html);
 }
 
 void Render(int slot, const PendingCheck& pc)
 {
-    auto& tr = Kit().Translations;
-    auto& chat = Sys().Chat;
+    auto& tr = Engine().Translations;
+    auto& chat = App().Chat;
 
     chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle", slot)));
 

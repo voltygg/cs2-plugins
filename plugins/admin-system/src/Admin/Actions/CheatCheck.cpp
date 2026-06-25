@@ -12,7 +12,7 @@ void CallCheck(int adminSlot, int targetSlot)
     if (!ctx.Valid())
         return;
 
-    Sys().CheatCheck.StartCheck(adminSlot, targetSlot);
+    App().CheatCheck.StartCheck(adminSlot, targetSlot);
 }
 
 bool CancelCheck(int adminSlot, int targetSlot)
@@ -21,7 +21,7 @@ bool CancelCheck(int adminSlot, int targetSlot)
     if (!ctx.Valid())
         return false;
 
-    return Sys().CheatCheck.Cancel(targetSlot);
+    return App().CheatCheck.Cancel(targetSlot);
 }
 
 }  // namespace AdminSystem::Admin::Actions

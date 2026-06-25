@@ -217,7 +217,7 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
     }
     else
     {
-        const auto& fallback = Sys().Config.GetChat();
+        const auto& fallback = App().Config.GetChat();
         style.Prefix = fallback.fallbackPrefix;
         style.PrefixColor = fallback.fallbackPrefixColor;
         style.NameColor = fallback.fallbackNameColor;

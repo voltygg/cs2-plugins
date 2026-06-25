@@ -68,7 +68,7 @@ These are non-negotiable — a change that violates them will be rejected:
 - **`std::format`** for string formatting; **designated initializers** for
   struct construction; `int64_t` for SteamIDs.
 - **Services / Managers, not singletons.** cs2-kit services are reached through
-  `Kit()` (`CS2Kit::Core::Services`); plugin-side managers through `Sys()`
+  `Engine()` (`CS2Kit::Core::Services`); plugin-side managers through `App()`
   (the `Managers` struct). Both are built in `OnLoad` and torn down on unload —
   there are no process-lifetime singletons. Don't add `static` global state.
 - Keep it **simple and newcomer-readable**, and keep source files under

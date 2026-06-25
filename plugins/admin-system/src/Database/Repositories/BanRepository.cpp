@@ -15,7 +15,7 @@ using CS2Kit::Database::TryOr;
 std::optional<Ban> BanRepository::FindActiveBySteamId(int64_t steamId)
 {
     return TryOr<std::optional<Ban>>(std::nullopt, "BanRepository::FindActiveBySteamId", [&]() -> std::optional<Ban> {
-        auto result = Sys().Db.ExecutePrepared("find_active_ban_by_steamid",
+        auto result = App().Db.ExecutePrepared("find_active_ban_by_steamid",
                                                "SELECT * FROM bans WHERE target_steam_id = $1 AND "
                                                "is_active = true AND (expires_at = 0 OR expires_at > $2)",
                                                steamId, TimeUtils::Now());
@@ -28,7 +28,7 @@ std::optional<Ban> BanRepository::FindActiveBySteamId(int64_t steamId)
 std::optional<Ban> BanRepository::FindActiveByIp(const std::string& ip)
 {
     return TryOr<std::optional<Ban>>(std::nullopt, "BanRepository::FindActiveByIp", [&]() -> std::optional<Ban> {
-        auto result = Sys().Db.ExecutePrepared("find_active_ban_by_ip",
+        auto result = App().Db.ExecutePrepared("find_active_ban_by_ip",
                                                "SELECT * FROM bans WHERE target_ip = $1 AND "
                                                "is_active = true AND (expires_at = 0 OR expires_at > $2)",
                                                ip, TimeUtils::Now());
@@ -42,7 +42,7 @@ std::vector<Ban> BanRepository::FindAllActive()
 {
     return TryOr(std::vector<Ban>{}, "BanRepository::FindAllActive", [&] {
         std::vector<Ban> bans;
-        auto result = Sys().Db.ExecutePrepared(
+        auto result = App().Db.ExecutePrepared(
             "find_all_active_bans", "SELECT * FROM bans WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)",
             TimeUtils::Now());
         for (const auto& row : result)
@@ -54,7 +54,7 @@ std::vector<Ban> BanRepository::FindAllActive()
 bool BanRepository::Create(Ban& ban)
 {
     return TryOr(false, "BanRepository::Create", [&] {
-        auto result = Sys().Db.ExecutePrepared(
+        auto result = App().Db.ExecutePrepared(
             "create_ban",
             "INSERT INTO bans (target_steam_id, target_name, target_ip, admin_steam_id, admin_name, reason, "
             "created_at, expires_at, duration, is_active) "
@@ -70,7 +70,7 @@ bool BanRepository::Create(Ban& ban)
 bool BanRepository::Update(const Ban& ban)
 {
     return TryOr(false, "BanRepository::Update", [&] {
-        Sys().Db.ExecutePrepared("update_ban",
+        App().Db.ExecutePrepared("update_ban",
                                  "UPDATE bans SET target_name = $2, is_active = $3, removed_at = $4, "
                                  "removed_by = $5, removed_reason = $6 WHERE id = $1",
                                  ban.Id, ban.TargetName, ban.IsActive, ban.RemovedAt, ban.RemovedBy, ban.RemovedReason);
@@ -81,7 +81,7 @@ bool BanRepository::Update(const Ban& ban)
 bool BanRepository::Remove(int64_t banId, int64_t removedBy, const std::string& reason)
 {
     return TryOr(false, "BanRepository::Remove", [&] {
-        Sys().Db.ExecutePrepared(
+        App().Db.ExecutePrepared(
             "remove_ban",
             "UPDATE bans SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 WHERE id = $1",
             banId, TimeUtils::Now(), removedBy, reason);
@@ -92,7 +92,7 @@ bool BanRepository::Remove(int64_t banId, int64_t removedBy, const std::string& 
 int BanRepository::ExpireOldBans()
 {
     return TryOr(0, "BanRepository::ExpireOldBans", [&]() -> int {
-        auto result = Sys().Db.ExecutePrepared(
+        auto result = App().Db.ExecutePrepared(
             "expire_old_bans",
             "UPDATE bans SET is_active = false WHERE is_active = true AND expires_at > 0 AND expires_at <= $1",
             TimeUtils::Now());
@@ -104,7 +104,7 @@ std::vector<Ban> BanRepository::GetHistory(int64_t steamId)
 {
     return TryOr(std::vector<Ban>{}, "BanRepository::GetHistory", [&] {
         std::vector<Ban> bans;
-        auto result = Sys().Db.ExecutePrepared(
+        auto result = App().Db.ExecutePrepared(
             "get_ban_history", "SELECT * FROM bans WHERE target_steam_id = $1 ORDER BY created_at DESC", steamId);
         for (const auto& row : result)
             bans.push_back(ParseRow(row));

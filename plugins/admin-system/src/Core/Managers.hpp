@@ -16,7 +16,7 @@ namespace AdminSystem
 /**
  * Plugin-owned service managers, constructed in AdminSystemPlugin::OnLoad and destroyed in
  * OnDestroyInstances — so their state cannot leak across `meta unload`/`meta reload`.
- * Declared in dependency order; destroyed in reverse. Reach them via Sys().
+ * Declared in dependency order; destroyed in reverse. Reach them via App().
  */
 struct Managers
 {
@@ -31,6 +31,6 @@ struct Managers
 };
 
 /** The plugin's live managers. Valid only between OnLoad and unload. */
-Managers& Sys();
+Managers& App();
 
 }  // namespace AdminSystem

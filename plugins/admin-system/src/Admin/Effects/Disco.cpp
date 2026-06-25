@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <memory>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Admin::Effects
 {
@@ -37,7 +37,7 @@ const EffectToggle Disco{
         int slot = ctx.Target->GetSlot();
 
         auto idx = std::make_shared<size_t>(0);
-        uint64_t timer = Kit().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
+        uint64_t timer = Engine().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
             CS2Kit::Sdk::PlayerController pc(slot);
             if (!pc.IsValid() || !pc.IsAlive())
                 return;

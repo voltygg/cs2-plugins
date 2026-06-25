@@ -16,7 +16,7 @@
 #include <format>
 #include <memory>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -29,9 +29,9 @@ using namespace CS2Kit::Sdk;
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
 {
-    auto& tr = Kit().Translations;
-    auto& adminMgr = Sys().Admins;
-    auto& plrMgr = Kit().Players;
+    auto& tr = Engine().Translations;
+    auto& adminMgr = App().Admins;
+    auto& plrMgr = Engine().Players;
 
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
     if (!admin)
@@ -45,7 +45,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
     // Self-only Hide toggle sits at the top of the Control list before player picks.
     builder.AddToggle(
         tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
-        [adminSlot](int) { return Sys().Effects.IsActive(adminSlot, EffectId::Hide); },
+        [adminSlot](int) { return App().Effects.IsActive(adminSlot, EffectId::Hide); },
         [adminSlot](int) { Effects::Run(adminSlot, adminSlot, Effects::Hide); }, hasB);
 
     auto players = plrMgr.GetAllPlayers();
@@ -57,7 +57,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
         builder.AddButton(p->GetName(), [adminSlot, targetSlot](int /*s*/) {
             auto actions = BuildControlActionsMenu(adminSlot, targetSlot);
             if (actions)
-                Kit().Menus.OpenMenu(adminSlot, actions);
+                Engine().Menus.OpenMenu(adminSlot, actions);
         });
     }
     if (players.empty())
@@ -68,9 +68,9 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = Kit().Translations;
-    auto& adminMgr = Sys().Admins;
-    auto& plrMgr = Kit().Players;
+    auto& tr = Engine().Translations;
+    auto& adminMgr = App().Admins;
+    auto& plrMgr = Engine().Players;
 
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
     auto* target = plrMgr.GetPlayerBySlot(targetSlot);

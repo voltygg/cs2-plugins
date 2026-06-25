@@ -8,10 +8,10 @@ Plugin.add_plugin(builder, PluginName,
     windows_libs=[
         # PostgreSQL: libpqxx + libpq and their static transitive deps.
         "pqxx.lib", "libpq.lib", "libpgcommon.lib", "libpgport.lib",
-        # libcurl + OpenSSL + compression (static).
-        "libcurl.lib", "libssl.lib", "libcrypto.lib", "zlib.lib", "lz4.lib",
+        # CPR + libcurl + OpenSSL + compression (static). cpr.lib must precede libcurl.lib.
+        "cpr.lib", "libcurl.lib", "libssl.lib", "libcrypto.lib", "zlib.lib", "lz4.lib",
         # System libs pulled in by OpenSSL/libpq/libcurl and the sigscanner.
         "crypt32.lib", "secur32.lib", "wldap32.lib", "iphlpapi.lib", "psapi.lib",
     ],
-    linux_libs=["pqxx", "pq", "curl"],
+    linux_libs=["pqxx", "pq", "cpr", "curl"],
 )

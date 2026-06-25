@@ -7,7 +7,7 @@
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Commands
 {
@@ -22,8 +22,8 @@ std::vector<ResolvedTarget> Resolve(const std::string& token, Player* caller)
     if (token.empty())
         return out;
 
-    auto& mgr = Kit().Players;
-    auto& admins = Sys().Admins;
+    auto& mgr = Engine().Players;
+    auto& admins = App().Admins;
 
     auto add = [&](Player* p) {
         if (!p)

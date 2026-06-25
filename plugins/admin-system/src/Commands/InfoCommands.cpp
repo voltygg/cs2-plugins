@@ -10,7 +10,7 @@
 
 #include <format>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Commands
 {
@@ -25,8 +25,8 @@ namespace
 
 CommandResult HandleWho(Player* admin, const std::vector<std::string>& /*args*/)
 {
-    auto& plrMgr = Kit().Players;
-    auto& adminMgr = Sys().Admins;
+    auto& plrMgr = Engine().Players;
+    auto& adminMgr = App().Admins;
     auto players = plrMgr.GetAllPlayers();
 
     if (players.empty())
@@ -35,7 +35,7 @@ CommandResult HandleWho(Player* admin, const std::vector<std::string>& /*args*/)
     }
 
     int slot = admin->GetSlot();
-    auto& chat = Sys().Chat;
+    auto& chat = App().Chat;
     chat.Reply(slot, std::format("Online players ({}):", players.size()));
     for (auto* p : players)
     {
@@ -53,7 +53,7 @@ CommandResult HandleWho(Player* admin, const std::vector<std::string>& /*args*/)
 
 CommandResult HandleAdminReload(Player* /*admin*/, const std::vector<std::string>& /*args*/)
 {
-    bool ok = Sys().Admins.Reload();
+    bool ok = App().Admins.Reload();
     return {ok, ok ? "Admins and groups reloaded from database." : "Reload failed (check logs)."};
 }
 

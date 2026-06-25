@@ -42,7 +42,7 @@ std::vector<std::string> ParseTextArray(const pqxx::field& field)
 std::optional<Admin> AdminRepository::FindBySteamId(int64_t steamId)
 {
     return TryOr<std::optional<Admin>>(std::nullopt, "AdminRepository::FindBySteamId", [&]() -> std::optional<Admin> {
-        auto result = Sys().Db.ExecutePrepared("find_admin_by_steamid",
+        auto result = App().Db.ExecutePrepared("find_admin_by_steamid",
                                                            "SELECT * FROM admins WHERE steam_id = $1", steamId);
 
         if (result.empty())
@@ -58,7 +58,7 @@ std::vector<Admin> AdminRepository::FindAll()
 {
     return TryOr(std::vector<Admin>{}, "AdminRepository::FindAll", [&] {
         std::vector<Admin> admins;
-        auto result = Sys().Db.Execute("SELECT * FROM admins");
+        auto result = App().Db.Execute("SELECT * FROM admins");
 
         for (const auto& row : result)
         {
@@ -71,7 +71,7 @@ std::vector<Admin> AdminRepository::FindAll()
 bool AdminRepository::Delete(int64_t steamId)
 {
     return TryOr(false, "AdminRepository::Delete", [&] {
-        Sys().Db.ExecutePrepared("delete_admin", "DELETE FROM admins WHERE steam_id = $1", steamId);
+        App().Db.ExecutePrepared("delete_admin", "DELETE FROM admins WHERE steam_id = $1", steamId);
 
         return true;
     });
@@ -81,7 +81,7 @@ bool AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const
                                        const std::string& messageColor)
 {
     return TryOr(false, "AdminRepository::UpdateChatStyle", [&] {
-        Sys().Db.ExecutePrepared(
+        App().Db.ExecutePrepared(
             "update_admin_chat_style",
             "UPDATE admins SET display_prefix = $2, name_color = $3, message_color = $4, "
             "updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE steam_id = $1",
@@ -93,7 +93,7 @@ bool AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const
 bool AdminRepository::UpdateLanguage(int64_t steamId, const std::string& lang)
 {
     return TryOr(false, "AdminRepository::UpdateLanguage", [&] {
-        Sys().Db.ExecutePrepared(
+        App().Db.ExecutePrepared(
             "update_admin_language",
             "UPDATE admins SET language = $2, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
             "WHERE steam_id = $1",
@@ -127,7 +127,7 @@ Admin AdminRepository::ParseRow(const pqxx::row& row)
 std::optional<AdminGroup> AdminGroupRepository::FindByName(const std::string& name)
 {
     return TryOr<std::optional<AdminGroup>>(std::nullopt, "AdminGroupRepository::FindByName", [&]() -> std::optional<AdminGroup> {
-        auto result = Sys().Db.ExecutePrepared("find_group_by_name",
+        auto result = App().Db.ExecutePrepared("find_group_by_name",
                                                            "SELECT * FROM admin_groups WHERE name = $1", name);
 
         if (result.empty())
@@ -143,7 +143,7 @@ std::vector<AdminGroup> AdminGroupRepository::FindAll()
 {
     return TryOr(std::vector<AdminGroup>{}, "AdminGroupRepository::FindAll", [&] {
         std::vector<AdminGroup> groups;
-        auto result = Sys().Db.Execute("SELECT * FROM admin_groups");
+        auto result = App().Db.Execute("SELECT * FROM admin_groups");
 
         for (const auto& row : result)
         {
@@ -156,7 +156,7 @@ std::vector<AdminGroup> AdminGroupRepository::FindAll()
 bool AdminGroupRepository::Delete(const std::string& name)
 {
     return TryOr(false, "AdminGroupRepository::Delete", [&] {
-        Sys().Db.ExecutePrepared("delete_group", "DELETE FROM admin_groups WHERE name = $1", name);
+        App().Db.ExecutePrepared("delete_group", "DELETE FROM admin_groups WHERE name = $1", name);
 
         return true;
     });

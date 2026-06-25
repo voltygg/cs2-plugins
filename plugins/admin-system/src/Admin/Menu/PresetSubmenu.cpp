@@ -8,7 +8,7 @@
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -19,13 +19,13 @@ using CS2Kit::Utils::Translations;
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildTeamPickerMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = Kit().Translations;
+    auto& tr = Engine().Translations;
     MenuBuilder builder(tr.Get("action.changeTeam", adminSlot));
 
     auto addTeam = [&](const std::string& label, int team) {
         builder.AddButton(label, [adminSlot, targetSlot, team](int slot) {
             Actions::Run(adminSlot, targetSlot, team, Actions::ChangeTeam);
-            Kit().Menus.CloseAllMenus(slot);
+            Engine().Menus.CloseAllMenus(slot);
         });
     };
 

@@ -11,7 +11,7 @@
       "version>=": "7.10.0"
     },
     {
-      "name": "curl",
+      "name": "cpr",
       "features": ["ssl"]
     },
     "nlohmann-json"

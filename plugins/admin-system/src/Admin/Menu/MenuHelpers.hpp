@@ -27,12 +27,12 @@ inline constexpr int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
 /** True if @p admin holds @p flag and outranks @p target; false if either slot has no live player. */
 inline bool CanActOnSlot(int admin, int target, Permission flag)
 {
-    auto& plrMgr = CS2Kit::Core::Kit().Players;
+    auto& plrMgr = CS2Kit::Core::Engine().Players;
     auto* a = plrMgr.GetPlayerBySlot(admin);
     auto* t = plrMgr.GetPlayerBySlot(target);
     if (!a || !t)
         return false;
-    return Sys().Admins.CanActOn(a->GetSteamID(), t->GetSteamID(), flag);
+    return App().Admins.CanActOn(a->GetSteamID(), t->GetSteamID(), flag);
 }
 
 /** A plain button row that runs a single-target @ref Actions::Action against (admin, target). */
@@ -48,11 +48,11 @@ inline void AddAction(CS2Kit::Menu::MenuBuilder& builder, const std::string& lab
 inline void AddEffectToggle(CS2Kit::Menu::MenuBuilder& builder, const std::string& label, int admin, int target,
                             const Effects::EffectToggle& effect)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = CS2Kit::Core::Engine().Translations;
     const Effects::EffectToggle* e = &effect;
     builder.AddToggle(
         label, tr.Get("effectState.on", admin), tr.Get("effectState.off", admin),
-        [target, id = effect.Id](int) { return Sys().Effects.IsActive(target, id); },
+        [target, id = effect.Id](int) { return App().Effects.IsActive(target, id); },
         [admin, target, e](int) { Effects::Run(admin, target, *e); }, CanActOnSlot(admin, target, effect.Flag));
 }
 
@@ -60,7 +60,7 @@ inline void AddEffectToggle(CS2Kit::Menu::MenuBuilder& builder, const std::strin
 inline void AddFlagToggle(CS2Kit::Menu::MenuBuilder& builder, const std::string& label, int admin, int target,
                           uint32_t flag, const Actions::Action& action)
 {
-    auto& tr = CS2Kit::Core::Kit().Translations;
+    auto& tr = CS2Kit::Core::Engine().Translations;
     const Actions::Action* a = &action;
     builder.AddToggle(
         label, tr.Get("effectState.on", admin), tr.Get("effectState.off", admin),
@@ -88,7 +88,7 @@ void AddPresetChoice(CS2Kit::Menu::MenuBuilder& builder, const std::string& titl
         title, std::move(choices), [idx](int) { return *idx; }, [idx](int, int newIdx) { *idx = newIdx; },
         [admin, target, a](int slot, const int& value) {
             Actions::Run(admin, target, value, *a);
-            CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+            CS2Kit::Core::Engine().Menus.CloseAllMenus(slot);
         },
         CanActOnSlot(admin, target, action.Flag));
 }

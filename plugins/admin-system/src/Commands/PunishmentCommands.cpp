@@ -41,7 +41,7 @@ CommandResult HandleKick(Player* admin, const std::vector<std::string>& args)
 
     std::string reason = JoinReason(args, 1, "Kicked by admin");
     PlayerController(target->GetSlot()).Kick(reason.c_str());
-    Sys().Chat.BroadcastPunishment("kicked", admin->GetName(), target->GetName(), reason, 0);
+    App().Chat.BroadcastPunishment("kicked", admin->GetName(), target->GetName(), reason, 0);
     return {true, std::format("Kicked {}.", target->GetName())};
 }
 
@@ -60,13 +60,13 @@ CommandResult HandleBan(Player* admin, const std::vector<std::string>& args)
         return {false, "Duration must be a non-negative number of minutes (0 = permanent)."};
     }
 
-    std::string reason = JoinReason(args, 2, Sys().Config.GetPunishments().defaultBanReason);
+    std::string reason = JoinReason(args, 2, App().Config.GetPunishments().defaultBanReason);
 
     Ban ban;
     FillPunishment(ban, target, admin, reason, durationSec);
     ban.TargetIp = target->GetIpAddress();
 
-    if (!Sys().Punishments.IssueBan(ban))
+    if (!App().Punishments.IssueBan(ban))
     {
         return {false, "Failed to issue ban (database error)."};
     }
@@ -82,7 +82,7 @@ CommandResult HandleUnban(Player* admin, const std::vector<std::string>& args)
     int64_t steamId = std::stoll(args[0]);
     std::string reason = JoinReason(args, 1, "Unbanned by admin");
 
-    if (!Sys().Punishments.RemoveBanBySteamId(steamId, admin->GetSteamID(), reason))
+    if (!App().Punishments.RemoveBanBySteamId(steamId, admin->GetSteamID(), reason))
     {
         return {false, std::format("No active ban for SteamID {}.", steamId)};
     }
@@ -107,7 +107,7 @@ CommandResult HandleVoiceMute(Player* admin, const std::vector<std::string>& arg
     VoiceMute mute;
     FillPunishment(mute, target, admin, JoinReason(args, 2, "Voice-muted by admin"), durationSec);
 
-    if (!Sys().Punishments.IssueVoiceMute(mute))
+    if (!App().Punishments.IssueVoiceMute(mute))
     {
         return {false, "Failed to issue voice mute (database error)."};
     }
@@ -123,7 +123,7 @@ CommandResult HandleVoiceUnmute(Player* admin, const std::vector<std::string>& a
         return {false, err};
     }
 
-    if (!Sys().Punishments.RemoveVoiceMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
+    if (!App().Punishments.RemoveVoiceMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
                                                                 "Voice-unmuted by admin"))
     {
         return {false, std::format("{} is not voice-muted.", target->GetName())};
@@ -149,7 +149,7 @@ CommandResult HandleTextMute(Player* admin, const std::vector<std::string>& args
     TextMute mute;
     FillPunishment(mute, target, admin, JoinReason(args, 2, "Text-muted by admin"), durationSec);
 
-    if (!Sys().Punishments.IssueTextMute(mute))
+    if (!App().Punishments.IssueTextMute(mute))
     {
         return {false, "Failed to issue text mute (database error)."};
     }
@@ -165,7 +165,7 @@ CommandResult HandleTextUnmute(Player* admin, const std::vector<std::string>& ar
         return {false, err};
     }
 
-    if (!Sys().Punishments.RemoveTextMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
+    if (!App().Punishments.RemoveTextMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
                                                                "Text-unmuted by admin"))
     {
         return {false, std::format("{} is not text-muted.", target->GetName())};
@@ -185,7 +185,7 @@ CommandResult HandleWarn(Player* admin, const std::vector<std::string>& args)
     Warning warn;
     FillPunishment(warn, target, admin, JoinReason(args, 1, "Warned by admin"), 0);
 
-    if (!Sys().Punishments.IssueWarning(warn))
+    if (!App().Punishments.IssueWarning(warn))
     {
         return {false, "Failed to issue warning (database error)."};
     }

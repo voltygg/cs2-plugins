@@ -6,7 +6,7 @@
 #include <mathlib/vector.h>
 #include <random>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Admin::Actions
 {
@@ -44,7 +44,7 @@ const Action Launch{Permission::Control, /*requireAlive*/ true, [](const ActionC
                             ctx.TargetCtrl.SetFlags(flags | CS2Kit::Sdk::FL_GODMODE);
 
                             int slot = ctx.Target->GetSlot();
-                            Kit().Scheduler.Delay(FallProtectMs, [slot]() {
+                            Engine().Scheduler.Delay(FallProtectMs, [slot]() {
                                 PlayerController pc(slot);
                                 if (pc.IsValid())
                                     pc.SetFlags(pc.GetFlags() & ~CS2Kit::Sdk::FL_GODMODE);

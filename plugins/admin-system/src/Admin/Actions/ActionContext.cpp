@@ -7,7 +7,7 @@
 
 #include <CS2Kit/Players/PlayerManager.hpp>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Admin::Actions
 {
@@ -20,14 +20,14 @@ ActionContext Resolve(int adminSlot, int targetSlot, char requiredFlag)
 {
     ActionContext ctx{nullptr, nullptr, PlayerController(adminSlot), PlayerController(targetSlot)};
 
-    auto& plrMgr = Kit().Players;
+    auto& plrMgr = Engine().Players;
     ctx.Admin = plrMgr.GetPlayerBySlot(adminSlot);
     ctx.Target = plrMgr.GetPlayerBySlot(targetSlot);
 
     if (!ctx.Admin || !ctx.Target)
         return ctx;
 
-    auto& adminMgr = Sys().Admins;
+    auto& adminMgr = App().Admins;
     int64_t adminSid = ctx.Admin->GetSteamID();
     int64_t targetSid = ctx.Target->GetSteamID();
 
@@ -48,7 +48,7 @@ void Broadcast(const ActionContext& ctx, const std::string& translationKey)
 {
     if (!ctx.Admin || !ctx.Target)
         return;
-    Sys().Chat.BroadcastAction(translationKey, ctx.Admin->GetName(), ctx.Target->GetName());
+    App().Chat.BroadcastAction(translationKey, ctx.Admin->GetName(), ctx.Target->GetName());
 }
 
 void Run(int adminSlot, int targetSlot, const Action& action)

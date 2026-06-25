@@ -87,7 +87,7 @@ Config loads via `CS2Kit::Utils::Json::TryDeserializeFile<Settings>` — the `Se
 
 - **C++17 nested namespaces:** `namespace AdminSystem::Sdk { ... }`
 - **`.hpp` headers** (not `.h`)
-- **Service container + accessor** — cs2-kit services via `Kit()` (`CS2Kit::Core::Services`); plugin managers in a `Managers` struct via `Sys()`. Built in `OnLoad`, destroyed on unload — no process-lifetime singletons.
+- **Service container + accessor** — cs2-kit services via `Engine()` (`CS2Kit::Core::Services`); plugin managers in a `Managers` struct via `App()`. Built in `OnLoad`, destroyed on unload — no process-lifetime singletons.
 - **No mutexes** (main-thread-only design; all Metamod hooks run on game thread)
 - **Designated initializers** for struct construction
 - **`std::format`** for string formatting

@@ -12,6 +12,7 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Core/ActiveService.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Core/Services.hpp>
@@ -35,7 +36,7 @@ using namespace CS2Kit::Players;
 using namespace CS2Kit::Sdk;
 using namespace CS2Kit::Utils;
 using namespace CS2Kit::Menu;
-using AdminSystem::Sys;
+using AdminSystem::App;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 using AdminSystem::Database::Database;
 using CS2Kit::Http::HttpClient;
@@ -52,18 +53,13 @@ AdminSystemPlugin& AdminSystemPlugin::Get()
     return g_AdminSystemPlugin;
 }
 
-AdminSystem::Managers& AdminSystemPlugin::M()
-{
-    return *_managers;
-}
-
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace AdminSystem
 {
-Managers& Sys()
+Managers& App()
 {
-    return g_AdminSystemPlugin.M();
+    return CS2Kit::Core::ActiveService<Managers>::Get();
 }
 }  // namespace AdminSystem
 
@@ -74,7 +70,7 @@ namespace
 
 bool LoadConfigs()
 {
-    if (!Sys().Config.LoadSettings("addons/admin-system/configs/settings.jsonc"))
+    if (!App().Config.LoadSettings("addons/admin-system/configs/settings.jsonc"))
     {
         Log::Error("Failed to load settings.jsonc -- aborting load.");
         return false;
@@ -84,10 +80,10 @@ bool LoadConfigs()
 
 void InstallCommandCallbacks()
 {
-    auto& cmdMgr = Kit().Commands;
+    auto& cmdMgr = Engine().Commands;
 
     cmdMgr.SetPermissionCallback([](int64_t steamId, const std::string& permission) -> bool {
-        return Sys().Admins.HasAnyPermission(steamId, permission);
+        return App().Admins.HasAnyPermission(steamId, permission);
     });
 
     // Pipe every command's result message into the player's chat as a colored reply.
@@ -95,16 +91,16 @@ void InstallCommandCallbacks()
     cmdMgr.SetResultCallback([](Player* caller, const Command& /*cmd*/, const CommandResult& result) {
         if (!caller || result.Message.empty())
             return;
-        Sys().Chat.Reply(caller->GetSlot(), result.Message);
+        App().Chat.Reply(caller->GetSlot(), result.Message);
     });
 }
 
 bool ConnectDatabaseAndLoadAdmins()
 {
     Log::Info("Connecting to database...");
-    auto& db = Sys().Db;
+    auto& db = App().Db;
 
-    if (!db.Initialize(Sys().Config.GetDatabase()))
+    if (!db.Initialize(App().Config.GetDatabase()))
     {
         Log::Warn("Database unavailable - admins/groups not loaded; chat commands will reject all callers.");
         return false;
@@ -117,7 +113,7 @@ bool ConnectDatabaseAndLoadAdmins()
     }
 
     Log::Info("Loading admins from database...");
-    auto& adminMgr = Sys().Admins;
+    auto& adminMgr = App().Admins;
     if (!adminMgr.LoadGroups())
         Log::Warn("Failed to load admin groups from DB.");
     if (!adminMgr.LoadAdmins())
@@ -128,27 +124,27 @@ bool ConnectDatabaseAndLoadAdmins()
 void RegisterPunishmentTasks()
 {
     Log::Info("Loading active punishments...");
-    if (!Sys().Punishments.LoadActivePunishments())
+    if (!App().Punishments.LoadActivePunishments())
         Log::Warn("Failed to load active punishments.");
 
     // Sweep expired bans/voice-mutes/text-mutes every minute so timed punishments self-clear without
     // requiring a server restart or manual intervention.
-    Kit().Scheduler.Repeat(60'000, []() { Sys().Punishments.ExpireOldPunishments(); });
+    Engine().Scheduler.Repeat(60'000, []() { App().Punishments.ExpireOldPunishments(); });
 }
 
 void RegisterGameEventListeners()
 {
-    auto& events = Kit().Events;
+    auto& events = Engine().Events;
     events.Listen("player_death", [](IGameEvent* e) {
         if (!e)
             return;
         // userid in CS2 events maps to the slot index for the legacy event system.
         int victim = e->GetInt("userid", -1);
         if (victim >= 0)
-            Sys().Effects.CancelAllForSlot(victim);
+            App().Effects.CancelAllForSlot(victim);
     });
-    events.Listen("round_end", [](IGameEvent*) { Sys().Effects.CancelAllForRoundEnd(); });
-    events.Listen("round_prestart", [](IGameEvent*) { Sys().Effects.CancelAllForRoundEnd(); });
+    events.Listen("round_end", [](IGameEvent*) { App().Effects.CancelAllForRoundEnd(); });
+    events.Listen("round_prestart", [](IGameEvent*) { App().Effects.CancelAllForRoundEnd(); });
 }
 
 }  // namespace
@@ -172,47 +168,48 @@ bool AdminSystemPlugin::OnLoad(bool late)
 {
     Log::Info("Loading v{}...", Info().Version);
 
-    // Construct the plugin's services up front so every Sys() access below resolves to a
+    // Construct the plugin's services up front so every App() access below resolves to a
     // freshly-built manager (no state carried over from a previous load).
     _managers = std::make_unique<AdminSystem::Managers>();
+    CS2Kit::Core::ActiveService<AdminSystem::Managers>::Set(_managers.get());
 
     Log::Info("Loading configurations...");
     if (!LoadConfigs())
         return false;
 
-    auto locale = Sys().Config.GetPlugin().locale;
+    auto locale = App().Config.GetPlugin().locale;
     Log::Info("Translations: Setting language to {}...", locale);
-    Kit().Translations.SetLanguage(locale);
+    Engine().Translations.SetLanguage(locale);
 
     InstallCommandCallbacks();
 
     // Freeze the player while an admin menu is open so WASD navigation doesn't also walk them around.
-    Kit().Menus.SetFreezePlayer(true);
+    Engine().Menus.SetFreezePlayer(true);
 
     bool dbConnected = ConnectDatabaseAndLoadAdmins();
     if (dbConnected)
-        Defer([] { Sys().Db.CloseConnection(); });
+        Defer([] { App().Db.CloseConnection(); });
 
     Log::Info("Initializing commands...");
-    AdminSystem::Commands::RegisterAdminCommands(Kit().Commands);
+    AdminSystem::Commands::RegisterAdminCommands(Engine().Commands);
 
     if (dbConnected)
         RegisterPunishmentTasks();
 
     Log::Info("Loading translations...");
-    Kit().Translations.Load("addons/admin-system/configs/translations");
+    Engine().Translations.Load("addons/admin-system/configs/translations");
 
     RegisterGameEventListeners();
 
     // Async HTTP for cheat-check website rooms. Completions are dispatched on the game thread.
-    Sys().Http.Start();
-    Defer([] { Sys().Http.Stop(); });
-    uint64_t dispatchTimer = Kit().Scheduler.Repeat(100, [] { Sys().Http.DispatchCompletions(); });
-    Defer([dispatchTimer] { Kit().Scheduler.Cancel(dispatchTimer); });
+    App().Http.Start();
+    Defer([] { App().Http.Stop(); });
+    uint64_t dispatchTimer = Engine().Scheduler.Repeat(100, [] { App().Http.DispatchCompletions(); });
+    Defer([dispatchTimer] { Engine().Scheduler.Cancel(dispatchTimer); });
 
-    Defer([] { Sys().CheatCheck.CancelAll(); });
-    Defer([] { Sys().Effects.CancelAll(); });
-    Defer([] { Kit().Players.Clear(); });
+    Defer([] { App().CheatCheck.CancelAll(); });
+    Defer([] { App().Effects.CancelAll(); });
+    Defer([] { Engine().Players.Clear(); });
 
     Log::Info("All subsystems initialized.");
     return true;
@@ -222,6 +219,7 @@ void AdminSystemPlugin::OnDestroyInstances()
 {
     // Runs after Defer() cleanups (which still saw live managers) and before the kit's services
     // are destroyed. Dropping these here is what gives a meta reload clean state.
+    CS2Kit::Core::ActiveService<AdminSystem::Managers>::Set(nullptr);
     _managers.reset();
 }
 
@@ -232,17 +230,17 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
 
     // Register the admin's panel language up front so every slot-aware Translations::Get (menus,
     // cheat-check, mute notices) renders in their language without per-command setup.
-    if (const auto* row = Sys().Admins.GetAdmin(player->GetSteamID()))
-        Kit().Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
+    if (const auto* row = App().Admins.GetAdmin(player->GetSteamID()))
+        Engine().Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
 
     // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so we defer
     // to the next game frame via the scheduler -- the player is fully connected by then. Bots have
     // no real SteamID and never match an active ban.
-    if (auto ban = Sys().Punishments.GetActiveBan(player->GetSteamID()))
+    if (auto ban = App().Punishments.GetActiveBan(player->GetSteamID()))
     {
         int slot = player->GetSlot();
         std::string reason = ban->Reason;
-        Kit().Scheduler.NextTick([slot, reason]() { PlayerController(slot).Kick(reason.c_str()); });
+        Engine().Scheduler.NextTick([slot, reason]() { PlayerController(slot).Kick(reason.c_str()); });
     }
 }
 
@@ -250,24 +248,24 @@ void AdminSystemPlugin::OnPlayerDisconnect(Player* player)
 {
     if (player)
     {
-        Sys().Effects.CancelAllForSlot(player->GetSlot());
-        Sys().CheatCheck.CancelAllForSlot(player->GetSlot());
+        App().Effects.CancelAllForSlot(player->GetSlot());
+        App().CheatCheck.CancelAllForSlot(player->GetSlot());
     }
 }
 
 bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)
 {
-    return Sys().Chat.HandleSay(player, std::string(message), teamChat);
+    return App().Chat.HandleSay(player, std::string(message), teamChat);
 }
 
 void AdminSystemPlugin::OnRegisterHooks()
 {
-    auto& gi = Kit().Interfaces;
+    auto& gi = Engine().Interfaces;
     SH_ADD_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
                 SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
 
     Defer([this] {
-        auto& g = Kit().Interfaces;
+        auto& g = Engine().Interfaces;
         SH_REMOVE_HOOK(IVEngineServer2, SetClientListening, g.Engine,
                        SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
     });
@@ -277,13 +275,13 @@ bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSl
 {
     if (bListen)
     {
-        if (auto* sender = Kit().Players.GetPlayerBySlot(iSender.Get()))
+        if (auto* sender = Engine().Players.GetPlayerBySlot(iSender.Get()))
         {
-            if (Sys().Punishments.IsVoiceMuted(sender->GetSteamID()))
+            if (App().Punishments.IsVoiceMuted(sender->GetSteamID()))
             {
                 // Tell the muted player they're being suppressed; ChatService rate-limits this
                 // so the per-receiver explosion of hook calls collapses to one chat line.
-                Sys().Chat.NotifyVoiceMuted(sender);
+                App().Chat.NotifyVoiceMuted(sender);
                 RETURN_META_VALUE_NEWPARAMS(MRES_HANDLED, false, &IVEngineServer2::SetClientListening,
                                             (iReceiver, iSender, false));
             }
