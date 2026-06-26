@@ -2,7 +2,7 @@
 #
 # One-time (idempotent) provisioning of the SHARED PostgreSQL instance:
 # creates the app login role and one database per plugin (database-per-plugin),
-# then grants the app role on each. Schemas/tables are NOT created here — each
+# then grants the app role on each. Schemas/tables are NOT created here - each
 # plugin's Migrator applies its own configs/migrations/ on first load.
 #
 # Run this once against the shared instance whenever you add a plugin (it skips
@@ -14,7 +14,7 @@
 #
 # Usage:
 #   APP_DB_PASSWORD=...  PGPASSWORD=<admin-pw> \
-#     deploy/bin/ensure-databases.sh --admin-user postgres
+#     deploy/scripts/ensure-databases.sh --admin-user postgres
 #
 # Env:
 #   APP_DB_PASSWORD   (required) password to set on the app login role (matches SOPS DB_PASSWORD)
@@ -32,7 +32,9 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-HereDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ScriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DeployDir="$(cd "$ScriptDir/.." && pwd)"
+ToolDir="$DeployDir/tools"
 PYBIN="${PYBIN:-python3}"
 
 if [[ -z "${APP_DB_PASSWORD:-}" ]]; then
@@ -45,7 +47,7 @@ if [[ -z "${PGPASSWORD:-}" ]]; then
 fi
 
 # Shared connection (DB_HOST/DB_PORT/DB_USER) from the inventory.
-eval "$("$PYBIN" "$HereDir/inventory.py" db-conn)"
+eval "$("$PYBIN" "$ToolDir/inventory.py" db-conn)"
 Host="${PGHOST:-$DB_HOST}"
 Port="${PGPORT:-$DB_PORT}"
 AppUser="$DB_USER"
@@ -75,6 +77,6 @@ while read -r plugin db; do
         echo "  db $db ($plugin): created"
     fi
     psql_admin -c "GRANT ALL PRIVILEGES ON DATABASE \"$db\" TO \"$AppUser\""
-done < <("$PYBIN" "$HereDir/inventory.py" plugin-dbs)
+done < <("$PYBIN" "$ToolDir/inventory.py" plugin-dbs)
 
 echo "=== Done ==="

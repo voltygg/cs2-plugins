@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
   clang \
   libpq-dev \
   libpqxx-dev \
+  libcpr-dev \
   && rm -rf /var/lib/apt/lists/*
 
 # Install AMBuild

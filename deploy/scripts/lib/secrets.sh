@@ -1,4 +1,4 @@
-# Shared per-server env loader for the deploy bin scripts. Source, don't execute.
+# Shared per-server env loader for the deploy scripts. Source, don't execute.
 #
 # load_server_env <server-config-dir>
 #   Exports the KEY=VALUE pairs from the server's unified env file (non-secret values

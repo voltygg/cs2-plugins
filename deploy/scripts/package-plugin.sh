@@ -2,12 +2,12 @@
 #
 # Stage one built plugin into a self-contained deploy bundle under package/<name>/,
 # laid out exactly as it lands under a server's csgo/ tree. The bundle is what CI
-# uploads as an artifact and what deploy/bin/deploy-remote.sh rsyncs to a server.
+# uploads as an artifact and what deploy/tools/render.py folds into Compose deploys.
 #
 # Unlike scripts/deploy.sh (local Windows dev), this targets Linux by default and
 # GENERATES the platform-correct VDF (the win64/linuxsteamrt64 path segment is part
 # of the VDF "file" value, so it must differ per platform). settings.jsonc is NOT
-# included here — it is rendered per-server by render-config.sh at deploy time.
+# included here - it is rendered per-server by render.py at deploy time.
 #
 # Usage:
 #   package-plugin.sh <plugin-name> [linux|windows] [--out DIR]

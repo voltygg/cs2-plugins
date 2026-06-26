@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
-"""Query deploy/inventory.yml for the deploy tooling and CI.
+"""Query deploy/inventory.yml for the Docker deploy tooling and CI.
 
 The inventory is the single source of truth for which servers run which plugins.
-This script resolves `defaults` into each server, joins the shared `database`
-block with each plugin's own database name, and emits the pieces the rest of the
-pipeline needs:
+This script resolves `defaults` into each server and emits the pieces the rest of
+the pipeline needs:
 
   servers-json        JSON array of fully-resolved servers (the deploy matrix)
-  plugins-json        JSON array of plugin names used by any server (the build set)
+  plugins-json        JSON array of declared plugin names (the build set)
   server   <id>       JSON object for one resolved server
-  server-env <id>     `export SRV_*=...` lines (host, ssh, paths, plugins, instances)
-  plugin-dbs          "<plugin> <dbname>" lines for ensure-databases.sh
+  server-env <id>     `export SRV_*=...` lines (host, ssh, deploy root, plugins, instances)
+  plugin-dbs          "<plugin> <dbname>" lines for deploy/scripts/ensure-databases.sh
   db-conn             `export DB_*=...` lines for the shared connection (no plugin)
-  render-env <id> <plugin>
-                      `export DB_*=...` lines (non-secret) for render-config.sh
 
 Requires PyYAML (declared in pyproject.toml; `pip install pyyaml` in CI).
 """
@@ -30,7 +27,7 @@ INVENTORY_PATH = os.environ.get(
 )
 
 # Server fields that fall back to `defaults` when not set on the server itself.
-_INHERITED = ("ssh_user", "ssh_port", "cs2_root", "csgo_path", "platform")
+_INHERITED = ("ssh_user", "ssh_port", "deploy_root", "runtime_image")
 
 
 def load() -> dict:
@@ -57,6 +54,7 @@ def resolve_server(data: dict, server: dict) -> dict:
     for key in _INHERITED:
         out[key] = server.get(key, defaults.get(key))
     out["environment"] = server.get("environment")
+    out["enabled"] = bool(server.get("enabled", True))
     out["plugins"] = list(server.get("plugins", []))
     out["instances"] = list(server.get("instances", []))
     return out
@@ -70,16 +68,13 @@ def find_server(data: dict, server_id: str) -> dict:
 
 
 def used_plugins(data: dict) -> list[str]:
-    seen: list[str] = []
-    for server in data.get("servers", []):
-        for plugin in server.get("plugins", []):
-            if plugin not in seen:
-                seen.append(plugin)
-    return seen
+    # Build every declared plugin. The committed inventory intentionally has no
+    # active servers, but CI should still produce bundles for the plugin registry.
+    return list(data.get("plugins", {}).keys())
 
 
 def cmd_servers_json(data: dict) -> None:
-    print(json.dumps([resolve_server(data, s) for s in data["servers"]]))
+    print(json.dumps([resolve_server(data, s) for s in data["servers"] if s.get("enabled", True)]))
 
 
 def cmd_plugins_json(data: dict) -> None:
@@ -106,8 +101,7 @@ def cmd_server_env(data: dict, server_id: str) -> None:
             "SRV_HOST": s["host"],
             "SRV_SSH_USER": s["ssh_user"],
             "SRV_SSH_PORT": s["ssh_port"],
-            "SRV_CS2_ROOT": s["cs2_root"],
-            "SRV_CSGO_PATH": s["csgo_path"],
+            "SRV_DEPLOY_ROOT": s["deploy_root"],
             "SRV_PLUGINS": " ".join(s["plugins"]),
             "SRV_INSTANCES": instances,
         }
@@ -133,15 +127,6 @@ def cmd_db_conn(data: dict) -> None:
     _print_exports(_conn_env(data))
 
 
-def cmd_render_env(data: dict, server_id: str, plugin: str) -> None:
-    server = find_server(data, server_id)
-    if plugin not in server["plugins"]:
-        sys.exit(f"ERROR: server '{server_id}' does not run plugin '{plugin}'")
-    env = _conn_env(data)
-    env["DB_NAME"] = plugin_db(data, plugin)
-    _print_exports(env)
-
-
 def _sh_quote(value: str) -> str:
     return "'" + value.replace("'", "'\\''") + "'"
 
@@ -163,8 +148,6 @@ def main(argv: list[str]) -> None:
         cmd_plugin_dbs(data)
     elif cmd == "db-conn":
         cmd_db_conn(data)
-    elif cmd == "render-env" and len(rest) == 2:
-        cmd_render_env(data, rest[0], rest[1])
     else:
         sys.exit(__doc__)
 

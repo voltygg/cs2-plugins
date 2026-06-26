@@ -1,11 +1,3 @@
-# Build Linux plugin bundles and deploy them to the servers in deploy/inventory.yml.
-# Triggered by pushing to the `prod` branch (promote main -> prod to release), or
-# manually via the Actions tab. Per-server secrets + approval gates live in the
-# GitHub Environment named by each server's `environment` in the inventory.
-#
-# Each environment must provide secrets: SSH_PRIVATE_KEY (deploy key for the box)
-# and SOPS_AGE_KEY (age private key that decrypts that server's .sops.env).
-
 name: Deploy
 
 on:
@@ -14,14 +6,18 @@ on:
   workflow_dispatch:
     inputs:
       server:
-        description: "Deploy only this server id (blank = all in inventory)"
+        description: "Deploy only this server id (blank = all active inventory servers)"
         required: false
         default: ""
       dry_run:
-        description: "Preview only (rsync --dry-run, no restarts)"
+        description: "Preview rsync only; do not run docker compose"
         type: boolean
         required: false
         default: false
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   prepare:
@@ -30,13 +26,18 @@ jobs:
     outputs:
       servers: ${{ steps.inv.outputs.servers }}
       plugins: ${{ steps.inv.outputs.plugins }}
+      runtime_image: ${{ steps.image.outputs.runtime_image }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.0
       - run: sudo apt-get update && sudo apt-get install -y python3-yaml jq
+      - id: image
+        run: |
+          repo="${GITHUB_REPOSITORY,,}"
+          echo "runtime_image=ghcr.io/${repo}/cs2-runtime" >> "$GITHUB_OUTPUT"
       - id: inv
         run: |
-          SERVERS=$(python3 deploy/bin/inventory.py servers-json)
-          PLUGINS=$(python3 deploy/bin/inventory.py plugins-json)
+          SERVERS=$(python3 deploy/tools/inventory.py servers-json)
+          PLUGINS=$(python3 deploy/tools/inventory.py plugins-json)
           FILTER='${{ github.event.inputs.server }}'
           if [ -n "$FILTER" ]; then
             SERVERS=$(echo "$SERVERS" | jq -c --arg s "$FILTER" '[.[] | select(.id==$s)]')
@@ -47,34 +48,87 @@ jobs:
           echo "Plugins: $PLUGINS"
 
   build:
-    name: Build + package (Linux)
+    name: Build + package plugins
     needs: prepare
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (recursive submodules)
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.0
         with:
           submodules: recursive
 
-      - name: Build all plugins via Docker (Linux .so)
+      - name: Build Linux plugins via Docker
         run: docker compose run --rm build
 
-      - name: Package each plugin into a deploy bundle
+      - name: Install packaging tools
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Package each declared plugin
         run: |
           for plugin in $(echo '${{ needs.prepare.outputs.plugins }}' | jq -r '.[]'); do
-            bash deploy/bin/package-plugin.sh "$plugin" linux
+            bash deploy/scripts/package-plugin.sh "$plugin" linux
           done
 
-      - name: Upload bundles
-        uses: actions/upload-artifact@v7
+      - name: Upload plugin bundles
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: bundles
           path: package/
           if-no-files-found: error
 
+  runtime-image:
+    name: Build + publish runtime image
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.0
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build runtime image
+        run: |
+          docker build \
+            -f deploy/runtime/Dockerfile \
+            -t "${{ needs.prepare.outputs.runtime_image }}:latest" \
+            .
+
+      - name: Push runtime image
+        run: |
+          docker push "${{ needs.prepare.outputs.runtime_image }}:latest"
+
+  runtime-check:
+    name: Check plugin runtime deps
+    needs: [prepare, build, runtime-image]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download bundles
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: bundles
+          path: package
+
+      - name: Pull runtime image
+        run: docker pull "${{ needs.prepare.outputs.runtime_image }}:latest"
+
+      - name: Run ldd inside runtime image
+        run: |
+          docker run --rm -v "$PWD/package:/package:ro" \
+            "${{ needs.prepare.outputs.runtime_image }}:latest" \
+            bash -lc '
+              set -euo pipefail
+              for so in /package/*/addons/*/bin/linuxsteamrt64/*.so; do
+                echo "==> $so"
+                ldd "$so" | tee /tmp/ldd.txt
+                if grep -q "not found" /tmp/ldd.txt; then
+                  exit 1
+                fi
+              done
+            '
+
   deploy:
     name: Deploy ${{ matrix.server.id }}
-    needs: [prepare, build]
+    needs: [prepare, build, runtime-check]
     runs-on: ubuntu-latest
     if: ${{ needs.prepare.outputs.servers != '[]' }}
     environment: ${{ matrix.server.environment }}
@@ -86,18 +140,18 @@ jobs:
       matrix:
         server: ${{ fromJSON(needs.prepare.outputs.servers) }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.0
 
       - name: Download bundles
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v8.0.1
         with:
           name: bundles
           path: package
 
-      - name: Install deploy tooling (sops, age, envsubst, pyyaml)
+      - name: Install deploy tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y age gettext-base rsync python3-yaml
+          sudo apt-get install -y age rsync python3-yaml
           SOPS_VERSION=v3.13.1
           sudo curl -sSLo /usr/local/bin/sops \
             "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
@@ -114,8 +168,9 @@ jobs:
       - name: Deploy
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          RUNTIME_IMAGE: ${{ needs.prepare.outputs.runtime_image }}:latest
           SSH_OPTS: "-i /home/runner/.ssh/id_deploy -o StrictHostKeyChecking=yes"
         run: |
           ARGS=(--server "${{ matrix.server.id }}")
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
-          bash deploy/bin/deploy-remote.sh "${ARGS[@]}"
+          bash deploy/scripts/deploy.sh "${ARGS[@]}"

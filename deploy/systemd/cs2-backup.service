@@ -1,6 +1,0 @@
-[Unit]
-Description=Backup CS2 plugin databases and configs
-
-[Service]
-Type=oneshot
-ExecStart=/home/steam/cs2/cs2-backup.sh

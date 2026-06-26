@@ -1,7 +1,0 @@
-[Unit]
-Description=Update CS2 dedicated server (SteamCMD app 730) and restart instances
-
-[Service]
-Type=oneshot
-# Runs as root so it can restart the instances; the SteamCMD step drops to `steam`.
-ExecStart=/home/steam/cs2/cs2-update.sh
