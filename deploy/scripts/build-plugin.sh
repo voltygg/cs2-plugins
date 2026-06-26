@@ -9,7 +9,7 @@ source "$ScriptDir/lib/common.sh"
 cd "$RepoRoot"
 
 ProtoRoot="vendor/cs2-kit/vendor/hl2sdk-cs2"
-Protoc="$ProtoRoot/devtools/bin/protoc"
+Protoc="$ProtoRoot/devtools/bin/linux/protoc"
 
 "$Protoc" \
     --proto_path="$ProtoRoot/common" \
