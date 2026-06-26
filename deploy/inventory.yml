@@ -1,0 +1,58 @@
+# Deploy inventory — the single source of truth for which servers run which plugins.
+#
+# Edit this file to add servers, plugins, and per-server CS2 instances. Both the
+# GitHub Actions deploy workflow and the manual `deploy/bin/deploy-remote.sh`
+# read it through `deploy/bin/inventory.py`.
+#
+# Values shown for servers below use the documentation IP range (203.0.113.0/24,
+# TEST-NET-3) — replace them with your real hosts.
+
+# Defaults applied to every server unless the server overrides them.
+defaults:
+  ssh_user: steam
+  ssh_port: 22
+  cs2_root: /home/steam/cs2
+  csgo_path: /home/steam/cs2/game/csgo   # the directory that contains addons/
+  platform: linux
+
+# One shared PostgreSQL instance. The connection (host/port/user/sslMode) is the
+# same everywhere; only the database NAME differs per plugin (see plugins below).
+# The password is a secret — it lives in each server's .sops.env as DB_PASSWORD.
+database:
+  host: db.internal.example
+  port: 5432
+  user: cs2_app
+  sslMode: require
+
+# Every deployable plugin, declared once. `name` must match plugins/<name>/.
+# `database` is this plugin's own DB on the shared instance (database-per-plugin).
+plugins:
+  admin-system:
+    artifact: admin-system
+    database: admin_system
+  # Add more plugins as you create them under plugins/<name>/, e.g.:
+  # match-system:
+  #   artifact: match-system
+  #   database: match_system
+
+# Servers (boxes). Each box runs ONE shared CS2 install (one addons/ tree) and
+# may host several `instances` on different ports. `plugins` is the subset this
+# box receives — different boxes can receive different subsets.
+servers:
+  - id: box-a
+    host: 203.0.113.10
+    environment: prod-box-a        # GitHub Environment holding this box's SSH key + SOPS_AGE_KEY
+    plugins:
+      - admin-system
+    instances:
+      - { name: main,   port: 27015, map: de_dust2 }
+      - { name: retake, port: 27016, map: de_mirage }
+
+  - id: box-b
+    host: 203.0.113.20
+    environment: prod-box-b
+    plugins:
+      - admin-system
+      # - match-system               # uncomment once match-system exists to give box-b a second plugin
+    instances:
+      - { name: main, port: 27015, map: de_dust2 }

@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily CS2 dedicated server update check
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,121 @@
+# Build Linux plugin bundles and deploy them to the servers in deploy/inventory.yml.
+# Triggered by pushing to the `prod` branch (promote main -> prod to release), or
+# manually via the Actions tab. Per-server secrets + approval gates live in the
+# GitHub Environment named by each server's `environment` in the inventory.
+#
+# Each environment must provide secrets: SSH_PRIVATE_KEY (deploy key for the box)
+# and SOPS_AGE_KEY (age private key that decrypts that server's .sops.env).
+
+name: Deploy
+
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch:
+    inputs:
+      server:
+        description: "Deploy only this server id (blank = all in inventory)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Preview only (rsync --dry-run, no restarts)"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  prepare:
+    name: Resolve inventory
+    runs-on: ubuntu-latest
+    outputs:
+      servers: ${{ steps.inv.outputs.servers }}
+      plugins: ${{ steps.inv.outputs.plugins }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: sudo apt-get update && sudo apt-get install -y python3-yaml jq
+      - id: inv
+        run: |
+          SERVERS=$(python3 deploy/bin/inventory.py servers-json)
+          PLUGINS=$(python3 deploy/bin/inventory.py plugins-json)
+          FILTER='${{ github.event.inputs.server }}'
+          if [ -n "$FILTER" ]; then
+            SERVERS=$(echo "$SERVERS" | jq -c --arg s "$FILTER" '[.[] | select(.id==$s)]')
+          fi
+          echo "servers=$SERVERS" >> "$GITHUB_OUTPUT"
+          echo "plugins=$PLUGINS" >> "$GITHUB_OUTPUT"
+          echo "Servers: $SERVERS"
+          echo "Plugins: $PLUGINS"
+
+  build:
+    name: Build + package (Linux)
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (recursive submodules)
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Build all plugins via Docker (Linux .so)
+        run: docker compose run --rm build
+
+      - name: Package each plugin into a deploy bundle
+        run: |
+          for plugin in $(echo '${{ needs.prepare.outputs.plugins }}' | jq -r '.[]'); do
+            bash deploy/bin/package-plugin.sh "$plugin" linux
+          done
+
+      - name: Upload bundles
+        uses: actions/upload-artifact@v7
+        with:
+          name: bundles
+          path: package/
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy ${{ matrix.server.id }}
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    if: ${{ needs.prepare.outputs.servers != '[]' }}
+    environment: ${{ matrix.server.environment }}
+    concurrency:
+      group: deploy-${{ matrix.server.id }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        server: ${{ fromJSON(needs.prepare.outputs.servers) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download bundles
+        uses: actions/download-artifact@v8
+        with:
+          name: bundles
+          path: package
+
+      - name: Install deploy tooling (sops, age, envsubst, pyyaml)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age gettext-base rsync python3-yaml
+          SOPS_VERSION=v3.13.1
+          sudo curl -sSLo /usr/local/bin/sops \
+            "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
+          sudo chmod +x /usr/local/bin/sops
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "${{ matrix.server.ssh_port }}" "${{ matrix.server.host }}" \
+            >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          SSH_OPTS: "-i /home/runner/.ssh/id_deploy -o StrictHostKeyChecking=yes"
+        run: |
+          ARGS=(--server "${{ matrix.server.id }}")
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
+          bash deploy/bin/deploy-remote.sh "${ARGS[@]}"

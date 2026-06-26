@@ -1,0 +1,62 @@
+// Template for admin-system's settings.jsonc — rendered per (server, plugin) by
+// deploy/bin/render-config.sh. Placeholders are filled from:
+//   - inventory.yml (DB_HOST/DB_PORT/DB_USER/DB_SSLMODE + the plugin's DB_NAME)
+//   - the server's .sops.env (DB_PASSWORD, CHEAT_*)
+// Non-secret, same-everywhere knobs stay literal here; edit them in git to change them.
+{
+  "plugin": {
+    "logLevel": "info",
+    "locale": "ru"
+  },
+  "database": {
+    "host": "${DB_HOST}",
+    "port": ${DB_PORT},
+    "database": "${DB_NAME}",
+    "username": "${DB_USER}",
+    "password": "${DB_PASSWORD}",
+    "sslMode": "${DB_SSLMODE}"
+  },
+  "punishments": {
+    "defaultBanReason": "Banned by administrator",
+    "warningThreshold": 3
+  },
+  "chat": {
+    "broadcastPunishments": true,
+    "tagAdminChatMessages": true,
+    "fallbackPrefix": "[ADMIN]",
+    "fallbackPrefixColor": "red",
+    "fallbackNameColor": "default",
+    "fallbackMessageColor": "default"
+  },
+  "cheatCheck": {
+    "mode": "fixedLink",
+    "timeoutSec": 120,
+    "autoKick": true,
+    "kickReason": "Failed to comply with cheat check",
+    "panelRefreshMs": 1000,
+    "moveToSpectator": true,
+    "bannerImageUrl": "",
+    "bannerWidth": 320,
+    "bannerHeight": 180,
+    "fixedLink": {
+      "url": "https://discord.gg/your-invite"
+    },
+    "websiteAutoRoom": {
+      "createRoomUrl": "${CHEAT_ROOM_URL}",
+      "apiKey": "${CHEAT_API_KEY}",
+      "authHeader": "X-API-Key",
+      "authScheme": "",
+      "requestBody": {
+        "purpose": "CHEAT_CHECK",
+        "title": "Cheat check: {playerName}",
+        "isLocked": false,
+        "metadata": { "reason": "Suspect {playerName} ({steamId}) - by {adminName}" }
+      },
+      "playerUrlField": "code",
+      "playerUrlTemplate": "http://localhost:3000/rooms/{value}",
+      "checkerUrlField": "code",
+      "checkerUrlTemplate": "http://localhost:3000/rooms/{value}",
+      "timeoutMs": 8000
+    }
+  }
+}
