@@ -47,8 +47,9 @@ struct ChatSettings
     std::string fallbackNameColor = "default";
     std::string fallbackMessageColor = "default";
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ChatSettings, broadcastPunishments, tagAdminChatMessages, fallbackPrefix,
-                                                fallbackPrefixColor, fallbackNameColor, fallbackMessageColor)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ChatSettings, broadcastPunishments, tagAdminChatMessages,
+                                                fallbackPrefix, fallbackPrefixColor, fallbackNameColor,
+                                                fallbackMessageColor)
 
 /** "cheatCheck.fixedLink" sub-section. */
 struct CheatCheckFixedLink
@@ -65,16 +66,16 @@ struct CheatCheckWebsiteAutoRoom
     std::string apiKey;
     std::string authHeader = "Authorization";  // header name; e.g. "X-API-Key"
     std::string authScheme = "Bearer";         // value prefix; "" sends the key verbatim
-    nlohmann::json requestBody;                 // body template, placeholders substituted per check
+    nlohmann::json requestBody;                // body template, placeholders substituted per check
     std::string playerUrlField = "playerUrl";  // dot-path into the JSON response
     std::string playerUrlTemplate;             // {value} -> playerUrlField; empty uses the field as-is
     std::string checkerUrlField = "checkerUrl";
-    std::string checkerUrlTemplate;            // optional; relayed to the calling admin
+    std::string checkerUrlTemplate;  // optional; relayed to the calling admin
     int timeoutMs = 8000;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckWebsiteAutoRoom, createRoomUrl, apiKey, authHeader, authScheme,
-                                                requestBody, playerUrlField, playerUrlTemplate, checkerUrlField,
-                                                checkerUrlTemplate, timeoutMs)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckWebsiteAutoRoom, createRoomUrl, apiKey, authHeader,
+                                                authScheme, requestBody, playerUrlField, playerUrlTemplate,
+                                                checkerUrlField, checkerUrlTemplate, timeoutMs)
 
 /** "cheatCheck" section of settings.jsonc. */
 struct CheatCheckSettings

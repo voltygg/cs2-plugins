@@ -1,6 +1,6 @@
 #include "ChatFormat.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>

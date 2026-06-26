@@ -1,8 +1,8 @@
 #include "Migrator.hpp"
+
 #include "Database.hpp"
 
 #include <CS2Kit/Utils/Log.hpp>
-
 #include <algorithm>
 #include <charconv>
 #include <filesystem>
@@ -82,10 +82,11 @@ bool RunMigrations(Database& db, const std::string& dir)
         return db.WithConnection([&](pqxx::connection& conn) -> bool {
             {
                 pqxx::work txn(conn);
-                txn.exec("CREATE TABLE IF NOT EXISTS schema_migrations ("
-                         "version INTEGER PRIMARY KEY, "
-                         "name TEXT NOT NULL, "
-                         "applied_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT)");
+                txn.exec(
+                    "CREATE TABLE IF NOT EXISTS schema_migrations ("
+                    "version INTEGER PRIMARY KEY, "
+                    "name TEXT NOT NULL, "
+                    "applied_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT)");
                 txn.commit();
             }
 

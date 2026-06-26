@@ -1,7 +1,7 @@
 #include "Descriptors.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
 #include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <mathlib/vector.h>
 #include <random>

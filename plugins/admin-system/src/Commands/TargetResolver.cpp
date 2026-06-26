@@ -1,9 +1,9 @@
 #include "TargetResolver.hpp"
-#include "../Core/Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
 #include "../Admin/AdminManager.hpp"
+#include "../Core/Managers.hpp"
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
 

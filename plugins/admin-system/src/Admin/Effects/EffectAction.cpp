@@ -1,5 +1,7 @@
 #include "EffectAction.hpp"
+
 #include "../../Core/Managers.hpp"
+
 #include <CS2Kit/Core/Services.hpp>
 
 using CS2Kit::Core::Engine;

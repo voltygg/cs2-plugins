@@ -3,7 +3,6 @@
 #include "TargetResolver.hpp"
 
 #include <CS2Kit/Utils/StringUtils.hpp>
-
 #include <format>
 
 namespace AdminSystem::Commands::Helpers

@@ -1,9 +1,9 @@
 #include "AdminMenu_ChatSettings.hpp"
-#include "../../Core/Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
+#include "../../Core/Managers.hpp"
 #include "../AdminManager.hpp"
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>

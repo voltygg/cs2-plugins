@@ -1,13 +1,13 @@
 #include "ChatService.hpp"
-#include "Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
 #include "../Admin/AdminManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatFormat.hpp"
 #include "Config.hpp"
+#include "Managers.hpp"
 
 #include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
 #include <CS2Kit/Utils/Chat.hpp>
@@ -189,9 +189,9 @@ void ChatService::NotifyVoiceMuted(Player* player)
     auto& tr = Engine().Translations;
     if (mute)
     {
-        Chat::Print(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot),
-                                      ChatColors::Default, ChatColors::Olive,
-                                      ChatFormat::FormatExpiry(mute->ExpiresAt, slot)));
+        Chat::Print(slot,
+                    std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot), ChatColors::Default,
+                                ChatColors::Olive, ChatFormat::FormatExpiry(mute->ExpiresAt, slot)));
         if (!mute->Reason.empty())
             Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
                                           ChatColors::Default, mute->Reason));

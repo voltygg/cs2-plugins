@@ -5,7 +5,6 @@
 
 #include <CS2Kit/Database/DbResult.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
-
 #include <format>
 #include <optional>
 #include <pqxx/pqxx>
@@ -28,19 +27,18 @@ class MuteRepository
 public:
     MuteRepository(std::string table, std::string statementPrefix)
         : _table(std::move(table)), _prefix(std::move(statementPrefix))
-    {
-    }
+    {}
 
     std::optional<TEntity> FindActiveBySteamId(int64_t steamId)
     {
         return CS2Kit::Database::TryOr<std::optional<TEntity>>(
             std::nullopt, Label("FindActiveBySteamId"), [&]() -> std::optional<TEntity> {
-                auto result = App().Db.ExecutePrepared(
-                    Stmt("find_active_by_steamid"),
-                    std::format("SELECT * FROM {} WHERE target_steam_id = $1 AND "
-                                "is_active = true AND (expires_at = 0 OR expires_at > $2)",
-                                _table),
-                    steamId, CS2Kit::Utils::TimeUtils::Now());
+                auto result =
+                    App().Db.ExecutePrepared(Stmt("find_active_by_steamid"),
+                                             std::format("SELECT * FROM {} WHERE target_steam_id = $1 AND "
+                                                         "is_active = true AND (expires_at = 0 OR expires_at > $2)",
+                                                         _table),
+                                             steamId, CS2Kit::Utils::TimeUtils::Now());
                 if (result.empty())
                     return std::nullopt;
                 return ParseRow(result[0]);

@@ -1,6 +1,6 @@
 #include "BanRepository.hpp"
-#include "../../Core/Managers.hpp"
 
+#include "../../Core/Managers.hpp"
 #include "../Database.hpp"
 
 #include <CS2Kit/Database/DbResult.hpp>

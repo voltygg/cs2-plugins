@@ -1,13 +1,13 @@
 #include "AdminMenu.hpp"
-#include "../Core/Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
+#include "../Core/Managers.hpp"
 #include "AdminManager.hpp"
 #include "Menu/AdminMenu_ChatSettings.hpp"
 #include "Menu/AdminMenu_Control.hpp"
 #include "Menu/AdminMenu_Effects.hpp"
 #include "Menu/AdminMenu_Punish.hpp"
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
@@ -44,8 +44,8 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
             tr.Get("category.effects", adminSlot), [adminSlot](int) { return Menu::BuildEffectsMenu(adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "fz"))
         .AddSubmenu(
-            tr.Get("category.chatSettings", adminSlot), [adminSlot](int) { return Menu::BuildChatSettingsMenu(adminSlot); },
-            adminMgr.IsAdmin(adminSid))
+            tr.Get("category.chatSettings", adminSlot),
+            [adminSlot](int) { return Menu::BuildChatSettingsMenu(adminSlot); }, adminMgr.IsAdmin(adminSid))
         .Build();
 }
 

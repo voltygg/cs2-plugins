@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/MetamodPluginBase.hpp>
-
 #include <memory>
 #include <string_view>
 

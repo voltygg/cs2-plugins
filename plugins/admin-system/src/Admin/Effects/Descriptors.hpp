@@ -23,7 +23,6 @@ extern const EffectToggle Hide;
 
 /** Ordered to match the EffectId enum so adding an EffectId without a descriptor is a compile error. */
 [[maybe_unused]] inline const EffectToggle* const EffectRegistry[] = {&Disco, &Ghost, &Hide};
-static_assert(std::size(EffectRegistry) == static_cast<size_t>(EffectId::Count),
-              "every EffectId needs a descriptor");
+static_assert(std::size(EffectRegistry) == static_cast<size_t>(EffectId::Count), "every EffectId needs a descriptor");
 
 }  // namespace AdminSystem::Admin::Effects

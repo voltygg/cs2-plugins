@@ -1,8 +1,8 @@
-#include "Descriptors.hpp"
 #include "../../Core/Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
+#include "Descriptors.hpp"
 
 #include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <array>
 #include <cstdint>
 #include <memory>
@@ -29,32 +29,32 @@ constexpr int DiscoIntervalMs = 200;
 constexpr int DiscoDurationSec = 15;
 }  // namespace
 
-const EffectToggle Disco{
-    Permission::Fun, EffectId::Disco, "broadcast.discoOn", "broadcast.discoOff",
-    [](const ActionContext& ctx) -> EffectSetup {
-        uint8_t savedMode = ctx.TargetCtrl.GetRenderMode();
-        uint32_t savedColor = ctx.TargetCtrl.GetRenderColor();
-        int slot = ctx.Target->GetSlot();
+const EffectToggle Disco{Permission::Fun, EffectId::Disco, "broadcast.discoOn", "broadcast.discoOff",
+                         [](const ActionContext& ctx) -> EffectSetup {
+                             uint8_t savedMode = ctx.TargetCtrl.GetRenderMode();
+                             uint32_t savedColor = ctx.TargetCtrl.GetRenderColor();
+                             int slot = ctx.Target->GetSlot();
 
-        auto idx = std::make_shared<size_t>(0);
-        uint64_t timer = Engine().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
-            CS2Kit::Sdk::PlayerController pc(slot);
-            if (!pc.IsValid() || !pc.IsAlive())
-                return;
-            pc.SetRender(RenderModeTransTexture, Palette[*idx]);
-            *idx = (*idx + 1) % Palette.size();
-        });
+                             auto idx = std::make_shared<size_t>(0);
+                             uint64_t timer = Engine().Scheduler.Repeat(DiscoIntervalMs, [slot, idx]() {
+                                 CS2Kit::Sdk::PlayerController pc(slot);
+                                 if (!pc.IsValid() || !pc.IsAlive())
+                                     return;
+                                 pc.SetRender(RenderModeTransTexture, Palette[*idx]);
+                                 *idx = (*idx + 1) % Palette.size();
+                             });
 
-        auto cancel = [slot, savedMode, savedColor]() {
-            CS2Kit::Sdk::PlayerController pc(slot);
-            if (pc.IsValid())
-                pc.SetRender(savedMode == 0 ? RenderModeNormal : savedMode,
-                             savedColor == 0 ? ColorOpaqueWhite : savedColor);
-        };
+                             auto cancel = [slot, savedMode, savedColor]() {
+                                 CS2Kit::Sdk::PlayerController pc(slot);
+                                 if (pc.IsValid())
+                                     pc.SetRender(savedMode == 0 ? RenderModeNormal : savedMode,
+                                                  savedColor == 0 ? ColorOpaqueWhite : savedColor);
+                             };
 
-        // EffectManager owns the auto-expire timer (DurationMs); a self-scheduled Delay here would
-        // survive an early cancel and could clobber a re-applied Disco on the same slot.
-        return {timer, std::move(cancel), /*roundScoped*/ true, /*durationMs*/ DiscoDurationSec * 1000};
-    }};
+                             // EffectManager owns the auto-expire timer (DurationMs); a self-scheduled Delay here would
+                             // survive an early cancel and could clobber a re-applied Disco on the same slot.
+                             return {timer, std::move(cancel), /*roundScoped*/ true,
+                                     /*durationMs*/ DiscoDurationSec * 1000};
+                         }};
 
 }  // namespace AdminSystem::Admin::Effects

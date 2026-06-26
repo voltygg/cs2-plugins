@@ -14,8 +14,8 @@
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/ActiveService.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
-#include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>

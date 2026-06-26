@@ -1,11 +1,11 @@
 #include "AdminMenuCommand.hpp"
-#include "../Core/Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/AdminMenu.hpp"
+#include "../Core/Managers.hpp"
 #include "../Core/Permissions.hpp"
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 
 using CS2Kit::Core::Engine;

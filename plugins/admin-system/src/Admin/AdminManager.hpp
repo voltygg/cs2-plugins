@@ -16,10 +16,10 @@ namespace AdminSystem::Admin
  */
 struct AdminChatStyle
 {
-    std::string Prefix;       /**< E.g., "[ADMIN]". Empty for non-admins. */
-    std::string PrefixColor;  /**< Color name; resolved via ChatColors::ParseNamed. */
-    std::string NameColor;    /**< Color name for the speaker's display name. */
-    std::string MessageColor; /**< Color name for the message body. */
+    std::string Prefix;        /**< E.g., "[ADMIN]". Empty for non-admins. */
+    std::string PrefixColor;   /**< Color name; resolved via ChatColors::ParseNamed. */
+    std::string NameColor;     /**< Color name for the speaker's display name. */
+    std::string MessageColor;  /**< Color name for the message body. */
     bool DisplayPrefix = true; /**< Per-admin toggle; suppresses the prefix when false. */
 
     bool HasPrefix() const { return DisplayPrefix && !Prefix.empty(); }

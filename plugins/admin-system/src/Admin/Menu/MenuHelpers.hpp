@@ -11,7 +11,6 @@
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
-
 #include <cstdint>
 #include <format>
 #include <memory>
@@ -40,8 +39,8 @@ inline void AddAction(CS2Kit::Menu::MenuBuilder& builder, const std::string& lab
                       const Actions::Action& action)
 {
     const Actions::Action* a = &action;
-    builder.AddButton(label, [admin, target, a](int) { Actions::Run(admin, target, *a); },
-                      CanActOnSlot(admin, target, action.Flag));
+    builder.AddButton(
+        label, [admin, target, a](int) { Actions::Run(admin, target, *a); }, CanActOnSlot(admin, target, action.Flag));
 }
 
 /** A toggle row whose live state is an active @ref Effects::EffectToggle on the target. */

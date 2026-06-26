@@ -13,7 +13,7 @@ namespace AdminSystem::Admin::Menu
  * Selecting a player invokes onPick(adminSlot, targetSlot) which is expected
  * to open the appropriate per-target actions submenu.
  */
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(
-    int adminSlot, const std::string& title, std::function<void(int adminSlot, int targetSlot)> onPick);
+std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(int adminSlot, const std::string& title,
+                                                        std::function<void(int adminSlot, int targetSlot)> onPick);
 
 }  // namespace AdminSystem::Admin::Menu

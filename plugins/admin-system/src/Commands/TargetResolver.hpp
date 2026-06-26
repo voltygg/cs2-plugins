@@ -10,8 +10,8 @@ namespace AdminSystem::Commands
 /** Outcome of attempting to resolve a single target token (e.g. "Bob", "#3"). */
 struct ResolvedTarget
 {
-    CS2Kit::Players::Player* Player = nullptr;  /**< null when unresolved. */
-    bool Allowed = true;                        /**< false when blocked by immunity. */
+    CS2Kit::Players::Player* Player = nullptr; /**< null when unresolved. */
+    bool Allowed = true;                       /**< false when blocked by immunity. */
 };
 
 /**

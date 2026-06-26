@@ -1,8 +1,8 @@
 #include "PunishmentCommands.hpp"
-#include "../Core/Managers.hpp"
 
 #include "../Core/ChatService.hpp"
 #include "../Core/Config.hpp"
+#include "../Core/Managers.hpp"
 #include "../Core/Permissions.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "CommandHelpers.hpp"
@@ -124,7 +124,7 @@ CommandResult HandleVoiceUnmute(Player* admin, const std::vector<std::string>& a
     }
 
     if (!App().Punishments.RemoveVoiceMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
-                                                                "Voice-unmuted by admin"))
+                                                    "Voice-unmuted by admin"))
     {
         return {false, std::format("{} is not voice-muted.", target->GetName())};
     }
@@ -165,8 +165,7 @@ CommandResult HandleTextUnmute(Player* admin, const std::vector<std::string>& ar
         return {false, err};
     }
 
-    if (!App().Punishments.RemoveTextMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
-                                                               "Text-unmuted by admin"))
+    if (!App().Punishments.RemoveTextMuteBySteamId(target->GetSteamID(), admin->GetSteamID(), "Text-unmuted by admin"))
     {
         return {false, std::format("{} is not text-muted.", target->GetName())};
     }

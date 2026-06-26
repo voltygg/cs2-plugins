@@ -1,13 +1,13 @@
 #include "PunishmentManager.hpp"
-#include "../Core/Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
 #include "../Core/ChatService.hpp"
 #include "../Core/Config.hpp"
+#include "../Core/Managers.hpp"
 #include "../Database/Repositories/BanRepository.hpp"
 #include "../Database/Repositories/MuteRepository.hpp"
 #include "../Database/Repositories/WarningRepository.hpp"
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
@@ -198,8 +198,7 @@ bool PunishmentManager::IssueVoiceMute(VoiceMute& mute)
         _voiceMutedPlayers.insert(mute.TargetSteamId);
         RefreshVoiceChannel(mute.TargetSteamId, true);
 
-        App().Chat.BroadcastPunishment("voice-muted", mute.AdminName, mute.TargetName, mute.Reason,
-                                                    mute.Duration);
+        App().Chat.BroadcastPunishment("voice-muted", mute.AdminName, mute.TargetName, mute.Reason, mute.Duration);
         return true;
     }
     catch (const std::exception& e)
@@ -225,8 +224,7 @@ bool PunishmentManager::IssueTextMute(TextMute& mute)
         _activeTextMutes[mute.TargetSteamId] = mute;
         _textMutedPlayers.insert(mute.TargetSteamId);
 
-        App().Chat.BroadcastPunishment("text-muted", mute.AdminName, mute.TargetName, mute.Reason,
-                                                    mute.Duration);
+        App().Chat.BroadcastPunishment("text-muted", mute.AdminName, mute.TargetName, mute.Reason, mute.Duration);
         return true;
     }
     catch (const std::exception& e)

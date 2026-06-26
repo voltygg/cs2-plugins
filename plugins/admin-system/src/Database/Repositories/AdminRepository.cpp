@@ -1,10 +1,9 @@
 #include "AdminRepository.hpp"
-#include "../../Core/Managers.hpp"
 
+#include "../../Core/Managers.hpp"
 #include "../Database.hpp"
 
 #include <CS2Kit/Database/DbResult.hpp>
-
 #include <pqxx/array>
 
 namespace AdminSystem::Database
@@ -42,8 +41,8 @@ std::vector<std::string> ParseTextArray(const pqxx::field& field)
 std::optional<Admin> AdminRepository::FindBySteamId(int64_t steamId)
 {
     return TryOr<std::optional<Admin>>(std::nullopt, "AdminRepository::FindBySteamId", [&]() -> std::optional<Admin> {
-        auto result = App().Db.ExecutePrepared("find_admin_by_steamid",
-                                                           "SELECT * FROM admins WHERE steam_id = $1", steamId);
+        auto result =
+            App().Db.ExecutePrepared("find_admin_by_steamid", "SELECT * FROM admins WHERE steam_id = $1", steamId);
 
         if (result.empty())
         {
@@ -78,14 +77,13 @@ bool AdminRepository::Delete(int64_t steamId)
 }
 
 bool AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
-                                       const std::string& messageColor)
+                                      const std::string& messageColor)
 {
     return TryOr(false, "AdminRepository::UpdateChatStyle", [&] {
-        App().Db.ExecutePrepared(
-            "update_admin_chat_style",
-            "UPDATE admins SET display_prefix = $2, name_color = $3, message_color = $4, "
-            "updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE steam_id = $1",
-            steamId, displayPrefix, nameColor, messageColor);
+        App().Db.ExecutePrepared("update_admin_chat_style",
+                                 "UPDATE admins SET display_prefix = $2, name_color = $3, message_color = $4, "
+                                 "updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE steam_id = $1",
+                                 steamId, displayPrefix, nameColor, messageColor);
         return true;
     });
 }
@@ -93,11 +91,10 @@ bool AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const
 bool AdminRepository::UpdateLanguage(int64_t steamId, const std::string& lang)
 {
     return TryOr(false, "AdminRepository::UpdateLanguage", [&] {
-        App().Db.ExecutePrepared(
-            "update_admin_language",
-            "UPDATE admins SET language = $2, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
-            "WHERE steam_id = $1",
-            steamId, lang);
+        App().Db.ExecutePrepared("update_admin_language",
+                                 "UPDATE admins SET language = $2, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
+                                 "WHERE steam_id = $1",
+                                 steamId, lang);
         return true;
     });
 }
@@ -126,17 +123,18 @@ Admin AdminRepository::ParseRow(const pqxx::row& row)
 
 std::optional<AdminGroup> AdminGroupRepository::FindByName(const std::string& name)
 {
-    return TryOr<std::optional<AdminGroup>>(std::nullopt, "AdminGroupRepository::FindByName", [&]() -> std::optional<AdminGroup> {
-        auto result = App().Db.ExecutePrepared("find_group_by_name",
-                                                           "SELECT * FROM admin_groups WHERE name = $1", name);
+    return TryOr<std::optional<AdminGroup>>(
+        std::nullopt, "AdminGroupRepository::FindByName", [&]() -> std::optional<AdminGroup> {
+            auto result =
+                App().Db.ExecutePrepared("find_group_by_name", "SELECT * FROM admin_groups WHERE name = $1", name);
 
-        if (result.empty())
-        {
-            return std::nullopt;
-        }
+            if (result.empty())
+            {
+                return std::nullopt;
+            }
 
-        return ParseRow(result[0]);
-    });
+            return ParseRow(result[0]);
+        });
 }
 
 std::vector<AdminGroup> AdminGroupRepository::FindAll()

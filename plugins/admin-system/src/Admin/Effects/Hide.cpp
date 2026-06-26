@@ -17,24 +17,25 @@ namespace
 constexpr int TeamSpectator = 1;
 }  // namespace
 
-const EffectToggle Hide{
-    Permission::Hide, EffectId::Hide, "broadcast.hideOn", "broadcast.hideOff",
-    [](const ActionContext& ctx) -> EffectSetup {
-        int savedTeam = ctx.TargetCtrl.GetTeam();
-        std::string savedName = ctx.TargetCtrl.GetPlayerName();
+const EffectToggle Hide{Permission::Hide, EffectId::Hide, "broadcast.hideOn", "broadcast.hideOff",
+                        [](const ActionContext& ctx) -> EffectSetup {
+                            int savedTeam = ctx.TargetCtrl.GetTeam();
+                            std::string savedName = ctx.TargetCtrl.GetPlayerName();
 
-        ctx.TargetCtrl.SetPlayerName("");
-        ctx.TargetCtrl.ChangeTeam(TeamSpectator);
+                            ctx.TargetCtrl.SetPlayerName("");
+                            ctx.TargetCtrl.ChangeTeam(TeamSpectator);
 
-        int slot = ctx.Target->GetSlot();
-        return {0, [slot, savedTeam, savedName]() {
-                    PlayerController pc(slot);
-                    if (!pc.IsValid())
-                        return;
-                    pc.SetPlayerName(savedName);
-                    if (pc.GetTeam() != savedTeam)
-                        pc.ChangeTeam(savedTeam);
-                }, false};
-    }};
+                            int slot = ctx.Target->GetSlot();
+                            return {0,
+                                    [slot, savedTeam, savedName]() {
+                                        PlayerController pc(slot);
+                                        if (!pc.IsValid())
+                                            return;
+                                        pc.SetPlayerName(savedName);
+                                        if (pc.GetTeam() != savedTeam)
+                                            pc.ChangeTeam(savedTeam);
+                                    },
+                                    false};
+                        }};
 
 }  // namespace AdminSystem::Admin::Effects

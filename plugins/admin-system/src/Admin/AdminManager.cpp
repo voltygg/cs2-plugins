@@ -1,7 +1,7 @@
 #include "AdminManager.hpp"
-#include "../Core/Managers.hpp"
 
 #include "../Core/Config.hpp"
+#include "../Core/Managers.hpp"
 #include "../Database/Repositories/AdminRepository.hpp"
 
 #include <CS2Kit/Utils/Log.hpp>

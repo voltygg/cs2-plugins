@@ -1,12 +1,12 @@
 #include "CheatCheckCommands.hpp"
-#include "../Core/Managers.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
 #include "../Admin/Actions/Descriptors.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
+#include "../Core/Managers.hpp"
 #include "../Core/Permissions.hpp"
 #include "CommandHelpers.hpp"
 
+#include <CS2Kit/Core/Services.hpp>
 #include <format>
 
 using CS2Kit::Core::Engine;
