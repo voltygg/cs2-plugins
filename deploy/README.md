@@ -47,6 +47,27 @@ APP_DB_PASSWORD='<app-role-pw>' PGPASSWORD='<superuser-pw>' \
 
 Plugins apply their own schema migrations on load.
 
+## Connect to the remote database
+
+The database isn't exposed publicly, so reach it through an SSH tunnel. This
+binds a local port (default 5433, to avoid clashing with a local postgres on
+5432) to the remote 5432:
+
+```bash
+deploy/scripts/tunnel-db.sh --server box-a
+# or without an inventory entry:
+deploy/scripts/tunnel-db.sh --host 203.0.113.10 --db-host localhost
+```
+
+Then in another shell:
+
+```bash
+psql "host=127.0.0.1 port=5433 dbname=admin_system user=cs2_app"
+```
+
+Ctrl-C stops the tunnel. `--local-port`, `--db-host`, `--ssh-user`, etc. override
+the inventory; see `--help`.
+
 ## Inventory + secrets
 
 The committed inventory has no active servers so CI cannot deploy documentation
@@ -73,7 +94,7 @@ sops --filename-override deploy/secrets/servers/box-a/.sops.env \
 rm deploy/secrets/servers/box-a/.env
 ```
 
-GitHub Environments named by `environment` provide `SSH_PRIVATE_KEY` and
+GitHub Environments named by `environment` provide `SSH_KEY` and
 `SOPS_AGE_KEY`. If the GHCR runtime image is private, also configure a remote
 Docker login outside this repo before deploying.
 
