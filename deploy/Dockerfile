@@ -8,10 +8,25 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     clang \
+    cmake \
     libpq-dev \
     libpqxx-dev \
-    libcpr-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# cpr isn't packaged for the sniper runtime (Debian bullseye); build it from source.
+ARG CPR_VERSION=1.11.2
+RUN git clone --depth 1 --branch "${CPR_VERSION}" https://github.com/libcpr/cpr.git /tmp/cpr \
+    && cmake -S /tmp/cpr -B /tmp/cpr/build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCPR_USE_SYSTEM_CURL=ON \
+        -DCPR_BUILD_TESTS=OFF \
+    && cmake --build /tmp/cpr/build -j"$(nproc)" \
+    && cmake --install /tmp/cpr/build \
+    && ldconfig \
+    && rm -rf /tmp/cpr
 
 RUN pip3 install git+https://github.com/alliedmodders/ambuild
 
@@ -21,10 +36,8 @@ FROM ${BASE_IMAGE} AS runtime
 
 USER root
 
-# Keep the runtime image boring on purpose: the CS2 image owns SteamCMD/server
-# lifecycle, while this layer supplies the plugin's shared-library closure and
-# small hook-time utilities. CPR may bring libcurl transitively; the project does
-# not link libcurl directly.
+# Runtime shared-library closure for the plugin. libcpr.so is copied from the
+# build stage (not packaged for this Debian release); libcurl comes via curl.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -33,7 +46,9 @@ RUN apt-get update \
         rsync \
         libpq-dev \
         libpqxx-dev \
-        libcpr-dev \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /usr/local/lib/libcpr.so* /usr/local/lib/
+RUN ldconfig
 
 USER steam
