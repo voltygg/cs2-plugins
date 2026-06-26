@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (recursive submodules)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -28,21 +28,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (recursive submodules)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.2.0
 
       - name: Ruff check (build tooling)
         run: uvx ruff check .
-
-      - name: Install clang-format
-        run: sudo apt-get update && sudo apt-get install -y clang-format
 
       - name: clang-format dry-run (plugin + cs2-kit sources)
         run: |
           find plugins vendor/cs2-kit/src \
             -type f \( -name '*.cpp' -o -name '*.hpp' \) \
-            -print0 | xargs -0 clang-format --dry-run --Werror
+            -print0 | xargs -0 uvx clang-format@22.1.5 --dry-run --Werror
