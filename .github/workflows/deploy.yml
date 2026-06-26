@@ -1,3 +1,7 @@
+# Builds the Linux plugin bundles + runtime image, then renders and deploys each
+# server in deploy/inventory.yml over SSH (docker compose up).
+# Triggers: push to `prod`, or run manually (optionally scoped to one server / dry-run).
+# Each server's GitHub Environment must provide secrets: SSH_KEY and SERVER_ENV.
 name: Deploy
 
 on:
@@ -149,14 +153,10 @@ jobs:
           name: bundles
           path: package
 
-      - name: Install deploy tooling
+      - name: Install inventory deps (PyYAML)
         run: |
           sudo apt-get update
-          sudo apt-get install -y age rsync python3-yaml
-          SOPS_VERSION=v3.13.1
-          sudo curl -sSLo /usr/local/bin/sops \
-            "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
-          sudo chmod +x /usr/local/bin/sops
+          sudo apt-get install -y python3-yaml
 
       - name: Configure SSH
         run: |
@@ -166,9 +166,20 @@ jobs:
           ssh-keyscan -p "${{ matrix.server.ssh_port }}" "${{ matrix.server.host }}" \
             >> ~/.ssh/known_hosts 2>/dev/null
 
+      - name: Write server env from secret
+        env:
+          SERVER_ENV: ${{ secrets.SERVER_ENV }}
+        run: |
+          if [ -z "$SERVER_ENV" ]; then
+            echo "ERROR: SERVER_ENV secret is empty for environment '${{ matrix.server.environment }}'" >&2
+            exit 1
+          fi
+          dir="deploy/secrets/servers/${{ matrix.server.id }}"
+          mkdir -p "$dir"
+          printf '%s\n' "$SERVER_ENV" > "$dir/.env"
+
       - name: Deploy
         env:
-          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           RUNTIME_IMAGE: ${{ needs.prepare.outputs.runtime_image }}:latest
           SSH_OPTS: "-i /home/runner/.ssh/id_deploy -o StrictHostKeyChecking=yes"
         run: |

@@ -3,7 +3,7 @@
 
 Inputs:
   * deploy/inventory.yml for servers/plugins/database defaults.
-  * exported environment variables loaded from secrets/servers/<id>/.sops.env.
+  * exported environment variables loaded from secrets/servers/<id>/.env.
   * package/<plugin>/addons bundles produced by deploy/scripts/package-plugin.sh.
 
 Outputs under deploy/.render/<server>/:
@@ -168,6 +168,8 @@ def compose_for(server: dict[str, Any], runtime_image: str) -> dict[str, Any]:
             "restart": "unless-stopped",
             "env_file": [f"./instances/{name}/server.env"],
             "ports": [f"{port}:{port}/udp", f"{port}:{port}/tcp"],
+            # reach host Postgres from the bridge network
+            "extra_hosts": ["host.docker.internal:host-gateway"],
             "volumes": [
                 f"./instances/{name}/cs2:/home/steam/cs2-dedicated",
                 "./bundles:/home/steam/plugin-bundles:ro",

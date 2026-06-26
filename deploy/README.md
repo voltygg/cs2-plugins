@@ -16,7 +16,7 @@ deploy/docker-compose.build.yml Linux plugin build wrapper
 deploy/scripts/               operator and CI entrypoints
 deploy/tools/                 Python inventory/render helpers
 deploy/templates/             plugin config templates rendered per server
-deploy/secrets/               encrypted per-server env files
+deploy/secrets/               per-server env template (real values in GitHub secrets)
 ```
 
 Each CS2 instance is one container with its own persistent
@@ -30,11 +30,14 @@ On a fresh Ubuntu box:
 
 ```bash
 sudo bash deploy/scripts/bootstrap-host.sh
+# already have Docker? skip reinstalling it:
+sudo bash deploy/scripts/bootstrap-host.sh --skip-docker
 ```
 
-This installs Docker + Compose, creates the deploy user, opens SSH and the CS2
-port range, and prepares `/opt/cs2`. Log out/in after bootstrapping so the deploy
-user's Docker group membership is active.
+This installs Docker + Compose (only if missing - it auto-skips when `docker` is
+already present), creates the deploy user, opens SSH and the CS2 UDP port range,
+and prepares `~/deploy/cs2`. Log out/in after bootstrapping so the deploy user's
+Docker group membership is active.
 
 ## One-time: shared database
 
@@ -78,25 +81,28 @@ servers:
   - id: box-a
     host: 203.0.113.10
     environment: prod-box-a
-    deploy_root: /opt/cs2/admin-system
+    deploy_root: /home/steam/deploy/cs2
     runtime_image: ghcr.io/OWNER/REPO/cs2-runtime:latest
     plugins: [admin-system]
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
 ```
 
-Create encrypted per-server env:
+Provide each server's secrets as a GitHub Environment secret. Fill in the
+template and paste its full contents into a secret named `SERVER_ENV` on the
+GitHub Environment matching the server's `environment:`:
 
 ```bash
-cp deploy/secrets/servers/box-a/.env.example deploy/secrets/servers/box-a/.env
-sops --filename-override deploy/secrets/servers/box-a/.sops.env \
-  -e deploy/secrets/servers/box-a/.env > deploy/secrets/servers/box-a/.sops.env
-rm deploy/secrets/servers/box-a/.env
+cp deploy/secrets/servers/box-a/.env.example /tmp/box-a.env
+# edit /tmp/box-a.env, then paste its contents into the SERVER_ENV secret
 ```
 
-GitHub Environments named by `environment` provide `SSH_KEY` and
-`SOPS_AGE_KEY`. If the GHCR runtime image is private, also configure a remote
-Docker login outside this repo before deploying.
+CI writes `SERVER_ENV` to `deploy/secrets/servers/<id>/.env` at deploy time. For
+local/manual deploys, keep a gitignored `.env` in that dir instead.
+
+GitHub Environments named by `environment` provide `SSH_KEY` and `SERVER_ENV`.
+If the GHCR runtime image is private, also configure a remote Docker login
+outside this repo before deploying.
 
 ## Deploy
 

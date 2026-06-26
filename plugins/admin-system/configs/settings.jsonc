@@ -77,15 +77,17 @@
         "purpose": "CHEAT_CHECK",
         "title": "Cheat check: {playerName}",
         "isLocked": false,
-        "metadata": { "reason": "Suspect {playerName} ({steamId}) - by {adminName}" }
+        "metadata": {
+          "reason": "Suspect {playerName} ({steamId}) - by {adminName}"
+        }
       },
       // Dot-path into the JSON response holding the suspect's room id/URL (meat-app returns "code").
       "playerUrlField": "code",
       // {value} is replaced by playerUrlField; leave empty to use the field value as the URL directly.
-      "playerUrlTemplate": "http://localhost:3000/rooms/{value}",
+      "playerUrlTemplate": "http://localhost:4001/rooms/{value}",
       // Optional checker URL relayed to the calling admin.
       "checkerUrlField": "code",
-      "checkerUrlTemplate": "http://localhost:3000/rooms/{value}",
+      "checkerUrlTemplate": "http://localhost:4001/rooms/{value}",
       // HTTP request timeout in milliseconds.
       "timeoutMs": 8000
     }

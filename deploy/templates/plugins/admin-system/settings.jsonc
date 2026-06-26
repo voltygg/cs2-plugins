@@ -1,7 +1,7 @@
 // Template for admin-system's settings.jsonc - rendered per (server, plugin) by
 // deploy/tools/render.py. Placeholders are filled from:
 //   - inventory.yml (DB_HOST/DB_PORT/DB_USER/DB_SSLMODE + the plugin's DB_NAME)
-//   - the server's .sops.env (DB_PASSWORD, CHEAT_*)
+//   - the server's env / SERVER_ENV secret (DB_PASSWORD, CHEAT_*)
 // Non-secret, same-everywhere knobs stay literal here; edit them in git to change them.
 {
   "plugin": {

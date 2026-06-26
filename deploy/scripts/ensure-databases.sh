@@ -17,7 +17,7 @@
 #     deploy/scripts/ensure-databases.sh --admin-user postgres
 #
 # Env:
-#   APP_DB_PASSWORD   (required) password to set on the app login role (matches SOPS DB_PASSWORD)
+#   APP_DB_PASSWORD   (required) password to set on the app login role (matches DB_PASSWORD in the server env)
 #   PGPASSWORD        (required) the admin/superuser password used to connect
 #   PGHOST/PGPORT     optional overrides for the inventory host/port
 

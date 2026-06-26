@@ -60,11 +60,8 @@ __pycache__/
 .env.local
 *.local.json
 
-# Deploy: decrypted per-server env (.env is covered by the global rule above) +
-# rendered configs + age keys — never commit these.
+# Deploy: per-server env (.env covered by the global rule above) + rendered configs.
 deploy/.render/
-*.agekey
-age.key
 
 # uv
 .venv/
