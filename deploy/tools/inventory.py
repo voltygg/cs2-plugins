@@ -30,21 +30,25 @@ INVENTORY_PATH = os.environ.get(
 _INHERITED = ("ssh_user", "ssh_port", "deploy_root", "runtime_image")
 
 
+def die(message: str) -> None:
+    sys.exit(f"ERROR: {message}")
+
+
 def load() -> dict:
     with open(INVENTORY_PATH, encoding="utf-8") as fh:
         data = yaml.safe_load(fh) or {}
     if "servers" not in data:
-        sys.exit(f"ERROR: no 'servers' in {INVENTORY_PATH}")
+        die(f"no 'servers' in {INVENTORY_PATH}")
     return data
 
 
 def plugin_db(data: dict, plugin: str) -> str:
     reg = data.get("plugins", {})
     if plugin not in reg:
-        sys.exit(f"ERROR: plugin '{plugin}' is not declared under 'plugins' in inventory.yml")
+        die(f"plugin '{plugin}' is not declared under 'plugins' in inventory.yml")
     db = reg[plugin].get("database")
     if not db:
-        sys.exit(f"ERROR: plugin '{plugin}' has no 'database' in inventory.yml")
+        die(f"plugin '{plugin}' has no 'database' in inventory.yml")
     return db
 
 
@@ -64,7 +68,7 @@ def find_server(data: dict, server_id: str) -> dict:
     for server in data.get("servers", []):
         if server.get("id") == server_id:
             return resolve_server(data, server)
-    sys.exit(f"ERROR: server '{server_id}' not found in inventory.yml")
+    die(f"server '{server_id}' not found in inventory.yml")
 
 
 def used_plugins(data: dict) -> list[str]:

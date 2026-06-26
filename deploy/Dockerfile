@@ -1,5 +1,23 @@
 ARG BASE_IMAGE=joedwards32/cs2:latest
-FROM ${BASE_IMAGE}
+
+FROM registry.gitlab.steamos.cloud/steamrt/sniper/platform:latest AS build
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    git \
+    python3 \
+    python3-pip \
+    clang \
+    libpq-dev \
+    libpqxx-dev \
+    libcpr-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install git+https://github.com/alliedmodders/ambuild
+
+WORKDIR /app
+
+FROM ${BASE_IMAGE} AS runtime
 
 USER root
 

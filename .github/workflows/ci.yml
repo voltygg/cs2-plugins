@@ -1,6 +1,6 @@
 # Initial CI scaffold -- NOT yet validated against a real GitHub Actions run.
-# Treat this as a starting point: the Docker build path mirrors `docker compose
-# run --rm build` locally, but the action/runner specifics (Docker availability,
+# Treat this as a starting point: the Docker build path mirrors
+# deploy/docker-compose.build.yml locally, but the action/runner specifics (Docker availability,
 # protoc paths, build time) should be confirmed and tuned on the first run.
 
 name: CI
@@ -21,7 +21,7 @@ jobs:
           submodules: recursive
 
       - name: Build plugin via Docker
-        run: docker compose run --rm build
+        run: docker compose -f deploy/docker-compose.build.yml run --rm --build build
 
   lint:
     name: Lint (ruff + clang-format)

@@ -8,7 +8,7 @@
 # Steps: fetch submodules -> Python deps (uv) -> C++ deps (vcpkg) -> build.
 # The build (configure.py + ambuild) generates the SDK protobuf headers itself,
 # so there is no separate protoc step here. The Docker/Linux path in
-# docker-compose.yml does its own explicit proto generation.
+# deploy/scripts/build-plugin.sh does its own explicit proto generation.
 set -euo pipefail
 
 ScriptDir="$(cd "$(dirname "$0")" && pwd)"

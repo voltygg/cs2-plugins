@@ -58,7 +58,7 @@ Runtime configuration lives in `plugins/admin-system/configs/settings.jsonc` (da
 git clone --recursive https://github.com/m9snoi/admin-system.git
 
 # Build Linux binary
-docker compose run --rm build
+docker compose -f deploy/docker-compose.build.yml run --rm --build build
 ```
 
 ### Windows Build

@@ -11,7 +11,8 @@ per-server settings.
 
 ```text
 deploy/inventory.yml          declared plugins + real Docker hosts
-deploy/runtime/Dockerfile     ghcr.io/<repo>/cs2-runtime, based on joedwards32/cs2:latest
+deploy/Dockerfile             build image + ghcr.io/<repo>/cs2-runtime
+deploy/docker-compose.build.yml Linux plugin build wrapper
 deploy/scripts/               operator and CI entrypoints
 deploy/tools/                 Python inventory/render helpers
 deploy/templates/             plugin config templates rendered per server
@@ -90,8 +91,8 @@ docker compose up -d --remove-orphans
 Manual path:
 
 ```bash
-docker build -f deploy/runtime/Dockerfile -t ghcr.io/OWNER/REPO/cs2-runtime:latest .
-docker compose run --rm build
+docker build -f deploy/Dockerfile --target runtime -t ghcr.io/OWNER/REPO/cs2-runtime:latest .
+docker compose -f deploy/docker-compose.build.yml run --rm --build build
 bash deploy/scripts/package-plugin.sh admin-system linux
 RUNTIME_IMAGE=ghcr.io/OWNER/REPO/cs2-runtime:latest \
   bash deploy/scripts/deploy.sh --server box-a

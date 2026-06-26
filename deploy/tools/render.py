@@ -22,42 +22,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import inventory
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 DEPLOY = ROOT / "deploy"
-INVENTORY = DEPLOY / "inventory.yml"
-
-
-def load_inventory() -> dict[str, Any]:
-    with INVENTORY.open(encoding="utf-8") as fh:
-        return yaml.safe_load(fh) or {}
 
 
 def die(message: str) -> None:
     raise SystemExit(f"ERROR: {message}")
-
-
-def find_server(data: dict[str, Any], server_id: str) -> dict[str, Any]:
-    defaults = data.get("defaults", {})
-    for raw in data.get("servers", []):
-        if raw.get("id") != server_id:
-            continue
-        server = {**defaults, **raw}
-        server["plugins"] = list(raw.get("plugins", []))
-        server["instances"] = list(raw.get("instances", []))
-        return server
-    die(f"server '{server_id}' not found in inventory.yml")
-
-
-def plugin_db(data: dict[str, Any], plugin: str) -> str:
-    entry = data.get("plugins", {}).get(plugin)
-    if not entry:
-        die(f"plugin '{plugin}' is not declared under plugins")
-    db = entry.get("database")
-    if not db:
-        die(f"plugin '{plugin}' has no database")
-    return str(db)
 
 
 def json_string_content(value: str) -> str:
@@ -73,7 +46,7 @@ def render_settings(data: dict[str, Any], server_id: str, plugin: str, out: Path
     env = {
         "DB_HOST": str(db.get("host", "")),
         "DB_PORT": str(db.get("port", "")),
-        "DB_NAME": plugin_db(data, plugin),
+        "DB_NAME": str(inventory.plugin_db(data, plugin)),
         "DB_USER": str(db.get("user", "")),
         "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
         "DB_SSLMODE": str(db.get("sslMode", "prefer")),
@@ -204,8 +177,8 @@ def compose_for(server: dict[str, Any], runtime_image: str) -> dict[str, Any]:
 
 
 def render(server_id: str, package_dir: Path, out_dir: Path, runtime_image: str | None) -> None:
-    data = load_inventory()
-    server = find_server(data, server_id)
+    data = inventory.load()
+    server = inventory.find_server(data, server_id)
     image = runtime_image or os.environ.get("RUNTIME_IMAGE") or str(server.get("runtime_image", ""))
     if not image:
         die(f"no runtime image configured for {server_id}")

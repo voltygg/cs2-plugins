@@ -16,11 +16,13 @@
 
 set -euo pipefail
 
+ScriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$ScriptDir/lib/common.sh"
+
 PluginName="${1:-}"
 shift || true
 if [[ -z "$PluginName" || "$PluginName" == -* ]]; then
-    echo "Usage: package-plugin.sh <plugin-name> [linux|windows] [--out DIR]" >&2
-    exit 1
+    die "Usage: package-plugin.sh <plugin-name> [linux|windows] [--out DIR]"
 fi
 
 Platform="linux"
@@ -29,40 +31,39 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         linux|windows) Platform="$1"; shift ;;
         --out) OutDir="$2"; shift 2 ;;
-        *) echo "Unknown argument: $1" >&2; exit 1 ;;
+        *) die "unknown argument: $1" ;;
     esac
 done
 
-RepoRoot="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$RepoRoot"
 
 case "$Platform" in
     linux)   BinSubdir="linuxsteamrt64"; ObjArch="linux-x86_64";   BinExt="so"; DbgExt="so.dbg" ;;
     windows) BinSubdir="win64";          ObjArch="windows-x86_64"; BinExt="dll"; DbgExt="pdb" ;;
-    *) echo "ERROR: unknown platform '$Platform' (use linux|windows)" >&2; exit 1 ;;
+    *) die "unknown platform '$Platform' (use linux|windows)" ;;
 esac
 
 PluginDir="plugins/$PluginName"
 if [[ ! -d "$PluginDir" ]]; then
-    echo "ERROR: plugin '$PluginDir' not found" >&2
-    exit 1
+    die "plugin '$PluginDir' not found"
 fi
 
 BuildDir="objdir/plugins/$PluginName/src/$PluginName/$ObjArch"
 BinaryPath="$BuildDir/$PluginName.$BinExt"
 if [[ ! -f "$BinaryPath" ]]; then
     echo "ERROR: no built binary at $BinaryPath" >&2
-    echo "Build first (Linux): docker compose run --rm build" >&2
+    echo "Build first (Linux): docker compose -f deploy/docker-compose.build.yml run --rm --build build" >&2
     exit 1
 fi
 
 [[ -n "$OutDir" ]] || OutDir="package/$PluginName"
+[[ "$OutDir" != "/" && "$OutDir" != "." ]] || die "refusing unsafe output dir: $OutDir"
 AddonsDir="$OutDir/addons"
 PluginAddon="$AddonsDir/$PluginName"
 
 echo "=== Packaging $PluginName ($Platform) -> $OutDir ==="
 
-rm -rf "$OutDir"
+rm -rf -- "$OutDir"
 mkdir -p "$PluginAddon/bin/$BinSubdir" "$AddonsDir/metamod"
 
 # Binary (+ debug symbols if present).

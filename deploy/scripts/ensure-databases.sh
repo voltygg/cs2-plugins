@@ -23,31 +23,27 @@
 
 set -euo pipefail
 
+ScriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$ScriptDir/lib/common.sh"
+
 AdminUser="postgres"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --admin-user) AdminUser="$2"; shift 2 ;;
         -h|--help) sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-        *) echo "Unknown argument: $1" >&2; exit 1 ;;
+        *) die "unknown argument: $1" ;;
     esac
 done
 
-ScriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DeployDir="$(cd "$ScriptDir/.." && pwd)"
-ToolDir="$DeployDir/tools"
-PYBIN="${PYBIN:-python3}"
-
 if [[ -z "${APP_DB_PASSWORD:-}" ]]; then
-    echo "ERROR: APP_DB_PASSWORD must be set (the app role's password)." >&2
-    exit 1
+    die "APP_DB_PASSWORD must be set (the app role's password)."
 fi
 if [[ -z "${PGPASSWORD:-}" ]]; then
-    echo "ERROR: PGPASSWORD must be set (the admin/superuser password)." >&2
-    exit 1
+    die "PGPASSWORD must be set (the admin/superuser password)."
 fi
 
 # Shared connection (DB_HOST/DB_PORT/DB_USER) from the inventory.
-eval "$("$PYBIN" "$ToolDir/inventory.py" db-conn)"
+eval "$(inventory db-conn)"
 Host="${PGHOST:-$DB_HOST}"
 Port="${PGPORT:-$DB_PORT}"
 AppUser="$DB_USER"
@@ -77,6 +73,6 @@ while read -r plugin db; do
         echo "  db $db ($plugin): created"
     fi
     psql_admin -c "GRANT ALL PRIVILEGES ON DATABASE \"$db\" TO \"$AppUser\""
-done < <("$PYBIN" "$ToolDir/inventory.py" plugin-dbs)
+done < <(inventory plugin-dbs)
 
 echo "=== Done ==="
