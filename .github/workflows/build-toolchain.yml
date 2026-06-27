@@ -9,6 +9,9 @@ on:
     paths:
       - deploy/Dockerfile
       - .github/workflows/build-toolchain.yml
+      - conanfile.py
+      - conan.lock
+      - conan/profiles/**
   workflow_dispatch:
 
 permissions:

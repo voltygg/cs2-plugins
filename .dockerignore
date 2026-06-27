@@ -1,0 +1,6 @@
+# Image build only needs the Conan manifest + profiles (runtime COPYs nothing;
+# local builds volume-mount source). Whitelist keeps ~1.4GB out of the context.
+*
+!conanfile.py
+!conan.lock
+!conan

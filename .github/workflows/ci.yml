@@ -27,16 +27,24 @@ jobs:
         with:
           submodules: recursive
 
-      # Persist the Conan cache so heavy deps aren't recompiled every run.
-      - name: Cache Conan packages
+      # No Conan cache: deps are baked into the toolchain image (deploy/Dockerfile).
+      # Per-run key so saves persist; branch-scoped restore; MAXSIZE bounds the blob.
+      - name: Cache ccache
         uses: actions/cache@v6
         with:
-          path: ~/.conan2
-          key: conan-linux-${{ hashFiles('conanfile.py', 'conan/profiles/**') }}
+          path: ~/.ccache
+          key: ccache-linux-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
-            conan-linux-
+            ccache-linux-${{ github.ref_name }}-
+            ccache-linux-
 
       - name: Build + test (configure -> build -> ctest via workflow preset)
+        env:
+          CCACHE_DIR: ~/.ccache
+          # Relative paths + ignore checkout mtimes so a fresh checkout still hits ccache.
+          CCACHE_BASEDIR: ${{ github.workspace }}
+          CCACHE_SLOPPINESS: time_macros,locale,include_file_ctime,include_file_mtime
+          CCACHE_MAXSIZE: 500M
         run: bash scripts/build.sh linux-steamrt-release
 
   lint:

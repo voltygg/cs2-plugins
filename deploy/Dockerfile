@@ -13,6 +13,7 @@ RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contri
         autoconf \
         automake \
         ca-certificates \
+        ccache \
         gcc-14-monolithic \
         git \
         libtool \
@@ -25,6 +26,20 @@ RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contri
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --no-cache-dir "cmake>=${CMAKE_MIN_VERSION}" "conan>=${CONAN_MIN_VERSION}"
+
+# CI sets HOME=/github/home; pin CONAN_HOME to the bake's path so CI finds the deps.
+ENV CONAN_HOME=/root/.conan2
+
+# Pre-build deps so CI never compiles them; same profiles/build_type/lockfile as
+# scripts/build.sh so package IDs match (else cache misses, deps rebuild).
+COPY conanfile.py conan.lock /app/
+COPY conan/profiles /app/conan/profiles
+RUN conan install /app --build=missing --lockfile /app/conan.lock \
+        --profile:host /app/conan/profiles/linux-steamrt.txt \
+        --profile:build /app/conan/profiles/linux-steamrt.txt \
+        -s build_type=Release --output-folder /tmp/conan-bake \
+    && conan cache clean "*" --source --build --temp \
+    && rm -rf /tmp/conan-bake
 
 WORKDIR /app
 
