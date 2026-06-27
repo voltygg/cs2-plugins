@@ -3,7 +3,7 @@
     {
       "name": "Win32",
       "includePath": [
-        "${workspaceFolder}/src",
+        "${workspaceFolder}/plugins",
         "${workspaceFolder}/vendor/cs2-kit/include",
         "${workspaceFolder}/vendor/cs2-kit/src",
         "${workspaceFolder}/vendor/cs2-kit/vendor/mmsource-2.0/core",
@@ -18,9 +18,7 @@
         "${workspaceFolder}/vendor/cs2-kit/vendor/hl2sdk-cs2/public/tier1",
         "${workspaceFolder}/vendor/cs2-kit/vendor/hl2sdk-cs2/public/entity2",
         "${workspaceFolder}/vendor/cs2-kit/vendor/hl2sdk-cs2/public/game/server",
-        "${workspaceFolder}/vendor/cs2-kit/vendor/hl2sdk-cs2/thirdparty/protobuf-3.21.8/src",
-        "${workspaceFolder}/vendor/cs2-kit/vendor/nlohmann/single_include",
-        "${workspaceFolder}/vcpkg_installed/x64-windows-static/include"
+        "${workspaceFolder}/vendor/cs2-kit/vendor/hl2sdk-cs2/thirdparty/protobuf-3.21.8/src"
       ],
       "defines": [
         "_DEBUG",
@@ -80,10 +78,10 @@
         "_GLIBCXX_USE_CXX11_ABI=0",
         "_FILE_OFFSET_BITS=64"
       ],
-      "compilerPath": "/usr/bin/clang++",
+      "compilerPath": "/usr/bin/g++-14",
       "cStandard": "c17",
       "cppStandard": "c++23",
-      "intelliSenseMode": "linux-clang-x64"
+      "intelliSenseMode": "linux-gcc-x64"
     }
   ],
   "version": 4

@@ -27,9 +27,8 @@ Profile="$ProfileDir/$Preset"
 mkdir -p "$ProfileDir"
 
 write_linux_profile() {
-    # gcc-14 is the supported sniper toolchain for C++23 (std::format) with the
-    # libstdc++ ABI Valve's prebuilt SDK libs use. clang is honored if CC points
-    # at it. libstdc++ (not libstdc++11) matches _GLIBCXX_USE_CXX11_ABI=0.
+    # gcc-14 sniper toolchain for C++23 + Valve SDK ABI; clang honored via CC.
+    # libstdc++ (not libstdc++11) matches _GLIBCXX_USE_CXX11_ABI=0.
     local cc_bin="${CC:-gcc-14}"
     local cxx_bin="${CXX:-g++-14}"
     local compiler compiler_version
