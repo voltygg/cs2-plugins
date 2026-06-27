@@ -11,7 +11,7 @@ per-server settings.
 
 ```text
 deploy/inventory.yml          declared plugins + real Docker hosts
-deploy/Dockerfile             build image + ghcr.io/<repo>/cs2-runtime
+deploy/Dockerfile             build + runtime stages (ghcr.io/<repo>/build CI toolchain, /cs2-runtime)
 deploy/docker-compose.build.yml Linux plugin build wrapper
 deploy/scripts/               operator and CI entrypoints
 deploy/tools/                 Python inventory/render helpers

@@ -1,5 +1,6 @@
-from conan import ConanFile
 from conan.tools.cmake import CMakeDeps, CMakeToolchain
+
+from conan import ConanFile
 
 
 class CS2PluginsConan(ConanFile):

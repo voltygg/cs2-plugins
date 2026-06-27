@@ -87,5 +87,15 @@ targets in `cmake/ThirdParty.cmake`.
 - Build with `scripts/build.sh`.
 - Run tests with `ctest --preset <preset>`.
 
-CI runs the Docker build plus ruff and clang-format dry-runs, so matching these
-locally keeps the pipeline green.
+Matching these locally keeps the CI pipeline green.
+
+## Continuous Integration
+
+CI builds the Linux plugin inside a prebuilt toolchain image
+(`ghcr.io/<owner>/<repo>/build`) instead of installing a compiler and build
+tools on every run. That image is the `build` stage of `deploy/Dockerfile`,
+published by the **Build toolchain image** workflow
+(`.github/workflows/build-toolchain.yml`) whenever the Dockerfile or that
+workflow changes. Run it once manually via "Run workflow" before the first CI
+run so the image exists to pull. Alongside the build, CI runs `uvx ruff check`
+and a `clang-format` dry-run.
