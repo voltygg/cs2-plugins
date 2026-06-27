@@ -13,8 +13,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+# cs2-kit's cmake helpers, needed before cs2_configure_third_party (which runs
+# before add_subdirectory(vendor/cs2-kit) below).
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vendor/cs2-kit/cmake")
 
 include(CTest)
+include(CS2KitThirdParty)
 include(ThirdParty)
 
 cs2_configure_third_party()
