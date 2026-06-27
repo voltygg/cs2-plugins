@@ -23,6 +23,11 @@ permissions:
   contents: read
   packages: write
 
+# Serialize deploys per ref; queue rather than cancel, to never abort one mid-flight.
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   prepare:
     name: Resolve inventory

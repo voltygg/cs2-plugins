@@ -116,7 +116,8 @@ bool RunMigrations(Database& db, const std::string& dir)
                 {
                     pqxx::work txn(conn);
                     txn.exec(ReadFile(m.Path));
-                    txn.exec_params("INSERT INTO schema_migrations (version, name) VALUES ($1, $2)", m.Version, m.Name);
+                    txn.exec("INSERT INTO schema_migrations (version, name) VALUES ($1, $2)",
+                             pqxx::params{m.Version, m.Name});
                     txn.commit();
                     ++applied;
                     Log::Info("Applied migration {} ({}).", m.Version, m.Name);

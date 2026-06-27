@@ -84,7 +84,7 @@ pqxx::result Database::ExecutePrepared(const std::string& name, const std::strin
     }
 
     pqxx::work txn(*_connection);
-    pqxx::result result = txn.exec_prepared(name, std::forward<Args>(params)...);
+    pqxx::result result = txn.exec(pqxx::prepped{name}, pqxx::params{std::forward<Args>(params)...});
     txn.commit();
     return result;
 }

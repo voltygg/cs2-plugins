@@ -71,7 +71,7 @@ public:
                 mute.TargetSteamId, mute.TargetName, mute.AdminSteamId, mute.AdminName, mute.Reason, mute.CreatedAt,
                 mute.ExpiresAt, mute.Duration, mute.IsActive);
             if (!result.empty())
-                mute.Id = result[0]["id"].as<int64_t>();
+                mute.Id = result[0]["id"].template as<int64_t>();
             return true;
         });
     }
