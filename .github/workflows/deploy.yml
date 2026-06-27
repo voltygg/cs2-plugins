@@ -63,7 +63,7 @@ jobs:
     # Same prebuilt toolchain image + Conan cache as ci.yml, instead of rebuilding
     # the image and cold-compiling deps on every deploy.
     container:
-      image: ghcr.io/${{ github.repository }}/cs2-build-toolchain:latest
+      image: ghcr.io/${{ github.repository }}/build:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
