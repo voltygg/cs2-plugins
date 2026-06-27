@@ -16,6 +16,7 @@ RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contri
     build-essential \
     pkg-config \
     perl \
+    m4 \
     autoconf \
     automake \
     libtool \
