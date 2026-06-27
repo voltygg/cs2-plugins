@@ -10,8 +10,12 @@ RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contri
         > /etc/apt/sources.list.d/steamrt-beta.list \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        autoconf \
+        automake \
         ca-certificates \
         gcc-14-monolithic \
+        libtool \
+        m4 \
         make \
         ninja-build \
         pkg-config \
