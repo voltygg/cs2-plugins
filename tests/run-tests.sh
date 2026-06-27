@@ -9,7 +9,7 @@
 # IMPORTANT: with MSVC (cl) this script assumes it is run from an
 # "x64 Native Tools Command Prompt for VS" / vcvars environment (run via Git Bash
 # launched from that shell, or after sourcing vcvars). If `cl` is not on PATH it
-# falls back to clang++ or g++.
+# falls back to g++.
 #
 # Usage:
 #   tests/run-tests.sh
@@ -62,13 +62,6 @@ if command -v cl >/dev/null 2>&1; then
         "/Fe${WinExeOut}" "/Fo${WinOutDir}"
     echo ">> Running $ExeOut"
     "$ExeOut"
-elif command -v clang++ >/dev/null 2>&1; then
-    echo ">> Compiling with clang++"
-    ExeOut="$OutDir/run_tests"
-    clang++ -std=c++23 -Wall -I"$IncludeDir" -I"$ScriptDir" \
-        "${TestSources[@]}" "${KitSources[@]}" -o "$ExeOut"
-    echo ">> Running $ExeOut"
-    "$ExeOut"
 elif command -v g++ >/dev/null 2>&1; then
     echo ">> Compiling with g++"
     ExeOut="$OutDir/run_tests"
@@ -77,7 +70,7 @@ elif command -v g++ >/dev/null 2>&1; then
     echo ">> Running $ExeOut"
     "$ExeOut"
 else
-    echo "ERROR: no C++ compiler found (need cl, clang++, or g++)." >&2
+    echo "ERROR: no C++ compiler found (need cl or g++)." >&2
     echo "       For cl, run from an x64 Native Tools / vcvars environment." >&2
     exit 1
 fi

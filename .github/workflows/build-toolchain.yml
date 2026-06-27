@@ -1,0 +1,55 @@
+# Publishes the `build` stage of deploy/Dockerfile to GHCR so CI runs inside it via
+# a container: job. Rebuilt only on Dockerfile/workflow changes, plus on demand.
+# FIRST-TIME SETUP: run once via "Run workflow" before CI can pull the image.
+name: Build toolchain image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - deploy/Dockerfile
+      - .github/workflows/build-toolchain.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-toolchain-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build + push toolchain image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve image ref
+        id: img
+        run: |
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/cs2-build-toolchain" >> "$GITHUB_OUTPUT"
+          echo "hash=$(sha256sum deploy/Dockerfile | cut -c1-12)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build + push (build stage)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/Dockerfile
+          target: build
+          push: true
+          tags: |
+            ${{ steps.img.outputs.image }}:latest
+            ${{ steps.img.outputs.image }}:${{ steps.img.outputs.hash }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

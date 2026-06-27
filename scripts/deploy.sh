@@ -36,6 +36,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 ScriptDir="$(cd "$(dirname "$0")" && pwd)"
+RepoRoot="$(dirname "$ScriptDir")"
+source "$ScriptDir/lib/common.sh"  # run_tool (resolves cmake via venv/PATH)
+
 ChangedDirectory=0
 if [[ "$(basename "$ScriptDir")" == "scripts" ]]; then
     pushd "$(dirname "$ScriptDir")" >/dev/null
@@ -94,86 +97,52 @@ mkdir -p "$CsgoPath/addons/metamod"
 deploy_plugin() {
     local name="$1"
     local pluginDir="plugins/$name"
-    local buildDir="build/$BuildPreset/plugins/$name/windows-$Architecture"
-    local binaryPath="$buildDir/$name.dll"
+    local buildDir="build/$BuildPreset"
 
     echo "--- $name ---"
 
-    if [[ ! -f "$binaryPath" ]]; then
+    if [[ ! -d "$buildDir" ]]; then
         if [[ -n "$PluginName" ]]; then
-            echo "ERROR: No built binary found at $binaryPath" >&2
+            echo "ERROR: no build at $buildDir" >&2
             echo "Build first: scripts/build.sh" >&2
             return 1
         fi
-        echo "  (skipped - no built binary at $binaryPath)"
+        echo "  (skipped - no build at $buildDir)"
         return 0
     fi
 
-    local pluginAddonPath="$CsgoPath/addons/$name"
-    local binPath="$pluginAddonPath/bin/win64"
-    mkdir -p "$binPath"
-
-    cp -f "$binaryPath" "$binPath/$name.dll"
-    echo "  -> addons/$name/bin/win64/$name.dll"
-
-    local pdbPath="$buildDir/$name.pdb"
-    if [[ -f "$pdbPath" ]]; then
-        cp -f "$pdbPath" "$binPath/$name.pdb"
-        echo "  -> addons/$name/bin/win64/$name.pdb"
+    # Stage via the shared install() rules, then merge into the server tree.
+    # settings.jsonc is seeded on first deploy and never clobbered.
+    local staging="$buildDir/_deploy-staging/$name"
+    rm -rf -- "$staging"
+    if ! run_tool cmake --install "$buildDir" --component "$name" --prefix "$staging" >/dev/null; then
+        if [[ -n "$PluginName" ]]; then
+            echo "ERROR: cmake --install failed for $name (is it built?)" >&2
+            return 1
+        fi
+        echo "  (skipped - cmake --install produced nothing for $name)"
+        return 0
     fi
 
-    local vdfPath="$pluginDir/$name.vdf"
-    if [[ -f "$vdfPath" ]]; then
-        cp -f "$vdfPath" "$CsgoPath/addons/metamod/$name.vdf"
-        echo "  -> addons/metamod/$name.vdf"
-    else
-        echo "  Warning: $vdfPath not found (skipping VDF)"
-    fi
+    cp -Rf "$staging/addons/." "$CsgoPath/addons/"
+    echo "  -> addons/ (binary, vdf, configs, cs2-kit gamedata)"
 
-    if [[ -d "$pluginDir/configs" ]]; then
-        mkdir -p "$pluginAddonPath/configs"
-
-        for configFile in "$pluginDir"/configs/*; do
-            [[ -f "$configFile" ]] || continue
-            local cfgName destPath
-            cfgName="$(basename "$configFile")"
-            destPath="$pluginAddonPath/configs/$cfgName"
-
-            # Preserve an existing settings.jsonc (holds DB creds + server config)
-            if [[ "$cfgName" == "settings.jsonc" && -f "$destPath" ]]; then
-                echo "  -> configs/$cfgName (skipped - already exists)"
-                continue
-            fi
-
-            cp -f "$configFile" "$destPath"
-            echo "  -> configs/$cfgName"
-        done
-
-        for dir in "$pluginDir"/configs/*/; do
-            [[ -d "$dir" ]] || continue
-            local subName destDir
-            subName="$(basename "$dir")"
-            destDir="$pluginAddonPath/configs/$subName"
-            mkdir -p "$destDir"
-            cp -Rf "$dir"* "$destDir/"
-            echo "  -> configs/$subName/"
-        done
+    local settingsSrc="$pluginDir/configs/settings.jsonc"
+    local settingsDst="$CsgoPath/addons/$name/configs/settings.jsonc"
+    if [[ -f "$settingsSrc" ]]; then
+        if [[ -f "$settingsDst" ]]; then
+            echo "  -> configs/settings.jsonc (skipped - already exists)"
+        else
+            mkdir -p "$(dirname "$settingsDst")"
+            cp -f "$settingsSrc" "$settingsDst"
+            echo "  -> configs/settings.jsonc (seeded)"
+        fi
     fi
 }
 
 for name in "${Plugins[@]}"; do
     deploy_plugin "$name"
 done
-
-# Shared across all plugins — copy once.
-CS2KitGamedata="vendor/cs2-kit/gamedata"
-if [[ -d "$CS2KitGamedata" ]] && compgen -G "$CS2KitGamedata/*" >/dev/null; then
-    echo "--- shared cs2-kit gamedata ---"
-    CS2KitAddonPath="$CsgoPath/addons/cs2-kit/gamedata"
-    mkdir -p "$CS2KitAddonPath"
-    cp -Rf "$CS2KitGamedata"/* "$CS2KitAddonPath/" 2>/dev/null || true
-    echo "  -> addons/cs2-kit/gamedata/"
-fi
 
 echo
 echo "=== Deployment Complete ==="

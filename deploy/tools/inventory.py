@@ -11,6 +11,7 @@ the pipeline needs:
   server-env <id>     `export SRV_*=...` lines (host, ssh, deploy root, plugins, instances)
   plugin-dbs          "<plugin> <dbname>" lines for deploy/scripts/ensure-databases.sh
   db-conn             `export DB_*=...` lines for the shared connection (no plugin)
+  runtime-image       the runtime image ref from defaults (single source of truth)
 
 Requires PyYAML (declared in pyproject.toml; `pip install pyyaml` in CI).
 """
@@ -131,6 +132,13 @@ def cmd_db_conn(data: dict) -> None:
     _print_exports(_conn_env(data))
 
 
+def cmd_runtime_image(data: dict) -> None:
+    image = data.get("defaults", {}).get("runtime_image")
+    if not image:
+        die("no 'defaults.runtime_image' in inventory.yml")
+    print(image)
+
+
 def _sh_quote(value: str) -> str:
     return "'" + value.replace("'", "'\\''") + "'"
 
@@ -152,6 +160,8 @@ def main(argv: list[str]) -> None:
         cmd_plugin_dbs(data)
     elif cmd == "db-conn":
         cmd_db_conn(data)
+    elif cmd == "runtime-image":
+        cmd_runtime_image(data)
     else:
         sys.exit(__doc__)
 

@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
 #
-# Stage one built plugin into a self-contained deploy bundle under package/<name>/,
-# laid out exactly as it lands under a server's csgo/ tree. The bundle is what CI
-# uploads as an artifact and what deploy/tools/render.py folds into Compose deploys.
-#
-# Unlike scripts/deploy.sh (local Windows dev), this targets Linux by default and
-# GENERATES the platform-correct VDF (the win64/linuxsteamrt64 path segment is part
-# of the VDF "file" value, so it must differ per platform). settings.jsonc is NOT
-# included here - it is rendered per-server by render.py at deploy time.
+# Stage one built plugin into a deploy bundle under package/<name>/ (CI artifact;
+# folded into Compose deploys by render.py). The layout is owned by the install()
+# rules in cmake/CS2Plugin.cmake; this just runs `cmake --install` for the plugin's
+# component. settings.jsonc is excluded (rendered per-server by render.py).
 #
 # Usage:
 #   package-plugin.sh <plugin-name> [linux|windows] [--out DIR]
@@ -18,6 +14,7 @@ set -euo pipefail
 
 ScriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$ScriptDir/lib/common.sh"
+source "$RepoRoot/scripts/lib/common.sh"  # run_tool (resolves cmake via venv/PATH)
 
 PluginName="${1:-}"
 shift || true
@@ -38,83 +35,40 @@ done
 cd "$RepoRoot"
 
 case "$Platform" in
-    linux)
-        BinSubdir="linuxsteamrt64"
-        ObjArch="linux-x86_64"
-        BinExt="so"
-        DbgExt="so.dbg"
-        BuildPreset="${CS2_BUILD_PRESET:-linux-steamrt-release}"
-        ;;
-    windows)
-        BinSubdir="win64"
-        ObjArch="windows-x86_64"
-        BinExt="dll"
-        DbgExt="pdb"
-        BuildPreset="${CS2_BUILD_PRESET:-windows-msvc-release}"
-        ;;
+    linux)   BuildPreset="${CS2_BUILD_PRESET:-linux-steamrt-release}" ;;
+    windows) BuildPreset="${CS2_BUILD_PRESET:-windows-msvc-release}" ;;
     *) die "unknown platform '$Platform' (use linux|windows)" ;;
 esac
 
 PluginDir="plugins/$PluginName"
-if [[ ! -d "$PluginDir" ]]; then
-    die "plugin '$PluginDir' not found"
-fi
+[[ -d "$PluginDir" ]] || die "plugin '$PluginDir' not found"
 
-BuildDir="build/$BuildPreset/plugins/$PluginName/$ObjArch"
-BinaryPath="$BuildDir/$PluginName.$BinExt"
-if [[ ! -f "$BinaryPath" ]]; then
-    echo "ERROR: no built binary at $BinaryPath" >&2
+BuildDir="build/$BuildPreset"
+if [[ ! -d "$BuildDir" ]]; then
+    echo "ERROR: no build at $BuildDir" >&2
     echo "Build first (Linux): docker compose -f deploy/docker-compose.build.yml run --rm --build build" >&2
     echo "Or set CS2_BUILD_PRESET to the preset that produced the binary." >&2
     exit 1
 fi
 
 [[ -n "$OutDir" ]] || OutDir="package/$PluginName"
-[[ "$OutDir" != "/" && "$OutDir" != "." ]] || die "refusing unsafe output dir: $OutDir"
-AddonsDir="$OutDir/addons"
-PluginAddon="$AddonsDir/$PluginName"
+
+# Refuse an --out that resolves outside the repo - guards the rm -rf below.
+RepoRootAbs="$(realpath -m -- "$RepoRoot")"
+OutDirAbs="$(realpath -m -- "$OutDir")"
+case "$OutDirAbs" in
+    "$RepoRootAbs"/?*) : ;;  # a non-empty path *under* the repo root
+    *) die "refusing unsafe output dir: $OutDir (must resolve under $RepoRootAbs)" ;;
+esac
+OutDir="$OutDirAbs"
 
 echo "=== Packaging $PluginName ($Platform) -> $OutDir ==="
 
+if [[ -e "$OutDir" && ! -d "$OutDir" ]]; then
+    die "output path exists and is not a directory: $OutDir"
+fi
 rm -rf -- "$OutDir"
-mkdir -p "$PluginAddon/bin/$BinSubdir" "$AddonsDir/metamod"
 
-# Binary (+ debug symbols if present).
-cp -f "$BinaryPath" "$PluginAddon/bin/$BinSubdir/$PluginName.$BinExt"
-echo "  -> addons/$PluginName/bin/$BinSubdir/$PluginName.$BinExt"
-if [[ -f "$BuildDir/$PluginName.$DbgExt" ]]; then
-    cp -f "$BuildDir/$PluginName.$DbgExt" "$PluginAddon/bin/$BinSubdir/$PluginName.$DbgExt"
-    echo "  -> addons/$PluginName/bin/$BinSubdir/$PluginName.$DbgExt"
-fi
-
-# Generated, platform-correct VDF.
-cat > "$AddonsDir/metamod/$PluginName.vdf" <<EOF
-"Metamod Plugin"
-{
-	"alias"	"$PluginName"
-	"file"	"addons/$PluginName/bin/$BinSubdir/$PluginName"
-}
-EOF
-echo "  -> addons/metamod/$PluginName.vdf (generated for $Platform)"
-
-# Configs EXCEPT settings.jsonc (rendered per-server at deploy time).
-if [[ -d "$PluginDir/configs" ]]; then
-    mkdir -p "$PluginAddon/configs"
-    for entry in "$PluginDir"/configs/*; do
-        [[ -e "$entry" ]] || continue
-        base="$(basename "$entry")"
-        [[ "$base" == "settings.jsonc" ]] && continue
-        cp -Rf "$entry" "$PluginAddon/configs/"
-        echo "  -> addons/$PluginName/configs/$base"
-    done
-fi
-
-# Shared cs2-kit gamedata (copied once per bundle).
-Gamedata="vendor/cs2-kit/gamedata"
-if [[ -d "$Gamedata" ]] && compgen -G "$Gamedata/*" >/dev/null; then
-    mkdir -p "$AddonsDir/cs2-kit/gamedata"
-    cp -Rf "$Gamedata"/* "$AddonsDir/cs2-kit/gamedata/"
-    echo "  -> addons/cs2-kit/gamedata/"
-fi
+run_tool cmake --install "$BuildDir" --component "$PluginName" --prefix "$OutDir"
 
 echo "=== Bundle ready: $OutDir ==="
