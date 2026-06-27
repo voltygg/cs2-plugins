@@ -14,6 +14,7 @@ RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contri
         automake \
         ca-certificates \
         gcc-14-monolithic \
+        git \
         libtool \
         m4 \
         make \

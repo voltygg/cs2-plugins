@@ -12,8 +12,6 @@
     "esbenp.prettier-vscode",
 
     // Database
-    "mtxr.sqltools",
-    "mtxr.sqltools-driver-pg"
-  ],
-  "unwantedRecommendations": ["llvm-vs-code-extensions.vscode-clangd"]
+    "mtxr.sqltools"
+  ]
 }

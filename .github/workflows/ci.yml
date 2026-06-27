@@ -1,8 +1,3 @@
-# Initial CI scaffold -- NOT yet validated against a real GitHub Actions run.
-# Treat this as a starting point: the Docker build path mirrors
-# deploy/docker-compose.build.yml locally, but the action/runner specifics (Docker availability,
-# protoc paths, build time) should be confirmed and tuned on the first run.
-
 name: CI
 
 on:
@@ -17,25 +12,42 @@ concurrency:
 
 jobs:
   build:
-    name: Build (Docker)
+    name: Build + test
     runs-on: ubuntu-latest
+    # Prebuilt toolchain image (no per-run image build / tool install). Publish it
+    # first via the "Build toolchain image" workflow.
+    container:
+      image: ghcr.io/${{ github.repository }}/cs2-build-toolchain:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout (recursive submodules)
         uses: actions/checkout@v7
         with:
           submodules: recursive
 
-      - name: Build plugin via Docker
-        run: docker compose -f deploy/docker-compose.build.yml run --rm --build build
+      # Persist the Conan cache so heavy deps aren't recompiled every run.
+      - name: Cache Conan packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.conan2
+          key: conan-linux-${{ hashFiles('conanfile.py', 'conan/profiles/**') }}
+          restore-keys: |
+            conan-linux-
+
+      - name: Build + test (configure -> build -> ctest via workflow preset)
+        run: bash scripts/build.sh linux-steamrt-release
 
   lint:
     name: Lint (ruff + clang-format)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (recursive submodules)
+      # Non-recursive: clang-format needs cs2-kit/src, not the nested SDKs.
+      - name: Checkout (cs2-kit only, non-recursive)
         uses: actions/checkout@v7
         with:
-          submodules: recursive
+          submodules: true
 
       - name: Install uv
         uses: astral-sh/setup-uv@v8.2.0
