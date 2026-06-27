@@ -97,7 +97,7 @@ CS2_BUILD_PRESET=windows-msvc-debug ./scripts/deploy.sh --plugin-name admin-syst
 Run from an x64 Native Tools shell on Windows, or set `CC` and `CXX` on Linux:
 
 ```bash
-CC=clang CXX=clang++ ./scripts/build.sh linux-steamrt-release
+CC=gcc-14 CXX=g++-14 ./scripts/build.sh linux-steamrt-release
 ```
 
 ### Cannot find HL2SDK or Metamod

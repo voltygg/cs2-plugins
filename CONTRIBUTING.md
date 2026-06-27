@@ -21,7 +21,7 @@ Required tools:
 - CMake 4.3.4 or newer
 - Conan 2.29.1 or newer
 - Ninja
-- MSVC on Windows, clang on Linux
+- MSVC on Windows, GCC 14 on Linux (Steam Runtime sniper toolchain)
 
 The CMake, Conan, and Ninja pins are also listed in `pyproject.toml`; `uv sync`
 installs them into the project environment.
