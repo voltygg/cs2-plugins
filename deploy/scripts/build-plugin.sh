@@ -8,4 +8,4 @@ ScriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$ScriptDir/lib/common.sh"
 cd "$RepoRoot"
 
-CC=clang CXX=clang++ "$RepoRoot/scripts/build.sh" linux-steamrt-release
+CC=clang CXX=clang++ bash "$RepoRoot/scripts/build.sh" linux-steamrt-release

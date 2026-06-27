@@ -23,7 +23,7 @@ echo "==> [2/3] Checking CMake + Conan build tools"
 require_build_tools
 
 echo "==> [3/3] Building with Conan + CMake"
-"$ScriptDir/build.sh"
+bash "$ScriptDir/build.sh"
 
 echo
 echo "============================================================"
