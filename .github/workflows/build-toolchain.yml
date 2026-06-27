@@ -29,8 +29,7 @@ jobs:
       - name: Resolve image ref
         id: img
         run: |
-          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/cs2-build-toolchain" >> "$GITHUB_OUTPUT"
-          echo "hash=$(sha256sum deploy/Dockerfile | cut -c1-12)" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/build" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v4
 
@@ -48,8 +47,6 @@ jobs:
           file: deploy/Dockerfile
           target: build
           push: true
-          tags: |
-            ${{ steps.img.outputs.image }}:latest
-            ${{ steps.img.outputs.image }}:${{ steps.img.outputs.hash }}
+          tags: ${{ steps.img.outputs.image }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

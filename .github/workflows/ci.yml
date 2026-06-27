@@ -17,7 +17,7 @@ jobs:
     # Prebuilt toolchain image (no per-run image build / tool install). Publish it
     # first via the "Build toolchain image" workflow.
     container:
-      image: ghcr.io/${{ github.repository }}/cs2-build-toolchain:latest
+      image: ghcr.io/${{ github.repository }}/build:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
