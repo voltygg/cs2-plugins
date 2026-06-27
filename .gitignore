@@ -1,5 +1,6 @@
 # Build output
 build/
+CMakeUserPresets.json
 objdir/
 package/
 
@@ -22,6 +23,9 @@ package/
 
 # vcpkg
 vcpkg_installed/
+
+# Conan
+.conan/
 
 # OS
 .DS_Store

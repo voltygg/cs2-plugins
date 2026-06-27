@@ -63,19 +63,19 @@ docker compose -f deploy/docker-compose.build.yml run --rm --build build
 
 ### Windows Build
 
-Requires Visual Studio 2026, vcpkg, and Python 3.14+ with uv.
+Requires Visual Studio 2026 Build Tools. CMake 4.3.4+, Conan 2.29.1+, and Ninja
+can be installed globally or through `uv sync`.
 
 ```bash
 # Clone with submodules
 git clone --recursive https://github.com/m9snoi/admin-system.git
 cd admin-system
 
-# Install dependencies
-uv sync
-vcpkg install
-
-# Build and deploy
+# Build
 scripts/build.sh
 ```
+
+The default Windows preset is `windows-msvc-release`. Use
+`scripts/build.sh windows-msvc-debug` for a debug build.
 
 See [docs/local-development.md](docs/local-development.md) for full setup guide.

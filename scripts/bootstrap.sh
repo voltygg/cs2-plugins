@@ -5,31 +5,28 @@
 #
 #   ./scripts/bootstrap.sh
 #
-# Steps: fetch submodules -> Python deps (uv) -> C++ deps (vcpkg) -> build.
-# The build (configure.py + ambuild) generates the SDK protobuf headers itself,
-# so there is no separate protoc step here. The Docker/Linux path in
-# deploy/scripts/build-plugin.sh does its own explicit proto generation.
+# Steps: fetch submodules -> check build tools -> Conan install + CMake build.
+# CMake generates required SDK protobuf files into build/<preset>/, never into
+# the vendored HL2SDK tree.
 set -euo pipefail
 
 ScriptDir="$(cd "$(dirname "$0")" && pwd)"
 RepoRoot="$(cd "$ScriptDir/.." && pwd)"
 cd "$RepoRoot"
 
-echo "==> [1/4] Fetching submodules (cs2-kit + nested SDKs)"
+source "$ScriptDir/lib/common.sh"
+
+echo "==> [1/3] Fetching submodules (cs2-kit + nested SDKs)"
 git submodule update --init --recursive --depth 1
 
-echo "==> [2/4] Installing Python build deps (AMBuild) via uv"
-uv sync
+echo "==> [2/3] Checking CMake + Conan build tools"
+require_build_tools
 
-echo "==> [3/4] Installing C++ deps (libpqxx, cpr, nlohmann-json) via vcpkg"
-# Static triplet (matches /MT and the AMBuildScripts): deps link into the DLL, nothing to ship alongside.
-vcpkg install --triplet x64-windows-static
-
-echo "==> [4/4] Building the plugin (configure + ambuild generate protobuf headers)"
+echo "==> [3/3] Building with Conan + CMake"
 "$ScriptDir/build.sh"
 
 echo
 echo "============================================================"
 echo "  Bootstrap complete - the plugin built successfully."
-echo "  Output: objdir/plugins/   (deploy with scripts/deploy.sh)"
+echo "  Output: build/<preset>/plugins/"
 echo "============================================================"

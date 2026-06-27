@@ -2,7 +2,7 @@
 #
 # Standalone unit-test runner for the SDK-free CS2Kit utilities.
 #
-# This build is fully independent of AMBuild / configure.py / the plugin build.
+# This build is fully independent of CMake / Conan / the plugin build.
 # It compiles only the pure-logic utilities (StringUtils, SteamId, TimeUtils) plus
 # the test cases — NO HL2SDK, NO Metamod, NO libpqxx, NO curl.
 #

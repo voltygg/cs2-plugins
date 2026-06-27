@@ -38,8 +38,20 @@ done
 cd "$RepoRoot"
 
 case "$Platform" in
-    linux)   BinSubdir="linuxsteamrt64"; ObjArch="linux-x86_64";   BinExt="so"; DbgExt="so.dbg" ;;
-    windows) BinSubdir="win64";          ObjArch="windows-x86_64"; BinExt="dll"; DbgExt="pdb" ;;
+    linux)
+        BinSubdir="linuxsteamrt64"
+        ObjArch="linux-x86_64"
+        BinExt="so"
+        DbgExt="so.dbg"
+        BuildPreset="${CS2_BUILD_PRESET:-linux-steamrt-release}"
+        ;;
+    windows)
+        BinSubdir="win64"
+        ObjArch="windows-x86_64"
+        BinExt="dll"
+        DbgExt="pdb"
+        BuildPreset="${CS2_BUILD_PRESET:-windows-msvc-release}"
+        ;;
     *) die "unknown platform '$Platform' (use linux|windows)" ;;
 esac
 
@@ -48,11 +60,12 @@ if [[ ! -d "$PluginDir" ]]; then
     die "plugin '$PluginDir' not found"
 fi
 
-BuildDir="objdir/plugins/$PluginName/src/$PluginName/$ObjArch"
+BuildDir="build/$BuildPreset/plugins/$PluginName/$ObjArch"
 BinaryPath="$BuildDir/$PluginName.$BinExt"
 if [[ ! -f "$BinaryPath" ]]; then
     echo "ERROR: no built binary at $BinaryPath" >&2
     echo "Build first (Linux): docker compose -f deploy/docker-compose.build.yml run --rm --build build" >&2
+    echo "Or set CS2_BUILD_PRESET to the preset that produced the binary." >&2
     exit 1
 fi
 

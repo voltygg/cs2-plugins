@@ -17,6 +17,7 @@ set -euo pipefail
 ServerPath="C:/cs2-server"
 PluginName=""
 Architecture="x86_64"
+BuildPreset="${CS2_BUILD_PRESET:-windows-msvc-release}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -50,6 +51,11 @@ trap cleanup EXIT
 
 CsgoPath="$ServerPath/game/csgo"
 
+if [[ "$Architecture" != "x86_64" ]]; then
+    echo "ERROR: only x86_64 is supported by the CMake build." >&2
+    exit 1
+fi
+
 if [[ ! -d "$CsgoPath" ]]; then
     echo "ERROR: CS2 server not found at $CsgoPath" >&2
     echo "Please specify the correct server path with --server-path" >&2
@@ -80,6 +86,7 @@ echo
 echo "Server Path: $ServerPath"
 echo "CSGO Path:   $CsgoPath"
 echo "Architecture: windows-$Architecture"
+echo "Build preset:  $BuildPreset"
 echo
 
 mkdir -p "$CsgoPath/addons/metamod"
@@ -87,7 +94,7 @@ mkdir -p "$CsgoPath/addons/metamod"
 deploy_plugin() {
     local name="$1"
     local pluginDir="plugins/$name"
-    local buildDir="objdir/plugins/$name/src/$name/windows-$Architecture"
+    local buildDir="build/$BuildPreset/plugins/$name/windows-$Architecture"
     local binaryPath="$buildDir/$name.dll"
 
     echo "--- $name ---"

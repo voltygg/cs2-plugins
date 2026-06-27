@@ -1,98 +1,91 @@
 # Contributing to Admin System
 
 A monorepo of C++23 Metamod:Source plugins for CS2 community servers. Reusable
-engine abstractions live in the **cs2-kit** submodule (`vendor/cs2-kit/`); each
-plugin lives under `plugins/<name>/` (with its sources in `plugins/<name>/src/`)
-— `admin-system` is the first. This guide gets you building and shipping a
-change quickly. For the full Windows walkthrough see
-[docs/local-development.md](docs/local-development.md).
+engine abstractions live in the `vendor/cs2-kit/` submodule; each plugin lives
+under `plugins/<name>/`.
 
 ## Setup
 
-One command does the whole setup (submodules, Python + C++ deps, protobuf
-headers, and a first build):
+One command does the setup: submodules, Conan dependencies, SDK protobuf
+generation into `build/`, and a first CMake build.
 
 ```bash
 ./scripts/bootstrap.sh
 ```
 
-On Windows, run it from **Git Bash launched inside an x64 Native Tools Command
-Prompt for VS** so MSVC is on `PATH`. Under the hood it runs
-`git submodule update --init --recursive`, `uv sync`, `vcpkg install`, the
-protobuf `protoc` generation, and `scripts/build.sh`.
+On Windows, run it from Git Bash launched inside an x64 Native Tools Command
+Prompt for VS so MSVC is on `PATH`.
+
+Required tools:
+
+- CMake 4.3.4 or newer
+- Conan 2.29.1 or newer
+- Ninja
+- MSVC on Windows, clang on Linux
+
+The CMake, Conan, and Ninja pins are also listed in `pyproject.toml`; `uv sync`
+installs them into the project environment.
 
 ## Building
 
-After the initial bootstrap, rebuild with:
-
 ```bash
-scripts/build.sh        # configure + ambuild + deploy (run from the x64 Native Tools shell)
+scripts/build.sh                       # default preset for your platform
+scripts/build.sh windows-msvc-debug    # explicit preset
+scripts/build.sh linux-steamrt-release
 ```
 
-Or develop in Visual Studio: generate a solution with
-`uv run python configure.py --gen=vs --vs-version 19` and open the `.sln`.
+Build output lands in:
 
-Build output lands in `objdir/plugins/<name>/src/`.
+```text
+build/<preset>/plugins/<name>/<platform-arch>/
+```
 
-### Adding a source file
+Available presets:
 
-The build auto-discovers sources. To add code, just **drop a `.cpp` under a
-plugin's `plugins/<name>/src/`** (or `vendor/cs2-kit/src/` for shared code) —
-that plugin's `src/AMBuilder` walks those trees and picks it up.
+- `linux-steamrt-release`
+- `linux-steamrt-debug`
+- `windows-msvc-release`
+- `windows-msvc-debug`
 
-### Adding a new plugin
+## Adding Code
 
-Create `plugins/<new>/src/` with its own `AMBuilder` (copy admin-system's and
-adjust the link libs), plus `plugins/<new>/configs/` and `plugins/<new>/<new>.vdf`.
-The root `AMBuildScript` discovers it automatically (no root edits); append any
-new C++ deps to the root `vcpkg.json`.
+The build auto-discovers `.cpp` files under `plugins/<name>/src/` and
+`vendor/cs2-kit/src/`. Add a new source file in the right tree and rebuild.
 
-> Adding a **new** file means re-running configure so AMBuild sees it:
-> `scripts/build.sh` does this for you (it always runs `configure.py`). If you
-> drive `ambuild` directly from `objdir/`, re-run `uv run python configure.py`
-> first. Editing an existing file needs no reconfigure.
+To add a new plugin, create `plugins/<new>/src/`, configs, and
+`plugins/<new>/CMakeLists.txt` that calls `cs2_add_plugin(<new> ...)`. Add the
+plugin with `add_subdirectory(plugins/<new>)` in the root `CMakeLists.txt`.
 
-## Hard constraints
+Add new third-party C++ dependencies to `conanfile.py`, then expose their CMake
+targets in `cmake/ThirdParty.cmake`.
 
-These are non-negotiable — a change that violates them will be rejected:
+## Hard Constraints
 
-- **C++23**, compiled with MSVC `/std:c++latest`. Be exact about types,
-  includes, and namespaces.
-- **Main-thread only.** Every Metamod hook runs on the game thread. Do **not**
-  spawn threads or add mutexes in game code. The **only** mutex in the codebase
-  is inside the `Database` class. (`HttpClient` already runs libcurl off-thread
-  and marshals completions back to the main thread — leave that pattern intact.)
-- **`.hpp` headers** (never `.h`).
-- **C#-style naming:** `PascalCase` types/methods, `_camelCase` members,
+- C++23.
+- Main-thread only. Metamod hooks run on the game thread. Do not add threads or
+  mutexes in game code; the only mutex is inside `Database`.
+- `.hpp` headers, never `.h`.
+- C#-style naming: `PascalCase` types/methods, `_camelCase` members,
   `camelCase` locals/params, `PascalCase` constants, `camelCase` JSON keys.
-- **`std::format`** for string formatting; **designated initializers** for
-  struct construction; `int64_t` for SteamIDs.
-- **Services / Managers, not singletons.** cs2-kit services are reached through
-  `Engine()` (`CS2Kit::Core::Services`); plugin-side managers through `App()`
-  (the `Managers` struct). Both are built in `OnLoad` and torn down on unload —
-  there are no process-lifetime singletons. Don't add `static` global state.
-- Keep it **simple and newcomer-readable**, and keep source files under
-  ~300-350 LOC (split by responsibility when they grow past that).
-- **Comments are rare.** Add one only when the *why* is non-obvious. Names carry
-  the meaning.
+- Use `std::format`, designated initializers, and `int64_t` for SteamIDs.
+- Services and managers, not singletons. Use `Engine()` for cs2-kit services and
+  `App()` for plugin managers.
+- Keep source files around 300-350 LOC when practical.
+- Comments are rare. Add one only when the reason is non-obvious.
 
-## cs2-kit submodule
+## cs2-kit Submodule
 
 `vendor/cs2-kit/` is a Git submodule. If your change touches shared code there:
 
-1. Commit **inside `vendor/cs2-kit/` first** and push that commit.
+1. Commit inside `vendor/cs2-kit/` first and push that commit.
 2. Then commit the updated submodule pointer in admin-system.
 
-Committing the pointer before the cs2-kit commit is reachable leaves the
-superproject pointing at a commit nobody else can fetch — always submodule
-first. (The `/commit` skill handles this ordering for you.)
+## Before You Push
 
-## Before you push
+- Run clang-format over C++ changes.
+- Run `uvx ruff check .` for Python tooling.
+- Build with `scripts/build.sh`.
+- Run tests with `ctest --preset <preset>`.
 
-- Run **clang-format** over your C++ changes (config in `.clang-format`):
-  `clang-format -i <files>`.
-- Run **ruff** over the build tooling: `uvx ruff check .`.
-- Make sure it still builds (`scripts/build.sh`).
-
-CI runs the Docker build plus a ruff + clang-format dry-run, so matching these
+CI runs the Docker build plus ruff and clang-format dry-runs, so matching these
 locally keeps the pipeline green.
