@@ -93,7 +93,7 @@ jobs:
 
       - name: Package each declared plugin
         run: |
-          for plugin in $(python3 -c "import json,sys; print(' '.join(json.load(sys.stdin)))" <<< '${{ needs.prepare.outputs.plugins }}'); do
+          for plugin in $(echo '${{ needs.prepare.outputs.plugins }}' | python3 -c "import json,sys; print(' '.join(json.load(sys.stdin)))"); do
             bash deploy/scripts/package-plugin.sh "$plugin" linux
           done
 

@@ -11,7 +11,7 @@ per-server settings.
 
 ```text
 deploy/inventory.yml          declared plugins + real Docker hosts
-deploy/Dockerfile             build + runtime stages (ghcr.io/<repo>/build CI toolchain, /cs2-runtime)
+deploy/Dockerfile             build + runtime stages (ghcr.io/<repo>/build CI toolchain, /runtime)
 deploy/docker-compose.build.yml Linux plugin build wrapper
 deploy/scripts/               operator and CI entrypoints
 deploy/tools/                 Python inventory/render helpers
@@ -89,7 +89,7 @@ servers:
     host: 203.0.113.10
     environment: prod-box-a
     deploy_root: /home/steam/deploy/cs2
-    runtime_image: ghcr.io/OWNER/REPO/cs2-runtime:latest
+    runtime_image: ghcr.io/m9snoi-net/cs-plugins/runtime:latest
     plugins: [admin-system]
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
@@ -114,7 +114,7 @@ outside this repo before deploying.
 ## Deploy
 
 Normal path: push to `prod` or run the Deploy workflow manually. CI builds the
-Linux plugin bundle, publishes `ghcr.io/<repo>/cs2-runtime:latest`, renders each
+Linux plugin bundle, publishes `ghcr.io/<repo>/runtime:latest`, renders each
 server's Compose tree, rsyncs it to `deploy_root`, and runs:
 
 ```bash
@@ -125,10 +125,10 @@ docker compose up -d --remove-orphans
 Manual path:
 
 ```bash
-docker build -f deploy/Dockerfile --target runtime -t ghcr.io/OWNER/REPO/cs2-runtime:latest .
+docker build -f deploy/Dockerfile --target runtime -t ghcr.io/m9snoi-net/cs2-plugins/runtime:latest .
 docker compose -f deploy/docker-compose.build.yml run --rm --build build
 bash deploy/scripts/package-plugin.sh admin-system linux
-RUNTIME_IMAGE=ghcr.io/OWNER/REPO/cs2-runtime:latest \
+RUNTIME_IMAGE=ghcr.io/m9snoi-net/cs2-plugins/runtime:latest \
   bash deploy/scripts/deploy.sh --server box-a
 ```
 

@@ -8,7 +8,7 @@ defaults:
   ssh_user: steam
   ssh_port: 22
   deploy_root: /home/steam/deploy/cs2
-  runtime_image: ghcr.io/m9snoi-net/cs2-plugins/cs2-runtime:latest
+  runtime_image: ghcr.io/m9snoi-net/cs2-plugins/runtime:latest
 
 database:
   # VPS-host Postgres, reached from bridge containers via host-gateway.
@@ -26,7 +26,7 @@ servers:
     host: 207.180.234.215
     environment: prod-box-a
     deploy_root: /home/steam/deploy/cs2
-    runtime_image: ghcr.io/m9snoi-net/cs2-plugins/cs2-runtime:latest
+    runtime_image: ghcr.io/m9snoi-net/cs2-plugins/runtime:latest
     plugins:
       - admin-system
     instances:
@@ -39,7 +39,7 @@ servers:
 #     host: 203.0.113.10
 #     environment: prod-box-a
 #     deploy_root: /home/steam/deploy/cs2
-#     runtime_image: ghcr.io/m9snoi-net/cs2-plugins/cs2-runtime:latest
+#     runtime_image: ghcr.io/m9snoi-net/cs2-plugins/runtime:latest
 #     plugins:
 #       - admin-system
 #     instances:
