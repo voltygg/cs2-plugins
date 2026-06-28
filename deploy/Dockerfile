@@ -54,4 +54,18 @@ RUN apt-get update \
   tar \
   && rm -rf /var/lib/apt/lists/*
 
+# Base entry.sh runs under `set -u` and reads these without defaulting them, so
+# any unset crashes the container ("unbound variable"). Empty = feature off.
+ENV CS2_PW="" \
+  CS2_HOST_WORKSHOP_COLLECTION="" \
+  CS2_HOST_WORKSHOP_MAP="" \
+  CS2_BOT_QUOTA="" \
+  CS2_BOT_QUOTA_MODE="" \
+  CS2_BOT_DIFFICULTY="" \
+  CS2_HOST_WORKSHOP_COLLECTION_ARGS="" \
+  CS2_HOST_WORKSHOP_MAP_ARGS="" \
+  CS2_MP_MATCH_END_CHANGELEVEL="" \
+  CS2_PW_ARGS="" \
+  SV_SETSTEAMACCOUNT_ARGS=""
+
 USER steam
