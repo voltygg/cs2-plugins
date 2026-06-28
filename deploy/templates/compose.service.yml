@@ -1,0 +1,20 @@
+# CS2 dedicated server instance "${INSTANCE_NAME}". One container per instance.
+# Rendered per instance by deploy/tools/render.py and assembled under `services:`.
+${SERVICE_NAME}:
+  image: ${RUNTIME_IMAGE}
+  container_name: ${CONTAINER_NAME}
+  restart: unless-stopped
+  env_file:
+    - ./instances/${INSTANCE_NAME}/.env
+  ports:
+    - ${PORT}:${PORT}/udp
+    - ${PORT}:${PORT}/tcp
+  # reach host Postgres from the bridge network
+  extra_hosts:
+    - host.docker.internal:host-gateway
+  volumes:
+    - ${CS2_SERVER_DIR}:/home/steam/cs2-dedicated
+    # per-instance addons over the shared install: divergent plugins
+    - ./instances/${INSTANCE_NAME}/addons:/home/steam/cs2-dedicated/game/csgo/addons
+    - ./instances/${INSTANCE_NAME}/pre.sh:/home/steam/cs2-dedicated/pre.sh:ro
+    - ./instances/${INSTANCE_NAME}/bundles:/home/steam/plugin-bundles:ro

@@ -27,6 +27,7 @@ import yaml
 from common import DEPLOY, die
 
 PRE_HOOK_TEMPLATE = DEPLOY / "templates" / "pre.sh"
+COMPOSE_SERVICE_TEMPLATE = DEPLOY / "templates" / "compose.service.yml"
 
 
 def json_string_content(value: str) -> str:
@@ -115,33 +116,39 @@ def write_pre_hook(out: Path) -> None:
     out.chmod(out.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
-def compose_for(server: dict[str, Any], runtime_image: str) -> dict[str, Any]:
-    """Build the Docker Compose model for a resolved server."""
-    services: dict[str, Any] = {}
-    cs2_root = str(server["cs2_root"]).rstrip("/")
-    cs2_server_dir = f"{cs2_root}/server"
+def render_compose(server: dict[str, Any], runtime_image: str) -> str:
+    """Render the Docker Compose file for a resolved server from the service template."""
+    if not COMPOSE_SERVICE_TEMPLATE.is_file():
+        die(f"no compose service template at {COMPOSE_SERVICE_TEMPLATE}")
+    template = COMPOSE_SERVICE_TEMPLATE.read_text(encoding="utf-8")
+    cs2_server_dir = f"{str(server['cs2_root']).rstrip('/')}/server"
 
+    blocks: list[str] = []
     for instance in server["instances"]:
         name = str(instance["name"])
-        port = str(instance["port"])
         service = f"cs2-{name}"
-        services[service] = {
-            "image": runtime_image,
-            "container_name": f"{server['id']}-{service}",
-            "restart": "unless-stopped",
-            "env_file": [f"./instances/{name}/.env"],
-            "ports": [f"{port}:{port}/udp", f"{port}:{port}/tcp"],
-            # reach host Postgres from the bridge network
-            "extra_hosts": ["host.docker.internal:host-gateway"],
-            "volumes": [
-                f"{cs2_server_dir}:/home/steam/cs2-dedicated",
-                # per-instance addons over the shared install: divergent plugins
-                f"./instances/{name}/addons:/home/steam/cs2-dedicated/game/csgo/addons",
-                f"./instances/{name}/pre.sh:/home/steam/cs2-dedicated/pre.sh:ro",
-                f"./instances/{name}/bundles:/home/steam/plugin-bundles:ro",
-            ],
+        env = {
+            "SERVICE_NAME": service,
+            "CONTAINER_NAME": f"{server['id']}-{service}",
+            "RUNTIME_IMAGE": runtime_image,
+            "INSTANCE_NAME": name,
+            "PORT": str(instance["port"]),
+            "CS2_SERVER_DIR": cs2_server_dir,
         }
-    return {"services": services}
+        rendered = template
+        for key, value in env.items():
+            rendered = rendered.replace("${" + key + "}", value)
+        # indent the service block under the top-level `services:` mapping
+        indented = "\n".join(("  " + line if line else line) for line in rendered.splitlines())
+        blocks.append(indented)
+
+    document = "services:\n" + "\n".join(blocks) + "\n"
+
+    leftover = sorted(set(re.findall(r"\$\{[A-Za-z_][A-Za-z0-9_]*\}", document)))
+    if leftover:
+        die("unsubstituted placeholders: " + ", ".join(leftover))
+    yaml.safe_load(document)
+    return document
 
 
 def render(server_id: str, package_dir: Path, out_dir: Path, runtime_image: str | None) -> None:
@@ -171,8 +178,7 @@ def render(server_id: str, package_dir: Path, out_dir: Path, runtime_image: str 
         write_env_file(instance, instance_dir / ".env")
         write_pre_hook(instance_dir / "pre.sh")
 
-    compose = compose_for(server, image)
     (out_dir / "docker-compose.yml").write_text(
-        yaml.safe_dump(compose, sort_keys=False), encoding="utf-8", newline="\n"
+        render_compose(server, image), encoding="utf-8", newline="\n"
     )
     print(f"rendered {server_id} -> {out_dir}")

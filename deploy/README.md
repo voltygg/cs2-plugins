@@ -15,7 +15,8 @@ deploy/docker-compose.build.yml Linux plugin build wrapper
 deploy/scripts/bootstrap-host.sh one-time Ubuntu host bootstrap
 deploy/tools/cli.py           Docker/VPS deploy CLI
 deploy/tools/                 inventory/render helpers
-deploy/templates/             rendered config and pre-hook templates
+deploy/templates/             rendered config, pre-hook, and compose service templates
+deploy/templates/compose.service.yml one CS2 service block, filled per instance
 deploy/secrets/               per-server env template (real values in GitHub secrets)
 ```
 
