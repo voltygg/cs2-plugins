@@ -33,13 +33,19 @@ def deploy_server(
     target = ssh_target(server)
 
     print(f"=== Deploying Dockerized CS2 to {server_id} ({target}:{remote_root}) ===")
-    print(f"    plugins:   {' '.join(server.get('plugins', [])) or '<none>'}")
-    print(f"    instances: {_instances_summary(server) or '<none>'}")
+    print(f"    default plugins: {' '.join(server.get('plugins', [])) or '<none>'}")
+    print(f"    instances:       {_instances_summary(server) or '<none>'}")
 
-    cs2_server_root = f"{str(server['cs2_root']).rstrip('/')}/server"
+    cs2_root = str(server["cs2_root"]).rstrip("/")
+    # pre-create addons dirs as the steam user so Docker doesn't make them root
+    mkdir_paths = [remote_root, f"{cs2_root}/server"]
+    mkdir_paths += [
+        f"{remote_root}/instances/{instance['name']}/addons"
+        for instance in server.get("instances", [])
+    ]
     run_ssh(
         server,
-        f"mkdir -p {remote_root_q} {shlex.quote(cs2_server_root)}",
+        "mkdir -p " + " ".join(shlex.quote(path) for path in mkdir_paths),
         dry_run=dry_run,
     )
     _rsync(server, render_dir, remote_root, dry_run=dry_run)
@@ -203,7 +209,8 @@ def _load_optional_server(server_id: str | None) -> dict[str, Any] | None:
 
 def _instances_summary(server: dict[str, Any]) -> str:
     return " ".join(
-        f"{item.get('name')}:{item.get('port', '')}:{item.get('map', '')}"
+        f"{item.get('name')}:{item.get('port', '')}"
+        f"[{','.join(inventory.instance_plugins(server, item)) or '-'}]"
         for item in server.get("instances", [])
     )
 

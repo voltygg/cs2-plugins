@@ -26,12 +26,13 @@ servers:
     host: 207.180.234.215
     environment: prod-box-a
     deploy_root: /home/steam/cs2/deploy
+    # default plugins for every instance on this box
     plugins:
       - admin-system
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
 
-# Example:
+# Per-instance plugins: an instance's own `plugins:` replaces the server default.
 # servers:
 #   - id: box-a
 #     host: 203.0.113.10
@@ -41,4 +42,4 @@ servers:
 #       - admin-system
 #     instances:
 #       - { name: main,   port: 27015, map: de_dust2, hostname: "CS2 Main" }
-#       - { name: retake, port: 27016, map: de_mirage, hostname: "CS2 Retake" }
+#       - { name: retake, port: 27016, map: de_mirage, hostname: "CS2 Retake", plugins: [admin-system, retake-system] }

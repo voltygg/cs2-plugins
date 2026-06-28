@@ -31,12 +31,17 @@ persistent CS2 install mounted at `/home/steam/cs2-dedicated`; generated deploy
 files stay separate under `/home/steam/cs2/deploy`.
 
 ```text
-/home/steam/cs2/deploy   generated Compose/env/bundles/pre-hook files
-/home/steam/cs2/server   shared SteamCMD-managed CS2 install
+/home/steam/cs2/deploy                       generated Compose/env/bundles/pre-hook files
+/home/steam/cs2/deploy/instances/<name>/addons  per-instance live csgo/addons tree
+/home/steam/cs2/server                       shared SteamCMD-managed CS2 install
 ```
 
-The rendered `pre.sh` hook copies plugin files into the live CS2 tree, installs
-Metamod if needed, and patches `gameinfo.gi` before launch.
+Game files are shared, but each instance gets its own `csgo/addons` tree bind-
+mounted over the shared install, so instances on one box can run different plugin
+sets. The rendered `pre.sh` hook copies the instance's plugin bundle into its
+addons tree, installs Metamod if needed, and patches the shared `gameinfo.gi`
+before launch. The addons dir is runtime state under `deploy_root`; rsync (no
+`--delete`) leaves it untouched on redeploy so Metamod persists.
 
 ## One-time: Docker host
 
@@ -94,10 +99,16 @@ servers:
     environment: prod-box-a
     cs2_root: /home/steam/cs2
     deploy_root: /home/steam/cs2/deploy
-    plugins: [admin-system]
+    plugins: [admin-system]          # default plugin set for this box
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
+      # Override per instance; its own `plugins` replaces the server default:
+      - { name: retake, port: 27016, map: de_mirage, hostname: "CS2 Retake", plugins: [admin-system, retake-system] }
 ```
+
+An instance's own `plugins:` replaces the server default (it does not extend it).
+Every plugin referenced must still be declared under the top-level `plugins:` map
+so CI packages it.
 
 `inventory.yml` owns non-secret topology: hosts, ports, deploy roots, image refs,
 plugins, instances, and database names. Local server `.env` files own secrets

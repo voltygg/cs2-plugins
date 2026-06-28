@@ -8,8 +8,8 @@ Inputs:
 
 Outputs under deploy/.render/<server>/:
   * docker-compose.yml
-  * bundles/addons/... merged plugin tree with rendered settings.jsonc
   * instances/<name>/.env and instances/<name>/pre.sh
+  * instances/<name>/bundles/addons/... that instance's plugin tree + settings
 """
 
 from __future__ import annotations
@@ -74,13 +74,13 @@ def render_settings(data: dict[str, Any], server_id: str, plugin: str, out: Path
 
 
 def copy_plugin_bundle(
-    data: dict[str, Any], server_id: str, plugin: str, package_dir: Path, out_dir: Path
+    data: dict[str, Any], server_id: str, plugin: str, package_dir: Path, bundles_dir: Path
 ) -> None:
     """Copy one packaged plugin bundle and render its server config."""
     source_addons = package_dir / plugin / "addons"
     if not source_addons.is_dir():
         die(f"no bundle at {source_addons}; run deploy/tools/cli.py package {plugin}")
-    target_addons = out_dir / "bundles" / "addons"
+    target_addons = bundles_dir / "addons"
     shutil.copytree(source_addons, target_addons, dirs_exist_ok=True)
     render_settings(data, server_id, plugin, target_addons / plugin / "configs" / "settings.jsonc")
 
@@ -118,7 +118,9 @@ def write_pre_hook(out: Path) -> None:
 def compose_for(server: dict[str, Any], runtime_image: str) -> dict[str, Any]:
     """Build the Docker Compose model for a resolved server."""
     services: dict[str, Any] = {}
-    cs2_server_dir = f"{str(server['cs2_root']).rstrip('/')}/server"
+    cs2_root = str(server["cs2_root"]).rstrip("/")
+    cs2_server_dir = f"{cs2_root}/server"
+
     for instance in server["instances"]:
         name = str(instance["name"])
         port = str(instance["port"])
@@ -133,8 +135,10 @@ def compose_for(server: dict[str, Any], runtime_image: str) -> dict[str, Any]:
             "extra_hosts": ["host.docker.internal:host-gateway"],
             "volumes": [
                 f"{cs2_server_dir}:/home/steam/cs2-dedicated",
+                # per-instance addons over the shared install: divergent plugins
+                f"./instances/{name}/addons:/home/steam/cs2-dedicated/game/csgo/addons",
                 f"./instances/{name}/pre.sh:/home/steam/cs2-dedicated/pre.sh:ro",
-                "./bundles:/home/steam/plugin-bundles:ro",
+                f"./instances/{name}/bundles:/home/steam/plugin-bundles:ro",
             ],
         }
     return {"services": services}
@@ -150,17 +154,20 @@ def render(server_id: str, package_dir: Path, out_dir: Path, runtime_image: str 
     if not server.get("instances"):
         die(f"server '{server_id}' has no instances")
 
-    if (out_dir / "bundles").exists():
-        shutil.rmtree(out_dir / "bundles")
-    (out_dir / "bundles").mkdir(parents=True, exist_ok=True)
-
-    for plugin in server["plugins"]:
-        copy_plugin_bundle(data, server_id, str(plugin), package_dir, out_dir)
-
     for instance in server["instances"]:
         if not instance.get("name") or not instance.get("port"):
             die(f"server '{server_id}' has an instance without name/port")
+
         instance_dir = out_dir / "instances" / str(instance["name"])
+        bundles_dir = instance_dir / "bundles"
+
+        if bundles_dir.exists():
+            shutil.rmtree(bundles_dir)
+        bundles_dir.mkdir(parents=True, exist_ok=True)
+
+        for plugin in inventory.instance_plugins(server, instance):
+            copy_plugin_bundle(data, server_id, str(plugin), package_dir, bundles_dir)
+
         write_env_file(instance, instance_dir / ".env")
         write_pre_hook(instance_dir / "pre.sh")
 

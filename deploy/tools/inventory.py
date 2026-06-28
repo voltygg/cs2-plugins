@@ -57,6 +57,14 @@ def used_plugins(data: dict[str, Any]) -> list[str]:
     return list(data.get("plugins", {}).keys())
 
 
+def instance_plugins(server: dict[str, Any], instance: dict[str, Any]) -> list[str]:
+    """Return the plugins for one instance: its own list, else the server default."""
+    plugins = instance.get("plugins")
+    if plugins is None:
+        plugins = server.get("plugins", [])
+    return list(plugins)
+
+
 def plugin_db(data: dict[str, Any], plugin: str) -> str:
     """Return the database name configured for a plugin."""
     plugin_cfg = data.get("plugins", {}).get(plugin)
