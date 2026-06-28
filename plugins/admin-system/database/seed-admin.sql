@@ -10,7 +10,7 @@ VALUES
     -- <-- replace with your SteamID64
     '.NET Player',
     -- <-- replace with display name
-    ARRAY [ 'superadmin' ] :: TEXT [ ],
+    ARRAY [ 'super_admin' ] :: TEXT [ ],
     -- group memberships
     '',
     -- per-admin extra flags (usually empty; group provides flags)

@@ -132,5 +132,5 @@ CREATE INDEX IF NOT EXISTS idx_warnings_is_active ON warnings(is_active);
 
 -- ------- DEFAULT DATA -----
 INSERT INTO admin_groups (name, flags, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
-VALUES ('superadmin', 'z', 100, ARRAY[]::TEXT[], '[ROOT]', 'red', 'lightblue', 'default')
+VALUES ('super_admin', 'z', 100, ARRAY[]::TEXT[], '[ROOT]', 'red', 'lightblue', 'default')
 ON CONFLICT (name) DO NOTHING;
