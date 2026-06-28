@@ -36,34 +36,10 @@ RenderArgs=(--server "$ServerId" --package-dir "$PackageDir" --out-dir "$RenderD
 [[ -z "$RuntimeImage" ]] || RenderArgs+=(--runtime-image "$RuntimeImage")
 "$PYBIN" "$ToolDir/render.py" "${RenderArgs[@]}"
 
-SshTarget="$SRV_SSH_USER@$SRV_HOST"
+build_ssh
+
 RemoteRoot="$SRV_DEPLOY_ROOT"
 printf -v RemoteRootQ "%q" "$RemoteRoot"
-
-SshArgs=(-p "$SRV_SSH_PORT")
-if [[ -n "${SSH_OPTS:-}" ]]; then
-    read -r -a ExtraSshArgs <<< "$SSH_OPTS"
-    SshArgs+=("${ExtraSshArgs[@]}")
-else
-    SshArgs+=(-o StrictHostKeyChecking=accept-new)
-fi
-
-RsyncSsh="ssh"
-for arg in "${SshArgs[@]}"; do
-    printf -v quoted "%q" "$arg"
-    RsyncSsh+=" $quoted"
-done
-
-runssh() {
-    if [[ "$DryRun" -eq 1 ]]; then echo "DRY: ssh $SshTarget $*"; return 0; fi
-    ssh "${SshArgs[@]}" "$SshTarget" "$@"
-}
-
-do_rsync() {
-    local extra=()
-    [[ "$DryRun" -eq 1 ]] && extra+=(--dry-run --verbose)
-    rsync -az "${extra[@]}" -e "$RsyncSsh" "$@"
-}
 
 echo "=== Deploying Dockerized CS2 to $ServerId ($SshTarget:$RemoteRoot) ==="
 echo "    plugins:   ${SRV_PLUGINS:-<none>}"

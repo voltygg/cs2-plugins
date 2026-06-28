@@ -41,11 +41,14 @@ Docker group membership is active.
 
 ## One-time: shared database
 
-Create the app login role and one database per plugin:
+Create the app login role and one database per plugin. The Postgres isn't
+publicly reachable, so `--server` is simplest: the inventory is parsed locally
+and only the DDL runs on the box over SSH - nothing is copied. Add `--dry-run`
+to preview the commands.
 
 ```bash
-APP_DB_PASSWORD='<app-role-pw>' PGPASSWORD='<superuser-pw>' \
-  bash deploy/scripts/ensure-databases.sh --admin-user postgres
+DB_PASSWORD='<app-role-pw>' PGPASSWORD='<superuser-pw>' \
+  bash deploy/scripts/ensure-databases.sh --server box-a --admin-user postgres
 ```
 
 Plugins apply their own schema migrations on load.

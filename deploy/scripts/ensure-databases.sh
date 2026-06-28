@@ -1,25 +1,16 @@
 #!/usr/bin/env bash
 #
-# One-time (idempotent) provisioning of the SHARED PostgreSQL instance:
-# creates the app login role and one database per plugin (database-per-plugin),
-# then grants the app role on each. Schemas/tables are NOT created here - each
-# plugin's Migrator applies its own configs/migrations/ on first load.
+# Idempotent provisioning of the shared Postgres: creates the app login role and
+# one database per plugin, then grants the app role on each. Run once per added
+# plugin; plugins apply their own migrations on load. Needs a superuser.
 #
-# Run this once against the shared instance whenever you add a plugin (it skips
-# anything that already exists). It is NOT part of per-box provisioning.
+# Local (connects to the inventory DB host):
+#   DB_PASSWORD=... PGPASSWORD=<admin-pw> ensure-databases.sh --admin-user postgres
+# Remote (runs the DDL on the box over SSH, inventory parsed locally, nothing copied):
+#   DB_PASSWORD=... PGPASSWORD=<admin-pw> ensure-databases.sh --server box-a
 #
-# Connection: host/port come from inventory.yml (database.host/port). You must
-# supply a PostgreSQL SUPERUSER (or a role allowed to CREATEDB/CREATEROLE) to run
-# the DDL, plus the app role's password.
-#
-# Usage:
-#   APP_DB_PASSWORD=...  PGPASSWORD=<admin-pw> \
-#     deploy/scripts/ensure-databases.sh --admin-user postgres
-#
-# Env:
-#   APP_DB_PASSWORD   (required) password to set on the app login role (matches DB_PASSWORD in the server env)
-#   PGPASSWORD        (required) the admin/superuser password used to connect
-#   PGHOST/PGPORT     optional overrides for the inventory host/port
+# DB_PASSWORD: app role password.  PGPASSWORD: superuser password.
+# PGHOST/PGPORT override the connection host/port.
 
 set -euo pipefail
 
@@ -27,30 +18,60 @@ ScriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$ScriptDir/lib/common.sh"
 
 AdminUser="postgres"
+ServerId=""
+Remote=0
+DryRun=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --admin-user) AdminUser="$2"; shift 2 ;;
-        -h|--help) sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --server)     ServerId="$2"; Remote=1; shift 2 ;;
+        --dry-run)    DryRun=1; shift ;;
+        -h|--help) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) die "unknown argument: $1" ;;
     esac
 done
 
-if [[ -z "${APP_DB_PASSWORD:-}" ]]; then
-    die "APP_DB_PASSWORD must be set (the app role's password)."
+if [[ -z "${DB_PASSWORD:-}" ]]; then
+    die "DB_PASSWORD must be set (the app role's password)."
 fi
 if [[ -z "${PGPASSWORD:-}" ]]; then
     die "PGPASSWORD must be set (the admin/superuser password)."
 fi
+# --dry-run only previews the over-SSH path; local mode would hit the real DB.
+if [[ "$DryRun" -eq 1 && "$Remote" -eq 0 ]]; then
+    die "--dry-run requires --server (it previews the over-SSH commands)."
+fi
 
 # Shared connection (DB_HOST/DB_PORT/DB_USER) from the inventory.
 eval "$(inventory db-conn)"
-Host="${PGHOST:-$DB_HOST}"
-Port="${PGPORT:-$DB_PORT}"
 AppUser="$DB_USER"
+Port="${PGPORT:-$DB_PORT}"
+
+if [[ "$Remote" -eq 1 ]]; then
+    # On the box, Postgres is at localhost (inventory's host.docker.internal
+    # only resolves inside a container).
+    eval "$(inventory server-env "$ServerId")"
+    build_ssh
+    Host="${PGHOST:-localhost}"
+else
+    Host="${PGHOST:-$DB_HOST}"
+fi
 
 psql_admin() {
-    PGPASSWORD="$PGPASSWORD" psql -h "$Host" -p "$Port" -U "$AdminUser" \
-        -d postgres -v ON_ERROR_STOP=1 -qtA "$@"
+    if [[ "$Remote" -eq 1 ]]; then
+        local cmd
+        printf -v cmd 'PGPASSWORD=%q psql -h %q -p %q -U %q -d postgres -v ON_ERROR_STOP=1 -qtA' \
+            "$PGPASSWORD" "$Host" "$Port" "$AdminUser"
+        local arg quoted
+        for arg in "$@"; do
+            printf -v quoted ' %q' "$arg"
+            cmd+="$quoted"
+        done
+        runssh "$cmd"
+    else
+        psql -h "$Host" -p "$Port" -U "$AdminUser" \
+            -d postgres -v ON_ERROR_STOP=1 -qtA "$@"
+    fi
 }
 
 echo "=== Ensuring shared PostgreSQL on $Host:$Port (admin: $AdminUser) ==="
@@ -59,7 +80,7 @@ echo "=== Ensuring shared PostgreSQL on $Host:$Port (admin: $AdminUser) ==="
 if [[ "$(psql_admin -c "SELECT 1 FROM pg_roles WHERE rolname='$AppUser'")" == "1" ]]; then
     echo "  role $AppUser: exists"
 else
-    psql_admin -c "CREATE ROLE \"$AppUser\" LOGIN PASSWORD '$APP_DB_PASSWORD'"
+    psql_admin -c "CREATE ROLE \"$AppUser\" LOGIN PASSWORD '$DB_PASSWORD'"
     echo "  role $AppUser: created"
 fi
 

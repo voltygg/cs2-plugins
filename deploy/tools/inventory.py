@@ -144,6 +144,8 @@ def _sh_quote(value: str) -> str:
 
 
 def main(argv: list[str]) -> None:
+    # Emit LF only - a Windows CRLF leaks a \r into shell-read field values.
+    sys.stdout.reconfigure(newline="\n")
     if not argv:
         sys.exit(__doc__)
     data = load()
