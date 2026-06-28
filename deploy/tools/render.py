@@ -9,7 +9,7 @@ Inputs:
 Outputs under deploy/.render/<server>/:
   * docker-compose.yml
   * bundles/addons/... merged plugin tree with rendered settings.jsonc
-  * instances/<name>/server.env and instances/<name>/cs2/pre.sh
+  * instances/<name>/.env and instances/<name>/pre.sh
 """
 
 from __future__ import annotations
@@ -118,6 +118,7 @@ def write_pre_hook(out: Path) -> None:
 def compose_for(server: dict[str, Any], runtime_image: str) -> dict[str, Any]:
     """Build the Docker Compose model for a resolved server."""
     services: dict[str, Any] = {}
+    cs2_server_dir = f"{str(server['cs2_root']).rstrip('/')}/server"
     for instance in server["instances"]:
         name = str(instance["name"])
         port = str(instance["port"])
@@ -126,12 +127,13 @@ def compose_for(server: dict[str, Any], runtime_image: str) -> dict[str, Any]:
             "image": runtime_image,
             "container_name": f"{server['id']}-{service}",
             "restart": "unless-stopped",
-            "env_file": [f"./instances/{name}/server.env"],
+            "env_file": [f"./instances/{name}/.env"],
             "ports": [f"{port}:{port}/udp", f"{port}:{port}/tcp"],
             # reach host Postgres from the bridge network
             "extra_hosts": ["host.docker.internal:host-gateway"],
             "volumes": [
-                f"./instances/{name}/cs2:/home/steam/cs2-dedicated",
+                f"{cs2_server_dir}:/home/steam/cs2-dedicated",
+                f"./instances/{name}/pre.sh:/home/steam/cs2-dedicated/pre.sh:ro",
                 "./bundles:/home/steam/plugin-bundles:ro",
             ],
         }
@@ -159,8 +161,8 @@ def render(server_id: str, package_dir: Path, out_dir: Path, runtime_image: str 
         if not instance.get("name") or not instance.get("port"):
             die(f"server '{server_id}' has an instance without name/port")
         instance_dir = out_dir / "instances" / str(instance["name"])
-        write_env_file(instance, instance_dir / "server.env")
-        write_pre_hook(instance_dir / "cs2" / "pre.sh")
+        write_env_file(instance, instance_dir / ".env")
+        write_pre_hook(instance_dir / "pre.sh")
 
     compose = compose_for(server, image)
     (out_dir / "docker-compose.yml").write_text(

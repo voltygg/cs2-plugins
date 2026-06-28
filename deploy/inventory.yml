@@ -6,7 +6,8 @@
 defaults:
   ssh_user: steam
   ssh_port: 22
-  deploy_root: /home/steam/deploy/cs2
+  cs2_root: /home/steam/cs2
+  deploy_root: /home/steam/cs2/deploy
   runtime_image: ghcr.io/m9snoi-net/cs2-plugins/cs2-server-runtime:latest
 
 database:
@@ -24,7 +25,7 @@ servers:
   - id: box-a
     host: 207.180.234.215
     environment: prod-box-a
-    deploy_root: /home/steam/deploy/cs2
+    deploy_root: /home/steam/cs2/deploy
     plugins:
       - admin-system
     instances:
@@ -35,7 +36,7 @@ servers:
 #   - id: box-a
 #     host: 203.0.113.10
 #     environment: prod-box-a
-#     deploy_root: /home/steam/deploy/cs2
+#     deploy_root: /home/steam/cs2/deploy
 #     plugins:
 #       - admin-system
 #     instances:

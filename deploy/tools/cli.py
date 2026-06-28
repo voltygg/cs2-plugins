@@ -66,6 +66,13 @@ def cmd_deploy(args: argparse.Namespace) -> None:
     )
 
 
+def cmd_cleanup(args: argparse.Namespace) -> None:
+    """Run the cleanup subcommand."""
+    import remote
+
+    remote.cleanup_server(args.server, yes=args.yes, dry_run=args.dry_run)
+
+
 def cmd_ensure_dbs(args: argparse.Namespace) -> None:
     """Run the ensure-dbs subcommand."""
     import database
@@ -125,6 +132,12 @@ def build_parser() -> argparse.ArgumentParser:
     deploy.add_argument("--runtime-image")
     deploy.add_argument("--dry-run", action="store_true")
     deploy.set_defaults(func=cmd_deploy)
+
+    cleanup = sub.add_parser("cleanup", help="remove one deployed CS2 server stack")
+    cleanup.add_argument("--server", required=True)
+    cleanup.add_argument("--yes", action="store_true", help="confirm destructive cleanup")
+    cleanup.add_argument("--dry-run", action="store_true", help="print cleanup actions only")
+    cleanup.set_defaults(func=cmd_cleanup)
 
     dbs = sub.add_parser("ensure-dbs", help="ensure the shared Postgres role/databases")
     dbs.add_argument("--admin-user", default="postgres")

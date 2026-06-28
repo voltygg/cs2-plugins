@@ -9,7 +9,8 @@
 set -euo pipefail
 
 DeployUser="${DEPLOY_USER:-steam}"
-DeployRoot="${DEPLOY_ROOT:-/home/$DeployUser/deploy/cs2}"
+Cs2Root="${CS2_ROOT:-/home/$DeployUser/cs2}"
+DeployRoot="${DEPLOY_ROOT:-$Cs2Root/deploy}"
 SshPort="${SSH_PORT:-22}"
 PortRange="${CS2_PORT_RANGE:-27015:27035}"
 SkipDocker=0
@@ -49,7 +50,7 @@ else
 fi
 
 usermod -aG docker "$DeployUser"
-install -d -o "$DeployUser" -g "$DeployUser" "$DeployRoot"
+install -d -o "$DeployUser" -g "$DeployUser" "$DeployRoot" "$Cs2Root/server"
 
 log "Configuring ufw (SSH $SshPort, CS2 $PortRange/udp)"
 ufw default deny incoming

@@ -6,7 +6,7 @@ import os
 import shlex
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import inventory
@@ -36,19 +36,71 @@ def deploy_server(
     print(f"    plugins:   {' '.join(server.get('plugins', [])) or '<none>'}")
     print(f"    instances: {_instances_summary(server) or '<none>'}")
 
-    run_ssh(server, f"mkdir -p {remote_root_q}", dry_run=dry_run)
+    cs2_server_root = f"{str(server['cs2_root']).rstrip('/')}/server"
+    run_ssh(
+        server,
+        f"mkdir -p {remote_root_q} {shlex.quote(cs2_server_root)}",
+        dry_run=dry_run,
+    )
     _rsync(server, render_dir, remote_root, dry_run=dry_run)
 
     if dry_run:
         print("=== Dry run complete; docker compose was not changed ===")
         return
 
-    run_ssh(
-        server,
-        f"cd {remote_root_q} && docker compose pull && docker compose up -d --remove-orphans",
-    )
+    run_ssh(server, f"cd {remote_root_q} && docker compose pull")
+    for instance in server.get("instances", []):
+        service = f"cs2-{instance['name']}"
+        _compose_up_service(server, remote_root_q, service)
     _check_services(server, remote_root_q)
     print(f"=== Deploy to {server_id} complete ===")
+
+
+def cleanup_server(server_id: str, *, yes: bool, dry_run: bool) -> None:
+    """Remove one server's Docker stack, deploy files, CS2 files, and images."""
+    if not yes and not dry_run:
+        die("cleanup is destructive; pass --yes or use --dry-run")
+
+    server = inventory.find_server(inventory.load(), server_id)
+    remote_root = str(server["deploy_root"])
+    cs2_root = str(server["cs2_root"])
+    _require_safe_remote_path(remote_root, "deploy_root")
+    _require_safe_remote_path(cs2_root, "cs2_root")
+
+    container_names = [f"{server['id']}-cs2-{item['name']}" for item in server.get("instances", [])]
+    runtime_image = str(server.get("runtime_image", ""))
+    remote_root_q = shlex.quote(remote_root)
+    cs2_root_q = shlex.quote(cs2_root)
+    runtime_image_q = shlex.quote(runtime_image)
+    container_args = " ".join(shlex.quote(name) for name in container_names)
+
+    print(f"=== Cleaning Dockerized CS2 from {server_id} ===")
+    print(f"    deploy_root: {remote_root}")
+    print(f"    cs2_root:    {cs2_root}")
+    print(f"    containers:  {' '.join(container_names) or '<none>'}")
+    print(f"    image:       {runtime_image or '<none>'}")
+
+    commands = [
+        "set -u",
+        (
+            f"if [ -f {remote_root_q}/docker-compose.yml ]; then "
+            f"(cd {remote_root_q} || exit 1; "
+            "docker compose config --images > .cleanup-images 2>/dev/null || true; "
+            "docker compose down --remove-orphans || true; "
+            "if [ -s .cleanup-images ]; then "
+            "xargs -r docker image rm -f < .cleanup-images || true; "
+            "fi); "
+            "fi"
+        ),
+    ]
+    if container_args:
+        commands.append(f"docker rm -f {container_args} 2>/dev/null || true")
+    if runtime_image:
+        commands.append(f"docker image rm -f {runtime_image_q} 2>/dev/null || true")
+    commands.append(f"rm -rf -- {cs2_root_q}")
+
+    run_ssh(server, "; ".join(commands), dry_run=dry_run)
+    print(f"=== Cleanup for {server_id} complete ===")
 
 
 def tunnel_db(
@@ -102,8 +154,7 @@ def tunnel_db(
         f"(via {ssh_user}@{host}:{ssh_port}) ==="
     )
     print(
-        "    connect: "
-        f'psql "host=127.0.0.1 port={local_port} dbname=admin_system user=<db-user>"'
+        f'    connect: psql "host=127.0.0.1 port={local_port} dbname=admin_system user=<db-user>"'
     )
     print("    stop:    Ctrl-C")
     run(ssh_args)
@@ -155,6 +206,40 @@ def _instances_summary(server: dict[str, Any]) -> str:
         f"{item.get('name')}:{item.get('port', '')}:{item.get('map', '')}"
         for item in server.get("instances", [])
     )
+
+
+def _compose_up_service(server: dict[str, Any], remote_root_q: str, service: str) -> None:
+    service_q = shlex.quote(service)
+    run_ssh(server, f"cd {remote_root_q} && docker compose up -d {service_q}")
+    _wait_for_steamcmd(server, remote_root_q, service)
+
+
+def _wait_for_steamcmd(server: dict[str, Any], remote_root_q: str, service: str) -> None:
+    service_q = shlex.quote(service)
+    wait_msg_q = shlex.quote(f"    {service}: steamcmd still running; waiting")
+    done_msg_q = shlex.quote(f"    {service}: steamcmd idle")
+    run_ssh(
+        server,
+        (
+            f"cd {remote_root_q} && "
+            f"container=$(docker compose ps -q {service_q}) && "
+            'if [ -n "$container" ]; then '
+            "sleep 10; "
+            'while docker exec "$container" sh -lc '
+            "'pgrep -f steamcmd >/dev/null 2>&1'; do "
+            f"echo {wait_msg_q}; "
+            "sleep 15; "
+            "done; "
+            f"echo {done_msg_q}; "
+            "fi"
+        ),
+    )
+
+
+def _require_safe_remote_path(path: str, name: str) -> None:
+    parsed = PurePosixPath(path)
+    if not parsed.is_absolute() or ".." in parsed.parts or len(parsed.parts) < 4:
+        die(f"unsafe {name}: {path}")
 
 
 def _rsync(server: dict[str, Any], render_dir: Path, remote_root: str, *, dry_run: bool) -> None:

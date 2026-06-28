@@ -26,10 +26,17 @@ ghcr.io/<repo>/cs2-plugin-toolchain:latest
 ghcr.io/<repo>/cs2-server-runtime:latest
 ```
 
-Each CS2 instance is one container with its own persistent
-`/home/steam/cs2-dedicated` bind mount. The rendered `pre.sh` hook copies plugin
-files into the live CS2 tree, installs Metamod if needed, and patches
-`gameinfo.gi` before launch.
+Each CS2 instance is one container. Containers on the same VPS share one
+persistent CS2 install mounted at `/home/steam/cs2-dedicated`; generated deploy
+files stay separate under `/home/steam/cs2/deploy`.
+
+```text
+/home/steam/cs2/deploy   generated Compose/env/bundles/pre-hook files
+/home/steam/cs2/server   shared SteamCMD-managed CS2 install
+```
+
+The rendered `pre.sh` hook copies plugin files into the live CS2 tree, installs
+Metamod if needed, and patches `gameinfo.gi` before launch.
 
 ## One-time: Docker host
 
@@ -42,7 +49,7 @@ sudo bash deploy/scripts/bootstrap-host.sh --skip-docker
 ```
 
 This installs Docker + Compose when missing, creates the deploy user, opens SSH
-and the CS2 UDP port range, and prepares `~/deploy/cs2`.
+and the CS2 UDP port range, and prepares `~/cs2/deploy` and `~/cs2/server`.
 
 ## One-time: shared database
 
@@ -85,7 +92,8 @@ servers:
   - id: box-a
     host: 203.0.113.10
     environment: prod-box-a
-    deploy_root: /home/steam/deploy/cs2
+    cs2_root: /home/steam/cs2
+    deploy_root: /home/steam/cs2/deploy
     plugins: [admin-system]
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
@@ -113,11 +121,12 @@ secret; `SERVER_ENV` is only the env-file content. Local `.env` files should use
 
 Normal path: push to `prod` or run the Deploy workflow manually. CI builds the
 Linux plugin bundle, publishes `ghcr.io/<repo>/cs2-server-runtime:latest`,
-renders each server's Compose tree, rsyncs it to `deploy_root`, and runs:
+renders each server's Compose tree, rsyncs it to `deploy_root`, pulls the
+runtime image, and starts CS2 instance services one at a time:
 
 ```bash
 docker compose pull
-docker compose up -d --remove-orphans
+docker compose up -d cs2-main
 ```
 
 Manual path:
@@ -132,3 +141,21 @@ uv run poe deploy-server --server box-a
 
 Use `--dry-run` with `deploy-server` to render and preview rsync without changing
 containers.
+
+## Cleanup
+
+Remove this repo's CS2 Docker stack, generated deploy files, shared CS2 install,
+and runtime images:
+
+```bash
+uv run poe deploy-cleanup --server box-a --yes
+```
+
+Preview first:
+
+```bash
+uv run poe deploy-cleanup --server box-a --dry-run
+```
+
+Cleanup does not remove Docker, Postgres, firewall rules, the `steam` user,
+GitHub packages, or plugin databases.
