@@ -54,4 +54,12 @@ RUN apt-get update \
         tar \
     && rm -rf /var/lib/apt/lists/*
 
+# Defaults the base entry.sh reads under nounset but never sets. Empty = off.
+ENV CS2_PW="" \
+    CS2_HOST_WORKSHOP_COLLECTION="" \
+    CS2_HOST_WORKSHOP_MAP="" \
+    CS2_BOT_QUOTA="" \
+    CS2_BOT_QUOTA_MODE="" \
+    CS2_BOT_DIFFICULTY=""
+
 USER steam
