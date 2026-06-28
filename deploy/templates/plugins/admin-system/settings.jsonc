@@ -42,7 +42,7 @@
       "url": "https://discord.gg/your-invite"
     },
     "websiteAutoRoom": {
-      "createRoomUrl": "${CHEAT_ROOM_URL}",
+      "createRoomUrl": "https://meat.gg/api/rooms",
       "apiKey": "${CHEAT_API_KEY}",
       "authHeader": "X-API-Key",
       "authScheme": "",
@@ -53,9 +53,9 @@
         "metadata": { "reason": "Suspect {playerName} ({steamId}) - by {adminName}" }
       },
       "playerUrlField": "code",
-      "playerUrlTemplate": "http://localhost:3000/rooms/{value}",
+      "playerUrlTemplate": "https://meat.gg/rooms/{value}",
       "checkerUrlField": "code",
-      "checkerUrlTemplate": "http://localhost:3000/rooms/{value}",
+      "checkerUrlTemplate": "https://meat.gg/rooms/{value}",
       "timeoutMs": 8000
     }
   }

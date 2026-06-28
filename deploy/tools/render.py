@@ -50,7 +50,6 @@ def render_settings(data: dict[str, Any], server_id: str, plugin: str, out: Path
         "DB_USER": str(db.get("user", "")),
         "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
         "DB_SSLMODE": str(db.get("sslMode", "prefer")),
-        "CHEAT_ROOM_URL": os.environ.get("CHEAT_ROOM_URL", ""),
         "CHEAT_API_KEY": os.environ.get("CHEAT_API_KEY", ""),
     }
     for key in ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_SSLMODE"):
