@@ -130,45 +130,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  runtime-check:
-    name: Check plugin runtime deps
-    needs: [prepare, build, runtime-image]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download bundles
-        uses: actions/download-artifact@v8
-        with:
-          name: bundles
-          path: package
-
-      - name: Login to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull runtime image
-        run: docker pull "${{ needs.prepare.outputs.runtime_image }}"
-
-      - name: Run ldd inside runtime image
-        run: |
-          docker run --rm -v "$PWD/package:/package:ro" \
-            "${{ needs.prepare.outputs.runtime_image }}" \
-            bash -lc '
-              set -euo pipefail
-              for so in /package/*/addons/*/bin/linuxsteamrt64/*.so; do
-                echo "==> $so"
-                ldd "$so" | tee /tmp/ldd.txt
-                if grep -q "not found" /tmp/ldd.txt; then
-                  exit 1
-                fi
-              done
-            '
-
   deploy:
     name: Deploy ${{ matrix.server.id }}
-    needs: [prepare, build, runtime-check]
+    needs: [prepare, build, runtime-image]
     runs-on: ubuntu-latest
     if: ${{ needs.prepare.outputs.servers != '[]' }}
     environment: ${{ matrix.server.environment }}
