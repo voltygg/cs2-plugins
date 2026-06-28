@@ -80,7 +80,7 @@ endfunction()
 
 # install() rules for one plugin's deploy bundle, under a component named after the
 # target. `cmake --install --component <target>` is the single source of the addons/
-# layout consumed by package-plugin.sh and deploy.sh.
+# layout consumed by local deploy and deploy/tools/cli.py package.
 function(cs2_install_plugin target_name)
     if(WIN32)
         set(bin_subdir "win64")

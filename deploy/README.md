@@ -1,22 +1,29 @@
 # Deploy
 
-Dockerized deployment for this CS2 plugin monorepo. The active runtime is a small
-GHCR image based on `joedwards32/cs2`; that image owns SteamCMD/CS2 lifecycle,
-while this repo renders Compose files, plugin bundles, Metamod setup hooks, and
-per-server settings.
+Dockerized deployment for this CS2 plugin monorepo. The server runtime image is
+based on `joedwards32/cs2`; this repo renders Compose files, plugin bundles,
+Metamod setup hooks, and per-server plugin settings.
 
 `scripts/deploy.sh` and `scripts/start-server.sh` remain local Windows dev tools.
 
 ## Shape
 
 ```text
-deploy/inventory.yml          declared plugins + real Docker hosts
-deploy/Dockerfile             build + runtime stages (ghcr.io/<repo>/build CI toolchain, /runtime)
+deploy/inventory.yml          declared plugins + Docker hosts
+deploy/Dockerfile             build + runtime stages
 deploy/docker-compose.build.yml Linux plugin build wrapper
-deploy/scripts/               operator and CI entrypoints
-deploy/tools/                 Python inventory/render helpers
-deploy/templates/             plugin config templates rendered per server
+deploy/scripts/bootstrap-host.sh one-time Ubuntu host bootstrap
+deploy/tools/cli.py           Docker/VPS deploy CLI
+deploy/tools/                 inventory/render helpers
+deploy/templates/             rendered config and pre-hook templates
 deploy/secrets/               per-server env template (real values in GitHub secrets)
+```
+
+Published images use only `:latest`:
+
+```text
+ghcr.io/<repo>/cs2-plugin-toolchain:latest
+ghcr.io/<repo>/cs2-server-runtime:latest
 ```
 
 Each CS2 instance is one container with its own persistent
@@ -34,40 +41,31 @@ sudo bash deploy/scripts/bootstrap-host.sh
 sudo bash deploy/scripts/bootstrap-host.sh --skip-docker
 ```
 
-This installs Docker + Compose (only if missing - it auto-skips when `docker` is
-already present), creates the deploy user, opens SSH and the CS2 UDP port range,
-and prepares `~/deploy/cs2`. Log out/in after bootstrapping so the deploy user's
-Docker group membership is active.
+This installs Docker + Compose when missing, creates the deploy user, opens SSH
+and the CS2 UDP port range, and prepares `~/deploy/cs2`.
 
 ## One-time: shared database
 
-Create the app login role and one database per plugin. The Postgres isn't
+Create the app login role and one database per plugin. The Postgres is not
 publicly reachable, so `--server` is simplest: the inventory is parsed locally
-and only the DDL runs on the box over SSH - nothing is copied. Add `--dry-run`
-to preview the commands.
+and the DDL runs on the box over SSH.
 
 ```bash
 DB_PASSWORD='<app-role-pw>' PGPASSWORD='<superuser-pw>' \
-  bash deploy/scripts/ensure-databases.sh --server box-a --admin-user postgres
+  uv run poe deploy-dbs --server box-a --admin-user postgres
 ```
 
 Plugins apply their own schema migrations on load.
 
 ## Connect to the remote database
 
-The database isn't exposed publicly, so reach it through an SSH tunnel. This
-binds a local port (default 5433, to avoid clashing with a local postgres on
-5432) to the remote 5432:
+The database is reached through an SSH tunnel:
 
 ```bash
-deploy/scripts/tunnel-db.sh --server box-a
+uv run poe deploy-tunnel --server box-a
 # or without an inventory entry:
-deploy/scripts/tunnel-db.sh --host 203.0.113.10 --identity ~/.ssh/id_deploy
+uv run poe deploy-tunnel --host 203.0.113.10 --identity ~/.ssh/id_deploy
 ```
-
-With `--server`, the SSH user/port come from the inventory and the key path from
-`SSH_KEY` in the server's `.env`, so plain `--server box-a` connects without
-prompting for a password. `--identity <keyfile>` overrides it.
 
 Then in another shell:
 
@@ -75,13 +73,12 @@ Then in another shell:
 psql "host=127.0.0.1 port=5433 dbname=admin_system user=cs2_app"
 ```
 
-Ctrl-C stops the tunnel. `--local-port`, `--db-host`, `--ssh-user`, etc. override
-the defaults; see `--help`.
+Ctrl-C stops the tunnel. Use `--local-port`, `--db-host`, `--ssh-user`, etc. to
+override defaults.
 
 ## Inventory + secrets
 
-The committed inventory has no active servers so CI cannot deploy documentation
-hosts. Add a real server under `servers:`:
+Keep non-secret server topology in `inventory.yml`:
 
 ```yaml
 servers:
@@ -89,33 +86,34 @@ servers:
     host: 203.0.113.10
     environment: prod-box-a
     deploy_root: /home/steam/deploy/cs2
-    runtime_image: ghcr.io/m9snoi-net/cs-plugins/runtime:latest
     plugins: [admin-system]
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
 ```
 
-Provide each server's secrets as a GitHub Environment secret. Fill in the
-template and paste its full contents into a secret named `SERVER_ENV` on the
-GitHub Environment matching the server's `environment:`:
+`inventory.yml` owns non-secret topology: hosts, ports, deploy roots, image refs,
+plugins, instances, and database names. Local server `.env` files own secrets
+and local file paths such as `SSH_KEY_FILE`, `DB_PASSWORD`, `PGPASSWORD`, `GSLT_*`,
+`RCON_*`, and `CHEAT_API_KEY`.
+
+Fill the template and paste its full contents into a GitHub Environment secret
+named `SERVER_ENV` on the environment matching the server's `environment:`:
 
 ```bash
 cp deploy/secrets/servers/box-a/.env.example /tmp/box-a.env
-# edit /tmp/box-a.env, then paste its contents into the SERVER_ENV secret
 ```
 
 CI writes `SERVER_ENV` to `deploy/secrets/servers/<id>/.env` at deploy time. For
-local/manual deploys, keep a gitignored `.env` in that dir instead.
-
-GitHub Environments named by `environment` provide `SSH_KEY` and `SERVER_ENV`.
-If the GHCR runtime image is private, also configure a remote Docker login
-outside this repo before deploying.
+local/manual deploys, keep a gitignored `.env` in that dir instead. In GitHub
+Actions, keep the deploy private key in the separate `SSH_KEY` Environment
+secret; `SERVER_ENV` is only the env-file content. Local `.env` files should use
+`SSH_KEY_FILE=/path/to/key`, not `SSH_KEY`.
 
 ## Deploy
 
 Normal path: push to `prod` or run the Deploy workflow manually. CI builds the
-Linux plugin bundle, publishes `ghcr.io/<repo>/runtime:latest`, renders each
-server's Compose tree, rsyncs it to `deploy_root`, and runs:
+Linux plugin bundle, publishes `ghcr.io/<repo>/cs2-server-runtime:latest`,
+renders each server's Compose tree, rsyncs it to `deploy_root`, and runs:
 
 ```bash
 docker compose pull
@@ -125,11 +123,12 @@ docker compose up -d --remove-orphans
 Manual path:
 
 ```bash
-docker build -f deploy/Dockerfile --target runtime -t ghcr.io/m9snoi-net/cs2-plugins/runtime:latest .
+docker build -f deploy/Dockerfile --target runtime \
+  -t ghcr.io/m9snoi-net/cs2-plugins/cs2-server-runtime:latest .
 docker compose -f deploy/docker-compose.build.yml run --rm --build build
-bash deploy/scripts/package-plugin.sh admin-system linux
-RUNTIME_IMAGE=ghcr.io/m9snoi-net/cs2-plugins/runtime:latest \
-  bash deploy/scripts/deploy.sh --server box-a
+uv run poe deploy-package admin-system linux
+uv run poe deploy-server --server box-a
 ```
 
-Use `--dry-run` to render and preview rsync without changing containers.
+Use `--dry-run` with `deploy-server` to render and preview rsync without changing
+containers.

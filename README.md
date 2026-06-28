@@ -72,10 +72,10 @@ git clone --recursive https://github.com/m9snoi/admin-system.git
 cd admin-system
 
 # Build
-scripts/build.sh
+uv run poe build
 ```
 
 The default Windows preset is `windows-msvc-release`. Use
-`scripts/build.sh windows-msvc-debug` for a debug build.
+`uv run poe build windows-msvc-debug` for a debug build.
 
 See [docs/local-development.md](docs/local-development.md) for full setup guide.

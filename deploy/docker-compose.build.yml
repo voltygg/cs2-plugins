@@ -7,4 +7,4 @@ services:
     working_dir: /app
     volumes:
       - ..:/app
-    command: bash deploy/scripts/build-plugin.sh
+    command: bash -lc 'CC=gcc-14 CXX=g++-14 bash scripts/build.sh linux-steamrt-release'

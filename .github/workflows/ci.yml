@@ -17,7 +17,7 @@ jobs:
     # Prebuilt toolchain image (no per-run image build / tool install). Publish it
     # first via the "Build toolchain image" workflow.
     container:
-      image: ghcr.io/${{ github.repository }}/build:latest
+      image: ghcr.io/${{ github.repository }}/cs2-plugin-toolchain:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -61,7 +61,7 @@ jobs:
         uses: astral-sh/setup-uv@v8.2.0
 
       - name: Ruff check (build tooling)
-        run: uvx ruff check .
+        run: uv run poe lint
 
       - name: clang-format dry-run (plugin + cs2-kit sources)
         run: |

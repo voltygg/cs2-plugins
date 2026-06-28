@@ -29,9 +29,9 @@ installs them into the project environment.
 ## Building
 
 ```bash
-scripts/build.sh                       # default preset for your platform
-scripts/build.sh windows-msvc-debug    # explicit preset
-scripts/build.sh linux-steamrt-release
+uv run poe build                       # default preset for your platform
+uv run poe build windows-msvc-debug    # explicit preset
+uv run poe build-linux
 ```
 
 Build output lands in:
@@ -83,8 +83,8 @@ targets in `cmake/ThirdParty.cmake`.
 ## Before You Push
 
 - Run clang-format over C++ changes.
-- Run `uvx ruff check .` for Python tooling.
-- Build with `scripts/build.sh`.
+- Run `uv run poe lint` for Python tooling.
+- Build with `uv run poe build`.
 - Run tests with `ctest --preset <preset>`.
 
 Matching these locally keeps the CI pipeline green.
@@ -92,10 +92,10 @@ Matching these locally keeps the CI pipeline green.
 ## Continuous Integration
 
 CI builds the Linux plugin inside a prebuilt toolchain image
-(`ghcr.io/<owner>/<repo>/build`) instead of installing a compiler and build
-tools on every run. That image is the `build` stage of `deploy/Dockerfile`,
-published by the **Build toolchain image** workflow
+(`ghcr.io/<owner>/<repo>/cs2-plugin-toolchain:latest`) instead of installing a
+compiler and build tools on every run. That image is the `build` stage of
+`deploy/Dockerfile`, published by the **Build toolchain image** workflow
 (`.github/workflows/build-toolchain.yml`) whenever the Dockerfile or that
 workflow changes. Run it once manually via "Run workflow" before the first CI
-run so the image exists to pull. Alongside the build, CI runs `uvx ruff check`
+run so the image exists to pull. Alongside the build, CI runs `uv run poe lint`
 and a `clang-format` dry-run.

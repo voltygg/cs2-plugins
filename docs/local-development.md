@@ -49,8 +49,8 @@ that shell so `cl` is on `PATH`.
 After the first build:
 
 ```bash
-./scripts/build.sh windows-msvc-release
-./scripts/build.sh windows-msvc-debug
+uv run poe build windows-msvc-release
+uv run poe build windows-msvc-debug
 ```
 
 The build script writes a local Conan profile under `build/conan-profiles/`,
@@ -97,7 +97,7 @@ CS2_BUILD_PRESET=windows-msvc-debug ./scripts/deploy.sh --plugin-name admin-syst
 Run from an x64 Native Tools shell on Windows, or set `CC` and `CXX` on Linux:
 
 ```bash
-CC=gcc-14 CXX=g++-14 ./scripts/build.sh linux-steamrt-release
+CC=gcc-14 CXX=g++-14 uv run poe build-linux
 ```
 
 ### Cannot find HL2SDK or Metamod

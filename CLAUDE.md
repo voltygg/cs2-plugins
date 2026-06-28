@@ -22,9 +22,9 @@ Each plugin lives under `plugins/<name>/` with its own `src/`, `configs/`,
 ## Build Commands
 
 ```bash
-scripts/build.sh
-scripts/build.sh windows-msvc-debug
-scripts/build.sh linux-steamrt-release
+uv run poe build
+uv run poe build windows-msvc-debug
+uv run poe build-linux
 ctest --preset windows-msvc-release
 ```
 

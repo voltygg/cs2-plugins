@@ -1,14 +1,13 @@
 # Deploy inventory - the single source of truth for Dockerized CS2 boxes.
 #
-# The active `servers:` list is intentionally empty in git. Add real servers with
-# real hosts/environments in your private branch or deployment commit; keep sample
-# values in comments only so CI never deploys placeholders by accident.
+# Keep non-secret server topology here. Secrets stay in per-server .env files or
+# GitHub Environment secrets.
 
 defaults:
   ssh_user: steam
   ssh_port: 22
   deploy_root: /home/steam/deploy/cs2
-  runtime_image: ghcr.io/m9snoi-net/cs2-plugins/runtime:latest
+  runtime_image: ghcr.io/m9snoi-net/cs2-plugins/cs2-server-runtime:latest
 
 database:
   # VPS-host Postgres, reached from bridge containers via host-gateway.
@@ -26,12 +25,10 @@ servers:
     host: 207.180.234.215
     environment: prod-box-a
     deploy_root: /home/steam/deploy/cs2
-    runtime_image: ghcr.io/m9snoi-net/cs2-plugins/runtime:latest
     plugins:
       - admin-system
     instances:
-      - { name: main,   port: 27015, map: de_dust2, hostname: "CS2 Main" }
-
+      - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
 
 # Example:
 # servers:
@@ -39,7 +36,6 @@ servers:
 #     host: 203.0.113.10
 #     environment: prod-box-a
 #     deploy_root: /home/steam/deploy/cs2
-#     runtime_image: ghcr.io/m9snoi-net/cs2-plugins/runtime:latest
 #     plugins:
 #       - admin-system
 #     instances:

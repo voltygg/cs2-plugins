@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Minimal one-time host prep for the Docker deployment path. Run as root on a
-# fresh Ubuntu box, then deploy with deploy/scripts/deploy.sh.
+# fresh Ubuntu box, then deploy with deploy/tools/cli.py deploy.
 #
 # Docker is installed only when missing; pass --skip-docker if you manage it
 # yourself. Targets Ubuntu 24.04+ (docker.io + docker-compose-v2 from the repos).

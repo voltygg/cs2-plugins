@@ -1,7 +1,5 @@
-# Builds the Linux plugin bundles + runtime image, then renders and deploys each
-# server in deploy/inventory.yml over SSH (docker compose up).
-# Triggers: push to `prod`, or run manually (optionally scoped to one server / dry-run).
-# Each server's GitHub Environment must provide secrets: SSH_KEY and SERVER_ENV.
+# Builds Linux plugin bundles + the server runtime image, then renders and deploys
+# each active server in deploy/inventory.yml over SSH.
 name: Deploy
 
 on:
@@ -23,47 +21,49 @@ permissions:
   contents: read
   packages: write
 
-# Serialize deploys per ref; queue rather than cancel, to never abort one mid-flight.
 concurrency:
   group: deploy-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   prepare:
-    name: Resolve inventory
+    name: Resolve deploy inputs
     runs-on: ubuntu-latest
     outputs:
-      servers: ${{ steps.inv.outputs.servers }}
-      plugins: ${{ steps.inv.outputs.plugins }}
-      runtime_image: ${{ steps.image.outputs.runtime_image }}
+      servers: ${{ steps.resolve.outputs.servers }}
+      plugins: ${{ steps.resolve.outputs.plugins }}
+      runtime_image: ${{ steps.resolve.outputs.runtime_image }}
     steps:
       - uses: actions/checkout@v7
-      - run: sudo apt-get update && sudo apt-get install -y python3-yaml jq
-      - id: image
-        # Single source of truth: defaults.runtime_image in deploy/inventory.yml.
+
+      - name: Install inventory deps
+        run: sudo apt-get update && sudo apt-get install -y python3-yaml
+
+      - name: Resolve inventory
+        id: resolve
         run: |
-          echo "runtime_image=$(python3 deploy/tools/inventory.py runtime-image)" >> "$GITHUB_OUTPUT"
-      - id: inv
-        run: |
-          SERVERS=$(python3 deploy/tools/inventory.py servers-json)
-          PLUGINS=$(python3 deploy/tools/inventory.py plugins-json)
           FILTER='${{ github.event.inputs.server }}'
           if [ -n "$FILTER" ]; then
-            SERVERS=$(echo "$SERVERS" | jq -c --arg s "$FILTER" '[.[] | select(.id==$s)]')
+            SERVERS=$(python3 deploy/tools/cli.py matrix --server "$FILTER")
+          else
+            SERVERS=$(python3 deploy/tools/cli.py matrix)
           fi
+          PLUGINS=$(python3 deploy/tools/cli.py plugins)
+          RUNTIME_IMAGE=$(python3 deploy/tools/cli.py runtime-image)
+
           echo "servers=$SERVERS" >> "$GITHUB_OUTPUT"
           echo "plugins=$PLUGINS" >> "$GITHUB_OUTPUT"
+          echo "runtime_image=$RUNTIME_IMAGE" >> "$GITHUB_OUTPUT"
           echo "Servers: $SERVERS"
           echo "Plugins: $PLUGINS"
+          echo "Runtime image: $RUNTIME_IMAGE"
 
   build:
     name: Build + package plugins
     needs: prepare
     runs-on: ubuntu-latest
-    # Same prebuilt toolchain image + Conan cache as ci.yml, instead of rebuilding
-    # the image and cold-compiling deps on every deploy.
     container:
-      image: ghcr.io/${{ github.repository }}/build:latest
+      image: ghcr.io/${{ github.repository }}/cs2-plugin-toolchain:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -73,7 +73,6 @@ jobs:
         with:
           submodules: recursive
 
-      # No Conan cache: deps are baked into the toolchain image (deploy/Dockerfile).
       - name: Cache ccache
         uses: actions/cache@v6
         with:
@@ -94,7 +93,7 @@ jobs:
       - name: Package each declared plugin
         run: |
           for plugin in $(echo '${{ needs.prepare.outputs.plugins }}' | python3 -c "import json,sys; print(' '.join(json.load(sys.stdin)))"); do
-            bash deploy/scripts/package-plugin.sh "$plugin" linux
+            python3 deploy/tools/cli.py package "$plugin" linux
           done
 
       - name: Upload plugin bundles
@@ -105,7 +104,7 @@ jobs:
           if-no-files-found: error
 
   runtime-image:
-    name: Build + publish runtime image
+    name: Build + publish server runtime image
     needs: prepare
     runs-on: ubuntu-latest
     steps:
@@ -120,7 +119,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Layer cache makes this a near-noop when the runtime stage is unchanged.
       - name: Build + push runtime image
         uses: docker/build-push-action@v7
         with:
@@ -183,10 +181,10 @@ jobs:
           name: bundles
           path: package
 
-      - name: Install inventory deps (PyYAML)
+      - name: Install deploy deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-yaml
+          sudo apt-get install -y python3-yaml python3-dotenv rsync
 
       - name: Configure SSH
         run: |
@@ -210,9 +208,8 @@ jobs:
 
       - name: Deploy
         env:
-          RUNTIME_IMAGE: ${{ needs.prepare.outputs.runtime_image }}
-          SSH_KEY: /home/runner/.ssh/id_deploy
+          SSH_KEY_FILE: /home/runner/.ssh/id_deploy
         run: |
-          ARGS=(--server "${{ matrix.server.id }}")
+          ARGS=(deploy --server "${{ matrix.server.id }}" --runtime-image "${{ needs.prepare.outputs.runtime_image }}")
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
-          bash deploy/scripts/deploy.sh "${ARGS[@]}"
+          python3 deploy/tools/cli.py "${ARGS[@]}"

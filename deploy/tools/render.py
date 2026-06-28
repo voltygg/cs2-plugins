@@ -4,7 +4,7 @@
 Inputs:
   * deploy/inventory.yml for servers/plugins/database defaults.
   * exported environment variables loaded from secrets/servers/<id>/.env.
-  * package/<plugin>/addons bundles produced by deploy/scripts/package-plugin.sh.
+  * package/<plugin>/addons bundles produced by deploy/tools/cli.py package.
 
 Outputs under deploy/.render/<server>/:
   * docker-compose.yml
@@ -12,25 +12,19 @@ Outputs under deploy/.render/<server>/:
   * instances/<name>/server.env and instances/<name>/cs2/pre.sh
 """
 
-import argparse
 import json
 import os
 import re
 import shutil
 import stat
-import sys
 from pathlib import Path
 from typing import Any
 
 import inventory
 import yaml
+from common import DEPLOY, die
 
-ROOT = Path(__file__).resolve().parents[2]
-DEPLOY = ROOT / "deploy"
-
-
-def die(message: str) -> None:
-    raise SystemExit(f"ERROR: {message}")
+PRE_HOOK_TEMPLATE = DEPLOY / "templates" / "pre.sh"
 
 
 def json_string_content(value: str) -> str:
@@ -79,7 +73,7 @@ def copy_plugin_bundle(
 ) -> None:
     source_addons = package_dir / plugin / "addons"
     if not source_addons.is_dir():
-        die(f"no bundle at {source_addons}; run deploy/scripts/package-plugin.sh {plugin}")
+        die(f"no bundle at {source_addons}; run deploy/tools/cli.py package {plugin}")
     target_addons = out_dir / "bundles" / "addons"
     shutil.copytree(source_addons, target_addons, dirs_exist_ok=True)
     render_settings(data, server_id, plugin, target_addons / plugin / "configs" / "settings.jsonc")
@@ -106,52 +100,9 @@ def write_env_file(instance: dict[str, Any], out: Path) -> None:
     out.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
-PRE_SH = """#!/usr/bin/env bash
-set -euo pipefail
-
-Root="/home/steam/cs2-dedicated"
-Csgo="$Root/game/csgo"
-AddonsSrc="/home/steam/plugin-bundles/addons"
-MmsBase="${MMS_BASE:-https://mms.alliedmods.net/mmsdrop/2.0}"
-
-if [[ ! -d "$Csgo" ]]; then
-    echo "CS2 game directory is not present yet: $Csgo" >&2
-    exit 0
-fi
-
-if [[ -d "$AddonsSrc" ]]; then
-    mkdir -p "$Csgo/addons"
-    cp -a "$AddonsSrc/." "$Csgo/addons/"
-fi
-
-if [[ -f "$Csgo/gameinfo.gi" ]] && ! grep -q 'csgo/addons/metamod' "$Csgo/gameinfo.gi"; then
-    awk '
-        !done && $0 ~ /[[:space:]]Game[[:space:]]+csgo[[:space:]]*$/ {
-            match($0, /^[[:space:]]*/); indent = substr($0, 1, RLENGTH)
-            printf "%sGame\\tcsgo/addons/metamod\\n", indent
-            done = 1
-        }
-        { print }
-    ' "$Csgo/gameinfo.gi" > "$Csgo/gameinfo.gi.tmp"
-    mv "$Csgo/gameinfo.gi.tmp" "$Csgo/gameinfo.gi"
-fi
-
-if [[ ! -d "$Csgo/addons/metamod/bin" ]]; then
-    if [[ -z "${MMS_URL:-}" ]]; then
-        latest="$(curl -fsSL "$MmsBase/mmsource-latest-linux")"
-        MMS_URL="$MmsBase/$latest"
-    fi
-    tmp="$(mktemp -d)"
-    curl -fsSL "$MMS_URL" -o "$tmp/mms.tar.gz"
-    tar -xzf "$tmp/mms.tar.gz" -C "$Csgo"
-    rm -rf "$tmp"
-fi
-"""
-
-
 def write_pre_hook(out: Path) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(PRE_SH, encoding="utf-8", newline="\n")
+    out.write_text(PRE_HOOK_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
     out.chmod(out.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
@@ -205,19 +156,3 @@ def render(server_id: str, package_dir: Path, out_dir: Path, runtime_image: str 
         yaml.safe_dump(compose, sort_keys=False), encoding="utf-8", newline="\n"
     )
     print(f"rendered {server_id} -> {out_dir}")
-
-
-def main(argv: list[str]) -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--server", required=True)
-    parser.add_argument("--package-dir", default="package")
-    parser.add_argument("--out-dir")
-    parser.add_argument("--runtime-image")
-    args = parser.parse_args(argv)
-
-    out = Path(args.out_dir) if args.out_dir else DEPLOY / ".render" / args.server
-    render(args.server, Path(args.package_dir), out, args.runtime_image)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])

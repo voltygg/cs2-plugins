@@ -12,11 +12,23 @@ dependencies = [
     "ninja>=1.13.0",
     "ruff>=0.14.0",
     "mypy>=1.19.0",
+    "poethepoet>=0.47.0",
+    "python-dotenv>=1.2.0",
     "pyyaml>=6.0",
 ]
 
 [tool.uv]
 package = false
+
+[tool.poe.tasks]
+build = "bash scripts/build.sh"
+build-linux = "bash scripts/build.sh linux-steamrt-release"
+lint = "ruff check ."
+deploy-package = "python deploy/tools/cli.py package"
+deploy-render = "python deploy/tools/cli.py render"
+deploy-server = "python deploy/tools/cli.py deploy"
+deploy-dbs = "python deploy/tools/cli.py ensure-dbs"
+deploy-tunnel = "python deploy/tools/cli.py tunnel-db"
 
 [tool.ruff]
 line-length = 100

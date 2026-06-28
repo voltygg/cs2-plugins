@@ -1,5 +1,5 @@
-# Publishes the `build` stage of deploy/Dockerfile to GHCR so CI runs inside it via
-# a container: job. Rebuilt only on Dockerfile/workflow changes, plus on demand.
+# Publishes the `build` stage of deploy/Dockerfile to GHCR so CI runs inside it
+# via a container: job. Rebuilt only on Dockerfile/workflow changes, plus on demand.
 # FIRST-TIME SETUP: run once via "Run workflow" before CI can pull the image.
 name: Build toolchain image
 
@@ -32,7 +32,7 @@ jobs:
       - name: Resolve image ref
         id: img
         run: |
-          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/build" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/cs2-plugin-toolchain" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v4
 
