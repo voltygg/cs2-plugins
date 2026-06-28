@@ -9,6 +9,7 @@ from common import DEPLOY, load_server_env, repo_path
 
 
 def cmd_matrix(args: argparse.Namespace) -> None:
+    """Print the deploy matrix consumed by GitHub Actions."""
     import inventory
 
     servers = inventory.active_servers(inventory.load())
@@ -20,6 +21,7 @@ def cmd_matrix(args: argparse.Namespace) -> None:
 
 
 def cmd_plugins(args: argparse.Namespace) -> None:
+    """Print declared plugin names."""
     import inventory
 
     plugins = inventory.used_plugins(inventory.load())
@@ -27,18 +29,21 @@ def cmd_plugins(args: argparse.Namespace) -> None:
 
 
 def cmd_runtime_image(_args: argparse.Namespace) -> None:
+    """Print the configured runtime image ref."""
     import inventory
 
     print(inventory.runtime_image(inventory.load()))
 
 
 def cmd_package(args: argparse.Namespace) -> None:
+    """Run the package subcommand."""
     import bundle
 
     bundle.package_plugin(args.plugin, args.platform, args.out)
 
 
 def cmd_render(args: argparse.Namespace) -> None:
+    """Run the render subcommand."""
     import render as renderer
 
     if not args.no_env:
@@ -48,6 +53,7 @@ def cmd_render(args: argparse.Namespace) -> None:
 
 
 def cmd_deploy(args: argparse.Namespace) -> None:
+    """Run the deploy subcommand."""
     import remote
 
     remote.deploy_server(
@@ -59,12 +65,14 @@ def cmd_deploy(args: argparse.Namespace) -> None:
 
 
 def cmd_ensure_dbs(args: argparse.Namespace) -> None:
+    """Run the ensure-dbs subcommand."""
     import database
 
     database.ensure_databases(args.server, args.admin_user, dry_run=args.dry_run)
 
 
 def cmd_tunnel_db(args: argparse.Namespace) -> None:
+    """Run the tunnel-db subcommand."""
     import remote
 
     remote.tunnel_db(
@@ -80,6 +88,7 @@ def cmd_tunnel_db(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the top-level deploy CLI parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -136,6 +145,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Parse arguments and dispatch to the selected subcommand."""
     args = build_parser().parse_args(argv)
     args.func(args)
 

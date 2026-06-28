@@ -9,6 +9,7 @@ from remote import run_ssh
 
 
 def ensure_databases(server_id: str | None, admin_user: str, *, dry_run: bool) -> None:
+    """Create the shared app role and plugin databases when missing."""
     data = inventory.load()
     server = None
     if server_id:
@@ -53,6 +54,7 @@ def ensure_databases(server_id: str | None, admin_user: str, *, dry_run: bool) -
 
 
 def psql_command(host: str, port: str, admin_user: str, sql: str) -> list[str]:
+    """Build a psql command for one admin SQL statement."""
     return [
         "psql",
         "-h",
@@ -72,10 +74,12 @@ def psql_command(host: str, port: str, admin_user: str, sql: str) -> list[str]:
 
 
 def sql_identifier(value: str) -> str:
+    """Quote a PostgreSQL identifier."""
     return '"' + value.replace('"', '""') + '"'
 
 
 def sql_literal(value: str) -> str:
+    """Quote a PostgreSQL string literal."""
     return "'" + value.replace("'", "''") + "'"
 
 

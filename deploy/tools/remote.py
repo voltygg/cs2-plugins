@@ -19,6 +19,7 @@ def deploy_server(
     *,
     dry_run: bool,
 ) -> None:
+    """Render and apply one server's Docker Compose tree over SSH."""
     server = inventory.find_server(inventory.load(), server_id)
     load_server_env(server_id, required=True)
 
@@ -59,6 +60,7 @@ def tunnel_db(
     local_port_arg: str | None,
     identity_arg: str | None,
 ) -> None:
+    """Open an SSH local port forward to a server-side Postgres port."""
     server = _load_optional_server(server_id)
     host = host_arg or (server and str(server["host"])) or os.environ.get("VPS_HOST", "")
     ssh_user = (
@@ -106,6 +108,7 @@ def tunnel_db(
 
 
 def ssh_options(server: dict[str, Any]) -> list[str]:
+    """Return common ssh options for a resolved inventory server."""
     options = [
         "-p",
         str(server["ssh_port"]),
@@ -118,6 +121,7 @@ def ssh_options(server: dict[str, Any]) -> list[str]:
 
 
 def ssh_target(server: dict[str, Any]) -> str:
+    """Return user@host for a resolved inventory server."""
     return f"{server['ssh_user']}@{server['host']}"
 
 
@@ -128,6 +132,7 @@ def run_ssh(
     dry_run: bool = False,
     capture: bool = False,
 ) -> subprocess.CompletedProcess[str]:
+    """Run a remote command on a resolved inventory server."""
     return run(
         ["ssh", *ssh_options(server), ssh_target(server), remote_command],
         dry_run=dry_run,

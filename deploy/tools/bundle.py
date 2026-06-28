@@ -8,6 +8,7 @@ from common import ROOT, die, repo_path, run
 
 
 def package_plugin(plugin: str, platform: str, out: str | None) -> None:
+    """Install one built plugin component into a deploy bundle directory."""
     build_preset = _build_preset(platform)
     plugin_dir = ROOT / "plugins" / plugin
     if not plugin_dir.is_dir():
