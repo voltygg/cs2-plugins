@@ -18,7 +18,6 @@
     "AMBuildScript": "python"
   },
   "files.exclude": {
-    "**/build": true,
     "**/objdir": true,
     "**/.vs": true,
     "**/__pycache__": true,

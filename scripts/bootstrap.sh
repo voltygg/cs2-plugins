@@ -14,10 +14,11 @@ ScriptDir="$(cd "$(dirname "$0")" && pwd)"
 RepoRoot="$(cd "$ScriptDir/.." && pwd)"
 cd "$RepoRoot"
 
-source "$ScriptDir/lib/common.sh"
-
+# Fetch first: lib/common.sh wraps helpers vendored in cs2-kit.
 echo "==> [1/3] Fetching submodules (cs2-kit + nested SDKs)"
 git submodule update --init --recursive --depth 1
+
+source "$ScriptDir/lib/common.sh"
 
 echo "==> [2/3] Checking CMake + Conan build tools"
 require_build_tools
