@@ -126,10 +126,9 @@ def render_compose(server: dict[str, Any], runtime_image: str) -> str:
     blocks: list[str] = []
     for instance in server["instances"]:
         name = str(instance["name"])
-        service = f"cs2-{name}"
         env = {
-            "SERVICE_NAME": service,
-            "CONTAINER_NAME": f"{server['id']}-{service}",
+            "SERVICE_NAME": name,
+            "CONTAINER_NAME": f"{server['id']}-cs2-{name}",
             "RUNTIME_IMAGE": runtime_image,
             "INSTANCE_NAME": name,
             "PORT": str(instance["port"]),
@@ -142,7 +141,7 @@ def render_compose(server: dict[str, Any], runtime_image: str) -> str:
         indented = "\n".join(("  " + line if line else line) for line in rendered.splitlines())
         blocks.append(indented)
 
-    document = "services:\n" + "\n".join(blocks) + "\n"
+    document = "name: cs2\n" + "services:\n" + "\n".join(blocks) + "\n"
 
     leftover = sorted(set(re.findall(r"\$\{[A-Za-z_][A-Za-z0-9_]*\}", document)))
     if leftover:
