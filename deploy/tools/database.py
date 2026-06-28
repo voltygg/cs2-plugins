@@ -1,5 +1,7 @@
 """Shared PostgreSQL provisioning for deployed plugins."""
 
+from __future__ import annotations
+
 import os
 import shlex
 

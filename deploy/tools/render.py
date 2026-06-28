@@ -12,6 +12,8 @@ Outputs under deploy/.render/<server>/:
   * instances/<name>/server.env and instances/<name>/cs2/pre.sh
 """
 
+from __future__ import annotations
+
 import json
 import os
 import re

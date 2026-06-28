@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Inventory helpers for Dockerized CS2 deploys."""
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 from typing import Any
