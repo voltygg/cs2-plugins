@@ -21,8 +21,11 @@ dependencies = [
 package = false
 
 [tool.poe.tasks]
-build = "bash scripts/build.sh"
-build-linux = "bash scripts/build.sh linux-steamrt-release"
+build = "python scripts/build.py"
+build-linux = "python scripts/build.py linux-steamrt-release"
+bootstrap = "python scripts/bootstrap.py"
+deploy = "python scripts/deploy.py"
+start-server = "python scripts/start-server.py"
 lint = "ruff check ."
 deploy-package = "python deploy/tools/cli.py package"
 deploy-render = "python deploy/tools/cli.py render"

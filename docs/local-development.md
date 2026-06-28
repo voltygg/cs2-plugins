@@ -39,11 +39,11 @@ git submodule update --init --recursive
 
 ## Build
 
-Open an x64 Native Tools Command Prompt for VS 2026, then launch Git Bash from
-that shell so `cl` is on `PATH`.
+The build auto-loads the MSVC environment via `vcvars64.bat`, so a plain shell
+works on Windows.
 
 ```bash
-./scripts/bootstrap.sh
+uv run poe bootstrap
 ```
 
 After the first build:
@@ -53,9 +53,9 @@ uv run poe build windows-msvc-release
 uv run poe build windows-msvc-debug
 ```
 
-The build script writes a local Conan profile under `build/conan-profiles/`,
-runs `conan install`, configures CMake, and builds the requested preset. It
-uses tools from `PATH` first and falls back to `uv run --project .` when needed.
+The build script runs `conan install`, configures CMake, and builds the
+requested preset via the workflow preset. It prefers tools from the project
+venv, then `uv run`, then `PATH`.
 
 ## CMake Presets
 
@@ -81,13 +81,13 @@ build/windows-msvc-release/plugins/admin-system/windows-x86_64/admin-system.dll
 ## Deploy To A Local Server
 
 ```bash
-./scripts/deploy.sh --server-path "C:/cs2-server" --plugin-name admin-system
+uv run poe deploy --server-path "C:/cs2-server" --plugin-name admin-system
 ```
 
 Set `CS2_BUILD_PRESET` if you want to deploy from a non-default preset:
 
 ```bash
-CS2_BUILD_PRESET=windows-msvc-debug ./scripts/deploy.sh --plugin-name admin-system
+CS2_BUILD_PRESET=windows-msvc-debug uv run poe deploy --plugin-name admin-system
 ```
 
 ## Common Issues

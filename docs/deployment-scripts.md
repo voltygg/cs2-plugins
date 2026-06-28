@@ -6,17 +6,17 @@ deploy the shared cs2-kit gamedata.
 ## Usage
 
 ```bash
-./scripts/deploy.sh
-./scripts/deploy.sh --server-path "D:/CS2-Server"
-./scripts/deploy.sh --plugin-name admin-system
-./scripts/deploy.sh --server-path "D:/CS2-Server" --plugin-name admin-system
+uv run poe deploy
+uv run poe deploy --server-path "D:/CS2-Server"
+uv run poe deploy --plugin-name admin-system
+uv run poe deploy --server-path "D:/CS2-Server" --plugin-name admin-system
 ```
 
-On Windows, run from Git Bash or WSL. The default Windows build preset is
-`windows-msvc-release`; override it with `CS2_BUILD_PRESET`.
+The default Windows build preset is `windows-msvc-release`; override it with
+`CS2_BUILD_PRESET`.
 
 ```bash
-CS2_BUILD_PRESET=windows-msvc-debug ./scripts/deploy.sh --plugin-name admin-system
+CS2_BUILD_PRESET=windows-msvc-debug uv run poe deploy --plugin-name admin-system
 ```
 
 ## Build Output

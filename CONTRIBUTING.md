@@ -10,11 +10,11 @@ One command does the setup: submodules, Conan dependencies, SDK protobuf
 generation into `build/`, and a first CMake build.
 
 ```bash
-./scripts/bootstrap.sh
+uv run poe bootstrap
 ```
 
-On Windows, run it from Git Bash launched inside an x64 Native Tools Command
-Prompt for VS so MSVC is on `PATH`.
+On Windows this auto-loads the MSVC environment via `vcvars64.bat`, so a plain
+shell works; no x64 Native Tools prompt is required.
 
 Required tools:
 

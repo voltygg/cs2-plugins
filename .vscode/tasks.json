@@ -63,9 +63,9 @@
     {
       "label": "Start CS2 Server",
       "type": "shell",
-      "command": "bash",
+      "command": "python",
       "args": [
-        "${workspaceFolder}/scripts/start-server.sh"
+        "${workspaceFolder}/scripts/start-server.py"
       ],
       "problemMatcher": [],
       "presentation": {
