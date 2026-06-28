@@ -141,6 +141,13 @@ jobs:
           name: bundles
           path: package
 
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Pull runtime image
         run: docker pull "${{ needs.prepare.outputs.runtime_image }}"
 
