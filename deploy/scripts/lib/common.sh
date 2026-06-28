@@ -32,14 +32,10 @@ load_server_env() {
 # Set SshTarget/SshArgs/RsyncSsh from SRV_* (call after `inventory server-env`).
 build_ssh() {
     SshTarget="$SRV_SSH_USER@$SRV_HOST"
-    SshArgs=(-p "$SRV_SSH_PORT")
-    if [[ -n "${SSH_OPTS:-}" ]]; then
-        local extra
-        read -r -a extra <<< "$SSH_OPTS"
-        SshArgs+=("${extra[@]}")
-    else
-        SshArgs+=(-o StrictHostKeyChecking=accept-new)
-    fi
+    SshArgs=(-p "$SRV_SSH_PORT" -o StrictHostKeyChecking=accept-new)
+    # SSH_KEY (a private-key path, e.g. from the server .env) selects the key so
+    # ssh won't fall back to a password prompt.
+    [[ -z "${SSH_KEY:-}" ]] || SshArgs+=(-i "$SSH_KEY" -o IdentitiesOnly=yes)
 
     RsyncSsh="ssh"
     local arg quoted

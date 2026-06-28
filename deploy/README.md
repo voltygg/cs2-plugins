@@ -62,8 +62,12 @@ binds a local port (default 5433, to avoid clashing with a local postgres on
 ```bash
 deploy/scripts/tunnel-db.sh --server box-a
 # or without an inventory entry:
-deploy/scripts/tunnel-db.sh --host 203.0.113.10 --db-host localhost
+deploy/scripts/tunnel-db.sh --host 203.0.113.10 --identity ~/.ssh/id_deploy
 ```
+
+With `--server`, the SSH user/port come from the inventory and the key path from
+`SSH_KEY` in the server's `.env`, so plain `--server box-a` connects without
+prompting for a password. `--identity <keyfile>` overrides it.
 
 Then in another shell:
 
@@ -72,7 +76,7 @@ psql "host=127.0.0.1 port=5433 dbname=admin_system user=cs2_app"
 ```
 
 Ctrl-C stops the tunnel. `--local-port`, `--db-host`, `--ssh-user`, etc. override
-the inventory; see `--help`.
+the defaults; see `--help`.
 
 ## Inventory + secrets
 

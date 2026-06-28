@@ -211,7 +211,7 @@ jobs:
       - name: Deploy
         env:
           RUNTIME_IMAGE: ${{ needs.prepare.outputs.runtime_image }}
-          SSH_OPTS: "-i /home/runner/.ssh/id_deploy -o StrictHostKeyChecking=yes"
+          SSH_KEY: /home/runner/.ssh/id_deploy
         run: |
           ARGS=(--server "${{ matrix.server.id }}")
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi

@@ -3,9 +3,14 @@
 # SSH tunnel to the remote PostgreSQL behind a deployed VPS. Binds a local port
 # (default 5433, to dodge a local postgres on 5432) to the remote 5432.
 #
+# Auth is key-based. With --server the key path comes from SSH_KEY in the
+# server's env file, so plain `--server box-a` just works; --identity <keyfile>
+# overrides it. Either way ssh won't fall back to a password prompt.
+#
 # Usage:
 #   deploy/scripts/tunnel-db.sh --server box-a
-#   deploy/scripts/tunnel-db.sh --host 203.0.113.10 [--db-host localhost]
+#   deploy/scripts/tunnel-db.sh --server box-a --identity ~/.ssh/id_deploy
+#   deploy/scripts/tunnel-db.sh --host 203.0.113.10 --identity ~/.ssh/id_deploy
 #   deploy/scripts/tunnel-db.sh --server box-a --local-port 5544
 #
 # Then: psql "host=127.0.0.1 port=5433 dbname=admin_system user=cs2_app"
@@ -22,29 +27,32 @@ SshPort="${SSH_PORT:-}"
 DbHost="${DB_HOST:-}"
 DbPort="${DB_PORT:-}"
 LocalPort="${LOCAL_PORT:-5433}"
+Identity="${SSH_KEY:-}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --server)     ServerId="$2"; shift 2 ;;
-        --host)       VpsHost="$2"; shift 2 ;;
-        --ssh-user)   SshUser="$2"; shift 2 ;;
-        --ssh-port)   SshPort="$2"; shift 2 ;;
-        --db-host)    DbHost="$2"; shift 2 ;;
-        --db-port)    DbPort="$2"; shift 2 ;;
-        --local-port) LocalPort="$2"; shift 2 ;;
-        -h|--help)    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --server)        ServerId="$2"; shift 2 ;;
+        --host)          VpsHost="$2"; shift 2 ;;
+        --ssh-user)      SshUser="$2"; shift 2 ;;
+        --ssh-port)      SshPort="$2"; shift 2 ;;
+        --db-host)       DbHost="$2"; shift 2 ;;
+        --db-port)       DbPort="$2"; shift 2 ;;
+        --local-port)    LocalPort="$2"; shift 2 ;;
+        -i|--identity)   Identity="$2"; shift 2 ;;
+        -h|--help)       sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) die "unknown argument: $1" ;;
     esac
 done
 
 if [[ -n "$ServerId" ]]; then
     eval "$(inventory server-env "$ServerId")"
-    eval "$(inventory db-conn)"
     VpsHost="${VpsHost:-$SRV_HOST}"
     SshUser="${SshUser:-$SRV_SSH_USER}"
     SshPort="${SshPort:-$SRV_SSH_PORT}"
-    DbHost="${DbHost:-$DB_HOST}"
-    DbPort="${DbPort:-$DB_PORT}"
+
+    EnvDir="$DeployDir/secrets/servers/$ServerId"
+    [[ -f "$EnvDir/.env" ]] && load_server_env "$EnvDir"
+    Identity="${Identity:-${SSH_KEY:-}}"
 fi
 
 SshUser="${SshUser:-steam}"
@@ -55,13 +63,11 @@ DbPort="${DbPort:-5432}"
 [[ -n "$VpsHost" ]] || die "VPS host is required (use --server <id> or --host <ip>)"
 
 SshArgs=(-N -p "$SshPort" -L "127.0.0.1:$LocalPort:$DbHost:$DbPort")
-if [[ -n "${SSH_OPTS:-}" ]]; then
-    read -r -a ExtraSshArgs <<< "$SSH_OPTS"
-    SshArgs+=("${ExtraSshArgs[@]}")
-else
-    # ExitOnForwardFailure: fail loudly if LocalPort is taken, don't connect without the forward.
-    SshArgs+=(-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes)
-fi
+# ExitOnForwardFailure: fail loudly if LocalPort is taken, don't connect without the forward.
+SshArgs+=(-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes)
+
+# Use the given key only (IdentitiesOnly) so ssh won't drop to a password prompt.
+[[ -z "$Identity" ]] || SshArgs+=(-i "$Identity" -o IdentitiesOnly=yes)
 
 echo "=== SSH tunnel: 127.0.0.1:$LocalPort -> $DbHost:$DbPort (via $SshUser@$VpsHost:$SshPort) ==="
 echo "    connect: psql \"host=127.0.0.1 port=$LocalPort dbname=admin_system user=<db-user>\""

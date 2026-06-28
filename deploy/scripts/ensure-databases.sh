@@ -4,13 +4,13 @@
 # one database per plugin, then grants the app role on each. Run once per added
 # plugin; plugins apply their own migrations on load. Needs a superuser.
 #
-# Local (connects to the inventory DB host):
+# Local (connects to the inventory DB host; pass the passwords explicitly):
 #   DB_PASSWORD=... PGPASSWORD=<admin-pw> ensure-databases.sh --admin-user postgres
-# Remote (runs the DDL on the box over SSH, inventory parsed locally, nothing copied):
-#   DB_PASSWORD=... PGPASSWORD=<admin-pw> ensure-databases.sh --server box-a
+# Remote (over SSH; reads SSH_KEY/DB_PASSWORD/PGPASSWORD from the server .env):
+#   ensure-databases.sh --server box-a
 #
 # DB_PASSWORD: app role password.  PGPASSWORD: superuser password.
-# PGHOST/PGPORT override the connection host/port.
+# PGHOST/PGPORT override host/port. Explicit env vars override .env values.
 
 set -euo pipefail
 
@@ -21,6 +21,7 @@ AdminUser="postgres"
 ServerId=""
 Remote=0
 DryRun=0
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --admin-user) AdminUser="$2"; shift 2 ;;
@@ -30,6 +31,18 @@ while [[ $# -gt 0 ]]; do
         *) die "unknown argument: $1" ;;
     esac
 done
+
+if [[ "$Remote" -eq 1 ]]; then
+    # Connect over SSH and read SSH_KEY/DB_PASSWORD/PGPASSWORD from the server .env
+    eval "$(inventory server-env "$ServerId")"
+    _db="${DB_PASSWORD:-}"; _pg="${PGPASSWORD:-}"
+    EnvDir="$DeployDir/secrets/servers/$ServerId"
+
+    [[ -f "$EnvDir/.env" ]] && load_server_env "$EnvDir"
+    [[ -n "$_db" ]] && DB_PASSWORD="$_db"
+    [[ -n "$_pg" ]] && PGPASSWORD="$_pg"
+    build_ssh
+fi
 
 if [[ -z "${DB_PASSWORD:-}" ]]; then
     die "DB_PASSWORD must be set (the app role's password)."
@@ -47,11 +60,9 @@ eval "$(inventory db-conn)"
 AppUser="$DB_USER"
 Port="${PGPORT:-$DB_PORT}"
 
+# On the box, Postgres is at localhost (inventory's host.docker.internal only
+# resolves inside a container).
 if [[ "$Remote" -eq 1 ]]; then
-    # On the box, Postgres is at localhost (inventory's host.docker.internal
-    # only resolves inside a container).
-    eval "$(inventory server-env "$ServerId")"
-    build_ssh
     Host="${PGHOST:-localhost}"
 else
     Host="${PGHOST:-$DB_HOST}"
