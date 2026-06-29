@@ -56,7 +56,7 @@ def deploy_server(
 
     run_ssh(server, f"cd {remote_root_q} && docker compose pull")
     for instance in server.get("instances", []):
-        service = f"cs2-{instance['name']}"
+        service = str(instance["name"])
         _compose_up_service(server, remote_root_q, service)
     _check_services(server, remote_root_q)
     print(f"=== Deploy to {server_id} complete ===")
@@ -272,7 +272,7 @@ def _check_services(server: dict[str, Any], remote_root_q: str) -> None:
 
     failed = False
     for instance in server.get("instances", []):
-        service = f"cs2-{instance['name']}"
+        service = str(instance["name"])
         if service in running:
             print(f"    {service}: running")
             continue
