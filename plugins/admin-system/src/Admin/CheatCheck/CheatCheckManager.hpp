@@ -41,7 +41,7 @@ public:
     /** A suspect submitted a link via `!cc` (playerProvided mode). */
     SubmitResult SubmitPlayerLink(int callerSlot, const std::string& link);
 
-    /** Silent teardown for a disconnecting slot (no unfreeze/broadcast — the player is gone). */
+    /** Silent teardown for a disconnecting slot (no unfreeze/broadcast - the player is gone). */
     void CancelAllForSlot(int slot);
 
     /** Tear down every active check (plugin unload). */

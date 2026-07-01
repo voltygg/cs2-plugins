@@ -20,7 +20,7 @@ constexpr uint8_t RenderModeNormal = 0;
 constexpr uint8_t RenderModeTransTexture = 3;
 constexpr uint32_t ColorOpaqueWhite = 0xFFFFFFFFu;
 
-// Bright RGBA values cycled at 200 ms — red / orange / yellow / green / blue / magenta.
+// Bright RGBA values cycled at 200 ms - red / orange / yellow / green / blue / magenta.
 constexpr std::array<uint32_t, 6> Palette = {
     0xFF0000FFu, 0xFF8000FFu, 0xFFFF00FFu, 0x00FF00FFu, 0x0000FFFFu, 0xFF00FFFFu,
 };

@@ -44,7 +44,7 @@ void Broadcast(const ActionContext& ctx, const std::string& translationKey);
  * Bodies receive a valid, permission/immunity-checked @ref ActionContext, mutate the
  * target, and return the broadcast key (or nullopt to stay silent). The dispatcher owns
  * the `Resolve -> guard -> Broadcast` shape, so an action is just its flag, its guards,
- * and its effect — no per-action wrapper function. Menus and commands invoke them through
+ * and its effect - no per-action wrapper function. Menus and commands invoke them through
  * @ref Run.
  */
 struct Action

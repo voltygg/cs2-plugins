@@ -18,11 +18,11 @@ struct ResolvedTarget
  * Resolve a target token to a list of online players.
  *
  * Supported syntax (parsed by CS2Kit::Utils::StringUtils::ParseTarget):
- *   - `@all` / `@*` — every connected player.
- *   - `@me` — the caller.
- *   - `#N` — slot index N (e.g. "#3").
- *   - a SteamID64 / `STEAM_…` / `[U:1:…]` — that exact player.
- *   - anything else — case-insensitive substring of the player's display name.
+ *   - `@all` / `@*` - every connected player.
+ *   - `@me` - the caller.
+ *   - `#N` - slot index N (e.g. "#3").
+ *   - a SteamID64 / `STEAM_…` / `[U:1:…]` - that exact player.
+ *   - anything else - case-insensitive substring of the player's display name.
  *
  * Caller's immunity is checked against each match; blocked entries appear with
  * `Allowed = false` so the command handler can report "X is immune".

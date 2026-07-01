@@ -69,7 +69,7 @@ std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(int viewerSlot)
     std::vector<ChoiceOption<std::string>::Choice> choices;
     choices.reserve(ChatColors::Palette.size() + 1);
 
-    // First entry is always "(group default)" — empty DB value, distinct from
+    // First entry is always "(group default)" - empty DB value, distinct from
     // ChatColors::Default which is itself a real overrideable color.
     choices.push_back({tr.Get("color.groupDefault", viewerSlot), std::string{}});
 
@@ -91,7 +91,7 @@ enum class ColorSlot
     Message,
 };
 
-// Pull the current persisted color out of the admin row (NOT the resolved style — we
+// Pull the current persisted color out of the admin row (NOT the resolved style - we
 // want the override slot itself, so "default" stays selected after a rebroadcast).
 std::string CurrentSlotColor(int64_t steamId, ColorSlot slot)
 {
@@ -138,7 +138,7 @@ void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t stea
 }
 
 // Friendly name for a language code, keyed as `lang.<code>` so a new translations/<code>.json
-// only needs a matching `lang.<code>` entry — no code change. Falls back to the raw code.
+// only needs a matching `lang.<code>` entry - no code change. Falls back to the raw code.
 std::string LanguageLabel(const std::string& code, int viewerSlot)
 {
     std::string key = "lang." + code;
@@ -203,7 +203,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildChatSettingsMenu(int adminSlot)
 
     MenuBuilder builder(tr.Get("category.chatSettings", adminSlot));
 
-    // Display Prefix toggle — flips the bool and persists immediately so the next chat line
+    // Display Prefix toggle - flips the bool and persists immediately so the next chat line
     // reflects the change without needing an explicit "Save" row.
     builder.AddToggle(
         tr.Get("chat.displayPrefix", adminSlot), tr.Get("effectState.on", adminSlot),
@@ -226,7 +226,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildChatSettingsMenu(int adminSlot)
     AddColorChoice(builder, tr.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message,
                    std::make_shared<int>(0), adminSlot);
 
-    // Panel language — commit on E persists and rebuilds the menu in the chosen language.
+    // Panel language - commit on E persists and rebuilds the menu in the chosen language.
     AddLanguageChoice(builder, steamId, std::make_shared<int>(0), adminSlot);
 
     return builder.Build();

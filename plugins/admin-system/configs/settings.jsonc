@@ -61,7 +61,7 @@
       "url": "https://discord.gg/your-invite"
     },
     // "websiteAutoRoom" mode: the plugin POSTs here to create a per-check room.
-    // Backend-agnostic — shipped pre-filled for the meat-app API; edit for your own backend.
+    // Backend-agnostic - shipped pre-filled for the meat-app API; edit for your own backend.
     "websiteAutoRoom": {
       // Room-creation endpoint.
       "createRoomUrl": "http://localhost:4000/api/rooms",

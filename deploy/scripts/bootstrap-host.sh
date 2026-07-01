@@ -14,6 +14,8 @@ DeployRoot="${DEPLOY_ROOT:-$Cs2Root/deploy}"
 SshPort="${SSH_PORT:-22}"
 PortRange="${CS2_PORT_RANGE:-27015:27035}"
 SkipDocker=0
+SkipAutoupdate=0
+ScriptDir="$(cd "$(dirname "$0")" && pwd)"
 
 log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
@@ -21,6 +23,7 @@ die() { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --skip-docker) SkipDocker=1; shift ;;
+        --skip-autoupdate) SkipAutoupdate=1; shift ;;
         -h|--help) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) die "unknown argument: $1" ;;
     esac
@@ -59,5 +62,42 @@ ufw allow "${SshPort}/tcp"
 # CS2 game traffic is UDP; RCON (TCP) is intentionally not exposed publicly.
 ufw allow "${PortRange}/udp"
 ufw --force enable
+
+if [[ "$SkipAutoupdate" -eq 0 ]]; then
+    log "Installing cs2-autoupdate timer (checks the CS2 build every 15 min)"
+    install -m 0755 "$ScriptDir/cs2-autoupdate.sh" /usr/local/bin/cs2-autoupdate.sh
+
+    cat > /etc/systemd/system/cs2-autoupdate.service <<EOF
+[Unit]
+Description=CS2 dedicated server auto-update check
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+User=$DeployUser
+Environment=CS2_ROOT=$Cs2Root
+Environment=DEPLOY_ROOT=$DeployRoot
+ExecStart=/usr/local/bin/cs2-autoupdate.sh
+EOF
+
+    cat > /etc/systemd/system/cs2-autoupdate.timer <<'EOF'
+[Unit]
+Description=Periodic CS2 dedicated server auto-update check
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable --now cs2-autoupdate.timer
+else
+    log "Skipping cs2-autoupdate timer (--skip-autoupdate)"
+fi
 
 log "Docker host ready. Log out/in for '$DeployUser' docker group membership to apply."

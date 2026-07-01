@@ -8,7 +8,7 @@
 namespace AdminSystem::Database
 {
 
-/** Repository for player warning records — used by escalation logic and audit history. */
+/** Repository for player warning records - used by escalation logic and audit history. */
 class WarningRepository
 {
 public:

@@ -62,6 +62,36 @@ def deploy_server(
     print(f"=== Deploy to {server_id} complete ===")
 
 
+def update_server(server_id: str, *, dry_run: bool) -> None:
+    """Restart one server's instances so SteamCMD pulls the latest CS2 build.
+
+    The runtime image runs SteamCMD only at container start, so a long-running
+    container never picks up Valve updates. Restarting re-execs the entrypoint
+    and updates the shared install in the cs2_root volume.
+    """
+    server = inventory.find_server(inventory.load(), server_id)
+    load_server_env(server_id, required=False)
+
+    remote_root_q = shlex.quote(str(server["deploy_root"]))
+    target = ssh_target(server)
+
+    print(f"=== Updating CS2 on {server_id} ({target}) ===")
+    print(f"    instances: {_instances_summary(server) or '<none>'}")
+
+    # Sequential: instances share one CS2 install; concurrent SteamCMD writes
+    # to the same volume must be avoided.
+    for instance in server.get("instances", []):
+        service = str(instance["name"])
+        _compose_restart_service(server, remote_root_q, service, dry_run=dry_run)
+
+    if dry_run:
+        print("=== Dry run complete; no containers were restarted ===")
+        return
+
+    _check_services(server, remote_root_q)
+    print(f"=== Update for {server_id} complete ===")
+
+
 def cleanup_server(server_id: str, *, yes: bool, dry_run: bool) -> None:
     """Remove one server's Docker stack, deploy files, CS2 files, and images."""
     if not yes and not dry_run:
@@ -219,6 +249,15 @@ def _compose_up_service(server: dict[str, Any], remote_root_q: str, service: str
     service_q = shlex.quote(service)
     run_ssh(server, f"cd {remote_root_q} && docker compose up -d {service_q}")
     _wait_for_steamcmd(server, remote_root_q, service)
+
+
+def _compose_restart_service(
+    server: dict[str, Any], remote_root_q: str, service: str, *, dry_run: bool = False
+) -> None:
+    service_q = shlex.quote(service)
+    run_ssh(server, f"cd {remote_root_q} && docker compose restart {service_q}", dry_run=dry_run)
+    if not dry_run:
+        _wait_for_steamcmd(server, remote_root_q, service)
 
 
 def _wait_for_steamcmd(server: dict[str, Any], remote_root_q: str, service: str) -> None:

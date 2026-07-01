@@ -15,7 +15,7 @@ namespace AdminSystem::Database
 {
 
 /**
- * Repository for mute records — lookup, creation, removal, expiration, and history.
+ * Repository for mute records - lookup, creation, removal, expiration, and history.
  * Templated over the entity (VoiceMute / TextMute) since both tables share an identical
  * schema and row mapping. The table name and a prepared-statement-name prefix are passed in
  * at construction so the two tables keep DISTINCT prepared statements (e.g. "voice_mute" vs

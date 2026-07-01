@@ -26,9 +26,9 @@ git -C vendor/cs2-kit log --oneline -3
 
 Decide which path applies:
 
-- **A. Both clean** — nothing to do. Tell the user and stop.
-- **B. Only admin-system dirty** — skip to step 4.
-- **C. cs2-kit dirty (with or without admin-system changes)** — start at step 2.
+- **A. Both clean** - nothing to do. Tell the user and stop.
+- **B. Only admin-system dirty** - skip to step 4.
+- **C. cs2-kit dirty (with or without admin-system changes)** - start at step 2.
 
 ### 2. Commit and push cs2-kit first
 
@@ -39,7 +39,7 @@ git -C vendor/cs2-kit add <specific files>
 git -C vendor/cs2-kit commit -m "$(cat <<'EOF'
 <type>: <summary>
 
-<optional body — why, not how>
+<optional body - why, not how>
 EOF
 )"
 git -C vendor/cs2-kit push origin main
@@ -72,7 +72,7 @@ EOF
 )"
 ```
 
-If the commit only bumps the submodule (no other src changes), use `chore: bump cs2-kit to <reason>` — match the style of `bacf503` in recent history.
+If the commit only bumps the submodule (no other src changes), use `chore: bump cs2-kit to <reason>` - match the style of `bacf503` in recent history.
 
 ### 5. Push admin-system
 
@@ -90,17 +90,17 @@ End with the parent repo's new HEAD SHA and, if applicable, the cs2-kit HEAD SHA
 
 Match the existing history (`git log --oneline -10` to confirm). Conventional-commit prefixes used in this repo:
 
-- `feat:` — new functionality
-- `fix:` — bug fix
-- `refactor:` — restructuring without behavior change
-- `chore:` — submodule bumps, config tweaks, version bumps
-- `docs:` — documentation only
+- `feat:` - new functionality
+- `fix:` - bug fix
+- `refactor:` - restructuring without behavior change
+- `chore:` - submodule bumps, config tweaks, version bumps
+- `docs:` - documentation only
 
 **Rules:**
 
 - Summary: imperative mood, lowercase, no trailing period, under 72 chars
 - Body wrapped at 72; separate from summary with a blank line
-- Focus on **why**, not **what** — the diff shows what
+- Focus on **why**, not **what** - the diff shows what
 - Do NOT append `Co-Authored-By` or any other trailer unless the user explicitly asks
 
 ## Important
@@ -109,7 +109,7 @@ Match the existing history (`git log --oneline -10` to confirm). Conventional-co
 - **Don't amend** previous commits unless the user explicitly asks.
 - **Don't force-push** main in either repo.
 - **Don't bypass hooks** (`--no-verify`, `--no-gpg-sign`). Investigate and fix the underlying issue if a hook fails.
-- If pre-commit hooks fail, the commit did not happen — fix, re-stage, create a NEW commit (not `--amend`).
+- If pre-commit hooks fail, the commit did not happen - fix, re-stage, create a NEW commit (not `--amend`).
 - If there are no changes to commit in a given repo, skip that repo and continue.
 
 ## Examples

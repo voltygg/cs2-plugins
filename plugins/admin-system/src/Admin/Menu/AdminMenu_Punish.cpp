@@ -54,7 +54,7 @@ static std::shared_ptr<::CS2Kit::Menu::Menu> BuildTimedPunishmentMenu(
     for (const auto& dur : Durations)
         presets.emplace_back(tr.Get(dur.Key, adminSlot), dur.Seconds);
 
-    // The preset is content-agnostic, so it fires onPick(viewerSlot, seconds) only — the plugin
+    // The preset is content-agnostic, so it fires onPick(viewerSlot, seconds) only - the plugin
     // applies the punishment and closes the menu stack here to preserve the prior behavior.
     auto onPick = [target = targetSlot, callback = std::move(onDuration)](int slot, int seconds) {
         callback(slot, target, seconds);

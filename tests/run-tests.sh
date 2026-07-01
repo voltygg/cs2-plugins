@@ -4,7 +4,7 @@
 #
 # This build is fully independent of CMake / Conan / the plugin build.
 # It compiles only the pure-logic utilities (StringUtils, SteamId, TimeUtils) plus
-# the test cases — NO HL2SDK, NO Metamod, NO libpqxx, NO curl.
+# the test cases - NO HL2SDK, NO Metamod, NO libpqxx, NO curl.
 #
 # IMPORTANT: with MSVC (cl) this script assumes it is run from an
 # "x64 Native Tools Command Prompt for VS" / vcvars environment (run via Git Bash

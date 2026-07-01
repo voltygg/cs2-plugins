@@ -66,6 +66,13 @@ def cmd_deploy(args: argparse.Namespace) -> None:
     )
 
 
+def cmd_update(args: argparse.Namespace) -> None:
+    """Run the update subcommand."""
+    import remote
+
+    remote.update_server(args.server, dry_run=args.dry_run)
+
+
 def cmd_cleanup(args: argparse.Namespace) -> None:
     """Run the cleanup subcommand."""
     import remote
@@ -132,6 +139,11 @@ def build_parser() -> argparse.ArgumentParser:
     deploy.add_argument("--runtime-image")
     deploy.add_argument("--dry-run", action="store_true")
     deploy.set_defaults(func=cmd_deploy)
+
+    update = sub.add_parser("update", help="restart instances to pull the latest CS2 build")
+    update.add_argument("--server", required=True)
+    update.add_argument("--dry-run", action="store_true")
+    update.set_defaults(func=cmd_update)
 
     cleanup = sub.add_parser("cleanup", help="remove one deployed CS2 server stack")
     cleanup.add_argument("--server", required=True)

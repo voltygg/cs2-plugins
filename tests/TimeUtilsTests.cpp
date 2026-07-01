@@ -1,7 +1,6 @@
 #include "MicroTest.hpp"
 
 #include <CS2Kit/Utils/TimeUtils.hpp>
-
 #include <cstdint>
 #include <string>
 
@@ -61,7 +60,7 @@ TEST_CASE("TimeUtils::FormatTimestamp zero -> Never")
 TEST_CASE("TimeUtils::Now is a plausible Unix timestamp")
 {
     int64_t now = TimeUtils::Now();
-    // After 2025-01-01 and before 2100-01-01 — just a sanity envelope.
+    // After 2025-01-01 and before 2100-01-01 - just a sanity envelope.
     CHECK(now > 1735689600LL);
     CHECK(now < 4102444800LL);
 }
