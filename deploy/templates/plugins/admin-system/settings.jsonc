@@ -29,7 +29,7 @@
     "fallbackMessageColor": "default"
   },
   "cheatCheck": {
-    "mode": "fixedLink",
+    "mode": "websiteAutoRoom",
     "timeoutSec": 120,
     "autoKick": true,
     "kickReason": "Failed to comply with cheat check",
