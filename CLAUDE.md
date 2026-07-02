@@ -10,6 +10,10 @@ Each plugin lives under `plugins/<name>/` with its own `src/`, `configs/`,
 `<name>.vdf`, and `CMakeLists.txt`. Add new plugins with
 `cs2_add_plugin(<name> ...)` and a root `add_subdirectory()`.
 
+Third-party C++ deps: add to `conanfile.py`, `find_package` in the root
+`CMakeLists.txt`, link the imported target (e.g. `libpqxx::pqxx`) in the
+plugin's `CMakeLists.txt`.
+
 ## Tech Stack
 
 - Language: C++23
@@ -29,6 +33,8 @@ ctest --preset windows-msvc-release
 ```
 
 Build output lands in `build/<preset>/plugins/<name>/<platform-arch>/`.
+Conan profiles are canonical in `vendor/cs2-kit/conan/profiles/` (no local
+copies). The utils unit tests live in `vendor/cs2-kit/tests/`.
 
 ## Project Structure
 
