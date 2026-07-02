@@ -75,9 +75,6 @@ private:
     /** Phrase at `translationKey`, or the key itself so a missing translation is obvious. */
     std::string BroadcastPhrase(const std::string& translationKey) const;
 
-    /** Print "{prefix} {admin} {olive phrase}" server-wide; skipped when broadcasts are disabled. */
-    void BroadcastAdminLine(std::string_view adminName, std::string_view phrase);
-
     // Once per minute per player: the voice hook fires every keypress and chat spam produces
     // dozens of say events, so unthrottled notices would out-spam the spam itself.
     static constexpr int64_t MuteNoticeIntervalSec = 60;

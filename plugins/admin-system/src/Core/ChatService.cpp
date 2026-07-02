@@ -78,38 +78,31 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
                                   std::string_view targetName)
 {
-    auto verb = BroadcastPhrase(translationKey);
-    if (targetName.empty())
-        BroadcastAdminLine(adminName, verb);
-    else
-        BroadcastAdminLine(adminName, std::format("{}{} {}", verb, ChatColors::Default, targetName));
+    const auto& cfg = App().Config.GetChat();
+    if (!cfg.broadcastPunishments)
+        return;
+
+    Chat::AdminLineStyle style{.Prefix = cfg.fallbackPrefix};
+    auto phrase = BroadcastPhrase(translationKey);
+    Chat::PrintAll(targetName.empty() ? Chat::FormatAdminLine(style, adminName, phrase)
+                                      : Chat::FormatAdminLine(style, adminName, phrase, targetName));
 }
 
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
                                   const std::map<std::string, std::string>& nameTokens)
 {
-    // Names sit inside the olive phrase, so restore the default color around each
-    // to match the single-target layout.
-    std::map<std::string, std::string> colored;
-    for (const auto& [token, name] : nameTokens)
-        colored.emplace(token, std::format("{}{}{}", ChatColors::Default, name, ChatColors::Olive));
+    const auto& cfg = App().Config.GetChat();
+    if (!cfg.broadcastPunishments)
+        return;
 
-    BroadcastAdminLine(adminName, StringUtils::SubstituteTokens(BroadcastPhrase(translationKey), colored));
+    Chat::PrintAll(Chat::FormatAdminLine(Chat::AdminLineStyle{.Prefix = cfg.fallbackPrefix}, adminName,
+                                         BroadcastPhrase(translationKey), nameTokens));
 }
 
 std::string ChatService::BroadcastPhrase(const std::string& translationKey) const
 {
     auto phrase = Engine().Translations.Get(translationKey);
     return phrase.empty() ? translationKey : phrase;  // Render a missing translation's key literally.
-}
-
-void ChatService::BroadcastAdminLine(std::string_view adminName, std::string_view phrase)
-{
-    const auto& cfg = App().Config.GetChat();
-    if (!cfg.broadcastPunishments)
-        return;
-    Chat::PrintAll(std::format("{}{} {}{}{} {}{}", ChatColors::Green, cfg.fallbackPrefix, ChatColors::Default,
-                               adminName, ChatColors::Default, ChatColors::Olive, phrase));
 }
 
 void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view message, bool /*teamOnly*/)

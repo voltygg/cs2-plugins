@@ -1,8 +1,10 @@
 #include "CommandHelpers.hpp"
 
-#include "TargetResolver.hpp"
+#include "../Admin/AdminManager.hpp"
+#include "../Core/Managers.hpp"
 
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Players/TargetResolver.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <utility>
@@ -12,6 +14,15 @@ namespace AdminSystem::Commands::Helpers
 
 using namespace CS2Kit::Players;
 using namespace CS2Kit::Utils;
+
+namespace
+{
+/** Immunity policy shared by every command target resolution. */
+bool CanTarget(Player& caller, Player& target)
+{
+    return App().Admins.CanTarget(caller.GetSteamID(), target.GetSteamID());
+}
+}  // namespace
 
 std::string JoinReason(const std::vector<std::string>& args, std::size_t start, const std::string& fallback)
 {
@@ -28,35 +39,23 @@ Player* ResolveSingle(const std::string& token, Player* caller, std::string& out
     auto& tr = CS2Kit::Core::Engine().Translations;
     int callerSlot = caller ? caller->GetSlot() : -1;  // -1 = server language (console callers)
 
-    auto matches = Resolve(token, caller);
-    if (matches.empty())
+    auto result = ResolveSingleTarget(token, caller, CanTarget);
+    switch (result.Error)
     {
+    case SingleTargetError::NoMatch:
         outError = tr.Get("target.noMatch", callerSlot, {{"token", token}});
         return nullptr;
-    }
-
-    // Prefer allowed targets; if all matches are blocked by immunity, fail with that reason.
-    std::vector<Player*> allowed;
-    for (const auto& m : matches)
-    {
-        if (m.Allowed && m.Player)
-        {
-            allowed.push_back(m.Player);
-        }
-    }
-
-    if (allowed.empty())
-    {
+    case SingleTargetError::Immune:
         outError = tr.Get("target.immune", callerSlot, {{"token", token}});
         return nullptr;
-    }
-    if (allowed.size() > 1)
-    {
+    case SingleTargetError::Ambiguous:
         outError =
-            tr.Get("target.ambiguous", callerSlot, {{"token", token}, {"count", std::to_string(allowed.size())}});
+            tr.Get("target.ambiguous", callerSlot, {{"token", token}, {"count", std::to_string(result.MatchCount)}});
         return nullptr;
+    case SingleTargetError::None:
+        break;
     }
-    return allowed[0];
+    return result.Target;
 }
 
 bool ParseCommandDuration(const std::string& arg, int64_t& outSeconds)
