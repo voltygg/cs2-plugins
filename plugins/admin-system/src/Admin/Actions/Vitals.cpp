@@ -5,9 +5,9 @@
 namespace AdminSystem::Admin::Actions
 {
 
-const Action Slay{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Kill{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                       ctx.TargetCtrl.Slay();
-                      return "broadcast.slain";
+                      return "broadcast.killed";
                   }};
 
 const Action Godmode{

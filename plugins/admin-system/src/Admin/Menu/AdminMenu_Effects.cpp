@@ -52,7 +52,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
 
     AddEffectToggle(builder, tr.Get("action.ghost", adminSlot), adminSlot, targetSlot, Effects::Ghost);
     AddEffectToggle(builder, tr.Get("action.disco", adminSlot), adminSlot, targetSlot, Effects::Disco);
-    AddAction(builder, tr.Get("action.launch", adminSlot), adminSlot, targetSlot, Actions::Launch);
+    AddAction(builder, tr.Get("action.slap", adminSlot), adminSlot, targetSlot, Actions::Slap);
     AddAction(builder, tr.Get("action.smite", adminSlot), adminSlot, targetSlot, Actions::Smite);
 
     // Swap opens a second player picker, then runs the dual-target Swap.

@@ -84,7 +84,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));
 
-    AddAction(builder, tr.Get("action.slay", adminSlot), adminSlot, targetSlot, Actions::Slay);
+    AddAction(builder, tr.Get("action.kill", adminSlot), adminSlot, targetSlot, Actions::Kill);
     AddAction(builder, tr.Get("action.bring", adminSlot), adminSlot, targetSlot, Actions::Bring);
     AddAction(builder, tr.Get("action.goto", adminSlot), adminSlot, targetSlot, Actions::Goto);
     AddAction(builder, tr.Get("action.freeze", adminSlot), adminSlot, targetSlot, Actions::Freeze);

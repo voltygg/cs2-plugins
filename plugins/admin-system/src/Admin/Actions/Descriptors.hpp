@@ -6,7 +6,7 @@ namespace AdminSystem::Admin::Actions
 {
 
 // Vitals
-extern const Action Slay;
+extern const Action Kill;
 extern const Action Godmode;
 extern const ParamAction SetHealth;
 extern const ParamAction SetArmor;
@@ -33,12 +33,12 @@ constexpr int TeamCt = 3;
 /** Param is the destination team (TeamSpec/TeamT/TeamCt); out-of-range values are ignored. */
 extern const ParamAction ChangeTeam;
 
-// Launch
+// Slap
 /**
- * @brief Launch: high upward velocity with a 3-second godmode window so the target
+ * @brief Slap: high upward velocity with a 3-second godmode window so the target
  * survives the fall.
  */
-extern const Action Launch;
+extern const Action Slap;
 
 // Smite
 /**
