@@ -3,12 +3,12 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/Effects/EffectManager.hpp"
-#include "../Database/Database.hpp"
 #include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
 
+#include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 
 namespace AdminSystem
@@ -22,7 +22,7 @@ namespace AdminSystem
 struct Managers
 {
     Core::ConfigManager Config;
-    Database::Database Db;
+    CS2Kit::Database::PostgresDatabase Db;
     Database::PlayerRepository PlayerRepo;
     Admin::AdminManager Admins;
     Punishments::PunishmentManager Punishments;

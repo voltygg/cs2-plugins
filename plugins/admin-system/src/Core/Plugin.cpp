@@ -4,8 +4,6 @@
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/Effects/EffectManager.hpp"
 #include "../Commands/AdminCommands.hpp"
-#include "../Database/Database.hpp"
-#include "../Database/Migrator.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
@@ -15,6 +13,8 @@
 #include <CS2Kit/Core/ActiveService.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Database/Migrator.hpp>
+#include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/Player.hpp>
@@ -38,7 +38,6 @@ using namespace CS2Kit::Utils;
 using namespace CS2Kit::Menu;
 using AdminSystem::App;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
-using AdminSystem::Database::Database;
 using CS2Kit::Http::HttpClient;
 
 AdminSystemPlugin g_AdminSystemPlugin;
@@ -106,7 +105,8 @@ bool ConnectDatabaseAndLoadAdmins()
         return false;
     }
 
-    if (!AdminSystem::Database::RunMigrations(db, "addons/admin-system/configs/migrations"))
+    if (!CS2Kit::Database::RunMigrations(db, "addons/admin-system/configs/migrations",
+                                         {.TableName = "schema_migrations", .AdvisoryLockKey = 727274}))
     {
         Log::Warn("Database migrations failed - not loading admins against an out-of-date schema.");
         return false;

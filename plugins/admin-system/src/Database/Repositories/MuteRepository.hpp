@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "../../Core/Managers.hpp"
-#include "../Database.hpp"
 
 #include <CS2Kit/Database/DbResult.hpp>
+#include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 #include <format>
 #include <optional>

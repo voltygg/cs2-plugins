@@ -1,9 +1,9 @@
-#include "BanRepository.hpp"
+﻿#include "BanRepository.hpp"
 
 #include "../../Core/Managers.hpp"
-#include "../Database.hpp"
 
 #include <CS2Kit/Database/DbResult.hpp>
+#include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 
 namespace AdminSystem::Database

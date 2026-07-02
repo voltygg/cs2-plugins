@@ -1,9 +1,9 @@
-#include "AdminRepository.hpp"
+﻿#include "AdminRepository.hpp"
 
 #include "../../Core/Managers.hpp"
-#include "../Database.hpp"
 
 #include <CS2Kit/Database/DbResult.hpp>
+#include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <pqxx/array>
 
 namespace AdminSystem::Database

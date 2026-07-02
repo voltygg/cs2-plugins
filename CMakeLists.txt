@@ -29,8 +29,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(CTest)
 
-# cpr/nlohmann_json come from cs2-kit; libpqxx is plugin-only.
-find_package(libpqxx CONFIG REQUIRED)
+# cpr/nlohmann_json/libpqxx are all found inside cs2-kit; Postgres support is
+# opt-in there, and this monorepo's plugins use it.
+set(CS2KIT_ENABLE_POSTGRES ON)
 
 add_subdirectory(vendor/cs2-kit)
 

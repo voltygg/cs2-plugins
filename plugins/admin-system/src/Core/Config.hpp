@@ -1,22 +1,23 @@
 #pragma once
 
-#include "../Database/Database.hpp"
 #include "../Punishments/PunishType.hpp"
 
+#include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
-namespace AdminSystem::Database
+namespace CS2Kit::Database
 {
-// DatabaseConfig lives in this namespace; the mapper must too, so ADL finds it.
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DatabaseConfig, host, port, database, username, password, sslMode)
-}  // namespace AdminSystem::Database
+// PostgresConfig's mapper must share its namespace so ADL finds it. Defined here rather than
+// in the kit so the kit header stays nlohmann-free.
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PostgresConfig, host, port, database, username, password, sslMode)
+}  // namespace CS2Kit::Database
 
 namespace AdminSystem::Core
 {
 
-using DatabaseConfig = AdminSystem::Database::DatabaseConfig;
+using DatabaseConfig = CS2Kit::Database::PostgresConfig;
 
 /** "plugin" section of settings.json. */
 struct PluginSettings
