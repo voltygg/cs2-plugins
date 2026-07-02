@@ -1,9 +1,11 @@
 #pragma once
 
 #include "../Database/Database.hpp"
+#include "../Punishments/PunishType.hpp"
 
 #include <nlohmann/json.hpp>
 #include <string>
+#include <vector>
 
 namespace AdminSystem::Database
 {
@@ -24,13 +26,36 @@ struct PluginSettings
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PluginSettings, logLevel, locale)
 
+/** One "punishments.templates[]" entry, verbatim from JSON. Validated into a ResolvedTemplate on load. */
+struct PunishmentTemplate
+{
+    std::string name;
+    std::string type;      // "ban" | "voiceMute" | "textMute"
+    std::string duration;  // CS2Kit::Utils::ParseDuration grammar: 30s/5m/2h/7d, "perm"/"0" = permanent
+    std::string reason;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentTemplate, name, type, duration, reason)
+
 /** "punishments" section of settings.json. */
 struct PunishmentSettings
 {
     std::string defaultBanReason = "Banned by administrator";
     int warningThreshold = 3;
+    std::vector<PunishmentTemplate> templates;
+    std::vector<std::string> reasonPresets;
+    std::vector<std::string> menuDurations = {"5m", "30m", "1h", "1d", "7d", "perm"};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentSettings, defaultBanReason, warningThreshold)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentSettings, defaultBanReason, warningThreshold, templates,
+                                                reasonPresets, menuDurations)
+
+/** A punishment template that survived load-time validation; what the Quick Punish menu consumes. */
+struct ResolvedTemplate
+{
+    std::string Name;
+    Punishments::PunishType Type = Punishments::PunishType::Ban;
+    int DurationSec = 0;  // 0 = permanent
+    std::string Reason;
+};
 
 /** "chat" section of settings.json. */
 struct ChatSettings
@@ -129,8 +154,19 @@ public:
     const ChatSettings& GetChat() const { return _settings.chat; }
     const CheatCheckSettings& GetCheatCheck() const { return _settings.cheatCheck; }
 
+    /** Punishment templates that passed load-time validation (invalid entries are skipped with a warning). */
+    const std::vector<ResolvedTemplate>& GetPunishmentTemplates() const { return _resolvedTemplates; }
+
+    /** Menu duration-picker rows in seconds (0 = permanent), parsed from `punishments.menuDurations`. */
+    const std::vector<int>& GetMenuDurations() const { return _menuDurationSecs; }
+
 private:
+    /** Parse/validate the string-typed punishment settings into their runtime forms. */
+    void ResolveRuntimeSettings();
+
     Settings _settings;
+    std::vector<ResolvedTemplate> _resolvedTemplates;
+    std::vector<int> _menuDurationSecs;
 };
 
 }  // namespace AdminSystem::Core

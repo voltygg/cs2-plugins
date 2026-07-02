@@ -2,8 +2,10 @@
 
 #include "TargetResolver.hpp"
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
-#include <format>
+#include <CS2Kit/Utils/Translations.hpp>
+#include <utility>
 
 namespace AdminSystem::Commands::Helpers
 {
@@ -21,12 +23,19 @@ std::string JoinReason(const std::vector<std::string>& args, std::size_t start, 
     return StringUtils::Join(rest, " ");
 }
 
+std::string CallerText(const Player* caller, const std::string& key, const std::map<std::string, std::string>& tokens)
+{
+    auto& tr = CS2Kit::Core::Engine().Translations;
+    std::string text = caller ? tr.Get(key, caller->GetSlot()) : tr.Get(key);
+    return StringUtils::SubstituteTokens(std::move(text), tokens);
+}
+
 Player* ResolveSingle(const std::string& token, Player* caller, std::string& outError)
 {
     auto matches = Resolve(token, caller);
     if (matches.empty())
     {
-        outError = std::format("No player matched '{}'.", token);
+        outError = CallerText(caller, "target.noMatch", {{"token", token}});
         return nullptr;
     }
 
@@ -42,29 +51,26 @@ Player* ResolveSingle(const std::string& token, Player* caller, std::string& out
 
     if (allowed.empty())
     {
-        outError = std::format("Target '{}' is immune.", token);
+        outError = CallerText(caller, "target.immune", {{"token", token}});
         return nullptr;
     }
     if (allowed.size() > 1)
     {
-        outError = std::format("'{}' matches {} players -- be more specific.", token, allowed.size());
+        outError = CallerText(caller, "target.ambiguous", {{"token", token}, {"count", std::to_string(allowed.size())}});
         return nullptr;
     }
     return allowed[0];
 }
 
-bool ParseDurationMinutes(const std::string& arg, int64_t& outSeconds)
+bool ParseCommandDuration(const std::string& arg, int64_t& outSeconds)
 {
-    if (!StringUtils::IsNumeric(arg))
+    int seconds = ParseDuration(arg);
+    if (seconds < 0)
     {
         return false;
     }
-    int64_t mins = std::stoll(arg);
-    if (mins < 0)
-    {
-        return false;
-    }
-    outSeconds = mins * 60;
+    // A bare number keeps the legacy command meaning (minutes); ParseDuration read it as seconds.
+    outSeconds = StringUtils::IsNumeric(arg) ? static_cast<int64_t>(seconds) * 60 : seconds;
     return true;
 }
 

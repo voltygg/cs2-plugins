@@ -85,14 +85,63 @@
     "spec": "Spectator"
   },
   "duration": {
-    "5min": "5 Minutes",
-    "30min": "30 Minutes",
-    "1h": "1 Hour",
-    "1d": "1 Day",
-    "7d": "7 Days",
     "perm": "Permanent",
     "custom": "Custom...",
-    "customPrompt": "Enter duration (e.g. 30s, 5m, 2h, 7d, or 'perm')"
+    "customPrompt": "Enter duration (e.g. 30s, 5m, 2h, 7d, or 'perm')",
+    "unitSeconds": "s",
+    "unitMinutes": "min",
+    "unitHours": "h",
+    "unitDays": "d"
+  },
+  "punish": {
+    "quickPunish": "Quick Punish",
+    "noTemplates": "No templates available",
+    "selectReason": "Reason",
+    "customReason": "Custom...",
+    "customReasonPrompt": "Type the reason in chat",
+    "confirmTitle": "Confirm",
+    "target": "Target",
+    "duration": "Duration",
+    "reason": "Reason",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "issued": "{action}: {name} — done.",
+    "failed": "Failed to issue {action} (database error).",
+    "targetLost": "Target left the server; action cancelled.",
+    "notAllowed": "You can no longer target this player."
+  },
+  "target": {
+    "noMatch": "No player matched '{token}'.",
+    "immune": "Target '{token}' is immune.",
+    "ambiguous": "'{token}' matches {count} players — be more specific."
+  },
+  "cmd": {
+    "badDuration": "Invalid duration. Use minutes (e.g. 30), 30s/5m/2h/7d, or 'perm'.",
+    "kickSuccess": "Kicked {name}.",
+    "banSuccess": "Banned {name}.",
+    "banFailed": "Failed to issue ban (database error).",
+    "unbanUsage": "Usage: !unban <steamId> [reason]",
+    "unbanNoBan": "No active ban for SteamID {id}.",
+    "unbanSuccess": "Unbanned {id}.",
+    "voiceMuteSuccess": "Voice-muted {name}.",
+    "voiceMuteFailed": "Failed to issue voice mute (database error).",
+    "voiceUnmuteNotMuted": "{name} is not voice-muted.",
+    "voiceUnmuteSuccess": "Voice-unmuted {name}.",
+    "textMuteSuccess": "Text-muted {name}.",
+    "textMuteFailed": "Failed to issue text mute (database error).",
+    "textUnmuteNotMuted": "{name} is not text-muted.",
+    "textUnmuteSuccess": "Text-unmuted {name}.",
+    "warnSuccess": "Warned {name}.",
+    "warnFailed": "Failed to issue warning (database error)."
+  },
+  "reason": {
+    "kickedByAdmin": "Kicked by admin",
+    "voiceMutedByAdmin": "Voice-muted by admin",
+    "textMutedByAdmin": "Text-muted by admin",
+    "warnedByAdmin": "Warned by admin",
+    "unbannedByAdmin": "Unbanned by admin",
+    "voiceUnmutedByAdmin": "Voice-unmuted by admin",
+    "textUnmutedByAdmin": "Text-unmuted by admin"
   },
   "chat": {
     "displayPrefix": "Prefix",

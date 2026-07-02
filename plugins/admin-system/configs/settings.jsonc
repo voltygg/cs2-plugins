@@ -23,7 +23,30 @@
     // Reason recorded when an admin bans without specifying one.
     "defaultBanReason": "Banned by administrator",
     // Number of warnings before escalation logic triggers.
-    "warningThreshold": 3
+    "warningThreshold": 3,
+    // Quick Punish presets shown in the admin menu (menu-only; no command equivalent).
+    // type: "ban" | "voiceMute" | "textMute".
+    // duration: "perm" (or "0") for permanent, otherwise <n>s / <n>m / <n>h / <n>d.
+    //           A bare number means SECONDS - prefer an explicit suffix.
+    // Invalid entries are skipped with a warning in the server log.
+    "templates": [
+      { "name": "Cheating", "type": "ban", "duration": "perm", "reason": "Cheating" },
+      { "name": "Griefing", "type": "ban", "duration": "1d", "reason": "Team damage / griefing" },
+      { "name": "Mic spam", "type": "voiceMute", "duration": "30m", "reason": "Mic spam" },
+      { "name": "Toxic voice", "type": "voiceMute", "duration": "2h", "reason": "Toxic behavior in voice" },
+      { "name": "Chat spam", "type": "textMute", "duration": "30m", "reason": "Chat spam" },
+      { "name": "Toxic chat", "type": "textMute", "duration": "2h", "reason": "Toxic behavior in chat" }
+    ],
+    // Preset reasons offered in the manual menu punish flow (a free-text "Custom..." row is always added).
+    "reasonPresets": [
+      "Cheating",
+      "Toxic behavior",
+      "Mic spam",
+      "Team damage / griefing",
+      "Inappropriate nickname"
+    ],
+    // Rows of the menu duration picker (same grammar as template durations).
+    "menuDurations": ["5m", "30m", "1h", "1d", "7d", "perm"]
   },
   "chat": {
     // If true, every issued punishment broadcasts a colored line to all players.

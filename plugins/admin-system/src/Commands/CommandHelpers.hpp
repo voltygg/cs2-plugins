@@ -2,11 +2,19 @@
 
 #include <CS2Kit/Players/Player.hpp>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
 namespace AdminSystem::Commands::Helpers
 {
+
+/**
+ * Look up @p key in the caller's language (server language for console/null callers),
+ * substituting each `{token}` occurrence from @p tokens.
+ */
+std::string CallerText(const CS2Kit::Players::Player* caller, const std::string& key,
+                       const std::map<std::string, std::string>& tokens = {});
 
 /**
  * Glue all args from `start` onwards back into a single phrase, defaulting to `fallback`
@@ -21,28 +29,11 @@ std::string JoinReason(const std::vector<std::string>& args, std::size_t start, 
 CS2Kit::Players::Player* ResolveSingle(const std::string& token, CS2Kit::Players::Player* caller,
                                        std::string& outError);
 
-/** Parse a duration (in minutes) argument; 0 means permanent. Returns false on bad input. */
-bool ParseDurationMinutes(const std::string& arg, int64_t& outSeconds);
-
 /**
- * Fill the common target/admin/reason fields on a punishment entity, plus `Duration`
- * when the entity has one (Ban/VoiceMute/TextMute do; Warning does not). The Ban entity also has
- * TargetIp; callers set that one separately to keep this template simple.
+ * Parse a command duration argument. A bare number is MINUTES (the legacy command grammar);
+ * suffixed forms use the CS2Kit grammar (30s/5m/2h/7d). `0` and `perm`/`permanent` mean
+ * permanent under either reading. Returns false on bad input.
  */
-template <typename T>
-void FillPunishment(T& punishment, const CS2Kit::Players::Player* target, const CS2Kit::Players::Player* admin,
-                    const std::string& reason, int64_t durationSec)
-{
-    punishment.TargetSteamId = target->GetSteamID();
-    punishment.TargetName = target->GetName();
-    punishment.AdminSteamId = admin->GetSteamID();
-    punishment.AdminName = admin->GetName();
-    punishment.Reason = reason;
-
-    if constexpr (requires { punishment.Duration = durationSec; })
-    {
-        punishment.Duration = durationSec;
-    }
-}
+bool ParseCommandDuration(const std::string& arg, int64_t& outSeconds);
 
 }  // namespace AdminSystem::Commands::Helpers

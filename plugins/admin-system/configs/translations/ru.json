@@ -85,14 +85,63 @@
     "spec": "Наблюдатели"
   },
   "duration": {
-    "5min": "5 минут",
-    "30min": "30 минут",
-    "1h": "1 час",
-    "1d": "1 день",
-    "7d": "7 дней",
     "perm": "Навсегда",
     "custom": "Свой...",
-    "customPrompt": "Введите длительность (например 30s, 5m, 2h, 7d или 'perm')"
+    "customPrompt": "Введите длительность (например 30s, 5m, 2h, 7d или 'perm')",
+    "unitSeconds": "с",
+    "unitMinutes": "мин",
+    "unitHours": "ч",
+    "unitDays": "д"
+  },
+  "punish": {
+    "quickPunish": "Быстрое наказание",
+    "noTemplates": "Нет доступных шаблонов",
+    "selectReason": "Причина",
+    "customReason": "Своя...",
+    "customReasonPrompt": "Введите причину в чат",
+    "confirmTitle": "Подтверждение",
+    "target": "Игрок",
+    "duration": "Длительность",
+    "reason": "Причина",
+    "confirm": "Подтвердить",
+    "cancel": "Отмена",
+    "issued": "{action}: {name} — выполнено.",
+    "failed": "Не удалось применить {action} (ошибка базы данных).",
+    "targetLost": "Игрок покинул сервер; действие отменено.",
+    "notAllowed": "Вы больше не можете применить действие к этому игроку."
+  },
+  "target": {
+    "noMatch": "Игрок '{token}' не найден.",
+    "immune": "Игрок '{token}' защищён иммунитетом.",
+    "ambiguous": "'{token}' совпадает с {count} игроками — уточните запрос."
+  },
+  "cmd": {
+    "badDuration": "Неверная длительность. Используйте минуты (напр. 30), 30s/5m/2h/7d или 'perm'.",
+    "kickSuccess": "Кикнут {name}.",
+    "banSuccess": "Забанен {name}.",
+    "banFailed": "Не удалось выдать бан (ошибка базы данных).",
+    "unbanUsage": "Использование: !unban <steamId> [причина]",
+    "unbanNoBan": "Нет активного бана для SteamID {id}.",
+    "unbanSuccess": "Разбанен {id}.",
+    "voiceMuteSuccess": "Войс-мут выдан: {name}.",
+    "voiceMuteFailed": "Не удалось выдать войс-мут (ошибка базы данных).",
+    "voiceUnmuteNotMuted": "{name} не имеет войс-мута.",
+    "voiceUnmuteSuccess": "Войс-мут снят: {name}.",
+    "textMuteSuccess": "Текст-мут выдан: {name}.",
+    "textMuteFailed": "Не удалось выдать текст-мут (ошибка базы данных).",
+    "textUnmuteNotMuted": "{name} не имеет текст-мута.",
+    "textUnmuteSuccess": "Текст-мут снят: {name}.",
+    "warnSuccess": "Предупреждение выдано: {name}.",
+    "warnFailed": "Не удалось выдать предупреждение (ошибка базы данных)."
+  },
+  "reason": {
+    "kickedByAdmin": "Кикнут администратором",
+    "voiceMutedByAdmin": "Войс-мут от администратора",
+    "textMutedByAdmin": "Текст-мут от администратора",
+    "warnedByAdmin": "Предупреждён администратором",
+    "unbannedByAdmin": "Разбанен администратором",
+    "voiceUnmutedByAdmin": "Войс-мут снят администратором",
+    "textUnmutedByAdmin": "Текст-мут снят администратором"
   },
   "chat": {
     "displayPrefix": "Префикс",

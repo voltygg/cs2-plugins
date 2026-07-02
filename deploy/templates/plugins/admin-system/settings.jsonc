@@ -18,7 +18,28 @@
   },
   "punishments": {
     "defaultBanReason": "Banned by administrator",
-    "warningThreshold": 3
+    "warningThreshold": 3,
+    // Quick Punish presets shown in the admin menu. type: "ban" | "voiceMute" | "textMute".
+    // duration: "perm" (or "0") for permanent, otherwise <n>s / <n>m / <n>h / <n>d.
+    // Invalid entries are skipped with a warning in the server log.
+    "templates": [
+      { "name": "Читы", "type": "ban", "duration": "perm", "reason": "Читы" },
+      { "name": "Гриферство", "type": "ban", "duration": "1d", "reason": "Урон по своим / гриферство" },
+      { "name": "Спам в микрофон", "type": "voiceMute", "duration": "30m", "reason": "Спам в микрофон" },
+      { "name": "Токсичный войс", "type": "voiceMute", "duration": "2h", "reason": "Токсичное поведение в голосовом чате" },
+      { "name": "Спам в чат", "type": "textMute", "duration": "30m", "reason": "Спам в чате" },
+      { "name": "Токсичный чат", "type": "textMute", "duration": "2h", "reason": "Токсичное поведение в чате" }
+    ],
+    // Preset reasons offered in the manual menu punish flow (a free-text "Custom..." row is always added).
+    "reasonPresets": [
+      "Читы",
+      "Токсичное поведение",
+      "Спам в микрофон",
+      "Урон по своим / гриферство",
+      "Неприемлемый никнейм"
+    ],
+    // Rows of the menu duration picker (same grammar as template durations).
+    "menuDurations": ["5m", "30m", "1h", "1d", "7d", "perm"]
   },
   "chat": {
     "broadcastPunishments": true,
