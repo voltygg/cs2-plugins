@@ -37,11 +37,10 @@ bool PlayerRepository::RecordDisconnect(int64_t steamId, const std::string& name
         return false;
 
     return TryOr(false, "PlayerRepository::RecordDisconnect", [&] {
-        App().Db.ExecutePrepared(
-            "player_record_disconnect",
-            "UPDATE players SET name = $2, last_seen = $3, total_playtime = total_playtime + $4 "
-            "WHERE steam_id = $1",
-            steamId, name, TimeUtils::Now(), sessionSeconds > 0 ? sessionSeconds : 0);
+        App().Db.ExecutePrepared("player_record_disconnect",
+                                 "UPDATE players SET name = $2, last_seen = $3, total_playtime = total_playtime + $4 "
+                                 "WHERE steam_id = $1",
+                                 steamId, name, TimeUtils::Now(), sessionSeconds > 0 ? sessionSeconds : 0);
         return true;
     });
 }

@@ -161,8 +161,7 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Ki
     if (!result.Ok)
         Log::Warn("Cheat-check room request failed: {}", result.Error);
     else
-        Log::Warn("Cheat-check room response rejected (status {}): {}", result.StatusCode,
-                  result.Body.substr(0, 300));
+        Log::Warn("Cheat-check room response rejected (status {}): {}", result.StatusCode, result.Body.substr(0, 300));
 
     OnRoomFailed(targetSlot);
 }
