@@ -33,13 +33,13 @@
     "timeoutSec": 120,
     "autoKick": true,
     "kickReason": "Failed to comply with cheat check",
-    "panelRefreshMs": 1000,
+    "panelRefreshMs": 100,
     "moveToSpectator": true,
     "bannerImageUrl": "",
     "bannerWidth": 320,
     "bannerHeight": 180,
     "fixedLink": {
-      "url": "https://discord.gg/your-invite"
+      "url": "https://discord.gg/meatgg"
     },
     "websiteAutoRoom": {
       "createRoomUrl": "https://meat.gg/api/rooms",
@@ -50,6 +50,7 @@
         "purpose": "CHEAT_CHECK",
         "title": "Cheat check: {playerName}",
         "isLocked": false,
+        "adminSteamId": "{adminSteamId}",
         "metadata": { "reason": "Suspect {playerName} ({steamId}) - by {adminName}" }
       },
       "playerUrlField": "code",

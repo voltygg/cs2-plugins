@@ -48,8 +48,10 @@
     "autoKick": true,
     // Kick reason shown to the player when autoKick triggers.
     "kickReason": "Failed to comply with cheat check",
-    // How often (ms) the center-HTML panel is re-sent + countdown updated (CS2 clears it after ~5s).
-    "panelRefreshMs": 1000,
+    // How often (ms) the center-HTML panel is re-sent + countdown updated. The client drops the
+    // panel on death/team-switch/HUD updates, so it must be re-sent continuously (like WASD menus);
+    // values above ~200 make it visibly blink or vanish.
+    "panelRefreshMs": 100,
     // Also force the suspect to spectator (not just freeze) so they can't keep playing.
     "moveToSpectator": true,
     // Optional online image (https) shown atop the panel; leave empty for no banner.
@@ -77,6 +79,8 @@
         "purpose": "CHEAT_CHECK",
         "title": "Cheat check: {playerName}",
         "isLocked": false,
+        // Lets the backend attribute the room to the calling admin so they join as HOST.
+        "adminSteamId": "{adminSteamId}",
         "metadata": {
           "reason": "Suspect {playerName} ({steamId}) - by {adminName}"
         }

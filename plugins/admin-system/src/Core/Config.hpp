@@ -85,7 +85,9 @@ struct CheatCheckSettings
     int timeoutSec = 120;
     bool autoKick = true;
     std::string kickReason = "Failed to comply with cheat check";
-    int panelRefreshMs = 1000;
+    // The client drops center-HTML almost immediately (death, team switch, HUD updates), so the
+    // panel must be re-sent continuously like the WASD menus - not at the nominal 5s duration.
+    int panelRefreshMs = 100;
     bool moveToSpectator = true;  // force the suspect to spectator so they can't keep playing
     std::string bannerImageUrl;   // optional online image shown atop the panel ("" => none)
     int bannerWidth = 320;

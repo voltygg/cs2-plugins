@@ -4,6 +4,7 @@
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/Effects/EffectManager.hpp"
 #include "../Database/Database.hpp"
+#include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
@@ -22,6 +23,7 @@ struct Managers
 {
     Core::ConfigManager Config;
     Database::Database Db;
+    Database::PlayerRepository PlayerRepo;
     Admin::AdminManager Admins;
     Punishments::PunishmentManager Punishments;
     Core::ChatService Chat;

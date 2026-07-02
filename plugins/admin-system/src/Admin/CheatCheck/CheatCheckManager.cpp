@@ -14,6 +14,7 @@
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
+#include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
@@ -31,6 +32,7 @@ using CS2Kit::Sdk::MessageSystem;
 using CS2Kit::Sdk::MoveType;
 using CS2Kit::Sdk::PlayerController;
 using CS2Kit::Utils::TimeUtils;
+namespace Log = CS2Kit::Utils::Log;
 namespace ChatColors = CS2Kit::Utils::ChatColors;
 
 namespace
@@ -82,7 +84,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     if (cfg.moveToSpectator)
         targetCtrl.ChangeTeam(Actions::TeamSpec);
 
-    int interval = cfg.panelRefreshMs > 0 ? cfg.panelRefreshMs : 1000;
+    int interval = cfg.panelRefreshMs > 0 ? cfg.panelRefreshMs : 100;
     pc.TickTimer = Engine().Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
 
     ResolveUrl(targetSlot);
@@ -155,6 +157,12 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Ki
         View::Render(targetSlot, pc);
         return;
     }
+
+    if (!result.Ok)
+        Log::Warn("Cheat-check room request failed: {}", result.Error);
+    else
+        Log::Warn("Cheat-check room response rejected (status {}): {}", result.StatusCode,
+                  result.Body.substr(0, 300));
 
     OnRoomFailed(targetSlot);
 }

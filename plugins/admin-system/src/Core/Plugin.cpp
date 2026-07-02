@@ -138,13 +138,21 @@ void RegisterGameEventListeners()
     events.Listen("player_death", [](IGameEvent* e) {
         if (!e)
             return;
-        // userid in CS2 events maps to the slot index for the legacy event system.
-        int victim = e->GetInt("userid", -1);
+        // GetInt("userid") yields the connection userid (drifts from the slot on reconnect);
+        // GetPlayerSlot decodes it to the actual slot.
+        int victim = e->GetPlayerSlot("userid").Get();
         if (victim >= 0)
             App().Effects.CancelAllForSlot(victim);
     });
     events.Listen("round_end", [](IGameEvent*) { App().Effects.CancelAllForRoundEnd(); });
     events.Listen("round_prestart", [](IGameEvent*) { App().Effects.CancelAllForRoundEnd(); });
+}
+
+// Persist a finished session; shared by the disconnect hook and the unload sweep. No-ops for bots.
+void FlushPlayerSession(Player* player)
+{
+    if (player)
+        App().PlayerRepo.RecordDisconnect(player->GetSteamID(), player->GetName(), player->GetPlaytime());
 }
 
 }  // namespace
@@ -209,6 +217,11 @@ bool AdminSystemPlugin::OnLoad(bool late)
 
     Defer([] { App().CheatCheck.CancelAll(); });
     Defer([] { App().Effects.CancelAll(); });
+    // Unload fires no disconnect hooks, so fold open sessions here or lose their playtime.
+    Defer([] {
+        for (auto* p : Engine().Players.GetAllPlayers())
+            FlushPlayerSession(p);
+    });
     Defer([] { Engine().Players.Clear(); });
 
     Log::Info("All subsystems initialized.");
@@ -227,6 +240,8 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
 {
     if (!player)
         return;
+
+    App().PlayerRepo.RecordConnect(player->GetSteamID(), player->GetName(), player->GetIpAddress());
 
     // Register the admin's panel language up front so every slot-aware Translations::Get (menus,
     // cheat-check, mute notices) renders in their language without per-command setup.
@@ -248,6 +263,7 @@ void AdminSystemPlugin::OnPlayerDisconnect(Player* player)
 {
     if (player)
     {
+        FlushPlayerSession(player);
         App().Effects.CancelAllForSlot(player->GetSlot());
         App().CheatCheck.CancelAllForSlot(player->GetSlot());
     }
