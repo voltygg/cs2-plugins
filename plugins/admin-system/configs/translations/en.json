@@ -4,7 +4,7 @@
     "playerManagement": "Player Management",
     "serverManagement": "Server Management",
     "playerActions": "Player Actions",
-    "selectDuration": "Select Duration"
+    "selectDuration": "Duration"
   },
   "category": {
     "punish": "Punish",
@@ -95,16 +95,16 @@
     "customPrompt": "Enter duration (e.g. 30s, 5m, 2h, 7d, or 'perm')"
   },
   "chat": {
-    "displayPrefix": "Display Prefix",
-    "nameColor": "Name Color",
-    "messageColor": "Message Color",
-    "panelLanguage": "Panel Language"
+    "displayPrefix": "Prefix",
+    "nameColor": "Name",
+    "messageColor": "Message",
+    "panelLanguage": "Language"
   },
   "color": {
-    "groupDefault": "(group default)",
+    "groupDefault": "(default)",
     "default": "Default",
     "darkRed": "Dark Red",
-    "lightPurple": "Light Purple",
+    "lightPurple": "Lilac",
     "green": "Green",
     "olive": "Olive",
     "lime": "Lime",

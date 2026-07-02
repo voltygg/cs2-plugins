@@ -4,7 +4,7 @@
     "playerManagement": "Управление игроками",
     "serverManagement": "Управление сервером",
     "playerActions": "Действия с игроком",
-    "selectDuration": "Выберите длительность"
+    "selectDuration": "Длительность"
   },
   "category": {
     "punish": "Наказания",
@@ -95,16 +95,16 @@
     "customPrompt": "Введите длительность (например 30s, 5m, 2h, 7d или 'perm')"
   },
   "chat": {
-    "displayPrefix": "Показывать префикс",
-    "nameColor": "Цвет имени",
-    "messageColor": "Цвет сообщения",
-    "panelLanguage": "Язык панели"
+    "displayPrefix": "Префикс",
+    "nameColor": "Имя",
+    "messageColor": "Текст",
+    "panelLanguage": "Язык"
   },
   "color": {
-    "groupDefault": "(по умолчанию)",
+    "groupDefault": "по умолч.",
     "default": "Стандартный",
     "darkRed": "Тёмно-красный",
-    "lightPurple": "Светло-фиолетовый",
+    "lightPurple": "Сиреневый",
     "green": "Зелёный",
     "olive": "Оливковый",
     "lime": "Салатовый",
@@ -115,7 +115,7 @@
     "lightBlue": "Голубой",
     "darkBlue": "Тёмно-синий",
     "purple": "Фиолетовый",
-    "lightRed": "Светло-красный",
+    "lightRed": "Св.-красный",
     "gold": "Золотой"
   },
   "cheatCheck": {
