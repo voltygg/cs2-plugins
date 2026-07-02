@@ -6,6 +6,7 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
@@ -73,15 +74,13 @@ std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(int viewerSlot)
     // ChatColors::Default which is itself a real overrideable color.
     choices.push_back({tr.Get("color.groupDefault", viewerSlot), std::string{}});
 
-    for (const auto& entry : ChatColors::Palette)
-    {
-        std::string label;
-        if (auto it = keys.find(entry.Name); it != keys.end())
-            label = tr.Get(std::string(it->second), viewerSlot);
-        else
-            label = std::string(entry.Name);  // Fallback if a new color lacks a translation key.
-        choices.push_back({std::move(label), std::string(entry.Name)});
-    }
+    // The kit renders the palette; colors without a translation key fall back to their name.
+    auto palette = ::CS2Kit::Menu::BuildPaletteChoices([&](std::string_view name) -> std::string {
+        if (auto it = keys.find(name); it != keys.end())
+            return tr.Get(std::string(it->second), viewerSlot);
+        return {};
+    });
+    choices.insert(choices.end(), std::make_move_iterator(palette.begin()), std::make_move_iterator(palette.end()));
     return choices;
 }
 

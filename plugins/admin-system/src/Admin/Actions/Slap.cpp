@@ -5,7 +5,7 @@
 namespace AdminSystem::Admin::Actions
 {
 
-const Action Slap{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Slap{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                       CS2Kit::Sdk::PawnOps::Slap(ctx.TargetCtrl);
                       return "broadcast.slapped";
                   }};

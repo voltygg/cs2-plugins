@@ -29,7 +29,7 @@ constexpr int DiscoIntervalMs = 200;
 constexpr int DiscoDurationSec = 15;
 }  // namespace
 
-const EffectToggle Disco{Permission::Fun, EffectId::Disco, "broadcast.discoOn", "broadcast.discoOff",
+const EffectToggle Disco{Flag(Permission::Fun), EffectId::Disco, "broadcast.discoOn", "broadcast.discoOff",
                          [](const ActionContext& ctx) -> EffectSetup {
                              uint8_t savedMode = ctx.TargetCtrl.GetRenderMode();
                              uint32_t savedColor = ctx.TargetCtrl.GetRenderColor();

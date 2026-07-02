@@ -10,7 +10,7 @@ namespace AdminSystem::Admin::Actions
 
 constexpr int SmiteDelayMs = 250;
 
-const Action Smite{Permission::Fun, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                        int slot = ctx.Target->GetSlot();
                        Engine().Scheduler.Delay(SmiteDelayMs, [slot]() {
                            CS2Kit::Sdk::PlayerController pc(slot);

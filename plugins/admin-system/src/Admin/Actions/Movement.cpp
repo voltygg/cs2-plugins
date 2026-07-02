@@ -1,4 +1,4 @@
-#include "Descriptors.hpp"
+﻿#include "Descriptors.hpp"
 
 #include <CS2Kit/Sdk/PawnOps.hpp>
 
@@ -12,20 +12,20 @@ namespace
 constexpr float BuryDepth = 15.0f;
 }  // namespace
 
-const Action Noclip{Permission::Control, /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
+const Action Noclip{Flag(Permission::Control), /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
                         return PawnOps::ToggleNoclip(ctx.TargetCtrl) ? "broadcast.noclipOn" : "broadcast.noclipOff";
                     }};
 
-const Action Freeze{Permission::Control, /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
+const Action Freeze{Flag(Permission::Control), /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
                         return PawnOps::ToggleFreeze(ctx.TargetCtrl) ? "broadcast.freezeOn" : "broadcast.freezeOff";
                     }};
 
-const Action Bury{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Bury{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                       PawnOps::ShiftZ(ctx.TargetCtrl, -BuryDepth);
                       return "broadcast.buried";
                   }};
 
-const Action Unbury{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Unbury{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                         PawnOps::ShiftZ(ctx.TargetCtrl, BuryDepth);
                         return "broadcast.unburied";
                     }};

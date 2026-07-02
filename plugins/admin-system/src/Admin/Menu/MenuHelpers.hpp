@@ -34,13 +34,26 @@ inline bool CanActOnSlot(int admin, int target, Permission flag)
     return App().Admins.CanActOn(a->GetSteamID(), t->GetSteamID(), flag);
 }
 
+/** Flag-string variant for the data-driven Action/EffectToggle descriptors. */
+inline bool CanActOnSlot(int admin, int target, const std::string& flags)
+{
+    auto& plrMgr = CS2Kit::Core::Engine().Players;
+    auto* a = plrMgr.GetPlayerBySlot(admin);
+    auto* t = plrMgr.GetPlayerBySlot(target);
+    if (!a || !t)
+        return false;
+    return App().Admins.HasAnyPermission(a->GetSteamID(), flags) &&
+           App().Admins.CanTarget(a->GetSteamID(), t->GetSteamID());
+}
+
 /** A plain button row that runs a single-target @ref Actions::Action against (admin, target). */
 inline void AddAction(CS2Kit::Menu::MenuBuilder& builder, const std::string& label, int admin, int target,
                       const Actions::Action& action)
 {
     const Actions::Action* a = &action;
     builder.AddButton(
-        label, [admin, target, a](int) { Actions::Run(admin, target, *a); }, CanActOnSlot(admin, target, action.Flag));
+        label, [admin, target, a](int) { Actions::Run(admin, target, *a); },
+        CanActOnSlot(admin, target, action.Permission));
 }
 
 /** A toggle row whose live state is an active @ref Effects::EffectToggle on the target. */
@@ -67,7 +80,7 @@ inline void AddFlagToggle(CS2Kit::Menu::MenuBuilder& builder, const std::string&
             CS2Kit::Sdk::PlayerController pc(target);
             return pc.IsValid() && (pc.GetFlags() & flag) != 0;
         },
-        [admin, target, a](int) { Actions::Run(admin, target, *a); }, CanActOnSlot(admin, target, action.Flag));
+        [admin, target, a](int) { Actions::Run(admin, target, *a); }, CanActOnSlot(admin, target, action.Permission));
 }
 
 /** An inline Choice row: A/D cycles preset values, E applies the @ref Actions::ParamAction and closes. */
@@ -89,7 +102,7 @@ void AddPresetChoice(CS2Kit::Menu::MenuBuilder& builder, const std::string& titl
             Actions::Run(admin, target, value, *a);
             CS2Kit::Core::Engine().Menus.CloseAllMenus(slot);
         },
-        CanActOnSlot(admin, target, action.Flag));
+        CanActOnSlot(admin, target, action.Permission));
 }
 
 }  // namespace AdminSystem::Admin::Menu

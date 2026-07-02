@@ -5,7 +5,7 @@
 namespace AdminSystem::Admin::Actions
 {
 
-const ParamAction ChangeTeam{Permission::Control, /*requireAlive*/ false,
+const ParamAction ChangeTeam{Flag(Permission::Control), /*requireAlive*/ false,
                              [](const ActionContext& ctx, int team) -> OptKey {
                                  if (!CS2Kit::Sdk::PawnOps::ChangeTeamSafe(ctx.TargetCtrl, team))
                                      return std::nullopt;

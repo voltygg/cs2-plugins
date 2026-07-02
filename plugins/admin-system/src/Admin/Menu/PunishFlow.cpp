@@ -148,20 +148,22 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildConfirmStep(int adminSlot, PendingPun
     auto& tr = Engine().Translations;
     std::string action = tr.Get(ActionTranslationKey(pending.Type), adminSlot);
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("punish.confirmTitle", adminSlot), action));
-    builder.AddText(std::format("{}: {}", tr.Get("punish.target", adminSlot), pending.TargetName));
+    ::CS2Kit::Menu::ConfirmDialogSpec spec{
+        .Title = std::format("{}: {}", tr.Get("punish.confirmTitle", adminSlot), action),
+        .ConfirmLabel = tr.Get("punish.confirm", adminSlot),
+        .CancelLabel = tr.Get("punish.cancel", adminSlot),
+        .OnConfirm = [pending](int slot) { ConfirmAndIssue(slot, pending); },
+    };
+    spec.BodyLines.push_back(std::format("{}: {}", tr.Get("punish.target", adminSlot), pending.TargetName));
     if (IsTimed(pending.Type))
     {
-        builder.AddText(std::format("{}: {}", tr.Get("punish.duration", adminSlot),
-                                    FormatDurationLabel(pending.DurationSec, adminSlot)));
+        spec.BodyLines.push_back(std::format("{}: {}", tr.Get("punish.duration", adminSlot),
+                                             FormatDurationLabel(pending.DurationSec, adminSlot)));
     }
-    builder.AddText(
+    spec.BodyLines.push_back(
         std::format("{}: {}", tr.Get("punish.reason", adminSlot), StringUtils::TruncateUtf8(pending.Reason, 40)));
 
-    builder.AddButton(tr.Get("punish.confirm", adminSlot), [pending](int slot) { ConfirmAndIssue(slot, pending); });
-    builder.AddButton(tr.Get("punish.cancel", adminSlot), [](int slot) { Engine().Menus.CloseAllMenus(slot); });
-
-    return builder.Build();
+    return ::CS2Kit::Menu::BuildConfirmDialog(std::move(spec));
 }
 
 }  // namespace

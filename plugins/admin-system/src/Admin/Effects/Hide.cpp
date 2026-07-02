@@ -15,7 +15,7 @@ using CS2Kit::Sdk::TeamSpectator;
 // on a playing team, CS2's bot manager unloads bots until a human rejoins.
 // Toggle off restores the original team and name.
 
-const EffectToggle Hide{Permission::Hide, EffectId::Hide, "broadcast.hideOn", "broadcast.hideOff",
+const EffectToggle Hide{Flag(Permission::Hide), EffectId::Hide, "broadcast.hideOn", "broadcast.hideOff",
                         [](const ActionContext& ctx) -> EffectSetup {
                             int savedTeam = ctx.TargetCtrl.GetTeam();
                             std::string savedName = ctx.TargetCtrl.GetPlayerName();

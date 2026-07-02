@@ -11,7 +11,7 @@ namespace AdminSystem::Admin::Effects
 
 void Run(int adminSlot, int targetSlot, const EffectToggle& effect)
 {
-    auto ctx = Actions::Resolve(adminSlot, targetSlot, static_cast<char>(effect.Flag));
+    auto ctx = Actions::Resolve(adminSlot, targetSlot, effect.Flag);
     if (!ctx.Valid())
         return;
 

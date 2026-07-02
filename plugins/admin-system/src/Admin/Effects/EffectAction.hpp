@@ -22,7 +22,7 @@ using CS2Kit::Core::EffectSetup;
  */
 struct EffectToggle
 {
-    Permission Flag;
+    std::string Flag; /**< Permission flag string; see AdminSystem::Flag(Permission). */
     EffectId Id;
     std::string OnKey;
     std::string OffKey;
