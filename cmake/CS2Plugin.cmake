@@ -4,6 +4,8 @@ include_guard(GLOBAL)
 # function); used to locate plugin.vdf.in. cs2kit_platform_arch comes from cs2-kit.
 set(CS2_PLUGIN_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
+# Route all of `target_name`'s build artifacts to
+# build/plugins/<name>/<platform_arch>/ with no rpath and no lib prefix.
 function(cs2_set_output_dirs target_name platform_arch)
     set(output_dir "${CMAKE_BINARY_DIR}/plugins/${target_name}/${platform_arch}")
 
@@ -21,6 +23,9 @@ function(cs2_set_output_dirs target_name platform_arch)
     )
 endfunction()
 
+# Create a Metamod plugin MODULE linked against CS2Kit, with output dirs and
+# install rules. SOURCES defaults to a glob of src/*.cpp; INCLUDE_DIRS and
+# LIBRARIES are appended to the defaults.
 function(cs2_add_plugin target_name)
     cmake_parse_arguments(ARG "" "" "SOURCES;INCLUDE_DIRS;LIBRARIES" ${ARGN})
 
