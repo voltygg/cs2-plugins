@@ -1,5 +1,6 @@
 #include "Descriptors.hpp"
 
+#include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 
 namespace AdminSystem::Admin::Effects
@@ -7,15 +8,12 @@ namespace AdminSystem::Admin::Effects
 
 using Actions::ActionContext;
 using CS2Kit::Sdk::PlayerController;
+using CS2Kit::Sdk::TeamSpectator;
 
 // Hide moves the player to the spectator team and blanks their scoreboard
 // name. Tradeoff the operator accepts: when the admin was the last human
 // on a playing team, CS2's bot manager unloads bots until a human rejoins.
 // Toggle off restores the original team and name.
-namespace
-{
-constexpr int TeamSpectator = 1;
-}  // namespace
 
 const EffectToggle Hide{Permission::Hide, EffectId::Hide, "broadcast.hideOn", "broadcast.hideOff",
                         [](const ActionContext& ctx) -> EffectSetup {

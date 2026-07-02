@@ -1,13 +1,14 @@
 #include "Descriptors.hpp"
 
+#include <CS2Kit/Sdk/PawnOps.hpp>
+
 namespace AdminSystem::Admin::Actions
 {
 
 const ParamAction ChangeTeam{Permission::Control, /*requireAlive*/ false,
                              [](const ActionContext& ctx, int team) -> OptKey {
-                                 if (team < TeamSpec || team > TeamCt)
+                                 if (!CS2Kit::Sdk::PawnOps::ChangeTeamSafe(ctx.TargetCtrl, team))
                                      return std::nullopt;
-                                 ctx.TargetCtrl.ChangeTeam(team);
                                  return "broadcast.teamChanged";
                              }};
 

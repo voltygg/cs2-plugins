@@ -2,13 +2,15 @@
 
 #include "../Actions/ActionContext.hpp"
 #include "EffectId.hpp"
-#include "EffectManager.hpp"
 
+#include <CS2Kit/Core/EffectManager.hpp>
 #include <functional>
 #include <string>
 
 namespace AdminSystem::Admin::Effects
 {
+
+using CS2Kit::Core::EffectSetup;
 
 /**
  * @brief A toggleable effect expressed as data, mirroring @ref Actions::Action.

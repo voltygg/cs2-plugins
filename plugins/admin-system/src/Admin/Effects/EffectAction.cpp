@@ -15,7 +15,7 @@ void Run(int adminSlot, int targetSlot, const EffectToggle& effect)
     if (!ctx.Valid())
         return;
 
-    bool on = App().Effects.Toggle(targetSlot, effect.Id, [&] { return effect.Enable(ctx); });
+    bool on = App().Effects.Toggle(targetSlot, static_cast<int>(effect.Id), [&] { return effect.Enable(ctx); });
     Actions::Broadcast(ctx, on ? effect.OnKey : effect.OffKey);
 }
 

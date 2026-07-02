@@ -11,6 +11,7 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
@@ -82,7 +83,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 
     targetCtrl.SetMoveType(MoveType::None);
     if (cfg.moveToSpectator)
-        targetCtrl.ChangeTeam(Actions::TeamSpec);
+        targetCtrl.ChangeTeam(CS2Kit::Sdk::TeamSpectator);
 
     int interval = cfg.panelRefreshMs > 0 ? cfg.panelRefreshMs : 100;
     pc.TickTimer = Engine().Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
@@ -297,7 +298,7 @@ void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int resto
     if (!pc.IsValid())
         return;
     // restoreTeam is a real playing team (T/CT) only if we actually pulled them to spectator at start.
-    if (restoreTeam >= Actions::TeamT)
+    if (restoreTeam >= CS2Kit::Sdk::TeamT)
         pc.ChangeTeam(restoreTeam);
     pc.SetMoveType(restoreMove);
 }

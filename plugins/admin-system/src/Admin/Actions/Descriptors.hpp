@@ -26,11 +26,7 @@ extern const Action Goto;
 void Swap(int adminSlot, int firstSlot, int secondSlot);
 
 // Team
-constexpr int TeamSpec = 1;
-constexpr int TeamT = 2;
-constexpr int TeamCt = 3;
-
-/** Param is the destination team (TeamSpec/TeamT/TeamCt); out-of-range values are ignored. */
+/** Param is the destination team (CS2Kit::Sdk::TeamSpectator/TeamT/TeamCT); out-of-range values are ignored. */
 extern const ParamAction ChangeTeam;
 
 // Slap

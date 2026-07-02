@@ -2,7 +2,6 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
-#include "../Admin/Effects/EffectManager.hpp"
 #include "../Commands/AdminCommands.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
@@ -28,7 +27,6 @@
 
 using namespace AdminSystem::Core;
 using namespace AdminSystem::Admin;
-using namespace AdminSystem::Admin::Effects;
 using namespace AdminSystem::Punishments;
 using namespace CS2Kit::Commands;
 using namespace CS2Kit::Core;
@@ -144,8 +142,8 @@ void RegisterGameEventListeners()
         if (victim >= 0)
             App().Effects.CancelAllForSlot(victim);
     });
-    events.Listen("round_end", [](IGameEvent*) { App().Effects.CancelAllForRoundEnd(); });
-    events.Listen("round_prestart", [](IGameEvent*) { App().Effects.CancelAllForRoundEnd(); });
+    events.Listen("round_end", [](IGameEvent*) { App().Effects.CancelRoundScoped(); });
+    events.Listen("round_prestart", [](IGameEvent*) { App().Effects.CancelRoundScoped(); });
 }
 
 // Persist a finished session; shared by the disconnect hook and the unload sweep. No-ops for bots.

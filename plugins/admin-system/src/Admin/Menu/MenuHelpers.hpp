@@ -51,7 +51,7 @@ inline void AddEffectToggle(CS2Kit::Menu::MenuBuilder& builder, const std::strin
     const Effects::EffectToggle* e = &effect;
     builder.AddToggle(
         label, tr.Get("effectState.on", admin), tr.Get("effectState.off", admin),
-        [target, id = effect.Id](int) { return App().Effects.IsActive(target, id); },
+        [target, id = static_cast<int>(effect.Id)](int) { return App().Effects.IsActive(target, id); },
         [admin, target, e](int) { Effects::Run(admin, target, *e); }, CanActOnSlot(admin, target, effect.Flag));
 }
 

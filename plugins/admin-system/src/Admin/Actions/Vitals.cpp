@@ -1,6 +1,6 @@
 #include "Descriptors.hpp"
 
-#include <CS2Kit/Sdk/Entity.hpp>
+#include <CS2Kit/Sdk/PawnOps.hpp>
 
 namespace AdminSystem::Admin::Actions
 {
@@ -10,13 +10,10 @@ const Action Kill{Permission::Control, /*requireAlive*/ true, [](const ActionCon
                       return "broadcast.killed";
                   }};
 
-const Action Godmode{
-    Permission::Health, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-        uint32_t flags = ctx.TargetCtrl.GetFlags();
-        bool turningOn = (flags & CS2Kit::Sdk::FL_GODMODE) == 0;
-        ctx.TargetCtrl.SetFlags(turningOn ? (flags | CS2Kit::Sdk::FL_GODMODE) : (flags & ~CS2Kit::Sdk::FL_GODMODE));
-        return turningOn ? "broadcast.godmodeOn" : "broadcast.godmodeOff";
-    }};
+const Action Godmode{Permission::Health, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+                         return CS2Kit::Sdk::PawnOps::ToggleGodmode(ctx.TargetCtrl) ? "broadcast.godmodeOn"
+                                                                                    : "broadcast.godmodeOff";
+                     }};
 
 const ParamAction SetHealth{Permission::Health, /*requireAlive*/ true,
                             [](const ActionContext& ctx, int health) -> OptKey {

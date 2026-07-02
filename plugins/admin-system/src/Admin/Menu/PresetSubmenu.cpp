@@ -6,6 +6,7 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 
 using CS2Kit::Core::Engine;
@@ -29,9 +30,9 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildTeamPickerMenu(int adminSlot, int tar
         });
     };
 
-    addTeam(tr.Get("team.ct", adminSlot), Actions::TeamCt);
-    addTeam(tr.Get("team.t", adminSlot), Actions::TeamT);
-    addTeam(tr.Get("team.spec", adminSlot), Actions::TeamSpec);
+    addTeam(tr.Get("team.ct", adminSlot), CS2Kit::Sdk::TeamCT);
+    addTeam(tr.Get("team.t", adminSlot), CS2Kit::Sdk::TeamT);
+    addTeam(tr.Get("team.spec", adminSlot), CS2Kit::Sdk::TeamSpectator);
 
     return builder.Build();
 }
