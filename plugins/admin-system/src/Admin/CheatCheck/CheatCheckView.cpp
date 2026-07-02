@@ -8,6 +8,7 @@
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
+#include <CS2Kit/Utils/StringUtils.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 #include <format>
 #include <string>
@@ -21,6 +22,7 @@ using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
 using CS2Kit::Players::PlayerManager;
 using CS2Kit::Sdk::MessageSystem;
+using CS2Kit::Utils::StringUtils;
 using CS2Kit::Utils::TimeUtils;
 namespace ChatColors = CS2Kit::Utils::ChatColors;
 
@@ -44,37 +46,6 @@ PanelState PanelStateFor(const PendingCheck& pc)
     if (!pc.ResolvedUrl.empty())
         return PanelState::HasUrl;
     return PanelState::Generic;
-}
-
-std::string EscapeHtml(const std::string& text)
-{
-    std::string out;
-    out.reserve(text.size());
-    for (char c : text)
-    {
-        switch (c)
-        {
-        case '&':
-            out += "&amp;";
-            break;
-        case '<':
-            out += "&lt;";
-            break;
-        case '>':
-            out += "&gt;";
-            break;
-        case '"':
-            out += "&quot;";
-            break;
-        case '\'':
-            out += "&#39;";
-            break;
-        default:
-            out += c;
-            break;
-        }
-    }
-    return out;
 }
 
 }  // namespace
@@ -101,7 +72,7 @@ void RenderPanel(int slot, const PendingCheck& pc)
         body = tr.Get("cheatCheck.provideLink", slot);
         break;
     case PanelState::HasUrl:
-        body = std::format("{}<br>{}", tr.Get("cheatCheck.joinHere", slot), EscapeHtml(pc.ResolvedUrl));
+        body = std::format("{}<br>{}", tr.Get("cheatCheck.joinHere", slot), StringUtils::EscapeHtml(pc.ResolvedUrl));
         break;
     case PanelState::Generic:
         body = tr.Get("cheatCheck.instructions", slot);

@@ -12,6 +12,7 @@
 #include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
+#include <CS2Kit/Utils/TimeUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 #include <string>
@@ -27,6 +28,7 @@ using namespace AdminSystem::Punishments;
 
 using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Utils::StringUtils;
+using CS2Kit::Utils::TimeUtils;
 
 namespace
 {
@@ -34,40 +36,15 @@ namespace
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildReasonStep(int adminSlot, PendingPunishment pending);
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildConfirmStep(int adminSlot, PendingPunishment pending);
 
-// Cut at a UTF-8 sequence boundary so typed Cyrillic reasons stay valid center-HTML.
-std::string TruncateForDisplay(const std::string& text, std::size_t maxBytes)
-{
-    if (text.size() <= maxBytes)
-        return text;
-    std::size_t end = maxBytes;
-    while (end > 0 && (static_cast<unsigned char>(text[end]) & 0xC0) == 0x80)
-        --end;
-    return text.substr(0, end) + "...";
-}
-
-/** Localized "{n} {unit}" (largest exactly-dividing unit), or `duration.perm` for 0. */
+/** Kit duration label fed from this plugin's `duration.*` translations for @p slot. */
 std::string FormatDurationLabel(int seconds, int slot)
 {
     auto& tr = Engine().Translations;
-    if (seconds <= 0)
-        return tr.Get("duration.perm", slot);
-
-    struct Unit
-    {
-        int Seconds;
-        const char* Key;
-    };
-    static constexpr Unit Units[] = {
-        {86400, "duration.unitDays"},
-        {3600, "duration.unitHours"},
-        {60, "duration.unitMinutes"},
-    };
-    for (const auto& unit : Units)
-    {
-        if (seconds % unit.Seconds == 0)
-            return std::format("{} {}", seconds / unit.Seconds, tr.Get(unit.Key, slot));
-    }
-    return std::format("{} {}", seconds, tr.Get("duration.unitSeconds", slot));
+    return TimeUtils::FormatDurationLabel(seconds, {.Permanent = tr.Get("duration.perm", slot),
+                                                    .Days = tr.Get("duration.unitDays", slot),
+                                                    .Hours = tr.Get("duration.unitHours", slot),
+                                                    .Minutes = tr.Get("duration.unitMinutes", slot),
+                                                    .Seconds = tr.Get("duration.unitSeconds", slot)});
 }
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildDurationStep(int adminSlot, PendingPunishment pending)
@@ -153,17 +130,15 @@ void ConfirmAndIssue(int adminSlot, const PendingPunishment& pending)
 
     if (!IssuePunishment(*admin, *target, pending.Type, pending.Reason, pending.DurationSec))
     {
-        App().Chat.Reply(adminSlot, StringUtils::SubstituteTokens(
-                                        tr.Get("punish.failed", adminSlot),
-                                        {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)}}));
+        App().Chat.Reply(adminSlot, tr.Get("punish.failed", adminSlot,
+                                           {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)}}));
     }
     else if (!App().Config.GetChat().broadcastPunishments)
     {
         // With broadcasts on, the admin already sees the server-wide line; avoid double messaging.
-        App().Chat.Reply(
-            adminSlot, StringUtils::SubstituteTokens(tr.Get("punish.issued", adminSlot),
-                                                     {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)},
-                                                      {"name", pending.TargetName}}));
+        App().Chat.Reply(adminSlot, tr.Get("punish.issued", adminSlot,
+                                           {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)},
+                                            {"name", pending.TargetName}}));
     }
     Engine().Menus.CloseAllMenus(adminSlot);
 }
@@ -180,7 +155,8 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildConfirmStep(int adminSlot, PendingPun
         builder.AddText(std::format("{}: {}", tr.Get("punish.duration", adminSlot),
                                     FormatDurationLabel(pending.DurationSec, adminSlot)));
     }
-    builder.AddText(std::format("{}: {}", tr.Get("punish.reason", adminSlot), TruncateForDisplay(pending.Reason, 40)));
+    builder.AddText(
+        std::format("{}: {}", tr.Get("punish.reason", adminSlot), StringUtils::TruncateUtf8(pending.Reason, 40)));
 
     builder.AddButton(tr.Get("punish.confirm", adminSlot), [pending](int slot) { ConfirmAndIssue(slot, pending); });
     builder.AddButton(tr.Get("punish.cancel", adminSlot), [](int slot) { Engine().Menus.CloseAllMenus(slot); });

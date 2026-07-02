@@ -1,11 +1,11 @@
 #pragma once
 
 #include <CS2Kit/Players/Player.hpp>
+#include <CS2Kit/Utils/SlotThrottle.hpp>
 #include <cstdint>
 #include <map>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 namespace AdminSystem::Core
 {
@@ -78,10 +78,12 @@ private:
     /** Print "{prefix} {admin} {olive phrase}" server-wide; skipped when broadcasts are disabled. */
     void BroadcastAdminLine(std::string_view adminName, std::string_view phrase);
 
-    /** Last-notified timestamps per slot for the voice-mute notice (keyed by slot, value = epoch sec). */
-    std::unordered_map<int, int64_t> _voiceMuteNoticeAt;
-    /** Last-notified timestamps per slot for the text-mute notice. */
-    std::unordered_map<int, int64_t> _textMuteNoticeAt;
+    // Once per minute per player: the voice hook fires every keypress and chat spam produces
+    // dozens of say events, so unthrottled notices would out-spam the spam itself.
+    static constexpr int64_t MuteNoticeIntervalSec = 60;
+
+    CS2Kit::Utils::SlotThrottle _voiceMuteNotice{MuteNoticeIntervalSec};
+    CS2Kit::Utils::SlotThrottle _textMuteNotice{MuteNoticeIntervalSec};
 };
 
 }  // namespace AdminSystem::Core

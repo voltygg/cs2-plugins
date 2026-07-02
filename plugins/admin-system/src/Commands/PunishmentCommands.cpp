@@ -46,9 +46,9 @@ CommandResult HandlePunish(Player* admin, const std::vector<std::string>& args, 
 
     if (!IssuePunishment(*admin, *target, type, reason, durationSec))
     {
-        return {false, CallerText(admin, failedKey)};
+        return {false, Engine().Translations.Get(failedKey, admin->GetSlot())};
     }
-    return {true, CallerText(admin, successKey, {{"name", targetName}})};
+    return {true, Engine().Translations.Get(successKey, admin->GetSlot(), {{"name", targetName}})};
 }
 
 /** Like HandlePunish for the timed types: the duration is parsed from args[1]. */
@@ -58,7 +58,7 @@ CommandResult HandleTimedPunish(Player* admin, const std::vector<std::string>& a
     int64_t durationSec = 0;
     if (!ParseCommandDuration(args[1], durationSec))
     {
-        return {false, CallerText(admin, "cmd.badDuration")};
+        return {false, Engine().Translations.Get("cmd.badDuration", admin->GetSlot())};
     }
     return HandlePunish(admin, args, type, 2, fallbackReason, durationSec, successKey, failedKey);
 }
@@ -80,14 +80,14 @@ CommandResult HandleUnban(Player* admin, const std::vector<std::string>& args)
 {
     if (!StringUtils::IsNumeric(args[0]))
     {
-        return {false, CallerText(admin, "cmd.unbanUsage")};
+        return {false, Engine().Translations.Get("cmd.unbanUsage", admin->GetSlot())};
     }
     int64_t steamId = std::stoll(args[0]);
     std::string reason = JoinReason(args, 1, Engine().Translations.Get("reason.unbannedByAdmin"));
 
     bool removed = App().Punishments.RemoveBanBySteamId(steamId, admin->GetSteamID(), reason);
-    return {removed,
-            CallerText(admin, removed ? "cmd.unbanSuccess" : "cmd.unbanNoBan", {{"id", std::to_string(steamId)}})};
+    return {removed, Engine().Translations.Get(removed ? "cmd.unbanSuccess" : "cmd.unbanNoBan", admin->GetSlot(),
+                                               {{"id", std::to_string(steamId)}})};
 }
 
 CommandResult HandleVoiceMute(Player* admin, const std::vector<std::string>& args)
@@ -107,8 +107,8 @@ CommandResult HandleVoiceUnmute(Player* admin, const std::vector<std::string>& a
 
     bool removed = App().Punishments.RemoveVoiceMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
                                                               Engine().Translations.Get("reason.voiceUnmutedByAdmin"));
-    return {removed, CallerText(admin, removed ? "cmd.voiceUnmuteSuccess" : "cmd.voiceUnmuteNotMuted",
-                                {{"name", target->GetName()}})};
+    return {removed, Engine().Translations.Get(removed ? "cmd.voiceUnmuteSuccess" : "cmd.voiceUnmuteNotMuted",
+                                               admin->GetSlot(), {{"name", target->GetName()}})};
 }
 
 CommandResult HandleTextMute(Player* admin, const std::vector<std::string>& args)
@@ -128,8 +128,8 @@ CommandResult HandleTextUnmute(Player* admin, const std::vector<std::string>& ar
 
     bool removed = App().Punishments.RemoveTextMuteBySteamId(target->GetSteamID(), admin->GetSteamID(),
                                                              Engine().Translations.Get("reason.textUnmutedByAdmin"));
-    return {removed, CallerText(admin, removed ? "cmd.textUnmuteSuccess" : "cmd.textUnmuteNotMuted",
-                                {{"name", target->GetName()}})};
+    return {removed, Engine().Translations.Get(removed ? "cmd.textUnmuteSuccess" : "cmd.textUnmuteNotMuted",
+                                               admin->GetSlot(), {{"name", target->GetName()}})};
 }
 
 CommandResult HandleWarn(Player* admin, const std::vector<std::string>& args)

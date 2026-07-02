@@ -2,19 +2,11 @@
 
 #include <CS2Kit/Players/Player.hpp>
 #include <cstdint>
-#include <map>
 #include <string>
 #include <vector>
 
 namespace AdminSystem::Commands::Helpers
 {
-
-/**
- * Look up @p key in the caller's language (server language for console/null callers),
- * substituting each `{token}` occurrence from @p tokens.
- */
-std::string CallerText(const CS2Kit::Players::Player* caller, const std::string& key,
-                       const std::map<std::string, std::string>& tokens = {});
 
 /**
  * Glue all args from `start` onwards back into a single phrase, defaulting to `fallback`

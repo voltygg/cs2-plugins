@@ -2,7 +2,6 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
-#include "ChatFormat.hpp"
 #include "Config.hpp"
 #include "Managers.hpp"
 
@@ -31,10 +30,13 @@ using CS2Kit::Commands::CommandManager;
 namespace
 {
 
-// Rate limit (seconds) for "you are muted" notifications. The voice hook fires per receiver
-// every voice keypress, and chat-spam quickly produces dozens of say events; once per minute
-// is enough to be informative without becoming the spam itself.
-constexpr int64_t kMuteNoticeIntervalSec = 60;
+/** Localized expiry suffix for mute notices addressed to @p slot. */
+std::string MuteExpiryText(int64_t expiresAt, int slot)
+{
+    auto& tr = Engine().Translations;
+    return TimeUtils::FormatExpiry(expiresAt, TimeUtils::Now(), tr.Get("muteNotice.permanent", slot),
+                                   tr.Get("muteNotice.expiresIn", slot));
+}
 
 }  // namespace
 
@@ -159,19 +161,15 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
     if (App().Punishments.IsTextMuted(steamId))
     {
         int slot = player->GetSlot();
-        int64_t now = TimeUtils::Now();
-        auto& last = _textMuteNoticeAt[slot];
-
-        if (now - last >= kMuteNoticeIntervalSec)
+        if (_textMuteNotice.TryAcquire(slot, TimeUtils::Now()))
         {
-            last = now;
             auto mute = App().Punishments.GetActiveTextMute(steamId);
             auto& tr = Engine().Translations;
             if (mute)
             {
-                Chat::Print(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.text", slot),
-                                              ChatColors::Default, ChatColors::Olive,
-                                              ChatFormat::FormatExpiry(mute->ExpiresAt, slot)));
+                Chat::Print(slot,
+                            std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.text", slot),
+                                        ChatColors::Default, ChatColors::Olive, MuteExpiryText(mute->ExpiresAt, slot)));
                 if (!mute->Reason.empty())
                     Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
                                                   ChatColors::Default, mute->Reason));
@@ -200,19 +198,15 @@ void ChatService::NotifyVoiceMuted(Player* player)
         return;
 
     int slot = player->GetSlot();
-    int64_t now = TimeUtils::Now();
-    auto& last = _voiceMuteNoticeAt[slot];
-    if (now - last < kMuteNoticeIntervalSec)
+    if (!_voiceMuteNotice.TryAcquire(slot, TimeUtils::Now()))
         return;
-    last = now;
 
     auto mute = App().Punishments.GetActiveVoiceMute(player->GetSteamID());
     auto& tr = Engine().Translations;
     if (mute)
     {
-        Chat::Print(slot,
-                    std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot), ChatColors::Default,
-                                ChatColors::Olive, ChatFormat::FormatExpiry(mute->ExpiresAt, slot)));
+        Chat::Print(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot),
+                                      ChatColors::Default, ChatColors::Olive, MuteExpiryText(mute->ExpiresAt, slot)));
         if (!mute->Reason.empty())
             Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
                                           ChatColors::Default, mute->Reason));

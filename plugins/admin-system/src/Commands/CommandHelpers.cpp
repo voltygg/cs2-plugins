@@ -23,19 +23,15 @@ std::string JoinReason(const std::vector<std::string>& args, std::size_t start, 
     return StringUtils::Join(rest, " ");
 }
 
-std::string CallerText(const Player* caller, const std::string& key, const std::map<std::string, std::string>& tokens)
-{
-    auto& tr = CS2Kit::Core::Engine().Translations;
-    std::string text = caller ? tr.Get(key, caller->GetSlot()) : tr.Get(key);
-    return StringUtils::SubstituteTokens(std::move(text), tokens);
-}
-
 Player* ResolveSingle(const std::string& token, Player* caller, std::string& outError)
 {
+    auto& tr = CS2Kit::Core::Engine().Translations;
+    int callerSlot = caller ? caller->GetSlot() : -1;  // -1 = server language (console callers)
+
     auto matches = Resolve(token, caller);
     if (matches.empty())
     {
-        outError = CallerText(caller, "target.noMatch", {{"token", token}});
+        outError = tr.Get("target.noMatch", callerSlot, {{"token", token}});
         return nullptr;
     }
 
@@ -51,13 +47,13 @@ Player* ResolveSingle(const std::string& token, Player* caller, std::string& out
 
     if (allowed.empty())
     {
-        outError = CallerText(caller, "target.immune", {{"token", token}});
+        outError = tr.Get("target.immune", callerSlot, {{"token", token}});
         return nullptr;
     }
     if (allowed.size() > 1)
     {
         outError =
-            CallerText(caller, "target.ambiguous", {{"token", token}, {"count", std::to_string(allowed.size())}});
+            tr.Get("target.ambiguous", callerSlot, {{"token", token}, {"count", std::to_string(allowed.size())}});
         return nullptr;
     }
     return allowed[0];
