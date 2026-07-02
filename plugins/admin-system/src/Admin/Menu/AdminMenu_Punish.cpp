@@ -57,8 +57,8 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int 
                            [targetSlot](int slot) { return BuildQuickPunishMenu(slot, targetSlot); });
     }
 
-    for (PunishType type : {PunishType::Kick, PunishType::Ban, PunishType::VoiceMute, PunishType::TextMute,
-                            PunishType::Warn})
+    for (PunishType type :
+         {PunishType::Kick, PunishType::Ban, PunishType::VoiceMute, PunishType::TextMute, PunishType::Warn})
     {
         PendingPunishment pending{
             .Type = type,

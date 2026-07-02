@@ -33,8 +33,9 @@ void ConfigManager::ResolveRuntimeSettings()
         auto type = Punishments::ParsePunishType(t.type);
         if (!type || !Punishments::IsTimed(*type))
         {
-            Log::Warn("settings: skipping punishments.templates[{}] ('{}'): type must be ban/voiceMute/textMute, got '{}'",
-                      i, t.name, t.type);
+            Log::Warn(
+                "settings: skipping punishments.templates[{}] ('{}'): type must be ban/voiceMute/textMute, got '{}'", i,
+                t.name, t.type);
             continue;
         }
 

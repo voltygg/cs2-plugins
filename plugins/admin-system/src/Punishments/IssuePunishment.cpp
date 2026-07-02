@@ -39,37 +39,37 @@ bool IssuePunishment(const Player& admin, const Player& target, PunishType type,
     auto& pm = App().Punishments;
     switch (type)
     {
-        case PunishType::Kick:
-        {
-            CS2Kit::Sdk::PlayerController(target.GetSlot()).Kick(reason.c_str());
-            App().Chat.BroadcastPunishment("kicked", admin.GetName(), target.GetName(), reason, 0);
-            return true;
-        }
-        case PunishType::Ban:
-        {
-            Ban ban;
-            Fill(ban, target, admin, reason, durationSec);
-            ban.TargetIp = target.GetIpAddress();
-            return pm.IssueBan(ban);
-        }
-        case PunishType::VoiceMute:
-        {
-            VoiceMute mute;
-            Fill(mute, target, admin, reason, durationSec);
-            return pm.IssueVoiceMute(mute);
-        }
-        case PunishType::TextMute:
-        {
-            TextMute mute;
-            Fill(mute, target, admin, reason, durationSec);
-            return pm.IssueTextMute(mute);
-        }
-        case PunishType::Warn:
-        {
-            Warning warn;
-            Fill(warn, target, admin, reason, 0);
-            return pm.IssueWarning(warn);
-        }
+    case PunishType::Kick:
+    {
+        CS2Kit::Sdk::PlayerController(target.GetSlot()).Kick(reason.c_str());
+        App().Chat.BroadcastPunishment("kicked", admin.GetName(), target.GetName(), reason, 0);
+        return true;
+    }
+    case PunishType::Ban:
+    {
+        Ban ban;
+        Fill(ban, target, admin, reason, durationSec);
+        ban.TargetIp = target.GetIpAddress();
+        return pm.IssueBan(ban);
+    }
+    case PunishType::VoiceMute:
+    {
+        VoiceMute mute;
+        Fill(mute, target, admin, reason, durationSec);
+        return pm.IssueVoiceMute(mute);
+    }
+    case PunishType::TextMute:
+    {
+        TextMute mute;
+        Fill(mute, target, admin, reason, durationSec);
+        return pm.IssueTextMute(mute);
+    }
+    case PunishType::Warn:
+    {
+        Warning warn;
+        Fill(warn, target, admin, reason, 0);
+        return pm.IssueWarning(warn);
+    }
     }
     return false;
 }

@@ -150,13 +150,14 @@ void RegisterPunishmentCommands(CommandManager& mgr)
                      .OnExecute(HandleKick)
                      .Build());
 
-    mgr.Register(CommandBuilder("ban")
-                     .WithDescription("Ban a player. Duration: minutes (e.g. 30) or 30s/5m/2h/7d; 0/'perm' = permanent.")
-                     .WithUsage("!ban <target> <duration> [reason]")
-                     .RequirePermission(Flag(Permission::Ban))
-                     .WithArgs(2)
-                     .OnExecute(HandleBan)
-                     .Build());
+    mgr.Register(
+        CommandBuilder("ban")
+            .WithDescription("Ban a player. Duration: minutes (e.g. 30) or 30s/5m/2h/7d; 0/'perm' = permanent.")
+            .WithUsage("!ban <target> <duration> [reason]")
+            .RequirePermission(Flag(Permission::Ban))
+            .WithArgs(2)
+            .OnExecute(HandleBan)
+            .Build());
 
     mgr.Register(CommandBuilder("unban")
                      .WithDescription("Lift an active ban for the given SteamID.")

@@ -88,8 +88,8 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildDurationStep(int adminSlot, PendingPu
     };
 
     return ::CS2Kit::Menu::BuildDurationPicker(
-        adminSlot, std::format("{}: {}", action, tr.Get("panel.selectDuration", adminSlot)), presets,
-        std::move(onPick), tr.Get("duration.custom", adminSlot), tr.Get("duration.customPrompt", adminSlot), 32);
+        adminSlot, std::format("{}: {}", action, tr.Get("panel.selectDuration", adminSlot)), presets, std::move(onPick),
+        tr.Get("duration.custom", adminSlot), tr.Get("duration.customPrompt", adminSlot), 32);
 }
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildReasonStep(int adminSlot, PendingPunishment pending)
@@ -160,11 +160,10 @@ void ConfirmAndIssue(int adminSlot, const PendingPunishment& pending)
     else if (!App().Config.GetChat().broadcastPunishments)
     {
         // With broadcasts on, the admin already sees the server-wide line; avoid double messaging.
-        App().Chat.Reply(adminSlot,
-                         StringUtils::SubstituteTokens(
-                             tr.Get("punish.issued", adminSlot),
-                             {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)},
-                              {"name", pending.TargetName}}));
+        App().Chat.Reply(
+            adminSlot, StringUtils::SubstituteTokens(tr.Get("punish.issued", adminSlot),
+                                                     {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)},
+                                                      {"name", pending.TargetName}}));
     }
     Engine().Menus.CloseAllMenus(adminSlot);
 }
@@ -181,8 +180,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildConfirmStep(int adminSlot, PendingPun
         builder.AddText(std::format("{}: {}", tr.Get("punish.duration", adminSlot),
                                     FormatDurationLabel(pending.DurationSec, adminSlot)));
     }
-    builder.AddText(
-        std::format("{}: {}", tr.Get("punish.reason", adminSlot), TruncateForDisplay(pending.Reason, 40)));
+    builder.AddText(std::format("{}: {}", tr.Get("punish.reason", adminSlot), TruncateForDisplay(pending.Reason, 40)));
 
     builder.AddButton(tr.Get("punish.confirm", adminSlot), [pending](int slot) { ConfirmAndIssue(slot, pending); });
     builder.AddButton(tr.Get("punish.cancel", adminSlot), [](int slot) { Engine().Menus.CloseAllMenus(slot); });
@@ -231,9 +229,8 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildQuickPunishMenu(int adminSlot, int ta
             .DurationSec = tmpl.DurationSec,
             .Reason = tmpl.Reason,
         };
-        builder.AddButton(
-            std::format("{} - {}", tmpl.Name, FormatDurationLabel(tmpl.DurationSec, adminSlot)),
-            [pending](int slot) { Engine().Menus.OpenMenu(slot, BuildConfirmStep(slot, pending)); });
+        builder.AddButton(std::format("{} - {}", tmpl.Name, FormatDurationLabel(tmpl.DurationSec, adminSlot)),
+                          [pending](int slot) { Engine().Menus.OpenMenu(slot, BuildConfirmStep(slot, pending)); });
         ++rows;
     }
 

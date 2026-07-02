@@ -56,7 +56,8 @@ Player* ResolveSingle(const std::string& token, Player* caller, std::string& out
     }
     if (allowed.size() > 1)
     {
-        outError = CallerText(caller, "target.ambiguous", {{"token", token}, {"count", std::to_string(allowed.size())}});
+        outError =
+            CallerText(caller, "target.ambiguous", {{"token", token}, {"count", std::to_string(allowed.size())}});
         return nullptr;
     }
     return allowed[0];

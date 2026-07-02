@@ -39,16 +39,16 @@ inline const char* ActionTranslationKey(PunishType type)
 {
     switch (type)
     {
-        case PunishType::Kick:
-            return "action.kick";
-        case PunishType::Ban:
-            return "action.ban";
-        case PunishType::VoiceMute:
-            return "action.voiceMute";
-        case PunishType::TextMute:
-            return "action.textMute";
-        case PunishType::Warn:
-            return "action.warn";
+    case PunishType::Kick:
+        return "action.kick";
+    case PunishType::Ban:
+        return "action.ban";
+    case PunishType::VoiceMute:
+        return "action.voiceMute";
+    case PunishType::TextMute:
+        return "action.textMute";
+    case PunishType::Warn:
+        return "action.warn";
     }
     return "action.kick";
 }
@@ -58,16 +58,16 @@ inline Permission PermissionFor(PunishType type)
 {
     switch (type)
     {
-        case PunishType::Kick:
-            return Permission::Kick;
-        case PunishType::Ban:
-            return Permission::Ban;
-        case PunishType::VoiceMute:
-            return Permission::VoiceMute;
-        case PunishType::TextMute:
-            return Permission::TextMute;
-        case PunishType::Warn:
-            return Permission::Warn;
+    case PunishType::Kick:
+        return Permission::Kick;
+    case PunishType::Ban:
+        return Permission::Ban;
+    case PunishType::VoiceMute:
+        return Permission::VoiceMute;
+    case PunishType::TextMute:
+        return Permission::TextMute;
+    case PunishType::Warn:
+        return Permission::Warn;
     }
     return Permission::Root;
 }
