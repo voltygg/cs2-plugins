@@ -101,8 +101,11 @@ void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view mes
     auto style = App().Admins.GetChatStyle(admin->GetSteamID());
 
     auto prefixColor = ChatColors::ParseNamed(style.PrefixColor);
-    auto nameColor = ChatColors::ParseNamed(style.NameColor);
     auto messageColor = ChatColors::ParseNamed(style.MessageColor);
+
+    // Hiding the prefix is an incognito signal: default the name color too so a colored name
+    // doesn't still mark the admin as staff. Render-only, so their saved color returns on re-enable.
+    auto nameColor = style.DisplayPrefix ? ChatColors::ParseNamed(style.NameColor) : ChatColors::Default;
 
     // {prefixColor}{prefix} {nameColor}{name}{Default}: {messageColor}{message}
     std::string line;
