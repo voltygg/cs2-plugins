@@ -21,40 +21,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Conan imported targets are directory-scoped; make them visible across the
+# plugin directories.
+set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL ON)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-# cs2-kit's cmake helpers, needed before cs2_configure_third_party (which runs
-# before add_subdirectory(vendor/cs2-kit) below).
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vendor/cs2-kit/cmake")
 
 include(CTest)
-include(CS2KitThirdParty)
-include(ThirdParty)
 
-cs2_configure_third_party()
+# cpr/nlohmann_json come from cs2-kit; libpqxx is plugin-only.
+find_package(libpqxx CONFIG REQUIRED)
 
 add_subdirectory(vendor/cs2-kit)
 
 include(CS2Plugin)
 
 add_subdirectory(plugins/admin-system)
-
-if(BUILD_TESTING)
-    add_executable(cs2kit-utils-tests
-        tests/MicroTestMain.cpp
-        tests/ParseDurationTests.cpp
-        tests/StringUtilsTests.cpp
-        tests/SteamIdTests.cpp
-        tests/TimeUtilsTests.cpp
-        vendor/cs2-kit/src/Utils/StringUtils.cpp
-        vendor/cs2-kit/src/Utils/SteamId.cpp
-        vendor/cs2-kit/src/Utils/TimeUtils.cpp
-    )
-
-    target_compile_features(cs2kit-utils-tests PRIVATE cxx_std_23)
-    target_include_directories(cs2kit-utils-tests PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/tests"
-        "${CMAKE_CURRENT_SOURCE_DIR}/vendor/cs2-kit/include"
-    )
-
-    add_test(NAME cs2kit-utils COMMAND cs2kit-utils-tests)
-endif()

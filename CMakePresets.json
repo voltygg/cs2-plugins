@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json.schemastore.org/cmake-presets.json",
+  "$schema": "https://raw.githubusercontent.com/Kitware/CMake/master/Help/manual/presets/schema.json",
   "version": 8,
   "configurePresets": [
     {
@@ -53,8 +53,7 @@
       "displayName": "Windows MSVC Release",
       "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
@@ -62,8 +61,7 @@
       "displayName": "Windows MSVC Debug",
       "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     }
   ],

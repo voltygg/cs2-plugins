@@ -1,13 +1,12 @@
-from conan.tools.cmake import CMakeDeps, CMakeToolchain
-
 from conan import ConanFile
+from conan.tools.cmake import CMakeDeps, CMakeToolchain
 
 
 class CS2PluginsConan(ConanFile):
     name = "cs2-plugins"
     version = "1.0.0"
     settings = "os", "compiler", "build_type", "arch"
-    package_type = "application"
+    package_type = "shared-library"
 
     requires = (
         "libpqxx/7.10.0",

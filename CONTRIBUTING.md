@@ -56,8 +56,9 @@ To add a new plugin, create `plugins/<new>/src/`, configs, and
 `plugins/<new>/CMakeLists.txt` that calls `cs2_add_plugin(<new> ...)`. Add the
 plugin with `add_subdirectory(plugins/<new>)` in the root `CMakeLists.txt`.
 
-Add new third-party C++ dependencies to `conanfile.py`, then expose their CMake
-targets in `cmake/ThirdParty.cmake`.
+Add new third-party C++ dependencies to `conanfile.py`, then `find_package`
+them in the root `CMakeLists.txt` and link their imported targets (e.g.
+`libpqxx::pqxx`) in the plugin's `CMakeLists.txt`.
 
 ## Hard Constraints
 

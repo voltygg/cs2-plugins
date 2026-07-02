@@ -73,11 +73,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--server-path", default="C:/cs2-server")
     parser.add_argument("--plugin-name", default="")
-    parser.add_argument("--architecture", default="x86_64")
     args = parser.parse_args(argv)
-
-    if args.architecture != "x86_64":
-        buildtools.die("only x86_64 is supported by the CMake build.")
 
     csgo = Path(args.server_path) / "game" / "csgo"
     if not csgo.is_dir():

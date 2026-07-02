@@ -32,7 +32,8 @@ ENV CONAN_HOME=/root/.conan2
 # Pre-build deps so CI never compiles them; same profiles/build_type/lockfile as
 # scripts/build.py so package IDs match (else cache misses, deps rebuild).
 COPY conanfile.py conan.lock /app/
-COPY conan/profiles /app/conan/profiles
+# Profiles are canonical in the cs2-kit submodule (CI must check out submodules).
+COPY vendor/cs2-kit/conan/profiles /app/conan/profiles
 RUN conan install /app --build=missing --lockfile /app/conan.lock \
   --profile:host /app/conan/profiles/linux-steamrt.txt \
   --profile:build /app/conan/profiles/linux-steamrt.txt \

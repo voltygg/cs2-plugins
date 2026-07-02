@@ -95,8 +95,11 @@ def write_env_file(instance: dict[str, Any], out: Path) -> None:
     """Write one CS2 instance env_file consumed by Docker Compose."""
     name = str(instance["name"])
     port = str(instance["port"])
+    srcds_token = os.environ.get(f"GSLT_{name}", "")
+    if not srcds_token:
+        print(f"WARNING: GSLT_{name} is not set; instance '{name}' will start in LAN mode")
     env = {
-        "SRCDS_TOKEN": os.environ.get(f"GSLT_{name}", ""),
+        "SRCDS_TOKEN": srcds_token,
         "CS2_RCONPW": os.environ.get(f"RCON_{name}", ""),
         "CS2_PORT": port,
         "CS2_STARTMAP": str(instance.get("map", "de_dust2")),

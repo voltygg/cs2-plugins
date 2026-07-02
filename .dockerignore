@@ -3,4 +3,4 @@
 *
 !conanfile.py
 !conan.lock
-!conan
+!vendor/cs2-kit/conan

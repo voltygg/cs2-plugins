@@ -48,30 +48,6 @@ function(cs2_add_plugin target_name)
         ${ARG_LIBRARIES}
     )
 
-    if(WIN32)
-        target_link_libraries("${target_name}" PRIVATE
-            kernel32
-            user32
-            gdi32
-            winspool
-            comdlg32
-            advapi32
-            shell32
-            ole32
-            oleaut32
-            uuid
-            odbc32
-            odbccp32
-            ws2_32
-            crypt32
-            secur32
-            wldap32
-            iphlpapi
-        )
-
-        target_link_options("${target_name}" PRIVATE /SUBSYSTEM:WINDOWS)
-    endif()
-
     cs2kit_platform_arch(platform_arch)
     cs2_set_output_dirs("${target_name}" "${platform_arch}")
 
