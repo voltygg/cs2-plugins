@@ -2,6 +2,7 @@
 
 #include <CS2Kit/Players/Player.hpp>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -42,6 +43,14 @@ public:
     void BroadcastAction(const std::string& translationKey, std::string_view adminName, std::string_view targetName);
 
     /**
+     * Token variant for multi-target actions, e.g. "[ADMIN] Bob swapped Alice and Carol".
+     * The phrase at `translationKey` carries `{token}` placeholders matching @p nameTokens
+     * keys; each name is substituted in with the same styling as the single-target layout.
+     */
+    void BroadcastAction(const std::string& translationKey, std::string_view adminName,
+                         const std::map<std::string, std::string>& nameTokens);
+
+    /**
      * Re-emit an admin's regular chat with their group's colored prefix attached.
      * Caller is expected to SUPERCEDE the original say/say_team in the chat hook.
      */
@@ -63,6 +72,12 @@ public:
     void NotifyVoiceMuted(CS2Kit::Players::Player* player);
 
 private:
+    /** Phrase at `translationKey`, or the key itself so a missing translation is obvious. */
+    std::string BroadcastPhrase(const std::string& translationKey) const;
+
+    /** Print "{prefix} {admin} {olive phrase}" server-wide; skipped when broadcasts are disabled. */
+    void BroadcastAdminLine(std::string_view adminName, std::string_view phrase);
+
     /** Last-notified timestamps per slot for the voice-mute notice (keyed by slot, value = epoch sec). */
     std::unordered_map<int, int64_t> _voiceMuteNoticeAt;
     /** Last-notified timestamps per slot for the text-mute notice. */

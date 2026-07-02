@@ -38,6 +38,9 @@ ActionContext Resolve(int adminSlot, int targetSlot, char requiredFlag);
 
 void Broadcast(const ActionContext& ctx, const std::string& translationKey);
 
+/** Two-target variant: the phrase at `translationKey` receives the target names as {a} and {b}. */
+void Broadcast(const ActionContext& first, const ActionContext& second, const std::string& translationKey);
+
 /**
  * @brief A single-target admin action expressed as data.
  *

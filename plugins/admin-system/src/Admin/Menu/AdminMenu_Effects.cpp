@@ -11,6 +11,7 @@
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 
@@ -59,11 +60,17 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
     builder.AddButton(
         tr.Get("action.swap", adminSlot),
         [adminSlot, targetSlot](int slot) {
-            auto picker = BuildPlayerPicker(adminSlot, Engine().Translations.Get("common.selectSwapTarget", adminSlot),
-                                            [first = targetSlot](int a, int second) {
-                                                Actions::Swap(a, first, second);
-                                                Engine().Menus.CloseAllMenus(a);
-                                            });
+            auto picker = BuildPlayerPicker(
+                adminSlot, Engine().Translations.Get("common.selectSwapTarget", adminSlot),
+                [first = targetSlot](int a, int second) {
+                    Actions::Swap(a, first, second);
+                    Engine().Menus.CloseAllMenus(a);
+                },
+                [first = targetSlot](int candidate) {
+                    // Gray out partners Swap would reject: the already-picked player and the dead.
+                    CS2Kit::Sdk::PlayerController ctrl(candidate);
+                    return candidate != first && ctrl.IsValid() && ctrl.IsAlive();
+                });
             if (picker)
                 Engine().Menus.OpenMenu(slot, picker);
         },

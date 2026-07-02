@@ -51,6 +51,14 @@ void Broadcast(const ActionContext& ctx, const std::string& translationKey)
     App().Chat.BroadcastAction(translationKey, ctx.Admin->GetName(), ctx.Target->GetName());
 }
 
+void Broadcast(const ActionContext& first, const ActionContext& second, const std::string& translationKey)
+{
+    if (!first.Admin || !first.Target || !second.Target)
+        return;
+    App().Chat.BroadcastAction(translationKey, first.Admin->GetName(),
+                               {{"a", first.Target->GetName()}, {"b", second.Target->GetName()}});
+}
+
 void Run(int adminSlot, int targetSlot, const Action& action)
 {
     auto ctx = Resolve(adminSlot, targetSlot, static_cast<char>(action.Flag));

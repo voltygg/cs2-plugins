@@ -55,15 +55,17 @@ void Swap(int adminSlot, int firstSlot, int secondSlot)
     if (!ctxA.TargetCtrl.IsAlive() || !ctxB.TargetCtrl.IsAlive())
         return;
 
-    // Read both destinations before either move, since each reads the other's live origin.
-    Vector destForA = ClearedDestination(ctxB.TargetCtrl);
-    Vector destForB = ClearedDestination(ctxA.TargetCtrl);
+    // Exact origins, unlike Bring/Goto: both spots are vacated in the same frame, so there is
+    // nothing to clear past - and a facing offset lets the two destinations converge into the
+    // very collision stick it was meant to avoid when the players face each other.
+    Vector posA = ctxA.TargetCtrl.GetAbsOrigin();
+    Vector posB = ctxB.TargetCtrl.GetAbsOrigin();
     Vector zero = ZeroVelocity;
 
-    ctxA.TargetCtrl.Teleport(&destForA, nullptr, &zero);
-    ctxB.TargetCtrl.Teleport(&destForB, nullptr, &zero);
+    ctxA.TargetCtrl.Teleport(&posB, nullptr, &zero);
+    ctxB.TargetCtrl.Teleport(&posA, nullptr, &zero);
 
-    Broadcast(ctxA, "broadcast.swapped");
+    Broadcast(ctxA, ctxB, "broadcast.swapped");
 }
 
 }  // namespace AdminSystem::Admin::Actions

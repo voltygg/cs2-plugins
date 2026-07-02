@@ -11,11 +11,12 @@ namespace AdminSystem::Admin::Menu
 {
 
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(int adminSlot, const std::string& title,
-                                                        std::function<void(int adminSlot, int targetSlot)> onPick)
+                                                        std::function<void(int adminSlot, int targetSlot)> onPick,
+                                                        std::function<bool(int targetSlot)> isEnabled)
 {
     auto& tr = Engine().Translations;
-    return ::CS2Kit::Menu::BuildPlayerPicker(adminSlot, title, std::move(onPick),
-                                             tr.Get("common.noPlayers", adminSlot));
+    return ::CS2Kit::Menu::BuildPlayerPicker(adminSlot, title, std::move(onPick), tr.Get("common.noPlayers", adminSlot),
+                                             std::move(isEnabled));
 }
 
 }  // namespace AdminSystem::Admin::Menu

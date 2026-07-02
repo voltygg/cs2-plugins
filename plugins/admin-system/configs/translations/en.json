@@ -51,7 +51,7 @@
     "discoOff": "ended the disco for",
     "smote": "smote",
     "slapped": "slapped",
-    "swapped": "swapped",
+    "swapped": "swapped {a} and {b}",
     "hideOn": "went stealth",
     "hideOff": "came back",
     "killed": "killed",
