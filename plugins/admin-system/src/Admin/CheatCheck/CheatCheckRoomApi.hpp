@@ -1,11 +1,10 @@
 #pragma once
 
-#include <CS2Kit/Http/HttpResult.hpp>
+#include <CS2Kit/Http/RestJsonApi.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace AdminSystem::Core
 {
@@ -16,13 +15,7 @@ namespace AdminSystem::Admin::CheatCheck
 {
 
 /** A ready-to-send create-room HTTP POST, derived from config + the players involved. */
-struct RoomRequest
-{
-    std::string Url;
-    std::string Body;
-    std::vector<std::string> Headers;
-    long TimeoutMs = 0;
-};
+using RoomRequest = CS2Kit::Http::PreparedRequest;
 
 /** URLs extracted from a successful create-room response. */
 struct RoomUrls

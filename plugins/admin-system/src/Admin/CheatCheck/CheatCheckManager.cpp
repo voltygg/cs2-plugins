@@ -136,8 +136,8 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     }
 
     const uint64_t seq = pc.RequestSeq;
-    App().Http.Post(
-        std::move(request->Url), std::move(request->Body), std::move(request->Headers), request->TimeoutMs,
+    CS2Kit::Http::Post(
+        Engine().Http, std::move(*request),
         [this, targetSlot, seq](const CS2Kit::Http::HttpResult& result) { OnRoomResponse(targetSlot, seq, result); });
 }
 

@@ -14,7 +14,6 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Database/Migrator.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
-#include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -36,7 +35,6 @@ using namespace CS2Kit::Utils;
 using namespace CS2Kit::Menu;
 using AdminSystem::App;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
-using CS2Kit::Http::HttpClient;
 
 AdminSystemPlugin g_AdminSystemPlugin;
 PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
@@ -206,12 +204,6 @@ bool AdminSystemPlugin::OnLoad(bool late)
     Engine().Translations.Load("addons/admin-system/configs/translations");
 
     RegisterGameEventListeners();
-
-    // Async HTTP for cheat-check website rooms. Completions are dispatched on the game thread.
-    App().Http.Start();
-    Defer([] { App().Http.Stop(); });
-    uint64_t dispatchTimer = Engine().Scheduler.Repeat(100, [] { App().Http.DispatchCompletions(); });
-    Defer([dispatchTimer] { Engine().Scheduler.Cancel(dispatchTimer); });
 
     Defer([] { App().CheatCheck.CancelAll(); });
     Defer([] { App().Effects.CancelAll(); });

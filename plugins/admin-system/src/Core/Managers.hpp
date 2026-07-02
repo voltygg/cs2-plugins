@@ -10,7 +10,6 @@
 #include <CS2Kit/Core/EffectManager.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
-#include <CS2Kit/Http/HttpClient.hpp>
 
 namespace AdminSystem
 {
@@ -31,7 +30,6 @@ struct Managers
     // Constructed in OnLoad, when the kit's Services (and its Scheduler) are already live.
     CS2Kit::Core::EffectManager Effects{CS2Kit::Core::Engine().Scheduler};
     Admin::CheatCheck::CheatCheckManager CheatCheck;
-    CS2Kit::Http::HttpClient Http;
 };
 
 /** The plugin's live managers. Valid only between OnLoad and unload. */
