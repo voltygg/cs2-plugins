@@ -89,8 +89,8 @@ bool IssuePunishment(const Player& admin, const Player& target, PunishType type,
     // warning->ban auto-escalation calls PunishmentManager directly and is deliberately
     // not counted against the admin.
     auto detail = durationSec > 0 ? std::format("{}; {}s", reason, durationSec) : reason;
-    App().Freeze.RecordPunishment(admin.GetSteamID(), admin.GetName(), AuditActionName(type), targetSteamId,
-                                  targetName, detail);
+    App().Freeze.RecordPunishment(admin.GetSteamID(), admin.GetName(), AuditActionName(type), targetSteamId, targetName,
+                                  detail);
     return true;
 }
 

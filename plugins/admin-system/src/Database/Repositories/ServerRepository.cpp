@@ -27,9 +27,8 @@ bool ServerRepository::Upsert(const std::string& tag, const std::string& name)
 bool ServerRepository::Heartbeat(const std::string& tag)
 {
     return TryOr(false, "ServerRepository::Heartbeat", [&] {
-        App().Db.ExecutePrepared("heartbeat_server",
-                                 "UPDATE servers SET last_seen = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE tag = $1",
-                                 tag);
+        App().Db.ExecutePrepared(
+            "heartbeat_server", "UPDATE servers SET last_seen = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE tag = $1", tag);
         return true;
     });
 }

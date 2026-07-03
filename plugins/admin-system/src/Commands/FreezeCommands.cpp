@@ -108,8 +108,7 @@ CommandResult HandleUnfreezeAdmin(Player* admin, const std::vector<std::string>&
             }
         }
         if (matches > 1)
-            return {false, tr.Get("target.ambiguous", slot,
-                                  {{"token", args[0]}, {"count", std::to_string(matches)}})};
+            return {false, tr.Get("target.ambiguous", slot, {{"token", args[0]}, {"count", std::to_string(matches)}})};
     }
 
     const auto* row = App().Freeze.GetFrozen(targetSteamId);

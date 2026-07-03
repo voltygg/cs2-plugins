@@ -22,9 +22,8 @@ struct ActivityCounts
 class AdminActivityRepository
 {
 public:
-    bool Record(int64_t adminSteamId, const std::string& adminName, const std::string& action,
-                int64_t targetSteamId, const std::string& targetName, const std::string& detail,
-                const std::string& serverTag);
+    bool Record(int64_t adminSteamId, const std::string& adminName, const std::string& action, int64_t targetSteamId,
+                const std::string& targetName, const std::string& detail, const std::string& serverTag);
 
     /** Per-type action counts for one admin since @p sinceEpoch, across all servers. */
     ActivityCounts CountSince(int64_t adminSteamId, int64_t sinceEpoch);

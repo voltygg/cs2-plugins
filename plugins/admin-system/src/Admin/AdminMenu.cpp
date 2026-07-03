@@ -36,8 +36,8 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
     int64_t adminSid = adminPlayer->GetSteamID();
 
     // Version rendered small and gray next to the gold panel title, matching the pager style.
-    auto title = std::format("{} <font class='fontSize-s' color='#887755'>v{}</font>",
-                             tr.Get("panel.admin", adminSlot), AdminSystemPlugin::Get().GetVersion());
+    auto title = std::format("{} <font class='fontSize-s' color='#887755'>v{}</font>", tr.Get("panel.admin", adminSlot),
+                             AdminSystemPlugin::Get().GetVersion());
 
     return MenuBuilder(title)
         .AddSubmenu(

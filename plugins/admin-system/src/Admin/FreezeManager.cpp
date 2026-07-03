@@ -102,17 +102,14 @@ void FreezeManager::RecordAudit(int64_t adminSteamId, const std::string& adminNa
                                          App().Config.GetServer().tag);
 }
 
-bool FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId,
-                                const std::string& byName, const std::string& reason)
+bool FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId, const std::string& byName,
+                                const std::string& reason)
 {
     if (!Db::AdminRepository{}.SetFrozen(steamId, bySteamId, reason))
         return false;
 
-    _frozen[steamId] = {.SteamId = steamId,
-                        .Name = name,
-                        .FrozenAt = TimeUtils::Now(),
-                        .FrozenBy = bySteamId,
-                        .Reason = reason};
+    _frozen[steamId] = {
+        .SteamId = steamId, .Name = name, .FrozenAt = TimeUtils::Now(), .FrozenBy = bySteamId, .Reason = reason};
 
     RecordAudit(bySteamId, byName, "freeze_admin", steamId, name, reason);
     NotifyFrozen(steamId);

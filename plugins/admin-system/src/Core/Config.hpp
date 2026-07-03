@@ -160,8 +160,8 @@ struct Settings
     ChatSettings chat;
     CheatCheckSettings cheatCheck;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, database, punishments, abuseProtection,
-                                                chat, cheatCheck)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, database, punishments, abuseProtection, chat,
+                                                cheatCheck)
 
 /**
  * Loads and owns settings.json. All admin/group data is owned by the database
