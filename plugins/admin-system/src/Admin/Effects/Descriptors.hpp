@@ -21,8 +21,10 @@ extern const EffectToggle Ghost;
  */
 extern const EffectToggle Hide;
 
-/** Ordered to match the EffectId enum so adding an EffectId without a descriptor is a compile error. */
+/** Toggle effects in EffectId order, so a new toggle without a descriptor is a compile error. Model
+ *  is parameterized (Effects/Model.*), not a toggle, so it is excluded and the guard stops at Model. */
 [[maybe_unused]] inline const EffectToggle* const EffectRegistry[] = {&Disco, &Ghost, &Hide};
-static_assert(std::size(EffectRegistry) == static_cast<size_t>(EffectId::Count), "every EffectId needs a descriptor");
+static_assert(std::size(EffectRegistry) == static_cast<size_t>(EffectId::Model),
+              "every toggle EffectId before Model needs a descriptor");
 
 }  // namespace AdminSystem::Admin::Effects

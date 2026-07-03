@@ -4,6 +4,7 @@
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/Descriptors.hpp"
+#include "../Effects/Model.hpp"
 #include "MenuHelpers.hpp"
 #include "PlayerPicker.hpp"
 
@@ -34,6 +35,45 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsMenu(int adminSlot)
     });
 }
 
+namespace
+{
+
+// A button per fun model (selecting applies/swaps) plus a Reset row.
+std::shared_ptr<::CS2Kit::Menu::Menu> BuildModelMenu(int adminSlot, int targetSlot)
+{
+    auto& tr = Engine().Translations;
+    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
+    if (!target)
+        return nullptr;
+
+    bool allowed = CanActOnSlot(adminSlot, targetSlot, Permission::Fun);
+    MenuBuilder builder(std::format("{}: {}", tr.Get("action.model", adminSlot), target->GetName()));
+
+    const auto& models = Effects::FunModels();
+    for (size_t i = 0; i < models.size(); ++i)
+    {
+        builder.AddButton(
+            models[i].Name,
+            [adminSlot, targetSlot, i](int slot) {
+                Effects::ApplyModel(adminSlot, targetSlot, i);
+                Engine().Menus.CloseAllMenus(slot);
+            },
+            allowed);
+    }
+
+    builder.AddButton(
+        tr.Get("action.modelReset", adminSlot),
+        [adminSlot, targetSlot](int slot) {
+            Effects::ResetModel(adminSlot, targetSlot);
+            Engine().Menus.CloseAllMenus(slot);
+        },
+        allowed);
+
+    return builder.Build();
+}
+
+}  // namespace
+
 std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Engine().Translations;
@@ -53,6 +93,12 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
 
     AddEffectToggle(builder, tr.Get("action.ghost", adminSlot), adminSlot, targetSlot, Effects::Ghost);
     AddEffectToggle(builder, tr.Get("action.disco", adminSlot), adminSlot, targetSlot, Effects::Disco);
+
+    builder.AddSubmenu(
+        tr.Get("action.model", adminSlot),
+        [adminSlot, targetSlot](int) { return BuildModelMenu(adminSlot, targetSlot); },
+        CanActOnSlot(adminSlot, targetSlot, Permission::Fun));
+
     AddAction(builder, tr.Get("action.slap", adminSlot), adminSlot, targetSlot, Actions::Slap);
     AddAction(builder, tr.Get("action.smite", adminSlot), adminSlot, targetSlot, Actions::Smite);
 

@@ -2,6 +2,7 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
+#include "../Admin/Effects/Model.hpp"
 #include "../Commands/AdminCommands.hpp"
 #include "../Database/Repositories/ServerRepository.hpp"
 #include "../Punishments/PunishmentManager.hpp"
@@ -214,6 +215,9 @@ bool AdminSystemPlugin::OnLoad(bool late)
     Engine().Translations.Load("addons/admin-system/configs/translations");
 
     RegisterGameEventListeners();
+
+    // Queue fun-model assets; they replicate to clients from the next map load.
+    AdminSystem::Admin::Effects::PrecacheModels();
 
     Defer([] { App().CheatCheck.CancelAll(); });
     Defer([] { App().Effects.CancelAll(); });
