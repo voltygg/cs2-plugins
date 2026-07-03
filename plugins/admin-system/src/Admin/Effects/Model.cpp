@@ -42,10 +42,15 @@ const std::vector<FunModel>& FunModels()
     // model, so keep these to precached, client-available assets.
     static const std::vector<FunModel> models = {
         {"Chicken", "models/chicken/chicken.vmdl"},
-        {"Barrel", "models/props/de_train/hr_t/oil_drum/oil_drum.vmdl"},
-        {"Crate", "models/props_crates/csgo_drop_crate.vmdl"},
-        {"Gnome", "models/props_survival/gnome/gnome.vmdl"},
-        {"Melon", "models/props_junk/watermelon01.vmdl"},
+        {"Roasted Chicken", "models/chicken/chicken_roasted.vmdl"},
+        {"Watermelon", "models/food/fruits/watermelon01a.vmdl"},
+        {"Vending Machine", "models/props/cs_office/vending_machine.vmdl"},
+        {"Cash Stack", "models/gameplay/cash_stack/cash_stack.vmdl"},
+        {"Traffic Cone", "models/props/de_vertigo/trafficcone_clean.vmdl"},
+        {"Fire Hydrant", "models/props_street/firehydrant.vmdl"},
+        {"CRT TV", "models/generic/tv_crt_01/tv_crt_01.vmdl"},
+        {"ATM", "models/generic/atm_01/atm_01.vmdl"},
+        {"Goldfish", "models/props/de_inferno/goldfish.vmdl"},
     };
     return models;
 }
