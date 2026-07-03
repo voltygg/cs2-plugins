@@ -1,6 +1,7 @@
 #include "InfoCommands.hpp"
 
 #include "../Admin/AdminManager.hpp"
+#include "../Admin/FreezeManager.hpp"
 #include "../Core/ChatService.hpp"
 #include "../Core/Managers.hpp"
 #include "../Core/Permissions.hpp"
@@ -53,6 +54,7 @@ CommandResult HandleWho(Player* admin, const std::vector<std::string>& /*args*/)
 CommandResult HandleAdminReload(Player* /*admin*/, const std::vector<std::string>& /*args*/)
 {
     bool ok = App().Admins.Reload();
+    App().Freeze.RefreshFromDatabase();
     return {ok, ok ? "Admins and groups reloaded from database." : "Reload failed (check logs)."};
 }
 

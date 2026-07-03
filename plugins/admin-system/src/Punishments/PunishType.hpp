@@ -53,6 +53,25 @@ inline const char* ActionTranslationKey(PunishType type)
     return "action.kick";
 }
 
+/** The admin_activity `action` value for this punishment (audit trail + rate detection). */
+inline const char* AuditActionName(PunishType type)
+{
+    switch (type)
+    {
+    case PunishType::Kick:
+        return "kick";
+    case PunishType::Ban:
+        return "ban";
+    case PunishType::VoiceMute:
+        return "voice_mute";
+    case PunishType::TextMute:
+        return "text_mute";
+    case PunishType::Warn:
+        return "warn";
+    }
+    return "kick";
+}
+
 /** The admin flag required to issue this punishment. */
 inline Permission PermissionFor(PunishType type)
 {

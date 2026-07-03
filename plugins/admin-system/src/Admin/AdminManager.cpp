@@ -3,6 +3,7 @@
 #include "../Core/Config.hpp"
 #include "../Core/Managers.hpp"
 #include "../Database/Repositories/AdminRepository.hpp"
+#include "../Database/Repositories/ServerRepository.hpp"
 
 #include <CS2Kit/Utils/Log.hpp>
 #include <algorithm>
@@ -33,6 +34,23 @@ bool AdminManager::LoadAdmins()
         for (const auto& admin : admins)
         {
             _admins[admin.SteamId] = admin;
+        }
+
+        // Merge this server's admin_server_groups grants into the in-memory Groups vectors so
+        // flag/immunity/chat-style resolution below sees the effective per-server set. Grants
+        // for unknown admins are skipped, like unknown group names in admins.groups.
+        Db::AdminServerGroupRepository serverGroupRepo;
+        for (auto& [steamId, groupNames] : serverGroupRepo.FindByServerTag(App().Config.GetServer().tag))
+        {
+            auto it = _admins.find(steamId);
+            if (it == _admins.end())
+                continue;
+            auto& groups = it->second.Groups;
+            for (auto& name : groupNames)
+            {
+                if (std::find(groups.begin(), groups.end(), name) == groups.end())
+                    groups.push_back(std::move(name));
+            }
         }
 
         for (auto& [steamId, admin] : _admins)
@@ -97,12 +115,20 @@ const Database::Admin* AdminManager::GetAdmin(int64_t steamId)
 
 bool AdminManager::HasPermission(int64_t steamId, char flag)
 {
+    // Abuse-protection: a frozen admin is denied everything. Every permission surface
+    // (commands, menu, actions) funnels through these three methods, so this is the one gate.
+    if (App().Freeze.IsFrozen(steamId))
+        return false;
+
     auto it = _resolvedFlags.find(steamId);
     return it != _resolvedFlags.end() && HasBit(it->second, flag);
 }
 
 bool AdminManager::HasAllPermissions(int64_t steamId, const std::string& flags)
 {
+    if (App().Freeze.IsFrozen(steamId))
+        return false;
+
     auto it = _resolvedFlags.find(steamId);
     if (it == _resolvedFlags.end())
         return false;
@@ -118,6 +144,9 @@ bool AdminManager::HasAllPermissions(int64_t steamId, const std::string& flags)
 
 bool AdminManager::HasAnyPermission(int64_t steamId, const std::string& flags)
 {
+    if (App().Freeze.IsFrozen(steamId))
+        return false;
+
     auto it = _resolvedFlags.find(steamId);
     if (it == _resolvedFlags.end())
         return false;

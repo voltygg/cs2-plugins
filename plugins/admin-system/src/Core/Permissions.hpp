@@ -12,6 +12,7 @@ namespace AdminSystem
  */
 enum class Permission : char
 {
+    FreezeAdmins = 'a',  // freeze/unfreeze other admins' privileges, list frozen admins
     Kick = 'c',
     Ban = 'd',
     Unban = 'e',

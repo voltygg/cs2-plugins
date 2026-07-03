@@ -8,6 +8,12 @@
     "logLevel": "info",
     "locale": "ru"
   },
+  "server": {
+    // Per-instance identity for per-server admin grants; rendered as <box>-<instance>
+    // (e.g. "box-a-main"). Stable - renaming a box/instance orphans its grants.
+    "tag": "${SERVER_TAG}",
+    "name": "${SERVER_NAME}"
+  },
   "database": {
     "host": "${DB_HOST}",
     "port": ${DB_PORT},
@@ -40,6 +46,16 @@
     ],
     // Rows of the menu duration picker (same grammar as template durations).
     "menuDurations": ["5m", "30m", "1h", "1d", "7d", "perm"]
+  },
+  "abuseProtection": {
+    // Auto-freeze an admin's privileges when they exceed these per-window action counts
+    // (counted across all servers). 0 disables a counter; root admins are exempt.
+    "enabled": true,
+    "windowMinutes": 10,
+    "maxBans": 5,
+    "maxKicks": 10,
+    "maxMutes": 15,
+    "maxWarnings": 15
   },
   "chat": {
     "broadcastPunishments": true,

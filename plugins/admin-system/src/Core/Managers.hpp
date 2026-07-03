@@ -2,6 +2,7 @@
 
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
+#include "../Admin/FreezeManager.hpp"
 #include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
@@ -31,6 +32,7 @@ struct Managers
     CS2Kit::Database::PostgresDatabase Db;
     Database::PlayerRepository PlayerRepo;
     Admin::AdminManager Admins;
+    Admin::FreezeManager Freeze;
     Punishments::PunishmentManager Punishments;
     Core::ChatService Chat;
     // Constructed in OnLoad, when the kit's Services (and its Scheduler) are already live.

@@ -99,6 +99,51 @@ bool AdminRepository::UpdateLanguage(int64_t steamId, const std::string& lang)
     });
 }
 
+bool AdminRepository::SetFrozen(int64_t steamId, int64_t frozenBy, const std::string& reason)
+{
+    return TryOr(false, "AdminRepository::SetFrozen", [&] {
+        App().Db.ExecutePrepared("set_admin_frozen",
+                                 "UPDATE admins SET is_frozen = TRUE, "
+                                 "frozen_at = EXTRACT(EPOCH FROM NOW())::BIGINT, frozen_by = $2, "
+                                 "freeze_reason = $3, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
+                                 "WHERE steam_id = $1",
+                                 steamId, frozenBy, reason);
+        return true;
+    });
+}
+
+bool AdminRepository::ClearFrozen(int64_t steamId)
+{
+    return TryOr(false, "AdminRepository::ClearFrozen", [&] {
+        App().Db.ExecutePrepared("clear_admin_frozen",
+                                 "UPDATE admins SET is_frozen = FALSE, frozen_at = 0, frozen_by = 0, "
+                                 "freeze_reason = '', updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
+                                 "WHERE steam_id = $1",
+                                 steamId);
+        return true;
+    });
+}
+
+CS2Kit::Database::DbResult<std::vector<FrozenAdmin>> AdminRepository::FindFrozen()
+{
+    return CS2Kit::Database::TryDb("AdminRepository::FindFrozen", [&] {
+        std::vector<FrozenAdmin> frozen;
+        auto result = App().Db.ExecutePrepared(
+            "find_frozen_admins",
+            "SELECT steam_id, name, frozen_at, frozen_by, freeze_reason FROM admins WHERE is_frozen = TRUE");
+
+        for (const auto& row : result)
+        {
+            frozen.push_back({.SteamId = row["steam_id"].as<int64_t>(),
+                              .Name = row["name"].c_str(),
+                              .FrozenAt = row["frozen_at"].as<int64_t>(),
+                              .FrozenBy = row["frozen_by"].as<int64_t>(),
+                              .Reason = row["freeze_reason"].c_str()});
+        }
+        return frozen;
+    });
+}
+
 Admin AdminRepository::ParseRow(const pqxx::row& row)
 {
     Admin admin;

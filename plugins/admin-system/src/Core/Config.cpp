@@ -25,6 +25,15 @@ bool ConfigManager::LoadSettings(const std::string& path)
 // must not take down ban/mute enforcement for the whole server.
 void ConfigManager::ResolveRuntimeSettings()
 {
+    // A blank/oversized tag would silently orphan per-server grants (the DB column is
+    // VARCHAR(64)), so normalize to the documented default instead of failing the load.
+    auto& tag = _settings.server.tag;
+    if (StringUtils::Trim(tag).empty() || tag.size() > 64)
+    {
+        Log::Warn("settings: server.tag is empty or longer than 64 chars; using \"default\"");
+        tag = "default";
+    }
+
     _resolvedTemplates.clear();
     const auto& punishments = _settings.punishments;
     for (std::size_t i = 0; i < punishments.templates.size(); ++i)

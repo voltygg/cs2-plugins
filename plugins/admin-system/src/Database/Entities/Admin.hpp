@@ -13,6 +13,8 @@ struct Admin
     int64_t Id = 0;
     int64_t SteamId = 0;
     std::string Name;
+    /** In memory this is the EFFECTIVE set for this server (global `admins.groups` merged with
+     *  this server's `admin_server_groups` grants at load time); the DB column is global-only. */
     std::vector<std::string> Groups;
     std::string Flags;
     int32_t Immunity = 0;

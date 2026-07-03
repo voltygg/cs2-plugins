@@ -111,6 +111,12 @@ An instance's own `plugins:` replaces the server default (it does not extend it)
 Every plugin referenced must still be declared under the top-level `plugins:` map
 so CI packages it.
 
+Each instance's rendered admin-system settings automatically get a server
+identity: `server.tag = <box>-<instance>` (e.g. `box-a-main`) and `server.name`
+from the instance `hostname`. That tag keys per-server admin grants
+(`admin_server_groups`) in the shared database, so treat box ids and instance
+names as **stable** - renaming one orphans the grants that reference its tag.
+
 `inventory.yml` owns non-secret topology: hosts, ports, deploy roots, image refs,
 plugins, instances, and database names. Local server `.env` files own secrets
 and local file paths such as `SSH_KEY_FILE`, `DB_PASSWORD`, `PGPASSWORD`, `GSLT_*`,
@@ -134,7 +140,9 @@ secret; `SERVER_ENV` is only the env-file content. Local `.env` files should use
 Normal path: push to `prod` or run the Deploy workflow manually. CI builds the
 Linux plugin bundle, publishes `ghcr.io/<repo>/cs2-server-runtime:latest`,
 renders each server's Compose tree, rsyncs it to `deploy_root`, pulls the
-runtime image, and starts CS2 instance services one at a time:
+runtime image, and starts CS2 instance services one at a time. After the
+services come up healthy it runs `docker image prune -f` on the box, removing
+the dangling `<none>` image left behind each time the `:latest` tag moves:
 
 ```bash
 docker compose pull

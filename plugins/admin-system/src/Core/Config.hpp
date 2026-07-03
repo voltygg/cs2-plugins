@@ -27,6 +27,30 @@ struct PluginSettings
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PluginSettings, logLevel, locale)
 
+/** "server" section of settings.jsonc: this server's identity in the shared database.
+ *  The tag keys per-server admin grants (admin_server_groups) and audit attribution, so it
+ *  must be unique per server and stable once referenced. */
+struct ServerSettings
+{
+    std::string tag = "default";
+    std::string name = "CS2 Server";
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ServerSettings, tag, name)
+
+/** "abuseProtection" section of settings.jsonc: automatic admin-freeze rate thresholds.
+ *  A threshold of 0 disables that counter; root ('z') admins are always exempt. */
+struct AbuseProtectionSettings
+{
+    bool enabled = true;
+    int windowMinutes = 10;
+    int maxBans = 5;
+    int maxKicks = 10;
+    int maxMutes = 15;  // voice + text combined
+    int maxWarnings = 15;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AbuseProtectionSettings, enabled, windowMinutes, maxBans, maxKicks,
+                                                maxMutes, maxWarnings)
+
 /** One "punishments.templates[]" entry, verbatim from JSON. Validated into a ResolvedTemplate on load. */
 struct PunishmentTemplate
 {
@@ -129,12 +153,15 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckSettings, mode, timeou
 struct Settings
 {
     PluginSettings plugin;
+    ServerSettings server;
     DatabaseConfig database;
     PunishmentSettings punishments;
+    AbuseProtectionSettings abuseProtection;
     ChatSettings chat;
     CheatCheckSettings cheatCheck;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, database, punishments, chat, cheatCheck)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, database, punishments, abuseProtection,
+                                                chat, cheatCheck)
 
 /**
  * Loads and owns settings.json. All admin/group data is owned by the database
@@ -150,8 +177,10 @@ public:
 
     const Settings& Get() const { return _settings; }
     const PluginSettings& GetPlugin() const { return _settings.plugin; }
+    const ServerSettings& GetServer() const { return _settings.server; }
     const DatabaseConfig& GetDatabase() const { return _settings.database; }
     const PunishmentSettings& GetPunishments() const { return _settings.punishments; }
+    const AbuseProtectionSettings& GetAbuseProtection() const { return _settings.abuseProtection; }
     const ChatSettings& GetChat() const { return _settings.chat; }
     const CheatCheckSettings& GetCheatCheck() const { return _settings.cheatCheck; }
 

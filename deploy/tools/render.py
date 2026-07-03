@@ -40,9 +40,12 @@ def strip_jsonc(raw: str) -> str:
     return re.sub(r"(?m)^\s*//.*$", "", raw)
 
 
-def render_settings(data: dict[str, Any], server_id: str, plugin: str, out: Path) -> None:
+def render_settings(
+    data: dict[str, Any], server_id: str, instance: dict[str, Any], plugin: str, out: Path
+) -> None:
     """Render one plugin settings.jsonc from inventory and environment."""
     db = data.get("database", {})
+    instance_name = str(instance["name"])
     env = {
         "DB_HOST": str(db.get("host", "")),
         "DB_PORT": str(db.get("port", "")),
@@ -51,8 +54,11 @@ def render_settings(data: dict[str, Any], server_id: str, plugin: str, out: Path
         "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
         "DB_SSLMODE": str(db.get("sslMode", "prefer")),
         "CHEAT_API_KEY": os.environ.get("CHEAT_API_KEY", ""),
+        # Per-instance server identity for per-server admin grants; must stay stable.
+        "SERVER_TAG": f"{server_id}-{instance_name}",
+        "SERVER_NAME": str(instance.get("hostname", f"CS2 {instance_name}")),
     }
-    for key in ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_SSLMODE"):
+    for key in ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_SSLMODE", "SERVER_TAG"):
         if not env[key]:
             die(f"required var {key} is empty for {server_id}/{plugin}")
 
@@ -75,15 +81,20 @@ def render_settings(data: dict[str, Any], server_id: str, plugin: str, out: Path
 
 
 def copy_plugin_bundle(
-    data: dict[str, Any], server_id: str, plugin: str, package_dir: Path, bundles_dir: Path
+    data: dict[str, Any],
+    server_id: str,
+    instance: dict[str, Any],
+    plugin: str,
+    package_dir: Path,
+    bundles_dir: Path,
 ) -> None:
-    """Copy one packaged plugin bundle and render its server config."""
+    """Copy one packaged plugin bundle and render its instance config."""
     source_addons = package_dir / plugin / "addons"
     if not source_addons.is_dir():
         die(f"no bundle at {source_addons}; run deploy/tools/cli.py package {plugin}")
     target_addons = bundles_dir / "addons"
     shutil.copytree(source_addons, target_addons, dirs_exist_ok=True)
-    render_settings(data, server_id, plugin, target_addons / plugin / "configs" / "settings.jsonc")
+    render_settings(data, server_id, instance, plugin, target_addons / plugin / "configs" / "settings.jsonc")
 
 
 def dotenv_value(value: str) -> str:
@@ -175,7 +186,7 @@ def render(server_id: str, package_dir: Path, out_dir: Path, runtime_image: str 
         bundles_dir.mkdir(parents=True, exist_ok=True)
 
         for plugin in inventory.instance_plugins(server, instance):
-            copy_plugin_bundle(data, server_id, str(plugin), package_dir, bundles_dir)
+            copy_plugin_bundle(data, server_id, instance, str(plugin), package_dir, bundles_dir)
 
         write_env_file(instance, instance_dir / ".env")
         write_pre_hook(instance_dir / "pre.sh")

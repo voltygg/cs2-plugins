@@ -1,17 +1,19 @@
-# Admin System
+# CS2 Plugins
 
-A modern C++ admin system plugin for Counter-Strike 2 community servers, built on Metamod:Source.
+A C++23 Metamod:Source plugin monorepo for Counter-Strike 2 community servers. The main plugin is **admin-system**; each plugin lives under `plugins/<name>/`.
 
-Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C++23 library for CS2 plugin development providing commands, menus, SDK wrappers, and utilities. CS2Kit is the only submodule - all SDK dependencies (hl2sdk-cs2, mmsource-2.0, etc.) are nested inside it.
+Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C++23 library for CS2 plugin development providing commands, menus, SDK wrappers, and utilities, consumed as the `vendor/cs2-kit` submodule. CS2Kit is the only submodule - all SDK dependencies (hl2sdk-cs2, mmsource-2.0, etc.) are nested inside it.
 
 ## Features
 
-- **Punish:** Kick, ban, mute, gag, warn
+- **Punish:** Kick, ban, mute, gag, warn (warnings auto-escalate to a ban at a configurable threshold)
 - **Control:** Slay, Bring, Goto, Freeze, Noclip, Health/Armor presets, Godmode (FL_GODMODE), Bury/Unbury, Change Team
 - **Effects:** Ghost (translucent render), Disco (color cycling), Launch (high-velocity yeet + 3 s fall protect), Smite (theatrical instakill), Swap (exchange two players' positions). Blind reserved (awaits Fade user-message infra).
-- **Admin System:** Permission flags (`s` control, `h` survival/cheats, `f` fun), groups, immunity levels. Self-targeting always allowed.
+- **Admin System:** Permission flags (`a` freeze-admins, `b` hide/who, `c` kick, `d` ban, `e` unban, `o` voice-mute, `p` text-mute, `q` warn, `s` control, `h` health/cheats, `f` fun, `k` cheat-check, `r` admin menu, `z` root), groups, immunity levels. Self-targeting always allowed.
+- **Multi-Server:** Several servers share one database; admins can hold different groups per server (see [Multi-Server Setup](#multi-server-setup))
+- **Abuse Protection:** Automatic + manual freezing of rogue admins, with a full action audit trail (see [Admin Abuse Protection](#admin-abuse-protection))
 - **WASD Menus:** Top-level category dispatcher → player picker → actions. Toggle entries (Ghost, Disco, Godmode) show live `: ON / : OFF` state via dynamic-title menu items.
-- **Database:** PostgreSQL with async queries
+- **Database:** PostgreSQL (synchronous, main-thread, prepared statements) with forward-only auto-applied migrations
 - **Chat Commands:** `!kick`, `!ban`, `!voice_mute`, `!text_mute`, `!warn` and more
 
 ## Requirements
@@ -22,10 +24,10 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C
 
 ## Installation
 
-1. Download the latest release from [Releases](#)
+1. Download the latest release from [Releases](https://github.com/m9snoi/cs2-plugins/releases)
 2. Extract to your server's `csgo/` folder
-3. Configure database and plugin settings in `addons/admin-system/configs/settings.jsonc`
-4. (Optional) The plugin applies the schema automatically on load. To pre-create it manually: `psql -d admin_system -f plugins/admin-system/configs/migrations/0001_initial_schema.sql`
+3. Configure database and plugin settings in `addons/admin-system/configs/settings.jsonc` (set a unique `server.tag` per server — see [Multi-Server Setup](#multi-server-setup))
+4. (Optional) The plugin applies all migrations automatically on load. To pre-create the schema manually, run the files in `plugins/admin-system/configs/migrations/` in order: `psql -d admin_system -f plugins/admin-system/configs/migrations/0001_initial_schema.sql` (then `0002_...`, etc.)
 5. Edit `plugins/admin-system/database/seed-admin.sql` with your SteamID64 and run it: `psql -d admin_system -f plugins/admin-system/database/seed-admin.sql`
 6. Restart the server (or run `!admin_reload` if it was already running)
 
@@ -33,29 +35,88 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C
 
 | Command | Permission | Description |
 | --- | --- | --- |
-| `!kick <target> [reason]` | Kick | Kick a player |
-| `!ban <target> <duration> [reason]` | Ban | Ban a player |
-| `!unban <steamid>` | Unban | Remove a ban |
-| `!voice_mute <target> <duration> [reason]` | VoiceMute | Mute voice |
-| `!voice_unmute <target>` | VoiceMute | Unmute voice |
-| `!text_mute <target> <duration> [reason]` | TextMute | Block text chat |
-| `!text_unmute <target>` | TextMute | Unblock text chat |
-| `!warn <target> <reason>` | Warn | Issue a warning |
-| `!admin` | AdminMenu | Open admin menu |
+| `!kick <target> [reason]` | Kick (`c`) | Kick a player |
+| `!ban <target> <duration> [reason]` | Ban (`d`) | Ban a player |
+| `!unban <steamid> [reason]` | Unban (`e`) | Remove a ban |
+| `!voice_mute <target> <duration> [reason]` (aliases `!vmute`, `!mute`) | VoiceMute (`o`) | Mute voice |
+| `!voice_unmute <target>` (aliases `!vunmute`, `!unmute`) | VoiceMute (`o`) | Unmute voice |
+| `!text_mute <target> <duration> [reason]` (aliases `!tmute`, `!gag`) | TextMute (`p`) | Block text chat |
+| `!text_unmute <target>` (aliases `!tunmute`, `!ungag`) | TextMute (`p`) | Unblock text chat |
+| `!warn <target> [reason]` | Warn (`q`) | Issue a warning (auto-ban at threshold) |
+| `!admin` (aliases `!a`, `!menu`) | AdminMenu (`r`) | Open admin menu |
+| `!who` (alias `!players`) | Hide (`b`) | List players, prefixes, immunity |
+| `!hide` | Hide (`b`) | Toggle admin stealth |
+| `!cc <target>` / `!cccancel <target>` | CheatCheck (`k`) | Call / cancel a cheat check |
+| `!freeze_admin <target\|steamId> [reason]` | FreezeAdmins (`a`) | Freeze another admin's privileges |
+| `!unfreeze_admin <steamId\|name>` | FreezeAdmins (`a`) | Restore a frozen admin's privileges |
+| `!frozen_admins` | FreezeAdmins (`a`) | List currently frozen admins |
+| `!admin_reload` (alias `!reload_admins`) | Root (`z`) | Reload admins/groups/grants/freezes from DB |
 
 **Target Selectors:** `@all`, `@me`, `@ct`, `@t`, or partial player name
 
-**Duration Format:** `5m`, `1h`, `1d`, `1w`, or `0` for permanent
+**Duration Format:** `30s`, `5m`, `2h`, `7d`, `1w`; a bare number means minutes; `0` or `perm` = permanent
 
 ## Configuration
 
-Runtime configuration lives in `plugins/admin-system/configs/settings.jsonc` (database, punishments, chat, cheat-check). Admin groups (with their chat prefix and colors) and individual admins live in the `admin_groups` and `admins` PostgreSQL tables -- see `plugins/admin-system/configs/migrations/`. Run `!admin_reload` after editing those tables to refresh in-memory state without restarting.
+Runtime configuration lives in `plugins/admin-system/configs/settings.jsonc` (server identity, database, punishments, abuse protection, chat, cheat-check). Admin groups (with their chat prefix and colors) and individual admins live in the `admin_groups` and `admins` PostgreSQL tables; per-server group grants live in `admin_server_groups`, and every admin action is audited in `admin_activity` -- see `plugins/admin-system/configs/migrations/`. Run `!admin_reload` after editing those tables to refresh in-memory state without restarting.
+
+## Multi-Server Setup
+
+Several game servers can share one PostgreSQL database. Each server declares a stable identity in `settings.jsonc`:
+
+```jsonc
+"server": {
+  "tag": "server-1",        // unique per server; never change once grants reference it
+  "name": "My Community #1" // human-readable, shown in the servers registry table
+}
+```
+
+On boot the server registers itself in the `servers` table and heartbeats `last_seen` every minute, so you can see which servers are alive with a simple query.
+
+Admin rights resolve per server:
+
+- `admins.groups` (the array on the admin row) is **global** — it applies on every server. Use it for network-wide admins.
+- `admin_server_groups(admin_steam_id, server_tag, group_name)` grants **additional groups on one server only**. The same person can be `super_admin` on `server-1` and only `moderator` on `server-2`.
+- `admins.flags` and `admins.immunity` remain global; group flags/immunity apply wherever the group applies.
+
+Punishments (bans, mutes, warnings) are always **network-wide** — a ban issued on one server applies everywhere.
+
+Example per-server grant (also shown commented in `seed-admin.sql`):
+
+```sql
+INSERT INTO admin_server_groups (admin_steam_id, server_tag, group_name)
+VALUES (76561198000000000, 'server-1', 'super_admin')
+ON CONFLICT (admin_steam_id, server_tag, group_name) DO NOTHING;
+```
+
+Run `!admin_reload` on the affected server to pick up grant changes without a restart.
+
+## Admin Abuse Protection
+
+Protects the community from rogue admins (e.g. a purchased admin account mass-banning players). A **frozen** admin keeps their DB rows but is denied *every* admin permission — commands, the admin menu, and all actions — on every server sharing the database, until a reviewer unfreezes them.
+
+**Automatic freezing.** Every kick/ban/mute/warn is written to the `admin_activity` audit table. After each action the admin's totals over a sliding window are checked against thresholds in `settings.jsonc`; counting is network-wide, so hopping servers doesn't evade it. Root (`z`) admins are exempt.
+
+```jsonc
+"abuseProtection": {
+  "enabled": true,      // master switch for automatic freezing
+  "windowMinutes": 10,  // sliding window, counted across all servers
+  "maxBans": 5,         // 0 disables a counter
+  "maxKicks": 10,
+  "maxMutes": 15,       // voice + text combined
+  "maxWarnings": 15
+}
+```
+
+**Manual freezing.** An admin holding the `a` flag can run `!freeze_admin <target> [reason]` against any admin with strictly lower immunity (self-freezing is rejected). `!frozen_admins` lists open cases; `!unfreeze_admin <steamId|name>` restores privileges after review.
+
+**What happens on freeze:** the freeze is broadcast in chat, the frozen admin is notified (immediately if online, on connect otherwise, and within ~60 seconds on other servers), and their recent punishments stay active so the reviewer can inspect `admin_activity` / the punishment tables and revert selectively. Freezes and unfreezes are themselves recorded in `admin_activity`.
 
 ### Quick Start (Docker)
 
 ```bash
 # Clone with submodules (--recursive pulls CS2Kit and its nested SDK submodules)
-git clone --recursive https://github.com/m9snoi/admin-system.git
+git clone --recursive https://github.com/m9snoi/cs2-plugins.git
 
 # Build Linux binary
 docker compose -f deploy/docker-compose.build.yml run --rm --build build
@@ -68,8 +129,8 @@ can be installed globally or through `uv sync`.
 
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/m9snoi/admin-system.git
-cd admin-system
+git clone --recursive https://github.com/m9snoi/cs2-plugins.git
+cd cs2-plugins
 
 # Build
 uv run poe build

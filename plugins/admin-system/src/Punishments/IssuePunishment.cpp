@@ -1,10 +1,12 @@
 #include "IssuePunishment.hpp"
 
+#include "../Admin/FreezeManager.hpp"
 #include "../Core/ChatService.hpp"
 #include "../Core/Managers.hpp"
 #include "PunishmentManager.hpp"
 
 #include <CS2Kit/Sdk/PlayerController.hpp>
+#include <format>
 
 namespace AdminSystem::Punishments
 {
@@ -31,10 +33,7 @@ void Fill(T& punishment, const Player& target, const Player& admin, const std::s
     }
 }
 
-}  // namespace
-
-bool IssuePunishment(const Player& admin, const Player& target, PunishType type, const std::string& reason,
-                     int64_t durationSec)
+bool Issue(const Player& admin, const Player& target, PunishType type, const std::string& reason, int64_t durationSec)
 {
     auto& pm = App().Punishments;
     switch (type)
@@ -72,6 +71,27 @@ bool IssuePunishment(const Player& admin, const Player& target, PunishType type,
     }
     }
     return false;
+}
+
+}  // namespace
+
+bool IssuePunishment(const Player& admin, const Player& target, PunishType type, const std::string& reason,
+                     int64_t durationSec)
+{
+    // Capture identity up front: a kick invalidates `target` before the audit write below.
+    int64_t targetSteamId = target.GetSteamID();
+    std::string targetName = target.GetName();
+
+    if (!Issue(admin, target, type, reason, durationSec))
+        return false;
+
+    // Audit + abuse-rate check. Covers chat commands and the menu (both land here); the
+    // warning->ban auto-escalation calls PunishmentManager directly and is deliberately
+    // not counted against the admin.
+    auto detail = durationSec > 0 ? std::format("{}; {}s", reason, durationSec) : reason;
+    App().Freeze.RecordPunishment(admin.GetSteamID(), admin.GetName(), AuditActionName(type), targetSteamId,
+                                  targetName, detail);
+    return true;
 }
 
 }  // namespace AdminSystem::Punishments

@@ -5,6 +5,13 @@
     // Default panel/translation language: matches a file in configs/translations (e.g. "en", "ru").
     "locale": "ru"
   },
+  "server": {
+    // Stable identity of THIS game server in the shared database. Must be unique per server
+    // and must never change once per-server admin grants reference it.
+    "tag": "default",
+    // Human-readable name registered in the servers table (auto-upserted on boot).
+    "name": "CS2 Server"
+  },
   "database": {
     // PostgreSQL host.
     "host": "localhost",
@@ -47,6 +54,21 @@
     ],
     // Rows of the menu duration picker (same grammar as template durations).
     "menuDurations": ["5m", "30m", "1h", "1d", "7d", "perm"]
+  },
+  "abuseProtection": {
+    // Master switch for AUTOMATIC admin freezing; manual !freeze_admin always works.
+    // A frozen admin loses ALL admin permissions on every server sharing the database
+    // until a higher-immunity admin runs !unfreeze_admin.
+    "enabled": true,
+    // Sliding window (minutes) over which an admin's actions are counted, across ALL servers.
+    "windowMinutes": 10,
+    // Per-window thresholds; reaching one freezes the admin. 0 disables that counter.
+    // Root ('z') admins are exempt from automatic freezing.
+    "maxBans": 5,
+    "maxKicks": 10,
+    // Voice + text mutes combined.
+    "maxMutes": 15,
+    "maxWarnings": 15
   },
   "chat": {
     // If true, every issued punishment broadcasts a colored line to all players.

@@ -88,3 +88,8 @@ lifecycle, and `CS2Kit::Initialize` / `Shutdown`.
 - Optional manual seed: `plugins/admin-system/database/seed-admin.sql`.
 - Admin groups and admins live in PostgreSQL tables; use `!admin_reload` to
   refresh in-memory state after DB edits.
+- Multiple servers share one database. `server.tag` in settings.jsonc is the
+  server's stable identity; per-server group grants live in
+  `admin_server_groups` keyed by that tag, while `admins.groups` stays global.
+  Abuse-protection freeze state lives on the `admins` row (`is_frozen` etc.)
+  and admin actions are audited in `admin_activity`.

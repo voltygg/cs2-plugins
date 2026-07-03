@@ -70,7 +70,10 @@
     "teamChanged": "moved team of",
     "cheatCheckCalled": "called a cheat check on",
     "cheatCheckCleared": "cleared the cheat check on",
-    "cheatCheckTimedOut": "cheat check timed out for"
+    "cheatCheckTimedOut": "cheat check timed out for",
+    "frozeAdmin": "froze the admin privileges of",
+    "unfrozeAdmin": "restored the admin privileges of",
+    "autoFrozeAdmin": "had their admin privileges automatically frozen (rate limit) pending review"
   },
   "common": {
     "selectSwapTarget": "Select swap partner",
@@ -132,7 +135,20 @@
     "textUnmuteNotMuted": "{name} is not text-muted.",
     "textUnmuteSuccess": "Text-unmuted {name}.",
     "warnSuccess": "Warned {name}.",
-    "warnFailed": "Failed to issue warning (database error)."
+    "warnFailed": "Failed to issue warning (database error).",
+    "freezeSuccess": "Froze the admin privileges of {name}.",
+    "freezeFailed": "Failed to freeze (database error).",
+    "freezeNotAdmin": "{name} is not an admin.",
+    "freezeSelf": "You cannot freeze yourself.",
+    "freezeNoOutrank": "You must outrank {name} to freeze them.",
+    "freezeAlready": "{name} is already frozen.",
+    "unfreezeSuccess": "Restored the admin privileges of {name}.",
+    "unfreezeNone": "No frozen admin matches '{token}'.",
+    "frozenNone": "No admins are currently frozen.",
+    "frozenHeader": "Frozen admins ({count}):"
+  },
+  "freeze": {
+    "notice": "Your admin privileges are frozen pending review. Reason: {reason}"
   },
   "reason": {
     "kickedByAdmin": "Kicked by admin",
@@ -141,7 +157,8 @@
     "warnedByAdmin": "Warned by admin",
     "unbannedByAdmin": "Unbanned by admin",
     "voiceUnmutedByAdmin": "Voice-unmuted by admin",
-    "textUnmutedByAdmin": "Text-unmuted by admin"
+    "textUnmutedByAdmin": "Text-unmuted by admin",
+    "frozenByAdmin": "Frozen by admin pending review"
   },
   "chat": {
     "displayPrefix": "Prefix",

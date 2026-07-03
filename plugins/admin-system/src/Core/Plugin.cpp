@@ -3,6 +3,7 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Commands/AdminCommands.hpp"
+#include "../Database/Repositories/ServerRepository.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
@@ -108,12 +109,17 @@ bool ConnectDatabaseAndLoadAdmins()
         return false;
     }
 
+    const auto& server = App().Config.GetServer();
+    if (!AdminSystem::Database::ServerRepository{}.Upsert(server.tag, server.name))
+        Log::Warn("Failed to register server '{}' in the servers table.", server.tag);
+
     Log::Info("Loading admins from database...");
     auto& adminMgr = App().Admins;
     if (!adminMgr.LoadGroups())
         Log::Warn("Failed to load admin groups from DB.");
     if (!adminMgr.LoadAdmins())
         Log::Warn("Failed to load admins from DB.");
+    App().Freeze.RefreshFromDatabase();
     return true;
 }
 
@@ -123,9 +129,13 @@ void RegisterPunishmentTasks()
     if (!App().Punishments.LoadActivePunishments())
         Log::Warn("Failed to load active punishments.");
 
-    // Sweep expired bans/voice-mutes/text-mutes every minute so timed punishments self-clear without
-    // requiring a server restart or manual intervention.
-    Engine().Scheduler.Repeat(60'000, []() { App().Punishments.ExpireOldPunishments(); });
+    // Every minute: sweep expired bans/mutes, pick up admin freezes issued on other servers
+    // sharing this database, and advance this server's registry heartbeat.
+    Engine().Scheduler.Repeat(60'000, []() {
+        App().Punishments.ExpireOldPunishments();
+        App().Freeze.RefreshFromDatabase();
+        AdminSystem::Database::ServerRepository{}.Heartbeat(App().Config.GetServer().tag);
+    });
 }
 
 void RegisterGameEventListeners()
@@ -237,6 +247,14 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
     // cheat-check, mute notices) renders in their language without per-command setup.
     if (const auto* row = App().Admins.GetAdmin(player->GetSteamID()))
         Engine().Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
+
+    // A frozen admin gets told up front instead of discovering it on their first denied command.
+    // Deferred a tick like the ban kick below so the freshly-connected client receives the line.
+    if (App().Freeze.IsFrozen(player->GetSteamID()))
+    {
+        int64_t steamId = player->GetSteamID();
+        Engine().Scheduler.NextTick([steamId]() { App().Freeze.NotifyFrozen(steamId); });
+    }
 
     // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so we defer
     // to the next game frame via the scheduler -- the player is fully connected by then. Bots have
