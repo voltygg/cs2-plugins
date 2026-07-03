@@ -171,7 +171,7 @@ PluginInfo AdminSystemPlugin::Info() const
         .Name = "Admin System",
         .Author = "Sukhrob Ilyosbekov",
         .Description = "Admin System for CS2",
-        .Url = "https://github.com/m9snoi-net/admin-system",
+        .Url = "https://github.com/m9snoi-net/cs2-plugins",
         .License = "MIT",
         .Version = "1.0.0",
         .LogTag = "ADMIN",
