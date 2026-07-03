@@ -24,7 +24,7 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C
 
 ## Installation
 
-1. Download the latest release from [Releases](https://github.com/m9snoi/cs2-plugins/releases)
+1. Download the latest release from [Releases](https://github.com/m9snoi-net/cs2-plugins/releases)
 2. Extract to your server's `csgo/` folder
 3. Configure database and plugin settings in `addons/admin-system/configs/settings.jsonc` (set a unique `server.tag` per server — see [Multi-Server Setup](#multi-server-setup))
 4. (Optional) The plugin applies all migrations automatically on load. To pre-create the schema manually, run the files in `plugins/admin-system/configs/migrations/` in order: `psql -d admin_system -f plugins/admin-system/configs/migrations/0001_initial_schema.sql` (then `0002_...`, etc.)
@@ -116,7 +116,7 @@ Protects the community from rogue admins (e.g. a purchased admin account mass-ba
 
 ```bash
 # Clone with submodules (--recursive pulls CS2Kit and its nested SDK submodules)
-git clone --recursive https://github.com/m9snoi/cs2-plugins.git
+git clone --recursive https://github.com/m9snoi-net/cs2-plugins.git
 
 # Build Linux binary
 docker compose -f deploy/docker-compose.build.yml run --rm --build build
@@ -129,7 +129,7 @@ can be installed globally or through `uv sync`.
 
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/m9snoi/cs2-plugins.git
+git clone --recursive https://github.com/m9snoi-net/cs2-plugins.git
 cd cs2-plugins
 
 # Build
