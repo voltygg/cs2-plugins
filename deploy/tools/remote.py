@@ -59,6 +59,9 @@ def deploy_server(
         service = str(instance["name"])
         _compose_up_service(server, remote_root_q, service)
     _check_services(server, remote_root_q)
+    # Each pull of :latest strands the previous digest as a dangling <none> image (multi-GB
+    # runtime layers). Prune only after the new containers are confirmed healthy.
+    run_ssh(server, "docker image prune -f")
     print(f"=== Deploy to {server_id} complete ===")
 
 
