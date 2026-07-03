@@ -7,7 +7,7 @@
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <array>
-#include <color.h>
+#include <Color.h>
 #include <cstdint>
 #include <memory>
 #include <string>
