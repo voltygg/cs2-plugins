@@ -1,8 +1,6 @@
 #include "Model.hpp"
 
-#include "../../Core/Managers.hpp"
-#include "../Actions/ActionContext.hpp"
-#include "EffectId.hpp"
+#include "Descriptors.hpp"
 
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
@@ -60,42 +58,38 @@ void PrecacheModels()
     Engine().Precache.Add(DefaultModelCt);
 }
 
-void ApplyModel(int adminSlot, int targetSlot, std::size_t modelIndex)
-{
-    auto ctx = Actions::Resolve(adminSlot, targetSlot, Flag(Permission::Fun));
-    if (!ctx.Valid() || modelIndex >= FunModels().size())
-        return;
+const ParamEffect Model{
+    .Flag = Flag(Permission::Fun),
+    .Id = static_cast<int>(EffectId::Model),
+    .NameKey = "action.model",
+    .OnKey = "broadcast.modelOn",
+    .OffKey = "broadcast.modelOff",
+    .ResetLabelKey = "action.modelReset",
+    .RequireAlive = true,
+    .Choices =
+        []() {
+            std::vector<EffectChoice> choices;
+            const auto& models = FunModels();
+            choices.reserve(models.size());
+            for (int i = 0; i < static_cast<int>(models.size()); ++i)
+                choices.push_back({models[i].Name, i});
+            return choices;
+        },
+    .Setup =
+        [](const ActionContext& ctx, int param) -> EffectInstance {
+        // Dispatch already bounds-checked param and required the target alive.
+        Engine().EntityOps.SetModel(ctx.TargetCtrl.GetPawn(), FunModels()[param].Path.c_str());
 
-    // A dead pawn's model is the ragdoll; changing it is pointless and respawn overwrites it.
-    if (!ctx.TargetCtrl.IsAlive())
-        return;
-
-    Engine().EntityOps.SetModel(ctx.TargetCtrl.GetPawn(), FunModels()[modelIndex].Path.c_str());
-
-    // Apply cancels any prior Model effect first (re-select swaps); the cancel closure restores the
-    // team default when cleared while alive (a no-op on death, where IsAlive is false).
-    App().Effects.Apply(targetSlot, static_cast<int>(EffectId::Model), /*timerHandle*/ 0, [targetSlot]() {
-        PlayerController pc(targetSlot);
-        if (!pc.IsValid() || !pc.IsAlive())
-            return;
-        if (const char* def = DefaultModelForTeam(pc.GetTeam()))
-            Engine().EntityOps.SetModel(pc.GetPawn(), def);
-    });
-
-    Actions::Broadcast(ctx, "broadcast.modelOn");
-}
-
-void ResetModel(int adminSlot, int targetSlot)
-{
-    auto ctx = Actions::Resolve(adminSlot, targetSlot, Flag(Permission::Fun));
-    if (!ctx.Valid())
-        return;
-
-    if (!App().Effects.IsActive(targetSlot, static_cast<int>(EffectId::Model)))
-        return;
-
-    App().Effects.Cancel(targetSlot, static_cast<int>(EffectId::Model));
-    Actions::Broadcast(ctx, "broadcast.modelOff");
-}
+        // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
+        // team default when cleared while alive (a no-op on death, where IsAlive is false).
+        int targetSlot = ctx.Target->GetSlot();
+        return {.OnStop = [targetSlot]() {
+            PlayerController pc(targetSlot);
+            if (!pc.IsValid() || !pc.IsAlive())
+                return;
+            if (const char* def = DefaultModelForTeam(pc.GetTeam()))
+                Engine().EntityOps.SetModel(pc.GetPawn(), def);
+        }};
+    }};
 
 }  // namespace AdminSystem::Admin::Effects

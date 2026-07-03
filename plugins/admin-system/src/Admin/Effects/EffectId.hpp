@@ -5,17 +5,15 @@
 namespace AdminSystem::Admin::Effects
 {
 
+// Stable per-effect id used as the key into the per-slot EffectManager map. Order is not
+// load-bearing: the menu iterates the runtime EffectRegistry(), not this enum.
 enum class EffectId : uint8_t
 {
-    Disco = 0,
-    Ghost = 1,
-    Hide = 2,
-    Wallhack = 3,
-    // Parameterized (not an EffectToggle); no Descriptors entry.
-    Model = 4,
-
-    // Sentinel = effect count; bounds-checks the descriptor registry (Descriptors.hpp). Never dispatch.
-    Count
+    Disco,
+    Ghost,
+    Hide,
+    Wallhack,
+    Model
 };
 
 }  // namespace AdminSystem::Admin::Effects

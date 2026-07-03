@@ -22,27 +22,31 @@ using CS2Kit::Sdk::TeamSpectator;
 // unloads bots until a human rejoins. Toggle off restores team, name and
 // scoreboard visibility.
 
-const EffectToggle Hide{Flag(Permission::Hide), EffectId::Hide, "broadcast.hideOn", "broadcast.hideOff",
-                        [](const ActionContext& ctx) -> EffectSetup {
-                            int savedTeam = ctx.TargetCtrl.GetTeam();
-                            std::string savedName = ctx.TargetCtrl.GetPlayerName();
+const Effect Hide{
+    .Flag = Flag(Permission::Hide),
+    .Id = static_cast<int>(EffectId::Hide),
+    .NameKey = "action.hide",
+    .OnKey = "broadcast.hideOn",
+    .OffKey = "broadcast.hideOff",
+    .Setup =
+        [](const ActionContext& ctx) -> EffectInstance {
+        int savedTeam = ctx.TargetCtrl.GetTeam();
+        std::string savedName = ctx.TargetCtrl.GetPlayerName();
 
-                            ctx.TargetCtrl.SetPlayerName("");
-                            ctx.TargetCtrl.ChangeTeam(TeamSpectator);
+        ctx.TargetCtrl.SetPlayerName("");
+        ctx.TargetCtrl.ChangeTeam(TeamSpectator);
 
-                            int slot = ctx.Target->GetSlot();
-                            Engine().Transmit.SetControllerHidden(slot, true);
-                            return {0,
-                                    [slot, savedTeam, savedName]() {
-                                        Engine().Transmit.SetControllerHidden(slot, false);
-                                        PlayerController pc(slot);
-                                        if (!pc.IsValid())
-                                            return;
-                                        pc.SetPlayerName(savedName);
-                                        if (pc.GetTeam() != savedTeam)
-                                            pc.ChangeTeam(savedTeam);
-                                    },
-                                    false};
-                        }};
+        int slot = ctx.Target->GetSlot();
+        Engine().Transmit.SetControllerHidden(slot, true);
+        return {.OnStop = [slot, savedTeam, savedName]() {
+            Engine().Transmit.SetControllerHidden(slot, false);
+            PlayerController pc(slot);
+            if (!pc.IsValid())
+                return;
+            pc.SetPlayerName(savedName);
+            if (pc.GetTeam() != savedTeam)
+                pc.ChangeTeam(savedTeam);
+        }};
+    }};
 
 }  // namespace AdminSystem::Admin::Effects

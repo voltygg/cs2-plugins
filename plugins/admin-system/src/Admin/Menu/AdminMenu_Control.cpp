@@ -21,7 +21,6 @@ using CS2Kit::Core::Engine;
 namespace AdminSystem::Admin::Menu
 {
 
-using AdminSystem::Admin::Effects::EffectId;
 using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Players::PlayerManager;
 using CS2Kit::Utils::Translations;
@@ -45,8 +44,8 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
     // Self-only Hide toggle sits at the top of the Control list before player picks.
     builder.AddToggle(
         tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
-        [adminSlot](int) { return App().Effects.IsActive(adminSlot, static_cast<int>(EffectId::Hide)); },
-        [adminSlot](int) { Effects::Run(adminSlot, adminSlot, Effects::Hide); }, hasB);
+        [adminSlot](int) { return App().Effects.IsActive(adminSlot, Effects::Hide.Id); },
+        [adminSlot](int) { Effects::Toggle(adminSlot, adminSlot, Effects::Hide); }, hasB);
 
     auto players = plrMgr.GetAllPlayers();
     for (auto* p : players)

@@ -3,7 +3,7 @@
 #include "../../Core/Managers.hpp"
 #include "../Actions/ActionContext.hpp"
 #include "../AdminManager.hpp"
-#include "../Effects/EffectAction.hpp"
+#include "../Effects/EffectDescriptor.hpp"
 
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
@@ -34,7 +34,7 @@ inline bool CanActOnSlot(int admin, int target, Permission flag)
     return App().Admins.CanActOn(a->GetSteamID(), t->GetSteamID(), flag);
 }
 
-/** Flag-string variant for the data-driven Action/EffectToggle descriptors. */
+/** Flag-string variant for the data-driven Action/Effect descriptors. */
 inline bool CanActOnSlot(int admin, int target, const std::string& flags)
 {
     auto& plrMgr = CS2Kit::Core::Engine().Players;
@@ -56,16 +56,65 @@ inline void AddAction(CS2Kit::Menu::MenuBuilder& builder, const std::string& lab
         CanActOnSlot(admin, target, action.Permission));
 }
 
-/** A toggle row whose live state is an active @ref Effects::EffectToggle on the target. */
-inline void AddEffectToggle(CS2Kit::Menu::MenuBuilder& builder, const std::string& label, int admin, int target,
-                            const Effects::EffectToggle& effect)
+/** A toggle row whose live state is an active @ref Effects::Effect on the target. */
+inline void AddEffectToggleRow(CS2Kit::Menu::MenuBuilder& builder, int admin, int target,
+                               const Effects::Effect& effect)
 {
     auto& tr = CS2Kit::Core::Engine().Translations;
-    const Effects::EffectToggle* e = &effect;
+    const Effects::Effect* e = &effect;
     builder.AddToggle(
-        label, tr.Get("effectState.on", admin), tr.Get("effectState.off", admin),
-        [target, id = static_cast<int>(effect.Id)](int) { return App().Effects.IsActive(target, id); },
-        [admin, target, e](int) { Effects::Run(admin, target, *e); }, CanActOnSlot(admin, target, effect.Flag));
+        tr.Get(effect.NameKey, admin), tr.Get("effectState.on", admin), tr.Get("effectState.off", admin),
+        [target, id = effect.Id](int) { return App().Effects.IsActive(target, id); },
+        [admin, target, e](int) { Effects::Toggle(admin, target, *e); }, CanActOnSlot(admin, target, effect.Flag));
+}
+
+/** A per-option picker for a @ref Effects::ParamEffect: one button per choice plus a Reset row. */
+inline std::shared_ptr<CS2Kit::Menu::Menu> BuildParamEffectMenu(int admin, int target,
+                                                                const Effects::ParamEffect& effect)
+{
+    auto& tr = CS2Kit::Core::Engine().Translations;
+    auto* t = CS2Kit::Core::Engine().Players.GetPlayerBySlot(target);
+    if (!t)
+        return nullptr;
+
+    bool allowed = CanActOnSlot(admin, target, effect.Flag);
+    const Effects::ParamEffect* e = &effect;
+    CS2Kit::Menu::MenuBuilder builder(std::format("{}: {}", tr.Get(effect.NameKey, admin), t->GetName()));
+
+    auto choices = effect.Choices ? effect.Choices() : std::vector<Effects::EffectChoice>{};
+    for (const auto& choice : choices)
+    {
+        int param = choice.Param;
+        builder.AddButton(
+            choice.Label,
+            [admin, target, e, param](int slot) {
+                Effects::Apply(admin, target, param, *e);
+                CS2Kit::Core::Engine().Menus.CloseAllMenus(slot);
+            },
+            allowed);
+    }
+
+    if (!effect.ResetLabelKey.empty())
+        builder.AddButton(
+            tr.Get(effect.ResetLabelKey, admin),
+            [admin, target, e](int slot) {
+                Effects::Clear(admin, target, *e);
+                CS2Kit::Core::Engine().Menus.CloseAllMenus(slot);
+            },
+            allowed);
+
+    return builder.Build();
+}
+
+/** A submenu row that opens the @ref BuildParamEffectMenu picker for a @ref Effects::ParamEffect. */
+inline void AddEffectSubmenuRow(CS2Kit::Menu::MenuBuilder& builder, int admin, int target,
+                                const Effects::ParamEffect& effect)
+{
+    auto& tr = CS2Kit::Core::Engine().Translations;
+    const Effects::ParamEffect* e = &effect;
+    builder.AddSubmenu(
+        tr.Get(effect.NameKey, admin), [admin, target, e](int) { return BuildParamEffectMenu(admin, target, *e); },
+        CanActOnSlot(admin, target, effect.Flag));
 }
 
 /** A toggle row whose live state is read from a m_fFlags bit on the target's pawn. */

@@ -14,11 +14,17 @@ using Actions::ActionContext;
 // every other client instead of touching render fields, so the weapon, gloves and
 // shadow vanish too. The player still sees themself; sounds are unaffected.
 
-const EffectToggle Ghost{Flag(Permission::Fun), EffectId::Ghost, "broadcast.ghostOn", "broadcast.ghostOff",
-                         [](const ActionContext& ctx) -> EffectSetup {
-                             int slot = ctx.Target->GetSlot();
-                             Engine().Transmit.SetPawnHidden(slot, true);
-                             return {0, [slot]() { Engine().Transmit.SetPawnHidden(slot, false); }, false};
-                         }};
+const Effect Ghost{
+    .Flag = Flag(Permission::Fun),
+    .Id = static_cast<int>(EffectId::Ghost),
+    .NameKey = "action.ghost",
+    .OnKey = "broadcast.ghostOn",
+    .OffKey = "broadcast.ghostOff",
+    .Setup =
+        [](const ActionContext& ctx) -> EffectInstance {
+        int slot = ctx.Target->GetSlot();
+        Engine().Transmit.SetPawnHidden(slot, true);
+        return {.OnStop = [slot]() { Engine().Transmit.SetPawnHidden(slot, false); }};
+    }};
 
 }  // namespace AdminSystem::Admin::Effects

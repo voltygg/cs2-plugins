@@ -1,6 +1,5 @@
 #include "Descriptors.hpp"
 
-#include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/EntityKeyValues.hpp>
@@ -163,23 +162,30 @@ void Reconcile(int beneficiarySlot, WallhackState& state)
 
 }  // namespace
 
-const EffectToggle Wallhack{Flag(Permission::Fun), EffectId::Wallhack, "broadcast.wallhackOn",
-                            "broadcast.wallhackOff",
-                            [](const ActionContext& ctx) -> EffectSetup {
-                                int slot = ctx.Target->GetSlot();
-                                auto state = std::make_shared<WallhackState>();
+const Effect Wallhack{
+    .Flag = Flag(Permission::Fun),
+    .Id = static_cast<int>(EffectId::Wallhack),
+    .NameKey = "action.wallhack",
+    .OnKey = "broadcast.wallhackOn",
+    .OffKey = "broadcast.wallhackOff",
+    .Scope = EffectScope::Round,
+    .TickIntervalMs = ReconcileIntervalMs,
+    .Setup =
+        [](const ActionContext& ctx) -> EffectInstance {
+        int slot = ctx.Target->GetSlot();
+        auto state = std::make_shared<WallhackState>();
 
-                                Reconcile(slot, *state);
-                                uint64_t timer = Engine().Scheduler.Repeat(
-                                    ReconcileIntervalMs, [slot, state]() { Reconcile(slot, *state); });
+        // Build the glow clones immediately; the repeating tick then tracks spawns/deaths/team
+        // changes. OnStop clears the transmit-filter entries and removes any surviving clones
+        // (on a round restart the props are already gone).
+        Reconcile(slot, *state);
 
-                                // EffectManager cancels the reconcile timer; on a round restart the props are
-                                // already gone, so this only clears the transmit-filter entries.
-                                auto cancel = [state]() {
-                                    for (auto& pair : state->Pairs)
-                                        DestroyPair(pair);
-                                };
-                                return {timer, std::move(cancel), /*roundScoped*/ true};
-                            }};
+        return {.OnTick = [slot, state]() { Reconcile(slot, *state); },
+                .OnStop =
+                    [state]() {
+                        for (auto& pair : state->Pairs)
+                            DestroyPair(pair);
+                    }};
+    }};
 
 }  // namespace AdminSystem::Admin::Effects

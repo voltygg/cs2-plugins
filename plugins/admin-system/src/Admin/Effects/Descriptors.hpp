@@ -1,38 +1,30 @@
 #pragma once
 
-#include "EffectAction.hpp"
-#include "EffectId.hpp"
-
-#include <iterator>
+#include "EffectDescriptor.hpp"
 
 namespace AdminSystem::Admin::Effects
 {
 
-/** Toggle Disco: cycles bright render colors on a timer, auto-cancelling after a fixed duration. */
-extern const EffectToggle Disco;
+/** Disco: cycles bright render colors on a timer, auto-cancelling after a fixed duration. */
+extern const Effect Disco;
 
-/** Toggle Ghost: full invisibility via transmit filtering (pawn + weapons + wearables). */
-extern const EffectToggle Ghost;
-
-/**
- * Toggle stealth-spectator on a player: moves them to the spectator team in free-roam
- * observer mode and clears their scoreboard name. Re-applying restores the original team
- * and name. Self-only in practice - invoked via Run(adminSlot, adminSlot, Hide).
- */
-extern const EffectToggle Hide;
+/** Ghost: full invisibility via transmit filtering (pawn + weapons + wearables). */
+extern const Effect Ghost;
 
 /**
- * Toggle Wallhack: the target sees every other live player as a team-colored glow through
- * walls; per-viewer transmit filtering keeps the glow entities invisible to everyone else.
+ * Hide: stealth-spectator. Moves the player to the spectator team in free-roam observer mode
+ * and clears their scoreboard name; toggling off restores the original team and name. Self-only
+ * in practice - invoked via Toggle(adminSlot, adminSlot, Hide).
  */
-extern const EffectToggle Wallhack;
+extern const Effect Hide;
 
 /**
- * Toggle effects in EffectId order, so a new toggle without a descriptor is a compile error. Model
- * is parameterized (Effects/Model.*), not a toggle, so it is excluded and the guard stops at Model.
+ * Wallhack: the target sees every other live player as a team-colored glow through walls;
+ * per-viewer transmit filtering keeps the glow entities invisible to everyone else.
  */
-[[maybe_unused]] inline const EffectToggle* const EffectRegistry[] = {&Disco, &Ghost, &Hide, &Wallhack};
-static_assert(std::size(EffectRegistry) == static_cast<size_t>(EffectId::Model),
-              "every toggle EffectId before Model needs a descriptor");
+extern const Effect Wallhack;
+
+/** Model: parameterized fun-model swap; the param indexes FunModels() (see Model.hpp). */
+extern const ParamEffect Model;
 
 }  // namespace AdminSystem::Admin::Effects

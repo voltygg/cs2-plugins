@@ -1,7 +1,6 @@
 #include "AdminSelfCommands.hpp"
 
 #include "../Admin/Effects/Descriptors.hpp"
-#include "../Admin/Effects/EffectAction.hpp"
 #include "../Core/Permissions.hpp"
 
 namespace AdminSystem::Commands
@@ -16,7 +15,7 @@ namespace
 CommandResult HandleHide(Player* admin, const std::vector<std::string>& /*args*/)
 {
     int slot = admin->GetSlot();
-    AdminSystem::Admin::Effects::Run(slot, slot, AdminSystem::Admin::Effects::Hide);
+    AdminSystem::Admin::Effects::Toggle(slot, slot, AdminSystem::Admin::Effects::Hide);
     return {true, ""};
 }
 

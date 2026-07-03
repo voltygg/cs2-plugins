@@ -21,11 +21,4 @@ const std::vector<FunModel>& FunModels();
  *  the paths only reach clients from the NEXT map load (see PrecacheService). */
 void PrecacheModels();
 
-/** Apply the fun model at `modelIndex` (into FunModels()) to the target. Cancels any prior model
- *  effect first, requires the target alive, and broadcasts on success. */
-void ApplyModel(int adminSlot, int targetSlot, std::size_t modelIndex);
-
-/** Clear an active model effect on the target, restoring their team-default model while alive. */
-void ResetModel(int adminSlot, int targetSlot);
-
 }  // namespace AdminSystem::Admin::Effects
