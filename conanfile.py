@@ -1,3 +1,6 @@
+# Conan rebinds class attributes at runtime; ignore the Pyright false positives.
+# pyright: reportAttributeAccessIssue=false
+
 from conan import ConanFile
 from conan.tools.cmake import CMakeDeps, CMakeToolchain
 
