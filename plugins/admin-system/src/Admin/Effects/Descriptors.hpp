@@ -21,9 +21,17 @@ extern const EffectToggle Ghost;
  */
 extern const EffectToggle Hide;
 
-/** Toggle effects in EffectId order, so a new toggle without a descriptor is a compile error. Model
- *  is parameterized (Effects/Model.*), not a toggle, so it is excluded and the guard stops at Model. */
-[[maybe_unused]] inline const EffectToggle* const EffectRegistry[] = {&Disco, &Ghost, &Hide};
+/**
+ * Toggle Wallhack: the target sees every other live player as a team-colored glow through
+ * walls; per-viewer transmit filtering keeps the glow entities invisible to everyone else.
+ */
+extern const EffectToggle Wallhack;
+
+/**
+ * Toggle effects in EffectId order, so a new toggle without a descriptor is a compile error. Model
+ * is parameterized (Effects/Model.*), not a toggle, so it is excluded and the guard stops at Model.
+ */
+[[maybe_unused]] inline const EffectToggle* const EffectRegistry[] = {&Disco, &Ghost, &Hide, &Wallhack};
 static_assert(std::size(EffectRegistry) == static_cast<size_t>(EffectId::Model),
               "every toggle EffectId before Model needs a descriptor");
 

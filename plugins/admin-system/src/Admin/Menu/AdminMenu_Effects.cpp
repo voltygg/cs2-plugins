@@ -93,6 +93,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
 
     AddEffectToggle(builder, tr.Get("action.ghost", adminSlot), adminSlot, targetSlot, Effects::Ghost);
     AddEffectToggle(builder, tr.Get("action.disco", adminSlot), adminSlot, targetSlot, Effects::Disco);
+    AddEffectToggle(builder, tr.Get("action.wallhack", adminSlot), adminSlot, targetSlot, Effects::Wallhack);
 
     builder.AddSubmenu(
         tr.Get("action.model", adminSlot),
