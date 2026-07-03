@@ -1,6 +1,7 @@
 #include "AdminMenu.hpp"
 
 #include "../Core/Managers.hpp"
+#include "../Core/Plugin.hpp"
 #include "AdminManager.hpp"
 #include "Menu/AdminMenu_ChatSettings.hpp"
 #include "Menu/AdminMenu_Control.hpp"
@@ -11,6 +12,7 @@
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
+#include <format>
 
 using CS2Kit::Core::Engine;
 
@@ -33,7 +35,11 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
 
     int64_t adminSid = adminPlayer->GetSteamID();
 
-    return MenuBuilder(tr.Get("panel.admin", adminSlot))
+    // Version rendered small and gray next to the gold panel title, matching the pager style.
+    auto title = std::format("{} <font class='fontSize-s' color='#887755'>v{}</font>",
+                             tr.Get("panel.admin", adminSlot), AdminSystemPlugin::Get().GetVersion());
+
+    return MenuBuilder(title)
         .AddSubmenu(
             tr.Get("category.punish", adminSlot), [adminSlot](int) { return Menu::BuildPunishMenu(adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "cdopq"))
