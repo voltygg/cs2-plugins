@@ -38,9 +38,10 @@ extern const Action Slap;
 
 // Smite
 /**
- * Theatrical instakill: broadcast, then Slay after a 250 ms beat. Per Phase 0 fallback for
- * the missing particle API - no lightning bolt visual until ParticleService lands; the chat
- * broadcast carries the drama in the meantime. Requires the Fun flag.
+ * Theatrical instakill: a no-damage env_explosion at the target (stock fireball +
+ * boom, works on every map without precaching), then Slay after a 300 ms beat.
+ * Falls back to the plain delayed Slay when the kit's entity-ops signatures are
+ * unresolved. Requires the Fun flag.
  */
 extern const Action Smite;
 
