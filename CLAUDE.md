@@ -67,6 +67,13 @@ duplicate SDK submodules. Include style: `#include <CS2Kit/Commands/Command.hpp>
 the ISmmPlugin boilerplate, standard SourceHook hooks, the PlayerManager
 lifecycle, and `CS2Kit::Initialize` / `Shutdown`.
 
+## Reference Projects
+
+Local, git-ignored copies of third-party CS2 projects live in `references/`
+(`CS2Fixes/`, `cs2-admin_system/`, `swiftlys2/`) for consulting SDK usage and
+implementation patterns. They are read-only references, not build inputs - do
+not edit them or add them to the build.
+
 ## Code Conventions
 
 - C++23.
