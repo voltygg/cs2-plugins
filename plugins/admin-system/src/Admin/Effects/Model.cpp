@@ -38,19 +38,13 @@ const char* DefaultModelForTeam(int team)
 
 const std::vector<FunModel>& FunModels()
 {
-    // Addon-free, so only globally-mounted families render on every map: gameplay entities (chicken)
-    // and weapon/grenade world models. Map-specific props box out where the map doesn't load them.
+    // Addon-free, so only always-mounted gameplay entities render on every map. Map-specific props
+    // and unbought weapon/grenade world models box out where the map hasn't loaded them; these three
+    // are verified to render on vanilla maps (a workshop addon would be needed for anything else).
     static const std::vector<FunModel> models = {
         {"Chicken", "models/chicken/chicken.vmdl"},
         {"Fire Hydrant", "models/props_street/firehydrant.vmdl"},
         {"C4 Bomb", "weapons/models/c4/weapon_c4.vmdl"},
-        {"HE Grenade", "weapons/models/grenade/hegrenade/weapon_hegrenade.vmdl"},
-        {"Molotov", "weapons/models/grenade/molotov/weapon_molotov.vmdl"},
-        {"Smoke Grenade", "weapons/models/grenade/smokegrenade/weapon_smokegrenade.vmdl"},
-        {"Flashbang", "weapons/models/grenade/flashbang/weapon_flashbang.vmdl"},
-        {"AK-47", "weapons/models/ak47/weapon_rif_ak47.vmdl"},
-        {"AWP", "weapons/models/awp/weapon_snip_awp.vmdl"},
-        {"Butterfly Knife", "weapons/models/knife/knife_butterfly/weapon_knife_butterfly.vmdl"},
     };
     return models;
 }
