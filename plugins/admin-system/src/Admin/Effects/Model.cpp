@@ -38,19 +38,19 @@ const char* DefaultModelForTeam(int team)
 
 const std::vector<FunModel>& FunModels()
 {
-    // Chicken is animated; props render in bind pose. Paths missing on the client show the error
-    // model, so keep these to precached, client-available assets.
+    // Addon-free, so only globally-mounted families render on every map: gameplay entities (chicken)
+    // and weapon/grenade world models. Map-specific props box out where the map doesn't load them.
     static const std::vector<FunModel> models = {
         {"Chicken", "models/chicken/chicken.vmdl"},
-        {"Roasted Chicken", "models/chicken/chicken_roasted.vmdl"},
-        {"Watermelon", "models/food/fruits/watermelon01a.vmdl"},
-        {"Vending Machine", "models/props/cs_office/vending_machine.vmdl"},
-        {"Cash Stack", "models/gameplay/cash_stack/cash_stack.vmdl"},
-        {"Traffic Cone", "models/props/de_vertigo/trafficcone_clean.vmdl"},
         {"Fire Hydrant", "models/props_street/firehydrant.vmdl"},
-        {"CRT TV", "models/generic/tv_crt_01/tv_crt_01.vmdl"},
-        {"ATM", "models/generic/atm_01/atm_01.vmdl"},
-        {"Goldfish", "models/props/de_inferno/goldfish.vmdl"},
+        {"C4 Bomb", "weapons/models/c4/weapon_c4.vmdl"},
+        {"HE Grenade", "weapons/models/grenade/hegrenade/weapon_hegrenade.vmdl"},
+        {"Molotov", "weapons/models/grenade/molotov/weapon_molotov.vmdl"},
+        {"Smoke Grenade", "weapons/models/grenade/smokegrenade/weapon_smokegrenade.vmdl"},
+        {"Flashbang", "weapons/models/grenade/flashbang/weapon_flashbang.vmdl"},
+        {"AK-47", "weapons/models/ak47/weapon_rif_ak47.vmdl"},
+        {"AWP", "weapons/models/awp/weapon_snip_awp.vmdl"},
+        {"Butterfly Knife", "weapons/models/knife/knife_butterfly/weapon_knife_butterfly.vmdl"},
     };
     return models;
 }
