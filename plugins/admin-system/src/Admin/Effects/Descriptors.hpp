@@ -11,7 +11,7 @@ namespace AdminSystem::Admin::Effects
 /** Toggle Disco: cycles bright render colors on a timer, auto-cancelling after a fixed duration. */
 extern const EffectToggle Disco;
 
-/** Toggle Ghost: invisible render. Re-applying cancels and restores visibility. */
+/** Toggle Ghost: full invisibility via transmit filtering (pawn + weapons + wearables). */
 extern const EffectToggle Ghost;
 
 /**
