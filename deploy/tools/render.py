@@ -58,7 +58,10 @@ def render_settings(
         "SERVER_TAG": f"{server_id}-{instance_name}",
         "SERVER_NAME": str(instance.get("hostname", f"CS2 {instance_name}")),
     }
-    for key in ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_SSLMODE", "SERVER_TAG"):
+    required = (
+        "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_SSLMODE", "SERVER_TAG",
+    )
+    for key in required:
         if not env[key]:
             die(f"required var {key} is empty for {server_id}/{plugin}")
 
@@ -94,7 +97,8 @@ def copy_plugin_bundle(
         die(f"no bundle at {source_addons}; run deploy/tools/cli.py package {plugin}")
     target_addons = bundles_dir / "addons"
     shutil.copytree(source_addons, target_addons, dirs_exist_ok=True)
-    render_settings(data, server_id, instance, plugin, target_addons / plugin / "configs" / "settings.jsonc")
+    settings_out = target_addons / plugin / "configs" / "settings.jsonc"
+    render_settings(data, server_id, instance, plugin, settings_out)
 
 
 def dotenv_value(value: str) -> str:
