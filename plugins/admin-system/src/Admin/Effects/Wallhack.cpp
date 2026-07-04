@@ -6,8 +6,8 @@
 #include <CS2Kit/Sdk/EntityOps.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
-#include <array>
 #include <Color.h>
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -78,9 +78,9 @@ void DestroyPair(GlowPair& pair)
 
     auto& ops = Engine().EntityOps;
     auto& entities = Engine().Entities;
-    if (auto* glow = entities.ResolveEntityHandleExact(pair.GlowHandle))
+    if (auto* glow = entities.ResolveEntityHandle(pair.GlowHandle))
         ops.Remove(glow);
-    if (auto* relay = entities.ResolveEntityHandleExact(pair.RelayHandle))
+    if (auto* relay = entities.ResolveEntityHandle(pair.RelayHandle))
         ops.Remove(relay);
 
     pair = {};
@@ -143,14 +143,14 @@ void Reconcile(int beneficiarySlot, WallhackState& state)
         PlayerController pc(slot);
         int team = pc.GetTeam();
         // Ghosted pawns never transmit to the target, so a clone would follow nothing.
-        bool desired = slot != beneficiarySlot && pc.IsValid() && pc.IsAlive() &&
-                       (team == TeamT || team == TeamCT) && !Engine().Transmit.IsPawnHidden(slot);
+        bool desired = slot != beneficiarySlot && pc.IsValid() && pc.IsAlive() && (team == TeamT || team == TeamCT) &&
+                       !Engine().Transmit.IsPawnHidden(slot);
 
         if (pair.Active())
         {
             auto& entities = Engine().Entities;
-            bool stale = !desired || team != pair.Team || !entities.ResolveEntityHandleExact(pair.RelayHandle) ||
-                         !entities.ResolveEntityHandleExact(pair.GlowHandle) || pc.GetPawnModelName() != pair.Model;
+            bool stale = !desired || team != pair.Team || !entities.ResolveEntityHandle(pair.RelayHandle) ||
+                         !entities.ResolveEntityHandle(pair.GlowHandle) || pc.GetPawnModelName() != pair.Model;
             if (stale)
                 DestroyPair(pair);
         }
@@ -162,30 +162,28 @@ void Reconcile(int beneficiarySlot, WallhackState& state)
 
 }  // namespace
 
-const Effect Wallhack{
-    .Flag = Flag(Permission::Fun),
-    .Id = static_cast<int>(EffectId::Wallhack),
-    .NameKey = "action.wallhack",
-    .OnKey = "broadcast.wallhackOn",
-    .OffKey = "broadcast.wallhackOff",
-    .Scope = EffectScope::Round,
-    .TickIntervalMs = ReconcileIntervalMs,
-    .Setup =
-        [](const ActionContext& ctx) -> EffectInstance {
-        int slot = ctx.Target->GetSlot();
-        auto state = std::make_shared<WallhackState>();
+const Effect Wallhack{.Flag = Flag(Permission::Fun),
+                      .Id = static_cast<int>(EffectId::Wallhack),
+                      .NameKey = "action.wallhack",
+                      .OnKey = "broadcast.wallhackOn",
+                      .OffKey = "broadcast.wallhackOff",
+                      .Scope = EffectScope::Round,
+                      .TickIntervalMs = ReconcileIntervalMs,
+                      .Setup = [](const ActionContext& ctx) -> EffectInstance {
+                          int slot = ctx.Target->GetSlot();
+                          auto state = std::make_shared<WallhackState>();
 
-        // Build the glow clones immediately; the repeating tick then tracks spawns/deaths/team
-        // changes. OnStop clears the transmit-filter entries and removes any surviving clones
-        // (on a round restart the props are already gone).
-        Reconcile(slot, *state);
+                          // Build the glow clones immediately; the repeating tick then tracks spawns/deaths/team
+                          // changes. OnStop clears the transmit-filter entries and removes any surviving clones
+                          // (on a round restart the props are already gone).
+                          Reconcile(slot, *state);
 
-        return {.OnTick = [slot, state]() { Reconcile(slot, *state); },
-                .OnStop =
-                    [state]() {
-                        for (auto& pair : state->Pairs)
-                            DestroyPair(pair);
-                    }};
-    }};
+                          return {.OnTick = [slot, state]() { Reconcile(slot, *state); },
+                                  .OnStop =
+                                      [state]() {
+                                          for (auto& pair : state->Pairs)
+                                              DestroyPair(pair);
+                                      }};
+                      }};
 
 }  // namespace AdminSystem::Admin::Effects
