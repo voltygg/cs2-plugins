@@ -24,7 +24,7 @@ A full admin suite for CS2 community servers: punishments, fun effects, a WASD a
 
 1. Download the latest release from [Releases](https://github.com/m9snoi-net/cs2-plugins/releases)
 2. Extract to your server's `csgo/` folder
-3. Configure database and plugin settings in `addons/admin-system/configs/settings.jsonc` (set a unique `server.tag` per server — see [Multi-Server Setup](#multi-server-setup))
+3. Configure database and plugin settings in `addons/admin-system/configs/settings.jsonc` (set a unique `server.tag` per server - see [Multi-Server Setup](#multi-server-setup))
 4. (Optional) The plugin applies all migrations automatically on load. To pre-create the schema manually, run the files in [configs/migrations/](configs/migrations/) in order: `psql -d admin_system -f configs/migrations/0001_initial_schema.sql` (then `0002_...`, etc.)
 5. Edit [database/seed-admin.sql](database/seed-admin.sql) with your SteamID64 and run it: `psql -d admin_system -f database/seed-admin.sql`
 6. Restart the server (or run `!admin_reload` if it was already running)
@@ -73,11 +73,11 @@ On boot the server registers itself in the `servers` table and heartbeats `last_
 
 Admin rights resolve per server:
 
-- `admins.groups` (the array on the admin row) is **global** — it applies on every server. Use it for network-wide admins.
+- `admins.groups` (the array on the admin row) is **global** - it applies on every server. Use it for network-wide admins.
 - `admin_server_groups(admin_steam_id, server_tag, group_name)` grants **additional groups on one server only**. The same person can be `super_admin` on `server-1` and only `moderator` on `server-2`.
 - `admins.flags` and `admins.immunity` remain global; group flags/immunity apply wherever the group applies.
 
-Punishments (bans, mutes, warnings) are always **network-wide** — a ban issued on one server applies everywhere.
+Punishments (bans, mutes, warnings) are always **network-wide** - a ban issued on one server applies everywhere.
 
 Example per-server grant (also shown commented in `seed-admin.sql`):
 
@@ -91,7 +91,7 @@ Run `!admin_reload` on the affected server to pick up grant changes without a re
 
 ## Admin Abuse Protection
 
-Protects the community from rogue admins (e.g. a purchased admin account mass-banning players). A **frozen** admin keeps their DB rows but is denied *every* admin permission — commands, the admin menu, and all actions — on every server sharing the database, until a reviewer unfreezes them.
+Protects the community from rogue admins (e.g. a purchased admin account mass-banning players). A **frozen** admin keeps their DB rows but is denied *every* admin permission - commands, the admin menu, and all actions - on every server sharing the database, until a reviewer unfreezes them.
 
 **Automatic freezing.** Every kick/ban/mute/warn is written to the `admin_activity` audit table. After each action the admin's totals over a sliding window are checked against thresholds in `settings.jsonc`; counting is network-wide, so hopping servers doesn't evade it. Root (`z`) admins are exempt.
 
@@ -112,4 +112,4 @@ Protects the community from rogue admins (e.g. a purchased admin account mass-ba
 
 ## Building
 
-The plugin builds as part of the monorepo — see the [repository README](../../README.md) for Docker and Windows build instructions.
+The plugin builds as part of the monorepo - see the [repository README](../../README.md) for Docker and Windows build instructions.

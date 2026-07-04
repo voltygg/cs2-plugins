@@ -119,7 +119,7 @@
     "reason": "Reason",
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "issued": "{action}: {name} — done.",
+    "issued": "{action}: {name} - done.",
     "failed": "Failed to issue {action} (database error).",
     "targetLost": "Target left the server; action cancelled.",
     "notAllowed": "You can no longer target this player."
@@ -127,7 +127,7 @@
   "target": {
     "noMatch": "No player matched '{token}'.",
     "immune": "Target '{token}' is immune.",
-    "ambiguous": "'{token}' matches {count} players — be more specific.",
+    "ambiguous": "'{token}' matches {count} players - be more specific.",
     "dead": "Target '{token}' is dead.",
     "bot": "Bots cannot be targeted here."
   },
@@ -213,8 +213,8 @@
     "checkerUrl": "Cheat-check room (checker):",
     "apiFailed": "Failed to create a verification room; falling back.",
     "started": "Cheat check started on {name}.",
-    "suspectJoined": "{name} joined the check room — countdown paused.",
-    "suspectLeft": "{name} left the check room — countdown resumed.",
+    "suspectJoined": "{name} joined the check room - countdown paused.",
+    "suspectLeft": "{name} left the check room - countdown resumed.",
     "joinedPanel": "Connected. Stay in the room and wait for the admin's decision.",
     "joinedStatus": "Waiting for the admin's decision"
   },

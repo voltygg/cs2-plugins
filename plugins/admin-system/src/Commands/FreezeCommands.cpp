@@ -122,7 +122,7 @@ const bool _registered = [] {
                         const auto* freezer = App().Admins.GetAdmin(row.FrozenBy);
                         by = freezer ? freezer->Name : std::to_string(row.FrozenBy);
                     }
-                    chat.Reply(slot, std::format("  {} ({}) — {}: {}", row.Name, row.SteamId, by, row.Reason));
+                    chat.Reply(slot, std::format("  {} ({}) - {}: {}", row.Name, row.SteamId, by, row.Reason));
                 }
                 return CommandResult{true, ""};
             },

@@ -10,7 +10,7 @@ namespace AdminSystem::Admin
 {
 
 /**
- * Admin-abuse protection. A frozen admin has ALL admin permissions denied — the gate lives
+ * Admin-abuse protection. A frozen admin has ALL admin permissions denied - the gate lives
  * inside AdminManager::HasPermission/HasAnyPermission/HasAllPermissions, which every command,
  * menu, and action check funnels through. Freeze state is stored on the shared admins table,
  * so it applies network-wide; RefreshFromDatabase() runs on the 60s timer to pick up freezes

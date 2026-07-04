@@ -99,7 +99,7 @@ void AppendMuteRows(MenuBuilder& builder, const std::vector<TMute>& mutes, bool 
                     .Reason = mute.Reason};
 
         auto tag = tr.Get(isVoice ? "action.voiceMute" : "action.textMute", adminSlot);
-        auto label = std::format("[{}] {} — {}", tag, row.Name, ExpiryLabel(row.ExpiresAt, adminSlot));
+        auto label = std::format("[{}] {} - {}", tag, row.Name, ExpiryLabel(row.ExpiresAt, adminSlot));
         builder.AddButton(label, [row = std::move(row)](int slot) { StartUnmuteConfirm(slot, row); });
     }
 }

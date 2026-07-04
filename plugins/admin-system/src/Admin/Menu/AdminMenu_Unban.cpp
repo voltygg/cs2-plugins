@@ -95,7 +95,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildUnbanMenu(int adminSlot)
                    .Name = StringUtils::DisplayNameOr(ban.TargetSteamId, ban.TargetName),
                    .ExpiresAt = ban.ExpiresAt,
                    .Reason = ban.Reason};
-        auto label = std::format("{} — {}", row.Name, ExpiryLabel(row.ExpiresAt, adminSlot));
+        auto label = std::format("{} - {}", row.Name, ExpiryLabel(row.ExpiresAt, adminSlot));
 
         builder.AddButton(label, [row = std::move(row)](int slot) { StartUnbanConfirm(slot, row); });
     }
