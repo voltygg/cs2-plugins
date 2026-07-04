@@ -1,4 +1,5 @@
 #include "../Admin/Effects/Descriptors.hpp"
+#include "../Core/Managers.hpp"
 #include "../Core/Permissions.hpp"
 
 #include <CS2Kit/Api.hpp>
@@ -21,7 +22,7 @@ const bool _registered = [] {
         .Handler =
             [](CommandContext& c) {
                 int slot = c.CallerSlot();
-                AdminSystem::Admin::Effects::Toggle(slot, slot, AdminSystem::Admin::Effects::Hide);
+                CS2Kit::ToggleEffect(App().Effects, slot, slot, AdminSystem::Admin::Effects::Hide);
                 return CommandResult{true, ""};
             },
     });

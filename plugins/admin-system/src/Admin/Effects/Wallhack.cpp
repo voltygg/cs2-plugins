@@ -11,7 +11,7 @@ namespace AdminSystem::Admin::Effects
 using Actions::ActionContext;
 using CS2Kit::Sdk::GlowVision;
 
-const Effect Wallhack{.Flag = Flag(Permission::Wallhack),
+const Effect Wallhack{.Permission = Flag(Permission::Wallhack),
                       .Id = static_cast<int>(EffectId::Wallhack),
                       .NameKey = "action.wallhack",
                       .OnKey = "broadcast.wallhackOn",

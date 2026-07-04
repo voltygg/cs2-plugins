@@ -4,7 +4,6 @@
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/Descriptors.hpp"
-#include "MenuHelpers.hpp"
 #include "PresetSubmenu.hpp"
 
 #include <CS2Kit/Api.hpp>
@@ -24,22 +23,26 @@ namespace AdminSystem::Admin::Menu
 {
 
 using CS2Kit::Menu::MenuBuilder;
-using CS2Kit::Players::PlayerManager;
-using CS2Kit::Utils::Translations;
 using namespace CS2Kit::Sdk;
+
+namespace
+{
+constexpr int HealthPresets[] = {1, 50, 100, 200, 500, 999};
+constexpr int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
+constexpr int SpeedPresets[] = {50, 100, 150, 200, 300};
+constexpr int SizePresets[] = {50, 75, 100, 150, 200};
+}  // namespace
 
 std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
 {
     auto& tr = Engine().Translations;
     auto& adminMgr = App().Admins;
-    auto& plrMgr = Engine().Players;
 
-    auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
+    auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
     if (!admin)
         return nullptr;
 
-    int64_t adminSid = admin->GetSteamID();
-    bool hasB = adminMgr.HasPermission(adminSid, Permission::Hide);
+    bool hasB = adminMgr.HasPermission(admin->GetSteamID(), Permission::Hide);
 
     MenuBuilder builder(tr.Get("category.control", adminSlot));
 
@@ -47,7 +50,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
     builder.AddToggle(
         tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
         [adminSlot](int) { return App().Effects.IsActive(adminSlot, Effects::Hide.Id); },
-        [adminSlot](int) { Effects::Toggle(adminSlot, adminSlot, Effects::Hide); }, hasB);
+        [adminSlot](int) { CS2Kit::ToggleEffect(App().Effects, adminSlot, adminSlot, Effects::Hide); }, hasB);
 
     CS2Kit::Menu::AppendPlayerRows(
         builder, adminSlot,
@@ -64,55 +67,42 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
 std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Engine().Translations;
-    auto& adminMgr = App().Admins;
-    auto& plrMgr = Engine().Players;
 
-    auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
-    auto* target = plrMgr.GetPlayerBySlot(targetSlot);
-    if (!admin || !target)
+    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
+    if (!target || !Engine().Players.GetPlayerBySlot(adminSlot))
         return nullptr;
 
-    int64_t adminSid = admin->GetSteamID();
-    int64_t targetSid = target->GetSteamID();
-    bool hasS = adminMgr.CanActOn(adminSid, targetSid, Permission::Control);
+    CS2Kit::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &App().Effects};
+    bool hasS = ctx.Allowed(Flag(Permission::Control));
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));
+    builder.WithContext(ctx);
 
     // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
-    // (no broadcast / bool result), so they stay plain functions rather than Actions descriptors.
+    // (no broadcast / bool result), so they stay plain buttons rather than Actions descriptors.
     const bool checkActive = App().CheatCheck.IsActive(targetSlot);
     builder.AddButton(
-        tr.Get("action.callCheck", adminSlot),
-        [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasS);
+        ctx.Tr("action.callCheck"), [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasS);
     builder.AddButton(
-        tr.Get("action.cancelCheck", adminSlot),
-        [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); }, hasS && checkActive);
+        ctx.Tr("action.cancelCheck"), [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); },
+        hasS && checkActive);
 
-    AddAction(builder, tr.Get("action.kill", adminSlot), adminSlot, targetSlot, Actions::Kill);
-    AddAction(builder, tr.Get("action.bring", adminSlot), adminSlot, targetSlot, Actions::Bring);
-    AddAction(builder, tr.Get("action.goto", adminSlot), adminSlot, targetSlot, Actions::Goto);
-    AddStateToggle(builder, tr.Get("action.freeze", adminSlot), adminSlot, targetSlot, InMoveType(MoveType::None),
-                   Actions::Freeze);
-    AddStateToggle(builder, tr.Get("action.noclip", adminSlot), adminSlot, targetSlot, InMoveType(MoveType::NoClip),
-                   Actions::Noclip);
+    builder.AddActionRow("action.kill", Actions::Kill)
+        .AddActionRow("action.bring", Actions::Bring)
+        .AddActionRow("action.goto", Actions::Goto)
+        .AddStateToggleRow("action.freeze", CS2Kit::InMoveType(CS2Kit::MoveType::None), Actions::Freeze)
+        .AddStateToggleRow("action.noclip", CS2Kit::InMoveType(CS2Kit::MoveType::NoClip), Actions::Noclip)
+        // HP/Armor/Speed/Size are inline Choice rows: A/D cycles preset values, E applies and closes.
+        .AddPresetChoiceRow("action.health", "HP", HealthPresets, Actions::SetHealth)
+        .AddPresetChoiceRow("action.armor", "AP", ArmorPresets, Actions::SetArmor)
+        .AddPresetChoiceRow("action.speed", "%", SpeedPresets, Actions::SetSpeed)
+        .AddPresetChoiceRow("action.size", "%", SizePresets, Actions::SetSize)
+        .AddStateToggleRow("action.godmode", CS2Kit::HasPawnFlag(CS2Kit::Sdk::FL_GODMODE), Actions::Godmode)
+        .AddActionRow("action.bury", Actions::Bury)
+        .AddActionRow("action.unbury", Actions::Unbury);
 
-    // HP/Armor are inline Choice rows: A/D cycles preset values, E applies and closes.
-    AddPresetChoice(builder, tr.Get("action.health", adminSlot), "HP", adminSlot, targetSlot, Actions::SetHealth,
-                    HealthPresets);
-    AddPresetChoice(builder, tr.Get("action.armor", adminSlot), "AP", adminSlot, targetSlot, Actions::SetArmor,
-                    ArmorPresets);
-    AddPresetChoice(builder, tr.Get("action.speed", adminSlot), "%", adminSlot, targetSlot, Actions::SetSpeed,
-                    SpeedPresets);
-    AddPresetChoice(builder, tr.Get("action.size", adminSlot), "%", adminSlot, targetSlot, Actions::SetSize,
-                    SizePresets);
-
-    AddStateToggle(builder, tr.Get("action.godmode", adminSlot), adminSlot, targetSlot,
-                   HasFlag(CS2Kit::Sdk::FL_GODMODE), Actions::Godmode);
-
-    AddAction(builder, tr.Get("action.bury", adminSlot), adminSlot, targetSlot, Actions::Bury);
-    AddAction(builder, tr.Get("action.unbury", adminSlot), adminSlot, targetSlot, Actions::Unbury);
     builder.AddSubmenu(
-        tr.Get("action.changeTeam", adminSlot),
+        ctx.Tr("action.changeTeam"),
         [adminSlot, targetSlot](int) { return BuildTeamPickerMenu(adminSlot, targetSlot); }, hasS);
 
     return builder.Build();

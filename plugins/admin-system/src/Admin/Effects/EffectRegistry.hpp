@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EffectDescriptor.hpp"
+#include "Descriptors.hpp"
 
 #include <CS2Kit/Core/Registry.hpp>
 

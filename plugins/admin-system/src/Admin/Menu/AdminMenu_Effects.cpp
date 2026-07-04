@@ -4,7 +4,6 @@
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/EffectRegistry.hpp"
-#include "MenuHelpers.hpp"
 #include "PlayerPicker.hpp"
 
 #include <CS2Kit/Api.hpp>
@@ -13,7 +12,6 @@
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
 #include <algorithm>
 #include <format>
 #include <vector>
@@ -24,8 +22,6 @@ namespace AdminSystem::Admin::Menu
 {
 
 using CS2Kit::Menu::MenuBuilder;
-using CS2Kit::Players::PlayerManager;
-using CS2Kit::Utils::Translations;
 
 std::shared_ptr<CS2Kit::MenuView> BuildEffectsMenu(int adminSlot)
 {
@@ -40,19 +36,16 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsMenu(int adminSlot)
 std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Engine().Translations;
-    auto& adminMgr = App().Admins;
-    auto& plrMgr = Engine().Players;
 
-    auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
-    auto* target = plrMgr.GetPlayerBySlot(targetSlot);
-    if (!admin || !target)
+    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
+    if (!target || !Engine().Players.GetPlayerBySlot(adminSlot))
         return nullptr;
 
-    int64_t adminSid = admin->GetSteamID();
-    int64_t targetSid = target->GetSteamID();
-    bool hasS = adminMgr.CanActOn(adminSid, targetSid, Permission::Control);
+    CS2Kit::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &App().Effects};
+    bool hasS = ctx.Allowed(Flag(Permission::Control));
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->GetName()));
+    builder.WithContext(ctx);
 
     auto registered = CS2Kit::Registry<Effects::EffectEntry>::Items();
     std::vector<Effects::EffectEntry> entries(registered.begin(), registered.end());
@@ -60,17 +53,16 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(int adminSlot, int tar
     for (const auto& entry : entries)
     {
         if (entry.Toggle)
-            AddEffectToggleRow(builder, adminSlot, targetSlot, *entry.Toggle);
+            builder.AddEffectToggleRow(*entry.Toggle);
         else if (entry.Param)
-            AddEffectSubmenuRow(builder, adminSlot, targetSlot, *entry.Param);
+            builder.AddEffectPickerRow(*entry.Param);
     }
 
-    AddAction(builder, tr.Get("action.slap", adminSlot), adminSlot, targetSlot, Actions::Slap);
-    AddAction(builder, tr.Get("action.smite", adminSlot), adminSlot, targetSlot, Actions::Smite);
+    builder.AddActionRow("action.slap", Actions::Slap).AddActionRow("action.smite", Actions::Smite);
 
     // Swap opens a second player picker, then runs the dual-target Swap.
     builder.AddButton(
-        tr.Get("action.swap", adminSlot),
+        ctx.Tr("action.swap"),
         [adminSlot, targetSlot](int slot) {
             auto picker = BuildPlayerPicker(
                 adminSlot, Engine().Translations.Get("common.selectSwapTarget", adminSlot),

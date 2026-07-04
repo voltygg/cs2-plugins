@@ -27,10 +27,11 @@ struct PendingPunishment
 };
 
 /**
- * Entry into the punish flow for @p pending's type: duration -> reason -> confirm for timed
- * punishments, reason -> confirm for kick/warn. Confirm re-validates the target, then issues.
+ * Start the punish wizard for @p pending's type: duration -> reason -> confirm for timed
+ * punishments, reason -> confirm for kick/warn. Every step (and the final confirm)
+ * re-validates the target and the admin's permission, then issues.
  */
-std::shared_ptr<CS2Kit::MenuView> BuildFirstStep(int adminSlot, PendingPunishment pending);
+void StartPunishFlow(int adminSlot, PendingPunishment pending);
 
 /** Quick Punish list of the configured templates the admin may use on this target. */
 std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(int adminSlot, int targetSlot);

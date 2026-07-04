@@ -108,15 +108,13 @@ std::string CurrentSlotColor(int64_t steamId, ColorSlot slot)
     return "";
 }
 
-void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t steamId, ColorSlot slot,
-                    std::shared_ptr<int> pendingIdx, int viewerSlot)
+void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t steamId, ColorSlot slot, int viewerSlot)
 {
     auto choices = BuildColorChoices(viewerSlot);
-    *pendingIdx = IndexForColor(CurrentSlotColor(steamId, slot));
+    int initialIndex = IndexForColor(CurrentSlotColor(steamId, slot));
 
     builder.AddChoice<std::string>(
-        title, std::move(choices), [pendingIdx](int) { return *pendingIdx; },
-        [pendingIdx](int, int newIdx) { *pendingIdx = newIdx; },
+        title, std::move(choices),
         [steamId, slot](int /*menuSlot*/, const std::string& value) {
             auto& mgr = App().Admins;
             const auto* admin = mgr.GetAdmin(steamId);
@@ -134,7 +132,8 @@ void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t stea
                 break;
             }
             mgr.UpdateChatStyle(steamId, admin->DisplayPrefix, nameColor, messageColor);
-        });
+        },
+        true, initialIndex);
 }
 
 // Friendly name for a language code, keyed as `lang.<code>` so a new translations/<code>.json
@@ -161,7 +160,7 @@ int IndexForLanguage(const std::vector<std::string>& langs, const std::string& c
     return it != langs.end() ? static_cast<int>(it - langs.begin()) : 0;
 }
 
-void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<int> pendingIdx, int viewerSlot)
+void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, int viewerSlot)
 {
     auto langs = AvailableLanguagesSorted();
 
@@ -174,11 +173,10 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<in
     }
 
     const auto* admin = App().Admins.GetAdmin(steamId);
-    *pendingIdx = IndexForLanguage(langs, admin ? admin->Language : std::string("en"));
+    int initialIndex = IndexForLanguage(langs, admin ? admin->Language : std::string("en"));
 
     builder.AddChoice<std::string>(
         Engine().Translations.Get("chat.panelLanguage", viewerSlot), std::move(choices),
-        [pendingIdx](int) { return *pendingIdx; }, [pendingIdx](int, int newIdx) { *pendingIdx = newIdx; },
         [steamId](int menuSlot, const std::string& lang) {
             App().Admins.UpdateLanguage(steamId, lang);
             Engine().Translations.SetPlayerLanguage(menuSlot, lang);
@@ -188,7 +186,8 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<in
             auto& mgr = Engine().Menus;
             mgr.CloseMenu(menuSlot);
             mgr.OpenMenu(menuSlot, BuildChatSettingsMenu(menuSlot));
-        });
+        },
+        true, initialIndex);
 }
 
 }  // namespace
@@ -220,14 +219,13 @@ std::shared_ptr<CS2Kit::MenuView> BuildChatSettingsMenu(int adminSlot)
             mgr.UpdateChatStyle(steamId, !a->DisplayPrefix, a->NameColor, a->MessageColor);
         });
 
-    // Each color picker keeps its own pending index; commit on E persists that single slot.
-    AddColorChoice(builder, tr.Get("chat.nameColor", adminSlot), steamId, ColorSlot::Name, std::make_shared<int>(0),
-                   adminSlot);
-    AddColorChoice(builder, tr.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message,
-                   std::make_shared<int>(0), adminSlot);
+    // Each choice row owns its cycle index (seeded from the persisted value); commit on E
+    // persists that single slot.
+    AddColorChoice(builder, tr.Get("chat.nameColor", adminSlot), steamId, ColorSlot::Name, adminSlot);
+    AddColorChoice(builder, tr.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message, adminSlot);
 
     // Panel language - commit on E persists and rebuilds the menu in the chosen language.
-    AddLanguageChoice(builder, steamId, std::make_shared<int>(0), adminSlot);
+    AddLanguageChoice(builder, steamId, adminSlot);
 
     return builder.Build();
 }

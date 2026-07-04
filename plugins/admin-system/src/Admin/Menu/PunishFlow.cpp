@@ -4,18 +4,18 @@
 #include "../../Core/Config.hpp"
 #include "../../Core/Managers.hpp"
 #include "../../Punishments/IssuePunishment.hpp"
-#include "MenuHelpers.hpp"
+#include "../AdminManager.hpp"
+#include "Labels.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Menu/Flow.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
-#include <CS2Kit/Utils/TimeUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,105 +29,41 @@ using namespace AdminSystem::Punishments;
 
 using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Utils::StringUtils;
-using CS2Kit::Utils::TimeUtils;
+using PunishFlowT = CS2Kit::Flow<PendingPunishment>;
 
 namespace
 {
 
-std::shared_ptr<CS2Kit::MenuView> BuildReasonStep(int adminSlot, PendingPunishment pending);
-std::shared_ptr<CS2Kit::MenuView> BuildConfirmStep(int adminSlot, PendingPunishment pending);
-
-/** Kit duration label fed from this plugin's `duration.*` translations for @p slot. */
-std::string FormatDurationLabel(int seconds, int slot)
+/** True if @p adminSlot may still punish @p targetSlot with @p type's permission. */
+bool CanStillPunish(int adminSlot, int targetSlot, PunishType type)
 {
-    auto& tr = Engine().Translations;
-    return TimeUtils::FormatDurationLabel(seconds, {.Permanent = tr.Get("duration.perm", slot),
-                                                    .Days = tr.Get("duration.unitDays", slot),
-                                                    .Hours = tr.Get("duration.unitHours", slot),
-                                                    .Minutes = tr.Get("duration.unitMinutes", slot),
-                                                    .Seconds = tr.Get("duration.unitSeconds", slot)});
-}
-
-std::shared_ptr<CS2Kit::MenuView> BuildDurationStep(int adminSlot, PendingPunishment pending)
-{
-    auto& tr = Engine().Translations;
-    std::string action = tr.Get(ActionTranslationKey(pending.Type), adminSlot);
-
-    const auto& durations = App().Config.GetMenuDurations();
-    std::vector<std::pair<std::string, int>> presets;
-    presets.reserve(durations.size());
-    for (int seconds : durations)
-        presets.emplace_back(FormatDurationLabel(seconds, adminSlot), seconds);
-
-    auto onPick = [pending](int slot, int seconds) {
-        auto next = pending;
-        next.DurationSec = seconds;
-        Engine().Menus.OpenMenu(slot, BuildReasonStep(slot, std::move(next)));
-    };
-
-    return ::CS2Kit::Menu::BuildDurationPicker(
-        adminSlot, std::format("{}: {}", action, tr.Get("panel.selectDuration", adminSlot)), presets, std::move(onPick),
-        tr.Get("duration.custom", adminSlot), tr.Get("duration.customPrompt", adminSlot), 32);
-}
-
-std::shared_ptr<CS2Kit::MenuView> BuildReasonStep(int adminSlot, PendingPunishment pending)
-{
-    auto& tr = Engine().Translations;
-    std::string action = tr.Get(ActionTranslationKey(pending.Type), adminSlot);
-
-    MenuBuilder builder(std::format("{}: {}", action, tr.Get("punish.selectReason", adminSlot)));
-
-    for (const auto& preset : App().Config.GetPunishments().reasonPresets)
-    {
-        builder.AddButton(preset, [pending, preset](int slot) {
-            auto next = pending;
-            next.Reason = preset;
-            Engine().Menus.OpenMenu(slot, BuildConfirmStep(slot, std::move(next)));
-        });
-    }
-
-    builder.AddInput(
-        tr.Get("punish.customReason", adminSlot), tr.Get("punish.customReasonPrompt", adminSlot),
-        [](int) { return std::string(); },
-        [pending](int slot, std::string_view text) {
-            std::string reason = StringUtils::Trim(std::string(text));
-            if (reason.empty())
-                return false;  // re-prompt
-            auto next = pending;
-            next.Reason = std::move(reason);
-            Engine().Menus.OpenMenu(slot, BuildConfirmStep(slot, std::move(next)));
-            return true;
-        },
-        64);
-
-    return builder.Build();
-}
-
-void ConfirmAndIssue(int adminSlot, const PendingPunishment& pending)
-{
-    auto& tr = Engine().Translations;
     auto& plrMgr = Engine().Players;
-
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
-    if (!admin)
-        return;
+    auto* target = plrMgr.GetPlayerBySlot(targetSlot);
+    if (!admin || !target)
+        return false;
+    return App().Admins.CanActOn(admin->GetSteamID(), target->GetSteamID(), PermissionFor(type));
+}
 
-    // The target may have disconnected (or the slot may host a different player) since selection.
-    auto* target = plrMgr.GetPlayerBySlot(pending.TargetSlot);
+/** Flow validation: the target may have left (or the slot rehosts another player) and the
+ *  admin's flags/immunity may have changed (e.g. !admin_reload) while the menu was open. */
+std::optional<std::string> ValidatePending(int slot, const PendingPunishment& pending)
+{
+    auto* target = Engine().Players.GetPlayerBySlot(pending.TargetSlot);
     if (!target || target->GetSteamID() != pending.TargetSteamId)
-    {
-        App().Chat.Reply(adminSlot, tr.Get("punish.targetLost", adminSlot));
-        Engine().Menus.CloseAllMenus(adminSlot);
-        return;
-    }
+        return "punish.targetLost";
+    if (!CanStillPunish(slot, pending.TargetSlot, pending.Type))
+        return "punish.notAllowed";
+    return std::nullopt;
+}
 
-    // Flags or immunity may have changed (e.g. !admin_reload) while the menu was open.
-    if (!CanActOnSlot(adminSlot, pending.TargetSlot, PermissionFor(pending.Type)))
-    {
-        App().Chat.Reply(adminSlot, tr.Get("punish.notAllowed", adminSlot));
-        Engine().Menus.CloseAllMenus(adminSlot);
+void Issue(int adminSlot, PendingPunishment& pending)
+{
+    auto& tr = Engine().Translations;
+    auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
+    auto* target = Engine().Players.GetPlayerBySlot(pending.TargetSlot);
+    if (!admin || !target)
         return;
-    }
 
     if (!IssuePunishment(*admin, *target, pending.Type, pending.Reason, pending.DurationSec))
     {
@@ -141,45 +77,71 @@ void ConfirmAndIssue(int adminSlot, const PendingPunishment& pending)
                                            {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)},
                                             {"name", pending.TargetName}}));
     }
-    Engine().Menus.CloseAllMenus(adminSlot);
 }
 
-std::shared_ptr<CS2Kit::MenuView> BuildConfirmStep(int adminSlot, PendingPunishment pending)
+/** The validated confirm -> issue tail every punish path shares. */
+PunishFlowT::Ptr MakeBaseFlow(PendingPunishment pending)
 {
-    auto& tr = Engine().Translations;
-    std::string action = tr.Get(ActionTranslationKey(pending.Type), adminSlot);
-
-    ::CS2Kit::Menu::ConfirmDialogSpec spec{
-        .Title = std::format("{}: {}", tr.Get("punish.confirmTitle", adminSlot), action),
-        .ConfirmLabel = tr.Get("punish.confirm", adminSlot),
-        .CancelLabel = tr.Get("punish.cancel", adminSlot),
-        .OnConfirm = [pending](int slot) { ConfirmAndIssue(slot, pending); },
-    };
-    spec.BodyLines.push_back(std::format("{}: {}", tr.Get("punish.target", adminSlot), pending.TargetName));
-    if (IsTimed(pending.Type))
-    {
-        spec.BodyLines.push_back(std::format("{}: {}", tr.Get("punish.duration", adminSlot),
-                                             FormatDurationLabel(pending.DurationSec, adminSlot)));
-    }
-    spec.BodyLines.push_back(
-        std::format("{}: {}", tr.Get("punish.reason", adminSlot), StringUtils::TruncateUtf8(pending.Reason, 40)));
-
-    return ::CS2Kit::Menu::BuildConfirmDialog(std::move(spec));
+    auto type = pending.Type;
+    return PunishFlowT::Create(std::move(pending))
+        ->OnValidate(ValidatePending)
+        ->WithConfirm(
+            [type](int slot) {
+                auto& tr = Engine().Translations;
+                return std::format("{}: {}", tr.Get("punish.confirmTitle", slot),
+                                   tr.Get(ActionTranslationKey(type), slot));
+            },
+            [](int slot, const PendingPunishment& p) {
+                auto& tr = Engine().Translations;
+                std::vector<std::pair<std::string, std::string>> rows;
+                rows.emplace_back(tr.Get("punish.target", slot), p.TargetName);
+                if (IsTimed(p.Type))
+                    rows.emplace_back(tr.Get("punish.duration", slot), DurationLabel(p.DurationSec, slot));
+                rows.emplace_back(tr.Get("punish.reason", slot), StringUtils::TruncateUtf8(p.Reason, 40));
+                return rows;
+            },
+            [](int slot) { return Engine().Translations.Get("punish.confirm", slot); },
+            [](int slot) { return Engine().Translations.Get("punish.cancel", slot); })
+        ->OnFinish(Issue);
 }
 
 }  // namespace
 
-std::shared_ptr<CS2Kit::MenuView> BuildFirstStep(int adminSlot, PendingPunishment pending)
+void StartPunishFlow(int adminSlot, PendingPunishment pending)
 {
-    return IsTimed(pending.Type) ? BuildDurationStep(adminSlot, std::move(pending))
-                                 : BuildReasonStep(adminSlot, std::move(pending));
+    auto type = pending.Type;
+    auto stepTitle = [type](int slot, const char* suffixKey) {
+        auto& tr = Engine().Translations;
+        return std::format("{}: {}", tr.Get(ActionTranslationKey(type), slot), tr.Get(suffixKey, slot));
+    };
+
+    MakeBaseFlow(std::move(pending))
+        ->AddDurationStep(
+            [stepTitle](int slot) { return stepTitle(slot, "panel.selectDuration"); },
+            [](int slot) {
+                std::vector<std::pair<std::string, int>> presets;
+                for (int seconds : App().Config.GetMenuDurations())
+                    presets.emplace_back(DurationLabel(seconds, slot), seconds);
+                return presets;
+            },
+            [](PendingPunishment& p, int seconds) { p.DurationSec = seconds; },
+            [](int slot) { return Engine().Translations.Get("duration.custom", slot); },
+            [](int slot) { return Engine().Translations.Get("duration.customPrompt", slot); },
+            [](const PendingPunishment& p) { return IsTimed(p.Type); })
+        ->AddOptionsStep(
+            [stepTitle](int slot) { return stepTitle(slot, "punish.selectReason"); },
+            [](int) { return App().Config.GetPunishments().reasonPresets; },
+            [](PendingPunishment& p, std::string reason) { p.Reason = std::move(reason); },
+            [](int slot) { return Engine().Translations.Get("punish.customReason", slot); },
+            [](int slot) { return Engine().Translations.Get("punish.customReasonPrompt", slot); })
+        ->Start(adminSlot);
 }
 
 bool AnyTemplateUsable(int adminSlot, int targetSlot)
 {
     for (const auto& tmpl : App().Config.GetPunishmentTemplates())
     {
-        if (CanActOnSlot(adminSlot, targetSlot, PermissionFor(tmpl.Type)))
+        if (CanStillPunish(adminSlot, targetSlot, tmpl.Type))
             return true;
     }
     return false;
@@ -197,7 +159,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(int adminSlot, int target
     int rows = 0;
     for (const auto& tmpl : App().Config.GetPunishmentTemplates())
     {
-        if (!CanActOnSlot(adminSlot, targetSlot, PermissionFor(tmpl.Type)))
+        if (!CanStillPunish(adminSlot, targetSlot, tmpl.Type))
             continue;
 
         PendingPunishment pending{
@@ -208,8 +170,9 @@ std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(int adminSlot, int target
             .DurationSec = tmpl.DurationSec,
             .Reason = tmpl.Reason,
         };
-        builder.AddButton(std::format("{} - {}", tmpl.Name, FormatDurationLabel(tmpl.DurationSec, adminSlot)),
-                          [pending](int slot) { Engine().Menus.OpenMenu(slot, BuildConfirmStep(slot, pending)); });
+        // Duration and reason are preset by the template, so the flow jumps straight to confirm.
+        builder.AddButton(std::format("{} - {}", tmpl.Name, DurationLabel(tmpl.DurationSec, adminSlot)),
+                          [pending](int slot) { MakeBaseFlow(pending)->Start(slot); });
         ++rows;
     }
 

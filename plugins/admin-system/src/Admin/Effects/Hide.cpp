@@ -29,7 +29,7 @@ using CS2Kit::Sdk::TeamSpectator;
 // unloads bots until a human rejoins. Toggle off restores team, name and
 // scoreboard visibility.
 
-const Effect Hide{.Flag = Flag(Permission::Hide),
+const Effect Hide{.Permission = Flag(Permission::Hide),
                   .Id = static_cast<int>(EffectId::Hide),
                   .NameKey = "action.hide",
                   .OnKey = "",

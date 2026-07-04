@@ -91,7 +91,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(int adminSlot, int targ
         };
         builder.AddButton(
             tr.Get(ActionTranslationKey(type), adminSlot),
-            [pending = std::move(pending)](int slot) { Engine().Menus.OpenMenu(slot, BuildFirstStep(slot, pending)); },
+            [pending = std::move(pending)](int slot) { StartPunishFlow(slot, pending); },
             adminMgr.CanActOn(adminSid, targetSid, PermissionFor(type)));
     }
 

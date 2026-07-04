@@ -29,7 +29,7 @@ constexpr int DiscoIntervalMs = 200;
 constexpr int DiscoDurationSec = 15;
 }  // namespace
 
-const Effect Disco{.Flag = Flag(Permission::Fun),
+const Effect Disco{.Permission = Flag(Permission::Fun),
                    .Id = static_cast<int>(EffectId::Disco),
                    .NameKey = "action.disco",
                    .OnKey = "broadcast.discoOn",

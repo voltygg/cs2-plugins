@@ -16,7 +16,7 @@ using Actions::ActionContext;
 // every other client instead of touching render fields, so the weapon, gloves and
 // shadow vanish too. The player still sees themself; sounds are unaffected.
 
-const Effect Ghost{.Flag = Flag(Permission::Fun),
+const Effect Ghost{.Permission = Flag(Permission::Fun),
                    .Id = static_cast<int>(EffectId::Ghost),
                    .NameKey = "action.ghost",
                    .OnKey = "broadcast.ghostOn",

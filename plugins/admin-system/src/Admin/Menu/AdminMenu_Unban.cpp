@@ -4,20 +4,20 @@
 #include "../../Core/Managers.hpp"
 #include "../../Core/Permissions.hpp"
 #include "../AdminManager.hpp"
-#include "MenuHelpers.hpp"
+#include "Labels.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Menu/Flow.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Menu/MenuPresets.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
-#include <CS2Kit/Utils/TimeUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
+#include <cstdint>
 #include <format>
+#include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 using CS2Kit::Core::Engine;
 
@@ -26,7 +26,6 @@ namespace AdminSystem::Admin::Menu
 
 using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Utils::StringUtils;
-using CS2Kit::Utils::TimeUtils;
 
 namespace
 {
@@ -40,49 +39,45 @@ struct BanRow
     std::string Reason;
 };
 
-void ConfirmAndUnban(int adminSlot, int64_t banId, const std::string& targetName)
+void StartUnbanConfirm(int adminSlot, BanRow row)
 {
-    auto& tr = Engine().Translations;
+    CS2Kit::Flow<BanRow>::Create(std::move(row))
+        // The Unban flag may have been revoked (e.g. !admin_reload) while the menu was open.
+        ->OnValidate([](int slot, const BanRow&) -> std::optional<std::string> {
+            auto* admin = Engine().Players.GetPlayerBySlot(slot);
+            if (!admin || !App().Admins.HasPermission(admin->GetSteamID(), Permission::Unban))
+                return "punish.notAllowed";
+            return std::nullopt;
+        })
+        ->WithConfirm(
+            [](int slot) {
+                auto& tr = Engine().Translations;
+                return std::format("{}: {}", tr.Get("punish.confirmTitle", slot), tr.Get("action.unban", slot));
+            },
+            [](int slot, const BanRow& r) {
+                auto& tr = Engine().Translations;
+                std::vector<std::pair<std::string, std::string>> rows;
+                rows.emplace_back(tr.Get("punish.target", slot), r.Name);
+                rows.emplace_back(tr.Get("punish.duration", slot), ExpiryLabel(r.ExpiresAt, slot));
+                rows.emplace_back(tr.Get("punish.reason", slot), StringUtils::TruncateUtf8(r.Reason, 40));
+                return rows;
+            },
+            [](int slot) { return Engine().Translations.Get("punish.confirm", slot); },
+            [](int slot) { return Engine().Translations.Get("punish.cancel", slot); })
+        ->OnFinish([](int slot, BanRow& r) {
+            auto& tr = Engine().Translations;
+            auto* admin = Engine().Players.GetPlayerBySlot(slot);
+            if (!admin)
+                return;
 
-    auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
-    if (!admin)
-        return;
-
-    // The Unban flag may have been revoked (e.g. !admin_reload) while the menu was open.
-    if (!App().Admins.HasPermission(admin->GetSteamID(), Permission::Unban))
-    {
-        App().Chat.Reply(adminSlot, tr.Get("punish.notAllowed", adminSlot));
-        Engine().Menus.CloseAllMenus(adminSlot);
-        return;
-    }
-
-    // RemoveBan broadcasts "unbanned"; the extra reply covers broadcasts being disabled and
-    // returns false when another server already lifted the ban.
-    if (App().Punishments.RemoveBan(banId, admin->GetSteamID(), tr.Get("reason.unbannedByAdmin")))
-        App().Chat.Reply(adminSlot, tr.Get("unban.done", adminSlot, {{"name", targetName}}));
-    else
-        App().Chat.Reply(adminSlot, tr.Get("unban.gone", adminSlot));
-
-    Engine().Menus.CloseAllMenus(adminSlot);
-}
-
-std::shared_ptr<CS2Kit::MenuView> BuildUnbanConfirm(int adminSlot, const BanRow& row)
-{
-    auto& tr = Engine().Translations;
-
-    ::CS2Kit::Menu::ConfirmDialogSpec spec{
-        .Title = std::format("{}: {}", tr.Get("punish.confirmTitle", adminSlot), tr.Get("action.unban", adminSlot)),
-        .ConfirmLabel = tr.Get("punish.confirm", adminSlot),
-        .CancelLabel = tr.Get("punish.cancel", adminSlot),
-        .OnConfirm = [banId = row.Id, name = row.Name](int slot) { ConfirmAndUnban(slot, banId, name); },
-    };
-    spec.BodyLines.push_back(std::format("{}: {}", tr.Get("punish.target", adminSlot), row.Name));
-    spec.BodyLines.push_back(
-        std::format("{}: {}", tr.Get("punish.duration", adminSlot), ExpiryLabel(row.ExpiresAt, adminSlot)));
-    spec.BodyLines.push_back(
-        std::format("{}: {}", tr.Get("punish.reason", adminSlot), StringUtils::TruncateUtf8(row.Reason, 40)));
-
-    return ::CS2Kit::Menu::BuildConfirmDialog(std::move(spec));
+            // RemoveBan broadcasts "unbanned"; the extra reply covers broadcasts being disabled and
+            // returns false when another server already lifted the ban.
+            if (App().Punishments.RemoveBan(r.Id, admin->GetSteamID(), tr.Get("reason.unbannedByAdmin")))
+                App().Chat.Reply(slot, tr.Get("unban.done", slot, {{"name", r.Name}}));
+            else
+                App().Chat.Reply(slot, tr.Get("unban.gone", slot));
+        })
+        ->Start(adminSlot);
 }
 
 }  // namespace
@@ -97,13 +92,12 @@ std::shared_ptr<CS2Kit::MenuView> BuildUnbanMenu(int adminSlot)
     for (const auto& ban : bans)
     {
         BanRow row{.Id = ban.Id,
-                   .Name = MenuDisplayName(ban.TargetSteamId, ban.TargetName),
+                   .Name = StringUtils::DisplayNameOr(ban.TargetSteamId, ban.TargetName),
                    .ExpiresAt = ban.ExpiresAt,
                    .Reason = ban.Reason};
         auto label = std::format("{} — {}", row.Name, ExpiryLabel(row.ExpiresAt, adminSlot));
 
-        builder.AddButton(
-            label, [row = std::move(row)](int slot) { Engine().Menus.OpenMenu(slot, BuildUnbanConfirm(slot, row)); });
+        builder.AddButton(label, [row = std::move(row)](int slot) { StartUnbanConfirm(slot, row); });
     }
 
     // Never show a dead-end empty page.

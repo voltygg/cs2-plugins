@@ -60,7 +60,7 @@ void PrecacheModels()
     Engine().Precache.Add(DefaultModelCt);
 }
 
-const ParamEffect Model{.Flag = Flag(Permission::Fun),
+const ParamEffect Model{.Permission = Flag(Permission::Fun),
                         .Id = static_cast<int>(EffectId::Model),
                         .NameKey = "action.model",
                         .OnKey = "broadcast.modelOn",

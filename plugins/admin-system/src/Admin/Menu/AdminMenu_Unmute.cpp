@@ -4,18 +4,17 @@
 #include "../../Core/Managers.hpp"
 #include "../../Core/Permissions.hpp"
 #include "../AdminManager.hpp"
-#include "MenuHelpers.hpp"
+#include "Labels.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Menu/Flow.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Menu/MenuPresets.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <cstdint>
 #include <format>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,80 +40,68 @@ struct MuteRow
     std::string Reason;
 };
 
-void ConfirmAndUnmute(int adminSlot, int64_t muteId, bool isVoice, const std::string& name)
+void StartUnmuteConfirm(int adminSlot, MuteRow row)
 {
-    auto& tr = Engine().Translations;
+    CS2Kit::Flow<MuteRow>::Create(std::move(row))
+        // The Mute flag may have been revoked (e.g. !admin_reload) while the menu was open.
+        ->OnValidate([](int slot, const MuteRow&) -> std::optional<std::string> {
+            auto* admin = Engine().Players.GetPlayerBySlot(slot);
+            if (!admin || !App().Admins.HasPermission(admin->GetSteamID(), Permission::Mute))
+                return "punish.notAllowed";
+            return std::nullopt;
+        })
+        ->WithConfirm(
+            [](int slot) {
+                auto& tr = Engine().Translations;
+                return std::format("{}: {}", tr.Get("punish.confirmTitle", slot), tr.Get("action.unmute", slot));
+            },
+            [](int slot, const MuteRow& r) {
+                auto& tr = Engine().Translations;
+                std::vector<std::pair<std::string, std::string>> rows;
+                rows.emplace_back(tr.Get("punish.target", slot), r.Name);
+                rows.emplace_back(tr.Get(r.IsVoice ? "action.voiceMute" : "action.textMute", slot), "");
+                rows.emplace_back(tr.Get("punish.duration", slot), ExpiryLabel(r.ExpiresAt, slot));
+                rows.emplace_back(tr.Get("punish.reason", slot), StringUtils::TruncateUtf8(r.Reason, 40));
+                return rows;
+            },
+            [](int slot) { return Engine().Translations.Get("punish.confirm", slot); },
+            [](int slot) { return Engine().Translations.Get("punish.cancel", slot); })
+        ->OnFinish([](int slot, MuteRow& r) {
+            auto& tr = Engine().Translations;
+            auto* admin = Engine().Players.GetPlayerBySlot(slot);
+            if (!admin)
+                return;
 
-    auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
-    if (!admin)
-        return;
+            // Remove* broadcasts the unmute; the extra reply covers broadcasts being disabled and
+            // returns false when another server already lifted the mute.
+            const bool removed =
+                r.IsVoice
+                    ? App().Punishments.RemoveVoiceMute(r.Id, admin->GetSteamID(), tr.Get("reason.voiceUnmutedByAdmin"))
+                    : App().Punishments.RemoveTextMute(r.Id, admin->GetSteamID(), tr.Get("reason.textUnmutedByAdmin"));
 
-    // The Mute flag may have been revoked (e.g. !admin_reload) while the menu was open.
-    if (!App().Admins.HasPermission(admin->GetSteamID(), Permission::Mute))
-    {
-        App().Chat.Reply(adminSlot, tr.Get("punish.notAllowed", adminSlot));
-        Engine().Menus.CloseAllMenus(adminSlot);
-        return;
-    }
-
-    // Remove* broadcasts the unmute; the extra reply covers broadcasts being disabled and returns
-    // false when another server already lifted the mute.
-    const bool removed =
-        isVoice ? App().Punishments.RemoveVoiceMute(muteId, admin->GetSteamID(), tr.Get("reason.voiceUnmutedByAdmin"))
-                : App().Punishments.RemoveTextMute(muteId, admin->GetSteamID(), tr.Get("reason.textUnmutedByAdmin"));
-
-    if (removed)
-        App().Chat.Reply(adminSlot, tr.Get("unmute.done", adminSlot, {{"name", name}}));
-    else
-        App().Chat.Reply(adminSlot, tr.Get("unmute.gone", adminSlot));
-
-    Engine().Menus.CloseAllMenus(adminSlot);
-}
-
-std::shared_ptr<CS2Kit::MenuView> BuildUnmuteConfirm(int adminSlot, const MuteRow& row)
-{
-    auto& tr = Engine().Translations;
-
-    ::CS2Kit::Menu::ConfirmDialogSpec spec{
-        .Title = std::format("{}: {}", tr.Get("punish.confirmTitle", adminSlot), tr.Get("action.unmute", adminSlot)),
-        .ConfirmLabel = tr.Get("punish.confirm", adminSlot),
-        .CancelLabel = tr.Get("punish.cancel", adminSlot),
-        .OnConfirm = [id = row.Id, isVoice = row.IsVoice,
-                      name = row.Name](int slot) { ConfirmAndUnmute(slot, id, isVoice, name); },
-    };
-    spec.BodyLines.push_back(std::format("{}: {}", tr.Get("punish.target", adminSlot), row.Name));
-    spec.BodyLines.push_back(tr.Get(row.IsVoice ? "action.voiceMute" : "action.textMute", adminSlot));
-    spec.BodyLines.push_back(
-        std::format("{}: {}", tr.Get("punish.duration", adminSlot), ExpiryLabel(row.ExpiresAt, adminSlot)));
-    spec.BodyLines.push_back(
-        std::format("{}: {}", tr.Get("punish.reason", adminSlot), StringUtils::TruncateUtf8(row.Reason, 40)));
-
-    return ::CS2Kit::Menu::BuildConfirmDialog(std::move(spec));
-}
-
-/** Append one selectable row per mute, tagged with its type; the row is moved into the button lambda. */
-void AddMuteRow(MenuBuilder& builder, MuteRow row, int adminSlot)
-{
-    auto& tr = Engine().Translations;
-    auto tag = tr.Get(row.IsVoice ? "action.voiceMute" : "action.textMute", adminSlot);
-    auto label = std::format("[{}] {} — {}", tag, row.Name, ExpiryLabel(row.ExpiresAt, adminSlot));
-
-    builder.AddButton(
-        label, [row = std::move(row)](int slot) { Engine().Menus.OpenMenu(slot, BuildUnmuteConfirm(slot, row)); });
+            App().Chat.Reply(slot, removed ? tr.Get("unmute.done", slot, {{"name", r.Name}})
+                                           : tr.Get("unmute.gone", slot));
+        })
+        ->Start(adminSlot);
 }
 
 /** Turn a cache snapshot of voice/text mutes into tagged menu rows. */
 template <typename TMute>
 void AppendMuteRows(MenuBuilder& builder, const std::vector<TMute>& mutes, bool isVoice, int adminSlot)
 {
+    auto& tr = Engine().Translations;
     for (const auto& mute : mutes)
-        AddMuteRow(builder,
-                   MuteRow{.Id = mute.Id,
-                           .IsVoice = isVoice,
-                           .Name = MenuDisplayName(mute.TargetSteamId, mute.TargetName),
-                           .ExpiresAt = mute.ExpiresAt,
-                           .Reason = mute.Reason},
-                   adminSlot);
+    {
+        MuteRow row{.Id = mute.Id,
+                    .IsVoice = isVoice,
+                    .Name = StringUtils::DisplayNameOr(mute.TargetSteamId, mute.TargetName),
+                    .ExpiresAt = mute.ExpiresAt,
+                    .Reason = mute.Reason};
+
+        auto tag = tr.Get(isVoice ? "action.voiceMute" : "action.textMute", adminSlot);
+        auto label = std::format("[{}] {} — {}", tag, row.Name, ExpiryLabel(row.ExpiresAt, adminSlot));
+        builder.AddButton(label, [row = std::move(row)](int slot) { StartUnmuteConfirm(slot, row); });
+    }
 }
 
 }  // namespace
