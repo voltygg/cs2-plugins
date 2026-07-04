@@ -82,11 +82,9 @@ inline Permission PermissionFor(PunishType type)
     case PunishType::Ban:
         return Permission::Ban;
     case PunishType::VoiceMute:
-        return Permission::VoiceMute;
     case PunishType::TextMute:
-        return Permission::TextMute;
     case PunishType::Warn:
-        return Permission::Warn;
+        return Permission::Mute;
     }
     return Permission::Root;
 }

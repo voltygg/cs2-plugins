@@ -162,7 +162,7 @@ void Reconcile(int beneficiarySlot, WallhackState& state)
 
 }  // namespace
 
-const Effect Wallhack{.Flag = Flag(Permission::Fun),
+const Effect Wallhack{.Flag = Flag(Permission::Wallhack),
                       .Id = static_cast<int>(EffectId::Wallhack),
                       .NameKey = "action.wallhack",
                       .OnKey = "broadcast.wallhackOn",

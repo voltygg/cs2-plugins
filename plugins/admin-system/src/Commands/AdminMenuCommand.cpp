@@ -3,7 +3,6 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/AdminMenu.hpp"
 #include "../Core/Managers.hpp"
-#include "../Core/Permissions.hpp"
 
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
@@ -25,6 +24,10 @@ CommandResult HandleAdminMenu(Player* admin, const std::vector<std::string>& /*a
     if (!admin)
         return {false, "Invalid caller"};
 
+    // Any registered admin may open the menu; each category inside is gated by its own flags.
+    if (!App().Admins.IsAdmin(admin->GetSteamID()))
+        return {false, "You do not have permission to use this command."};
+
     int slot = admin->GetSlot();
 
     // Panel language is registered at connect (see AdminSystemPlugin::OnPlayerConnect).
@@ -44,7 +47,6 @@ void RegisterAdminMenuCommand(CommandManager& mgr)
                      .WithAliases({"a", "menu"})
                      .WithDescription("Open the admin menu")
                      .WithUsage("!admin")
-                     .RequirePermission(Flag(Permission::AdminMenu))
                      .WithArgs(0, 0)
                      .OnExecute(HandleAdminMenu)
                      .Build());

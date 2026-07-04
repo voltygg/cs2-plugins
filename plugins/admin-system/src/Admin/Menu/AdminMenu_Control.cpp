@@ -79,7 +79,6 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     int64_t adminSid = admin->GetSteamID();
     int64_t targetSid = target->GetSteamID();
     bool hasS = adminMgr.CanActOn(adminSid, targetSid, Permission::Control);
-    bool hasK = adminMgr.CanActOn(adminSid, targetSid, Permission::CheatCheck);
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));
 
@@ -107,10 +106,10 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     // CheatCheck call/cancel are orchestration (no broadcast / bool result), so they stay plain functions.
     builder.AddButton(
         tr.Get("action.callCheck", adminSlot),
-        [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasK);
+        [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasS);
     builder.AddButton(
         tr.Get("action.cancelCheck", adminSlot),
-        [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); }, hasK);
+        [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); }, hasS);
 
     return builder.Build();
 }

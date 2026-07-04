@@ -69,7 +69,7 @@ void RegisterCheatCheckCommands(CommandManager& mgr)
     mgr.Register(CommandBuilder("cccancel")
                      .WithDescription("Cancel a pending cheat check on a player.")
                      .WithUsage("!cccancel <target>")
-                     .RequirePermission(Flag(Permission::CheatCheck))
+                     .RequirePermission(Flag(Permission::Control))
                      .WithArgs(1, 1)
                      .OnExecute(HandleCheatCheckCancel)
                      .Build());

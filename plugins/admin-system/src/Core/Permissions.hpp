@@ -16,15 +16,12 @@ enum class Permission : char
     Kick = 'c',
     Ban = 'd',
     Unban = 'e',
-    VoiceMute = 'o',
-    TextMute = 'p',
-    Warn = 'q',
+    Mute = 'o',  // voice mute / text mute / warn
     Control = 's',  // slay / move / teleport / freeze / noclip / bury / team
     Fun = 'f',      // ghost / disco / smite
     Health = 'h',   // health / armor / godmode
     Hide = 'b',
-    CheatCheck = 'k',
-    AdminMenu = 'r',
+    Wallhack = 'w',  // grant a target see-through-walls glow vision
     Root = 'z',
 };
 
