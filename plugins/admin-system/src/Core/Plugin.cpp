@@ -3,7 +3,6 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/Effects/Model.hpp"
-#include "../Commands/AdminCommands.hpp"
 #include "../Database/Repositories/ServerRepository.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
@@ -199,7 +198,8 @@ bool AdminSystemPlugin::OnLoad(bool late)
         Defer([] { App().Db.CloseConnection(); });
 
     Log::Info("Initializing commands...");
-    AdminSystem::Commands::RegisterAdminCommands(Engine().Commands);
+    // Every command self-registered into the Registry at its definition site; ingest once.
+    Engine().Commands.RegisterAll(CS2Kit::Registry<CS2Kit::CommandSpec>::Items());
 
     if (dbConnected)
         RegisterPunishmentTasks();

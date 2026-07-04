@@ -1,55 +1,48 @@
-#include "AdminMenuCommand.hpp"
-
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/AdminMenu.hpp"
 #include "../Core/Managers.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
-
-using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Commands
 {
 
 using namespace CS2Kit::Commands;
-using namespace CS2Kit::Menu;
-using namespace CS2Kit::Players;
+using CS2Kit::Registry;
+using CS2Kit::Core::Engine;
 
 namespace
 {
 
-CommandResult HandleAdminMenu(Player* admin, const std::vector<std::string>& /*args*/)
-{
-    if (!admin)
-        return {false, "Invalid caller"};
+const bool _registered = [] {
+    Registry<CommandSpec>::Add({
+        .Name = "admin",
+        .Aliases = {"a", "menu"},
+        .Description = "Open the admin menu",
+        .Usage = "!admin",
+        .Handler =
+            [](CommandContext& c) {
+                // Any registered admin may open the menu; each category inside is gated by its own flags.
+                if (!App().Admins.IsAdmin(c.Caller->GetSteamID()))
+                    return CommandResult{false, "You do not have permission to use this command."};
 
-    // Any registered admin may open the menu; each category inside is gated by its own flags.
-    if (!App().Admins.IsAdmin(admin->GetSteamID()))
-        return {false, "You do not have permission to use this command."};
+                int slot = c.CallerSlot();
 
-    int slot = admin->GetSlot();
+                // Panel language is registered at connect (see AdminSystemPlugin::OnPlayerConnect).
+                auto menu = AdminSystem::Admin::BuildAdminMainMenu(slot);
+                if (!menu)
+                    return CommandResult{false, "Failed to open admin menu"};
 
-    // Panel language is registered at connect (see AdminSystemPlugin::OnPlayerConnect).
-    auto menu = AdminSystem::Admin::BuildAdminMainMenu(slot);
-    if (!menu)
-        return {false, "Failed to open admin menu"};
+                Engine().Menus.OpenMenu(slot, menu);
+                return CommandResult{true, ""};  // menu UI is the feedback; no chat reply needed
+            },
+    });
 
-    Engine().Menus.OpenMenu(slot, menu);
-    return {true, ""};  // menu UI is the feedback; no chat reply needed
-}
+    return true;
+}();
 
 }  // namespace
-
-void RegisterAdminMenuCommand(CommandManager& mgr)
-{
-    mgr.Register(CommandBuilder("admin")
-                     .WithAliases({"a", "menu"})
-                     .WithDescription("Open the admin menu")
-                     .WithUsage("!admin")
-                     .WithArgs(0, 0)
-                     .OnExecute(HandleAdminMenu)
-                     .Build());
-}
 
 }  // namespace AdminSystem::Commands

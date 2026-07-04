@@ -1,103 +1,78 @@
-#include "CheatCheckCommands.hpp"
-
 #include "../Admin/Actions/Descriptors.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Core/Managers.hpp"
 #include "../Core/Permissions.hpp"
-#include "CommandHelpers.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <format>
-
-using CS2Kit::Core::Engine;
 
 namespace AdminSystem::Commands
 {
 
 using namespace CS2Kit::Commands;
-using namespace CS2Kit::Players;
-using namespace AdminSystem::Commands::Helpers;
+using CS2Kit::Registry;
+using CS2Kit::Core::Engine;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 
 namespace
 {
 
-CommandResult HandleCheatCheckLink(Player* caller, const std::vector<std::string>& args)
-{
-    int slot = caller->GetSlot();
-    auto& tr = Engine().Translations;
+const bool _registered = [] {
+    Registry<CommandSpec>::Add({
+        .Name = "cc",
+        .Description = "Submit your verification link for a pending cheat check.",
+        .Usage = "!cc <link>",
+        .Args = {Word()},
+        .Handler =
+            [](CommandContext& c) {
+                switch (App().CheatCheck.SubmitPlayerLink(c.CallerSlot(), c.Word))
+                {
+                case CheatCheckManager::SubmitResult::Relayed:
+                    return c.Ok("cheatCheck.linkReceived");
+                case CheatCheckManager::SubmitResult::Invalid:
+                    return c.Fail("cheatCheck.linkInvalid");
+                case CheatCheckManager::SubmitResult::NoActiveCheck:
+                default:
+                    return c.Fail("cheatCheck.noActiveCheck");
+                }
+            },
+    });
 
-    switch (App().CheatCheck.SubmitPlayerLink(slot, args[0]))
-    {
-    case CheatCheckManager::SubmitResult::Relayed:
-        return {true, tr.Get("cheatCheck.linkReceived", slot)};
-    case CheatCheckManager::SubmitResult::Invalid:
-        return {false, tr.Get("cheatCheck.linkInvalid", slot)};
-    case CheatCheckManager::SubmitResult::NoActiveCheck:
-    default:
-        return {false, tr.Get("cheatCheck.noActiveCheck", slot)};
-    }
-}
+    Registry<CommandSpec>::Add({
+        .Name = "check",
+        .Description = "Start a cheat check on a player.",
+        .Usage = "!check <target>",
+        .Permission = Flag(Permission::Control),
+        .Args = {Target()},
+        .Handler =
+            [](CommandContext& c) {
+                if (!AdminSystem::Admin::Actions::CallCheck(c.CallerSlot(), c.Target->GetSlot()))
+                    return c.Fail("common.noPermission");
+                return c.Ok("cheatCheck.started", {{"name", c.Target->GetName()}});
+            },
+    });
 
-CommandResult HandleCheatCheckStart(Player* admin, const std::vector<std::string>& args)
-{
-    std::string err;
-    Player* target = ResolveSingle(args[0], admin, err);
-    if (!target)
-        return {false, err};
+    Registry<CommandSpec>::Add({
+        .Name = "cccancel",
+        .Aliases = {"uncheck"},
+        .Description = "Cancel a pending cheat check on a player.",
+        .Usage = "!cccancel <target>",
+        .Permission = Flag(Permission::Control),
+        .Args = {Target()},
+        .Handler =
+            [](CommandContext& c) {
+                if (!AdminSystem::Admin::Actions::CancelCheck(c.CallerSlot(), c.Target->GetSlot()))
+                    return c.Fail("cheatCheck.noActiveCheck");
+                return CommandResult{
+                    true, std::format("{} {}", Engine().Translations.Get("cheatCheck.cancelled", c.CallerSlot()),
+                                      c.Target->GetName())};
+            },
+    });
 
-    int slot = admin->GetSlot();
-    auto& tr = Engine().Translations;
-
-    if (!AdminSystem::Admin::Actions::CallCheck(slot, target->GetSlot()))
-        return {false, tr.Get("common.noPermission", slot)};
-
-    return {true, tr.Get("cheatCheck.started", slot, {{"name", target->GetName()}})};
-}
-
-CommandResult HandleCheatCheckCancel(Player* admin, const std::vector<std::string>& args)
-{
-    std::string err;
-    Player* target = ResolveSingle(args[0], admin, err);
-    if (!target)
-        return {false, err};
-
-    int slot = admin->GetSlot();
-    auto& tr = Engine().Translations;
-
-    if (!AdminSystem::Admin::Actions::CancelCheck(slot, target->GetSlot()))
-        return {false, tr.Get("cheatCheck.noActiveCheck", slot)};
-
-    return {true, std::format("{} {}", tr.Get("cheatCheck.cancelled", slot), target->GetName())};
-}
+    return true;
+}();
 
 }  // namespace
-
-void RegisterCheatCheckCommands(CommandManager& mgr)
-{
-    mgr.Register(CommandBuilder("cc")
-                     .WithDescription("Submit your verification link for a pending cheat check.")
-                     .WithUsage("!cc <link>")
-                     .WithArgs(1, 1)
-                     .OnExecute(HandleCheatCheckLink)
-                     .Build());
-
-    mgr.Register(CommandBuilder("check")
-                     .WithDescription("Start a cheat check on a player.")
-                     .WithUsage("!check <target>")
-                     .RequirePermission(Flag(Permission::Control))
-                     .WithArgs(1, 1)
-                     .OnExecute(HandleCheatCheckStart)
-                     .Build());
-
-    mgr.Register(CommandBuilder("cccancel")
-                     .WithDescription("Cancel a pending cheat check on a player.")
-                     .WithUsage("!cccancel <target>")
-                     .WithAliases({"uncheck"})
-                     .RequirePermission(Flag(Permission::Control))
-                     .WithArgs(1, 1)
-                     .OnExecute(HandleCheatCheckCancel)
-                     .Build());
-}
 
 }  // namespace AdminSystem::Commands
