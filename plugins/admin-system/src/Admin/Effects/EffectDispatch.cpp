@@ -28,8 +28,7 @@ void ClearById(int adminSlot, int targetSlot, const std::string& flag, int id, c
         return;
 
     App().Effects.Cancel(targetSlot, id);
-    if (!offKey.empty())
-        Actions::Broadcast(ctx, offKey);
+    Actions::Broadcast(ctx, offKey);
 }
 
 }  // namespace

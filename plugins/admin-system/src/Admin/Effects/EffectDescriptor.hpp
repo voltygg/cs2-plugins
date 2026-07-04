@@ -42,8 +42,8 @@ struct EffectChoice
  *
  * `Setup` receives the resolved, permission/immunity-checked context, applies the effect, and
  * returns its @ref EffectInstance. Lifetime is declarative: `Scope`, `TickIntervalMs`, and
- * `DurationMs` are data the dispatcher forwards to @ref EffectManager. An empty `OffKey` marks a
- * one-shot effect (no toggle-off broadcast).
+ * `DurationMs` are data the dispatcher forwards to @ref EffectManager. An empty `OnKey`/`OffKey`
+ * suppresses that broadcast (Hide toggles silently; one-shots leave `OffKey` empty).
  */
 struct Effect
 {

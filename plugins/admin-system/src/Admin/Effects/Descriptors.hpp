@@ -12,9 +12,11 @@ extern const Effect Disco;
 extern const Effect Ghost;
 
 /**
- * Hide: stealth-spectator. Moves the player to the spectator team in free-roam observer mode
- * and clears their scoreboard name; toggling off restores the original team and name. Self-only
- * in practice - invoked via Toggle(adminSlot, adminSlot, Hide).
+ * Hide: stealth-spectator. Moves the player to the spectator team in free-roam observer mode,
+ * clears their scoreboard name, and grants glow vision (all live players outlined through walls,
+ * visible only to them) for covert cheater observation; the toggle is silent - no broadcast.
+ * Toggling off restores the original team and name. Self-only in practice - invoked via
+ * Toggle(adminSlot, adminSlot, Hide).
  */
 extern const Effect Hide;
 

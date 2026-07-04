@@ -59,8 +59,6 @@
     "smote": "smote",
     "slapped": "slapped",
     "swapped": "swapped {a} and {b}",
-    "hideOn": "went stealth",
-    "hideOff": "came back",
     "killed": "killed",
     "brought": "brought",
     "goto": "teleported to",

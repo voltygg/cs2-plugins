@@ -13,6 +13,9 @@ ActionContext Resolve(int adminSlot, int targetSlot, const std::string& required
 
 void Broadcast(const ActionContext& ctx, const std::string& translationKey)
 {
+    // An empty key means "no message" - silent effects (Hide) and one-shots leave it blank.
+    if (translationKey.empty())
+        return;
     App().ActionDisp.Broadcast(ctx, translationKey);
 }
 
