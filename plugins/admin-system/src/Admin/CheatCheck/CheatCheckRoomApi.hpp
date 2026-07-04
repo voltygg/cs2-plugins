@@ -39,15 +39,14 @@ std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoo
  * Parse the create-room response into player/checker URLs per the config's field + template rules.
  * Returns nullopt on transport/HTTP/parse failure or when no player URL could be resolved.
  */
-std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg,
-                                          const CS2Kit::HttpResult& result);
+std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg, const CS2Kit::HttpResult& result);
 
 /**
  * Build the presence GET from the websiteAutoRoom config. Substitutes {code}/{steamId} into the
  * URL template. Returns nullopt when polling is not configured or @p roomCode is empty.
  */
-std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg,
-                                                const std::string& roomCode, int64_t targetSteamId);
+std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, const std::string& roomCode,
+                                                int64_t targetSteamId);
 
 /**
  * Read the in-room flag from a presence response. Returns nullopt on transport/HTTP/parse

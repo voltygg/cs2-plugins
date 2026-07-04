@@ -105,7 +105,7 @@ bool ConnectDatabaseAndLoadAdmins()
     }
 
     if (!CS2Kit::RunMigrations(db, "addons/admin-system/configs/migrations",
-                                         {.TableName = "schema_migrations", .AdvisoryLockKey = 727274}))
+                               {.TableName = "schema_migrations", .AdvisoryLockKey = 727274}))
     {
         Log::Warn("Database migrations failed - not loading admins against an out-of-date schema.");
         return false;

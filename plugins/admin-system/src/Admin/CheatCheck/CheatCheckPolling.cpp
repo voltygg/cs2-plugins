@@ -53,9 +53,9 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 
     pc.PollInFlight = true;
     const uint64_t seq = pc.RequestSeq;
-    CS2Kit::Http::Get(
-        Engine().Http, std::move(*request),
-        [this, targetSlot, seq](const CS2Kit::HttpResult& result) { OnPresenceResponse(targetSlot, seq, result); });
+    CS2Kit::Http::Get(Engine().Http, std::move(*request), [this, targetSlot, seq](const CS2Kit::HttpResult& result) {
+        OnPresenceResponse(targetSlot, seq, result);
+    });
 }
 
 void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result)
@@ -91,8 +91,9 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const C
         pc.SuspectJoined = true;
         pc.PausedRemainingSec = std::max<int64_t>(pc.DeadlineSec - TimeUtils::Now(), 0);
         ReplyToAdmin(pc, [&targetName, adminSlot = pc.AdminSlot] {
-            return std::format("{}{}", ChatColors::Green,
-                               Engine().Translations.Get("cheatCheck.suspectJoined", adminSlot, {{"name", targetName}}));
+            return std::format(
+                "{}{}", ChatColors::Green,
+                Engine().Translations.Get("cheatCheck.suspectJoined", adminSlot, {{"name", targetName}}));
         });
     }
     else

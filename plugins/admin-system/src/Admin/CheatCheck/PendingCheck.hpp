@@ -21,14 +21,14 @@ struct PendingCheck
     uint64_t TickTimer = 0;
     std::string ResolvedUrl;  // URL shown to the suspect (empty while awaiting / before playerProvided submit)
     bool AwaitingUrl = false;
-    uint64_t RequestSeq = 0;  // staleness guard for async HTTP completions
-    std::string RoomCode;     // raw playerUrlField value; "" => no presence polling
-    bool SuspectJoined = false;      // countdown is paused while the suspect is in the room
-    int64_t PausedRemainingSec = 0;  // seconds that were left when the countdown paused
-    int64_t NextPollAtSec = 0;       // TimeUtils::Now timestamp of the next presence poll
-    bool PollInFlight = false;       // suppress overlapping polls
+    uint64_t RequestSeq = 0;                                  // staleness guard for async HTTP completions
+    std::string RoomCode;                                     // raw playerUrlField value; "" => no presence polling
+    bool SuspectJoined = false;                               // countdown is paused while the suspect is in the room
+    int64_t PausedRemainingSec = 0;                           // seconds that were left when the countdown paused
+    int64_t NextPollAtSec = 0;                                // TimeUtils::Now timestamp of the next presence poll
+    bool PollInFlight = false;                                // suppress overlapping polls
     CS2Kit::MoveType PriorMoveType = CS2Kit::MoveType::Walk;  // restored on unfreeze
-    int PriorTeam = 0;  // team before force-to-spectator; restored on unfreeze
+    int PriorTeam = 0;                                        // team before force-to-spectator; restored on unfreeze
 };
 
 }  // namespace AdminSystem::Admin::CheatCheck

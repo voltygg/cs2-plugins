@@ -79,8 +79,8 @@ std::shared_ptr<CS2Kit::MenuView> BuildUnmuteConfirm(int adminSlot, const MuteRo
         .Title = std::format("{}: {}", tr.Get("punish.confirmTitle", adminSlot), tr.Get("action.unmute", adminSlot)),
         .ConfirmLabel = tr.Get("punish.confirm", adminSlot),
         .CancelLabel = tr.Get("punish.cancel", adminSlot),
-        .OnConfirm = [id = row.Id, isVoice = row.IsVoice, name = row.Name](
-                         int slot) { ConfirmAndUnmute(slot, id, isVoice, name); },
+        .OnConfirm = [id = row.Id, isVoice = row.IsVoice,
+                      name = row.Name](int slot) { ConfirmAndUnmute(slot, id, isVoice, name); },
     };
     spec.BodyLines.push_back(std::format("{}: {}", tr.Get("punish.target", adminSlot), row.Name));
     spec.BodyLines.push_back(tr.Get(row.IsVoice ? "action.voiceMute" : "action.textMute", adminSlot));

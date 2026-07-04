@@ -35,8 +35,7 @@ std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoo
                                });
 }
 
-std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg,
-                                          const CS2Kit::HttpResult& result)
+std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg, const CS2Kit::HttpResult& result)
 {
     if (!IsSuccess(result))
         return std::nullopt;
@@ -47,16 +46,16 @@ std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom&
 
     using CS2Kit::Utils::StringUtils;
     return RoomUrls{
-        .PlayerUrl = cfg.playerUrlTemplate.empty() ? code
-                                                   : StringUtils::SubstituteTokens(cfg.playerUrlTemplate,
-                                                                                   {{"value", code}}),
+        .PlayerUrl = cfg.playerUrlTemplate.empty()
+                         ? code
+                         : StringUtils::SubstituteTokens(cfg.playerUrlTemplate, {{"value", code}}),
         .CheckerUrl = ExtractField(result, cfg.checkerUrlField, cfg.checkerUrlTemplate),
         .RoomCode = std::move(code),
     };
 }
 
-std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg,
-                                                const std::string& roomCode, int64_t targetSteamId)
+std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, const std::string& roomCode,
+                                                int64_t targetSteamId)
 {
     if (cfg.presenceUrl.empty() || roomCode.empty())
         return std::nullopt;

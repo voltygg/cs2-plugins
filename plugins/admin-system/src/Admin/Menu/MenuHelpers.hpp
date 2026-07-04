@@ -90,8 +90,7 @@ inline void AddEffectToggleRow(CS2Kit::MenuBuilder& builder, int admin, int targ
 }
 
 /** A per-option picker for a @ref Effects::ParamEffect: one button per choice plus a Reset row. */
-inline std::shared_ptr<CS2Kit::MenuView> BuildParamEffectMenu(int admin, int target,
-                                                                const Effects::ParamEffect& effect)
+inline std::shared_ptr<CS2Kit::MenuView> BuildParamEffectMenu(int admin, int target, const Effects::ParamEffect& effect)
 {
     auto& tr = CS2Kit::Engine().Translations;
     auto* t = CS2Kit::Engine().Players.GetPlayerBySlot(target);
@@ -128,8 +127,7 @@ inline std::shared_ptr<CS2Kit::MenuView> BuildParamEffectMenu(int admin, int tar
 }
 
 /** A submenu row that opens the @ref BuildParamEffectMenu picker for a @ref Effects::ParamEffect. */
-inline void AddEffectSubmenuRow(CS2Kit::MenuBuilder& builder, int admin, int target,
-                                const Effects::ParamEffect& effect)
+inline void AddEffectSubmenuRow(CS2Kit::MenuBuilder& builder, int admin, int target, const Effects::ParamEffect& effect)
 {
     auto& tr = CS2Kit::Engine().Translations;
     const Effects::ParamEffect* e = &effect;
@@ -145,8 +143,7 @@ inline void AddEffectSubmenuRow(CS2Kit::MenuBuilder& builder, int admin, int tar
  * @p targetPredicate factories below build the common @p isActive checks (move type, m_fFlags bit).
  */
 inline void AddStateToggle(CS2Kit::MenuBuilder& builder, const std::string& label, int admin, int target,
-                           std::function<bool(const CS2Kit::PlayerController&)> isActive,
-                           const Actions::Action& action)
+                           std::function<bool(const CS2Kit::PlayerController&)> isActive, const Actions::Action& action)
 {
     auto& tr = CS2Kit::Engine().Translations;
     const Actions::Action* a = &action;
