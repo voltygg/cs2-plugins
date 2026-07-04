@@ -26,6 +26,12 @@ public:
      */
     void Reply(int slot, std::string_view message);
 
+    /**
+     * Reply with a label line followed by the URL alone on its own line: CS2 chat doesn't wrap,
+     * so any leading text (labels, wide nicknames) would push the URL off the panel's right edge.
+     */
+    void ReplyLink(int slot, std::string_view label, std::string_view url);
+
     /** Reply with a translated "no permission" line. */
     void NoPermission(int slot);
 

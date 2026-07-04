@@ -31,6 +31,7 @@ namespace
 
 enum class PanelState
 {
+    Joined,        // suspect is in the check room; countdown paused
     CreatingRoom,  // awaiting async room creation
     ProvideLink,   // playerProvided mode, suspect hasn't submitted yet
     HasUrl,        // a URL is ready to show
@@ -39,6 +40,8 @@ enum class PanelState
 
 PanelState PanelStateFor(const PendingCheck& pc)
 {
+    if (pc.SuspectJoined)
+        return PanelState::Joined;
     if (pc.AwaitingUrl)
         return PanelState::CreatingRoom;
     if (pc.Mode == CheatCheckMode::PlayerProvided && pc.ResolvedUrl.empty())
@@ -62,9 +65,14 @@ void RenderPanel(int slot, const PendingCheck& pc)
     int64_t remain = pc.DeadlineSec - TimeUtils::Now();
     int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
 
+    const PanelState state = PanelStateFor(pc);
+
     std::string body;
-    switch (PanelStateFor(pc))
+    switch (state)
     {
+    case PanelState::Joined:
+        body = tr.Get("cheatCheck.joinedPanel", slot);
+        break;
     case PanelState::CreatingRoom:
         body = tr.Get("cheatCheck.creatingRoom", slot);
         break;
@@ -89,11 +97,16 @@ void RenderPanel(int slot, const PendingCheck& pc)
                            cfg.bannerHeight);
     }
 
-    html +=
-        std::format("<font color='#ff4040' size='5'>{}</font><br>{}<br><font color='#ffd040'>{}: {}s</font>",
-                    tr.Get("cheatCheck.panelTitle", slot), body, tr.Get("cheatCheck.timeRemaining", slot), remainSec);
+    // Joined pauses the countdown: a calm status line replaces the timer and the kick warning.
+    std::string statusLine =
+        state == PanelState::Joined
+            ? std::format("<font color='#40ff70'>{}</font>", tr.Get("cheatCheck.joinedStatus", slot))
+            : std::format("<font color='#ffd040'>{}: {}s</font>", tr.Get("cheatCheck.timeRemaining", slot), remainSec);
 
-    if (cfg.autoKick)
+    html += std::format("<font color='#ff4040' size='5'>{}</font><br>{}<br>{}", tr.Get("cheatCheck.panelTitle", slot),
+                        body, statusLine);
+
+    if (cfg.autoKick && state != PanelState::Joined)
     {
         html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick", slot));
     }
@@ -110,6 +123,9 @@ void Render(int slot, const PendingCheck& pc)
 
     switch (PanelStateFor(pc))
     {
+    case PanelState::Joined:
+        chat.Reply(slot, std::format("{}{}", ChatColors::Green, tr.Get("cheatCheck.joinedPanel", slot)));
+        break;
     case PanelState::CreatingRoom:
         chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.creatingRoom", slot)));
         break;
@@ -117,8 +133,8 @@ void Render(int slot, const PendingCheck& pc)
         chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.provideLink", slot)));
         break;
     case PanelState::HasUrl:
-        chat.Reply(slot, std::format("{}{} {}{}", ChatColors::Default, tr.Get("cheatCheck.joinHere", slot),
-                                     ChatColors::Olive, pc.ResolvedUrl));
+        chat.ReplyLink(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.joinHere", slot)),
+                       pc.ResolvedUrl);
         break;
     case PanelState::Generic:
         break;

@@ -45,6 +45,12 @@ void ChatService::Reply(int slot, std::string_view message)
     Chat::Print(slot, message);
 }
 
+void ChatService::ReplyLink(int slot, std::string_view label, std::string_view url)
+{
+    Chat::Print(slot, label);
+    Chat::Print(slot, std::format("{}{}", ChatColors::Olive, url));
+}
+
 void ChatService::NoPermission(int slot)
 {
     auto msg = std::format("{}{}", ChatColors::Red, Engine().Translations.Get("common.noPermission", slot));

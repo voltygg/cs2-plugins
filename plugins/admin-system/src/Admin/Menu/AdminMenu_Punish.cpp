@@ -2,13 +2,14 @@
 
 #include "../../Core/Managers.hpp"
 #include "../AdminManager.hpp"
-#include "PlayerPicker.hpp"
+#include "AdminMenu_Unban.hpp"
 #include "PunishFlow.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
@@ -26,11 +27,27 @@ using CS2Kit::Menu::MenuBuilder;
 std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(int adminSlot)
 {
     auto& tr = Engine().Translations;
-    return BuildPlayerPicker(adminSlot, tr.Get("category.punish", adminSlot), [](int admin, int target) {
-        auto actions = BuildPunishActionsMenu(admin, target);
-        if (actions)
-            Engine().Menus.OpenMenu(admin, actions);
-    });
+
+    auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
+    if (!admin)
+        return nullptr;
+
+    MenuBuilder builder(tr.Get("category.punish", adminSlot));
+
+    builder.AddSubmenu(
+        tr.Get("action.unban", adminSlot), [](int slot) { return BuildUnbanMenu(slot); },
+        App().Admins.HasPermission(admin->GetSteamID(), Permission::Unban));
+
+    CS2Kit::Menu::AppendPlayerRows(
+        builder, adminSlot,
+        [](int admin, int target) {
+            auto actions = BuildPunishActionsMenu(admin, target);
+            if (actions)
+                Engine().Menus.OpenMenu(admin, actions);
+        },
+        tr.Get("common.noPlayers", adminSlot));
+
+    return builder.Build();
 }
 
 std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(int adminSlot, int targetSlot)

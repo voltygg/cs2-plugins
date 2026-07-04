@@ -11,6 +11,7 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
@@ -48,20 +49,14 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
         [adminSlot](int) { return App().Effects.IsActive(adminSlot, Effects::Hide.Id); },
         [adminSlot](int) { Effects::Toggle(adminSlot, adminSlot, Effects::Hide); }, hasB);
 
-    auto players = plrMgr.GetAllPlayers();
-    for (auto* p : players)
-    {
-        if (!p)
-            continue;
-        int targetSlot = p->GetSlot();
-        builder.AddButton(p->GetName(), [adminSlot, targetSlot](int /*s*/) {
-            auto actions = BuildControlActionsMenu(adminSlot, targetSlot);
+    CS2Kit::Menu::AppendPlayerRows(
+        builder, adminSlot,
+        [](int admin, int target) {
+            auto actions = BuildControlActionsMenu(admin, target);
             if (actions)
-                Engine().Menus.OpenMenu(adminSlot, actions);
-        });
-    }
-    if (players.empty())
-        builder.AddButton(tr.Get("common.noPlayers", adminSlot), [](int) {}, false);
+                Engine().Menus.OpenMenu(admin, actions);
+        },
+        tr.Get("common.noPlayers", adminSlot));
 
     return builder.Build();
 }
@@ -82,6 +77,16 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int tar
     bool hasS = adminMgr.CanActOn(adminSid, targetSid, Permission::Control);
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));
+
+    // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
+    // (no broadcast / bool result), so they stay plain functions rather than Actions descriptors.
+    const bool checkActive = App().CheatCheck.IsActive(targetSlot);
+    builder.AddButton(
+        tr.Get("action.callCheck", adminSlot),
+        [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasS);
+    builder.AddButton(
+        tr.Get("action.cancelCheck", adminSlot),
+        [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); }, hasS && checkActive);
 
     AddAction(builder, tr.Get("action.kill", adminSlot), adminSlot, targetSlot, Actions::Kill);
     AddAction(builder, tr.Get("action.bring", adminSlot), adminSlot, targetSlot, Actions::Bring);
@@ -105,14 +110,6 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int tar
     builder.AddSubmenu(
         tr.Get("action.changeTeam", adminSlot),
         [adminSlot, targetSlot](int) { return BuildTeamPickerMenu(adminSlot, targetSlot); }, hasS);
-
-    // CheatCheck call/cancel are orchestration (no broadcast / bool result), so they stay plain functions.
-    builder.AddButton(
-        tr.Get("action.callCheck", adminSlot),
-        [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasS);
-    builder.AddButton(
-        tr.Get("action.cancelCheck", adminSlot),
-        [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); }, hasS);
 
     return builder.Build();
 }

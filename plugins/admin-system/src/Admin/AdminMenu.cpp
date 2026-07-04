@@ -43,7 +43,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(int adminSlot)
     return MenuBuilder(title)
         .AddSubmenu(
             tr.Get("category.punish", adminSlot), [adminSlot](int) { return Menu::BuildPunishMenu(adminSlot); },
-            adminMgr.HasAnyPermission(adminSid, "cdo"))
+            adminMgr.HasAnyPermission(adminSid, "cdoe"))
         .AddSubmenu(
             tr.Get("category.control", adminSlot), [adminSlot](int) { return Menu::BuildControlMenu(adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "bsz"))

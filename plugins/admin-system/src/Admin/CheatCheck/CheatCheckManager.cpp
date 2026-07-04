@@ -137,9 +137,9 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     }
 
     const uint64_t seq = pc.RequestSeq;
-    CS2Kit::Http::Post(
-        Engine().Http, std::move(*request),
-        [this, targetSlot, seq](const CS2Kit::HttpResult& result) { OnRoomResponse(targetSlot, seq, result); });
+    CS2Kit::Http::Post(Engine().Http, std::move(*request), [this, targetSlot, seq](const CS2Kit::HttpResult& result) {
+        OnRoomResponse(targetSlot, seq, result);
+    });
 }
 
 void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result)
@@ -150,10 +150,20 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Ki
     if (!pc.Active || pc.RequestSeq != seq)  // stale: cancelled, expired, re-called, or slot reused
         return;
 
-    if (auto urls = ParseRoomResponse(App().Config.GetCheatCheck().websiteAutoRoom, result))
+    const auto& roomCfg = App().Config.GetCheatCheck().websiteAutoRoom;
+    if (auto urls = ParseRoomResponse(roomCfg, result))
     {
         pc.ResolvedUrl = std::move(urls->PlayerUrl);
         pc.AwaitingUrl = false;
+
+        // An empty RoomCode keeps the per-tick poll gate on its fast path when polling is off.
+        if (!roomCfg.presenceUrl.empty())
+        {
+            pc.RoomCode = std::move(urls->RoomCode);
+            // First poll one interval out: the suspect can't have opened the link yet.
+            pc.NextPollAtSec = TimeUtils::Now() + roomCfg.pollIntervalSec;
+        }
+
         if (!urls->CheckerUrl.empty())
             RelayCheckerUrl(targetSlot, urls->CheckerUrl);
         View::Render(targetSlot, pc);
@@ -182,11 +192,12 @@ void CheatCheckManager::OnRoomFailed(int targetSlot)
 
 void CheatCheckManager::RelayCheckerUrl(int targetSlot, const std::string& checkerUrl)
 {
-    ReplyToAdmin(_checks[targetSlot], [&checkerUrl, adminSlot = _checks[targetSlot].AdminSlot] {
-        auto& tr = Engine().Translations;
-        return std::format("{}{} {}{}", ChatColors::Green, tr.Get("cheatCheck.checkerUrl", adminSlot),
-                           ChatColors::Olive, checkerUrl);
-    });
+    if (auto slot = ResolveAdminSlot(_checks[targetSlot]))
+    {
+        App().Chat.ReplyLink(
+            *slot, std::format("{}{}", ChatColors::Green, Engine().Translations.Get("cheatCheck.checkerUrl", *slot)),
+            checkerUrl);
+    }
 }
 
 void CheatCheckManager::Tick(int targetSlot)
@@ -195,12 +206,15 @@ void CheatCheckManager::Tick(int targetSlot)
     if (!pc.Active)
         return;
 
-    if (TimeUtils::Now() >= pc.DeadlineSec)
+    // While the suspect is in the check room the deadline is suspended; polling still runs so
+    // leaving the room resumes the countdown.
+    if (!pc.SuspectJoined && TimeUtils::Now() >= pc.DeadlineSec)
     {
         Expire(targetSlot);
         return;
     }
 
+    PollPresenceIfDue(targetSlot);
     View::RenderPanel(targetSlot, pc);
 }
 
@@ -220,11 +234,15 @@ CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSl
 
     auto* caller = Engine().Players.GetPlayerBySlot(callerSlot);
     std::string name = caller ? caller->GetName() : std::string();
-    ReplyToAdmin(pc, [&name, &link, adminSlot = pc.AdminSlot] {
-        auto& tr = Engine().Translations;
-        return std::format("{}{} {}{}: {}{}", ChatColors::Green, tr.Get("cheatCheck.linkReceived", adminSlot),
-                           ChatColors::Default, name, ChatColors::Olive, link);
-    });
+
+    if (auto slot = ResolveAdminSlot(pc))
+    {
+        App().Chat.ReplyLink(
+            *slot,
+            std::format("{}{} {}{}", ChatColors::Green, Engine().Translations.Get("cheatCheck.linkReceived", *slot),
+                        ChatColors::Default, name),
+            link);
+    }
 
     View::RenderPanel(callerSlot, pc);
     return SubmitResult::Relayed;
@@ -238,13 +256,18 @@ void CheatCheckManager::FallbackToFixed(PendingCheck& pc)
         pc.ResolvedUrl = cfg.fixedLink.url;
 }
 
-void CheatCheckManager::ReplyToAdmin(const PendingCheck& pc, const std::function<std::string()>& buildMessage)
+std::optional<int> CheatCheckManager::ResolveAdminSlot(const PendingCheck& pc) const
 {
     auto* adminPlayer = Engine().Players.GetPlayerBySlot(pc.AdminSlot);
     if (!adminPlayer || adminPlayer->GetSteamID() != pc.AdminSteamId)
-        return;
+        return std::nullopt;
+    return pc.AdminSlot;
+}
 
-    App().Chat.Reply(pc.AdminSlot, buildMessage());
+void CheatCheckManager::ReplyToAdmin(const PendingCheck& pc, const std::function<std::string()>& buildMessage)
+{
+    if (auto slot = ResolveAdminSlot(pc))
+        App().Chat.Reply(*slot, buildMessage());
 }
 
 void CheatCheckManager::ResetCheck(int targetSlot)

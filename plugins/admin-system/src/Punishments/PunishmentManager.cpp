@@ -14,6 +14,7 @@
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
+#include <algorithm>
 
 using CS2Kit::Core::Engine;
 
@@ -93,6 +94,19 @@ bool PunishmentManager::LoadActivePunishments()
         Log::Warn("LoadActivePunishments failed: {}", e.what());
         return false;
     }
+}
+
+std::vector<Ban> PunishmentManager::GetActiveBans() const
+{
+    std::vector<Ban> bans;
+    bans.reserve(_activeBans.size());
+    for (const auto& [steamId, ban] : _activeBans)
+    {
+        if (!ban.IsExpired())
+            bans.push_back(ban);
+    }
+    std::sort(bans.begin(), bans.end(), [](const Ban& a, const Ban& b) { return a.CreatedAt > b.CreatedAt; });
+    return bans;
 }
 
 std::optional<Ban> PunishmentManager::GetActiveBan(int64_t steamId)

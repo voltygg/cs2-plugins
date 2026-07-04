@@ -46,7 +46,8 @@ extern const Action Slap;
 extern const Action Smite;
 
 // CheatCheck
-void CallCheck(int adminSlot, int targetSlot);
+/** Returns false if the action was rejected (immunity/permission) or the check could not start. */
+bool CallCheck(int adminSlot, int targetSlot);
 
 /** Returns false if the action was rejected (immunity/permission) or no check was active. */
 bool CancelCheck(int adminSlot, int targetSlot);

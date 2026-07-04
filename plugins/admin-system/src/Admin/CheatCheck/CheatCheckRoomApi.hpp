@@ -16,13 +16,14 @@ namespace AdminSystem::Admin::CheatCheck
 {
 
 /** A ready-to-send create-room HTTP POST, derived from config + the players involved. */
-using RoomRequest = CS2Kit::Http::PreparedRequest;
+using RoomRequest = CS2Kit::Http::HttpRequest;
 
 /** URLs extracted from a successful create-room response. */
 struct RoomUrls
 {
     std::string PlayerUrl;   // shown to the suspect
     std::string CheckerUrl;  // optional; relayed to the admin
+    std::string RoomCode;    // raw playerUrlField value; keys the presence polling
 };
 
 /**
@@ -40,5 +41,18 @@ std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoo
  */
 std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg,
                                           const CS2Kit::HttpResult& result);
+
+/**
+ * Build the presence GET from the websiteAutoRoom config. Substitutes {code}/{steamId} into the
+ * URL template. Returns nullopt when polling is not configured or @p roomCode is empty.
+ */
+std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg,
+                                                const std::string& roomCode, int64_t targetSteamId);
+
+/**
+ * Read the in-room flag from a presence response. Returns nullopt on transport/HTTP/parse
+ * failure so callers can distinguish "not in the room" from "API broke".
+ */
+std::optional<bool> ParsePresence(const Core::CheatCheckWebsiteAutoRoom& cfg, const CS2Kit::HttpResult& result);
 
 }  // namespace AdminSystem::Admin::CheatCheck

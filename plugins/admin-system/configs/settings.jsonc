@@ -138,7 +138,16 @@
       "checkerUrlField": "code",
       "checkerUrlTemplate": "http://localhost:4001/rooms/{value}",
       // HTTP request timeout in milliseconds.
-      "timeoutMs": 8000
+      "timeoutMs": 8000,
+      // Presence poll GET; {code} = raw playerUrlField value, {steamId} = suspect's SteamID64.
+      // While the suspect is in the room the timeout countdown pauses (resumes if they leave).
+      // Leave empty to disable polling.
+      "presenceUrl": "http://localhost:4000/api/rooms/{code}/presence?steamId={steamId}",
+      // Dot-path into the poll response holding the in-room flag.
+      "presenceField": "present",
+      // Poll cadence in seconds; also the worst-case delay before a join is noticed, so a suspect
+      // joining seconds before the deadline can still be kicked by the timer.
+      "pollIntervalSec": 5
     }
   }
 }

@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 
 namespace AdminSystem::Admin::CheatCheck
@@ -39,6 +40,9 @@ public:
     /** Admin-initiated cancel: unfreeze, clear the panel, broadcast cleared. Returns false if no check was active. */
     bool Cancel(int targetSlot);
 
+    /** True while a check is pending on `slot` (drives menu enablement). */
+    bool IsActive(int slot) const { return ValidSlot(slot) && _checks[slot].Active; }
+
     /** A suspect submitted a link via `!cc` (playerProvided mode). */
     SubmitResult SubmitPlayerLink(int callerSlot, const std::string& link);
 
@@ -59,7 +63,16 @@ private:
     void OnRoomFailed(int targetSlot);
     void RelayCheckerUrl(int targetSlot, const std::string& checkerUrl);
 
+    // Presence polling (CheatCheckPolling.cpp): pauses the countdown while the suspect
+    // is in the check room and resumes it if they leave.
+    void PollPresenceIfDue(int targetSlot);
+    void OnPresenceResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result);
+
     void FallbackToFixed(PendingCheck& pc);  // drop awaiting state, use the configured fixed link if any
+
+    // Slot of the admin who called the check, or nullopt when they disconnected / the slot
+    // now hosts a different player.
+    std::optional<int> ResolveAdminSlot(const PendingCheck& pc) const;
 
     // Reply to the admin who called the check, guarding against a disconnected/replaced admin slot.
     void ReplyToAdmin(const PendingCheck& pc, const std::function<std::string()>& buildMessage);

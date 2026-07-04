@@ -3,7 +3,9 @@
 #include "../../Core/Config.hpp"
 
 #include <CS2Kit/Api.hpp>
+#include <CS2Kit/Utils/StringUtils.hpp>
 #include <map>
+#include <utility>
 
 namespace AdminSystem::Admin::CheatCheck
 {
@@ -39,13 +41,48 @@ std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom&
     if (!IsSuccess(result))
         return std::nullopt;
 
-    RoomUrls urls{
-        .PlayerUrl = ExtractField(result, cfg.playerUrlField, cfg.playerUrlTemplate),
-        .CheckerUrl = ExtractField(result, cfg.checkerUrlField, cfg.checkerUrlTemplate),
-    };
-    if (urls.PlayerUrl.empty())
+    std::string code = ExtractField(result, cfg.playerUrlField);
+    if (code.empty())
         return std::nullopt;
-    return urls;
+
+    using CS2Kit::Utils::StringUtils;
+    return RoomUrls{
+        .PlayerUrl = cfg.playerUrlTemplate.empty() ? code
+                                                   : StringUtils::SubstituteTokens(cfg.playerUrlTemplate,
+                                                                                   {{"value", code}}),
+        .CheckerUrl = ExtractField(result, cfg.checkerUrlField, cfg.checkerUrlTemplate),
+        .RoomCode = std::move(code),
+    };
+}
+
+std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg,
+                                                const std::string& roomCode, int64_t targetSteamId)
+{
+    if (cfg.presenceUrl.empty() || roomCode.empty())
+        return std::nullopt;
+
+    CS2Kit::Http::JsonGetSpec spec{
+        .UrlTemplate = cfg.presenceUrl,
+        .ApiKey = cfg.apiKey,
+        .AuthHeader = cfg.authHeader,
+        .AuthScheme = cfg.authScheme,
+        .TimeoutMs = cfg.timeoutMs,
+    };
+    return CS2Kit::Http::BuildJsonGet(spec, {
+                                                {"code", roomCode},
+                                                {"steamId", std::to_string(targetSteamId)},
+                                            });
+}
+
+std::optional<bool> ParsePresence(const Core::CheatCheckWebsiteAutoRoom& cfg, const CS2Kit::HttpResult& result)
+{
+    if (!IsSuccess(result))
+        return std::nullopt;
+
+    const std::string present = ExtractField(result, cfg.presenceField);
+    if (present.empty())
+        return std::nullopt;
+    return present == "true";
 }
 
 }  // namespace AdminSystem::Admin::CheatCheck

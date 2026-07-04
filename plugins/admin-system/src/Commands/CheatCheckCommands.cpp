@@ -39,6 +39,22 @@ CommandResult HandleCheatCheckLink(Player* caller, const std::vector<std::string
     }
 }
 
+CommandResult HandleCheatCheckStart(Player* admin, const std::vector<std::string>& args)
+{
+    std::string err;
+    Player* target = ResolveSingle(args[0], admin, err);
+    if (!target)
+        return {false, err};
+
+    int slot = admin->GetSlot();
+    auto& tr = Engine().Translations;
+
+    if (!AdminSystem::Admin::Actions::CallCheck(slot, target->GetSlot()))
+        return {false, tr.Get("common.noPermission", slot)};
+
+    return {true, tr.Get("cheatCheck.started", slot, {{"name", target->GetName()}})};
+}
+
 CommandResult HandleCheatCheckCancel(Player* admin, const std::vector<std::string>& args)
 {
     std::string err;
@@ -66,9 +82,18 @@ void RegisterCheatCheckCommands(CommandManager& mgr)
                      .OnExecute(HandleCheatCheckLink)
                      .Build());
 
+    mgr.Register(CommandBuilder("check")
+                     .WithDescription("Start a cheat check on a player.")
+                     .WithUsage("!check <target>")
+                     .RequirePermission(Flag(Permission::Control))
+                     .WithArgs(1, 1)
+                     .OnExecute(HandleCheatCheckStart)
+                     .Build());
+
     mgr.Register(CommandBuilder("cccancel")
                      .WithDescription("Cancel a pending cheat check on a player.")
                      .WithUsage("!cccancel <target>")
+                     .WithAliases({"uncheck"})
                      .RequirePermission(Flag(Permission::Control))
                      .WithArgs(1, 1)
                      .OnExecute(HandleCheatCheckCancel)

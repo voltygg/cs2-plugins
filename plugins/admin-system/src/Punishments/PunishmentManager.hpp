@@ -8,6 +8,7 @@
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace AdminSystem::Punishments
 {
@@ -22,6 +23,8 @@ public:
     PunishmentManager() = default;
 
     bool LoadActivePunishments();
+    /** Snapshot of the cached active bans, newest first (drives the unban menu). */
+    std::vector<Database::Ban> GetActiveBans() const;
     std::optional<Database::Ban> GetActiveBan(int64_t steamId);
     std::optional<Database::VoiceMute> GetActiveVoiceMute(int64_t steamId);
     std::optional<Database::TextMute> GetActiveTextMute(int64_t steamId);

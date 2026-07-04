@@ -41,7 +41,8 @@
     "swap": "Swap Players",
     "hide": "Hide (Self)",
     "callCheck": "Call for Cheat Check",
-    "cancelCheck": "Cancel Cheat Check"
+    "cancelCheck": "Cancel Cheat Check",
+    "unban": "Unban"
   },
   "effectState": {
     "on": "ON",
@@ -202,7 +203,19 @@
     "noActiveCheck": "You have no active cheat check.",
     "cancelled": "Cancelled cheat check on",
     "checkerUrl": "Cheat-check room (checker):",
-    "apiFailed": "Failed to create a verification room; falling back."
+    "apiFailed": "Failed to create a verification room; falling back.",
+    "started": "Cheat check started on {name}.",
+    "suspectJoined": "{name} joined the check room — countdown paused.",
+    "suspectLeft": "{name} left the check room — countdown resumed.",
+    "joinedPanel": "Connected. Stay in the room and wait for the admin's decision.",
+    "joinedStatus": "Waiting for the admin's decision"
+  },
+  "unban": {
+    "title": "Active Bans",
+    "noBans": "No active bans",
+    "expiresIn": "expires in",
+    "done": "Unbanned {name}.",
+    "gone": "That ban is no longer active."
   },
   "muteNotice": {
     "text": "You are text-muted.",

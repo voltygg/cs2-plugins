@@ -94,7 +94,10 @@
       "playerUrlTemplate": "https://meat.gg/rooms/{value}",
       "checkerUrlField": "code",
       "checkerUrlTemplate": "https://meat.gg/rooms/{value}",
-      "timeoutMs": 8000
+      "timeoutMs": 8000,
+      "presenceUrl": "https://meat.gg/api/rooms/{code}/presence?steamId={steamId}",
+      "presenceField": "present",
+      "pollIntervalSec": 5
     }
   }
 }

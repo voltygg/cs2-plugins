@@ -123,10 +123,16 @@ struct CheatCheckWebsiteAutoRoom
     std::string checkerUrlField = "checkerUrl";
     std::string checkerUrlTemplate;  // optional; relayed to the calling admin
     int timeoutMs = 8000;
+    /** Presence poll GET; {code} receives the raw playerUrlField value, {steamId} the suspect's
+     *  SteamID64. "" disables polling (the countdown then never pauses). */
+    std::string presenceUrl;
+    std::string presenceField = "present";  // dot-path to the response's in-room flag
+    int pollIntervalSec = 5;                // also the worst-case delay before a join is noticed
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckWebsiteAutoRoom, createRoomUrl, apiKey, authHeader,
                                                 authScheme, requestBody, playerUrlField, playerUrlTemplate,
-                                                checkerUrlField, checkerUrlTemplate, timeoutMs)
+                                                checkerUrlField, checkerUrlTemplate, timeoutMs, presenceUrl,
+                                                presenceField, pollIntervalSec)
 
 /** "cheatCheck" section of settings.jsonc. */
 struct CheatCheckSettings
