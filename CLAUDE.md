@@ -7,8 +7,9 @@ abstractions live in `vendor/cs2-kit/`, which is consumed as the
 `CS2Kit::CS2Kit` CMake target.
 
 Each plugin lives under `plugins/<name>/` with its own `src/`, `configs/`,
-`<name>.vdf`, and `CMakeLists.txt`. Add new plugins with
-`cs2_add_plugin(<name> ...)` and a root `add_subdirectory()`.
+and `CMakeLists.txt` (`cs2_add_plugin(<name> ...)` + a root
+`add_subdirectory()`; the .vdf is generated at install time). Scaffold a new
+plugin with `uv run poe new-plugin <name>`.
 
 Third-party C++ deps: add to `conanfile.py`, `find_package` in the root
 `CMakeLists.txt`, link the imported target (e.g. `libpqxx::pqxx`) in the
@@ -49,7 +50,6 @@ plugins/admin-system/
     Database/
   configs/
   database/
-  admin-system.vdf
 CMakeLists.txt
 CMakePresets.json
 conanfile.py
@@ -61,11 +61,28 @@ vendor/cs2-kit/
 ## CS2Kit Integration
 
 All SDK dependencies live inside cs2-kit's `vendor/`, so admin-system has no
-duplicate SDK submodules. Include style: `#include <CS2Kit/Commands/Command.hpp>`.
+duplicate SDK submodules. Include style: `#include <CS2Kit/Commands/CommandSpec.hpp>`
+(or just `<CS2Kit/Api.hpp>` for the hoisted short names).
 
-`AdminSystemPlugin` derives from `CS2Kit::MetamodPluginBase`, which owns
-the ISmmPlugin boilerplate, standard SourceHook hooks, the PlayerManager
-lifecycle, and `CS2Kit::Initialize` / `Shutdown`.
+`AdminSystemPlugin` derives from `CS2Kit::PluginBase<Managers>`, which owns the
+ISmmPlugin boilerplate, standard SourceHook hooks, the PlayerManager lifecycle,
+`CS2Kit::Initialize`/`Shutdown`, and the `Managers` container behind `App()`.
+Plugin-domain rules (permissions, immunity, replies, broadcasts) are injected
+once in OnLoad via `Engine().Policy`.
+
+Key kit patterns in use here:
+
+- Commands are declarative `CommandSpec`s that self-register via
+  `Registry<CommandSpec>` in `src/Commands/*.cpp`; OnLoad ingests them with
+  `Engine().Commands.RegisterAll(...)`. Typed args (Target/Duration/ReasonTail)
+  are resolved before handlers run.
+- Fun effects are `EffectDescriptor`s in `src/Admin/Effects/`, self-registered
+  and rendered by menu context rows; punish/unmute/unban wizards are
+  `Flow<TState>` chains in `src/Admin/Menu/`.
+- Repositories declare entity column tables (`Table`/`Key`/`Columns()`) and use
+  the kit's `FromRow`/`InsertSql`/`SelectSql` mapping; hand-written SQL remains
+  only for bespoke UPDATE/WHERE clauses.
+- All player-facing text goes through `Engine().Messages` and translation keys.
 
 ## Reference Projects
 
@@ -81,8 +98,12 @@ not edit them or add them to the build.
 - C#-style naming: `PascalCase` types/methods, `_camelCase` members,
   `camelCase` locals/params, `PascalCase` constants.
 - Use `std::format`, designated initializers, and `int64_t` for SteamIDs.
-- Main-thread only. Do not add threads or mutexes in game code; the only mutex
-  is inside `Database`.
+- Main-thread only. Do not add threads or mutexes in game code; the only
+  threads/mutexes live inside the kit's `PostgresDatabase` worker and
+  `HttpClient`, both of which replay completions on the game thread.
+- Database access is async-first: `Query`/`Exec` with cache-first managers
+  during gameplay; `QueryBlocking`/`WithConnection` only at load time
+  (migrations, admin loads, `!admin_reload`).
 - Services/managers, not singletons. Use `Engine()` for cs2-kit services and
   `App()` for plugin managers.
 - Prefer the umbrella short names (`CS2Kit::Type` via `#include <CS2Kit/Api.hpp>`)
