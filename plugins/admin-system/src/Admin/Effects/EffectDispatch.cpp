@@ -1,6 +1,5 @@
-#include "EffectDescriptor.hpp"
-
 #include "../../Core/Managers.hpp"
+#include "EffectDescriptor.hpp"
 
 #include <utility>
 

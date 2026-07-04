@@ -58,38 +58,36 @@ void PrecacheModels()
     Engine().Precache.Add(DefaultModelCt);
 }
 
-const ParamEffect Model{
-    .Flag = Flag(Permission::Fun),
-    .Id = static_cast<int>(EffectId::Model),
-    .NameKey = "action.model",
-    .OnKey = "broadcast.modelOn",
-    .OffKey = "broadcast.modelOff",
-    .ResetLabelKey = "action.modelReset",
-    .RequireAlive = true,
-    .Choices =
-        []() {
-            std::vector<EffectChoice> choices;
-            const auto& models = FunModels();
-            choices.reserve(models.size());
-            for (int i = 0; i < static_cast<int>(models.size()); ++i)
-                choices.push_back({models[i].Name, i});
-            return choices;
-        },
-    .Setup =
-        [](const ActionContext& ctx, int param) -> EffectInstance {
-        // Dispatch already bounds-checked param and required the target alive.
-        Engine().EntityOps.SetModel(ctx.TargetCtrl.GetPawn(), FunModels()[param].Path.c_str());
+const ParamEffect Model{.Flag = Flag(Permission::Fun),
+                        .Id = static_cast<int>(EffectId::Model),
+                        .NameKey = "action.model",
+                        .OnKey = "broadcast.modelOn",
+                        .OffKey = "broadcast.modelOff",
+                        .ResetLabelKey = "action.modelReset",
+                        .RequireAlive = true,
+                        .Choices =
+                            []() {
+                                std::vector<EffectChoice> choices;
+                                const auto& models = FunModels();
+                                choices.reserve(models.size());
+                                for (int i = 0; i < static_cast<int>(models.size()); ++i)
+                                    choices.push_back({models[i].Name, i});
+                                return choices;
+                            },
+                        .Setup = [](const ActionContext& ctx, int param) -> EffectInstance {
+                            // Dispatch already bounds-checked param and required the target alive.
+                            Engine().EntityOps.SetModel(ctx.TargetCtrl.GetPawn(), FunModels()[param].Path.c_str());
 
-        // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
-        // team default when cleared while alive (a no-op on death, where IsAlive is false).
-        int targetSlot = ctx.Target->GetSlot();
-        return {.OnStop = [targetSlot]() {
-            PlayerController pc(targetSlot);
-            if (!pc.IsValid() || !pc.IsAlive())
-                return;
-            if (const char* def = DefaultModelForTeam(pc.GetTeam()))
-                Engine().EntityOps.SetModel(pc.GetPawn(), def);
-        }};
-    }};
+                            // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
+                            // team default when cleared while alive (a no-op on death, where IsAlive is false).
+                            int targetSlot = ctx.Target->GetSlot();
+                            return {.OnStop = [targetSlot]() {
+                                PlayerController pc(targetSlot);
+                                if (!pc.IsValid() || !pc.IsAlive())
+                                    return;
+                                if (const char* def = DefaultModelForTeam(pc.GetTeam()))
+                                    Engine().EntityOps.SetModel(pc.GetPawn(), def);
+                            }};
+                        }};
 
 }  // namespace AdminSystem::Admin::Effects

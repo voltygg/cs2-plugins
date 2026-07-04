@@ -27,36 +27,34 @@ constexpr int DiscoIntervalMs = 200;
 constexpr int DiscoDurationSec = 15;
 }  // namespace
 
-const Effect Disco{
-    .Flag = Flag(Permission::Fun),
-    .Id = static_cast<int>(EffectId::Disco),
-    .NameKey = "action.disco",
-    .OnKey = "broadcast.discoOn",
-    .OffKey = "broadcast.discoOff",
-    .Scope = EffectScope::Round,
-    .TickIntervalMs = DiscoIntervalMs,
-    .DurationMs = DiscoDurationSec * 1000,
-    .Setup =
-        [](const ActionContext& ctx) -> EffectInstance {
-        uint8_t savedMode = ctx.TargetCtrl.GetRenderMode();
-        uint32_t savedColor = ctx.TargetCtrl.GetRenderColor();
-        int slot = ctx.Target->GetSlot();
+const Effect Disco{.Flag = Flag(Permission::Fun),
+                   .Id = static_cast<int>(EffectId::Disco),
+                   .NameKey = "action.disco",
+                   .OnKey = "broadcast.discoOn",
+                   .OffKey = "broadcast.discoOff",
+                   .Scope = EffectScope::Round,
+                   .TickIntervalMs = DiscoIntervalMs,
+                   .DurationMs = DiscoDurationSec * 1000,
+                   .Setup = [](const ActionContext& ctx) -> EffectInstance {
+                       uint8_t savedMode = ctx.TargetCtrl.GetRenderMode();
+                       uint32_t savedColor = ctx.TargetCtrl.GetRenderColor();
+                       int slot = ctx.Target->GetSlot();
 
-        return {.OnTick =
-                    [slot, idx = size_t{0}]() mutable {
-                        CS2Kit::Sdk::PlayerController pc(slot);
-                        if (!pc.IsValid() || !pc.IsAlive())
-                            return;
-                        pc.SetRender(RenderModeTransTexture, Palette[idx]);
-                        idx = (idx + 1) % Palette.size();
-                    },
-                .OnStop =
-                    [slot, savedMode, savedColor]() {
-                        CS2Kit::Sdk::PlayerController pc(slot);
-                        if (pc.IsValid())
-                            pc.SetRender(savedMode == 0 ? RenderModeNormal : savedMode,
-                                         savedColor == 0 ? ColorOpaqueWhite : savedColor);
-                    }};
-    }};
+                       return {.OnTick =
+                                   [slot, idx = size_t{0}]() mutable {
+                                       CS2Kit::Sdk::PlayerController pc(slot);
+                                       if (!pc.IsValid() || !pc.IsAlive())
+                                           return;
+                                       pc.SetRender(RenderModeTransTexture, Palette[idx]);
+                                       idx = (idx + 1) % Palette.size();
+                                   },
+                               .OnStop =
+                                   [slot, savedMode, savedColor]() {
+                                       CS2Kit::Sdk::PlayerController pc(slot);
+                                       if (pc.IsValid())
+                                           pc.SetRender(savedMode == 0 ? RenderModeNormal : savedMode,
+                                                        savedColor == 0 ? ColorOpaqueWhite : savedColor);
+                                   }};
+                   }};
 
 }  // namespace AdminSystem::Admin::Effects

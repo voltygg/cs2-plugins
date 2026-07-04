@@ -16,7 +16,7 @@ enum class Permission : char
     Kick = 'c',
     Ban = 'd',
     Unban = 'e',
-    Mute = 'o',  // voice mute / text mute / warn
+    Mute = 'o',     // voice mute / text mute / warn
     Control = 's',  // slay / move / teleport / freeze / noclip / bury / team
     Fun = 'f',      // ghost / disco / smite
     Health = 'h',   // health / armor / godmode

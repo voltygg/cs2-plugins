@@ -57,8 +57,7 @@ inline void AddAction(CS2Kit::Menu::MenuBuilder& builder, const std::string& lab
 }
 
 /** A toggle row whose live state is an active @ref Effects::Effect on the target. */
-inline void AddEffectToggleRow(CS2Kit::Menu::MenuBuilder& builder, int admin, int target,
-                               const Effects::Effect& effect)
+inline void AddEffectToggleRow(CS2Kit::Menu::MenuBuilder& builder, int admin, int target, const Effects::Effect& effect)
 {
     auto& tr = CS2Kit::Core::Engine().Translations;
     const Effects::Effect* e = &effect;

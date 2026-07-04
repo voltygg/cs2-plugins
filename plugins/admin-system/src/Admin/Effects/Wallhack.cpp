@@ -1,7 +1,6 @@
 #include "Descriptors.hpp"
 
 #include <CS2Kit/Sdk/GlowVision.hpp>
-
 #include <memory>
 
 namespace AdminSystem::Admin::Effects
@@ -25,8 +24,7 @@ const Effect Wallhack{.Flag = Flag(Permission::Wallhack),
                           // (on a round restart the props are already gone).
                           glow->Reconcile();
 
-                          return {.OnTick = [glow]() { glow->Reconcile(); },
-                                  .OnStop = [glow]() { glow->Destroy(); }};
+                          return {.OnTick = [glow]() { glow->Reconcile(); }, .OnStop = [glow]() { glow->Destroy(); }};
                       }};
 
 }  // namespace AdminSystem::Admin::Effects
