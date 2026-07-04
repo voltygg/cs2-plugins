@@ -7,10 +7,12 @@
 #include "InfoCommands.hpp"
 #include "PunishmentCommands.hpp"
 
+#include <CS2Kit/Api.hpp>
+
 namespace AdminSystem::Commands
 {
 
-void RegisterAdminCommands(CS2Kit::Commands::CommandManager& mgr)
+void RegisterAdminCommands(CS2Kit::CommandManager& mgr)
 {
     RegisterAdminMenuCommand(mgr);
     RegisterPunishmentCommands(mgr);

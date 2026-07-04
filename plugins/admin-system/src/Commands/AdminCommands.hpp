@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
 
 namespace AdminSystem::Commands
@@ -12,6 +13,6 @@ namespace AdminSystem::Commands
  * `!mute`/`!unmute` map to voice mute, `!gag`/`!ungag` to text mute.
  * Idempotent: safe to call multiple times (later registrations replace earlier ones).
  */
-void RegisterAdminCommands(CS2Kit::Commands::CommandManager& mgr);
+void RegisterAdminCommands(CS2Kit::CommandManager& mgr);
 
 }  // namespace AdminSystem::Commands

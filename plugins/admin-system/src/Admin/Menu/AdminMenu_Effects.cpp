@@ -7,6 +7,7 @@
 #include "MenuHelpers.hpp"
 #include "PlayerPicker.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
@@ -24,7 +25,7 @@ using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Players::PlayerManager;
 using CS2Kit::Utils::Translations;
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsMenu(int adminSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildEffectsMenu(int adminSlot)
 {
     auto& tr = Engine().Translations;
     return BuildPlayerPicker(adminSlot, tr.Get("category.effects", adminSlot), [](int admin, int target) {
@@ -34,7 +35,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsMenu(int adminSlot)
     });
 }
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int targetSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Engine().Translations;
     auto& adminMgr = App().Admins;
@@ -69,7 +70,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildEffectsActionsMenu(int adminSlot, int
                 },
                 [first = targetSlot](int candidate) {
                     // Gray out partners Swap would reject: the already-picked player and the dead.
-                    CS2Kit::Sdk::PlayerController ctrl(candidate);
+                    CS2Kit::PlayerController ctrl(candidate);
                     return candidate != first && ctrl.IsValid() && ctrl.IsAlive();
                 });
             if (picker)

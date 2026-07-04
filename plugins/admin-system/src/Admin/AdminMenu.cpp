@@ -8,6 +8,7 @@
 #include "Menu/AdminMenu_Effects.hpp"
 #include "Menu/AdminMenu_Punish.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -23,7 +24,7 @@ using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Players::PlayerManager;
 using CS2Kit::Utils::Translations;
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildAdminMainMenu(int adminSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(int adminSlot)
 {
     auto& tr = Engine().Translations;
     auto& adminMgr = App().Admins;

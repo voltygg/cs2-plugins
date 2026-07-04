@@ -1,6 +1,7 @@
 #include "../../Core/Managers.hpp"
 #include "EffectDescriptor.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <utility>
 
 namespace AdminSystem::Admin::Effects
@@ -10,7 +11,7 @@ namespace
 {
 
 // Build the kit EffectSpec from the descriptor's declarative lifetime plus the body's instance.
-CS2Kit::Core::EffectSpec MakeSpec(EffectScope scope, int tickIntervalMs, int durationMs, EffectInstance inst)
+CS2Kit::EffectSpec MakeSpec(EffectScope scope, int tickIntervalMs, int durationMs, EffectInstance inst)
 {
     return {.TickIntervalMs = tickIntervalMs,
             .DurationMs = durationMs,

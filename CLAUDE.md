@@ -63,7 +63,7 @@ vendor/cs2-kit/
 All SDK dependencies live inside cs2-kit's `vendor/`, so admin-system has no
 duplicate SDK submodules. Include style: `#include <CS2Kit/Commands/Command.hpp>`.
 
-`AdminSystemPlugin` derives from `CS2Kit::Core::MetamodPluginBase`, which owns
+`AdminSystemPlugin` derives from `CS2Kit::MetamodPluginBase`, which owns
 the ISmmPlugin boilerplate, standard SourceHook hooks, the PlayerManager
 lifecycle, and `CS2Kit::Initialize` / `Shutdown`.
 
@@ -85,6 +85,9 @@ not edit them or add them to the build.
   is inside `Database`.
 - Services/managers, not singletons. Use `Engine()` for cs2-kit services and
   `App()` for plugin managers.
+- Prefer the umbrella short names (`CS2Kit::Type` via `#include <CS2Kit/Api.hpp>`)
+  over `CS2Kit::Module::Type`. In `.hpp` never use a namespace-scope
+  using-directive; `using namespace CS2Kit::X;` is allowed only in `.cpp` (TU-local).
 - Keep source files around 300-350 LOC when practical.
 - Comments are rare and should explain non-obvious reasons, not restate code.
 

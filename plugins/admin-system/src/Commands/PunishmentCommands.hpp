@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
 
 namespace AdminSystem::Commands
@@ -10,6 +11,6 @@ namespace AdminSystem::Commands
  * `!text_unmute`, `!warn`. SourceMod-style aliases are registered too:
  * `!mute`/`!unmute` map to voice mute, `!gag`/`!ungag` to text mute.
  */
-void RegisterPunishmentCommands(CS2Kit::Commands::CommandManager& mgr);
+void RegisterPunishmentCommands(CS2Kit::CommandManager& mgr);
 
 }  // namespace AdminSystem::Commands

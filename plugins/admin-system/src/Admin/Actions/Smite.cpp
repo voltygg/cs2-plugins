@@ -1,5 +1,6 @@
 #include "Descriptors.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/EntityKeyValues.hpp>
@@ -20,7 +21,7 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
                        auto& ops = Engine().EntityOps;
                        if (ops.CanSpawn())
                        {
-                           CS2Kit::Sdk::EntityKeyValues kv;
+                           CS2Kit::EntityKeyValues kv;
                            kv.Set("origin", ctx.TargetCtrl.GetAbsOrigin()).Set("spawnflags", EnvExplosionNoDamage);
                            if (auto* boom = ops.Spawn("env_explosion", kv))
                            {
@@ -31,7 +32,7 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
 
                        int slot = ctx.Target->GetSlot();
                        Engine().Scheduler.Delay(SmiteSlayDelayMs, [slot]() {
-                           CS2Kit::Sdk::PlayerController pc(slot);
+                           CS2Kit::PlayerController pc(slot);
                            if (pc.IsValid() && pc.IsAlive())
                                pc.Slay();
                        });

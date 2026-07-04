@@ -5,6 +5,7 @@
 #include "../Core/Managers.hpp"
 #include "PunishmentManager.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <format>
 
@@ -40,7 +41,7 @@ bool Issue(const Player& admin, const Player& target, PunishType type, const std
     {
     case PunishType::Kick:
     {
-        CS2Kit::Sdk::PlayerController(target.GetSlot()).Kick(reason.c_str());
+        CS2Kit::PlayerController(target.GetSlot()).Kick(reason.c_str());
         App().Chat.BroadcastPunishment("kicked", admin.GetName(), target.GetName(), reason, 0);
         return true;
     }

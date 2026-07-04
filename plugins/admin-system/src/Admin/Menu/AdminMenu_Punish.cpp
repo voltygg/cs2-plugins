@@ -5,6 +5,7 @@
 #include "PlayerPicker.hpp"
 #include "PunishFlow.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
@@ -22,7 +23,7 @@ namespace AdminSystem::Admin::Menu
 using namespace AdminSystem::Punishments;
 using CS2Kit::Menu::MenuBuilder;
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishMenu(int adminSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(int adminSlot)
 {
     auto& tr = Engine().Translations;
     return BuildPlayerPicker(adminSlot, tr.Get("category.punish", adminSlot), [](int admin, int target) {
@@ -32,7 +33,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishMenu(int adminSlot)
     });
 }
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildPunishActionsMenu(int adminSlot, int targetSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Engine().Translations;
     auto& adminMgr = App().Admins;

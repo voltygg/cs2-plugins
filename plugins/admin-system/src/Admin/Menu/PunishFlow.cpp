@@ -6,6 +6,7 @@
 #include "../../Punishments/IssuePunishment.hpp"
 #include "MenuHelpers.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
@@ -33,8 +34,8 @@ using CS2Kit::Utils::TimeUtils;
 namespace
 {
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildReasonStep(int adminSlot, PendingPunishment pending);
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildConfirmStep(int adminSlot, PendingPunishment pending);
+std::shared_ptr<CS2Kit::MenuView> BuildReasonStep(int adminSlot, PendingPunishment pending);
+std::shared_ptr<CS2Kit::MenuView> BuildConfirmStep(int adminSlot, PendingPunishment pending);
 
 /** Kit duration label fed from this plugin's `duration.*` translations for @p slot. */
 std::string FormatDurationLabel(int seconds, int slot)
@@ -47,7 +48,7 @@ std::string FormatDurationLabel(int seconds, int slot)
                                                     .Seconds = tr.Get("duration.unitSeconds", slot)});
 }
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildDurationStep(int adminSlot, PendingPunishment pending)
+std::shared_ptr<CS2Kit::MenuView> BuildDurationStep(int adminSlot, PendingPunishment pending)
 {
     auto& tr = Engine().Translations;
     std::string action = tr.Get(ActionTranslationKey(pending.Type), adminSlot);
@@ -69,7 +70,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildDurationStep(int adminSlot, PendingPu
         tr.Get("duration.custom", adminSlot), tr.Get("duration.customPrompt", adminSlot), 32);
 }
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildReasonStep(int adminSlot, PendingPunishment pending)
+std::shared_ptr<CS2Kit::MenuView> BuildReasonStep(int adminSlot, PendingPunishment pending)
 {
     auto& tr = Engine().Translations;
     std::string action = tr.Get(ActionTranslationKey(pending.Type), adminSlot);
@@ -143,7 +144,7 @@ void ConfirmAndIssue(int adminSlot, const PendingPunishment& pending)
     Engine().Menus.CloseAllMenus(adminSlot);
 }
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildConfirmStep(int adminSlot, PendingPunishment pending)
+std::shared_ptr<CS2Kit::MenuView> BuildConfirmStep(int adminSlot, PendingPunishment pending)
 {
     auto& tr = Engine().Translations;
     std::string action = tr.Get(ActionTranslationKey(pending.Type), adminSlot);
@@ -168,7 +169,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildConfirmStep(int adminSlot, PendingPun
 
 }  // namespace
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildFirstStep(int adminSlot, PendingPunishment pending)
+std::shared_ptr<CS2Kit::MenuView> BuildFirstStep(int adminSlot, PendingPunishment pending)
 {
     return IsTimed(pending.Type) ? BuildDurationStep(adminSlot, std::move(pending))
                                  : BuildReasonStep(adminSlot, std::move(pending));
@@ -184,7 +185,7 @@ bool AnyTemplateUsable(int adminSlot, int targetSlot)
     return false;
 }
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildQuickPunishMenu(int adminSlot, int targetSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Engine().Translations;
     auto* target = Engine().Players.GetPlayerBySlot(targetSlot);

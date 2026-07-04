@@ -3,6 +3,7 @@
 #include "../Entities/Admin.hpp"
 #include "../Entities/AdminGroup.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Database/DbResult.hpp>
 #include <optional>
 #include <pqxx/pqxx>
@@ -45,7 +46,7 @@ public:
     /** All currently frozen admins; the cheap periodic poll behind cross-server propagation.
      *  Returns an error (not an empty list) on DB failure so callers can keep their cached
      *  frozen set instead of accidentally unfreezing everyone. */
-    CS2Kit::Database::DbResult<std::vector<FrozenAdmin>> FindFrozen();
+    CS2Kit::DbResult<std::vector<FrozenAdmin>> FindFrozen();
 
 private:
     Admin ParseRow(const pqxx::row& row);

@@ -2,6 +2,7 @@
 
 #include "../../Core/Managers.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Database/DbResult.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <pqxx/array>
@@ -124,7 +125,7 @@ bool AdminRepository::ClearFrozen(int64_t steamId)
     });
 }
 
-CS2Kit::Database::DbResult<std::vector<FrozenAdmin>> AdminRepository::FindFrozen()
+CS2Kit::DbResult<std::vector<FrozenAdmin>> AdminRepository::FindFrozen()
 {
     return CS2Kit::Database::TryDb("AdminRepository::FindFrozen", [&] {
         std::vector<FrozenAdmin> frozen;

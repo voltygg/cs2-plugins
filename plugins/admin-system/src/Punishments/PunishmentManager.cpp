@@ -7,6 +7,7 @@
 #include "../Database/Repositories/MuteRepository.hpp"
 #include "../Database/Repositories/WarningRepository.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
@@ -167,7 +168,7 @@ bool PunishmentManager::IssueBan(Ban& ban)
         // Kick the player if currently connected.
         if (auto* player = Engine().Players.GetPlayerBySteamId(ban.TargetSteamId))
         {
-            CS2Kit::Sdk::PlayerController controller(player->GetSlot());
+            CS2Kit::PlayerController controller(player->GetSlot());
             controller.Kick(ban.Reason.c_str());
         }
 

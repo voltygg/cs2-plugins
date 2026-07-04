@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Utils/SlotThrottle.hpp>
 #include <cstdint>
@@ -54,7 +55,7 @@ public:
      * Re-emit an admin's regular chat with their group's colored prefix attached.
      * Caller is expected to SUPERCEDE the original say/say_team in the chat hook.
      */
-    void RebroadcastAdminChat(const CS2Kit::Players::Player* admin, std::string_view message, bool teamOnly);
+    void RebroadcastAdminChat(const CS2Kit::Player* admin, std::string_view message, bool teamOnly);
 
     /**
      * Apply admin-system semantics to a player's say/say_team message:
@@ -62,14 +63,14 @@ public:
      * admin chat with a colored prefix. Returns true when the original message should be
      * superseded (the hook caller must skip the engine's default broadcast).
      */
-    bool HandleSay(CS2Kit::Players::Player* player, std::string_view message, bool isSayTeam);
+    bool HandleSay(CS2Kit::Player* player, std::string_view message, bool isSayTeam);
 
     /**
      * Notify a voice-muted player that the engine is suppressing their microphone. Rate-limited
      * to avoid spam: the SetClientListening hook fires once per (receiver, sender) pair every
      * time the player keys voice, which can easily hit dozens of calls in a single press.
      */
-    void NotifyVoiceMuted(CS2Kit::Players::Player* player);
+    void NotifyVoiceMuted(CS2Kit::Player* player);
 
 private:
     /** Phrase at `translationKey`, or the key itself so a missing translation is obvious. */
@@ -79,8 +80,8 @@ private:
     // dozens of say events, so unthrottled notices would out-spam the spam itself.
     static constexpr int64_t MuteNoticeIntervalSec = 60;
 
-    CS2Kit::Utils::SlotThrottle _voiceMuteNotice{MuteNoticeIntervalSec};
-    CS2Kit::Utils::SlotThrottle _textMuteNotice{MuteNoticeIntervalSec};
+    CS2Kit::SlotThrottle _voiceMuteNotice{MuteNoticeIntervalSec};
+    CS2Kit::SlotThrottle _textMuteNotice{MuteNoticeIntervalSec};
 };
 
 }  // namespace AdminSystem::Core

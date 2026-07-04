@@ -2,6 +2,7 @@
 
 #include "PendingCheck.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Http/HttpResult.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
@@ -51,10 +52,10 @@ private:
     void Tick(int targetSlot);
     void Expire(int targetSlot);
     void ResetCheck(int targetSlot);  // cancel timer + clear panel + reset state, silently
-    void Unfreeze(int targetSlot, CS2Kit::Sdk::MoveType restoreMove, int restoreTeam);
+    void Unfreeze(int targetSlot, CS2Kit::MoveType restoreMove, int restoreTeam);
     void ResolveUrl(int targetSlot);
     void RequestRoom(int targetSlot);
-    void OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::Http::HttpResult& result);
+    void OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result);
     void OnRoomFailed(int targetSlot);
     void RelayCheckerUrl(int targetSlot, const std::string& checkerUrl);
 

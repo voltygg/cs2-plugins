@@ -3,6 +3,7 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Core/Managers.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/TargetResolver.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
@@ -36,7 +37,7 @@ std::string JoinReason(const std::vector<std::string>& args, std::size_t start, 
 
 Player* ResolveSingle(const std::string& token, Player* caller, std::string& outError)
 {
-    auto& tr = CS2Kit::Core::Engine().Translations;
+    auto& tr = CS2Kit::Engine().Translations;
     int callerSlot = caller ? caller->GetSlot() : -1;  // -1 = server language (console callers)
 
     auto result = ResolveSingleTarget(token, caller, CanTarget);

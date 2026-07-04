@@ -2,6 +2,7 @@
 
 #include "../../Punishments/PunishType.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Menu/Menu.hpp>
 #include <cstdint>
 #include <memory>
@@ -29,10 +30,10 @@ struct PendingPunishment
  * Entry into the punish flow for @p pending's type: duration -> reason -> confirm for timed
  * punishments, reason -> confirm for kick/warn. Confirm re-validates the target, then issues.
  */
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildFirstStep(int adminSlot, PendingPunishment pending);
+std::shared_ptr<CS2Kit::MenuView> BuildFirstStep(int adminSlot, PendingPunishment pending);
 
 /** Quick Punish list of the configured templates the admin may use on this target. */
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildQuickPunishMenu(int adminSlot, int targetSlot);
+std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(int adminSlot, int targetSlot);
 
 /** True if at least one configured template is usable by @p adminSlot against @p targetSlot. */
 bool AnyTemplateUsable(int adminSlot, int targetSlot);

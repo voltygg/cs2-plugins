@@ -3,6 +3,7 @@
 #include "../../Core/Managers.hpp"
 #include "../AdminManager.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
@@ -192,7 +193,7 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, std::shared_ptr<in
 
 }  // namespace
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildChatSettingsMenu(int adminSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildChatSettingsMenu(int adminSlot)
 {
     auto& tr = Engine().Translations;
     auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);

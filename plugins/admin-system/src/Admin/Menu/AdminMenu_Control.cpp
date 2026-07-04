@@ -7,6 +7,7 @@
 #include "MenuHelpers.hpp"
 #include "PresetSubmenu.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
@@ -26,7 +27,7 @@ using CS2Kit::Players::PlayerManager;
 using CS2Kit::Utils::Translations;
 using namespace CS2Kit::Sdk;
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
 {
     auto& tr = Engine().Translations;
     auto& adminMgr = App().Admins;
@@ -65,7 +66,7 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlMenu(int adminSlot)
     return builder.Build();
 }
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int targetSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Engine().Translations;
     auto& adminMgr = App().Admins;

@@ -10,6 +10,7 @@
 #include "Config.hpp"
 #include "Managers.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/ActiveService.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
@@ -103,7 +104,7 @@ bool ConnectDatabaseAndLoadAdmins()
         return false;
     }
 
-    if (!CS2Kit::Database::RunMigrations(db, "addons/admin-system/configs/migrations",
+    if (!CS2Kit::RunMigrations(db, "addons/admin-system/configs/migrations",
                                          {.TableName = "schema_migrations", .AdvisoryLockKey = 727274}))
     {
         Log::Warn("Database migrations failed - not loading admins against an out-of-date schema.");

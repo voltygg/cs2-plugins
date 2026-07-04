@@ -2,6 +2,7 @@
 
 #include "CheatCheckMode.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
 #include <cstdint>
 #include <string>
@@ -21,7 +22,7 @@ struct PendingCheck
     std::string ResolvedUrl;  // URL shown to the suspect (empty while awaiting / before playerProvided submit)
     bool AwaitingUrl = false;
     uint64_t RequestSeq = 0;                                            // staleness guard for async HTTP completions
-    CS2Kit::Sdk::MoveType PriorMoveType = CS2Kit::Sdk::MoveType::Walk;  // restored on unfreeze
+    CS2Kit::MoveType PriorMoveType = CS2Kit::MoveType::Walk;  // restored on unfreeze
     int PriorTeam = 0;  // team before force-to-spectator; restored on unfreeze
 };
 

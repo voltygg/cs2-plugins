@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Http/RestJsonApi.hpp>
 #include <cstdint>
 #include <optional>
@@ -38,6 +39,6 @@ std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoo
  * Returns nullopt on transport/HTTP/parse failure or when no player URL could be resolved.
  */
 std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg,
-                                          const CS2Kit::Http::HttpResult& result);
+                                          const CS2Kit::HttpResult& result);
 
 }  // namespace AdminSystem::Admin::CheatCheck

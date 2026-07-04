@@ -2,6 +2,7 @@
 
 #include "../../Core/Config.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <map>
 
 namespace AdminSystem::Admin::CheatCheck
@@ -33,7 +34,7 @@ std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoo
 }
 
 std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg,
-                                          const CS2Kit::Http::HttpResult& result)
+                                          const CS2Kit::HttpResult& result)
 {
     if (!IsSuccess(result))
         return std::nullopt;

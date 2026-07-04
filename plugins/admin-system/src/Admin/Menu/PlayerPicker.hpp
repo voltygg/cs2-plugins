@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Menu/Menu.hpp>
 #include <functional>
 #include <memory>
@@ -14,7 +15,7 @@ namespace AdminSystem::Admin::Menu
  * to open the appropriate per-target actions submenu. @p isEnabled, when supplied,
  * decides per-row whether a target is selectable (e.g. to gray out an already-picked player).
  */
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(int adminSlot, const std::string& title,
+std::shared_ptr<CS2Kit::MenuView> BuildPlayerPicker(int adminSlot, const std::string& title,
                                                         std::function<void(int adminSlot, int targetSlot)> onPick,
                                                         std::function<bool(int targetSlot)> isEnabled = {});
 

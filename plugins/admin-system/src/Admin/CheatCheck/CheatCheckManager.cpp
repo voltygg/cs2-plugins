@@ -7,6 +7,7 @@
 #include "CheatCheckRoomApi.hpp"
 #include "CheatCheckView.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
@@ -138,10 +139,10 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     const uint64_t seq = pc.RequestSeq;
     CS2Kit::Http::Post(
         Engine().Http, std::move(*request),
-        [this, targetSlot, seq](const CS2Kit::Http::HttpResult& result) { OnRoomResponse(targetSlot, seq, result); });
+        [this, targetSlot, seq](const CS2Kit::HttpResult& result) { OnRoomResponse(targetSlot, seq, result); });
 }
 
-void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::Http::HttpResult& result)
+void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result)
 {
     if (!ValidSlot(targetSlot))
         return;

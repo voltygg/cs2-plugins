@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <cstdint>
 #include <string>
@@ -18,7 +19,7 @@ std::string JoinReason(const std::vector<std::string>& args, std::size_t start, 
  * Resolve a target token down to a single allowed player. Returns nullptr and writes the
  * failure reason into `outError` when ambiguous, missing, or blocked by immunity.
  */
-CS2Kit::Players::Player* ResolveSingle(const std::string& token, CS2Kit::Players::Player* caller,
+CS2Kit::Player* ResolveSingle(const std::string& token, CS2Kit::Player* caller,
                                        std::string& outError);
 
 /**

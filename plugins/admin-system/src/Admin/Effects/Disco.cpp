@@ -1,5 +1,6 @@
 #include "Descriptors.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <array>
@@ -42,7 +43,7 @@ const Effect Disco{.Flag = Flag(Permission::Fun),
 
                        return {.OnTick =
                                    [slot, idx = size_t{0}]() mutable {
-                                       CS2Kit::Sdk::PlayerController pc(slot);
+                                       CS2Kit::PlayerController pc(slot);
                                        if (!pc.IsValid() || !pc.IsAlive())
                                            return;
                                        pc.SetRender(RenderModeTransTexture, Palette[idx]);
@@ -50,7 +51,7 @@ const Effect Disco{.Flag = Flag(Permission::Fun),
                                    },
                                .OnStop =
                                    [slot, savedMode, savedColor]() {
-                                       CS2Kit::Sdk::PlayerController pc(slot);
+                                       CS2Kit::PlayerController pc(slot);
                                        if (pc.IsValid())
                                            pc.SetRender(savedMode == 0 ? RenderModeNormal : savedMode,
                                                         savedColor == 0 ? ColorOpaqueWhite : savedColor);

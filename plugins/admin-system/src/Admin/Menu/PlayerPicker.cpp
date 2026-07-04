@@ -1,5 +1,6 @@
 #include "PlayerPicker.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
@@ -10,7 +11,7 @@ using CS2Kit::Core::Engine;
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildPlayerPicker(int adminSlot, const std::string& title,
+std::shared_ptr<CS2Kit::MenuView> BuildPlayerPicker(int adminSlot, const std::string& title,
                                                         std::function<void(int adminSlot, int targetSlot)> onPick,
                                                         std::function<bool(int targetSlot)> isEnabled)
 {

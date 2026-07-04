@@ -3,6 +3,7 @@
 #include "../Actions/ActionContext.hpp"
 #include "../Actions/Descriptors.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
@@ -18,7 +19,7 @@ using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Menu::MenuManager;
 using CS2Kit::Utils::Translations;
 
-std::shared_ptr<::CS2Kit::Menu::Menu> BuildTeamPickerMenu(int adminSlot, int targetSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildTeamPickerMenu(int adminSlot, int targetSlot)
 {
     auto& tr = Engine().Translations;
     MenuBuilder builder(tr.Get("action.changeTeam", adminSlot));

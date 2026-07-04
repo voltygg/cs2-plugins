@@ -2,6 +2,7 @@
 
 #include "../Punishments/PunishType.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -56,7 +57,7 @@ struct PunishmentTemplate
 {
     std::string name;
     std::string type;      // "ban" | "voiceMute" | "textMute"
-    std::string duration;  // CS2Kit::Utils::ParseDuration grammar: 30s/5m/2h/7d, "perm"/"0" = permanent
+    std::string duration;  // CS2Kit::ParseDuration grammar: 30s/5m/2h/7d, "perm"/"0" = permanent
     std::string reason;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentTemplate, name, type, duration, reason)
