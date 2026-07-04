@@ -63,8 +63,5 @@ jobs:
       - name: Ruff check (build tooling)
         run: uv run poe lint
 
-      - name: clang-format dry-run (plugin + cs2-kit sources)
-        run: |
-          find plugins vendor/cs2-kit/src \
-            -type f \( -name '*.cpp' -o -name '*.hpp' \) \
-            -print0 | xargs -0 uvx clang-format@22.1.5 --dry-run --Werror
+      - name: clang-format check (plugin + cs2-kit sources)
+        run: uv run poe format-check
