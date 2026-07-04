@@ -1,7 +1,9 @@
 #include "Model.hpp"
 
 #include "Descriptors.hpp"
+#include "EffectRegistry.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
@@ -89,5 +91,7 @@ const ParamEffect Model{.Flag = Flag(Permission::Fun),
                                     Engine().EntityOps.SetModel(pc.GetPawn(), def);
                             }};
                         }};
+
+static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 40, .Param = &Model});
 
 }  // namespace AdminSystem::Admin::Effects

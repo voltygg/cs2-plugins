@@ -1,23 +1,27 @@
 #pragma once
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <functional>
-#include <vector>
+#include "EffectDescriptor.hpp"
+
+#include <CS2Kit/Core/Registry.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 /**
- * @brief A registered effect, type-erased behind a self-rendering `Render` hook so the menu loop
- * can list Effect and ParamEffect descriptors uniformly without knowing their concrete type.
+ * @brief One auto-listed row in the Effects action menu. Data-only so each descriptor .cpp
+ * self-registers at its definition site:
+ *
+ *   static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 10, .Toggle = &Ghost});
+ *
+ * Exactly one of Toggle/Param is set. Registration order across TUs is unspecified, so the
+ * menu sorts by Order. Hide is deliberately not registered - it is a self-only Control row
+ * plus the !hide command, not an auto-listed effect.
  */
 struct EffectEntry
 {
-    std::function<void(CS2Kit::MenuBuilder&, int admin, int target)> Render;
+    int Order = 0;
+    const Effect* Toggle = nullptr;
+    const ParamEffect* Param = nullptr;
 };
-
-/** The effects auto-listed in the Effects action menu, built once on first use. */
-const std::vector<EffectEntry>& EffectRegistry();
 
 }  // namespace AdminSystem::Admin::Effects

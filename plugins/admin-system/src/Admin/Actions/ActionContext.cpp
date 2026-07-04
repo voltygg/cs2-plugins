@@ -6,9 +6,12 @@
 namespace AdminSystem::Admin::Actions
 {
 
+// The dispatcher is stateless - policy comes from Engine().Policy, set once in OnLoad.
+using CS2Kit::Players::ActionDispatcher;
+
 ActionContext Resolve(int adminSlot, int targetSlot, const std::string& requiredFlag)
 {
-    return App().ActionDisp.Resolve(adminSlot, targetSlot, requiredFlag);
+    return ActionDispatcher{}.Resolve(adminSlot, targetSlot, requiredFlag);
 }
 
 void Broadcast(const ActionContext& ctx, const std::string& translationKey)
@@ -16,7 +19,7 @@ void Broadcast(const ActionContext& ctx, const std::string& translationKey)
     // An empty key means "no message" - silent effects (Hide) and one-shots leave it blank.
     if (translationKey.empty())
         return;
-    App().ActionDisp.Broadcast(ctx, translationKey);
+    ActionDispatcher{}.Broadcast(ctx, translationKey);
 }
 
 void Broadcast(const ActionContext& first, const ActionContext& second, const std::string& translationKey)
@@ -29,12 +32,12 @@ void Broadcast(const ActionContext& first, const ActionContext& second, const st
 
 void Run(int adminSlot, int targetSlot, const Action& action)
 {
-    App().ActionDisp.Run(adminSlot, targetSlot, action);
+    ActionDispatcher{}.Run(adminSlot, targetSlot, action);
 }
 
 void Run(int adminSlot, int targetSlot, int param, const ParamAction& action)
 {
-    App().ActionDisp.Run(adminSlot, targetSlot, param, action);
+    ActionDispatcher{}.Run(adminSlot, targetSlot, param, action);
 }
 
 }  // namespace AdminSystem::Admin::Actions

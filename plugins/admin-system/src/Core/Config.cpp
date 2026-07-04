@@ -1,8 +1,8 @@
 #include "Config.hpp"
 
-#include <CS2Kit/Utils/Json.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/StringUtils.hpp>
+#include <CS2Kit/Utils/Validation.hpp>
+#include <format>
+#include <optional>
 
 namespace AdminSystem::Core
 {
@@ -11,13 +11,10 @@ using namespace CS2Kit::Utils;
 
 bool ConfigManager::LoadSettings(const std::string& path)
 {
-    auto loaded = Json::TryDeserializeFile<Settings>(path);
-    if (!loaded)
+    if (!Load(path))
         return false;
 
-    _settings = std::move(*loaded);
     ResolveRuntimeSettings();
-    Log::Info("Loaded settings from {}", path);
     return true;
 }
 
@@ -25,66 +22,35 @@ bool ConfigManager::LoadSettings(const std::string& path)
 // must not take down ban/mute enforcement for the whole server.
 void ConfigManager::ResolveRuntimeSettings()
 {
-    // A blank/oversized tag would silently orphan per-server grants (the DB column is
-    // VARCHAR(64)), so normalize to the documented default instead of failing the load.
-    auto& tag = _settings.server.tag;
-    if (StringUtils::Trim(tag).empty() || tag.size() > 64)
-    {
-        Log::Warn("settings: server.tag is empty or longer than 64 chars; using \"default\"");
-        tag = "default";
-    }
+    auto& settings = Mutable();
+
+    // A blank/oversized tag would silently orphan per-server grants (the DB column is VARCHAR(64)).
+    Validation::NormalizeTag(settings.server.tag, 64, "default", "server.tag");
+
+    auto& punishments = settings.punishments;
+    Validation::FilterValid(
+        punishments.templates,
+        [](const PunishmentTemplate& t, std::size_t) -> std::optional<std::string> {
+            auto type = Punishments::ParsePunishType(t.type);
+            if (!type || !Punishments::IsTimed(*type))
+                return std::format("type must be ban/voiceMute/textMute, got '{}'", t.type);
+            if (ParseDuration(t.duration) < 0)
+                return std::format("bad duration '{}'", t.duration);
+            if (t.name.empty() || t.reason.empty())
+                return std::string("name and reason must be non-empty");
+            return std::nullopt;
+        },
+        "punishments.templates");
 
     _resolvedTemplates.clear();
-    const auto& punishments = _settings.punishments;
-    for (std::size_t i = 0; i < punishments.templates.size(); ++i)
-    {
-        const auto& t = punishments.templates[i];
-        auto type = Punishments::ParsePunishType(t.type);
-        if (!type || !Punishments::IsTimed(*type))
-        {
-            Log::Warn(
-                "settings: skipping punishments.templates[{}] ('{}'): type must be ban/voiceMute/textMute, got '{}'", i,
-                t.name, t.type);
-            continue;
-        }
+    for (const auto& t : punishments.templates)
+        _resolvedTemplates.push_back(
+            {t.name, *Punishments::ParsePunishType(t.type), ParseDuration(t.duration), t.reason});
 
-        int durationSec = ParseDuration(t.duration);
-        if (durationSec < 0)
-        {
-            Log::Warn("settings: skipping punishments.templates[{}] ('{}'): bad duration '{}'", i, t.name, t.duration);
-            continue;
-        }
-
-        if (t.name.empty() || t.reason.empty())
-        {
-            Log::Warn("settings: skipping punishments.templates[{}]: name and reason must be non-empty", i);
-            continue;
-        }
-
-        _resolvedTemplates.push_back({t.name, *type, durationSec, t.reason});
-    }
-
-    _menuDurationSecs.clear();
-    for (std::size_t i = 0; i < punishments.menuDurations.size(); ++i)
-    {
-        int seconds = ParseDuration(punishments.menuDurations[i]);
-        if (seconds < 0)
-        {
-            Log::Warn("settings: skipping punishments.menuDurations[{}]: bad duration '{}'", i,
-                      punishments.menuDurations[i]);
-            continue;
-        }
-        _menuDurationSecs.push_back(seconds);
-    }
-
-    // An empty duration picker would dead-end the menu ban/mute flow; fall back to the
-    // struct defaults so the list exists in exactly one place.
-    if (_menuDurationSecs.empty())
-    {
-        Log::Warn("settings: punishments.menuDurations has no valid entries; using built-in defaults");
-        for (const auto& entry : PunishmentSettings{}.menuDurations)
-            _menuDurationSecs.push_back(ParseDuration(entry));
-    }
+    // An empty duration picker would dead-end the menu ban/mute flow; the helper falls back to
+    // the struct defaults so the list exists in exactly one place.
+    _menuDurationSecs = Validation::ParseDurations(punishments.menuDurations, PunishmentSettings{}.menuDurations,
+                                                   "punishments.menuDurations");
 }
 
 }  // namespace AdminSystem::Core

@@ -9,7 +9,7 @@ namespace AdminSystem::Admin::Actions
 {
 
 // The action scaffold lives in the kit; the plugin supplies its permission/immunity/broadcast
-// policy through App().ActionDisp (see Managers.hpp). These aliases keep descriptor files and
+// policy through Engine().Policy (set once in OnLoad). These aliases keep descriptor files and
 // call sites on the established local names.
 using ActionContext = CS2Kit::Players::ActionContext;
 using Action = CS2Kit::Players::Action;

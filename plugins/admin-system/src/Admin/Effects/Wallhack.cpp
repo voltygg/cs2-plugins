@@ -1,5 +1,7 @@
 #include "Descriptors.hpp"
+#include "EffectRegistry.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Sdk/GlowVision.hpp>
 #include <memory>
 
@@ -26,5 +28,7 @@ const Effect Wallhack{.Flag = Flag(Permission::Wallhack),
 
                           return {.OnTick = [glow]() { glow->Reconcile(); }, .OnStop = [glow]() { glow->Destroy(); }};
                       }};
+
+static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 30, .Toggle = &Wallhack});
 
 }  // namespace AdminSystem::Admin::Effects

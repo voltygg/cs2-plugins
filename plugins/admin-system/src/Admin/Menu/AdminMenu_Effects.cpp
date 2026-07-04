@@ -14,7 +14,9 @@
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
+#include <algorithm>
 #include <format>
+#include <vector>
 
 using CS2Kit::Core::Engine;
 
@@ -52,8 +54,16 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(int adminSlot, int tar
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->GetName()));
 
-    for (const auto& entry : Effects::EffectRegistry())
-        entry.Render(builder, adminSlot, targetSlot);
+    auto registered = CS2Kit::Registry<Effects::EffectEntry>::Items();
+    std::vector<Effects::EffectEntry> entries(registered.begin(), registered.end());
+    std::ranges::sort(entries, {}, &Effects::EffectEntry::Order);
+    for (const auto& entry : entries)
+    {
+        if (entry.Toggle)
+            AddEffectToggleRow(builder, adminSlot, targetSlot, *entry.Toggle);
+        else if (entry.Param)
+            AddEffectSubmenuRow(builder, adminSlot, targetSlot, *entry.Param);
+    }
 
     AddAction(builder, tr.Get("action.slap", adminSlot), adminSlot, targetSlot, Actions::Slap);
     AddAction(builder, tr.Get("action.smite", adminSlot), adminSlot, targetSlot, Actions::Smite);

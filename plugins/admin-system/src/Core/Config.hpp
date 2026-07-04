@@ -171,25 +171,26 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, databa
                                                 cheatCheck)
 
 /**
- * Loads and owns settings.json. All admin/group data is owned by the database
- * (`admins` and `admin_groups` tables) - this manager only exposes plugin/DB/punishment/chat config.
+ * Loads and owns settings.json (via the kit's JsonConfig). All admin/group data is owned by the
+ * database (`admins` and `admin_groups` tables) - this manager only exposes plugin/DB/punishment/
+ * chat config plus the validated runtime forms of the string-typed punishment settings.
  */
-class ConfigManager
+class ConfigManager : public CS2Kit::JsonConfig<Settings>
 {
 public:
     ConfigManager() = default;
 
-    /** Load settings.json. Returns false if the file is missing, unparseable, or has a wrong-typed value. */
+    /** Load settings.json, then validate/resolve the runtime forms. Returns false if the file
+     *  is missing, unparseable, or has a wrong-typed value. */
     bool LoadSettings(const std::string& path);
 
-    const Settings& Get() const { return _settings; }
-    const PluginSettings& GetPlugin() const { return _settings.plugin; }
-    const ServerSettings& GetServer() const { return _settings.server; }
-    const DatabaseConfig& GetDatabase() const { return _settings.database; }
-    const PunishmentSettings& GetPunishments() const { return _settings.punishments; }
-    const AbuseProtectionSettings& GetAbuseProtection() const { return _settings.abuseProtection; }
-    const ChatSettings& GetChat() const { return _settings.chat; }
-    const CheatCheckSettings& GetCheatCheck() const { return _settings.cheatCheck; }
+    const PluginSettings& GetPlugin() const { return Get().plugin; }
+    const ServerSettings& GetServer() const { return Get().server; }
+    const DatabaseConfig& GetDatabase() const { return Get().database; }
+    const PunishmentSettings& GetPunishments() const { return Get().punishments; }
+    const AbuseProtectionSettings& GetAbuseProtection() const { return Get().abuseProtection; }
+    const ChatSettings& GetChat() const { return Get().chat; }
+    const CheatCheckSettings& GetCheatCheck() const { return Get().cheatCheck; }
 
     /** Punishment templates that passed load-time validation (invalid entries are skipped with a warning). */
     const std::vector<ResolvedTemplate>& GetPunishmentTemplates() const { return _resolvedTemplates; }
@@ -201,7 +202,6 @@ private:
     /** Parse/validate the string-typed punishment settings into their runtime forms. */
     void ResolveRuntimeSettings();
 
-    Settings _settings;
     std::vector<ResolvedTemplate> _resolvedTemplates;
     std::vector<int> _menuDurationSecs;
 };

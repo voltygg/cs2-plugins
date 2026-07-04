@@ -1,4 +1,5 @@
 #include "Descriptors.hpp"
+#include "EffectRegistry.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
@@ -57,5 +58,7 @@ const Effect Disco{.Flag = Flag(Permission::Fun),
                                                         savedColor == 0 ? ColorOpaqueWhite : savedColor);
                                    }};
                    }};
+
+static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 20, .Toggle = &Disco});
 
 }  // namespace AdminSystem::Admin::Effects

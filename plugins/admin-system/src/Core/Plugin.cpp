@@ -12,7 +12,7 @@
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
-#include <CS2Kit/Core/ActiveService.hpp>
+#include <CS2Kit/Core/HookMacros.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Database/Migrator.hpp>
@@ -57,7 +57,7 @@ namespace AdminSystem
 {
 Managers& App()
 {
-    return CS2Kit::Core::ActiveService<Managers>::Get();
+    return AdminSystemPlugin::App();
 }
 }  // namespace AdminSystem
 
@@ -76,21 +76,22 @@ bool LoadConfigs()
     return true;
 }
 
-void InstallCommandCallbacks()
+// The one policy the kit consults everywhere: command permissions, action targeting,
+// result replies, and action broadcasts. Lambdas resolve App() at call time.
+void InstallPolicy()
 {
-    auto& cmdMgr = Engine().Commands;
-
-    cmdMgr.SetPermissionCallback([](int64_t steamId, const std::string& permission) -> bool {
-        return App().Admins.HasAnyPermission(steamId, permission);
-    });
-
-    // Pipe every command's result message into the player's chat as a colored reply.
-    // Suppresses empty messages (e.g. !who, which already streamed its own lines).
-    cmdMgr.SetResultCallback([](Player* caller, const Command& /*cmd*/, const CommandResult& result) {
-        if (!caller || result.Message.empty())
-            return;
-        App().Chat.Reply(caller->GetSlot(), result.Message);
-    });
+    Engine().Policy = {
+        .HasPermission = [](int64_t steamId,
+                            const std::string& permission) { return App().Admins.HasAnyPermission(steamId, permission); },
+        .CanTarget = [](Player& caller,
+                        Player& target) { return App().Admins.CanTarget(caller.GetSteamID(), target.GetSteamID()); },
+        .Reply = [](int slot, std::string_view message) { App().Chat.Reply(slot, message); },
+        .Broadcast =
+            [](Player& caller, Player* target, const std::string& key) {
+                if (target)
+                    App().Chat.BroadcastAction(key, caller.GetName(), target->GetName());
+            },
+    };
 }
 
 bool ConnectDatabaseAndLoadAdmins()
@@ -142,18 +143,14 @@ void RegisterPunishmentTasks()
 
 void RegisterGameEventListeners()
 {
+    namespace Events = CS2Kit::Events;
     auto& events = Engine().Events;
-    events.Listen("player_death", [](IGameEvent* e) {
-        if (!e)
-            return;
-        // GetInt("userid") yields the connection userid (drifts from the slot on reconnect);
-        // GetPlayerSlot decodes it to the actual slot.
-        int victim = e->GetPlayerSlot("userid").Get();
-        if (victim >= 0)
-            App().Effects.CancelAllForSlot(victim);
+    events.Listen<Events::PlayerDeath>([](const Events::PlayerDeath& e) {
+        if (e.VictimSlot >= 0)
+            App().Effects.CancelAllForSlot(e.VictimSlot);
     });
-    events.Listen("round_end", [](IGameEvent*) { App().Effects.CancelRoundScoped(); });
-    events.Listen("round_prestart", [](IGameEvent*) { App().Effects.CancelRoundScoped(); });
+    events.Listen<Events::RoundEnd>([](const Events::RoundEnd&) { App().Effects.CancelRoundScoped(); });
+    events.Listen<Events::RoundPrestart>([](const Events::RoundPrestart&) { App().Effects.CancelRoundScoped(); });
 }
 
 // Persist a finished session; shared by the disconnect hook and the unload sweep. No-ops for bots.
@@ -184,11 +181,6 @@ bool AdminSystemPlugin::OnLoad(bool late)
 {
     Log::Info("Loading v{}...", Info().Version);
 
-    // Construct the plugin's services up front so every App() access below resolves to a
-    // freshly-built manager (no state carried over from a previous load).
-    _managers = std::make_unique<AdminSystem::Managers>();
-    CS2Kit::Core::ActiveService<AdminSystem::Managers>::Set(_managers.get());
-
     Log::Info("Loading configurations...");
     if (!LoadConfigs())
         return false;
@@ -197,7 +189,7 @@ bool AdminSystemPlugin::OnLoad(bool late)
     Log::Info("Translations: Setting language to {}...", locale);
     Engine().Translations.SetLanguage(locale);
 
-    InstallCommandCallbacks();
+    InstallPolicy();
 
     // Freeze the player while an admin menu is open so WASD navigation doesn't also walk them around.
     Engine().Menus.SetFreezePlayer(true);
@@ -231,14 +223,6 @@ bool AdminSystemPlugin::OnLoad(bool late)
 
     Log::Info("All subsystems initialized.");
     return true;
-}
-
-void AdminSystemPlugin::OnDestroyInstances()
-{
-    // Runs after Defer() cleanups (which still saw live managers) and before the kit's services
-    // are destroyed. Dropping these here is what gives a meta reload clean state.
-    CS2Kit::Core::ActiveService<AdminSystem::Managers>::Set(nullptr);
-    _managers.reset();
 }
 
 void AdminSystemPlugin::OnPlayerConnect(Player* player)
@@ -289,15 +273,8 @@ bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, b
 
 void AdminSystemPlugin::OnRegisterHooks()
 {
-    auto& gi = Engine().Interfaces;
-    SH_ADD_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
-                SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
-
-    Defer([this] {
-        auto& g = Engine().Interfaces;
-        SH_REMOVE_HOOK(IVEngineServer2, SetClientListening, g.Engine,
+    CS2KIT_SCOPED_HOOK(IVEngineServer2, SetClientListening, Engine().Interfaces.Engine,
                        SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
-    });
 }
 
 bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen)

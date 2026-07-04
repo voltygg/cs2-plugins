@@ -1,5 +1,7 @@
 #include "Descriptors.hpp"
+#include "EffectRegistry.hpp"
 
+#include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/TransmitFilter.hpp>
 
@@ -24,5 +26,7 @@ const Effect Ghost{.Flag = Flag(Permission::Fun),
                        Engine().Transmit.SetPawnHidden(slot, true);
                        return {.OnStop = [slot]() { Engine().Transmit.SetPawnHidden(slot, false); }};
                    }};
+
+static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 10, .Toggle = &Ghost});
 
 }  // namespace AdminSystem::Admin::Effects
