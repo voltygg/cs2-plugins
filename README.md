@@ -13,7 +13,7 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C
 - **Multi-Server:** Several servers share one database; admins can hold different groups per server (see [Multi-Server Setup](#multi-server-setup))
 - **Abuse Protection:** Automatic + manual freezing of rogue admins, with a full action audit trail (see [Admin Abuse Protection](#admin-abuse-protection))
 - **WASD Menus:** Top-level category dispatcher → player picker → actions. Toggle entries (Ghost, Disco, Godmode) show live `: ON / : OFF` state via dynamic-title menu items.
-- **Database:** PostgreSQL (synchronous, main-thread, prepared statements) with forward-only auto-applied migrations
+- **Database:** PostgreSQL, async-first (a worker thread owns the connection; gameplay reads hit in-memory caches, writes ride the worker) with forward-only auto-applied migrations
 - **Chat Commands:** `!kick`, `!ban`, `!voice_mute`, `!text_mute`, `!warn` and more
 
 ## Requirements
@@ -52,7 +52,7 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C
 | `!frozen_admins` | FreezeAdmins (`a`) | List currently frozen admins |
 | `!admin_reload` (alias `!reload_admins`) | Root (`z`) | Reload admins/groups/grants/freezes from DB |
 
-**Target Selectors:** `@all`, `@me`, `@ct`, `@t`, or partial player name
+**Target Selectors:** `@all`, `@me`, `@!me`, `@t`, `@ct`, `@spec`, `@dead`, `@alive`, `@bot`, `@human`, `@random`, `@randomt`, `@randomct`, `#slot`, a SteamID (64 / `STEAM_` / `[U:1:...]`), or a name (exact, then prefix, then substring)
 
 **Duration Format:** `30s`, `5m`, `2h`, `7d`, `1w`; a bare number means minutes; `0` or `perm` = permanent
 
@@ -138,5 +138,15 @@ uv run poe build
 
 The default Windows preset is `windows-msvc-release`. Use
 `uv run poe build windows-msvc-debug` for a debug build.
+
+### Adding a plugin
+
+```bash
+uv run poe new-plugin my-plugin
+```
+
+Stamps `plugins/my-plugin/` from CS2Kit's template tree (PluginBase skeleton,
+settings.jsonc, translations, an example `!ping` command) and registers it in the
+root `CMakeLists.txt`. It builds and loads as-is.
 
 See [docs/local-development.md](docs/local-development.md) for full setup guide.
