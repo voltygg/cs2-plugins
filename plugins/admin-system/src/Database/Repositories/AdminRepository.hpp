@@ -3,16 +3,16 @@
 #include "../Entities/Admin.hpp"
 #include "../Entities/AdminGroup.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Database/DbResult.hpp>
-#include <optional>
+#include <cstdint>
+#include <functional>
 #include <pqxx/pqxx>
+#include <string>
 #include <vector>
 
 namespace AdminSystem::Database
 {
 
-/** One frozen admins-table row, as returned by AdminRepository::FindFrozen. */
+/** One frozen admins-table row, as returned by AdminRepository::FindFrozenAsync. */
 struct FrozenAdmin
 {
     int64_t SteamId = 0;
@@ -22,43 +22,43 @@ struct FrozenAdmin
     std::string Reason;
 };
 
-/** Repository for CRUD operations on the admins table. */
+/**
+ * Repository for the admins table. The full-table load blocks (load-time / !admin_reload);
+ * the chat-style/language writes are fire-and-forget; the freeze writes block because a
+ * freeze must be confirmed persisted network-wide before the caller reports success.
+ */
 class AdminRepository
 {
 public:
-    std::optional<Admin> FindBySteamId(int64_t steamId);
     std::vector<Admin> FindAll();
-    bool Delete(int64_t steamId);
 
     /** Persist the per-admin chat overrides set via the admin chat-settings menu. */
-    bool UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
+    void UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                          const std::string& messageColor);
 
     /** Persist the per-admin panel language set via the admin chat-settings menu. */
-    bool UpdateLanguage(int64_t steamId, const std::string& lang);
+    void UpdateLanguage(int64_t steamId, const std::string& lang);
 
-    /** Freeze all of an admin's privileges network-wide. frozenBy 0 = automatic. */
+    /** Freeze all of an admin's privileges network-wide. frozenBy 0 = automatic. Blocking. */
     bool SetFrozen(int64_t steamId, int64_t frozenBy, const std::string& reason);
 
-    /** Lift a freeze. Returns true even if the admin wasn't frozen (idempotent). */
+    /** Lift a freeze. Returns true even if the admin wasn't frozen (idempotent). Blocking. */
     bool ClearFrozen(int64_t steamId);
 
     /** All currently frozen admins; the cheap periodic poll behind cross-server propagation.
-     *  Returns an error (not an empty list) on DB failure so callers can keep their cached
-     *  frozen set instead of accidentally unfreezing everyone. */
-    CS2Kit::DbResult<std::vector<FrozenAdmin>> FindFrozen();
+     *  @p onDone runs on the game thread and is NOT called on DB failure, so callers keep
+     *  their cached frozen set instead of accidentally unfreezing everyone. */
+    void FindFrozenAsync(std::function<void(std::vector<FrozenAdmin>)> onDone);
 
 private:
     Admin ParseRow(const pqxx::row& row);
 };
 
-/** Repository for CRUD operations on the admin_groups table. */
+/** Repository for the admin_groups table. Load-time only. */
 class AdminGroupRepository
 {
 public:
-    std::optional<AdminGroup> FindByName(const std::string& name);
     std::vector<AdminGroup> FindAll();
-    bool Delete(const std::string& name);
 
 private:
     AdminGroup ParseRow(const pqxx::row& row);

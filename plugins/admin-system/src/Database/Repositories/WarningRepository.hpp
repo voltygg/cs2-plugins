@@ -2,23 +2,21 @@
 
 #include "../Entities/Warning.hpp"
 
-#include <pqxx/pqxx>
-#include <vector>
+#include <cstdint>
+#include <functional>
 
 namespace AdminSystem::Database
 {
 
-/** Repository for player warning records - used by escalation logic and audit history. */
+/** Repository for player warning records - the write side plus the escalation count. All
+ *  methods run on the database worker; the count arrives via callback (jobs are FIFO, so a
+ *  count enqueued after a create sees it). */
 class WarningRepository
 {
 public:
-    bool Create(Warning& warning);
-    int CountActive(int64_t steamId);
-    int Clear(int64_t steamId);
-    std::vector<Warning> GetHistory(int64_t steamId);
-
-private:
-    Warning ParseRow(const pqxx::row& row);
+    void CreateAsync(const Warning& warning);
+    void CountActiveAsync(int64_t steamId, std::function<void(int count)> onDone);
+    void ClearAsync(int64_t steamId);
 };
 
 }  // namespace AdminSystem::Database

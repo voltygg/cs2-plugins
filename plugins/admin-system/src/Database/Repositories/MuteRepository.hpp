@@ -1,152 +1,81 @@
-﻿#pragma once
+#pragma once
 
 #include "../../Core/Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Database/DbResult.hpp>
-#include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
+#include <cstdint>
 #include <format>
-#include <optional>
-#include <pqxx/pqxx>
+#include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace AdminSystem::Database
 {
 
 /**
- * Repository for mute records - lookup, creation, removal, expiration, and history.
- * Templated over the entity (VoiceMute / TextMute) since both tables share an identical
- * schema and row mapping. The table name and a prepared-statement-name prefix are passed in
- * at construction so the two tables keep DISTINCT prepared statements (e.g. "voice_mute" vs
- * "text_mute").
+ * Repository for mute records, templated over the entity (VoiceMute / TextMute) since both
+ * tables share an identical schema - the table name and SQL come from the entity's column
+ * table. Load-time reads block on the database worker; gameplay writes are fire-and-forget
+ * or callback-based.
  */
 template <typename TEntity>
 class MuteRepository
 {
 public:
-    MuteRepository(std::string table, std::string statementPrefix)
-        : _table(std::move(table)), _prefix(std::move(statementPrefix))
-    {}
-
-    std::optional<TEntity> FindActiveBySteamId(int64_t steamId)
-    {
-        return CS2Kit::TryOr<std::optional<TEntity>>(
-            std::nullopt, Label("FindActiveBySteamId"), [&]() -> std::optional<TEntity> {
-                auto result =
-                    App().Db.ExecutePrepared(Stmt("find_active_by_steamid"),
-                                             std::format("SELECT * FROM {} WHERE target_steam_id = $1 AND "
-                                                         "is_active = true AND (expires_at = 0 OR expires_at > $2)",
-                                                         _table),
-                                             steamId, CS2Kit::TimeUtils::Now());
-                if (result.empty())
-                    return std::nullopt;
-                return ParseRow(result[0]);
-            });
-    }
-
+    /** Blocking - load-time only. */
     std::vector<TEntity> FindAllActive()
     {
-        return CS2Kit::TryOr(std::vector<TEntity>{}, Label("FindAllActive"), [&] {
-            std::vector<TEntity> mutes;
-            auto result = App().Db.ExecutePrepared(
-                Stmt("find_all_active"),
-                std::format("SELECT * FROM {} WHERE is_active = true AND (expires_at = 0 OR expires_at > $1)", _table),
-                CS2Kit::TimeUtils::Now());
-            for (const auto& row : result)
-                mutes.push_back(ParseRow(row));
-            return mutes;
-        });
+        auto result = App().Db.QueryBlocking(Stmt("find_all_active"), CS2Kit::SelectSql<TEntity>(ActiveWhere),
+                                             pqxx::params{CS2Kit::TimeUtils::Now()});
+        return result ? CS2Kit::FromResult<TEntity>(*result) : std::vector<TEntity>{};
     }
 
-    bool Create(TEntity& mute)
+    /** Async snapshot for the periodic cache refresh; @p onDone runs on the game thread. */
+    void FindAllActiveAsync(std::function<void(std::vector<TEntity>)> onDone)
     {
-        return CS2Kit::TryOr(false, Label("Create"), [&] {
-            auto result = App().Db.ExecutePrepared(
-                Stmt("create"),
-                std::format("INSERT INTO {} (target_steam_id, target_name, admin_steam_id, admin_name, reason, "
-                            "created_at, expires_at, duration, is_active) "
-                            "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
-                            _table),
-                mute.TargetSteamId, mute.TargetName, mute.AdminSteamId, mute.AdminName, mute.Reason, mute.CreatedAt,
-                mute.ExpiresAt, mute.Duration, mute.IsActive);
-            if (!result.empty())
-                mute.Id = result[0]["id"].template as<int64_t>();
-            return true;
-        });
+        App().Db.Query(Stmt("find_all_active"), CS2Kit::SelectSql<TEntity>(ActiveWhere),
+                       pqxx::params{CS2Kit::TimeUtils::Now()},
+                       [onDone = std::move(onDone)](CS2Kit::DbResult<pqxx::result> result) {
+                           if (result && onDone)
+                               onDone(CS2Kit::FromResult<TEntity>(*result));
+                       });
     }
 
-    bool Remove(int64_t muteId, int64_t removedBy, const std::string& reason)
+    /** Async insert; @p onId receives the generated row id on the game thread. */
+    void CreateAsync(const TEntity& mute, std::function<void(int64_t)> onId = {})
     {
-        return CS2Kit::TryOr(false, Label("Remove"), [&] {
-            App().Db.ExecutePrepared(
-                Stmt("remove"),
-                std::format("UPDATE {} SET is_active = false, removed_at = $2, removed_by = $3, removed_reason = $4 "
-                            "WHERE id = $1",
-                            _table),
-                muteId, CS2Kit::TimeUtils::Now(), removedBy, reason);
-            return true;
-        });
+        App().Db.Query(Stmt("create"), CS2Kit::InsertSql<TEntity>(), CS2Kit::InsertParams(mute),
+                       [onId = std::move(onId)](CS2Kit::DbResult<pqxx::result> result) {
+                           if (result && !result->empty() && onId)
+                               onId((*result)[0][0].template as<int64_t>());
+                       });
     }
 
-    int ExpireOld()
+    void RemoveAsync(int64_t muteId, int64_t removedBy, const std::string& reason)
     {
-        return CS2Kit::TryOr(0, Label("ExpireOld"), [&]() -> int {
-            auto result = App().Db.ExecutePrepared(
-                Stmt("expire_old"),
-                std::format("UPDATE {} SET is_active = false WHERE is_active = true AND expires_at > 0 AND "
-                            "expires_at <= $1",
-                            _table),
-                CS2Kit::TimeUtils::Now());
-            return result.affected_rows();
-        });
+        App().Db.Exec(Stmt("remove"),
+                      std::format("UPDATE {} SET is_active = false, removed_at = $2, removed_by = $3, "
+                                  "removed_reason = $4 WHERE id = $1",
+                                  TEntity::Table),
+                      pqxx::params{muteId, CS2Kit::TimeUtils::Now(), removedBy, reason});
     }
 
-    std::vector<TEntity> GetHistory(int64_t steamId)
+    void ExpireOldAsync()
     {
-        return CS2Kit::TryOr(std::vector<TEntity>{}, Label("GetHistory"), [&] {
-            std::vector<TEntity> mutes;
-            auto result = App().Db.ExecutePrepared(
-                Stmt("get_history"),
-                std::format("SELECT * FROM {} WHERE target_steam_id = $1 ORDER BY created_at DESC", _table), steamId);
-            for (const auto& row : result)
-                mutes.push_back(ParseRow(row));
-            return mutes;
-        });
+        App().Db.Exec(Stmt("expire_old"),
+                      std::format("UPDATE {} SET is_active = false WHERE is_active = true AND expires_at > 0 AND "
+                                  "expires_at <= $1",
+                                  TEntity::Table),
+                      pqxx::params{CS2Kit::TimeUtils::Now()});
     }
 
 private:
-    // Distinct prepared-statement name per table, e.g. "voice_mute_find_active_by_steamid".
-    std::string Stmt(std::string_view op) const { return std::format("{}_{}", _prefix, op); }
+    static constexpr const char* ActiveWhere = "is_active = true AND (expires_at = 0 OR expires_at > $1)";
 
-    // Error-context label distinguishing the two repos in logs, e.g. "voice_mute::Create".
-    std::string Label(std::string_view method) const { return std::format("{}::{}", _prefix, method); }
-
-    TEntity ParseRow(const pqxx::row& row)
-    {
-        TEntity mute;
-        mute.Id = row["id"].as<int64_t>();
-        mute.TargetSteamId = row["target_steam_id"].as<int64_t>();
-        mute.TargetName = row["target_name"].c_str();
-        mute.AdminSteamId = row["admin_steam_id"].as<int64_t>();
-        mute.AdminName = row["admin_name"].c_str();
-        mute.Reason = row["reason"].c_str();
-        mute.CreatedAt = row["created_at"].as<int64_t>();
-        mute.ExpiresAt = row["expires_at"].as<int64_t>();
-        mute.Duration = row["duration"].as<int64_t>();
-        mute.IsActive = row["is_active"].as<bool>();
-        if (!row["removed_at"].is_null())
-        {
-            mute.RemovedAt = row["removed_at"].as<int64_t>();
-            mute.RemovedBy = row["removed_by"].as<int64_t>();
-            mute.RemovedReason = row["removed_reason"].c_str();
-        }
-        return mute;
-    }
-
-    std::string _table;
-    std::string _prefix;
+    // Distinct prepared-statement name per table, e.g. "voice_mutes_find_all_active".
+    std::string Stmt(std::string_view op) const { return std::format("{}_{}", TEntity::Table, op); }
 };
 
 }  // namespace AdminSystem::Database

@@ -98,7 +98,7 @@ bool ConnectDatabaseAndLoadAdmins()
     Log::Info("Connecting to database...");
     auto& db = App().Db;
 
-    if (!db.Initialize(App().Config.GetDatabase()))
+    if (!db.Start(App().Config.GetDatabase()))
     {
         Log::Warn("Database unavailable - admins/groups not loaded; chat commands will reject all callers.");
         return false;
@@ -195,7 +195,9 @@ bool AdminSystemPlugin::OnLoad(bool late)
 
     bool dbConnected = ConnectDatabaseAndLoadAdmins();
     if (dbConnected)
-        Defer([] { App().Db.CloseConnection(); });
+        // Stop drains queued writes (a ban issued just before unload must land) and drops
+        // undispatched completions before the managers they would touch are destroyed.
+        Defer([] { App().Db.Stop(); });
 
     Log::Info("Initializing commands...");
     // Every command self-registered into the Registry at its definition site; ingest once.

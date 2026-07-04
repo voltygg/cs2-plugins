@@ -273,9 +273,8 @@ bool AdminManager::UpdateChatStyle(int64_t steamId, bool displayPrefix, const st
     if (it == _admins.end())
         return false;
 
-    Database::AdminRepository repo;
-    if (!repo.UpdateChatStyle(steamId, displayPrefix, nameColor, messageColor))
-        return false;
+    // Cache-first: the next chat line uses the new style immediately; the persist rides the worker.
+    Database::AdminRepository{}.UpdateChatStyle(steamId, displayPrefix, nameColor, messageColor);
 
     auto& admin = it->second;
     admin.DisplayPrefix = displayPrefix;
@@ -292,10 +291,7 @@ bool AdminManager::UpdateLanguage(int64_t steamId, const std::string& lang)
     if (it == _admins.end())
         return false;
 
-    Database::AdminRepository repo;
-    if (!repo.UpdateLanguage(steamId, lang))
-        return false;
-
+    Database::AdminRepository{}.UpdateLanguage(steamId, lang);
     it->second.Language = lang;
     return true;
 }

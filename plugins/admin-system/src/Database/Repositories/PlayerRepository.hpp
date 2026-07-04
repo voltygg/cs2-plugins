@@ -6,21 +6,22 @@
 namespace AdminSystem::Database
 {
 
-/** Repository for the `players` table - connection history and accumulated playtime. */
+/** Repository for the `players` table - connection history and accumulated playtime.
+ *  Both writes are fire-and-forget on the database worker. */
 class PlayerRepository
 {
 public:
     /**
      * Upsert on connect: first connect inserts the row; reconnects refresh name/ip/last_seen
-     *  and bump total_connections. No-op for bots (steamId <= 0).
+     * and bump total_connections. No-op for bots (steamId <= 0).
      */
-    bool RecordConnect(int64_t steamId, const std::string& name, const std::string& ipAddress);
+    void RecordConnect(int64_t steamId, const std::string& name, const std::string& ipAddress);
 
     /**
      * Fold a finished session into the row: refresh name/last_seen and add the session's
      * seconds to total_playtime. No-op for bots (steamId <= 0).
      */
-    bool RecordDisconnect(int64_t steamId, const std::string& name, int64_t sessionSeconds);
+    void RecordDisconnect(int64_t steamId, const std::string& name, int64_t sessionSeconds);
 };
 
 }  // namespace AdminSystem::Database

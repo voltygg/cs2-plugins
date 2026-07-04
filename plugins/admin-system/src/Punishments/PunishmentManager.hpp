@@ -16,7 +16,11 @@ namespace AdminSystem::Punishments
 
 /**
  * Manages active punishments (bans, voice mutes, text mutes, warnings).
- * Caches active punishments in memory and syncs with the database.
+ *
+ * Cache-first: every gameplay decision (ban-on-connect, IsVoiceMuted, the unban/unmute menus)
+ * reads the in-memory caches, which are updated synchronously when a punishment is issued or
+ * removed. The database writes ride the async worker - a failed write is logged, never blocks
+ * the game thread, and the row id from an insert is backfilled into the cache when it lands.
  */
 class PunishmentManager
 {
@@ -57,10 +61,13 @@ public:
     bool RemoveVoiceMute(int64_t muteId, int64_t removedBy, const std::string& reason);
     bool RemoveTextMute(int64_t muteId, int64_t removedBy, const std::string& reason);
 
-    /** Mark expired bans/mutes inactive in the DB and rebuild the in-memory caches. */
+    /** Mark expired bans/mutes inactive in the DB and rebuild the in-memory caches (all async). */
     void ExpireOldPunishments();
 
 private:
+    /** Re-query the three active lists off-thread and swap the caches when the rows arrive. */
+    void RefreshCachesAsync();
+
     // Shared body for the three GetActive* snapshots: copy the non-expired cache entries out,
     // newest first. Keyed the same way for bans/voice/text mutes.
     template <typename TEntity>
@@ -77,20 +84,18 @@ private:
         return out;
     }
 
-    // Shared body for the three Remove*BySteamId methods: try the in-memory cache first,
-    // then fall back to a DB lookup so we can act on offline / never-cached players.
+    // Shared body for the three Remove*BySteamId methods. The caches mirror ALL active rows
+    // (shared across servers, refreshed by the sweep), so a cache miss means no active row -
+    // no DB fallback lookup needed.
     using RemoveByIdFn = bool (PunishmentManager::*)(int64_t, int64_t, const std::string&);
 
-    template <typename TEntity, typename Repo>
-    bool RemoveBySteamIdImpl(std::unordered_map<int64_t, TEntity>& cache, Repo& repo, int64_t steamId,
-                             int64_t removedBy, const std::string& reason, RemoveByIdFn remove)
+    template <typename TEntity>
+    bool RemoveBySteamIdImpl(std::unordered_map<int64_t, TEntity>& cache, int64_t steamId, int64_t removedBy,
+                             const std::string& reason, RemoveByIdFn remove)
     {
         auto it = cache.find(steamId);
         if (it != cache.end())
             return (this->*remove)(it->second.Id, removedBy, reason);
-
-        if (auto found = repo.FindActiveBySteamId(steamId))
-            return (this->*remove)(found->Id, removedBy, reason);
         return false;
     }
 
