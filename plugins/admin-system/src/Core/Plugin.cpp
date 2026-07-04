@@ -80,8 +80,10 @@ bool LoadConfigs()
 void InstallPolicy()
 {
     Engine().Policy = {
-        .HasPermission = [](int64_t steamId,
-                            const std::string& permission) { return App().Admins.HasAnyPermission(steamId, permission); },
+        .HasPermission =
+            [](int64_t steamId, const std::string& permission) {
+                return App().Admins.HasAnyPermission(steamId, permission);
+            },
         .CanTarget = [](Player& caller,
                         Player& target) { return App().Admins.CanTarget(caller.GetSteamID(), target.GetSteamID()); },
         .Reply = [](int slot, std::string_view message) { App().Chat.Reply(slot, message); },

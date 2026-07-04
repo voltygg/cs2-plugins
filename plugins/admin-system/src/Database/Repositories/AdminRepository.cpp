@@ -90,8 +90,8 @@ bool AdminRepository::ClearFrozen(int64_t steamId)
 void AdminRepository::FindFrozenAsync(std::function<void(std::vector<FrozenAdmin>)> onDone)
 {
     App().Db.Query("find_frozen_admins",
-                   "SELECT steam_id, name, frozen_at, frozen_by, freeze_reason FROM admins WHERE is_frozen = TRUE",
-                   {}, [onDone = std::move(onDone)](CS2Kit::DbResult<pqxx::result> result) {
+                   "SELECT steam_id, name, frozen_at, frozen_by, freeze_reason FROM admins WHERE is_frozen = TRUE", {},
+                   [onDone = std::move(onDone)](CS2Kit::DbResult<pqxx::result> result) {
                        if (!result || !onDone)
                            return;  // DB error already logged; keep the caller's cached set.
 

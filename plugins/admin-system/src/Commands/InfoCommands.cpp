@@ -60,8 +60,8 @@ const bool _registered = [] {
             [](CommandContext&) {
                 bool ok = App().Admins.Reload();
                 App().Freeze.RefreshFromDatabase();
-                return CommandResult{ok, ok ? "Admins and groups reloaded from database."
-                                            : "Reload failed (check logs)."};
+                return CommandResult{ok,
+                                     ok ? "Admins and groups reloaded from database." : "Reload failed (check logs)."};
             },
     });
 

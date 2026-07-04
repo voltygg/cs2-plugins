@@ -44,8 +44,13 @@ def deploy_plugin(name: str, csgo: Path, *, named: bool) -> None:
     shutil.rmtree(staging, ignore_errors=True)
     try:
         buildtools.run_tool(
-            "cmake", "--install", str(build_dir),
-            "--component", name, "--prefix", str(staging),
+            "cmake",
+            "--install",
+            str(build_dir),
+            "--component",
+            name,
+            "--prefix",
+            str(staging),
         )
     except Exception:
         if named:

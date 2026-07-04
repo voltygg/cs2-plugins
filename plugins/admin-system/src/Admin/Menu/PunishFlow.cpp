@@ -116,24 +116,22 @@ void StartPunishFlow(int adminSlot, PendingPunishment pending)
     };
 
     MakeBaseFlow(std::move(pending))
-        ->AddDurationStep(
-            [stepTitle](int slot) { return stepTitle(slot, "panel.selectDuration"); },
-            [](int slot) {
-                std::vector<std::pair<std::string, int>> presets;
-                for (int seconds : App().Config.GetMenuDurations())
-                    presets.emplace_back(DurationLabel(seconds, slot), seconds);
-                return presets;
-            },
-            [](PendingPunishment& p, int seconds) { p.DurationSec = seconds; },
-            [](int slot) { return Engine().Translations.Get("duration.custom", slot); },
-            [](int slot) { return Engine().Translations.Get("duration.customPrompt", slot); },
-            [](const PendingPunishment& p) { return IsTimed(p.Type); })
-        ->AddOptionsStep(
-            [stepTitle](int slot) { return stepTitle(slot, "punish.selectReason"); },
-            [](int) { return App().Config.GetPunishments().reasonPresets; },
-            [](PendingPunishment& p, std::string reason) { p.Reason = std::move(reason); },
-            [](int slot) { return Engine().Translations.Get("punish.customReason", slot); },
-            [](int slot) { return Engine().Translations.Get("punish.customReasonPrompt", slot); })
+        ->AddDurationStep([stepTitle](int slot) { return stepTitle(slot, "panel.selectDuration"); },
+                          [](int slot) {
+                              std::vector<std::pair<std::string, int>> presets;
+                              for (int seconds : App().Config.GetMenuDurations())
+                                  presets.emplace_back(DurationLabel(seconds, slot), seconds);
+                              return presets;
+                          },
+                          [](PendingPunishment& p, int seconds) { p.DurationSec = seconds; },
+                          [](int slot) { return Engine().Translations.Get("duration.custom", slot); },
+                          [](int slot) { return Engine().Translations.Get("duration.customPrompt", slot); },
+                          [](const PendingPunishment& p) { return IsTimed(p.Type); })
+        ->AddOptionsStep([stepTitle](int slot) { return stepTitle(slot, "punish.selectReason"); },
+                         [](int) { return App().Config.GetPunishments().reasonPresets; },
+                         [](PendingPunishment& p, std::string reason) { p.Reason = std::move(reason); },
+                         [](int slot) { return Engine().Translations.Get("punish.customReason", slot); },
+                         [](int slot) { return Engine().Translations.Get("punish.customReasonPrompt", slot); })
         ->Start(adminSlot);
 }
 

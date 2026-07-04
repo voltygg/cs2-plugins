@@ -16,13 +16,24 @@ def update_server(steamcmd: Path, server_path: str) -> None:
         return
 
     print("=== Updating CS2 Dedicated Server ===")
-    result = subprocess.run([
-        str(steamcmd), "+force_install_dir", server_path,
-        "+login", "anonymous", "+app_update", "730", "validate", "+quit",
-    ])
+    result = subprocess.run(
+        [
+            str(steamcmd),
+            "+force_install_dir",
+            server_path,
+            "+login",
+            "anonymous",
+            "+app_update",
+            "730",
+            "validate",
+            "+quit",
+        ]
+    )
     if result.returncode != 0:
-        print(f"WARNING: SteamCMD update failed (exit code {result.returncode}). "
-              "Continuing with existing files...")
+        print(
+            f"WARNING: SteamCMD update failed (exit code {result.returncode}). "
+            "Continuing with existing files..."
+        )
     else:
         print("Server update complete.")
     print()
@@ -60,9 +71,18 @@ def main(argv: list[str] | None = None) -> None:
     print(f"GSLT: {'Enabled (public server)' if args.gslt_token else 'Not set (LAN mode)'}\n")
 
     cmd = [
-        str(cs2_exe), "-dedicated", "-console", "-usercon",
-        "+map", args.map, "-maxplayers", str(args.max_players),
-        "-port", str(args.port), "+game_mode", "0",
+        str(cs2_exe),
+        "-dedicated",
+        "-console",
+        "-usercon",
+        "+map",
+        args.map,
+        "-maxplayers",
+        str(args.max_players),
+        "-port",
+        str(args.port),
+        "+game_mode",
+        "0",
     ]
     if args.gslt_token:
         cmd += ["+sv_setsteamaccount", args.gslt_token]

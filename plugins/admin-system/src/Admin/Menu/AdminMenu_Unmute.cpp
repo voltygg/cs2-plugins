@@ -79,8 +79,8 @@ void StartUnmuteConfirm(int adminSlot, MuteRow row)
                     ? App().Punishments.RemoveVoiceMute(r.Id, admin->GetSteamID(), tr.Get("reason.voiceUnmutedByAdmin"))
                     : App().Punishments.RemoveTextMute(r.Id, admin->GetSteamID(), tr.Get("reason.textUnmutedByAdmin"));
 
-            App().Chat.Reply(slot, removed ? tr.Get("unmute.done", slot, {{"name", r.Name}})
-                                           : tr.Get("unmute.gone", slot));
+            App().Chat.Reply(slot,
+                             removed ? tr.Get("unmute.done", slot, {{"name", r.Name}}) : tr.Get("unmute.gone", slot));
         })
         ->Start(adminSlot);
 }

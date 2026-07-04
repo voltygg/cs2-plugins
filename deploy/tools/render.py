@@ -59,7 +59,13 @@ def render_settings(
         "SERVER_NAME": str(instance.get("hostname", f"CS2 {instance_name}")),
     }
     required = (
-        "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_SSLMODE", "SERVER_TAG",
+        "DB_HOST",
+        "DB_PORT",
+        "DB_NAME",
+        "DB_USER",
+        "DB_PASSWORD",
+        "DB_SSLMODE",
+        "SERVER_TAG",
     )
     for key in required:
         if not env[key]:

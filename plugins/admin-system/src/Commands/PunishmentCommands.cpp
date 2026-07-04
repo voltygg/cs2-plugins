@@ -41,8 +41,10 @@ const bool _registered = [] {
         .Permission = Flag(Permission::Kick),
         .Args = {Target(), ReasonTail("reason.kickedByAdmin")},
         // Kick has no DB write, so IssuePunishment cannot fail and the failure key is never read.
-        .Handler = [](CommandContext& c)
-        { return Punish(c, PunishType::Kick, c.Reason, "cmd.kickSuccess", "cmd.kickSuccess"); },
+        .Handler =
+            [](CommandContext& c) {
+                return Punish(c, PunishType::Kick, c.Reason, "cmd.kickSuccess", "cmd.kickSuccess");
+            },
     });
 
     Registry<CommandSpec>::Add({
@@ -80,8 +82,10 @@ const bool _registered = [] {
         .Usage = "!voice_mute <target> <duration> [reason]",
         .Permission = Flag(Permission::Mute),
         .Args = {Target(), Duration(), ReasonTail("reason.voiceMutedByAdmin")},
-        .Handler = [](CommandContext& c)
-        { return Punish(c, PunishType::VoiceMute, c.Reason, "cmd.voiceMuteSuccess", "cmd.voiceMuteFailed"); },
+        .Handler =
+            [](CommandContext& c) {
+                return Punish(c, PunishType::VoiceMute, c.Reason, "cmd.voiceMuteSuccess", "cmd.voiceMuteFailed");
+            },
     });
 
     Registry<CommandSpec>::Add({
@@ -93,9 +97,9 @@ const bool _registered = [] {
         .Args = {Target()},
         .Handler =
             [](CommandContext& c) {
-                bool removed = App().Punishments.RemoveVoiceMuteBySteamId(
-                    c.Target->GetSteamID(), c.Caller->GetSteamID(),
-                    Engine().Translations.Get("reason.voiceUnmutedByAdmin"));
+                bool removed =
+                    App().Punishments.RemoveVoiceMuteBySteamId(c.Target->GetSteamID(), c.Caller->GetSteamID(),
+                                                               Engine().Translations.Get("reason.voiceUnmutedByAdmin"));
                 Tokens tokens{{"name", c.Target->GetName()}};
                 return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
             },
@@ -108,8 +112,10 @@ const bool _registered = [] {
         .Usage = "!text_mute <target> <duration> [reason]",
         .Permission = Flag(Permission::Mute),
         .Args = {Target(), Duration(), ReasonTail("reason.textMutedByAdmin")},
-        .Handler = [](CommandContext& c)
-        { return Punish(c, PunishType::TextMute, c.Reason, "cmd.textMuteSuccess", "cmd.textMuteFailed"); },
+        .Handler =
+            [](CommandContext& c) {
+                return Punish(c, PunishType::TextMute, c.Reason, "cmd.textMuteSuccess", "cmd.textMuteFailed");
+            },
     });
 
     Registry<CommandSpec>::Add({
@@ -121,9 +127,9 @@ const bool _registered = [] {
         .Args = {Target()},
         .Handler =
             [](CommandContext& c) {
-                bool removed = App().Punishments.RemoveTextMuteBySteamId(
-                    c.Target->GetSteamID(), c.Caller->GetSteamID(),
-                    Engine().Translations.Get("reason.textUnmutedByAdmin"));
+                bool removed =
+                    App().Punishments.RemoveTextMuteBySteamId(c.Target->GetSteamID(), c.Caller->GetSteamID(),
+                                                              Engine().Translations.Get("reason.textUnmutedByAdmin"));
                 Tokens tokens{{"name", c.Target->GetName()}};
                 return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
             },
@@ -135,8 +141,10 @@ const bool _registered = [] {
         .Usage = "!warn <target> [reason]",
         .Permission = Flag(Permission::Mute),
         .Args = {Target(), ReasonTail("reason.warnedByAdmin")},
-        .Handler = [](CommandContext& c)
-        { return Punish(c, PunishType::Warn, c.Reason, "cmd.warnSuccess", "cmd.warnFailed"); },
+        .Handler =
+            [](CommandContext& c) {
+                return Punish(c, PunishType::Warn, c.Reason, "cmd.warnSuccess", "cmd.warnFailed");
+            },
     });
 
     return true;

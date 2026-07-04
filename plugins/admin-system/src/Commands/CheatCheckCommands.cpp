@@ -11,9 +11,9 @@ namespace AdminSystem::Commands
 {
 
 using namespace CS2Kit::Commands;
+using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 using CS2Kit::Registry;
 using CS2Kit::Core::Engine;
-using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 
 namespace
 {

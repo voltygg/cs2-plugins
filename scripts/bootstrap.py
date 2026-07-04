@@ -18,7 +18,8 @@ def main() -> None:
     print("==> [1/3] Fetching submodules (cs2-kit + nested SDKs)")
     subprocess.run(
         ["git", "submodule", "update", "--init", "--recursive", "--depth", "1"],
-        cwd=ROOT, check=True,
+        cwd=ROOT,
+        check=True,
     )
 
     print("==> [2/3] Checking CMake + Conan build tools")

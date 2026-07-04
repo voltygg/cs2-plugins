@@ -50,8 +50,8 @@ const bool _registered = [] {
                 if (App().Freeze.IsFrozen(targetSteamId))
                     return c.Fail("cmd.freezeAlready", {{"name", targetName}});
 
-                bool ok = App().Freeze.Freeze(targetSteamId, targetName, c.Caller->GetSteamID(),
-                                              c.Caller->GetName(), c.Reason);
+                bool ok = App().Freeze.Freeze(targetSteamId, targetName, c.Caller->GetSteamID(), c.Caller->GetName(),
+                                              c.Reason);
                 return ok ? c.Ok("cmd.freezeSuccess", {{"name", targetName}})
                           : c.Fail("cmd.freezeFailed", {{"name", targetName}});
             },
