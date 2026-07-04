@@ -9,7 +9,7 @@
 
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Utils/Chat.hpp>
+#include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
@@ -21,7 +21,6 @@ namespace AdminSystem::Admin
 
 namespace Db = AdminSystem::Database;
 namespace Log = CS2Kit::Utils::Log;
-namespace Chat = CS2Kit::Utils::Chat;
 namespace ChatColors = CS2Kit::Utils::ChatColors;
 using CS2Kit::Core::Engine;
 using CS2Kit::Utils::TimeUtils;
@@ -122,27 +121,27 @@ void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, const std::string& adm
     int64_t windowStart = TimeUtils::Now() - static_cast<int64_t>(cfg.windowMinutes) * 60;
 
     // FIFO on the worker: this count sees the audit insert that triggered the check.
-    Db::AdminActivityRepository{}.CountSinceAsync(adminSteamId, windowStart, [this, adminSteamId,
-                                                                              adminName](Db::ActivityCounts counts) {
-        const auto& limits = App().Config.GetAbuseProtection();
-        bool tripped = (limits.maxBans > 0 && counts.Bans >= limits.maxBans) ||
-                       (limits.maxKicks > 0 && counts.Kicks >= limits.maxKicks) ||
-                       (limits.maxMutes > 0 && counts.Mutes >= limits.maxMutes) ||
-                       (limits.maxWarnings > 0 && counts.Warnings >= limits.maxWarnings);
-        if (!tripped || IsFrozen(adminSteamId))
-            return;
+    Db::AdminActivityRepository{}.CountSinceAsync(
+        adminSteamId, windowStart, [this, adminSteamId, adminName](Db::ActivityCounts counts) {
+            const auto& limits = App().Config.GetAbuseProtection();
+            bool tripped = (limits.maxBans > 0 && counts.Bans >= limits.maxBans) ||
+                           (limits.maxKicks > 0 && counts.Kicks >= limits.maxKicks) ||
+                           (limits.maxMutes > 0 && counts.Mutes >= limits.maxMutes) ||
+                           (limits.maxWarnings > 0 && counts.Warnings >= limits.maxWarnings);
+            if (!tripped || IsFrozen(adminSteamId))
+                return;
 
-        auto reason = std::format("Rate limit exceeded: {} bans, {} kicks, {} mutes, {} warnings in {} min",
-                                  counts.Bans, counts.Kicks, counts.Mutes, counts.Warnings, limits.windowMinutes);
-        if (!ApplyFreeze(adminSteamId, adminName, 0, "", reason))
-        {
-            Log::Error("Auto-freeze of {} ({}) failed to persist: {}", adminName, adminSteamId, reason);
-            return;
-        }
+            auto reason = std::format("Rate limit exceeded: {} bans, {} kicks, {} mutes, {} warnings in {} min",
+                                      counts.Bans, counts.Kicks, counts.Mutes, counts.Warnings, limits.windowMinutes);
+            if (!ApplyFreeze(adminSteamId, adminName, 0, "", reason))
+            {
+                Log::Error("Auto-freeze of {} ({}) failed to persist: {}", adminName, adminSteamId, reason);
+                return;
+            }
 
-        Log::Warn("AUTO-FROZE admin {} ({}): {}", adminName, adminSteamId, reason);
-        App().Chat.BroadcastAction("broadcast.autoFrozeAdmin", adminName, "");
-    });
+            Log::Warn("AUTO-FROZE admin {} ({}): {}", adminName, adminSteamId, reason);
+            App().Chat.BroadcastAction("broadcast.autoFrozeAdmin", adminName, "");
+        });
 }
 
 void FreezeManager::NotifyFrozen(int64_t steamId)
@@ -154,7 +153,7 @@ void FreezeManager::NotifyFrozen(int64_t steamId)
     const auto* row = GetFrozen(steamId);
     int slot = player->GetSlot();
     auto notice = Engine().Translations.Get("freeze.notice", slot, {{"reason", row ? row->Reason : ""}});
-    Chat::Print(slot, std::format("{}{}", ChatColors::Red, notice));
+    Engine().Messages.Reply(slot, std::format("{}{}", ChatColors::Red, notice));
 }
 
 }  // namespace AdminSystem::Admin

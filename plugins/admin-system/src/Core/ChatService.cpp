@@ -9,7 +9,7 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
-#include <CS2Kit/Utils/Chat.hpp>
+#include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
@@ -38,23 +38,60 @@ std::string MuteExpiryText(int64_t expiresAt, int slot)
                                    tr.Get("muteNotice.expiresIn", slot));
 }
 
+/** Layout for "{prefix} {actor} {phrase}" action lines. */
+struct AdminLineStyle
+{
+    std::string Prefix;
+    std::string_view PrefixColor = ChatColors::Green;
+    std::string_view NameColor = ChatColors::Default;
+    std::string_view PhraseColor = ChatColors::Olive;
+};
+
+/** "{prefix} {actor} {phrase}", e.g. "[ADMIN] Bob went stealth". */
+std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase)
+{
+    // {PrefixColor}{prefix} {NameColor}{actor}{Default} {PhraseColor}{phrase}
+    return std::format("{}{} {}{}{} {}{}", style.PrefixColor, style.Prefix, style.NameColor, actorName,
+                       ChatColors::Default, style.PhraseColor, phrase);
+}
+
+/** Single-target variant: "{prefix} {actor} {phrase} {target}", e.g. "[ADMIN] Bob slapped Alice". */
+std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase,
+                            std::string_view targetName)
+{
+    return std::format("{}{} {}", FormatAdminLine(style, actorName, phrase), ChatColors::Default, targetName);
+}
+
+/** Token variant for multi-target phrases, e.g. "swapped {a} and {b}": each mapped name is
+ *  substituted into `phraseTemplate` wrapped in the name color. */
+std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phraseTemplate,
+                            const std::map<std::string, std::string>& nameTokens)
+{
+    // Names sit inside the colored phrase, so wrap each in the name color before substituting.
+    std::map<std::string, std::string> colored;
+    for (const auto& [token, name] : nameTokens)
+        colored.emplace(token, std::format("{}{}{}", style.NameColor, name, style.PhraseColor));
+
+    return FormatAdminLine(style, actorName, StringUtils::SubstituteTokens(std::string(phraseTemplate), colored));
+}
+
 }  // namespace
 
 void ChatService::Reply(int slot, std::string_view message)
 {
-    Chat::Print(slot, message);
+    Engine().Messages.Reply(slot, message);
 }
 
 void ChatService::ReplyLink(int slot, std::string_view label, std::string_view url)
 {
-    Chat::Print(slot, label);
-    Chat::Print(slot, std::format("{}{}", ChatColors::Olive, url));
+    Engine().Messages.Reply(slot, label);
+    Engine().Messages.Reply(slot, std::format("{}{}", ChatColors::Olive, url));
 }
 
 void ChatService::NoPermission(int slot)
 {
     auto msg = std::format("{}{}", ChatColors::Red, Engine().Translations.Get("common.noPermission", slot));
-    Chat::Print(slot, msg);
+    Engine().Messages.Reply(slot, msg);
 }
 
 void ChatService::BroadcastPunishment(std::string_view action, std::string_view adminName, std::string_view targetName,
@@ -78,7 +115,7 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
         std::format("{}{} {}{}{} {}{}{} {} for {}{}{}{}", ChatColors::Green, cfg.fallbackPrefix, ChatColors::Default,
                     adminName, ChatColors::Default, ChatColors::Red, action, ChatColors::Default, targetName,
                     ChatColors::Olive, reason, ChatColors::Default, durationSuffix);
-    Chat::PrintAll(line);
+    Engine().Messages.Broadcast(line);
 }
 
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
@@ -88,10 +125,10 @@ void ChatService::BroadcastAction(const std::string& translationKey, std::string
     if (!cfg.broadcastPunishments)
         return;
 
-    Chat::AdminLineStyle style{.Prefix = cfg.fallbackPrefix};
+    AdminLineStyle style{.Prefix = cfg.fallbackPrefix};
     auto phrase = BroadcastPhrase(translationKey);
-    Chat::PrintAll(targetName.empty() ? Chat::FormatAdminLine(style, adminName, phrase)
-                                      : Chat::FormatAdminLine(style, adminName, phrase, targetName));
+    Engine().Messages.Broadcast(targetName.empty() ? FormatAdminLine(style, adminName, phrase)
+                                                   : FormatAdminLine(style, adminName, phrase, targetName));
 }
 
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
@@ -101,8 +138,8 @@ void ChatService::BroadcastAction(const std::string& translationKey, std::string
     if (!cfg.broadcastPunishments)
         return;
 
-    Chat::PrintAll(Chat::FormatAdminLine(Chat::AdminLineStyle{.Prefix = cfg.fallbackPrefix}, adminName,
-                                         BroadcastPhrase(translationKey), nameTokens));
+    Engine().Messages.Broadcast(FormatAdminLine(AdminLineStyle{.Prefix = cfg.fallbackPrefix}, adminName,
+                                                BroadcastPhrase(translationKey), nameTokens));
 }
 
 std::string ChatService::BroadcastPhrase(const std::string& translationKey) const
@@ -136,7 +173,7 @@ void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view mes
 
     // Team-only filtering isn't implemented yet (no stable team accessor on Player), so admin chat
     // currently broadcasts to everyone regardless of say vs say_team.
-    Chat::PrintAll(line);
+    Engine().Messages.Broadcast(line);
 }
 
 bool ChatService::HandleSay(Player* player, std::string_view message, bool isSayTeam)
@@ -166,16 +203,17 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
             auto& tr = Engine().Translations;
             if (mute)
             {
-                Chat::Print(slot,
-                            std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.text", slot),
-                                        ChatColors::Default, ChatColors::Olive, MuteExpiryText(mute->ExpiresAt, slot)));
+                Engine().Messages.Reply(
+                    slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.text", slot),
+                                      ChatColors::Default, ChatColors::Olive, MuteExpiryText(mute->ExpiresAt, slot)));
                 if (!mute->Reason.empty())
-                    Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
-                                                  ChatColors::Default, mute->Reason));
+                    Engine().Messages.Reply(
+                        slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
+                                          ChatColors::Default, mute->Reason));
             }
             else
             {
-                Chat::Print(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.text", slot)));
+                Engine().Messages.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.text", slot)));
             }
         }
         return true;
@@ -204,15 +242,16 @@ void ChatService::NotifyVoiceMuted(Player* player)
     auto& tr = Engine().Translations;
     if (mute)
     {
-        Chat::Print(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot),
-                                      ChatColors::Default, ChatColors::Olive, MuteExpiryText(mute->ExpiresAt, slot)));
+        Engine().Messages.Reply(
+            slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot), ChatColors::Default,
+                              ChatColors::Olive, MuteExpiryText(mute->ExpiresAt, slot)));
         if (!mute->Reason.empty())
-            Chat::Print(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
-                                          ChatColors::Default, mute->Reason));
+            Engine().Messages.Reply(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
+                                                      ChatColors::Default, mute->Reason));
     }
     else
     {
-        Chat::Print(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot)));
+        Engine().Messages.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot)));
     }
 }
 

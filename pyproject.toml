@@ -24,6 +24,7 @@ package = false
 build = "python scripts/build.py"
 build-linux = "python scripts/build.py linux-steamrt-release"
 bootstrap = "python scripts/bootstrap.py"
+new-plugin = "python vendor/cs2-kit/scripts/new_plugin.py"
 deploy = "python scripts/deploy.py"
 start-server = "python scripts/start-server.py"
 lint = "ruff check ."
