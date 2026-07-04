@@ -5,6 +5,7 @@
 #include "../Database/Entities/VoiceMute.hpp"
 #include "../Database/Entities/Warning.hpp"
 
+#include <algorithm>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -25,6 +26,9 @@ public:
     bool LoadActivePunishments();
     /** Snapshot of the cached active bans, newest first (drives the unban menu). */
     std::vector<Database::Ban> GetActiveBans() const;
+    /** Snapshots of the cached active voice/text mutes, newest first (drive the unmute menu). */
+    std::vector<Database::VoiceMute> GetActiveVoiceMutes() const;
+    std::vector<Database::TextMute> GetActiveTextMutes() const;
     std::optional<Database::Ban> GetActiveBan(int64_t steamId);
     std::optional<Database::VoiceMute> GetActiveVoiceMute(int64_t steamId);
     std::optional<Database::TextMute> GetActiveTextMute(int64_t steamId);
@@ -57,6 +61,22 @@ public:
     void ExpireOldPunishments();
 
 private:
+    // Shared body for the three GetActive* snapshots: copy the non-expired cache entries out,
+    // newest first. Keyed the same way for bans/voice/text mutes.
+    template <typename TEntity>
+    static std::vector<TEntity> SnapshotActive(const std::unordered_map<int64_t, TEntity>& cache)
+    {
+        std::vector<TEntity> out;
+        out.reserve(cache.size());
+        for (const auto& [steamId, entity] : cache)
+        {
+            if (!entity.IsExpired())
+                out.push_back(entity);
+        }
+        std::sort(out.begin(), out.end(), [](const TEntity& a, const TEntity& b) { return a.CreatedAt > b.CreatedAt; });
+        return out;
+    }
+
     // Shared body for the three Remove*BySteamId methods: try the in-memory cache first,
     // then fall back to a DB lookup so we can act on offline / never-cached players.
     using RemoveByIdFn = bool (PunishmentManager::*)(int64_t, int64_t, const std::string&);

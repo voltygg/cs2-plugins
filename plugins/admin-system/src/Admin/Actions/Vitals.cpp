@@ -27,4 +27,10 @@ const ParamAction SetArmor{Flag(Permission::Health), /*requireAlive*/ true,
                                return "broadcast.armored";
                            }};
 
+const ParamAction SetSize{Flag(Permission::Fun), /*requireAlive*/ true,
+                          [](const ActionContext& ctx, int percent) -> OptKey {
+                              ctx.TargetCtrl.SetModelScale(percent / 100.0f);
+                              return "broadcast.sizeSet";
+                          }};
+
 }  // namespace AdminSystem::Admin::Actions

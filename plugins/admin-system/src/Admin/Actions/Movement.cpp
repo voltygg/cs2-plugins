@@ -30,4 +30,10 @@ const Action Unbury{Flag(Permission::Control), /*requireAlive*/ true, [](const A
                         return "broadcast.unburied";
                     }};
 
+const ParamAction SetSpeed{Flag(Permission::Control), /*requireAlive*/ true,
+                           [](const ActionContext& ctx, int percent) -> OptKey {
+                               ctx.TargetCtrl.SetSpeedModifier(percent / 100.0f);
+                               return "broadcast.speedSet";
+                           }};
+
 }  // namespace AdminSystem::Admin::Actions

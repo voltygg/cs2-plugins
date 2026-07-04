@@ -27,6 +27,8 @@
     "noclip": "Noclip",
     "health": "Health",
     "armor": "Armor",
+    "speed": "Speed",
+    "size": "Size",
     "godmode": "Godmode",
     "bury": "Bury",
     "unbury": "Unbury",
@@ -42,7 +44,8 @@
     "hide": "Hide (Self)",
     "callCheck": "Call for Cheat Check",
     "cancelCheck": "Cancel Cheat Check",
-    "unban": "Unban"
+    "unban": "Unban",
+    "unmute": "Unmute"
   },
   "effectState": {
     "on": "ON",
@@ -69,6 +72,8 @@
     "noclipOff": "un-noclipped",
     "healed": "set health for",
     "armored": "set armor for",
+    "speedSet": "changed the speed of",
+    "sizeSet": "changed the size of",
     "godmodeOn": "made invincible",
     "godmodeOff": "made mortal again",
     "buried": "buried",
@@ -216,6 +221,12 @@
     "expiresIn": "expires in",
     "done": "Unbanned {name}.",
     "gone": "That ban is no longer active."
+  },
+  "unmute": {
+    "title": "Active Mutes",
+    "noMutes": "No active mutes",
+    "done": "Unmuted {name}.",
+    "gone": "That mute is no longer active."
   },
   "muteNotice": {
     "text": "You are text-muted.",

@@ -3,6 +3,7 @@
 #include "../../Core/Managers.hpp"
 #include "../AdminManager.hpp"
 #include "AdminMenu_Unban.hpp"
+#include "AdminMenu_Unmute.hpp"
 #include "PunishFlow.hpp"
 
 #include <CS2Kit/Api.hpp>
@@ -37,6 +38,10 @@ std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(int adminSlot)
     builder.AddSubmenu(
         tr.Get("action.unban", adminSlot), [](int slot) { return BuildUnbanMenu(slot); },
         App().Admins.HasPermission(admin->GetSteamID(), Permission::Unban));
+
+    builder.AddSubmenu(
+        tr.Get("action.unmute", adminSlot), [](int slot) { return BuildUnmuteMenu(slot); },
+        App().Admins.HasPermission(admin->GetSteamID(), Permission::Mute));
 
     CS2Kit::Menu::AppendPlayerRows(
         builder, adminSlot,

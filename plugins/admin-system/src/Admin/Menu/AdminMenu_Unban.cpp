@@ -4,6 +4,7 @@
 #include "../../Core/Managers.hpp"
 #include "../../Core/Permissions.hpp"
 #include "../AdminManager.hpp"
+#include "MenuHelpers.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Services.hpp>
@@ -38,18 +39,6 @@ struct BanRow
     int64_t ExpiresAt = 0;
     std::string Reason;
 };
-
-std::string BanDisplayName(const Database::Ban& ban)
-{
-    return ban.TargetName.empty() ? std::to_string(ban.TargetSteamId) : StringUtils::TruncateUtf8(ban.TargetName, 20);
-}
-
-std::string ExpiryLabel(int64_t expiresAt, int adminSlot)
-{
-    auto& tr = Engine().Translations;
-    return TimeUtils::FormatExpiry(expiresAt, TimeUtils::Now(), tr.Get("duration.perm", adminSlot),
-                                   tr.Get("unban.expiresIn", adminSlot));
-}
 
 void ConfirmAndUnban(int adminSlot, int64_t banId, const std::string& targetName)
 {
@@ -107,7 +96,10 @@ std::shared_ptr<CS2Kit::MenuView> BuildUnbanMenu(int adminSlot)
     const auto bans = App().Punishments.GetActiveBans();
     for (const auto& ban : bans)
     {
-        BanRow row{.Id = ban.Id, .Name = BanDisplayName(ban), .ExpiresAt = ban.ExpiresAt, .Reason = ban.Reason};
+        BanRow row{.Id = ban.Id,
+                   .Name = MenuDisplayName(ban.TargetSteamId, ban.TargetName),
+                   .ExpiresAt = ban.ExpiresAt,
+                   .Reason = ban.Reason};
         auto label = std::format("{} — {}", row.Name, ExpiryLabel(row.ExpiresAt, adminSlot));
 
         builder.AddButton(

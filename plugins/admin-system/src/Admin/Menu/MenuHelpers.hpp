@@ -12,6 +12,8 @@
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
+#include <CS2Kit/Utils/StringUtils.hpp>
+#include <CS2Kit/Utils/TimeUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <cstdint>
 #include <format>
@@ -25,6 +27,23 @@ namespace AdminSystem::Admin::Menu
 
 inline constexpr int HealthPresets[] = {1, 50, 100, 200, 500, 999};
 inline constexpr int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
+inline constexpr int SpeedPresets[] = {50, 100, 150, 200, 300};
+inline constexpr int SizePresets[] = {50, 75, 100, 150, 200};
+
+/** Row display name for a punished player: the name (truncated) or the SteamID when unnamed. */
+inline std::string MenuDisplayName(int64_t steamId, const std::string& name)
+{
+    return name.empty() ? std::to_string(steamId) : CS2Kit::Utils::StringUtils::TruncateUtf8(name, 20);
+}
+
+/** Human-readable expiry for a punishment ("permanent" or "expires in ...") in the admin's language. */
+inline std::string ExpiryLabel(int64_t expiresAt, int adminSlot)
+{
+    auto& tr = CS2Kit::Engine().Translations;
+    return CS2Kit::Utils::TimeUtils::FormatExpiry(expiresAt, CS2Kit::Utils::TimeUtils::Now(),
+                                                  tr.Get("duration.perm", adminSlot),
+                                                  tr.Get("unban.expiresIn", adminSlot));
+}
 
 /** True if @p admin holds @p flag and outranks @p target; false if either slot has no live player. */
 inline bool CanActOnSlot(int admin, int target, Permission flag)

@@ -16,6 +16,12 @@ extern const Action Noclip;
 extern const Action Freeze;
 extern const Action Bury;
 extern const Action Unbury;
+/** Param is the movement-speed percent (100 = normal); the body divides by 100. */
+extern const ParamAction SetSpeed;
+
+// Cosmetic
+/** Param is the model-size percent (100 = normal); the body divides by 100 and the kit clamps it. */
+extern const ParamAction SetSize;
 
 // Teleport
 extern const Action Bring;

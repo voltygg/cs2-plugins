@@ -98,15 +98,17 @@ bool PunishmentManager::LoadActivePunishments()
 
 std::vector<Ban> PunishmentManager::GetActiveBans() const
 {
-    std::vector<Ban> bans;
-    bans.reserve(_activeBans.size());
-    for (const auto& [steamId, ban] : _activeBans)
-    {
-        if (!ban.IsExpired())
-            bans.push_back(ban);
-    }
-    std::sort(bans.begin(), bans.end(), [](const Ban& a, const Ban& b) { return a.CreatedAt > b.CreatedAt; });
-    return bans;
+    return SnapshotActive(_activeBans);
+}
+
+std::vector<VoiceMute> PunishmentManager::GetActiveVoiceMutes() const
+{
+    return SnapshotActive(_activeVoiceMutes);
+}
+
+std::vector<TextMute> PunishmentManager::GetActiveTextMutes() const
+{
+    return SnapshotActive(_activeTextMutes);
 }
 
 std::optional<Ban> PunishmentManager::GetActiveBan(int64_t steamId)

@@ -101,6 +101,10 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int tar
                     HealthPresets);
     AddPresetChoice(builder, tr.Get("action.armor", adminSlot), "AP", adminSlot, targetSlot, Actions::SetArmor,
                     ArmorPresets);
+    AddPresetChoice(builder, tr.Get("action.speed", adminSlot), "%", adminSlot, targetSlot, Actions::SetSpeed,
+                    SpeedPresets);
+    AddPresetChoice(builder, tr.Get("action.size", adminSlot), "%", adminSlot, targetSlot, Actions::SetSize,
+                    SizePresets);
 
     AddStateToggle(builder, tr.Get("action.godmode", adminSlot), adminSlot, targetSlot,
                    HasFlag(CS2Kit::Sdk::FL_GODMODE), Actions::Godmode);
