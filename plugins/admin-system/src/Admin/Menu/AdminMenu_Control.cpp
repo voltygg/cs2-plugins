@@ -85,8 +85,10 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     AddAction(builder, tr.Get("action.kill", adminSlot), adminSlot, targetSlot, Actions::Kill);
     AddAction(builder, tr.Get("action.bring", adminSlot), adminSlot, targetSlot, Actions::Bring);
     AddAction(builder, tr.Get("action.goto", adminSlot), adminSlot, targetSlot, Actions::Goto);
-    AddAction(builder, tr.Get("action.freeze", adminSlot), adminSlot, targetSlot, Actions::Freeze);
-    AddAction(builder, tr.Get("action.noclip", adminSlot), adminSlot, targetSlot, Actions::Noclip);
+    AddStateToggle(builder, tr.Get("action.freeze", adminSlot), adminSlot, targetSlot, InMoveType(MoveType::None),
+                   Actions::Freeze);
+    AddStateToggle(builder, tr.Get("action.noclip", adminSlot), adminSlot, targetSlot, InMoveType(MoveType::NoClip),
+                   Actions::Noclip);
 
     // HP/Armor are inline Choice rows: A/D cycles preset values, E applies and closes.
     AddPresetChoice(builder, tr.Get("action.health", adminSlot), "HP", adminSlot, targetSlot, Actions::SetHealth,
@@ -94,8 +96,8 @@ std::shared_ptr<::CS2Kit::Menu::Menu> BuildControlActionsMenu(int adminSlot, int
     AddPresetChoice(builder, tr.Get("action.armor", adminSlot), "AP", adminSlot, targetSlot, Actions::SetArmor,
                     ArmorPresets);
 
-    AddFlagToggle(builder, tr.Get("action.godmode", adminSlot), adminSlot, targetSlot, CS2Kit::Sdk::FL_GODMODE,
-                  Actions::Godmode);
+    AddStateToggle(builder, tr.Get("action.godmode", adminSlot), adminSlot, targetSlot,
+                   HasFlag(CS2Kit::Sdk::FL_GODMODE), Actions::Godmode);
 
     AddAction(builder, tr.Get("action.bury", adminSlot), adminSlot, targetSlot, Actions::Bury);
     AddAction(builder, tr.Get("action.unbury", adminSlot), adminSlot, targetSlot, Actions::Unbury);

@@ -9,10 +9,12 @@
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/MoveType.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -116,19 +118,38 @@ inline void AddEffectSubmenuRow(CS2Kit::Menu::MenuBuilder& builder, int admin, i
         CanActOnSlot(admin, target, effect.Flag));
 }
 
-/** A toggle row whose live state is read from a m_fFlags bit on the target's pawn. */
-inline void AddFlagToggle(CS2Kit::Menu::MenuBuilder& builder, const std::string& label, int admin, int target,
-                          uint32_t flag, const Actions::Action& action)
+/**
+ * A toggle row whose live on-state is computed by @p isActive against the target's pawn (re-read
+ * on every redraw) and whose press runs the toggle @ref Actions::Action. Because the same action
+ * flips the state back off on a second press, the row doubles as an "undo" control (e.g. unfreeze).
+ * @p targetPredicate factories below build the common @p isActive checks (move type, m_fFlags bit).
+ */
+inline void AddStateToggle(CS2Kit::Menu::MenuBuilder& builder, const std::string& label, int admin, int target,
+                           std::function<bool(const CS2Kit::Sdk::PlayerController&)> isActive,
+                           const Actions::Action& action)
 {
     auto& tr = CS2Kit::Core::Engine().Translations;
     const Actions::Action* a = &action;
+
     builder.AddToggle(
         label, tr.Get("effectState.on", admin), tr.Get("effectState.off", admin),
-        [target, flag](int) {
+        [target, isActive = std::move(isActive)](int) {
             CS2Kit::Sdk::PlayerController pc(target);
-            return pc.IsValid() && (pc.GetFlags() & flag) != 0;
+            return pc.IsValid() && isActive(pc);
         },
         [admin, target, a](int) { Actions::Run(admin, target, *a); }, CanActOnSlot(admin, target, action.Permission));
+}
+
+/** State predicate for @ref AddStateToggle: pawn is currently in @p activeType (e.g. frozen). */
+inline auto InMoveType(CS2Kit::Sdk::MoveType activeType)
+{
+    return [activeType](const CS2Kit::Sdk::PlayerController& pc) { return pc.GetMoveType() == activeType; };
+}
+
+/** State predicate for @ref AddStateToggle: an m_fFlags bit is set on the pawn (e.g. godmode). */
+inline auto HasFlag(uint32_t flag)
+{
+    return [flag](const CS2Kit::Sdk::PlayerController& pc) { return (pc.GetFlags() & flag) != 0; };
 }
 
 /** An inline Choice row: A/D cycles preset values, E applies the @ref Actions::ParamAction and closes. */
