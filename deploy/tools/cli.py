@@ -87,6 +87,13 @@ def cmd_ensure_dbs(args: argparse.Namespace) -> None:
     database.ensure_databases(args.server, args.admin_user, dry_run=args.dry_run)
 
 
+def cmd_rcon(args: argparse.Namespace) -> None:
+    """Run the rcon subcommand."""
+    import rcon
+
+    rcon.run_commands(args.commands, server_id=args.server, instance_name=args.instance)
+
+
 def cmd_tunnel_db(args: argparse.Namespace) -> None:
     """Run the tunnel-db subcommand."""
     import remote
@@ -156,6 +163,12 @@ def build_parser() -> argparse.ArgumentParser:
     dbs.add_argument("--server")
     dbs.add_argument("--dry-run", action="store_true")
     dbs.set_defaults(func=cmd_ensure_dbs)
+
+    rcon = sub.add_parser("rcon", help="run console commands on a live instance over RCON")
+    rcon.add_argument("commands", nargs="+", help="one or more console commands (quote each)")
+    rcon.add_argument("--server", help="server id (optional when the inventory has one)")
+    rcon.add_argument("--instance", help="instance name (optional when the server has one)")
+    rcon.set_defaults(func=cmd_rcon)
 
     tunnel = sub.add_parser("tunnel-db", help="open an SSH tunnel to a server Postgres")
     tunnel.add_argument("--server")

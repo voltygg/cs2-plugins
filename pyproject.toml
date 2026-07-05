@@ -38,6 +38,7 @@ deploy-update = "python deploy/tools/cli.py update"
 deploy-cleanup = "python deploy/tools/cli.py cleanup"
 deploy-dbs = "python deploy/tools/cli.py ensure-dbs"
 deploy-tunnel = "python deploy/tools/cli.py tunnel-db"
+rcon = "python deploy/tools/cli.py rcon"
 
 [tool.ruff]
 line-length = 100
