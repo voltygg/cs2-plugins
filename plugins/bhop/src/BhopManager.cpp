@@ -51,8 +51,7 @@ void BhopManager::ApplySettings()
     if (_mode == Mode::Enabled)
         _conVars.ApplyGlobal();
 
-    Log::Info("Bhop mode: {} ({} convar overrides).", _mode == Mode::Enabled ? "enabled" : "grants",
-              _conVars.Count());
+    Log::Info("Bhop mode: {} ({} convar overrides).", _mode == Mode::Enabled ? "enabled" : "grants", _conVars.Count());
 }
 
 void BhopManager::Grant(int64_t steamId, bool enabled)
