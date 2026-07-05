@@ -233,11 +233,16 @@ void BhopManager::ForceAutoHop(int slot)
 
 void BhopManager::InjectJumpPress(int slot, void* userCmd)
 {
-    if (!userCmd || !(Engine().Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
+    if (!userCmd)
         return;
 
-    PlayerController controller(slot);
-    if (!controller.IsValid() || !(controller.GetFlags() & Sdk::FL_ONGROUND))
+    // Diagnostic while the strategy is experimental: what jump events does the client actually
+    // send while holding the button? (Its prediction runs with autobunnyhopping=1 replicated.)
+    std::string moves = Sdk::DescribeSubtickMoves(userCmd, Sdk::IN_JUMP);
+    if (!moves.empty())
+        Log::Info("usercmd slot {} jump moves: {}", slot, moves);
+
+    if (!(Engine().Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
         return;
 
     auto* engine = Engine().Interfaces.Engine;
@@ -254,8 +259,9 @@ void BhopManager::InjectJumpPress(int slot, void* userCmd)
     if (Sdk::HasSubtickPress(userCmd, Sdk::IN_JUMP))
         return;
 
-    // The button is physically held, so the engine's input state machine needs a release
-    // edge before the synthetic press registers as a fresh subtick jump.
+    // Inject regardless of ground state: if the engine buffers presses, one injected just
+    // before the landing gets consumed natively at the landing fraction. The button is
+    // physically held, so a release edge precedes the synthetic press.
     Sdk::InjectSubtickPress(userCmd, Sdk::IN_JUMP, false, 0.0f);
     Sdk::InjectSubtickPress(userCmd, Sdk::IN_JUMP, true, 0.05f);
     _lastInjectTick[slot] = globals->tickcount;
