@@ -39,7 +39,7 @@ void BhopManager::Initialize()
     // missing the landing (still airborne at pre time, vertical velocity re-zeroed by the landing
     // inside that same command).
     Engine().Scheduler.EveryFrame([this] {
-        if (_mode != Mode::Grants)
+        if (_mode != Mode::Grants || (_strategy != HopStrategy::Velocity && _strategy != HopStrategy::Both))
             return;
         for (int slot = 0; slot < Core::MaxPlayers; ++slot)
             if (_grantedSlots[slot])
@@ -152,7 +152,11 @@ void BhopManager::OnRunCommandPre(int slot)
     }
 
     if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
+    {
         _conVars.FlipRaw();
+        if (_strategy == HopStrategy::Press || _strategy == HopStrategy::Both)
+            StampJumpPress(slot);
+    }
 }
 
 void BhopManager::OnRunCommandPost(int /*slot*/)
@@ -222,6 +226,54 @@ void BhopManager::ForceAutoHop(int slot)
 
     // A forced hop never emits player_jump, so feed the boost chain by hand.
     OnPlayerJump(slot);
+}
+
+void BhopManager::ResolveJumpOffsets()
+{
+    if (_jumpOffsetsResolved)
+        return;
+    _jumpOffsetsResolved = true;
+
+    auto& entities = Engine().Entities;
+    _offModernJump = entities.SchemaOffset("CCSPlayer_MovementServices", "m_ModernJump");
+    _offUsableTick = entities.SchemaOffset("CCSPlayerModernJump", "m_nLastUsableJumpPressTick");
+    _offUsableFrac = entities.SchemaOffset("CCSPlayerModernJump", "m_flLastUsableJumpPressFrac");
+    _offActualTick = entities.SchemaOffset("CCSPlayerModernJump", "m_nLastActualJumpPressTick");
+    _offActualFrac = entities.SchemaOffset("CCSPlayerModernJump", "m_flLastActualJumpPressFrac");
+
+    if (_offModernJump < 0 || _offUsableTick < 0 || _offUsableFrac < 0)
+        Log::Warn("ModernJump schema fields unresolved; 'press' hop strategy is inert.");
+}
+
+void BhopManager::StampJumpPress(int slot)
+{
+    ResolveJumpOffsets();
+    if (_offModernJump < 0 || _offUsableTick < 0 || _offUsableFrac < 0)
+        return;
+
+    if (!(Engine().Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
+        return;
+
+    auto* movementServices = static_cast<uint8_t*>(Engine().Entities.GetPlayerMovementServices(slot));
+    if (!movementServices)
+        return;
+
+    auto* engine = Engine().Interfaces.Engine;
+    auto* globals = engine ? engine->GetServerGlobals() : nullptr;
+    if (!globals)
+        return;
+
+    // Pretend the held jump button was freshly pressed at the start of this tick. The modern
+    // (subtick) jump consumes the buffered "usable press" at ground contact, so the engine's own
+    // jump path fires on landing - with native subtick timing, unlike the forced-velocity hop.
+    uint8_t* modernJump = movementServices + _offModernJump;
+    *reinterpret_cast<int32_t*>(modernJump + _offUsableTick) = globals->tickcount;
+    *reinterpret_cast<float*>(modernJump + _offUsableFrac) = 0.0f;
+    if (_offActualTick >= 0 && _offActualFrac >= 0)
+    {
+        *reinterpret_cast<int32_t*>(modernJump + _offActualTick) = globals->tickcount;
+        *reinterpret_cast<float*>(modernJump + _offActualFrac) = 0.0f;
+    }
 }
 
 void BhopManager::OnPlayerSpawn(int slot)

@@ -4,6 +4,7 @@
 #include <charconv>
 #include <cstring>
 #include <tier1/convar.h>
+#include <utility>
 
 namespace Log = CS2Kit::Utils::Log;
 
@@ -39,6 +40,36 @@ void BhopManager::RegisterConsoleCommands()
 
     _cmdReload.emplace("bhop_reload", "Re-read settings.jsonc and re-apply the bhop configuration.",
                        [this](const CCommand&) { ReloadSettings(); });
+
+    // Live A/B switch for how grants mode produces the server-side hop (see HopStrategy).
+    _cmdStrategy.emplace("bhop_strategy", "Grants hop strategy: bhop_strategy <off|velocity|press|both>",
+                         [this](const CCommand& args) {
+                             static constexpr std::pair<const char*, HopStrategy> Names[] = {
+                                 {"off", HopStrategy::Off},
+                                 {"velocity", HopStrategy::Velocity},
+                                 {"press", HopStrategy::Press},
+                                 {"both", HopStrategy::Both},
+                             };
+
+                             if (args.ArgC() >= 2)
+                             {
+                                 for (const auto& [name, value] : Names)
+                                 {
+                                     if (std::strcmp(args.Arg(1), name) == 0)
+                                     {
+                                         _strategy = value;
+                                         Log::Info("bhop_strategy: {}.", name);
+                                         return;
+                                     }
+                                 }
+                                 Log::Warn("Usage: bhop_strategy <off|velocity|press|both>");
+                                 return;
+                             }
+
+                             for (const auto& [name, value] : Names)
+                                 if (value == _strategy)
+                                     Log::Info("bhop_strategy is {}.", name);
+                         });
 }
 
 }  // namespace Bhop
