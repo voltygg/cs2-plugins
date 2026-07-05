@@ -3,7 +3,6 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
-#include <CS2Kit/Sdk/UserCmd.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <algorithm>
 #include <cmath>
@@ -30,14 +29,8 @@ void BhopManager::Initialize()
             _conVars.ApplyGlobal();
     });
 
-    Engine().MovementHook.ListenPre([this](int slot, void* userCmd) { OnRunCommandPre(slot, userCmd); });
+    Engine().MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); });
     Engine().MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); });
-
-    // ProcessUsercmds scope: the engine parses subtick input (and decides jumps) here, before
-    // RunCommand - so both the convar flip and command mutation must happen at this level.
-    Engine().UserCmds.ListenPre([this](int slot) { OnUserCmdsPre(slot); });
-    Engine().UserCmds.ListenCmd([this](int slot, void* userCmd) { OnUserCmd(slot, userCmd); });
-    Engine().UserCmds.ListenPost([this](int slot) { OnUserCmdsPost(slot); });
 
     // Server-authoritative auto-hop for grants. The 2026 subtick jump code does not honor the
     // flipped sv_autobunnyhopping, so the client (predicting with the replicated overrides)
@@ -46,7 +39,7 @@ void BhopManager::Initialize()
     // missing the landing (still airborne at pre time, vertical velocity re-zeroed by the landing
     // inside that same command).
     Engine().Scheduler.EveryFrame([this] {
-        if (_mode != Mode::Grants || (_strategy != HopStrategy::Velocity && _strategy != HopStrategy::Both))
+        if (_mode != Mode::Grants)
             return;
         for (int slot = 0; slot < Core::MaxPlayers; ++slot)
             if (_grantedSlots[slot])
@@ -98,7 +91,6 @@ void BhopManager::Grant(int64_t steamId, bool enabled)
         if (enabled)
         {
             Engine().MovementHook.Install();
-            Engine().UserCmds.Install();
             _conVars.ReplicateOverrides(slot);
         }
         else
@@ -151,43 +143,10 @@ void BhopManager::OnPlayerDisconnect(Player* player)
     }
 }
 
-void BhopManager::OnRunCommandPre(int slot, void* /*userCmd*/)
+void BhopManager::OnRunCommandPre(int slot)
 {
-    if (!_movementHookSeen)
-    {
-        _movementHookSeen = true;
-        Log::Info("Movement RunCommand hook is firing (first callback, slot {}).", slot);
-    }
-
-    if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
-    {
-        _conVars.FlipRaw();
-        if (_strategy == HopStrategy::Press || _strategy == HopStrategy::Both)
-            StampJumpPress(slot);
-    }
-}
-
-void BhopManager::OnUserCmdsPre(int slot)
-{
-    // Flip for the whole ingest: if the parse-time autobhop synthesis reads the convar, a
-    // granted player gets fully native auto-hop with no command surgery at all.
     if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
         _conVars.FlipRaw();
-}
-
-void BhopManager::OnUserCmdsPost(int slot)
-{
-    if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
-        _conVars.RestoreRaw();
-}
-
-void BhopManager::OnUserCmd(int slot, void* userCmd)
-{
-    if (_mode != Mode::Grants || !Core::IsValidSlot(slot) || !_grantedSlots[slot])
-        return;
-
-    if (_strategy == HopStrategy::Inject)
-        InjectJumpPress(slot, userCmd);
 }
 
 void BhopManager::OnRunCommandPost(int /*slot*/)
@@ -259,90 +218,6 @@ void BhopManager::ForceAutoHop(int slot)
     OnPlayerJump(slot);
 }
 
-void BhopManager::InjectJumpPress(int slot, void* userCmd)
-{
-    if (!userCmd)
-        return;
-
-    // Diagnostic while the strategy is experimental: what jump events does the client actually
-    // send while holding the button? (Its prediction runs with autobunnyhopping=1 replicated.)
-    std::string moves = Sdk::DescribeSubtickMoves(userCmd, Sdk::IN_JUMP);
-    if (!moves.empty())
-        Log::Info("usercmd slot {} jump moves: {}", slot, moves);
-
-    if (!(Engine().Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
-        return;
-
-    auto* engine = Engine().Interfaces.Engine;
-    auto* globals = engine ? engine->GetServerGlobals() : nullptr;
-    if (!globals)
-        return;
-
-    // The modern jump ignores presses within sv_jump_spam_penalty_time (one tick) of the
-    // previous one, so space synthetic presses two ticks apart or they'd all be discarded.
-    if (globals->tickcount - _lastInjectTick[slot] < 2)
-        return;
-
-    // A real press already in this command wins; don't stack a second edge on top of it.
-    if (Sdk::HasSubtickPress(userCmd, Sdk::IN_JUMP))
-        return;
-
-    // Inject regardless of ground state: if the engine buffers presses, one injected just
-    // before the landing gets consumed natively at the landing fraction. The button is
-    // physically held, so a release edge precedes the synthetic press.
-    Sdk::InjectSubtickPress(userCmd, Sdk::IN_JUMP, false, 0.0f);
-    Sdk::InjectSubtickPress(userCmd, Sdk::IN_JUMP, true, 0.05f);
-    _lastInjectTick[slot] = globals->tickcount;
-}
-
-void BhopManager::ResolveJumpOffsets()
-{
-    if (_jumpOffsetsResolved)
-        return;
-    _jumpOffsetsResolved = true;
-
-    auto& entities = Engine().Entities;
-    _offModernJump = entities.SchemaOffset("CCSPlayer_MovementServices", "m_ModernJump");
-    _offUsableTick = entities.SchemaOffset("CCSPlayerModernJump", "m_nLastUsableJumpPressTick");
-    _offUsableFrac = entities.SchemaOffset("CCSPlayerModernJump", "m_flLastUsableJumpPressFrac");
-    _offActualTick = entities.SchemaOffset("CCSPlayerModernJump", "m_nLastActualJumpPressTick");
-    _offActualFrac = entities.SchemaOffset("CCSPlayerModernJump", "m_flLastActualJumpPressFrac");
-
-    if (_offModernJump < 0 || _offUsableTick < 0 || _offUsableFrac < 0)
-        Log::Warn("ModernJump schema fields unresolved; 'press' hop strategy is inert.");
-}
-
-void BhopManager::StampJumpPress(int slot)
-{
-    ResolveJumpOffsets();
-    if (_offModernJump < 0 || _offUsableTick < 0 || _offUsableFrac < 0)
-        return;
-
-    if (!(Engine().Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
-        return;
-
-    auto* movementServices = static_cast<uint8_t*>(Engine().Entities.GetPlayerMovementServices(slot));
-    if (!movementServices)
-        return;
-
-    auto* engine = Engine().Interfaces.Engine;
-    auto* globals = engine ? engine->GetServerGlobals() : nullptr;
-    if (!globals)
-        return;
-
-    // Pretend the held jump button was freshly pressed at the start of this tick. The modern
-    // (subtick) jump consumes the buffered "usable press" at ground contact, so the engine's own
-    // jump path fires on landing - with native subtick timing, unlike the forced-velocity hop.
-    uint8_t* modernJump = movementServices + _offModernJump;
-    *reinterpret_cast<int32_t*>(modernJump + _offUsableTick) = globals->tickcount;
-    *reinterpret_cast<float*>(modernJump + _offUsableFrac) = 0.0f;
-    if (_offActualTick >= 0 && _offActualFrac >= 0)
-    {
-        *reinterpret_cast<int32_t*>(modernJump + _offActualTick) = globals->tickcount;
-        *reinterpret_cast<float*>(modernJump + _offActualFrac) = 0.0f;
-    }
-}
-
 void BhopManager::OnPlayerSpawn(int slot)
 {
     // Enabled mode replicates server-wide via ApplyGlobal, so only grants needs per-player work.
@@ -357,7 +232,6 @@ void BhopManager::OnPlayerSpawn(int slot)
     {
         // The connect/map-change convar snapshot clobbered the client's override; re-send.
         Engine().MovementHook.Install();
-        Engine().UserCmds.Install();
         _conVars.ReplicateOverrides(slot);
     }
 }

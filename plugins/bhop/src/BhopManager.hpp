@@ -47,32 +47,14 @@ private:
         Grants,
     };
 
-    /** How grants mode makes the server hop a granted player (the 2026 subtick jump code
-     *  ignores the per-player convar flip, so the server must act itself). Runtime-switchable
-     *  via `bhop_strategy` for live A/B comparison. */
-    enum class HopStrategy : uint8_t
-    {
-        Off,       // convar replication only (client predicts, server does nothing - floats)
-        Velocity,  // post-simulation forced velocity.z jump
-        Press,     // stamp a fresh ModernJump usable-press (proven inert: fields are derived state)
-        Both,      // velocity + press
-        Inject,    // synthesize a subtick jump-press in the incoming CUserCmd (native jump path)
-    };
-
     void RegisterConsoleCommands();  // ConsoleCommands.cpp
     void ApplySettings();
 
-    void OnRunCommandPre(int slot, void* userCmd);
+    void OnRunCommandPre(int slot);
     void OnRunCommandPost(int slot);
-    void OnUserCmdsPre(int slot);
-    void OnUserCmdsPost(int slot);
-    void OnUserCmd(int slot, void* userCmd);
     void OnPlayerJump(int slot);
     void OnPlayerSpawn(int slot);
     void ForceAutoHop(int slot);
-    void StampJumpPress(int slot);
-    void InjectJumpPress(int slot, void* userCmd);
-    void ResolveJumpOffsets();
 
     bool IsActiveSlot(int slot) const;
 
@@ -88,17 +70,6 @@ private:
 
     std::optional<CS2Kit::ServerCommand> _cmdPlayer;
     std::optional<CS2Kit::ServerCommand> _cmdReload;
-    std::optional<CS2Kit::ServerCommand> _cmdStrategy;
-    bool _movementHookSeen = false;  // one-shot diagnostic: proves the RunCommand vtable hook fires
-
-    HopStrategy _strategy = HopStrategy::Velocity;
-    std::array<int, CS2Kit::Core::MaxPlayers> _lastInjectTick{};
-    bool _jumpOffsetsResolved = false;
-    int _offModernJump = -1;
-    int _offUsableTick = -1;
-    int _offUsableFrac = -1;
-    int _offActualTick = -1;
-    int _offActualFrac = -1;
 };
 
 }  // namespace Bhop
