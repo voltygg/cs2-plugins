@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import os
 import shlex
+import socket
 import subprocess
 import sys
+import time
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -56,8 +58,7 @@ def deploy_server(
 
     run_ssh(server, f"cd {remote_root_q} && docker compose pull")
     for instance in server.get("instances", []):
-        service = str(instance["name"])
-        _compose_up_service(server, remote_root_q, service)
+        _compose_service(server, remote_root_q, "up -d", str(instance["name"]))
     _check_services(server, remote_root_q)
     # Each pull of :latest strands the previous digest as a dangling <none> image (multi-GB
     # runtime layers). Prune only after the new containers are confirmed healthy.
@@ -84,8 +85,7 @@ def update_server(server_id: str, *, dry_run: bool) -> None:
     # Sequential: instances share one CS2 install; concurrent SteamCMD writes
     # to the same volume must be avoided.
     for instance in server.get("instances", []):
-        service = str(instance["name"])
-        _compose_restart_service(server, remote_root_q, service, dry_run=dry_run)
+        _compose_service(server, remote_root_q, "restart", str(instance["name"]), dry_run=dry_run)
 
     if dry_run:
         print("=== Dry run complete; no containers were restarted ===")
@@ -170,23 +170,15 @@ def tunnel_db(
     if not host:
         die("VPS host is required (use --server <id> or --host <ip>)")
 
-    ssh_args = [
-        "ssh",
-        "-N",
-        "-p",
-        str(ssh_port),
-        "-L",
-        f"127.0.0.1:{local_port}:{db_host}:{db_port}",
-        "-o",
-        "StrictHostKeyChecking=accept-new",
-        "-o",
-        "ServerAliveInterval=30",
-        "-o",
-        "ExitOnForwardFailure=yes",
-    ]
-    if identity:
-        ssh_args += ["-i", identity, "-o", "IdentitiesOnly=yes"]
-    ssh_args.append(f"{ssh_user}@{host}")
+    endpoint = {"host": host, "ssh_user": ssh_user, "ssh_port": ssh_port}
+    ssh_args = forward_args(
+        endpoint,
+        local_port,
+        db_host,
+        db_port,
+        identity=identity or None,
+        extra_options=("-o", "ServerAliveInterval=30"),
+    )
 
     print(
         f"=== SSH tunnel: 127.0.0.1:{local_port} -> {db_host}:{db_port} "
@@ -199,7 +191,7 @@ def tunnel_db(
     run(ssh_args)
 
 
-def ssh_options(server: dict[str, Any]) -> list[str]:
+def ssh_options(server: dict[str, Any], *, identity: str | None = None) -> list[str]:
     """Return common ssh options for a resolved inventory server."""
     options = [
         "-p",
@@ -207,9 +199,61 @@ def ssh_options(server: dict[str, Any]) -> list[str]:
         "-o",
         "StrictHostKeyChecking=accept-new",
     ]
-    if os.environ.get("SSH_KEY_FILE"):
-        options += ["-i", os.environ["SSH_KEY_FILE"], "-o", "IdentitiesOnly=yes"]
+    identity = identity or os.environ.get("SSH_KEY_FILE")
+    if identity:
+        options += ["-i", identity, "-o", "IdentitiesOnly=yes"]
     return options
+
+
+def forward_args(
+    server: dict[str, Any],
+    local_port: int | str,
+    dest_host: str,
+    dest_port: int | str,
+    *,
+    identity: str | None = None,
+    extra_options: tuple[str, ...] = (),
+) -> list[str]:
+    """Build the `ssh -N` local port-forward command for a server-like dict."""
+    return [
+        "ssh",
+        "-N",
+        *ssh_options(server, identity=identity),
+        "-o",
+        "ExitOnForwardFailure=yes",
+        *extra_options,
+        "-L",
+        f"127.0.0.1:{local_port}:{dest_host}:{dest_port}",
+        ssh_target(server),
+    ]
+
+
+def open_tunnel(
+    server: dict[str, Any], dest_host: str, dest_port: int
+) -> tuple[subprocess.Popen[bytes], int]:
+    """Start a background forward from a free local port and wait until it accepts."""
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        local_port = probe.getsockname()[1]
+
+    args = forward_args(
+        server, local_port, dest_host, dest_port, extra_options=("-o", "BatchMode=yes")
+    )
+    tunnel = subprocess.Popen(args)
+
+    deadline = time.monotonic() + 15.0
+    while time.monotonic() < deadline:
+        if tunnel.poll() is not None:
+            die(f"SSH tunnel to {server['id']} exited with code {tunnel.returncode}")
+        try:
+            socket.create_connection(("127.0.0.1", local_port), timeout=1.0).close()
+            return tunnel, local_port
+        except OSError:
+            time.sleep(0.3)
+
+    tunnel.terminate()
+    die(f"SSH tunnel to {server['id']} did not come up within 15s")
+    raise AssertionError("unreachable")
 
 
 def ssh_target(server: dict[str, Any]) -> str:
@@ -248,17 +292,12 @@ def _instances_summary(server: dict[str, Any]) -> str:
     )
 
 
-def _compose_up_service(server: dict[str, Any], remote_root_q: str, service: str) -> None:
-    service_q = shlex.quote(service)
-    run_ssh(server, f"cd {remote_root_q} && docker compose up -d {service_q}")
-    _wait_for_steamcmd(server, remote_root_q, service)
-
-
-def _compose_restart_service(
-    server: dict[str, Any], remote_root_q: str, service: str, *, dry_run: bool = False
+def _compose_service(
+    server: dict[str, Any], remote_root_q: str, action: str, service: str, *, dry_run: bool = False
 ) -> None:
+    """Run one docker compose action ("up -d" or "restart") and wait for SteamCMD."""
     service_q = shlex.quote(service)
-    run_ssh(server, f"cd {remote_root_q} && docker compose restart {service_q}", dry_run=dry_run)
+    run_ssh(server, f"cd {remote_root_q} && docker compose {action} {service_q}", dry_run=dry_run)
     if not dry_run:
         _wait_for_steamcmd(server, remote_root_q, service)
 

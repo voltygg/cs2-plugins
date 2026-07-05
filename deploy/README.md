@@ -169,24 +169,12 @@ containers.
 SteamCMD runs only when a container starts, so a long-running instance never
 picks up a Valve update and joins fail with "client out of date". `deploy-server`
 won't fix it (an unchanged `:latest` image makes `up -d` a no-op) - the reliable
-trigger is a **restart**.
-
-On demand (restarts each instance one at a time, waiting for SteamCMD):
+trigger is a **restart**. When clients report being out of date, restart each
+instance one at a time (the command waits for SteamCMD between instances):
 
 ```bash
 uv run poe deploy-update --server box-a
 uv run poe deploy-update --server box-a --dry-run   # print the SSH commands only
-```
-
-Automatic: the `cs2-autoupdate` systemd timer checks the buildid every ~15 min and
-restarts only when behind. `bootstrap-host.sh` installs it (`--skip-autoupdate` to
-opt out); re-run it on an existing box to add the timer:
-
-```bash
-sudo bash deploy/scripts/bootstrap-host.sh --skip-docker   # installs the timer
-systemctl status cs2-autoupdate.timer                      # active/waiting
-sudo systemctl start cs2-autoupdate.service                # run the check now
-journalctl -u cs2-autoupdate -n 30                         # "up to date" or a restart
 ```
 
 ## Cleanup

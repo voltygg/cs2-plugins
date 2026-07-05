@@ -20,7 +20,6 @@ from __future__ import annotations
 import os
 import socket
 import struct
-import subprocess
 import time
 from typing import Any
 
@@ -132,49 +131,14 @@ def _resolve_target(
     return server, int(target["port"]), password
 
 
-def _open_tunnel(server: dict[str, Any], remote_port: int) -> tuple[subprocess.Popen[bytes], int]:
-    """Forward a free local port to the instance's RCON port on the box."""
-    import remote
-
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        local_port = probe.getsockname()[1]
-
-    ssh_args = [
-        "ssh",
-        "-N",
-        *remote.ssh_options(server),
-        "-o",
-        "ExitOnForwardFailure=yes",
-        "-o",
-        "BatchMode=yes",
-        "-L",
-        f"127.0.0.1:{local_port}:127.0.0.1:{remote_port}",
-        remote.ssh_target(server),
-    ]
-    tunnel = subprocess.Popen(ssh_args)
-
-    deadline = time.monotonic() + 15.0
-    while time.monotonic() < deadline:
-        if tunnel.poll() is not None:
-            die(f"SSH tunnel to {server['id']} exited with code {tunnel.returncode}")
-        try:
-            socket.create_connection(("127.0.0.1", local_port), timeout=1.0).close()
-            return tunnel, local_port
-        except OSError:
-            time.sleep(0.3)
-
-    tunnel.terminate()
-    die(f"SSH tunnel to {server['id']} did not come up within 15s")
-    raise AssertionError("unreachable")
-
-
 def run_commands(
     commands: list[str], *, server_id: str | None = None, instance_name: str | None = None
 ) -> None:
     """Execute commands sequentially against one instance, printing each response."""
+    import remote
+
     server, rcon_port, password = _resolve_target(server_id, instance_name)
-    tunnel, local_port = _open_tunnel(server, rcon_port)
+    tunnel, local_port = remote.open_tunnel(server, "127.0.0.1", rcon_port)
     try:
         client = RconClient("127.0.0.1", local_port, password)
         try:

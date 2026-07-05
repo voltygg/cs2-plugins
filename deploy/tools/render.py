@@ -40,6 +40,20 @@ def strip_jsonc(raw: str) -> str:
     return re.sub(r"(?m)^\s*//.*$", "", raw)
 
 
+def replace_vars(text: str, env: dict[str, str]) -> str:
+    """Substitute ${KEY} placeholders from env."""
+    for key, value in env.items():
+        text = text.replace("${" + key + "}", value)
+    return text
+
+
+def check_placeholders(text: str) -> None:
+    """Fail on any ${VAR} placeholder that survived substitution."""
+    leftover = sorted(set(re.findall(r"\$\{[A-Za-z_][A-Za-z0-9_]*\}", text)))
+    if leftover:
+        die("unsubstituted placeholders: " + ", ".join(leftover))
+
+
 def render_settings(
     data: dict[str, Any], server_id: str, instance: dict[str, Any], plugin: str, out: Path
 ) -> None:
@@ -71,15 +85,14 @@ def render_settings(
     template = DEPLOY / "templates" / "plugins" / plugin / "settings.jsonc"
     if not template.is_file():
         die(f"no settings template at {template}")
-    rendered = template.read_text(encoding="utf-8")
-    for key, value in env.items():
-        replacement = value if key == "DB_PORT" else json_string_content(value)
-        rendered = rendered.replace("${" + key + "}", replacement)
+    replacements = {
+        key: value if key == "DB_PORT" else json_string_content(value)
+        for key, value in env.items()
+    }
+    rendered = replace_vars(template.read_text(encoding="utf-8"), replacements)
 
     body = strip_jsonc(rendered)
-    leftover = sorted(set(re.findall(r"\$\{[A-Za-z_][A-Za-z0-9_]*\}", body)))
-    if leftover:
-        die("unsubstituted placeholders: " + ", ".join(leftover))
+    check_placeholders(body)
     json.loads(body)
 
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -155,18 +168,14 @@ def render_compose(server: dict[str, Any], runtime_image: str) -> str:
             "PORT": str(instance["port"]),
             "CS2_SERVER_DIR": cs2_server_dir,
         }
-        rendered = template
-        for key, value in env.items():
-            rendered = rendered.replace("${" + key + "}", value)
+        rendered = replace_vars(template, env)
         # indent the service block under the top-level `services:` mapping
         indented = "\n".join(("  " + line if line else line) for line in rendered.splitlines())
         blocks.append(indented)
 
     document = "name: cs2\n" + "services:\n" + "\n".join(blocks) + "\n"
 
-    leftover = sorted(set(re.findall(r"\$\{[A-Za-z_][A-Za-z0-9_]*\}", document)))
-    if leftover:
-        die("unsubstituted placeholders: " + ", ".join(leftover))
+    check_placeholders(document)
     yaml.safe_load(document)
     return document
 
