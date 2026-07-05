@@ -35,7 +35,7 @@ def deploy_plugin(name: str, csgo: Path, *, named: bool) -> None:
     build_dir = ROOT / "build" / BUILD_PRESET
     if not build_dir.is_dir():
         if named:
-            buildtools.die(f"no build at {build_dir}\nBuild first: scripts/build.py")
+            buildtools.die(f"no build at {build_dir}\nBuild first: uv run poe build")
         print(f"  (skipped - no build at {build_dir})")
         return
 

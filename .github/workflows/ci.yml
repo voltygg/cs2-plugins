@@ -47,7 +47,7 @@ jobs:
         run: |
           # In-container path for base-dir rewriting (github.workspace is host path).
           export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
-          python3 scripts/build.py linux-steamrt-release
+          python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release
 
   lint:
     name: Lint (ruff + clang-format)

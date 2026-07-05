@@ -1,7 +1,7 @@
 [project]
-name = "admin-system"
+name = "cs2-plugins"
 version = "1.0.0"
-description = "CS2 Metamod admin system plugin build tools"
+description = "CS2 Metamod plugin monorepo build tools"
 readme = "README.md"
 requires-python = ">=3.14"
 license = { text = "MIT" }
@@ -22,15 +22,15 @@ dependencies = [
 package = false
 
 [tool.poe.tasks]
-build = "python scripts/build.py"
-build-linux = "python scripts/build.py linux-steamrt-release"
-bootstrap = "python scripts/bootstrap.py"
+build = "python vendor/cs2-kit/scripts/build.py"
+build-linux = "python vendor/cs2-kit/scripts/build.py linux-steamrt-release"
+bootstrap = "python vendor/cs2-kit/scripts/bootstrap.py"
 new-plugin = "python vendor/cs2-kit/scripts/new_plugin.py"
 deploy = "python scripts/deploy.py"
 start-server = "python scripts/start-server.py"
 lint = "ruff check ."
-format = "python scripts/format.py"
-format-check = "python scripts/format.py --check"
+format = "python vendor/cs2-kit/scripts/format.py plugins vendor/cs2-kit/src vendor/cs2-kit/include vendor/cs2-kit/tests"
+format-check = "python vendor/cs2-kit/scripts/format.py --check plugins vendor/cs2-kit/src vendor/cs2-kit/include vendor/cs2-kit/tests"
 deploy-package = "python deploy/tools/cli.py package"
 deploy-render = "python deploy/tools/cli.py render"
 deploy-server = "python deploy/tools/cli.py deploy"

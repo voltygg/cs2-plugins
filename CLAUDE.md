@@ -57,10 +57,15 @@ plugins/bhop/
 CMakeLists.txt
 CMakePresets.json
 conanfile.py
-cmake/
 scripts/
 vendor/cs2-kit/
 ```
+
+The build plumbing lives in the kit: `cs2_add_plugin` and the .vdf template come
+from `vendor/cs2-kit/cmake/CS2Plugin.cmake` (available after
+`add_subdirectory(vendor/cs2-kit)`), `CMakePresets.json` just includes the kit's
+presets, and the `build`/`bootstrap`/`format` poe tasks invoke the kit's
+cwd-based scripts directly. Local `scripts/` holds only deploy/server tooling.
 
 ## CS2Kit Integration
 

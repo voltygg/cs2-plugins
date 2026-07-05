@@ -30,7 +30,7 @@ RUN pip3 install --no-cache-dir "cmake>=${CMAKE_MIN_VERSION}" "conan>=${CONAN_MI
 ENV CONAN_HOME=/root/.conan2
 
 # Pre-build deps so CI never compiles them; same profiles/build_type/lockfile as
-# scripts/build.py so package IDs match (else cache misses, deps rebuild).
+# vendor/cs2-kit/scripts/build.py so package IDs match (else cache misses, deps rebuild).
 COPY conanfile.py conan.lock /app/
 # Profiles are canonical in the cs2-kit submodule (CI must check out submodules).
 COPY vendor/cs2-kit/conan/profiles /app/conan/profiles
