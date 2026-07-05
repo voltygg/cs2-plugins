@@ -25,10 +25,7 @@ void BhopManager::Initialize()
     // Gamemode cfg re-exec on map change can reset the convars; re-asserting is cheap.
     events.Listen<Events::RoundStart>([this](const Events::RoundStart&) {
         if (_mode == Mode::Enabled)
-        {
             _conVars.ApplyGlobal();
-            ReplicateToAllConnected();
-        }
     });
 
     Engine().MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); });
@@ -52,19 +49,9 @@ void BhopManager::ApplySettings()
     _conVars.Build(settings);
 
     if (_mode == Mode::Enabled)
-    {
-        _conVars.ApplyGlobal();
-        ReplicateToAllConnected();  // reload mid-round: push to already-connected clients now
-    }
+        _conVars.ApplyGlobal();  // sets and replicates the overrides server-wide
 
     Log::Info("Bhop mode: {} ({} convar overrides).", _mode == Mode::Enabled ? "enabled" : "grants", _conVars.Count());
-}
-
-void BhopManager::ReplicateToAllConnected()
-{
-    for (int slot = 0; slot < Core::MaxPlayers; ++slot)
-        if (Engine().Players.GetPlayerBySlot(slot))
-            _conVars.ReplicateOverrides(slot);
 }
 
 void BhopManager::Grant(int64_t steamId, bool enabled)
@@ -190,16 +177,9 @@ void BhopManager::OnPlayerJump(int slot)
 
 void BhopManager::OnPlayerSpawn(int slot)
 {
-    if (!Core::IsValidSlot(slot))
+    // Enabled mode replicates server-wide via ApplyGlobal, so only grants needs per-player work.
+    if (_mode != Mode::Grants || !Core::IsValidSlot(slot))
         return;
-
-    if (_mode == Mode::Enabled)
-    {
-        // Bhop is client-predicted, and the connect/map snapshot resets client convars; re-send
-        // the values each spawn so the client keeps predicting hops.
-        _conVars.ReplicateOverrides(slot);
-        return;
-    }
 
     Player* player = Engine().Players.GetPlayerBySlot(slot);
     bool granted = player && _granted.contains(player->GetSteamID());
