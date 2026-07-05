@@ -42,13 +42,14 @@ void BhopManager::RegisterConsoleCommands()
                        [this](const CCommand&) { ReloadSettings(); });
 
     // Live A/B switch for how grants mode produces the server-side hop (see HopStrategy).
-    _cmdStrategy.emplace("bhop_strategy", "Grants hop strategy: bhop_strategy <off|velocity|press|both>",
+    _cmdStrategy.emplace("bhop_strategy", "Grants hop strategy: bhop_strategy <off|velocity|press|both|inject>",
                          [this](const CCommand& args) {
                              static constexpr std::pair<const char*, HopStrategy> Names[] = {
                                  {"off", HopStrategy::Off},
                                  {"velocity", HopStrategy::Velocity},
                                  {"press", HopStrategy::Press},
                                  {"both", HopStrategy::Both},
+                                 {"inject", HopStrategy::Inject},
                              };
 
                              if (args.ArgC() >= 2)
@@ -62,7 +63,7 @@ void BhopManager::RegisterConsoleCommands()
                                          return;
                                      }
                                  }
-                                 Log::Warn("Usage: bhop_strategy <off|velocity|press|both>");
+                                 Log::Warn("Usage: bhop_strategy <off|velocity|press|both|inject>");
                                  return;
                              }
 

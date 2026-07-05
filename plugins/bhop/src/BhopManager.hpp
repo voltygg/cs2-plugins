@@ -54,19 +54,21 @@ private:
     {
         Off,       // convar replication only (client predicts, server does nothing - floats)
         Velocity,  // post-simulation forced velocity.z jump
-        Press,     // stamp a fresh ModernJump usable-press so the engine's own jump path fires
-        Both,
+        Press,     // stamp a fresh ModernJump usable-press (proven inert: fields are derived state)
+        Both,      // velocity + press
+        Inject,    // synthesize a subtick jump-press in the incoming CUserCmd (native jump path)
     };
 
     void RegisterConsoleCommands();  // ConsoleCommands.cpp
     void ApplySettings();
 
-    void OnRunCommandPre(int slot);
+    void OnRunCommandPre(int slot, void* userCmd);
     void OnRunCommandPost(int slot);
     void OnPlayerJump(int slot);
     void OnPlayerSpawn(int slot);
     void ForceAutoHop(int slot);
     void StampJumpPress(int slot);
+    void InjectJumpPress(int slot, void* userCmd);
     void ResolveJumpOffsets();
 
     bool IsActiveSlot(int slot) const;
@@ -87,6 +89,7 @@ private:
     bool _movementHookSeen = false;  // one-shot diagnostic: proves the RunCommand vtable hook fires
 
     HopStrategy _strategy = HopStrategy::Velocity;
+    std::array<int, CS2Kit::Core::MaxPlayers> _lastInjectTick{};
     bool _jumpOffsetsResolved = false;
     int _offModernJump = -1;
     int _offUsableTick = -1;

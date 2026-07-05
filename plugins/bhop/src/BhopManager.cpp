@@ -3,6 +3,7 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
+#include <CS2Kit/Sdk/UserCmd.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <algorithm>
 #include <cmath>
@@ -29,7 +30,7 @@ void BhopManager::Initialize()
             _conVars.ApplyGlobal();
     });
 
-    Engine().MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); });
+    Engine().MovementHook.ListenPre([this](int slot, void* userCmd) { OnRunCommandPre(slot, userCmd); });
     Engine().MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); });
 
     // Server-authoritative auto-hop for grants. The 2026 subtick jump code does not honor the
@@ -143,7 +144,7 @@ void BhopManager::OnPlayerDisconnect(Player* player)
     }
 }
 
-void BhopManager::OnRunCommandPre(int slot)
+void BhopManager::OnRunCommandPre(int slot, void* userCmd)
 {
     if (!_movementHookSeen)
     {
@@ -156,6 +157,8 @@ void BhopManager::OnRunCommandPre(int slot)
         _conVars.FlipRaw();
         if (_strategy == HopStrategy::Press || _strategy == HopStrategy::Both)
             StampJumpPress(slot);
+        if (_strategy == HopStrategy::Inject)
+            InjectJumpPress(slot, userCmd);
     }
 }
 
@@ -226,6 +229,36 @@ void BhopManager::ForceAutoHop(int slot)
 
     // A forced hop never emits player_jump, so feed the boost chain by hand.
     OnPlayerJump(slot);
+}
+
+void BhopManager::InjectJumpPress(int slot, void* userCmd)
+{
+    if (!userCmd || !(Engine().Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
+        return;
+
+    PlayerController controller(slot);
+    if (!controller.IsValid() || !(controller.GetFlags() & Sdk::FL_ONGROUND))
+        return;
+
+    auto* engine = Engine().Interfaces.Engine;
+    auto* globals = engine ? engine->GetServerGlobals() : nullptr;
+    if (!globals)
+        return;
+
+    // The modern jump ignores presses within sv_jump_spam_penalty_time (one tick) of the
+    // previous one, so space synthetic presses two ticks apart or they'd all be discarded.
+    if (globals->tickcount - _lastInjectTick[slot] < 2)
+        return;
+
+    // A real press already in this command wins; don't stack a second edge on top of it.
+    if (Sdk::HasSubtickPress(userCmd, Sdk::IN_JUMP))
+        return;
+
+    // The button is physically held, so the engine's input state machine needs a release
+    // edge before the synthetic press registers as a fresh subtick jump.
+    Sdk::InjectSubtickPress(userCmd, Sdk::IN_JUMP, false, 0.0f);
+    Sdk::InjectSubtickPress(userCmd, Sdk::IN_JUMP, true, 0.05f);
+    _lastInjectTick[slot] = globals->tickcount;
 }
 
 void BhopManager::ResolveJumpOffsets()
