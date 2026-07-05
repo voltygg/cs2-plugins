@@ -66,14 +66,12 @@ def instance_plugins(server: dict[str, Any], instance: dict[str, Any]) -> list[s
 
 
 def plugin_db(data: dict[str, Any], plugin: str) -> str:
-    """Return the database name configured for a plugin."""
-    plugin_cfg = data.get("plugins", {}).get(plugin)
-    if not plugin_cfg:
+    """Return the database name configured for a plugin, or "" for DB-less plugins."""
+    plugins = data.get("plugins", {})
+    if plugin not in plugins:
         die(f"plugin '{plugin}' is not declared under 'plugins' in inventory.yml")
-    db = plugin_cfg.get("database")
-    if not db:
-        die(f"plugin '{plugin}' has no 'database' in inventory.yml")
-    return str(db)
+    plugin_cfg = plugins.get(plugin) or {}
+    return str(plugin_cfg.get("database") or "")
 
 
 def db_conn(data: dict[str, Any]) -> dict[str, Any]:

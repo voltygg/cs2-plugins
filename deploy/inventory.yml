@@ -20,6 +20,8 @@ database:
 plugins:
   admin-system:
     database: admin_system
+  # DB-less plugin: no 'database' key, so rendering skips the DB_* requirements.
+  bhop: {}
 
 servers:
   - id: box-a
@@ -29,6 +31,7 @@ servers:
     # default plugins for every instance on this box
     plugins:
       - admin-system
+      - bhop
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
 

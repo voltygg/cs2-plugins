@@ -41,4 +41,13 @@ extern const Effect Wallhack;
 /** Model: parameterized fun-model swap; the param indexes FunModels() (see Model.hpp). */
 extern const ParamEffect Model;
 
+/**
+ * Bhop: session bunnyhop grant, delivered cross-plugin - Setup/OnStop drive the bhop
+ * plugin's `bhop_player` server command. Requires the bhop plugin in "grants" mode;
+ * without it the command is unknown and the toggle is inert. Declared
+ * EffectScope::Session, so it survives the death sweep; revoked on disconnect like
+ * every session effect.
+ */
+extern const Effect Bhop;
+
 }  // namespace AdminSystem::Admin::Effects

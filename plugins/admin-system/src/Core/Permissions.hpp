@@ -22,6 +22,7 @@ enum class Permission : char
     Health = 'h',   // health / armor / godmode
     Hide = 'b',
     Wallhack = 'w',  // grant a target see-through-walls glow vision
+    Bhop = 'j',      // grant a target session bunnyhop (requires the bhop plugin, "grants" mode)
     Root = 'z',
 };
 

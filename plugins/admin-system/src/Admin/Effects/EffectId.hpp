@@ -13,7 +13,8 @@ enum class EffectId : uint8_t
     Ghost,
     Hide,
     Wallhack,
-    Model
+    Model,
+    Bhop
 };
 
 }  // namespace AdminSystem::Admin::Effects

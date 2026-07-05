@@ -109,7 +109,9 @@ servers:
 
 An instance's own `plugins:` replaces the server default (it does not extend it).
 Every plugin referenced must still be declared under the top-level `plugins:` map
-so CI packages it.
+so CI packages it. Plugins without a `database:` key (e.g. `bhop: {}`) are DB-less:
+rendering skips the `DB_*` requirements for them and `deploy-dbs` skips creating a
+database.
 
 Each instance's rendered admin-system settings automatically get a server
 identity: `server.tag = <box>-<instance>` (e.g. `box-a-main`) and `server.name`

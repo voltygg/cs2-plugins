@@ -50,6 +50,10 @@ plugins/admin-system/
     Database/
   configs/
   database/
+plugins/bhop/
+  CMakeLists.txt
+  src/
+  configs/
 CMakeLists.txt
 CMakePresets.json
 conanfile.py

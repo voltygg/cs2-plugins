@@ -1,0 +1,48 @@
+{
+  // Plugin-wide options.
+  "plugin": {
+    "logLevel": "info",
+    "locale": "en"
+  },
+
+  "bhop": {
+    // "enabled": always-on for everyone - the convars below are set server-wide and
+    //            replicate to every client, so bhop is fully client-predicted (ping-free).
+    // "grants":  off by default - only players granted via `bhop_player <steamid64> 1`
+    //            (session-only, cleared on disconnect) get bhop. Admin-system's Bunnyhop
+    //            effect drives this command.
+    "mode": "enabled",
+
+    // sv_autobunnyhopping - hold jump to hop automatically.
+    "autoBunnyhopping": true,
+    // sv_enablebunnyhopping - remove the landing speed clamp (keeps gained speed).
+    "enableBunnyhopping": true,
+
+    // Stamina costs (jump-height/speed loss after landing). -1 = leave server value untouched.
+    "staminaJumpCost": 0.0,
+    "staminaLandCost": 0.0,
+
+    // Air acceleration - speed gain while airborne (replicated, client-predicted).
+    // sv_airaccelerate (game default 12); -1 = untouched.
+    "airAccelerate": 150.0,
+    // sv_air_max_wishspeed (game default 30); -1 = untouched.
+    "airMaxWishSpeed": 60.0,
+    // sv_maxvelocity; -1 = untouched.
+    "maxVelocity": -1,
+
+    // Server-side boost per chained hop, so speed builds from simply holding jump
+    // (strafing gains come from airAccelerate and are fully client-predicted).
+    "hopBoost": {
+      "enabled": true,
+      // Horizontal velocity multiplier per chained hop.
+      "factor": 1.08,
+      // A jump within this window of the previous one counts as chained.
+      "chainWindowMs": 1000,
+      // Horizontal speed cap for the boost.
+      "maxSpeed": 1200.0
+    },
+
+    // Center-message the player when a grant is toggled ("grants" mode).
+    "notifyPlayer": true
+  }
+}

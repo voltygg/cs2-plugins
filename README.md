@@ -9,6 +9,7 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C
 | Plugin | Description |
 | --- | --- |
 | [admin-system](plugins/admin-system/README.md) | Full admin suite: punishments, fun effects, WASD admin menu, multi-server admin groups, abuse protection, cheat-check |
+| [bhop](plugins/bhop/README.md) | Smooth, client-predicted auto-bunnyhop with air acceleration; server-wide or per-player session grants driven by admin-system |
 
 ## Requirements
 

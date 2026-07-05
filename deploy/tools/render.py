@@ -46,10 +46,11 @@ def render_settings(
     """Render one plugin settings.jsonc from inventory and environment."""
     db = data.get("database", {})
     instance_name = str(instance["name"])
+    db_name = inventory.plugin_db(data, plugin)  # "" = DB-less plugin
     env = {
         "DB_HOST": str(db.get("host", "")),
         "DB_PORT": str(db.get("port", "")),
-        "DB_NAME": str(inventory.plugin_db(data, plugin)),
+        "DB_NAME": db_name,
         "DB_USER": str(db.get("user", "")),
         "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
         "DB_SSLMODE": str(db.get("sslMode", "prefer")),
@@ -58,15 +59,11 @@ def render_settings(
         "SERVER_TAG": f"{server_id}-{instance_name}",
         "SERVER_NAME": str(instance.get("hostname", f"CS2 {instance_name}")),
     }
-    required = (
-        "DB_HOST",
-        "DB_PORT",
-        "DB_NAME",
-        "DB_USER",
-        "DB_PASSWORD",
-        "DB_SSLMODE",
-        "SERVER_TAG",
-    )
+    # DB vars are only required when the plugin declares a database in inventory.yml;
+    # the leftover-placeholder check below still catches a template expecting ${DB_*}.
+    required = ["SERVER_TAG"]
+    if db_name:
+        required += ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_SSLMODE"]
     for key in required:
         if not env[key]:
             die(f"required var {key} is empty for {server_id}/{plugin}")

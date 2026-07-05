@@ -38,3 +38,4 @@ add_subdirectory(vendor/cs2-kit)
 include(CS2Plugin)
 
 add_subdirectory(plugins/admin-system)
+add_subdirectory(plugins/bhop)

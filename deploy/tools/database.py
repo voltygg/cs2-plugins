@@ -51,7 +51,10 @@ def ensure_databases(server_id: str | None, admin_user: str, *, dry_run: bool) -
     print(f"=== Ensuring shared PostgreSQL on {host}:{port} (admin: {admin_user}) ===")
     _ensure_role(psql_admin, app_user, db_password)
     for plugin in inventory.used_plugins(data):
-        _ensure_database(psql_admin, plugin, inventory.plugin_db(data, plugin), app_user)
+        db_name = inventory.plugin_db(data, plugin)
+        if not db_name:
+            continue  # DB-less plugin (no 'database:' in inventory)
+        _ensure_database(psql_admin, plugin, db_name, app_user)
     print("=== Done ===")
 
 

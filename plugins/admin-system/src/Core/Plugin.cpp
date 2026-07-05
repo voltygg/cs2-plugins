@@ -147,8 +147,9 @@ void RegisterGameEventListeners()
     namespace Events = CS2Kit::Events;
     auto& events = Engine().Events;
     events.Listen<Events::PlayerDeath>([](const Events::PlayerDeath& e) {
+        // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
         if (e.VictimSlot >= 0)
-            App().Effects.CancelAllForSlot(e.VictimSlot);
+            App().Effects.CancelPerLife(e.VictimSlot);
     });
     events.Listen<Events::RoundEnd>([](const Events::RoundEnd&) { App().Effects.CancelRoundScoped(); });
     events.Listen<Events::RoundPrestart>([](const Events::RoundPrestart&) { App().Effects.CancelRoundScoped(); });

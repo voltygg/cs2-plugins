@@ -49,7 +49,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(int adminSlot)
             adminMgr.HasAnyPermission(adminSid, "bsz"))
         .AddSubmenu(
             tr.Get("category.effects", adminSlot), [adminSlot](int) { return Menu::BuildEffectsMenu(adminSlot); },
-            adminMgr.HasAnyPermission(adminSid, "fz"))
+            adminMgr.HasAnyPermission(adminSid, "fjz"))
         .AddSubmenu(
             tr.Get("category.chatSettings", adminSlot),
             [adminSlot](int) { return Menu::BuildChatSettingsMenu(adminSlot); }, adminMgr.IsAdmin(adminSid))
