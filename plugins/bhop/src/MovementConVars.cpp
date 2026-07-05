@@ -67,10 +67,14 @@ void MovementConVars::ApplyGlobal()
             entry.SavedValue = entry.IsFloat ? conVars.GetFloat(entry.Name).value_or(entry.Value)
                                              : (conVars.GetBool(entry.Name).value_or(false) ? 1.0f : 0.0f);
 
-        if (entry.IsFloat)
-            conVars.SetFloat(entry.Name, entry.Value);
-        else
-            conVars.SetBool(entry.Name, entry.Value != 0.0f);
+        // Set via the string path - identical to `<name> <value>` in a cfg/console - so the
+        // convar's own parser applies it regardless of engine type (SetInt/SetBool/SetFloat can
+        // silently no-op on a type mismatch).
+        conVars.SetString(entry.Name, entry.NetValue.c_str());
+
+        // Read back and log: distinguishes "we failed to set it" from "the game ignored it".
+        auto applied = conVars.GetString(entry.Name);
+        Log::Info("Bhop convar {} = {} (wanted {}).", entry.Name, applied.value_or("<unknown>"), entry.NetValue);
     }
     _globalApplied = true;
 }
@@ -84,12 +88,7 @@ void MovementConVars::RestoreGlobal()
     if (engine)
     {
         for (const auto& entry : _overrides)
-        {
-            if (entry.IsFloat)
-                engine->ConVars.SetFloat(entry.Name, entry.SavedValue);
-            else
-                engine->ConVars.SetBool(entry.Name, entry.SavedValue != 0.0f);
-        }
+            engine->ConVars.SetString(entry.Name, FormatConVarValue(entry.IsFloat, entry.SavedValue).c_str());
     }
     _globalApplied = false;
 }
