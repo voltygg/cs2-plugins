@@ -70,7 +70,7 @@ void MovementConVars::ApplyGlobal()
         if (entry.IsFloat)
             conVars.SetFloat(entry.Name, entry.Value);
         else
-            conVars.SetInt(entry.Name, entry.Value != 0.0f ? 1 : 0);
+            conVars.SetBool(entry.Name, entry.Value != 0.0f);
     }
     _globalApplied = true;
 }
@@ -88,7 +88,7 @@ void MovementConVars::RestoreGlobal()
             if (entry.IsFloat)
                 engine->ConVars.SetFloat(entry.Name, entry.SavedValue);
             else
-                engine->ConVars.SetInt(entry.Name, entry.SavedValue != 0.0f ? 1 : 0);
+                engine->ConVars.SetBool(entry.Name, entry.SavedValue != 0.0f);
         }
     }
     _globalApplied = false;
