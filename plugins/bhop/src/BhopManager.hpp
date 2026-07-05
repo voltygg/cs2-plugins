@@ -50,6 +50,9 @@ private:
     void RegisterConsoleCommands();  // ConsoleCommands.cpp
     void ApplySettings();
 
+    /** Enabled mode: push the override values into every connected client's prediction. */
+    void ReplicateToAllConnected();
+
     void OnRunCommandPre(int slot);
     void OnRunCommandPost(int slot);
     void OnPlayerJump(int slot);
