@@ -16,6 +16,7 @@
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 #include <memory>
+#include <span>
 
 using CS2Kit::Core::Engine;
 
@@ -29,8 +30,19 @@ namespace
 {
 constexpr int HealthPresets[] = {1, 50, 100, 200, 500, 999};
 constexpr int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
-constexpr int SpeedPresets[] = {50, 100, 150, 200, 300};
-constexpr int SizePresets[] = {50, 75, 100, 150, 200};
+constexpr int SpeedPresets[] = {10, 25, 50, 100, 150, 200, 300};
+constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
+
+// Speed/Size cycle both up and down from normal, so they open anchored on 100% (no change).
+constexpr int IndexOf(std::span<const int> presets, int value)
+{
+    for (size_t i = 0; i < presets.size(); ++i)
+        if (presets[i] == value)
+            return static_cast<int>(i);
+    return 0;
+}
+constexpr int SpeedDefault = IndexOf(SpeedPresets, 100);
+constexpr int SizeDefault = IndexOf(SizePresets, 100);
 }  // namespace
 
 std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
@@ -95,8 +107,8 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int tar
         // HP/Armor/Speed/Size are inline Choice rows: A/D cycles preset values, E applies and closes.
         .AddPresetChoiceRow("action.health", "HP", HealthPresets, Actions::SetHealth)
         .AddPresetChoiceRow("action.armor", "AP", ArmorPresets, Actions::SetArmor)
-        .AddPresetChoiceRow("action.speed", "%", SpeedPresets, Actions::SetSpeed)
-        .AddPresetChoiceRow("action.size", "%", SizePresets, Actions::SetSize)
+        .AddPresetChoiceRow("action.speed", "%", SpeedPresets, Actions::SetSpeed, SpeedDefault)
+        .AddPresetChoiceRow("action.size", "%", SizePresets, Actions::SetSize, SizeDefault)
         .AddStateToggleRow("action.godmode", CS2Kit::HasPawnFlag(CS2Kit::Sdk::FL_GODMODE), Actions::Godmode)
         .AddActionRow("action.bury", Actions::Bury)
         .AddActionRow("action.unbury", Actions::Unbury);
