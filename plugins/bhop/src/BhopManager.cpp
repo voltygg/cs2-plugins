@@ -31,18 +31,6 @@ void BhopManager::Initialize()
 
     Engine().MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); });
     Engine().MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); });
-
-    // Server-authoritative auto-hop for grants. The 2026 subtick jump code does not honor the
-    // per-RunCommand convar flip, so the client (predicting with the replicated overrides)
-    // auto-hops while the server keeps the player grounded - the "float". Forcing the re-jump
-    // here makes the server agree with what the granted client predicts.
-    Engine().Scheduler.EveryFrame([this] {
-        if (_mode != Mode::Grants)
-            return;
-        for (int slot = 0; slot < Core::MaxPlayers; ++slot)
-            if (_grantedSlots[slot])
-                ForceAutoHop(slot);
-    });
 }
 
 void BhopManager::ApplySettings()
@@ -150,7 +138,15 @@ void BhopManager::OnRunCommandPre(int slot)
     }
 
     if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
+    {
         _conVars.FlipRaw();
+        // Server-authoritative auto-hop. The 2026 subtick jump code does not honor the flipped
+        // sv_autobunnyhopping, so the client (predicting with the replicated overrides) auto-hops
+        // while the server keeps the player grounded - the grants-mode "float". Jumping the player
+        // right before this command's movement runs lands on the same tick the client predicted;
+        // doing it from a frame timer instead is one tick late and feels like micro-hitches.
+        ForceAutoHop(slot);
+    }
 }
 
 void BhopManager::OnRunCommandPost(int /*slot*/)
