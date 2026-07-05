@@ -16,7 +16,6 @@
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 #include <memory>
-#include <span>
 
 using CS2Kit::Core::Engine;
 
@@ -34,15 +33,8 @@ constexpr int SpeedPresets[] = {10, 25, 50, 100, 150, 200, 300};
 constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
 
 // Speed/Size cycle both up and down from normal, so they open anchored on 100% (no change).
-constexpr int IndexOf(std::span<const int> presets, int value)
-{
-    for (size_t i = 0; i < presets.size(); ++i)
-        if (presets[i] == value)
-            return static_cast<int>(i);
-    return 0;
-}
-constexpr int SpeedDefault = IndexOf(SpeedPresets, 100);
-constexpr int SizeDefault = IndexOf(SizePresets, 100);
+constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
+constexpr int SizeDefault = 4;   // index of 100 in SizePresets
 }  // namespace
 
 std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
