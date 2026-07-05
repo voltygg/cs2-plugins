@@ -40,8 +40,9 @@ public:
     void ReplicateOverrides(int slot) const;
     void ReplicateServerValues(int slot) const;
 
-    /** "grants" mode: flip raw storage to the bhop values for one player's RunCommand, then back.
-     *  RestoreRaw is a no-op unless a FlipRaw is outstanding. */
+    /** "grants" mode: flip raw storage to the bhop values around one player's command
+     *  processing, then back. Depth-counted, so nested scopes (ProcessUsercmds wrapping
+     *  RunCommand) are safe; only the outermost pair saves/restores. */
     void FlipRaw();
     void RestoreRaw();
 
@@ -61,7 +62,7 @@ private:
 
     std::vector<ConVarOverride> _overrides;
     bool _globalApplied = false;
-    bool _flipped = false;
+    int _flipDepth = 0;
 };
 
 }  // namespace Bhop

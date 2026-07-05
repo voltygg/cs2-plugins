@@ -110,7 +110,13 @@ void MovementConVars::ReplicateServerValues(int slot) const
 void MovementConVars::FlipRaw()
 {
     // Raw flips: server-side movement for this player's command sees bhop values; no callbacks
-    // fire and nothing is networked. RestoreRaw undoes it before anyone else runs.
+    // fire and nothing is networked. RestoreRaw undoes it before anyone else runs. Depth-counted
+    // because the flip scopes nest (RunCommand runs inside ProcessUsercmds): only the outermost
+    // flip saves, only the outermost restore writes back - a nested save would capture the
+    // already-flipped values and leak them server-wide.
+    if (++_flipDepth > 1)
+        return;
+
     for (auto& entry : _overrides)
     {
         if (!entry.Raw.Valid())
@@ -126,12 +132,11 @@ void MovementConVars::FlipRaw()
             entry.Raw.SetBool(entry.Value != 0.0f);
         }
     }
-    _flipped = true;
 }
 
 void MovementConVars::RestoreRaw()
 {
-    if (!_flipped)
+    if (_flipDepth == 0 || --_flipDepth > 0)
         return;
 
     for (auto& entry : _overrides)
@@ -143,7 +148,6 @@ void MovementConVars::RestoreRaw()
         else
             entry.Raw.SetBool(entry.SavedValue != 0.0f);
     }
-    _flipped = false;
 }
 
 }  // namespace Bhop

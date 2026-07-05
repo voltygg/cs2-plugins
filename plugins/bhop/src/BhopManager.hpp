@@ -64,6 +64,9 @@ private:
 
     void OnRunCommandPre(int slot, void* userCmd);
     void OnRunCommandPost(int slot);
+    void OnUserCmdsPre(int slot);
+    void OnUserCmdsPost(int slot);
+    void OnUserCmd(int slot, void* userCmd);
     void OnPlayerJump(int slot);
     void OnPlayerSpawn(int slot);
     void ForceAutoHop(int slot);

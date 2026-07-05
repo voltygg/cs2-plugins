@@ -33,6 +33,12 @@ void BhopManager::Initialize()
     Engine().MovementHook.ListenPre([this](int slot, void* userCmd) { OnRunCommandPre(slot, userCmd); });
     Engine().MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); });
 
+    // ProcessUsercmds scope: the engine parses subtick input (and decides jumps) here, before
+    // RunCommand - so both the convar flip and command mutation must happen at this level.
+    Engine().UserCmds.ListenPre([this](int slot) { OnUserCmdsPre(slot); });
+    Engine().UserCmds.ListenCmd([this](int slot, void* userCmd) { OnUserCmd(slot, userCmd); });
+    Engine().UserCmds.ListenPost([this](int slot) { OnUserCmdsPost(slot); });
+
     // Server-authoritative auto-hop for grants. The 2026 subtick jump code does not honor the
     // flipped sv_autobunnyhopping, so the client (predicting with the replicated overrides)
     // auto-hops while the server keeps the player grounded - the grants-mode "float".
@@ -92,6 +98,7 @@ void BhopManager::Grant(int64_t steamId, bool enabled)
         if (enabled)
         {
             Engine().MovementHook.Install();
+            Engine().UserCmds.Install();
             _conVars.ReplicateOverrides(slot);
         }
         else
@@ -144,7 +151,7 @@ void BhopManager::OnPlayerDisconnect(Player* player)
     }
 }
 
-void BhopManager::OnRunCommandPre(int slot, void* userCmd)
+void BhopManager::OnRunCommandPre(int slot, void* /*userCmd*/)
 {
     if (!_movementHookSeen)
     {
@@ -157,9 +164,30 @@ void BhopManager::OnRunCommandPre(int slot, void* userCmd)
         _conVars.FlipRaw();
         if (_strategy == HopStrategy::Press || _strategy == HopStrategy::Both)
             StampJumpPress(slot);
-        if (_strategy == HopStrategy::Inject)
-            InjectJumpPress(slot, userCmd);
     }
+}
+
+void BhopManager::OnUserCmdsPre(int slot)
+{
+    // Flip for the whole ingest: if the parse-time autobhop synthesis reads the convar, a
+    // granted player gets fully native auto-hop with no command surgery at all.
+    if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
+        _conVars.FlipRaw();
+}
+
+void BhopManager::OnUserCmdsPost(int slot)
+{
+    if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
+        _conVars.RestoreRaw();
+}
+
+void BhopManager::OnUserCmd(int slot, void* userCmd)
+{
+    if (_mode != Mode::Grants || !Core::IsValidSlot(slot) || !_grantedSlots[slot])
+        return;
+
+    if (_strategy == HopStrategy::Inject)
+        InjectJumpPress(slot, userCmd);
 }
 
 void BhopManager::OnRunCommandPost(int /*slot*/)
@@ -329,6 +357,7 @@ void BhopManager::OnPlayerSpawn(int slot)
     {
         // The connect/map-change convar snapshot clobbered the client's override; re-send.
         Engine().MovementHook.Install();
+        Engine().UserCmds.Install();
         _conVars.ReplicateOverrides(slot);
     }
 }
