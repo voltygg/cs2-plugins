@@ -32,7 +32,8 @@ jobs:
       - name: Cache ccache
         uses: actions/cache@v6
         with:
-          path: ~/.ccache
+          # Absolute path: `~` differs for actions/cache vs ccache in-container.
+          path: /ccache
           key: ccache-linux-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
             ccache-linux-${{ github.ref_name }}-
@@ -40,12 +41,13 @@ jobs:
 
       - name: Build + test (configure -> build -> ctest via workflow preset)
         env:
-          CCACHE_DIR: ~/.ccache
-          # Relative paths + ignore checkout mtimes so a fresh checkout still hits ccache.
-          CCACHE_BASEDIR: ${{ github.workspace }}
+          CCACHE_DIR: /ccache
           CCACHE_SLOPPINESS: time_macros,locale,include_file_ctime,include_file_mtime
           CCACHE_MAXSIZE: 500M
-        run: python3 scripts/build.py linux-steamrt-release
+        run: |
+          # In-container path for base-dir rewriting (github.workspace is host path).
+          export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
+          python3 scripts/build.py linux-steamrt-release
 
   lint:
     name: Lint (ruff + clang-format)
