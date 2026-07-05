@@ -25,6 +25,7 @@ from typing import Any
 
 import inventory
 from common import die, load_server_env
+from remote import open_tunnel
 
 _SERVERDATA_AUTH = 3
 _SERVERDATA_AUTH_RESPONSE = 2  # shares the value with EXECCOMMAND (protocol quirk)
@@ -135,10 +136,9 @@ def run_commands(
     commands: list[str], *, server_id: str | None = None, instance_name: str | None = None
 ) -> None:
     """Execute commands sequentially against one instance, printing each response."""
-    import remote
 
     server, rcon_port, password = _resolve_target(server_id, instance_name)
-    tunnel, local_port = remote.open_tunnel(server, "127.0.0.1", rcon_port)
+    tunnel, local_port = open_tunnel(server, "127.0.0.1", rcon_port)
     try:
         client = RconClient("127.0.0.1", local_port, password)
         try:
