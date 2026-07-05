@@ -54,6 +54,7 @@ private:
     void OnRunCommandPost(int slot);
     void OnPlayerJump(int slot);
     void OnPlayerSpawn(int slot);
+    void ForceAutoHop(int slot);
 
     bool IsActiveSlot(int slot) const;
 
@@ -69,6 +70,7 @@ private:
 
     std::optional<CS2Kit::ServerCommand> _cmdPlayer;
     std::optional<CS2Kit::ServerCommand> _cmdReload;
+    bool _movementHookSeen = false;  // one-shot diagnostic: proves the RunCommand vtable hook fires
 };
 
 }  // namespace Bhop

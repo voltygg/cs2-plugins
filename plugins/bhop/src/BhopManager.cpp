@@ -1,6 +1,7 @@
 #include "BhopManager.hpp"
 
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <algorithm>
@@ -30,6 +31,18 @@ void BhopManager::Initialize()
 
     Engine().MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); });
     Engine().MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); });
+
+    // Server-authoritative auto-hop for grants. The 2026 subtick jump code does not honor the
+    // per-RunCommand convar flip, so the client (predicting with the replicated overrides)
+    // auto-hops while the server keeps the player grounded - the "float". Forcing the re-jump
+    // here makes the server agree with what the granted client predicts.
+    Engine().Scheduler.EveryFrame([this] {
+        if (_mode != Mode::Grants)
+            return;
+        for (int slot = 0; slot < Core::MaxPlayers; ++slot)
+            if (_grantedSlots[slot])
+                ForceAutoHop(slot);
+    });
 }
 
 void BhopManager::ApplySettings()
@@ -130,6 +143,12 @@ void BhopManager::OnPlayerDisconnect(Player* player)
 
 void BhopManager::OnRunCommandPre(int slot)
 {
+    if (!_movementHookSeen)
+    {
+        _movementHookSeen = true;
+        Log::Info("Movement RunCommand hook is firing (first callback, slot {}).", slot);
+    }
+
     if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
         _conVars.FlipRaw();
 }
@@ -173,6 +192,27 @@ void BhopManager::OnPlayerJump(int slot)
     velocity.x *= scaled / speed;
     velocity.y *= scaled / speed;
     controller.SetVelocity(velocity);
+}
+
+void BhopManager::ForceAutoHop(int slot)
+{
+    if (!(Engine().Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
+        return;
+
+    PlayerController controller(slot);
+    if (!controller.IsValid() || !(controller.GetFlags() & Sdk::FL_ONGROUND))
+        return;
+
+    Vector velocity = controller.GetVelocity();
+    if (velocity.z > 0.0f)
+        return;  // already ascending: the engine (or last frame's hop) took this jump
+
+    constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0); engine default
+    velocity.z = Engine().ConVars.GetFloat("sv_jump_impulse").value_or(DefaultJumpImpulse);
+    controller.SetVelocity(velocity);
+
+    // A forced hop never emits player_jump, so feed the boost chain by hand.
+    OnPlayerJump(slot);
 }
 
 void BhopManager::OnPlayerSpawn(int slot)
