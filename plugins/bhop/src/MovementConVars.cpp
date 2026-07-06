@@ -110,8 +110,9 @@ void MovementConVars::ReplicateServerValues(int slot) const
 
 void MovementConVars::FlipRaw()
 {
-    if (_held)
-        return;
+    if (_held || _flipped)
+        return;  // idempotent: a second pre callback inside the same scope must not
+                 // save the already-flipped values as the restore target
 
     // Raw flips: server-side movement for this player's command sees bhop values; no callbacks
     // fire and nothing is networked. RestoreRaw undoes it before anyone else runs.

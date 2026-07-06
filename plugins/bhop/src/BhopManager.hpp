@@ -71,6 +71,7 @@ private:
     std::optional<CS2Kit::ServerCommand> _cmdPlayer;
     std::optional<CS2Kit::ServerCommand> _cmdReload;
     std::optional<CS2Kit::ServerCommand> _cmdFlipHold;
+    std::optional<CS2Kit::ServerCommand> _cmdDebug;
 };
 
 }  // namespace Bhop
