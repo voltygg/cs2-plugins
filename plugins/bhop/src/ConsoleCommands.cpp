@@ -65,10 +65,10 @@ void BhopManager::RegisterConsoleCommands()
                           for (bool slotGranted : _grantedSlots)
                               granted += slotGranted ? 1 : 0;
                           Log::Info(
-                              "bhop_debug: usercmds={} movement={} scopes={} unresolved={} "
+                              "bhop_debug: usercmds={} movement={} runcmds={} scopes={} unresolved={} "
                               "grantedSlots={} mode={}.",
-                              stats.UsercmdsCalls, stats.MovementCalls, stats.ScopesEntered, stats.UnresolvedSlots,
-                              granted, _mode == Mode::Grants ? "grants" : "enabled");
+                              stats.UsercmdsCalls, stats.MovementCalls, stats.RunCommandCalls, stats.ScopesEntered,
+                              stats.UnresolvedSlots, granted, _mode == Mode::Grants ? "grants" : "enabled");
                       });
 }
 
