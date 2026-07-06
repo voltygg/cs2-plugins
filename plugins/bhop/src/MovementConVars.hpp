@@ -17,13 +17,17 @@ namespace Bhop
  * "enabled" mode sets the overrides server-wide through the engine (ApplyGlobal/RestoreGlobal):
  * they replicate to every client and the feature is fully client-predicted. "grants" mode leaves
  * the server untouched - it replicates the values to a single client (ReplicateOverrides) and
- * flips the raw server-side storage only around that player's RunCommand (FlipRaw/RestoreRaw),
- * restoring the real values on revoke (ReplicateServerValues).
+ * flips the raw server-side storage only around that player's ProcessMovement (FlipRaw/
+ * RestoreRaw), restoring the real values on revoke (ReplicateServerValues).
  */
 class MovementConVars
 {
 public:
-    ~MovementConVars() { RestoreGlobal(); }  // unload leaves the server's convars as we found them
+    ~MovementConVars()  // unload leaves the server's convars as we found them
+    {
+        HoldRaw(false);
+        RestoreGlobal();
+    }
 
     /** (Re)resolve the override set from @p settings; clears any previous set first. */
     void Build(const BhopSettings& settings);
@@ -40,10 +44,15 @@ public:
     void ReplicateOverrides(int slot) const;
     void ReplicateServerValues(int slot) const;
 
-    /** "grants" mode: flip raw storage to the bhop values for one player's RunCommand, then back.
-     *  RestoreRaw is a no-op unless a FlipRaw is outstanding. */
+    /** "grants" mode: flip raw storage to the bhop values for one player's ProcessMovement,
+     *  then back. RestoreRaw is a no-op unless a FlipRaw is outstanding. */
     void FlipRaw();
     void RestoreRaw();
+
+    /** Diagnostic (bhop_flip_hold): keep the raw overrides applied server-wide, ignoring the
+     *  per-player flip/restore cycle until released. Verifies the engine's movement code
+     *  honors raw writes at all, without needing a granted client. */
+    void HoldRaw(bool hold);
 
 private:
     /** One convar the active settings override, with everything both modes need. */
@@ -62,6 +71,7 @@ private:
     std::vector<ConVarOverride> _overrides;
     bool _globalApplied = false;
     bool _flipped = false;
+    bool _held = false;  // bhop_flip_hold diagnostic: freezes FlipRaw/RestoreRaw
 };
 
 }  // namespace Bhop

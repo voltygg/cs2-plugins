@@ -21,7 +21,8 @@ namespace Bhop
  * to every client and the whole feature is client-predicted (ping-free). "grants" mode leaves the
  * server untouched and enables bhop per player: the client gets the convar values via
  * ReplicateToClient (its prediction auto-jumps) while the server flips the same convars only
- * around that player's RunCommand via the kit MovementHook.
+ * around that player's ProcessMovement via the kit MovementHook, so the engine's own jump code
+ * hops that player server-side and prediction stays in agreement.
  */
 class BhopManager
 {
@@ -50,11 +51,10 @@ private:
     void RegisterConsoleCommands();  // ConsoleCommands.cpp
     void ApplySettings();
 
-    void OnRunCommandPre(int slot);
-    void OnRunCommandPost(int slot);
+    void OnMovementPre(int slot);
+    void OnMovementPost(int slot);
     void OnPlayerJump(int slot);
     void OnPlayerSpawn(int slot);
-    void ForceAutoHop(int slot);
 
     bool IsActiveSlot(int slot) const;
 
@@ -70,6 +70,7 @@ private:
 
     std::optional<CS2Kit::ServerCommand> _cmdPlayer;
     std::optional<CS2Kit::ServerCommand> _cmdReload;
+    std::optional<CS2Kit::ServerCommand> _cmdFlipHold;
 };
 
 }  // namespace Bhop

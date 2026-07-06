@@ -54,6 +54,7 @@ void MovementConVars::Build(const BhopSettings& settings)
 
 void MovementConVars::Reset()
 {
+    HoldRaw(false);
     RestoreGlobal();
     _overrides.clear();
 }
@@ -109,6 +110,9 @@ void MovementConVars::ReplicateServerValues(int slot) const
 
 void MovementConVars::FlipRaw()
 {
+    if (_held)
+        return;
+
     // Raw flips: server-side movement for this player's command sees bhop values; no callbacks
     // fire and nothing is networked. RestoreRaw undoes it before anyone else runs.
     for (auto& entry : _overrides)
@@ -131,7 +135,7 @@ void MovementConVars::FlipRaw()
 
 void MovementConVars::RestoreRaw()
 {
-    if (!_flipped)
+    if (_held || !_flipped)
         return;
 
     for (auto& entry : _overrides)
@@ -144,6 +148,23 @@ void MovementConVars::RestoreRaw()
             entry.Raw.SetBool(entry.SavedValue != 0.0f);
     }
     _flipped = false;
+}
+
+void MovementConVars::HoldRaw(bool hold)
+{
+    if (hold == _held)
+        return;
+
+    if (hold)
+    {
+        FlipRaw();  // before _held engages, so the flip itself isn't suppressed
+        _held = true;
+    }
+    else
+    {
+        _held = false;
+        RestoreRaw();
+    }
 }
 
 }  // namespace Bhop

@@ -12,9 +12,9 @@ makes the **client itself** predict everything:
   they replicate to every client and all hops are client-predicted.
 - In `grants` mode, a granted player's client receives the convar values via a
   per-client `CNETMsg_SetConVar` (its prediction auto-jumps), while the server flips
-  the same convars only around that player's movement processing
-  (`CPlayer_MovementServices::RunCommand` hook). Both sides agree; nobody else is
-  affected.
+  the same convars only around that player's movement simulation
+  (`CCSPlayer_MovementServices::ProcessMovement` detour), so the engine's own jump
+  code hops that player server-side. Both sides agree; nobody else is affected.
 
 Speed gain comes from two layers:
 
@@ -37,6 +37,7 @@ Speed gain comes from two layers:
 | --- | --- |
 | `bhop_player <steamid64> <0\|1>` | Grant/revoke session bhop for a player (used by admin-system's Bunnyhop effect). |
 | `bhop_reload` | Re-read `settings.jsonc` and re-apply the configuration without a restart. |
+| `bhop_flip_hold <0\|1>` | Diagnostic: hold/release the raw server-side overrides for everyone (no replication). Verifies the engine honors the raw flip. |
 
 ## Configuration
 
@@ -71,7 +72,8 @@ plugin loaded the toggle is inert.
 
 ## Maintenance note
 
-`grants` mode hooks `CPlayer_MovementServices::RunCommand` by vtable index (gamedata
-`"RunCommand"`, currently windows 22 / linux 23). The index drifts with CS2 updates -
-re-verify it against SwiftlyS2/CS2Fixes gamedata after every game update. `enabled`
+`grants` mode detours `CCSPlayer_MovementServices::ProcessMovement` by byte pattern
+(gamedata `"ProcessMovement"`, synced from SwiftlyS2/CS2Fixes). The pattern drifts
+with CS2 updates - a failed match just disables grants (logged warning, no crash),
+but re-verify it against those projects' gamedata after every game update. `enabled`
 mode uses no hooks and is update-proof.
