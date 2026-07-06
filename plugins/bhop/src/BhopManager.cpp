@@ -1,6 +1,7 @@
 #include "BhopManager.hpp"
 
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <algorithm>
@@ -28,14 +29,22 @@ void BhopManager::Initialize()
             _conVars.ApplyGlobal();
     });
 
-    // The flip brackets ProcessMovement - the code that actually reads the movement convars -
-    // so the engine's own subtick jump performs the server-side hop with exactly the timing,
-    // stamina scaling, and impulse the granted client predicts. (An earlier design flipped
-    // around RunCommand and force-hopped from a frame scheduler; the manual hop could never
-    // match the client's subtick prediction and every jump shipped a correction - the
-    // grants-mode jitter.)
-    Engine().MovementHook.ListenPre([this](int slot) { OnMovementPre(slot); });
-    Engine().MovementHook.ListenPost([this](int slot) { OnMovementPost(slot); });
+    Engine().MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); });
+    Engine().MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); });
+
+    // Server-authoritative auto-hop for grants. The 2026 subtick jump code does not honor the
+    // flipped sv_autobunnyhopping, so the client (predicting with the replicated overrides)
+    // auto-hops while the server keeps the player grounded - the grants-mode "float".
+    // Post-simulation is the placement that works: hooking before the player's RunCommand kept
+    // missing the landing (still airborne at pre time, vertical velocity re-zeroed by the landing
+    // inside that same command).
+    Engine().Scheduler.EveryFrame([this] {
+        if (_mode != Mode::Grants)
+            return;
+        for (int slot = 0; slot < Core::MaxPlayers; ++slot)
+            if (_grantedSlots[slot])
+                ForceAutoHop(slot);
+    });
 }
 
 void BhopManager::ApplySettings()
@@ -134,13 +143,13 @@ void BhopManager::OnPlayerDisconnect(Player* player)
     }
 }
 
-void BhopManager::OnMovementPre(int slot)
+void BhopManager::OnRunCommandPre(int slot)
 {
     if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
         _conVars.FlipRaw();
 }
 
-void BhopManager::OnMovementPost(int /*slot*/)
+void BhopManager::OnRunCommandPost(int /*slot*/)
 {
     _conVars.RestoreRaw();
 }
@@ -179,6 +188,34 @@ void BhopManager::OnPlayerJump(int slot)
     velocity.x *= scaled / speed;
     velocity.y *= scaled / speed;
     controller.SetVelocity(velocity);
+}
+
+void BhopManager::ForceAutoHop(int slot)
+{
+    if (!(Engine().Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
+        return;
+
+    PlayerController controller(slot);
+    if (!controller.IsValid())
+        return;
+
+    uint32_t flags = controller.GetFlags();
+    if (!(flags & Sdk::FL_ONGROUND))
+        return;
+
+    Vector velocity = controller.GetVelocity();
+    if (velocity.z > 0.0f)
+        return;  // already ascending: the engine (or last frame's hop) took this jump
+
+    constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0); engine default
+    velocity.z = Engine().ConVars.GetFloat("sv_jump_impulse").value_or(DefaultJumpImpulse);
+    controller.SetVelocity(velocity);
+    // Leave the ground in the same frame: if the next movement command still sees FL_ONGROUND
+    // it can re-ground and zero the vertical velocity for a tick - the "laggy jump" hitch.
+    controller.SetFlags(flags & ~Sdk::FL_ONGROUND);
+
+    // A forced hop never emits player_jump, so feed the boost chain by hand.
+    OnPlayerJump(slot);
 }
 
 void BhopManager::OnPlayerSpawn(int slot)

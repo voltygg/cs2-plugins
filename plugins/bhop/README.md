@@ -13,10 +13,8 @@ makes the **client itself** predict everything:
 - In `grants` mode, a granted player's client receives the convar values via a
   per-client `CNETMsg_SetConVar` (its prediction auto-jumps), while the server flips
   the same convars only around that player's movement processing
-  (`CCSPlayerController::ProcessUsercmds` + `CCSPlayer_MovementServices::ProcessMovement`
-  detours - the jump code reads the convars in the usercmd layer, outside
-  ProcessMovement), so the engine's own jump code hops that player server-side.
-  Both sides agree; nobody else is affected.
+  (`CPlayer_MovementServices::RunCommand` hook). Both sides agree; nobody else is
+  affected.
 
 Speed gain comes from two layers:
 
@@ -39,8 +37,6 @@ Speed gain comes from two layers:
 | --- | --- |
 | `bhop_player <steamid64> <0\|1>` | Grant/revoke session bhop for a player (used by admin-system's Bunnyhop effect). |
 | `bhop_reload` | Re-read `settings.jsonc` and re-apply the configuration without a restart. |
-| `bhop_flip_hold <0\|1>` | Diagnostic: hold/release the raw server-side overrides for everyone (no replication - non-granted clients rubber-band; use mode `enabled` for real server-wide bhop). |
-| `bhop_debug` | Print movement-hook counters (usercmds/movement calls, scopes, unresolved slots) and grant state. |
 
 ## Configuration
 
@@ -75,9 +71,7 @@ plugin loaded the toggle is inert.
 
 ## Maintenance note
 
-`grants` mode detours `CCSPlayerController::ProcessUsercmds` and
-`CCSPlayer_MovementServices::ProcessMovement` by byte pattern (gamedata
-`"ProcessUsercmds"` / `"ProcessMovement"`, synced from CS2Fixes/SwiftlyS2). The
-patterns drift with CS2 updates - a failed match just disables that detour (logged
-warning, no crash), but re-verify against those projects' gamedata after every game
-update. `enabled` mode uses no hooks and is update-proof.
+`grants` mode hooks `CPlayer_MovementServices::RunCommand` by vtable index (gamedata
+`"RunCommand"`, currently windows 22 / linux 23). The index drifts with CS2 updates -
+re-verify it against SwiftlyS2/CS2Fixes gamedata after every game update. `enabled`
+mode uses no hooks and is update-proof.
