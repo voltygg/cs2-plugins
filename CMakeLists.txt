@@ -12,3 +12,4 @@ add_subdirectory(vendor/cs2-kit)
 
 add_subdirectory(plugins/admin-system)
 add_subdirectory(plugins/bhop)
+add_subdirectory(plugins/anticheat)

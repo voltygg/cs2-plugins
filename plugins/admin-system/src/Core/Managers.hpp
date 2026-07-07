@@ -3,6 +3,7 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/FreezeManager.hpp"
+#include "../Commands/AntiCheatBridge.hpp"
 #include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
@@ -38,6 +39,7 @@ struct Managers
     // Constructed after the kit's Services (and its Scheduler) are live - PluginBase guarantees it.
     CS2Kit::EffectManager Effects{CS2Kit::Engine().Scheduler};
     Admin::CheatCheck::CheatCheckManager CheatCheck;
+    Core::AntiCheatBridge AntiCheat;
 };
 
 }  // namespace AdminSystem

@@ -241,6 +241,9 @@
     "expiresIn": "истекает через",
     "permanent": "навсегда"
   },
+  "anticheat": {
+    "alert": "[AC] {name} помечен детектором {detector} (очки {score}) - стоит провести !check"
+  },
   "lang": {
     "en": "English",
     "ru": "Русский"

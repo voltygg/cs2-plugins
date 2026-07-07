@@ -241,6 +241,9 @@
     "expiresIn": "expires in",
     "permanent": "permanent"
   },
+  "anticheat": {
+    "alert": "[AC] {name} flagged by {detector} (score {score}) - consider a !check"
+  },
   "lang": {
     "en": "English",
     "ru": "Русский"

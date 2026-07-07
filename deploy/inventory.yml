@@ -20,8 +20,9 @@ database:
 plugins:
   admin-system:
     database: admin_system
-  # DB-less plugin: no 'database' key, so rendering skips the DB_* requirements.
+  # DB-less plugins: no 'database' key, so rendering skips the DB_* requirements.
   bhop: {}
+  anticheat: {}
 
 servers:
   - id: box-a
@@ -32,6 +33,7 @@ servers:
     plugins:
       - admin-system
       - bhop
+      - anticheat
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
 

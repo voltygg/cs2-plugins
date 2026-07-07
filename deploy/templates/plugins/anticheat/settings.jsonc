@@ -1,0 +1,91 @@
+// Template for anticheat's settings.jsonc - rendered per (server, plugin) by
+// deploy/tools/render.py. DB-less, no per-instance placeholders; every knob is
+// a literal - edit it in git to change it.
+//
+// Mode ladder: "observe" (log only) -> "alert" (notify Ban-flag admins via
+// admin-system) -> "ban" (auto-ban at ban score). Stays in "observe" until the
+// thresholds are tuned against real traffic on this box; flip to "alert", soak,
+// then "ban". Spinning alone never bans - the spin detector requires repeated
+// mid-spin on-target kills.
+{
+  "plugin": {
+    "logLevel": "info",
+    "locale": "ru"
+  },
+
+  "anticheat": {
+    "mode": "observe",
+    "alertCooldownSec": 30.0,
+    "historyDepth": 128,
+    "ban": {
+      "durationSec": 0, // 0 = permanent
+      "reason": "AntiCheat: blatant input anomaly"
+    },
+    "detectors": {
+      "spin": {
+        "enabled": true,
+        "yawVelocityDegPerSec": 1800.0,
+        "minTicks": 32,
+        "killWindowTicks": 8,
+        "onTargetEpsilonDeg": 8.0,
+        "minKillEvents": 3,
+        "eventWindowSec": 120.0,
+        "spinOnlyScore": 5.0,
+        "killEventScore": 40.0,
+        "headshotMultiplier": 1.5,
+        "alertScore": 60.0,
+        "banScore": 110.0,
+        "decayPerSec": 0.5
+      },
+      "aimSnap": {
+        "enabled": true,
+        "lookbackTicks": 16,
+        "minSnapDeg": 40.0,
+        "settleEpsilonDeg": 1.0,
+        "confirmWindowTicks": 4,
+        "onTargetEpsilonDeg": 8.0,
+        "minEvents": 4,
+        "eventWindowSec": 180.0,
+        "snapScore": 3.0,
+        "confirmedHitScore": 25.0,
+        "alertScore": 60.0,
+        "banScore": 100.0,
+        "decayPerSec": 0.5
+      },
+      "sanity": {
+        "enabled": true,
+        "maxPitchDeg": 89.5,
+        "minTicks": 4,
+        "minEvents": 1,
+        "eventWindowSec": 60.0,
+        "eventScore": 50.0,
+        "alertScore": 50.0,
+        "banScore": 50.0,
+        "decayPerSec": 0.1
+      },
+      "silentAim": {
+        "enabled": true,
+        "minAngleJumpDeg": 20.0,
+        "maxMouseUnits": 2,
+        "confirmWindowTicks": 4,
+        "onTargetEpsilonDeg": 8.0,
+        "minEvents": 3,
+        "eventWindowSec": 180.0,
+        "eventScore": 35.0,
+        "alertScore": 60.0,
+        "banScore": 100.0,
+        "decayPerSec": 0.5
+      },
+      "noFlash": {
+        "enabled": true,
+        "minRemainingSec": 1.0,
+        "minEvents": 3,
+        "eventWindowSec": 120.0,
+        "eventScore": 35.0,
+        "alertScore": 60.0,
+        "banScore": 100.0,
+        "decayPerSec": 0.5
+      }
+    }
+  }
+}

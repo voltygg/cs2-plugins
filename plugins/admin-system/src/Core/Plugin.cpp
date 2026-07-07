@@ -207,7 +207,11 @@ bool AdminSystemPlugin::OnLoad(bool late)
     Engine().Commands.RegisterAll(CS2Kit::Registry<CS2Kit::CommandSpec>::Items());
 
     if (dbConnected)
+    {
         RegisterPunishmentTasks();
+        // Console surface the anticheat plugin drives (bans need the DB, alerts need admin data).
+        App().AntiCheat.RegisterConsoleCommands();
+    }
 
     Log::Info("Loading translations...");
     Engine().Translations.Load("addons/admin-system/configs/translations");
