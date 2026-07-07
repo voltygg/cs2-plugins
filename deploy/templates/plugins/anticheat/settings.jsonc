@@ -18,7 +18,8 @@
     "alertCooldownSec": 30.0,
     "historyDepth": 128,
     "ban": {
-      "durationSec": 0, // 0 = permanent
+      // durationSec 0 = permanent
+      "durationSec": 0,
       "reason": "AntiCheat: blatant input anomaly"
     },
     "detectors": {
