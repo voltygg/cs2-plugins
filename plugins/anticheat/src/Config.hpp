@@ -37,7 +37,7 @@ struct SpinSettings
     float onTargetEpsilonDeg = 8.0f;       // fire-tick angle must land this close to the victim
     int minKillEvents = 3;                 // distinct spin-snap-kills required for ban tier
     float eventWindowSec = 120.0f;
-    float spinOnlyScore = 5.0f;            // observe-tier only; capped below alertScore by design
+    float spinOnlyScore = 5.0f;  // observe-tier only; capped below alertScore by design
     float killEventScore = 40.0f;
     float headshotMultiplier = 1.5f;
     float alertScore = 60.0f;
@@ -54,12 +54,12 @@ struct AimSnapSettings
     bool enabled = true;
     int lookbackTicks = 16;
     float minSnapDeg = 40.0f;
-    float settleEpsilonDeg = 1.0f;   // post-snap per-tick motion that still counts as "locked"
-    int confirmWindowTicks = 4;      // damage must arrive this close to the fire tick
+    float settleEpsilonDeg = 1.0f;  // post-snap per-tick motion that still counts as "locked"
+    int confirmWindowTicks = 4;     // damage must arrive this close to the fire tick
     float onTargetEpsilonDeg = 8.0f;
-    int minEvents = 4;               // confirmed snap-hits required for ban tier
+    int minEvents = 4;  // confirmed snap-hits required for ban tier
     float eventWindowSec = 180.0f;
-    float snapScore = 3.0f;          // unconfirmed snaps: observe log only
+    float snapScore = 3.0f;  // unconfirmed snaps: observe log only
     float confirmedHitScore = 25.0f;
     float alertScore = 60.0f;
     float banScore = 100.0f;

@@ -74,34 +74,32 @@ void AntiCheatBridge::RegisterConsoleCommands()
                             Log::Warn("as_ac_ban: failed to persist ban for {}.", steamId);
                     });
 
-    _cmdAlert.emplace("as_ac_alert", "Anticheat admin alert: as_ac_alert <steamid64> <detector> <score>",
-                      [](const CCommand& args) {
-                          if (args.ArgC() < 4)
-                          {
-                              Log::Warn("Usage: as_ac_alert <steamid64> <detector> <score>");
-                              return;
-                          }
+    _cmdAlert.emplace(
+        "as_ac_alert", "Anticheat admin alert: as_ac_alert <steamid64> <detector> <score>", [](const CCommand& args) {
+            if (args.ArgC() < 4)
+            {
+                Log::Warn("Usage: as_ac_alert <steamid64> <detector> <score>");
+                return;
+            }
 
-                          int64_t steamId = ParseSteamId64(args.Arg(1));
-                          if (steamId == 0)
-                          {
-                              Log::Warn("as_ac_alert: '{}' is not a SteamID64.", args.Arg(1));
-                              return;
-                          }
+            int64_t steamId = ParseSteamId64(args.Arg(1));
+            if (steamId == 0)
+            {
+                Log::Warn("as_ac_alert: '{}' is not a SteamID64.", args.Arg(1));
+                return;
+            }
 
-                          auto* suspect = Engine().Players.GetPlayerBySteamId(steamId);
-                          std::string suspectName = suspect ? suspect->GetName() : std::to_string(steamId);
+            auto* suspect = Engine().Players.GetPlayerBySteamId(steamId);
+            std::string suspectName = suspect ? suspect->GetName() : std::to_string(steamId);
 
-                          for (auto* admin : Engine().Players.GetAllPlayers())
-                          {
-                              if (!App().Admins.HasPermission(admin->GetSteamID(), Permission::Ban))
-                                  continue;
-                              Engine().Messages.ReplyKey(admin->GetSlot(), "anticheat.alert",
-                                                         {{"name", suspectName},
-                                                          {"detector", args.Arg(2)},
-                                                          {"score", args.Arg(3)}});
-                          }
-                      });
+            for (auto* admin : Engine().Players.GetAllPlayers())
+            {
+                if (!App().Admins.HasPermission(admin->GetSteamID(), Permission::Ban))
+                    continue;
+                Engine().Messages.ReplyKey(admin->GetSlot(), "anticheat.alert",
+                                           {{"name", suspectName}, {"detector", args.Arg(2)}, {"score", args.Arg(3)}});
+            }
+        });
 }
 
 }  // namespace AdminSystem::Core

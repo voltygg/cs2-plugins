@@ -60,9 +60,9 @@ struct PlayerState
     std::array<float, SpinWindow> YawDeltas{};
     int YawDeltaHead = 0;
     int YawDeltaCount = 0;
-    float YawDeltaSum = 0.0f;  // sum of |delta| across the window
-    uint32_t SpinTicks = 0;    // consecutive ticks above the spin velocity threshold
-    uint32_t LastSpinTick = 0; // most recent tick that qualified as spinning
+    float YawDeltaSum = 0.0f;   // sum of |delta| across the window
+    uint32_t SpinTicks = 0;     // consecutive ticks above the spin velocity threshold
+    uint32_t LastSpinTick = 0;  // most recent tick that qualified as spinning
     double LastSpinOnlyReport = 0.0;
     EventRing SpinKills;
 

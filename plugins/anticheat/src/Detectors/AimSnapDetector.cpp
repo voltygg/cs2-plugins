@@ -98,8 +98,8 @@ std::optional<Detection> OnDamage(const AimSnapSettings& cfg, PlayerState& s, fl
         .AlertScore = cfg.alertScore,
         .BanScore = cfg.banScore,
         .DecayPerSec = cfg.decayPerSec,
-        .Detail = std::format("snap confirmed by on-target hit, aim error {:.1f} deg ({} in window)", aimErrorDeg,
-                              events),
+        .Detail =
+            std::format("snap confirmed by on-target hit, aim error {:.1f} deg ({} in window)", aimErrorDeg, events),
     };
 }
 

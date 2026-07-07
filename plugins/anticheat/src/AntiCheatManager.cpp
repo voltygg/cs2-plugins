@@ -44,8 +44,7 @@ void AntiCheatManager::Initialize()
     // The movement hook needs a live pawn; retry from every spawn until it takes.
     Engine().Events.Listen<PlayerSpawn>([](const PlayerSpawn&) { Engine().MovementHook.Install(); });
 
-    Engine().MovementHook.ListenPreCmd(
-        [this](int slot, const CS2Kit::UserCmdView& cmd) { OnCmd(slot, cmd); });
+    Engine().MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { OnCmd(slot, cmd); });
     Engine().Events.Listen<WeaponFire>([this](const WeaponFire& e) { OnWeaponFire(e); });
     Engine().Events.Listen<PlayerHurt>([this](const PlayerHurt& e) { OnPlayerHurt(e); });
     Engine().Events.Listen<PlayerDeath>([this](const PlayerDeath& e) { OnPlayerDeath(e); });
