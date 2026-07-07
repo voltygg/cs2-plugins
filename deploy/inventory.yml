@@ -35,7 +35,10 @@ servers:
       - bhop
       - anticheat
     instances:
-      - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
+      - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main", insecure: true }
+      # `insecure: true` launches with -insecure (VAC off) for cheat testing;
+      # clients must connect with -insecure too. Leave off for live play.
+      # - { name: test, port: 27016, map: de_dust2, hostname: "CS2 Test", insecure: true }
 
 # Per-instance plugins: an instance's own `plugins:` replaces the server default.
 # servers:

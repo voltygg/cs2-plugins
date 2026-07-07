@@ -138,6 +138,10 @@ def write_env_file(instance: dict[str, Any], out: Path) -> None:
             f"CS2_HOSTNAME_{name}", str(instance.get("hostname", f"CS2 {name}"))
         ),
     }
+    # Opt-in VAC-off for cheat testing. "-insecure" alone works; "+exec
+    # server.cfg" alongside it re-enables VAC (joedwards32/CS2#17).
+    if instance.get("insecure"):
+        env["CS2_ADDITIONAL_ARGS"] = "-insecure"
     out.parent.mkdir(parents=True, exist_ok=True)
     lines = [f"{key}={dotenv_value(value)}" for key, value in env.items()]
     out.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
