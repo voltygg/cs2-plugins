@@ -96,7 +96,7 @@ Key kit patterns in use here:
 ## Reference Projects
 
 Local, git-ignored copies of third-party CS2 projects live in `references/`
-(`CS2Fixes/`, `cs2-admin_system/`, `swiftlys2/`) for consulting SDK usage and
+(`CS2Fixes/`, `swiftlys2/`, and other repos) for consulting SDK usage and
 implementation patterns. They are read-only references, not build inputs - do
 not edit them or add them to the build.
 
