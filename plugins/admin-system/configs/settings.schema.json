@@ -1,0 +1,257 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "admin-system settings.jsonc",
+  "description": "Runtime configuration for the admin-system CS2 plugin. Mirrors the Settings struct in src/Core/Config.hpp - missing keys fall back to their C++ defaults; wrong-typed values fail the whole load.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "logLevel": {
+          "type": "string",
+          "enum": ["trace", "debug", "info", "warn", "error"],
+          "default": "info",
+          "description": "Log verbosity. NOTE: currently declared but not consumed by the plugin."
+        },
+        "locale": {
+          "type": "string",
+          "default": "en",
+          "description": "Default panel/translation language; matches a file in configs/translations (e.g. \"en\", \"ru\")."
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "type": "string",
+          "default": "default",
+          "description": "Stable identity of THIS game server in the shared database. Must be unique per server and must never change once per-server admin grants reference it."
+        },
+        "name": {
+          "type": "string",
+          "default": "CS2 Server",
+          "description": "Human-readable name registered in the servers table (auto-upserted on boot)."
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "host": { "type": "string", "default": "localhost", "description": "PostgreSQL host." },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "default": 5432 },
+        "database": { "type": "string", "default": "admin_system" },
+        "username": { "type": "string", "default": "postgres" },
+        "password": { "type": "string" },
+        "sslMode": {
+          "type": "string",
+          "enum": ["disable", "allow", "prefer", "require", "verify-ca", "verify-full"],
+          "default": "prefer",
+          "description": "libpq SSL mode."
+        }
+      }
+    },
+    "punishments": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "defaultBanReason": {
+          "type": "string",
+          "default": "Banned by administrator",
+          "description": "Reason recorded when an admin bans without specifying one."
+        },
+        "warningThreshold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 3,
+          "description": "Number of warnings before escalation logic triggers."
+        },
+        "templates": {
+          "type": "array",
+          "description": "Quick Punish presets shown in the admin menu. Invalid entries are skipped with a warning in the server log.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "type", "duration", "reason"],
+            "properties": {
+              "name": { "type": "string", "description": "Menu row label." },
+              "type": { "type": "string", "enum": ["ban", "voiceMute", "textMute"] },
+              "duration": {
+                "type": "string",
+                "pattern": "^(perm|[0-9]+[smhd]?)$",
+                "description": "\"perm\" (or \"0\") for permanent, otherwise <n>s / <n>m / <n>h / <n>d. A bare number means SECONDS - prefer an explicit suffix.",
+                "examples": ["perm", "30s", "5m", "2h", "7d"]
+              },
+              "reason": { "type": "string", "description": "Reason recorded with the punishment." }
+            }
+          }
+        },
+        "reasonPresets": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Preset reasons offered in the manual menu punish flow (a free-text \"Custom...\" row is always added)."
+        },
+        "menuDurations": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^(perm|[0-9]+[smhd]?)$" },
+          "default": ["5m", "30m", "1h", "1d", "7d", "perm"],
+          "description": "Rows of the menu duration picker (same grammar as template durations)."
+        }
+      }
+    },
+    "abuseProtection": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Automatic admin-freeze rate thresholds, counted across ALL servers sharing the database. A threshold of 0 disables that counter; root ('z') admins are always exempt.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Master switch for AUTOMATIC admin freezing; manual !freeze_admin always works."
+        },
+        "windowMinutes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10,
+          "description": "Sliding window (minutes) over which an admin's actions are counted."
+        },
+        "maxBans": { "type": "integer", "minimum": 0, "default": 5 },
+        "maxKicks": { "type": "integer", "minimum": 0, "default": 10 },
+        "maxMutes": { "type": "integer", "minimum": 0, "default": 15, "description": "Voice + text mutes combined." },
+        "maxWarnings": { "type": "integer", "minimum": 0, "default": 15 }
+      }
+    },
+    "chat": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "broadcastPunishments": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, every issued punishment broadcasts a colored line to all players."
+        },
+        "tagAdminChatMessages": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, an admin's chat is re-emitted with their group's colored prefix."
+        },
+        "fallbackPrefix": {
+          "type": "string",
+          "default": "[ADMIN]",
+          "description": "Prefix used when an admin has no group prefix set."
+        },
+        "fallbackPrefixColor": { "type": "string", "default": "red" },
+        "fallbackNameColor": { "type": "string", "default": "default" },
+        "fallbackMessageColor": { "type": "string", "default": "default" }
+      }
+    },
+    "cheatCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["fixedLink", "websiteAutoRoom", "playerProvided"],
+          "default": "fixedLink",
+          "description": "Active delivery mode."
+        },
+        "timeoutSec": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 120,
+          "description": "Seconds the suspect has to comply before the timeout action fires."
+        },
+        "autoKick": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, auto-kick on timeout; if false, just unfreeze and notify the admin."
+        },
+        "kickReason": { "type": "string", "default": "Failed to comply with cheat check" },
+        "panelRefreshMs": {
+          "type": "integer",
+          "minimum": 50,
+          "default": 100,
+          "description": "How often (ms) the center-HTML panel is re-sent. Values above ~200 make it visibly blink or vanish."
+        },
+        "moveToSpectator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also force the suspect to spectator (not just freeze) so they can't keep playing."
+        },
+        "bannerImageUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Optional online image (https) shown atop the panel; leave empty for no banner."
+        },
+        "bannerWidth": { "type": "integer", "minimum": 1, "default": 320 },
+        "bannerHeight": { "type": "integer", "minimum": 1, "default": 180 },
+        "fixedLink": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "\"fixedLink\" mode: the single URL shown to the suspect. Also the fallback for websiteAutoRoom.",
+          "properties": {
+            "url": { "type": "string" }
+          }
+        },
+        "websiteAutoRoom": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "\"websiteAutoRoom\" mode: the plugin POSTs here to create a per-check room. Backend-agnostic; string values may contain {steamId} {playerName} {adminSteamId} {adminName} placeholders.",
+          "properties": {
+            "createRoomUrl": { "type": "string", "description": "Room-creation endpoint." },
+            "apiKey": { "type": "string" },
+            "authHeader": {
+              "type": "string",
+              "default": "Authorization",
+              "description": "Auth header NAME, e.g. \"Authorization\" or \"X-API-Key\"."
+            },
+            "authScheme": {
+              "type": "string",
+              "default": "Bearer",
+              "description": "Value prefix before the key; \"\" sends the key verbatim."
+            },
+            "requestBody": {
+              "type": "object",
+              "description": "Body POSTed to your API; placeholders substituted per check."
+            },
+            "playerUrlField": {
+              "type": "string",
+              "default": "playerUrl",
+              "description": "Dot-path into the JSON response holding the suspect's room id/URL."
+            },
+            "playerUrlTemplate": {
+              "type": "string",
+              "description": "{value} is replaced by playerUrlField; leave empty to use the field value as the URL directly."
+            },
+            "checkerUrlField": { "type": "string", "default": "checkerUrl" },
+            "checkerUrlTemplate": {
+              "type": "string",
+              "description": "Optional checker URL relayed to the calling admin."
+            },
+            "timeoutMs": { "type": "integer", "minimum": 1, "default": 8000 },
+            "presenceUrl": {
+              "type": "string",
+              "description": "Presence poll GET; {code} = raw playerUrlField value, {steamId} = suspect's SteamID64. Empty disables polling."
+            },
+            "presenceField": {
+              "type": "string",
+              "default": "present",
+              "description": "Dot-path into the poll response holding the in-room flag."
+            },
+            "pollIntervalSec": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 5,
+              "description": "Poll cadence in seconds; also the worst-case delay before a join is noticed."
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -10,6 +10,7 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
+#include <CS2Kit/BuildInfo.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/HookMacros.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
@@ -65,16 +66,6 @@ Managers& App()
 namespace
 {
 
-bool LoadConfigs()
-{
-    if (!App().Config.LoadSettings("addons/admin-system/configs/settings.jsonc"))
-    {
-        Log::Error("Failed to load settings.jsonc -- aborting load.");
-        return false;
-    }
-    return true;
-}
-
 // The one policy the kit consults everywhere: command permissions, action targeting,
 // result replies, and action broadcasts. Lambdas resolve App() at call time.
 void InstallPolicy()
@@ -95,43 +86,39 @@ void InstallPolicy()
     };
 }
 
-bool ConnectDatabaseAndLoadAdmins()
+StageResult ConnectDatabase()
 {
-    Log::Info("Connecting to database...");
     auto& db = App().Db;
-
     if (!db.Start(App().Config.GetDatabase()))
-    {
-        Log::Warn("Database unavailable - admins/groups not loaded; chat commands will reject all callers.");
-        return false;
-    }
+        return StageResult::Degraded("unavailable; chat commands will reject all callers");
 
-    if (!CS2Kit::RunMigrations(db, "addons/admin-system/configs/migrations",
-                               {.TableName = "schema_migrations", .AdvisoryLockKey = 727274}))
-    {
-        Log::Warn("Database migrations failed - not loading admins against an out-of-date schema.");
-        return false;
-    }
+    const auto migration = CS2Kit::RunMigrations(db, "addons/admin-system/configs/migrations",
+                                                 {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
+    App().Status.Migration = migration;
+    if (!migration)
+        return StageResult::Degraded("migrations failed; not loading admins against an out-of-date schema");
 
     const auto& server = App().Config.GetServer();
     if (!AdminSystem::Database::ServerRepository{}.Upsert(server.tag, server.name))
         Log::Warn("Failed to register server '{}' in the servers table.", server.tag);
 
-    Log::Info("Loading admins from database...");
-    auto& adminMgr = App().Admins;
-    if (!adminMgr.LoadGroups())
-        Log::Warn("Failed to load admin groups from DB.");
-    if (!adminMgr.LoadAdmins())
-        Log::Warn("Failed to load admins from DB.");
-    App().Freeze.RefreshFromDatabase();
-    return true;
+    return StageResult::Ok();
 }
 
-void RegisterPunishmentTasks()
+StageResult LoadAdminData()
 {
-    Log::Info("Loading active punishments...");
-    if (!App().Punishments.LoadActivePunishments())
-        Log::Warn("Failed to load active punishments.");
+    auto& adminMgr = App().Admins;
+    const bool groups = adminMgr.LoadGroups();
+    const bool admins = adminMgr.LoadAdmins();
+    App().Freeze.RefreshFromDatabase();
+    if (!groups || !admins)
+        return StageResult::Degraded("failed to load groups/admins from DB");
+    return StageResult::Ok();
+}
+
+StageResult StartPunishments()
+{
+    const bool loaded = App().Punishments.LoadActivePunishments();
 
     // Every minute: sweep expired bans/mutes, pick up admin freezes issued on other servers
     // sharing this database, and advance this server's registry heartbeat.
@@ -140,6 +127,11 @@ void RegisterPunishmentTasks()
         App().Freeze.RefreshFromDatabase();
         AdminSystem::Database::ServerRepository{}.Heartbeat(App().Config.GetServer().tag);
     });
+
+    // Console surface the anticheat plugin drives (bans need the DB, alerts need admin data).
+    App().AntiCheat.RegisterConsoleCommands();
+
+    return loaded ? StageResult::Ok() : StageResult::Degraded("failed to load active punishments");
 }
 
 void RegisterGameEventListeners()
@@ -174,7 +166,9 @@ PluginInfo AdminSystemPlugin::Info() const
         .Description = "Admin System for CS2",
         .Url = "https://github.com/m9snoi-net/cs2-plugins",
         .License = "MIT",
-        .Version = "1.0.0",
+        .Version = CS2Kit::BuildInfo::Version,
+        .Date = CS2Kit::BuildInfo::BuildDate,
+        .Commit = CS2Kit::BuildInfo::RepoCommit,
         .LogTag = "ADMIN",
     };
 }
@@ -183,43 +177,58 @@ bool AdminSystemPlugin::OnLoad(bool late)
 {
     Log::Info("Loading v{}...", Info().Version);
 
-    Log::Info("Loading configurations...");
-    if (!LoadConfigs())
+    auto& report = Engine().LoadReport;
+
+    const auto config = report.Run("Configuration", [] {
+        if (!App().Config.LoadSettings("addons/admin-system/configs/settings.jsonc"))
+            return StageResult::Failed("failed to load settings.jsonc");
+        return StageResult::Ok();
+    });
+    if (config == StageStatus::Failed)
         return false;
 
-    auto locale = App().Config.GetPlugin().locale;
-    Log::Info("Translations: Setting language to {}...", locale);
-    Engine().Translations.SetLanguage(locale);
+    report.Run("Translations", [] {
+        Engine().Translations.SetLanguage(App().Config.GetPlugin().locale);
+        Engine().Translations.Load("addons/admin-system/configs/translations");
+        return StageResult::Ok();
+    });
 
-    InstallPolicy();
+    report.Run("Policy", [] {
+        InstallPolicy();
+        // Freeze the player while an admin menu is open so WASD navigation doesn't also walk them around.
+        Engine().Menus.SetFreezePlayer(true);
+        return StageResult::Ok();
+    });
 
-    // Freeze the player while an admin menu is open so WASD navigation doesn't also walk them around.
-    Engine().Menus.SetFreezePlayer(true);
-
-    bool dbConnected = ConnectDatabaseAndLoadAdmins();
-    if (dbConnected)
+    if (report.Run("Database", [] { return ConnectDatabase(); }) == StageStatus::Ok)
         // Stop drains queued writes (a ban issued just before unload must land) and drops
         // undispatched completions before the managers they would touch are destroyed.
         Defer([] { App().Db.Stop(); });
 
-    Log::Info("Initializing commands...");
-    // Every command self-registered into the Registry at its definition site; ingest once.
-    Engine().Commands.RegisterAll(CS2Kit::Registry<CS2Kit::CommandSpec>::Items());
+    report.Run("Admins", [&] {
+        if (!report.IsOk("Database"))
+            return StageResult::Skipped("database unavailable");
+        return LoadAdminData();
+    });
 
-    if (dbConnected)
-    {
-        RegisterPunishmentTasks();
-        // Console surface the anticheat plugin drives (bans need the DB, alerts need admin data).
-        App().AntiCheat.RegisterConsoleCommands();
-    }
+    report.Run("Commands", [] {
+        // Every command self-registered into the Registry at its definition site; ingest once.
+        Engine().Commands.RegisterAll(CS2Kit::Registry<CS2Kit::CommandSpec>::Items());
+        return StageResult::Ok();
+    });
 
-    Log::Info("Loading translations...");
-    Engine().Translations.Load("addons/admin-system/configs/translations");
+    report.Run("Punishments", [&] {
+        if (!report.IsOk("Database"))
+            return StageResult::Skipped("database unavailable");
+        return StartPunishments();
+    });
 
-    RegisterGameEventListeners();
-
-    // Queue fun-model assets; they replicate to clients from the next map load.
-    AdminSystem::Admin::Effects::PrecacheModels();
+    report.Run("Events", [] {
+        RegisterGameEventListeners();
+        // Queue fun-model assets; they replicate to clients from the next map load.
+        AdminSystem::Admin::Effects::PrecacheModels();
+        return StageResult::Ok();
+    });
 
     Defer([] { App().CheatCheck.CancelAll(); });
     Defer([] { App().Effects.CancelAll(); });
@@ -230,7 +239,6 @@ bool AdminSystemPlugin::OnLoad(bool late)
     });
     Defer([] { Engine().Players.Clear(); });
 
-    Log::Info("All subsystems initialized.");
     return true;
 }
 

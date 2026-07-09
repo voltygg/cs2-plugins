@@ -4,6 +4,7 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
+#include <CS2Kit/BuildInfo.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 
@@ -29,7 +30,9 @@ CS2Kit::PluginInfo AnticheatPlugin::Info() const
         .Description = "Detects blatant cheating (spinbot, aimlock, silent aim) from per-tick input analysis.",
         .Url = "",
         .License = "MIT",
-        .Version = "0.1.0",
+        .Version = CS2Kit::BuildInfo::Version,
+        .Date = CS2Kit::BuildInfo::BuildDate,
+        .Commit = CS2Kit::BuildInfo::RepoCommit,
         .LogTag = "ANTICHEAT",
     };
 }

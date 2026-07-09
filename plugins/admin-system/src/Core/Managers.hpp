@@ -8,6 +8,7 @@
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
+#include "StatusCommand.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/EffectManager.hpp>
@@ -40,6 +41,7 @@ struct Managers
     CS2Kit::EffectManager Effects{CS2Kit::Engine().Scheduler};
     Admin::CheatCheck::CheatCheckManager CheatCheck;
     Core::AntiCheatBridge AntiCheat;
+    Core::StatusCommand Status;
 };
 
 }  // namespace AdminSystem

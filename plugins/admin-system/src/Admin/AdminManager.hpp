@@ -58,6 +58,8 @@ public:
     void AddAdmin(const Database::Admin& admin);
     void AddGroup(const Database::AdminGroup& group);
     void RemoveAdmin(int64_t steamId);
+    size_t AdminCount() const { return _admins.size(); }
+    size_t GroupCount() const { return _groups.size(); }
 
     /**
      * Resolve the chat styling that should decorate this admin's chat lines. Returns an
