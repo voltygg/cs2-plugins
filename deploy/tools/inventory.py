@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from common import DEPLOY, die
+
+from .common import DEPLOY, die
 
 INVENTORY_PATH = Path(os.environ.get("INVENTORY_PATH", DEPLOY / "inventory.yml"))
 _INHERITED = ("ssh_user", "ssh_port", "cs2_root", "deploy_root", "runtime_image")

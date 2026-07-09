@@ -3,9 +3,9 @@
 import os
 import shlex
 
-import inventory
-from common import die, load_server_env, run
-from remote import run_ssh
+from . import inventory
+from .common import die, load_server_env, run
+from .remote import run_ssh
 
 
 def ensure_databases(server_id: str | None, admin_user: str, *, dry_run: bool) -> None:

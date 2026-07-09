@@ -4,7 +4,7 @@
 Inputs:
   * deploy/inventory.yml for servers/plugins/database defaults.
   * exported environment variables loaded from secrets/servers/<id>/.env.
-  * package/<plugin>/addons bundles produced by deploy/tools/cli.py package.
+  * package/<plugin>/addons bundles produced by `python -m deploy.tools.cli package`.
 
 Outputs under deploy/.render/<server>/:
   * docker-compose.yml
@@ -20,9 +20,10 @@ import stat
 from pathlib import Path
 from typing import Any
 
-import inventory
 import yaml
-from common import DEPLOY, die
+
+from . import inventory
+from .common import DEPLOY, die
 
 PRE_HOOK_TEMPLATE = DEPLOY / "templates" / "pre.sh"
 COMPOSE_SERVICE_TEMPLATE = DEPLOY / "templates" / "compose.service.yml"
@@ -107,7 +108,7 @@ def copy_plugin_bundle(
     """Copy one packaged plugin bundle and render its instance config."""
     source_addons = package_dir / plugin / "addons"
     if not source_addons.is_dir():
-        die(f"no bundle at {source_addons}; run deploy/tools/cli.py package {plugin}")
+        die(f"no bundle at {source_addons}; run: python -m deploy.tools.cli package {plugin}")
     target_addons = bundles_dir / "addons"
     shutil.copytree(source_addons, target_addons, dirs_exist_ok=True)
     settings_out = target_addons / plugin / "configs" / "settings.jsonc"

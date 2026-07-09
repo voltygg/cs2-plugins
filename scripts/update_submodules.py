@@ -11,18 +11,18 @@ work inside vendor/cs2-kit can be committed normally.
     uv run poe update-submodules            # everything to upstream tips
     uv run poe update-submodules --pinned   # nested ones to the commit cs2-kit pins
     uv run poe update-submodules --dry-run  # report what would move
+
+Run via poe: it sets PYTHONPATH to the vendored kit's scripts/ for `import buildtools`.
 """
 
 import argparse
 import subprocess
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+import buildtools
 
-sys.path.insert(0, str(ROOT / "vendor/cs2-kit/scripts"))
-import buildtools  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @dataclass(frozen=True)
@@ -48,18 +48,6 @@ def git(repo: Path, *args: str) -> str:
     if result.returncode != 0:
         buildtools.die(f"git {' '.join(args)} (in {repo}):\n{result.stderr.strip()}")
     return result.stdout.strip()
-
-
-def git_ok(repo: Path, *args: str) -> bool:
-    """Run git in `repo`, returning whether it succeeded. Output is discarded."""
-    return (
-        subprocess.run(
-            ["git", "-C", str(repo), *args],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        ).returncode
-        == 0
-    )
 
 
 def read_submodules(repo: Path) -> list[Submodule]:
@@ -97,7 +85,6 @@ def default_branch(repo: Path) -> str:
         if line.startswith("ref:"):
             return line.split()[1].removeprefix("refs/heads/")
     buildtools.die(f"cannot resolve the default branch of origin in {repo}")
-    raise AssertionError  # unreachable; die() exits
 
 
 def is_dirty(repo: Path) -> bool:
@@ -194,8 +181,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if not git_ok(ROOT, "rev-parse", "--git-dir"):
-        buildtools.die(f"{ROOT} is not a git repository")
+    git(ROOT, "rev-parse", "--git-dir")  # die early when ROOT is not a git repo
 
     print("==> Syncing submodule URLs from .gitmodules")
     if not args.dry_run:

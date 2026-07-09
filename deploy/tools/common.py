@@ -3,12 +3,14 @@
 import shlex
 import subprocess
 from pathlib import Path
+from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[2]
 DEPLOY = ROOT / "deploy"
 
 
-def die(message: str) -> None:
+# Duplicates buildtools.die on purpose: CI runs deploy tooling without submodules.
+def die(message: str) -> NoReturn:
     """Exit the current command with a deploy-tooling error message."""
     raise SystemExit(f"ERROR: {message}")
 

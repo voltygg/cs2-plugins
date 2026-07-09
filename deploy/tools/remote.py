@@ -9,9 +9,8 @@ import time
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-import inventory
-import render
-from common import DEPLOY, command_line, die, load_server_env, repo_path, run
+from . import inventory, render
+from .common import DEPLOY, command_line, die, load_server_env, repo_path, run
 
 
 def deploy_server(
@@ -251,7 +250,6 @@ def open_tunnel(
 
     tunnel.terminate()
     die(f"SSH tunnel to {server['id']} did not come up within 15s")
-    raise AssertionError("unreachable")
 
 
 def ssh_target(server: dict[str, Any]) -> str:

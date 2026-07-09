@@ -4,7 +4,8 @@ Dockerized deployment for this CS2 plugin monorepo. The server runtime image is
 based on `joedwards32/cs2`; this repo renders Compose files, plugin bundles,
 Metamod setup hooks, and per-server plugin settings.
 
-`scripts/deploy.py` and `scripts/start-server.py` remain local Windows dev tools.
+`uv run poe deploy` (the `local` subcommand) and `scripts/start_server.py` remain
+local Windows dev tools.
 
 ## Shape
 
@@ -13,8 +14,7 @@ deploy/inventory.yml          declared plugins + Docker hosts
 deploy/Dockerfile             build + runtime stages
 deploy/docker-compose.build.yml Linux plugin build wrapper
 deploy/scripts/bootstrap-host.sh one-time Ubuntu host bootstrap
-deploy/tools/cli.py           Docker/VPS deploy CLI
-deploy/tools/                 inventory/render helpers
+deploy/tools/                 deploy CLI package (python -m deploy.tools.cli)
 deploy/templates/             rendered config, pre-hook, and compose service templates
 deploy/templates/compose.service.yml one CS2 service block, filled per instance
 deploy/secrets/               per-server env template (real values in GitHub secrets)

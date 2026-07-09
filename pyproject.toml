@@ -21,25 +21,29 @@ dependencies = [
 [tool.uv]
 package = false
 
+[tool.poe.env]
+# Lets repo scripts `import buildtools` from the vendored kit.
+PYTHONPATH = "${POE_ROOT}/vendor/cs2-kit/scripts"
+
 [tool.poe.tasks]
 build = "python vendor/cs2-kit/scripts/build.py"
 build-linux = "python vendor/cs2-kit/scripts/build.py linux-steamrt-release"
 bootstrap = "python vendor/cs2-kit/scripts/bootstrap.py"
 new-plugin = "python vendor/cs2-kit/scripts/new_plugin.py"
 update-submodules = "python scripts/update_submodules.py"
-deploy = "python scripts/deploy.py"
-start-server = "python scripts/start-server.py"
+deploy = "python -m deploy.tools.cli local"
+start-server = "python scripts/start_server.py"
 lint = "ruff check ."
 format = "python vendor/cs2-kit/scripts/format.py plugins vendor/cs2-kit/src vendor/cs2-kit/include vendor/cs2-kit/tests"
 format-check = "python vendor/cs2-kit/scripts/format.py --check plugins vendor/cs2-kit/src vendor/cs2-kit/include vendor/cs2-kit/tests"
-deploy-package = "python deploy/tools/cli.py package"
-deploy-render = "python deploy/tools/cli.py render"
-deploy-server = "python deploy/tools/cli.py deploy"
-deploy-update = "python deploy/tools/cli.py update"
-deploy-cleanup = "python deploy/tools/cli.py cleanup"
-deploy-dbs = "python deploy/tools/cli.py ensure-dbs"
-deploy-tunnel = "python deploy/tools/cli.py tunnel-db"
-rcon = "python deploy/tools/cli.py rcon"
+deploy-package = "python -m deploy.tools.cli package"
+deploy-render = "python -m deploy.tools.cli render"
+deploy-server = "python -m deploy.tools.cli deploy"
+deploy-update = "python -m deploy.tools.cli update"
+deploy-cleanup = "python -m deploy.tools.cli cleanup"
+deploy-dbs = "python -m deploy.tools.cli ensure-dbs"
+deploy-tunnel = "python -m deploy.tools.cli tunnel-db"
+rcon = "python -m deploy.tools.cli rcon"
 
 [tool.ruff]
 line-length = 100
@@ -56,5 +60,4 @@ warn_unused_configs = true
 ignore_missing_imports = true
 exclude = ["vendor", "references"]
 
-# scripts/ import buildtools off a sys.path entry added at runtime.
 mypy_path = "vendor/cs2-kit/scripts"

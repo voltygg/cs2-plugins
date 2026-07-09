@@ -65,7 +65,7 @@
       "type": "shell",
       "command": "python",
       "args": [
-        "${workspaceFolder}/scripts/start-server.py"
+        "${workspaceFolder}/scripts/start_server.py"
       ],
       "problemMatcher": [],
       "presentation": {

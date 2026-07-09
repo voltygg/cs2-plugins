@@ -44,12 +44,12 @@ jobs:
         run: |
           FILTER='${{ github.event.inputs.server }}'
           if [ -n "$FILTER" ]; then
-            SERVERS=$(python3 deploy/tools/cli.py matrix --server "$FILTER")
+            SERVERS=$(python3 -m deploy.tools.cli matrix --server "$FILTER")
           else
-            SERVERS=$(python3 deploy/tools/cli.py matrix)
+            SERVERS=$(python3 -m deploy.tools.cli matrix)
           fi
-          PLUGINS=$(python3 deploy/tools/cli.py plugins)
-          RUNTIME_IMAGE=$(python3 deploy/tools/cli.py runtime-image)
+          PLUGINS=$(python3 -m deploy.tools.cli plugins)
+          RUNTIME_IMAGE=$(python3 -m deploy.tools.cli runtime-image)
 
           echo "servers=$SERVERS" >> "$GITHUB_OUTPUT"
           echo "plugins=$PLUGINS" >> "$GITHUB_OUTPUT"
@@ -96,7 +96,7 @@ jobs:
       - name: Package each declared plugin
         run: |
           for plugin in $(echo '${{ needs.prepare.outputs.plugins }}' | python3 -c "import json,sys; print(' '.join(json.load(sys.stdin)))"); do
-            python3 deploy/tools/cli.py package "$plugin" linux
+            python3 -m deploy.tools.cli package "$plugin" linux
           done
 
       - name: Upload plugin bundles
@@ -186,4 +186,4 @@ jobs:
         run: |
           ARGS=(deploy --server "${{ matrix.server.id }}" --runtime-image "${{ needs.prepare.outputs.runtime_image }}")
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
-          python3 deploy/tools/cli.py "${ARGS[@]}"
+          python3 -m deploy.tools.cli "${ARGS[@]}"

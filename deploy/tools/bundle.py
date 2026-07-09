@@ -4,7 +4,7 @@ import os
 import shutil
 from pathlib import Path
 
-from common import ROOT, die, repo_path, run
+from .common import ROOT, die, repo_path, run
 
 
 def package_plugin(plugin: str, platform: str, out: str | None) -> None:

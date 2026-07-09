@@ -21,9 +21,9 @@ import struct
 import time
 from typing import Any
 
-import inventory
-from common import die, load_server_env
-from remote import open_tunnel
+from . import inventory
+from .common import die, load_server_env
+from .remote import open_tunnel
 
 _SERVERDATA_AUTH = 3
 _SERVERDATA_AUTH_RESPONSE = 2  # shares the value with EXECCOMMAND (protocol quirk)

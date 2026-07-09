@@ -70,5 +70,5 @@ addons/<plugin>/bin/linuxsteamrt64/<plugin>.so
   credentials or per-server config.
 - Debug symbols are copied if they exist.
 - Empty config directories are skipped.
-- `deploy/tools/cli.py package` generates platform-correct Metamod VDF files
-  for Docker deployment bundles.
+- `python -m deploy.tools.cli package` generates platform-correct Metamod VDF
+  files for Docker deployment bundles.

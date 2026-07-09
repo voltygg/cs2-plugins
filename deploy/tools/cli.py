@@ -1,16 +1,18 @@
-#!/usr/bin/env python3
-"""Unified Docker/VPS deployment CLI for CS2 plugin servers."""
+"""Unified deployment CLI for CS2 plugin servers (Docker/VPS and local).
+
+Run as a module from the repo root: python -m deploy.tools.cli <subcommand>
+"""
 
 import argparse
 import json
 from pathlib import Path
 
-from common import DEPLOY, load_server_env, repo_path
+from .common import DEPLOY, load_server_env, repo_path
 
 
 def cmd_matrix(args: argparse.Namespace) -> None:
     """Print the deploy matrix consumed by GitHub Actions."""
-    import inventory
+    from . import inventory
 
     servers = inventory.active_servers(inventory.load())
     if args.server:
@@ -22,7 +24,7 @@ def cmd_matrix(args: argparse.Namespace) -> None:
 
 def cmd_plugins(args: argparse.Namespace) -> None:
     """Print declared plugin names."""
-    import inventory
+    from . import inventory
 
     plugins = inventory.used_plugins(inventory.load())
     print("\n".join(plugins) if args.format == "plain" else json.dumps(plugins))
@@ -30,21 +32,19 @@ def cmd_plugins(args: argparse.Namespace) -> None:
 
 def cmd_runtime_image(_args: argparse.Namespace) -> None:
     """Print the configured runtime image ref."""
-    import inventory
+    from . import inventory
 
     print(inventory.runtime_image(inventory.load()))
 
 
 def cmd_package(args: argparse.Namespace) -> None:
-    """Run the package subcommand."""
-    import bundle
+    from . import bundle
 
     bundle.package_plugin(args.plugin, args.platform, args.out)
 
 
 def cmd_render(args: argparse.Namespace) -> None:
-    """Run the render subcommand."""
-    import render as renderer
+    from . import render as renderer
 
     if not args.no_env:
         load_server_env(args.server, required=False)
@@ -53,8 +53,7 @@ def cmd_render(args: argparse.Namespace) -> None:
 
 
 def cmd_deploy(args: argparse.Namespace) -> None:
-    """Run the deploy subcommand."""
-    import remote
+    from . import remote
 
     remote.deploy_server(
         args.server,
@@ -65,36 +64,37 @@ def cmd_deploy(args: argparse.Namespace) -> None:
 
 
 def cmd_update(args: argparse.Namespace) -> None:
-    """Run the update subcommand."""
-    import remote
+    from . import remote
 
     remote.update_server(args.server, dry_run=args.dry_run)
 
 
 def cmd_cleanup(args: argparse.Namespace) -> None:
-    """Run the cleanup subcommand."""
-    import remote
+    from . import remote
 
     remote.cleanup_server(args.server, yes=args.yes, dry_run=args.dry_run)
 
 
 def cmd_ensure_dbs(args: argparse.Namespace) -> None:
-    """Run the ensure-dbs subcommand."""
-    import database
+    from . import database
 
     database.ensure_databases(args.server, args.admin_user, dry_run=args.dry_run)
 
 
 def cmd_rcon(args: argparse.Namespace) -> None:
-    """Run the rcon subcommand."""
-    import rcon
+    from . import rcon
 
     rcon.run_commands(args.commands, server_id=args.server, instance_name=args.instance)
 
 
+def cmd_local(args: argparse.Namespace) -> None:
+    from . import local
+
+    local.deploy_local(args.server_path, args.plugin_name)
+
+
 def cmd_tunnel_db(args: argparse.Namespace) -> None:
-    """Run the tunnel-db subcommand."""
-    import remote
+    from . import remote
 
     remote.tunnel_db(
         server_id=args.server,
@@ -161,6 +161,11 @@ def build_parser() -> argparse.ArgumentParser:
     dbs.add_argument("--server")
     dbs.add_argument("--dry-run", action="store_true")
     dbs.set_defaults(func=cmd_ensure_dbs)
+
+    local = sub.add_parser("local", help="deploy built plugins into a local CS2 server tree")
+    local.add_argument("--server-path", default="C:/cs2-server")
+    local.add_argument("--plugin-name", default="")
+    local.set_defaults(func=cmd_local)
 
     rcon = sub.add_parser("rcon", help="run console commands on a live instance over RCON")
     rcon.add_argument("commands", nargs="+", help="one or more console commands (quote each)")
