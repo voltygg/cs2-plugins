@@ -8,11 +8,11 @@
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
-#include "StatusCommand.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/EffectManager.hpp>
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Database/Migrator.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
 
 namespace AdminSystem
@@ -41,7 +41,8 @@ struct Managers
     CS2Kit::EffectManager Effects{CS2Kit::Engine().Scheduler};
     Admin::CheatCheck::CheatCheckManager CheatCheck;
     Core::AntiCheatBridge AntiCheat;
-    Core::StatusCommand Status;
+    /** Load-time migration outcome, surfaced in the `admin_status` db section. Set by OnLoad. */
+    CS2Kit::MigrationResult Migration;
 };
 
 }  // namespace AdminSystem

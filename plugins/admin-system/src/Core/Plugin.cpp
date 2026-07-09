@@ -25,6 +25,7 @@
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
 
 using namespace AdminSystem::Core;
@@ -94,7 +95,7 @@ StageResult ConnectDatabase()
 
     const auto migration = CS2Kit::RunMigrations(db, "addons/admin-system/configs/migrations",
                                                  {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
-    App().Status.Migration = migration;
+    App().Migration = migration;
     if (!migration)
         return StageResult::Degraded("migrations failed; not loading admins against an out-of-date schema");
 
@@ -145,6 +146,35 @@ void RegisterGameEventListeners()
     });
     events.Listen<Events::RoundEnd>([](const Events::RoundEnd&) { App().Effects.CancelRoundScoped(); });
     events.Listen<Events::RoundPrestart>([](const Events::RoundPrestart&) { App().Effects.CancelRoundScoped(); });
+}
+
+// Domain sections on top of the kit's (build/load/gamedata/uptime), plus the command that
+// reports them. Health adds the database to the kit's baseline: an admin plugin that cannot
+// reach its database is not healthy even though the load itself succeeded.
+void InstallStatusReporting()
+{
+    auto& status = Engine().Status;
+
+    status.RegisterSection("db", [] {
+        return nlohmann::json{{"connected", Engine().LoadReport.IsOk("Database")},
+                              {"migrationVersion", App().Migration.CurrentVersion},
+                              {"migrationsApplied", App().Migration.Applied}};
+    });
+
+    status.RegisterSection("admins", [] {
+        return nlohmann::json{{"cached", App().Admins.AdminCount()}, {"groups", App().Admins.GroupCount()}};
+    });
+
+    status.RegisterSection("commands", [] { return nlohmann::json{{"registered", Engine().Commands.Count()}}; });
+
+    status.RegisterSection("server", [] {
+        const auto& server = App().Config.GetServer();
+        return nlohmann::json{{"tag", server.tag}, {"name", server.name}};
+    });
+
+    status.InstallCommand("admin_status",
+                          "Report plugin health; 'admin_status json' emits a machine-readable STATUS_JSON line.",
+                          [] { return Engine().LoadReport.IsOk("Database"); });
 }
 
 // Persist a finished session; shared by the disconnect hook and the unload sweep. No-ops for bots.
@@ -229,6 +259,8 @@ bool AdminSystemPlugin::OnLoad(bool late)
         AdminSystem::Admin::Effects::PrecacheModels();
         return StageResult::Ok();
     });
+
+    InstallStatusReporting();
 
     Defer([] { App().CheatCheck.CancelAll(); });
     Defer([] { App().Effects.CancelAll(); });
