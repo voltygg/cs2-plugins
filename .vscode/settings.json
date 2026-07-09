@@ -47,6 +47,8 @@
   "ruff.lineLength": 100,
   "mypy-type-checker.args": ["--config-file=${workspaceFolder}/pyproject.toml"],
   "python.analysis.typeCheckingMode": "basic",
+  // scripts/ import buildtools off a sys.path entry added at runtime.
+  "python.analysis.extraPaths": ["vendor/cs2-kit/scripts"],
 
   "[sql]": {
     "editor.defaultFormatter": "adpyke.vscode-sql-formatter",

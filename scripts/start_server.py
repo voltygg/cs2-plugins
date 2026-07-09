@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Start the CS2 dedicated server (optionally updating it via SteamCMD first)."""
 
-from __future__ import annotations
-
 import argparse
 import subprocess
 from pathlib import Path

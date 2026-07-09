@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Deploy built plugin binaries, configs, and cs2-kit gamedata to a local CS2 server."""
 
-from __future__ import annotations
-
 import argparse
 import os
 import shutil

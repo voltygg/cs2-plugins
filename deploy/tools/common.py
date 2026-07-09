@@ -1,7 +1,5 @@
 """Shared helpers for deploy tooling."""
 
-from __future__ import annotations
-
 import shlex
 import subprocess
 from pathlib import Path

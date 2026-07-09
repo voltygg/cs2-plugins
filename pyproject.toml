@@ -26,6 +26,7 @@ build = "python vendor/cs2-kit/scripts/build.py"
 build-linux = "python vendor/cs2-kit/scripts/build.py linux-steamrt-release"
 bootstrap = "python vendor/cs2-kit/scripts/bootstrap.py"
 new-plugin = "python vendor/cs2-kit/scripts/new_plugin.py"
+update-submodules = "python scripts/update_submodules.py"
 deploy = "python scripts/deploy.py"
 start-server = "python scripts/start-server.py"
 lint = "ruff check ."
@@ -54,3 +55,6 @@ warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 exclude = ["vendor", "references"]
+
+# scripts/ import buildtools off a sys.path entry added at runtime.
+mypy_path = "vendor/cs2-kit/scripts"

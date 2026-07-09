@@ -12,8 +12,6 @@ Outputs under deploy/.render/<server>/:
   * instances/<name>/bundles/addons/... that instance's plugin tree + settings
 """
 
-from __future__ import annotations
-
 import json
 import os
 import re
@@ -86,8 +84,7 @@ def render_settings(
     if not template.is_file():
         die(f"no settings template at {template}")
     replacements = {
-        key: value if key == "DB_PORT" else json_string_content(value)
-        for key, value in env.items()
+        key: value if key == "DB_PORT" else json_string_content(value) for key, value in env.items()
     }
     rendered = replace_vars(template.read_text(encoding="utf-8"), replacements)
 
