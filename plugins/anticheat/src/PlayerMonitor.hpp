@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Api.hpp>
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -81,6 +80,12 @@ struct PlayerState
     bool SilentPending = false;
     uint32_t SilentTick = 0;
     EventRing SilentHits;
+
+    // Shot angle: fired view angle (input_history) diverged from the visible view angle.
+    bool ShotDivergePending = false;
+    uint32_t ShotDivergeTick = 0;
+    float ShotDivergeDeg = 0.0f;
+    EventRing ShotDivergeHits;
 
     // Angle sanity.
     int BadAngleTicks = 0;

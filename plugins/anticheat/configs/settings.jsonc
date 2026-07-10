@@ -1,7 +1,6 @@
 {
   // Plugin-wide options.
   "plugin": {
-    "logLevel": "info",
     "locale": "en"
   },
 
@@ -21,7 +20,7 @@
       // minKillEvents kills whose fire-tick aim snapped onto the victim mid-spin.
       "spin": {
         "enabled": true,
-        "yawVelocityDegPerSec": 1800.0,
+        "yawVelocityDegPerSec": 720.0,
         "minTicks": 32,
         "killWindowTicks": 8,
         "onTargetEpsilonDeg": 8.0,
@@ -31,7 +30,7 @@
         "killEventScore": 40.0,
         "headshotMultiplier": 1.5,
         "alertScore": 60.0,
-        "banScore": 110.0,
+        "banScore": 90.0,
         "decayPerSec": 0.5
       },
       // Pre-fire flick > minSnapDeg that settles before the shot; only damage
@@ -46,9 +45,9 @@
         "minEvents": 4,
         "eventWindowSec": 180.0,
         "snapScore": 3.0,
-        "confirmedHitScore": 25.0,
+        "confirmedHitScore": 30.0,
         "alertScore": 60.0,
-        "banScore": 100.0,
+        "banScore": 90.0,
         "decayPerSec": 0.5
       },
       // NaN/inf angles or pitch outside +/-maxPitchDeg sustained minTicks.
@@ -63,9 +62,11 @@
         "banScore": 50.0,
         "decayPerSec": 0.1
       },
-      // Viewangle jump with ~zero mouse input = software wrote the aim.
+      // Viewangle jump with ~zero mouse input = software wrote the aim. Disabled by
+      // default: no reference project reads mousedx/dy and the CS2 client's population
+      // of them is unverified - confirm with anticheat_dumpcmd before enabling.
       "silentAim": {
-        "enabled": true,
+        "enabled": false,
         "minAngleJumpDeg": 20.0,
         "maxMouseUnits": 2,
         "confirmWindowTicks": 4,
@@ -74,7 +75,21 @@
         "eventWindowSec": 180.0,
         "eventScore": 35.0,
         "alertScore": 60.0,
-        "banScore": 100.0,
+        "banScore": 85.0,
+        "decayPerSec": 0.5
+      },
+      // Fired shot angle (input_history) diverging from the visible view angle = software
+      // wrote the shot. minDivergenceDeg must clear legit interp/flick divergence; verify
+      // with anticheat_dumpcmd before ban mode.
+      "shotAngle": {
+        "enabled": true,
+        "minDivergenceDeg": 8.0,
+        "confirmWindowTicks": 4,
+        "minEvents": 3,
+        "eventWindowSec": 180.0,
+        "eventScore": 35.0,
+        "alertScore": 60.0,
+        "banScore": 85.0,
         "decayPerSec": 0.5
       },
       // Kills landed while >= minRemainingSec of flash blindness remained.
@@ -85,8 +100,18 @@
         "eventWindowSec": 120.0,
         "eventScore": 35.0,
         "alertScore": 60.0,
-        "banScore": 100.0,
+        "banScore": 85.0,
         "decayPerSec": 0.5
+      }
+    },
+    // Test/verification aids; all default off. broadcastDetections chat-broadcasts every
+    // detection (even in observe mode); dryRunBans broadcasts "WOULD BAN ..." instead of
+    // issuing the ban; simulator.enabled arms the built-in cheat simulator (dev builds only).
+    "debug": {
+      "broadcastDetections": false,
+      "dryRunBans": false,
+      "simulator": {
+        "enabled": false
       }
     }
   }

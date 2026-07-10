@@ -7,7 +7,7 @@
 namespace Anticheat::Detectors::SilentAim
 {
 
-void OnCmd(const SilentAimSettings& cfg, PlayerState& s, const CS2Kit::UserCmdView& cmd, float yawDelta,
+void OnCmd(const SilentAimSettings& cfg, PlayerState& s, const CS2Kit::Sdk::UserCmdView& cmd, float yawDelta,
            float pitchDelta)
 {
     if (!cfg.enabled)

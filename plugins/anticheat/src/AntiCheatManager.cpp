@@ -3,6 +3,7 @@
 #include "Detectors/AimSnapDetector.hpp"
 #include "Detectors/AngleSanityDetector.hpp"
 #include "Detectors/NoFlashDetector.hpp"
+#include "Detectors/ShotAngleDetector.hpp"
 #include "Detectors/SilentAimDetector.hpp"
 #include "Detectors/SpinbotDetector.hpp"
 #include "Managers.hpp"
@@ -10,6 +11,7 @@
 #include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <algorithm>
+#include <cstdlib>
 #include <mathlib/vector.h>
 
 using CS2Kit::Core::Engine;
@@ -40,6 +42,8 @@ void AntiCheatManager::Initialize()
 {
     Engine().InputHistory.Enable(App().Config.Get().anticheat.historyDepth);
     _players.BindReset();
+    _dumpTicks.BindReset();
+    _simulator.Initialize();
 
     // The movement hook needs a live pawn; retry from every spawn until it takes.
     Engine().Events.Listen<PlayerSpawn>([](const PlayerSpawn&) { Engine().MovementHook.Install(); });
@@ -56,6 +60,23 @@ void AntiCheatManager::Initialize()
     });
     _cmdStatus.emplace("anticheat_status", "Dump per-player anticheat scores.",
                        [this](const CCommand&) { _response.DumpStatus(); });
+
+    _cmdDump.emplace("anticheat_dumpcmd", "Log raw usercmds for a slot: anticheat_dumpcmd <slot> [ticks=64]",
+                     [this](const CCommand& args) {
+                         if (args.ArgC() < 2)
+                         {
+                             Log::Warn("Usage: anticheat_dumpcmd <slot> [ticks=64]");
+                             return;
+                         }
+                         int slot = std::atoi(args.Arg(1));
+                         if (!IsValidSlot(slot))
+                         {
+                             Log::Warn("anticheat_dumpcmd: '{}' is not a valid slot.", args.Arg(1));
+                             return;
+                         }
+                         _dumpTicks[slot] = args.ArgC() > 2 ? std::atoi(args.Arg(2)) : 64;
+                         Log::Info("Dumping {} usercmds for slot {}.", _dumpTicks[slot], slot);
+                     });
 }
 
 void AntiCheatManager::OnCmd(int slot, const CS2Kit::UserCmdView& cmd)
@@ -69,6 +90,15 @@ void AntiCheatManager::OnCmd(int slot, const CS2Kit::UserCmdView& cmd)
 
     auto& s = _players[slot];
     ++s.Tick;
+
+    if (int& dump = _dumpTicks[slot]; dump > 0)
+    {
+        --dump;
+        Log::Info("[AC dump s{}] yaw={:.1f} pitch={:.1f} mouse=({},{}) subticks={} ihist={} atk1={} shotDiverge={:.1f}",
+                  slot, cmd.ViewYaw, cmd.ViewPitch, cmd.MouseDx, cmd.MouseDy, cmd.SubtickMoveCount,
+                  cmd.InputHistorySampleCount, cmd.Attack1StartHistoryIndex,
+                  Detectors::ShotAngle::ShotDivergence(cmd).value_or(-1.0f));
+    }
 
     float yawDelta = 0.0f;
     float pitchDelta = 0.0f;
@@ -84,9 +114,10 @@ void AntiCheatManager::OnCmd(int slot, const CS2Kit::UserCmdView& cmd)
     const auto& det = DetectorConfig();
     if (auto d = Detectors::AngleSanity::OnCmd(det.sanity, s, cmd.ViewPitch, cmd.ViewYaw))
         _response.Handle(slot, *d);
-    if (auto d = Detectors::Spinbot::OnCmd(det.spin, s, yawDelta))
+    if (auto d = Detectors::Spinbot::OnCmd(det.spin, s, Detectors::Spinbot::SpinYawDelta(cmd, yawDelta)))
         _response.Handle(slot, *d);
     Detectors::SilentAim::OnCmd(det.silentAim, s, cmd, yawDelta, pitchDelta);
+    Detectors::ShotAngle::OnCmd(det.shotAngle, s, cmd);
 }
 
 void AntiCheatManager::OnWeaponFire(const WeaponFire& e)
@@ -147,6 +178,8 @@ void AntiCheatManager::OnPlayerHurt(const PlayerHurt& e)
     if (auto d = Detectors::AimSnap::OnDamage(det.aimSnap, s, aimError, now))
         _response.Handle(e.AttackerSlot, *d);
     if (auto d = Detectors::SilentAim::OnDamage(det.silentAim, s, aimError, now))
+        _response.Handle(e.AttackerSlot, *d);
+    if (auto d = Detectors::ShotAngle::OnDamage(det.shotAngle, s, now))
         _response.Handle(e.AttackerSlot, *d);
 }
 

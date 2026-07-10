@@ -4,8 +4,13 @@
 #include "Config.hpp"
 #include "ResponseManager.hpp"
 
+#include <CS2Kit/Api.hpp>
+
 namespace Anticheat
 {
+
+/** Subclass CS2Kit::JsonConfig instead once you need post-load validation or accessors. */
+using ConfigManager = CS2Kit::JsonConfig<Settings>;
 
 struct Managers;
 

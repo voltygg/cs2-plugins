@@ -59,11 +59,16 @@ void ResponseManager::Handle(int slot, const Detection& detection)
     Log::Warn("[AC] {} ({}) {}: +{:.0f} -> {:.0f}: {}", player->GetName(), player->GetSteamID(), detection.Detector,
               detection.ScoreAdd, value, detection.Detail);
 
+    const auto& settings = App().Config.Get().anticheat;
+    if (settings.debug.broadcastDetections)
+        Engine().Messages.Broadcast(std::format("[AC] {} flagged {}: {:.0f}/{:.0f} ({})", player->GetName(),
+                                                detection.Detector, value, detection.BanScore, detection.Detail));
+
+    // ObserveOnly buckets (unconfirmed anomalies) log/broadcast but never escalate.
     Mode mode = CurrentMode();
-    if (mode == Mode::Observe)
+    if (detection.ObserveOnly || mode == Mode::Observe)
         return;
 
-    const auto& settings = App().Config.Get().anticheat;
     if (value >= detection.AlertScore && now - response.LastAlert >= settings.alertCooldownSec)
     {
         response.LastAlert = now;
@@ -75,11 +80,20 @@ void ResponseManager::Handle(int slot, const Detection& detection)
         detection.EventsInWindow >= detection.MinEvents)
     {
         response.BanIssued = true;
-        std::string reason = std::format("{} [{}]", SanitizeReason(settings.ban.reason), detection.Detector);
         Log::Warn("[AC] auto-ban {} ({}): {} score {:.0f} with {} events.", player->GetName(), player->GetSteamID(),
                   detection.Detector, value, detection.EventsInWindow);
-        Engine().ConVars.ExecuteServerCommand(
-            std::format("as_ac_ban {} {} {}", player->GetSteamID(), settings.ban.durationSec, reason).c_str());
+        if (settings.debug.dryRunBans)
+        {
+            Engine().Messages.Broadcast(std::format("[AC] WOULD BAN {} ({}) - {} score {:.0f}, {} events",
+                                                    player->GetName(), player->GetSteamID(), detection.Detector, value,
+                                                    detection.EventsInWindow));
+        }
+        else
+        {
+            std::string reason = std::format("{} [{}]", SanitizeReason(settings.ban.reason), detection.Detector);
+            Engine().ConVars.ExecuteServerCommand(
+                std::format("as_ac_ban {} {} {}", player->GetSteamID(), settings.ban.durationSec, reason).c_str());
+        }
     }
 }
 

@@ -6,6 +6,16 @@
 namespace Anticheat::Detectors::Spinbot
 {
 
+float SpinYawDelta(const CS2Kit::Sdk::UserCmdView& cmd, float normalizedFallback)
+{
+    if (cmd.SubtickMoveCount <= 0)
+        return normalizedFallback;
+    float sum = 0.0f;
+    for (int i = 0; i < cmd.SubtickMoveCount; ++i)
+        sum += cmd.SubtickMoves[i].YawDelta;
+    return sum;
+}
+
 std::optional<Detection> OnCmd(const SpinSettings& cfg, PlayerState& s, float yawDelta)
 {
     if (!cfg.enabled)
@@ -34,20 +44,18 @@ std::optional<Detection> OnCmd(const SpinSettings& cfg, PlayerState& s, float ya
 
     s.LastSpinTick = s.Tick;
 
-    // Observe-tier note when a spin first arms, throttled so a minute of
-    // fake-spinning doesn't flood the log. Score is capped below alert by config.
+    // Observe-only note when a spin first arms, throttled so a minute of fake-spinning doesn't
+    // flood the log. Its own bucket keeps it out of the kill-based "spin" score (legit players
+    // fake-spin for fun, so spinning alone must never escalate).
     double now = NowSeconds();
     if (s.SpinTicks == static_cast<uint32_t>(cfg.minTicks) && now - s.LastSpinOnlyReport > 10.0)
     {
         s.LastSpinOnlyReport = now;
         return Detection{
-            .Detector = "spin",
+            .Detector = "spin.idle",
             .ScoreAdd = cfg.spinOnlyScore,
-            .EventsInWindow = 0,
-            .MinEvents = cfg.minKillEvents,
-            .AlertScore = cfg.alertScore,
-            .BanScore = cfg.banScore,
             .DecayPerSec = cfg.decayPerSec,
+            .ObserveOnly = true,
             .Detail = std::format("spinning at {:.0f} deg/s (no kill correlation)", degPerSec),
         };
     }

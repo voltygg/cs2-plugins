@@ -9,7 +9,6 @@
 // mid-spin on-target kills.
 {
   "plugin": {
-    "logLevel": "info",
     "locale": "ru"
   },
 
@@ -25,7 +24,7 @@
     "detectors": {
       "spin": {
         "enabled": true,
-        "yawVelocityDegPerSec": 1800.0,
+        "yawVelocityDegPerSec": 720.0,
         "minTicks": 32,
         "killWindowTicks": 8,
         "onTargetEpsilonDeg": 8.0,
@@ -35,7 +34,7 @@
         "killEventScore": 40.0,
         "headshotMultiplier": 1.5,
         "alertScore": 60.0,
-        "banScore": 110.0,
+        "banScore": 90.0,
         "decayPerSec": 0.5
       },
       "aimSnap": {
@@ -48,9 +47,9 @@
         "minEvents": 4,
         "eventWindowSec": 180.0,
         "snapScore": 3.0,
-        "confirmedHitScore": 25.0,
+        "confirmedHitScore": 30.0,
         "alertScore": 60.0,
-        "banScore": 100.0,
+        "banScore": 90.0,
         "decayPerSec": 0.5
       },
       "sanity": {
@@ -65,7 +64,7 @@
         "decayPerSec": 0.1
       },
       "silentAim": {
-        "enabled": true,
+        "enabled": false,
         "minAngleJumpDeg": 20.0,
         "maxMouseUnits": 2,
         "confirmWindowTicks": 4,
@@ -74,7 +73,18 @@
         "eventWindowSec": 180.0,
         "eventScore": 35.0,
         "alertScore": 60.0,
-        "banScore": 100.0,
+        "banScore": 85.0,
+        "decayPerSec": 0.5
+      },
+      "shotAngle": {
+        "enabled": true,
+        "minDivergenceDeg": 8.0,
+        "confirmWindowTicks": 4,
+        "minEvents": 3,
+        "eventWindowSec": 180.0,
+        "eventScore": 35.0,
+        "alertScore": 60.0,
+        "banScore": 85.0,
         "decayPerSec": 0.5
       },
       "noFlash": {
@@ -84,8 +94,15 @@
         "eventWindowSec": 120.0,
         "eventScore": 35.0,
         "alertScore": 60.0,
-        "banScore": 100.0,
+        "banScore": 85.0,
         "decayPerSec": 0.5
+      }
+    },
+    "debug": {
+      "broadcastDetections": true,
+      "dryRunBans": true,
+      "simulator": {
+        "enabled": true
       }
     }
   }

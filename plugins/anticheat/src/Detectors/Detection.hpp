@@ -22,6 +22,7 @@ struct Detection
     float AlertScore = 0.0f;
     float BanScore = 0.0f;
     float DecayPerSec = 0.0f;
+    bool ObserveOnly = false;  // log/broadcast but never alert or ban (unconfirmed-anomaly buckets)
     std::string Detail;
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <CS2Kit/Api.hpp>
+// SDK-free so detectors that include it stay unit-testable; the ConfigManager alias is in Managers.hpp.
+#include <cstdint>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -12,10 +13,9 @@ inline constexpr const char* SettingsPath = "addons/anticheat/configs/settings.j
 /** "plugin" section of settings.jsonc. */
 struct PluginSettings
 {
-    std::string logLevel = "info";
     std::string locale = "en";
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PluginSettings, logLevel, locale)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PluginSettings, locale)
 
 struct BanSettings
 {
@@ -31,17 +31,17 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BanSettings, durationSec, reason
 struct SpinSettings
 {
     bool enabled = true;
-    float yawVelocityDegPerSec = 1800.0f;  // window mean |yaw velocity| that counts as spinning
-    int minTicks = 32;                     // sustained ticks before the spin state arms
-    int killWindowTicks = 8;               // kill counts as "mid-spin" this many ticks after spinning
-    float onTargetEpsilonDeg = 8.0f;       // fire-tick angle must land this close to the victim
-    int minKillEvents = 3;                 // distinct spin-snap-kills required for ban tier
+    float yawVelocityDegPerSec = 720.0f;  // window mean |yaw velocity| that counts as spinning (~2 rot/s)
+    int minTicks = 32;                    // sustained ticks before the spin state arms
+    int killWindowTicks = 8;              // kill counts as "mid-spin" this many ticks after spinning
+    float onTargetEpsilonDeg = 8.0f;      // fire-tick angle must land this close to the victim
+    int minKillEvents = 3;                // distinct spin-snap-kills required for ban tier
     float eventWindowSec = 120.0f;
-    float spinOnlyScore = 5.0f;  // observe-tier only; capped below alertScore by design
+    float spinOnlyScore = 5.0f;  // observe-only bucket ("spin.idle"), never escalates
     float killEventScore = 40.0f;
     float headshotMultiplier = 1.5f;
     float alertScore = 60.0f;
-    float banScore = 110.0f;
+    float banScore = 90.0f;  // 3 kills spaced <=30s apart reach this
     float decayPerSec = 0.5f;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SpinSettings, enabled, yawVelocityDegPerSec, minTicks, killWindowTicks,
@@ -59,10 +59,10 @@ struct AimSnapSettings
     float onTargetEpsilonDeg = 8.0f;
     int minEvents = 4;  // confirmed snap-hits required for ban tier
     float eventWindowSec = 180.0f;
-    float snapScore = 3.0f;  // unconfirmed snaps: observe log only
-    float confirmedHitScore = 25.0f;
+    float snapScore = 3.0f;  // unconfirmed snaps: observe-only bucket ("aimSnap.idle")
+    float confirmedHitScore = 30.0f;
     float alertScore = 60.0f;
-    float banScore = 100.0f;
+    float banScore = 90.0f;  // 4 confirmed hits spaced <=20s apart reach this
     float decayPerSec = 0.5f;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AimSnapSettings, enabled, lookbackTicks, minSnapDeg, settleEpsilonDeg,
@@ -88,7 +88,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SanitySettings, enabled, maxPitc
 /** Silent aim: viewangle jumps with no matching mouse input, confirmed by on-target damage. */
 struct SilentAimSettings
 {
-    bool enabled = true;
+    bool enabled = false;  // mousedx/dy population by the CS2 client is unverified; see shotAngle
     float minAngleJumpDeg = 20.0f;
     int maxMouseUnits = 2;  // |mousedx|+|mousedy| at or below this counts as "no mouse input"
     int confirmWindowTicks = 4;
@@ -97,12 +97,34 @@ struct SilentAimSettings
     float eventWindowSec = 180.0f;
     float eventScore = 35.0f;
     float alertScore = 60.0f;
-    float banScore = 100.0f;
+    float banScore = 85.0f;
     float decayPerSec = 0.5f;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SilentAimSettings, enabled, minAngleJumpDeg, maxMouseUnits,
                                                 confirmWindowTicks, onTargetEpsilonDeg, minEvents, eventWindowSec,
                                                 eventScore, alertScore, banScore, decayPerSec)
+
+/**
+ * Shot angle: the fired view angle (input_history[k].view_angles - where the bullet actually
+ * went) diverging from the visible view angle. On a legit client they match; software aim
+ * writes only the shot. minDivergenceDeg must clear the client's own interp/flick divergence
+ * (verify with anticheat_dumpcmd before trusting it in ban mode).
+ */
+struct ShotAngleSettings
+{
+    bool enabled = true;
+    float minDivergenceDeg = 8.0f;
+    int confirmWindowTicks = 4;  // damage must land this soon after the diverged shot
+    int minEvents = 3;
+    float eventWindowSec = 180.0f;
+    float eventScore = 35.0f;
+    float alertScore = 60.0f;
+    float banScore = 85.0f;
+    float decayPerSec = 0.5f;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ShotAngleSettings, enabled, minDivergenceDeg, confirmWindowTicks,
+                                                minEvents, eventWindowSec, eventScore, alertScore, banScore,
+                                                decayPerSec)
 
 /** No-flash: repeated kills while fully blinded (tracked via the player_blind event). */
 struct NoFlashSettings
@@ -113,7 +135,7 @@ struct NoFlashSettings
     float eventWindowSec = 120.0f;
     float eventScore = 35.0f;
     float alertScore = 60.0f;
-    float banScore = 100.0f;
+    float banScore = 85.0f;
     float decayPerSec = 0.5f;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(NoFlashSettings, enabled, minRemainingSec, minEvents, eventWindowSec,
@@ -125,9 +147,26 @@ struct DetectorSettings
     AimSnapSettings aimSnap;
     SanitySettings sanity;
     SilentAimSettings silentAim;
+    ShotAngleSettings shotAngle;
     NoFlashSettings noFlash;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DetectorSettings, spin, aimSnap, sanity, silentAim, noFlash)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DetectorSettings, spin, aimSnap, sanity, silentAim, shotAngle, noFlash)
+
+/** Cheat simulator toggle. It rewrites live player commands; leave it off outside a test box. */
+struct SimulatorDebugSettings
+{
+    bool enabled = false;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SimulatorDebugSettings, enabled)
+
+/** Test/verification aids; all default off so production is silent and bans for real. */
+struct DebugSettings
+{
+    bool broadcastDetections = false;  // chat-broadcast every detection, even in observe mode
+    bool dryRunBans = false;           // broadcast "WOULD BAN ..." instead of issuing the ban
+    SimulatorDebugSettings simulator;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DebugSettings, broadcastDetections, dryRunBans, simulator)
 
 /** "anticheat" section: response ladder + detector thresholds. */
 struct AntiCheatSettings
@@ -137,8 +176,10 @@ struct AntiCheatSettings
     int historyDepth = 128;  // usercmd lookback samples per player (~2s at 64 tick)
     BanSettings ban;
     DetectorSettings detectors;
+    DebugSettings debug;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AntiCheatSettings, mode, alertCooldownSec, historyDepth, ban, detectors)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AntiCheatSettings, mode, alertCooldownSec, historyDepth, ban, detectors,
+                                                debug)
 
 /** Root of settings.jsonc. Add a struct + a member here for each new section. */
 struct Settings
@@ -147,8 +188,5 @@ struct Settings
     AntiCheatSettings anticheat;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, anticheat)
-
-/** Subclass CS2Kit::JsonConfig instead once you need post-load validation or accessors. */
-using ConfigManager = CS2Kit::JsonConfig<Settings>;
 
 }  // namespace Anticheat

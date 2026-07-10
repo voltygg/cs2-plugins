@@ -4,10 +4,18 @@
 #include "../PlayerMonitor.hpp"
 #include "Detection.hpp"
 
+#include <CS2Kit/Sdk/UserCmd.hpp>
 #include <optional>
 
 namespace Anticheat::Detectors::Spinbot
 {
+
+/**
+ * Per-tick yaw magnitude for spin detection: the unwrapped subtick sum when present, else the
+ * caller's normalized fallback. NormalizeAngleDelta aliases a full rotation to ~0, so a fast
+ * spinbot reads as still from viewangles alone; the subtick deltas carry the true rotation.
+ */
+float SpinYawDelta(const CS2Kit::Sdk::UserCmdView& cmd, float normalizedFallback);
 
 /**
  * Per-tick spin-state update. Spinning alone is only ever an observe-tier

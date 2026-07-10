@@ -2,6 +2,7 @@
 
 #include "PlayerMonitor.hpp"
 #include "ResponseManager.hpp"
+#include "Simulator/CheatSimulator.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <optional>
@@ -36,8 +37,11 @@ private:
 
     ResponseManager& _response;
     CS2Kit::PerSlot<PlayerState> _players;
+    CS2Kit::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
     std::optional<CS2Kit::ServerCommand> _cmdReload;
     std::optional<CS2Kit::ServerCommand> _cmdStatus;
+    std::optional<CS2Kit::ServerCommand> _cmdDump;
+    CheatSimulator _simulator;
 };
 
 }  // namespace Anticheat
