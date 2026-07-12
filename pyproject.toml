@@ -15,6 +15,7 @@ dependencies = [
     "poethepoet>=0.47.0",
     "python-dotenv>=1.2.0",
     "pyyaml>=6.0",
+    "types-pyyaml>=6.0",
     "clang-format==22.1.5",
 ]
 
