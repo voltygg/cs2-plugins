@@ -26,6 +26,9 @@ if [[ -f "$Csgo/gameinfo.gi" ]] && ! grep -q 'csgo/addons/metamod' "$Csgo/gamein
         { print }
     ' "$Csgo/gameinfo.gi" > "$Csgo/gameinfo.gi.tmp"
     mv "$Csgo/gameinfo.gi.tmp" "$Csgo/gameinfo.gi"
+    if ! grep -q 'csgo/addons/metamod' "$Csgo/gameinfo.gi"; then
+        echo "WARNING: gameinfo.gi patch did not take (format changed?); metamod will NOT load" >&2
+    fi
 fi
 
 if [[ ! -d "$Csgo/addons/metamod/bin" ]]; then

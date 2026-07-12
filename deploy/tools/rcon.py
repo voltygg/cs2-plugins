@@ -15,6 +15,8 @@ command rides the game connection instead), so commands run through a short-
 lived SSH port forward using the same key the deploy tooling uses.
 """
 
+from __future__ import annotations
+
 import os
 import socket
 import struct

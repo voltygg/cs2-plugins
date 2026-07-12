@@ -12,6 +12,8 @@ Outputs under deploy/.render/<server>/:
   * instances/<name>/bundles/addons/... that instance's plugin tree + settings
 """
 
+from __future__ import annotations
+
 import json
 import os
 import re
