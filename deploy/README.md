@@ -40,9 +40,14 @@ files stay separate under `/home/steam/cs2/deploy`.
 Game files are shared, but each instance gets its own `csgo/addons` tree bind-
 mounted over the shared install, so instances on one box can run different plugin
 sets. The rendered `pre.sh` hook copies the instance's plugin bundle into its
-addons tree, installs Metamod if needed, and patches the shared `gameinfo.gi`
+addons tree, installs or refreshes Metamod, and patches the shared `gameinfo.gi`
 before launch. The addons dir is runtime state under `deploy_root`; rsync (no
 `--delete`) leaves it untouched on redeploy so Metamod persists.
+
+Metamod is re-checked on every launch against the build recorded in
+`addons/metamod/.mms-build` and reinstalled when the latest snapshot differs - a
+CS2 update can retire symbols an older Metamod links against, leaving it unable
+to load. Set `MMS_URL` to pin a build, `MMS_BASE` to change the mirror.
 
 ## One-time: Docker host
 
