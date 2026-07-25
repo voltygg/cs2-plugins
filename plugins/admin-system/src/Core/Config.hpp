@@ -102,6 +102,34 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ChatSettings, broadcastPunishmen
                                                 fallbackPrefix, fallbackPrefixColor, fallbackNameColor,
                                                 fallbackMessageColor)
 
+/** One "reports.reasons[]" entry. The menu prefers the `report.reasons.<code>` translation, so
+ *  `label` only surfaces for codes the translation files don't cover. */
+struct ReportReason
+{
+    std::string code;
+    std::string label;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportReason, code, label)
+
+/** "reports" section of settings.jsonc: player-to-player reporting (!r / !report). Rows go to
+ *  `player_reports` for an upstream website; nothing is surfaced in-game. */
+struct ReportSettings
+{
+    bool enabled = true;
+    /** Seconds between two reports of ANY player. 0 disables. */
+    int cooldownSec = 120;
+    /** Seconds before the same reporter may re-report the SAME player. 0 disables. */
+    int duplicateWindowSec = 1800;
+    /** Adds an "Other..." row storing typed text under the "other" code (capped at 64 chars). */
+    bool allowCustomReason = true;
+    std::vector<ReportReason> reasons = {
+        {"cheating", "Cheating / aimbot"}, {"wallhack", "Wallhack"}, {"griefing", "Griefing / team damage"},
+        {"abuse", "Toxic behavior"},       {"micspam", "Mic spam"},  {"nickname", "Inappropriate nickname"},
+    };
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportSettings, enabled, cooldownSec, duplicateWindowSec,
+                                                allowCustomReason, reasons)
+
 /** "cheatCheck.fixedLink" sub-section. */
 struct CheatCheckFixedLink
 {
@@ -165,10 +193,11 @@ struct Settings
     PunishmentSettings punishments;
     AbuseProtectionSettings abuseProtection;
     ChatSettings chat;
+    ReportSettings reports;
     CheatCheckSettings cheatCheck;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, database, punishments, abuseProtection, chat,
-                                                cheatCheck)
+                                                reports, cheatCheck)
 
 /**
  * Loads and owns settings.json (via the kit's JsonConfig). All admin/group data is owned by the
@@ -190,6 +219,7 @@ public:
     const PunishmentSettings& GetPunishments() const { return Get().punishments; }
     const AbuseProtectionSettings& GetAbuseProtection() const { return Get().abuseProtection; }
     const ChatSettings& GetChat() const { return Get().chat; }
+    const ReportSettings& GetReports() const { return Get().reports; }
     const CheatCheckSettings& GetCheatCheck() const { return Get().cheatCheck; }
 
     /** Punishment templates that passed load-time validation (invalid entries are skipped with a warning). */

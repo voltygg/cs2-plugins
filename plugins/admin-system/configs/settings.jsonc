@@ -85,6 +85,30 @@
     // Color of the admin's message body in tagged chat.
     "fallbackMessageColor": "default"
   },
+  "reports": {
+    // Master switch for the player report command (!r / !report). Available to every player.
+    "enabled": true,
+    // Seconds a reporter must wait between two reports of ANY player. 0 disables the cooldown.
+    // Tracked per SteamID, so reconnecting does not clear it.
+    "cooldownSec": 120,
+    // Seconds during which the same reporter cannot report the SAME player again. Players still
+    // inside the window render as greyed-out rows in the picker. 0 disables.
+    "duplicateWindowSec": 1800,
+    // Adds an "Other..." row that prompts for a typed reason (stored with reason code "other").
+    // The in-game input is capped at 64 characters by the menu system.
+    "allowCustomReason": true,
+    // Rows of the reason picker. `code` is the stable value the website groups on (max 32 chars).
+    // Players see the `report.reasons.<code>` translation when one exists, so `label` is only the
+    // fallback for codes you add here. Entries missing either field are skipped with a warning.
+    "reasons": [
+      { "code": "cheating", "label": "Cheating / aimbot" },
+      { "code": "wallhack", "label": "Wallhack" },
+      { "code": "griefing", "label": "Griefing / team damage" },
+      { "code": "abuse", "label": "Toxic behavior" },
+      { "code": "micspam", "label": "Mic spam" },
+      { "code": "nickname", "label": "Inappropriate nickname" }
+    ]
+  },
   "cheatCheck": {
     // Active delivery mode: "fixedLink" | "websiteAutoRoom" | "playerProvided".
     "mode": "fixedLink",

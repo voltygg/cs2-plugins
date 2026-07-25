@@ -6,6 +6,7 @@
 #include "../Commands/AntiCheatBridge.hpp"
 #include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Punishments/PunishmentManager.hpp"
+#include "../Reports/ReportManager.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
 
@@ -37,6 +38,7 @@ struct Managers
     Admin::FreezeManager Freeze;
     Punishments::PunishmentManager Punishments;
     Core::ChatService Chat;
+    Reports::ReportManager Reports;
     // Constructed after the kit's Services (and its Scheduler) are live - PluginBase guarantees it.
     CS2Kit::EffectManager Effects{CS2Kit::Engine().Scheduler};
     Admin::CheatCheck::CheatCheckManager CheatCheck;

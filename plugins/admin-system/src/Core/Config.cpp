@@ -1,6 +1,7 @@
 #include "Config.hpp"
 
 #include <CS2Kit/Utils/Validation.hpp>
+#include <algorithm>
 #include <format>
 #include <optional>
 
@@ -51,6 +52,25 @@ void ConfigManager::ResolveRuntimeSettings()
     // the struct defaults so the list exists in exactly one place.
     _menuDurationSecs = Validation::ParseDurations(punishments.menuDurations, PunishmentSettings{}.menuDurations,
                                                    "punishments.menuDurations");
+
+    auto& reports = settings.reports;
+    Validation::FilterValid(
+        reports.reasons,
+        [](const ReportReason& r, std::size_t) -> std::optional<std::string> {
+            if (r.code.empty() || r.label.empty())
+                return std::string("code and label must be non-empty");
+            if (r.code.size() > 32)  // the reason_code column is VARCHAR(32)
+                return std::format("code '{}' is longer than 32 chars", r.code);
+            return std::nullopt;
+        },
+        "reports.reasons");
+
+    // A reason picker with only the free-text row (or nothing at all) is a dead end.
+    Validation::FallbackIfEmpty(reports.reasons, ReportSettings{}.reasons, "reports.reasons");
+
+    // Negative windows would make every elapsed check pass; treat them as "disabled".
+    reports.cooldownSec = std::max(reports.cooldownSec, 0);
+    reports.duplicateWindowSec = std::max(reports.duplicateWindowSec, 0);
 }
 
 }  // namespace AdminSystem::Core

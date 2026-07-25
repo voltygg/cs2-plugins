@@ -150,6 +150,51 @@
         "fallbackMessageColor": { "type": "string", "default": "default" }
       }
     },
+    "reports": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Player-to-player reporting (!r / !report). Reports are inserted into player_reports for an upstream website; nothing is surfaced in-game.",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "cooldownSec": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 120,
+          "description": "Seconds a reporter must wait between two reports of ANY player. 0 disables."
+        },
+        "duplicateWindowSec": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1800,
+          "description": "Seconds during which the same reporter cannot re-report the SAME player. 0 disables."
+        },
+        "allowCustomReason": {
+          "type": "boolean",
+          "default": true,
+          "description": "Adds an \"Other...\" row prompting for a typed reason (stored with reason code \"other\"). The in-game input is capped at 64 characters."
+        },
+        "reasons": {
+          "type": "array",
+          "description": "Rows of the reason picker. Entries missing either field are skipped with a warning.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "label"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "maxLength": 32,
+                "description": "Stable grouping value stored in player_reports.reason_code."
+              },
+              "label": {
+                "type": "string",
+                "description": "Fallback menu text, used only when no report.reasons.<code> translation exists."
+              }
+            }
+          }
+        }
+      }
+    },
     "cheatCheck": {
       "type": "object",
       "additionalProperties": false,

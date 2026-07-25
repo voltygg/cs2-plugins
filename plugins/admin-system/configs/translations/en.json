@@ -244,6 +244,31 @@
   "anticheat": {
     "alert": "[AC] {name} flagged by {detector} (score {score}) - consider a !check"
   },
+  "report": {
+    "selectTarget": "Report a player",
+    "selectReason": "Report reason",
+    "customReason": "Other...",
+    "customReasonPrompt": "Type the reason in chat",
+    "confirmTitle": "Confirm report",
+    "target": "Player",
+    "reason": "Reason",
+    "confirm": "Send report",
+    "cancel": "Cancel",
+    "submitted": "Your report against {name} was submitted. Thank you.",
+    "failed": "Could not submit the report; please try again later.",
+    "disabled": "Reporting is disabled on this server.",
+    "cooldown": "You can send another report in {seconds}s.",
+    "blocked": "Report cancelled - you cannot report this player right now.",
+    "targetLost": "That player left the server; report cancelled.",
+    "reasons": {
+      "cheating": "Cheating / aimbot",
+      "wallhack": "Wallhack",
+      "griefing": "Griefing / team damage",
+      "abuse": "Toxic behavior",
+      "micspam": "Mic spam",
+      "nickname": "Inappropriate nickname"
+    }
+  },
   "lang": {
     "en": "English",
     "ru": "Русский"

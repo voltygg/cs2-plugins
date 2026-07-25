@@ -10,6 +10,7 @@ A full admin suite for CS2 community servers: punishments, fun effects, a WASD a
 - **Admin System:** Permission flags (`a` freeze-admins, `b` hide/who, `c` kick, `d` ban, `e` unban, `o` voice-mute, `p` text-mute, `q` warn, `s` control, `h` health/cheats, `f` fun, `j` bhop, `k` cheat-check, `r` admin menu, `z` root), groups, immunity levels. Self-targeting always allowed.
 - **Multi-Server:** Several servers share one database; admins can hold different groups per server (see [Multi-Server Setup](#multi-server-setup))
 - **Abuse Protection:** Automatic + manual freezing of rogue admins, with a full action audit trail (see [Admin Abuse Protection](#admin-abuse-protection))
+- **Player Reports:** Any player can report another from a WASD menu (`!r`); reports land in the database for an upstream website to triage (see [Player Reports](#player-reports))
 - **WASD Menus:** Top-level category dispatcher → player picker → actions. Toggle entries (Ghost, Disco, Godmode) show live `: ON / : OFF` state.
 - **Database:** PostgreSQL, async-first (a worker thread owns the connection; gameplay reads hit in-memory caches, writes ride the worker) with forward-only auto-applied migrations
 - **Chat Commands:** `!kick`, `!ban`, `!voice_mute`, `!text_mute`, `!warn` and more
@@ -49,6 +50,7 @@ A full admin suite for CS2 community servers: punishments, fun effects, a WASD a
 | `!unfreeze_admin <steamId\|name>` | FreezeAdmins (`a`) | Restore a frozen admin's privileges |
 | `!frozen_admins` | FreezeAdmins (`a`) | List currently frozen admins |
 | `!admin_reload` (alias `!reload_admins`) | Root (`z`) | Reload admins/groups/grants/freezes from DB |
+| `!report` (alias `!r`) | *none - every player* | Open the report menu (see [Player Reports](#player-reports)) |
 
 **Target Selectors:** `@all`, `@me`, `@!me`, `@t`, `@ct`, `@spec`, `@dead`, `@alive`, `@bot`, `@human`, `@random`, `@randomt`, `@randomct`, `#slot`, a SteamID (64 / `STEAM_` / `[U:1:...]`), or a name (exact, then prefix, then substring)
 
@@ -56,7 +58,7 @@ A full admin suite for CS2 community servers: punishments, fun effects, a WASD a
 
 ## Configuration
 
-Runtime configuration lives in [configs/settings.jsonc](configs/settings.jsonc) (server identity, database, punishments, abuse protection, chat, cheat-check). Admin groups (with their chat prefix and colors) and individual admins live in the `admin_groups` and `admins` PostgreSQL tables; per-server group grants live in `admin_server_groups`, and every admin action is audited in `admin_activity` -- see [configs/migrations/](configs/migrations/). Run `!admin_reload` after editing those tables to refresh in-memory state without restarting.
+Runtime configuration lives in [configs/settings.jsonc](configs/settings.jsonc) (server identity, database, punishments, abuse protection, chat, reports, cheat-check). Player-facing text comes from [configs/translations/](configs/translations/) - one JSON file per language, all of which must stay key-parallel. Admin groups (with their chat prefix and colors) and individual admins live in the `admin_groups` and `admins` PostgreSQL tables; per-server group grants live in `admin_server_groups`, every admin action is audited in `admin_activity`, and player reports land in `player_reports` -- see [configs/migrations/](configs/migrations/). Run `!admin_reload` after editing those tables to refresh in-memory state without restarting.
 
 ## Multi-Server Setup
 
@@ -109,6 +111,32 @@ Protects the community from rogue admins (e.g. a purchased admin account mass-ba
 **Manual freezing.** An admin holding the `a` flag can run `!freeze_admin <target> [reason]` against any admin with strictly lower immunity (self-freezing is rejected). `!frozen_admins` lists open cases; `!unfreeze_admin <steamId|name>` restores privileges after review.
 
 **What happens on freeze:** the freeze is broadcast in chat, the frozen admin is notified (immediately if online, on connect otherwise, and within ~60 seconds on other servers), and their recent punishments stay active so the reviewer can inspect `admin_activity` / the punishment tables and revert selectively. Freezes and unfreezes are themselves recorded in `admin_activity`.
+
+## Player Reports
+
+Lets ordinary players flag a cheater or griefer without leaving the server. `!report` (or `!r`) opens a WASD menu: pick the offender, pick a reason, confirm. The report is written to the `player_reports` table and **only the reporter** is told - nothing is broadcast, no admin is notified in-game, and there is no in-game triage command. An upstream website reads the table and owns the workflow.
+
+The command takes no arguments: the menu is the only entry point, so a report always carries a resolved SteamID rather than a name guess. Reporters keep moving while the menu is open (unlike the admin menu, which freezes), so `!r` mid-round is safe. Players cannot report themselves or bots - those rows render greyed out.
+
+**Anti-spam.** Two windows, both tracked per SteamID so reconnecting or a map change does not reset them:
+
+```jsonc
+"reports": {
+  "enabled": true,             // master switch for !report / !r
+  "cooldownSec": 120,          // wait between two reports of ANY player; 0 disables
+  "duplicateWindowSec": 1800,  // same reporter cannot re-report the SAME player; 0 disables
+  "allowCustomReason": true,   // adds an "Other..." row that prompts for typed text (max 64 chars)
+  "reasons": [
+    { "code": "cheating", "label": "Cheating / aimbot" }
+  ]
+}
+```
+
+Players still inside the duplicate window appear greyed out in the picker, and the gate is re-checked at every menu step and again at confirm, so holding the menu open cannot bypass it. A report that fails to reach the database refunds the cooldown, so an outage costs the reporter nothing.
+
+**Reasons.** Each entry has a stable `code` (what the website groups on, stored in `player_reports.reason_code`) and a `label`. Players see the `report.reasons.<code>` translation when the language files define one, so the config `label` is only a fallback for codes you add yourself. Typed reasons are stored with code `other`.
+
+**Schema.** The server only ever inserts into `player_reports`: both parties' SteamID/name/IP, the reason, `server_tag`, `map_name`, and `created_at`. The triage columns - `status` (defaults to `open`), `handled_by`, `handled_at`, `resolution` - are never written or read by the plugin and belong entirely to the website.
 
 ## Building
 
