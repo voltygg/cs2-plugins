@@ -22,7 +22,7 @@ plugins:
     database: admin_system
   # DB-less plugins: no 'database' key, so rendering skips the DB_* requirements.
   bhop: {}
-  anticheat: {}
+  #anticheat: {} TODO: anticheat plugin is not ready yet, but will be added in the future.
 
 servers:
   - id: box-a
@@ -33,7 +33,7 @@ servers:
     plugins:
       - admin-system
       - bhop
-      - anticheat
+      #- anticheat
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main", insecure: true }
       # `insecure: true` launches with -insecure (VAC off) for cheat testing;
