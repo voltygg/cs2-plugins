@@ -49,8 +49,7 @@ bool CanStillPunish(int adminSlot, int targetSlot, PunishType type)
  *  admin's flags/immunity may have changed (e.g. !admin_reload) while the menu was open. */
 std::optional<std::string> ValidatePending(int slot, const PendingPunishment& pending)
 {
-    auto* target = Engine().Players.GetPlayerBySlot(pending.TargetSlot);
-    if (!target || target->GetSteamID() != pending.TargetSteamId)
+    if (!Engine().Players.GetPlayerBySlotIfSteamId(pending.TargetSlot, pending.TargetSteamId))
         return "punish.targetLost";
     if (!CanStillPunish(slot, pending.TargetSlot, pending.Type))
         return "punish.notAllowed";

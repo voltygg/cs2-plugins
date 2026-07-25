@@ -2,13 +2,11 @@
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Players/Player.hpp>
+#include <CS2Kit/Utils/SlotThrottle.hpp>
 #include <cstdint>
 #include <functional>
-#include <map>
 #include <optional>
 #include <string>
-#include <unordered_map>
-#include <utility>
 
 namespace AdminSystem::Reports
 {
@@ -34,8 +32,8 @@ struct ReportGate
  * Owns player-submitted reports: the anti-spam gate and the single database write. Nothing in-game
  * reads them back; an upstream website triages the `player_reports` table.
  *
- * State is keyed by SteamID, not slot (which rules out CS2Kit::SlotThrottle), and survives
- * disconnect and map change - otherwise rejoining would clear a cooldown.
+ * Both throttles are keyed by SteamID, not slot, and survive disconnect and map change -
+ * otherwise rejoining would clear a cooldown.
  */
 class ReportManager
 {
@@ -61,15 +59,14 @@ private:
      *  clock read. @p targetSteamId engages the per-target duplicate window. */
     ReportGate EvaluateGate(int64_t reporterSteamId, std::optional<int64_t> targetSteamId, int64_t now) const;
 
-    /** Claim the reporter's next slot before the write, so a double-press can't produce two rows. */
+    /** Claim the reporter's next slot before the write (so a double-press can't produce two rows)
+     *  and sweep both throttles, this being their only growth point. */
     void Arm(int64_t reporterSteamId, int64_t targetSteamId, int64_t now);
     void Release(int64_t reporterSteamId, int64_t targetSteamId);
 
-    /** Drop entries past the longest configured window. Called from Arm, the only growth point. */
-    void Prune(int64_t now);
-
-    std::unordered_map<int64_t, int64_t> _lastReportAt;                // reporter -> epoch
-    std::map<std::pair<int64_t, int64_t>, int64_t> _lastReportOfPair;  // (reporter, target) -> epoch
+    /** Intervals come from reloadable config, so they are passed per call rather than constructed. */
+    CS2Kit::Throttle<int64_t> _anyTarget;               // reporter -> last report of anyone
+    CS2Kit::PairThrottle<int64_t, int64_t> _perTarget;  // (reporter, target) -> last report of that player
 };
 
 }  // namespace AdminSystem::Reports

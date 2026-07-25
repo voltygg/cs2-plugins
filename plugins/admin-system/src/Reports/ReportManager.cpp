@@ -24,26 +24,14 @@ ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<in
     if (!config.enabled)
         return {ReportDenial::Disabled};
 
-    // The elapsed >= 0 checks below absorb a backwards clock jump, which would otherwise read as
-    // "inside every window".
-    if (config.cooldownSec > 0)
-    {
-        if (auto it = _lastReportAt.find(reporterSteamId); it != _lastReportAt.end())
-        {
-            const int64_t elapsed = now - it->second;
-            if (elapsed >= 0 && elapsed < config.cooldownSec)
-                return {ReportDenial::OnCooldown, config.cooldownSec - elapsed};
-        }
-    }
+    if (int64_t wait = _anyTarget.RemainingSec(reporterSteamId, now, config.cooldownSec); wait > 0)
+        return {ReportDenial::OnCooldown, wait};
 
-    if (targetSteamId && config.duplicateWindowSec > 0)
+    if (targetSteamId)
     {
-        if (auto it = _lastReportOfPair.find({reporterSteamId, *targetSteamId}); it != _lastReportOfPair.end())
-        {
-            const int64_t elapsed = now - it->second;
-            if (elapsed >= 0 && elapsed < config.duplicateWindowSec)
-                return {ReportDenial::OnCooldown, config.duplicateWindowSec - elapsed};
-        }
+        const auto pair = std::pair{reporterSteamId, *targetSteamId};
+        if (int64_t wait = _perTarget.RemainingSec(pair, now, config.duplicateWindowSec); wait > 0)
+            return {ReportDenial::OnCooldown, wait};
     }
 
     return {};
@@ -104,24 +92,20 @@ void ReportManager::Submit(const CS2Kit::Player& reporter, const CS2Kit::Player&
 
 void ReportManager::Arm(int64_t reporterSteamId, int64_t targetSteamId, int64_t now)
 {
-    _lastReportAt[reporterSteamId] = now;
-    _lastReportOfPair[{reporterSteamId, targetSteamId}] = now;
-    Prune(now);
+    _anyTarget.Acquire(reporterSteamId, now);
+    _perTarget.Acquire({reporterSteamId, targetSteamId}, now);
+
+    // Both maps only grow here, so this is the one place worth sweeping.
+    const auto& config = App().Config.GetReports();
+    const int64_t horizon = std::max(config.cooldownSec, config.duplicateWindowSec);
+    _anyTarget.Prune(now, horizon);
+    _perTarget.Prune(now, horizon);
 }
 
 void ReportManager::Release(int64_t reporterSteamId, int64_t targetSteamId)
 {
-    _lastReportAt.erase(reporterSteamId);
-    _lastReportOfPair.erase({reporterSteamId, targetSteamId});
-}
-
-void ReportManager::Prune(int64_t now)
-{
-    const auto& config = App().Config.GetReports();
-    const int64_t horizon = std::max(config.cooldownSec, config.duplicateWindowSec);
-
-    std::erase_if(_lastReportAt, [&](const auto& entry) { return now - entry.second > horizon; });
-    std::erase_if(_lastReportOfPair, [&](const auto& entry) { return now - entry.second > horizon; });
+    _anyTarget.Reset(reporterSteamId);
+    _perTarget.Reset({reporterSteamId, targetSteamId});
 }
 
 }  // namespace AdminSystem::Reports

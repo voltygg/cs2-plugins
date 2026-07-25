@@ -156,7 +156,9 @@ void InstallStatusReporting()
     auto& status = Engine().Status;
 
     status.RegisterSection("db", [] {
-        return nlohmann::json{{"connected", Engine().LoadReport.IsOk("Database")},
+        // Live worker state, not the load-time stage result: a database that died (or recovered)
+        // after load must show as such.
+        return nlohmann::json{{"connected", App().Db.IsConnected()},
                               {"migrationVersion", App().Migration.CurrentVersion},
                               {"migrationsApplied", App().Migration.Applied}};
     });
@@ -174,7 +176,7 @@ void InstallStatusReporting()
 
     status.InstallCommand("admin_status",
                           "Report plugin health; 'admin_status json' emits a machine-readable STATUS_JSON line.",
-                          [] { return Engine().LoadReport.IsOk("Database"); });
+                          [] { return App().Db.IsConnected(); });
 }
 
 // Persist a finished session; shared by the disconnect hook and the unload sweep. No-ops for bots.

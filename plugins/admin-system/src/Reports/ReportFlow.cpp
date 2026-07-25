@@ -53,8 +53,7 @@ std::optional<std::string> ValidatePending(int slot, const PendingReport& pendin
     if (!reporter)
         return "report.failed";
 
-    auto* target = Engine().Players.GetPlayerBySlot(pending.TargetSlot);
-    if (!target || target->GetSteamID() != pending.TargetSteamId)
+    if (!Engine().Players.GetPlayerBySlotIfSteamId(pending.TargetSlot, pending.TargetSteamId))
         return "report.targetLost";
 
     if (!App().Reports.CanReport(reporter->GetSteamID(), pending.TargetSteamId))

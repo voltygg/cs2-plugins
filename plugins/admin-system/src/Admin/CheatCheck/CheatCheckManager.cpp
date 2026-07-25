@@ -258,8 +258,7 @@ void CheatCheckManager::FallbackToFixed(PendingCheck& pc)
 
 std::optional<int> CheatCheckManager::ResolveAdminSlot(const PendingCheck& pc) const
 {
-    auto* adminPlayer = Engine().Players.GetPlayerBySlot(pc.AdminSlot);
-    if (!adminPlayer || adminPlayer->GetSteamID() != pc.AdminSteamId)
+    if (!Engine().Players.GetPlayerBySlotIfSteamId(pc.AdminSlot, pc.AdminSteamId))
         return std::nullopt;
     return pc.AdminSlot;
 }
