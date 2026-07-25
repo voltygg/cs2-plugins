@@ -35,7 +35,10 @@ ctest --preset windows-msvc-release
 
 Build output lands in `build/<preset>/plugins/<name>/<platform-arch>/`.
 Conan profiles are canonical in `vendor/cs2-kit/conan/profiles/` (no local
-copies). The utils unit tests live in `vendor/cs2-kit/tests/`.
+copies). Unit tests use doctest (`test_requires` in both conanfiles) and live in
+`vendor/cs2-kit/tests/` plus `plugins/<name>/tests/`, wired by the kit's
+`cs2_add_tests()`. One ctest entry per case, so TEST_CASE names must not contain
+`[`, `]` or `;` (configure enforces it). See `vendor/cs2-kit/docs/testing.md`.
 
 ## Project Structure
 

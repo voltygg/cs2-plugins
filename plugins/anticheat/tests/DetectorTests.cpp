@@ -1,7 +1,6 @@
 #include "Config.hpp"
 #include "Detectors/AimSnapCore.hpp"
 #include "Detectors/SpinbotDetector.hpp"
-#include "MicroTest.hpp"
 #include "PlayerMonitor.hpp"
 
 #include <CS2Kit/Sdk/UserCmd.hpp>
@@ -9,6 +8,7 @@
 #include <array>
 #include <cmath>
 #include <cstring>
+#include <doctest/doctest.h>
 #include <string>
 
 using namespace Anticheat;
@@ -55,12 +55,9 @@ TEST_CASE("FindSettledSnap detects the snap nearest the shot despite a larger ea
         Cmd(-5.0f),
     };
     auto snap = Detectors::AimSnap::FindSettledSnap(w, cfg);
-    CHECK(snap.has_value());
-    if (snap)
-    {
-        CHECK_EQ(snap->Ago, 1);
-        CHECK(Near(snap->SnapDeg, 45.0f));
-    }
+    REQUIRE(snap.has_value());
+    CHECK_EQ(snap->Ago, 1);
+    CHECK(Near(snap->SnapDeg, 45.0f));
 }
 
 TEST_CASE("FindSettledSnap finds a clean snap-and-lock several ticks before the shot")
@@ -68,9 +65,8 @@ TEST_CASE("FindSettledSnap finds a clean snap-and-lock several ticks before the 
     AimSnapSettings cfg;
     std::array<UserCmdView, 6> w = {Cmd(100.0f), Cmd(100.0f), Cmd(100.0f), Cmd(50.0f), Cmd(50.0f), Cmd(50.0f)};
     auto snap = Detectors::AimSnap::FindSettledSnap(w, cfg);
-    CHECK(snap.has_value());
-    if (snap)
-        CHECK_EQ(snap->Ago, 3);
+    REQUIRE(snap.has_value());
+    CHECK_EQ(snap->Ago, 3);
 }
 
 TEST_CASE("FindSettledSnap ignores sub-minSnap motion and pure stillness")
