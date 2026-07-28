@@ -1,7 +1,7 @@
 #pragma once
 
-// The violation funnel as pure decision logic: given who was detected, what the config says and
-// what has already been done to them, decide what happens. SDK-free so every branch is testable.
+// The violation funnel as pure decision logic: who was detected, what the config says, and what has
+// already been done to them. SDK-free so every branch is testable.
 
 #include "Core/Samples.hpp"
 
@@ -115,10 +115,7 @@ struct FunnelDecision
     PunishmentLevel Apply = PunishmentLevel::None;  // None = nothing to issue
 };
 
-/**
- * Every detection is logged and reported by the caller regardless; this decides only whether an
- * alert goes out and what punishment (if any) is issued.
- */
+/** The caller logs and reports every detection regardless; this decides alert and punishment only. */
 constexpr FunnelDecision Decide(const FunnelInput& input)
 {
     if (input.SteamId == 0)

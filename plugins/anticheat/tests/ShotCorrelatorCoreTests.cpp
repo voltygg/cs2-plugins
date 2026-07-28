@@ -47,8 +47,7 @@ TEST_CASE("A command whose attack angles were capped away never enters the ring"
     core.OnCommand(Shooter, cmd);
     CHECK(core.CommandCount(Shooter) == 0);
 
-    // The old bug clamped such an index back into range and read another shot's angles; the sample
-    // must simply be absent.
+    // Clamping such an index back into range would read another shot's angles.
     core.OnCommand(Shooter, Cmd(2, 2));
     CHECK(core.CommandCount(Shooter) == 1);
 }

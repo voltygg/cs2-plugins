@@ -23,9 +23,9 @@ namespace Log = CS2Kit::Utils::Log;
 namespace
 {
 constexpr double SimulationSeconds = 10.0;
-/** Distinct yaws a jitter bind cycles through; three is the middle period AntiAim looks for. */
+/** Three is the middle jitter period AntiAim looks for. */
 constexpr int JitterPeriod = 3;
-/** Roll a fake-angle bind holds; well past AntiAim's 50.01 degree ceiling. */
+/** Well past AntiAim's 50.01 degree roll ceiling. */
 constexpr float BadRoll = 60.0f;
 /** Chest height, so the lock reads as a body point rather than a graze. */
 constexpr float LockHeight = 46.0f;
@@ -108,8 +108,8 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
         return;
     }
 
-    // The filter rewrites live player commands, so it stays uninstalled until a sim is first armed;
-    // a disabled simulator then costs nothing on the per-tick movement path.
+    // The filter rewrites live player commands, so it stays uninstalled until the first Arm. A
+    // disabled simulator then costs nothing on the per-tick movement path.
     if (!_filtering)
     {
         Engine().MovementHook.ListenFilterCmd(
@@ -211,9 +211,9 @@ void CheatSimulator::OnFilter(int slot, CS2Kit::UserCmdView& cmd)
         AimAtNearestOpponent(slot, cmd);
         break;
     case Kind::Mismatch:
-        // The input-history angles the client claims, rewritten away from the view it shows: what
-        // AntiAim's base-vs-history rule reads. It does not reach SilentAim, which judges the
-        // bullet's real impact geometry - untouchable from an edit to the decoded view.
+        // Rewrite the claimed input-history angles away from the visible view, which is what
+        // AntiAim's base-vs-history rule reads. SilentAim judges real impact geometry, so an edit
+        // to the decoded view never reaches it.
         cmd.InputHistorySampleCount = 1;
         cmd.InputHistoryTotalCount = 1;
         cmd.InputHistorySamples[0] = {

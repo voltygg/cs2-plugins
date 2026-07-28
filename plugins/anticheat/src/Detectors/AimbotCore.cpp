@@ -18,7 +18,7 @@ constexpr float MinimumDistance = 100.0f;
 constexpr int DetectionThreshold = 4;
 constexpr double EvidenceWindowSec = 600.0;  // 10 minutes
 
-// Convergence: a large jump that lands far closer to the target than it started. The two branches
+// Convergence: a large jump landing far closer to the target than it started. The two branches
 // trade snap size against how completely the error collapsed.
 constexpr float WideSnapDeg = 10.0f;
 constexpr float WideSnapErrorRatio = 0.2f;
@@ -114,7 +114,7 @@ std::optional<Finding> AimbotCore::OnPlayerHurt(int attackerSlot, int victimSlot
     if (data.Pending)
     {
         Evaluate(attackerSlot, shot.FireTick, nowSec, out);
-        data.Pending = false;  // the previous shot never resolved; the new one takes its place
+        data.Pending = false;  // the previous shot never resolved, so the new one takes its place
     }
     data.PendingShot = shot.CmdNum;
     data.VictimSlot = victimSlot;
@@ -146,7 +146,7 @@ void AimbotCore::Evaluate(int slot, int32_t currentTick, double nowSec, std::opt
     const PositionSample* shotAttacker = _shots.FindPosition(shot->ServerTick, slot);
     if (!shotTarget || !shotAttacker)
     {
-        // The frame for the shot's tick may still be captured this frame; only give up once past it.
+        // The frame for the shot's tick may still be captured, so only give up once past it.
         if (currentTick <= shot->ServerTick)
             return;
         clearPending();
@@ -172,8 +172,7 @@ void AimbotCore::Evaluate(int slot, int32_t currentTick, double nowSec, std::opt
     float bestBefore = 0.0f;
     float bestAfter = 0.0f;
 
-    // Walk backwards along strictly adjacent commands: one lost command and the chain ends, because
-    // a gap could hide the human motion that explains the jump.
+    // Strictly adjacent commands only: a gap could hide the human motion that explains the jump.
     AimCommand* newer = shot;
     while (newer->CmdNum > std::numeric_limits<int32_t>::min())
     {

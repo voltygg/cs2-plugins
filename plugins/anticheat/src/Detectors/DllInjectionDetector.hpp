@@ -1,8 +1,8 @@
 #pragma once
 
 // A stock client subscribes only to the events its HUD needs. Injected client code registers its
-// own legacy listener and asks for events no HUD ever wants, which is a fingerprint the server can
-// read without touching the client. No core: the whole check is one engine query plus a schedule.
+// own legacy listener and asks for events no HUD ever wants - a fingerprint the server can read
+// without touching the client. No core: the check is one engine query plus a schedule.
 
 #include "Core/Samples.hpp"
 

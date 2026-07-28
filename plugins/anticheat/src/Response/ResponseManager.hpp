@@ -10,9 +10,8 @@ namespace Anticheat
 {
 
 /**
- * The violation funnel. Cores already self-threshold, so a Finding is a verdict: this only decides
- * how loudly to react. Bans go through admin-system's console bridge (as_ac_ban) so persistence,
- * kick and broadcast stay in one place.
+ * Cores already self-threshold, so this only decides how loudly to react. Bans go through
+ * admin-system's console bridge (as_ac_ban) to keep persistence, kick and broadcast in one place.
  */
 class ResponseManager
 {
@@ -36,7 +35,7 @@ public:
     PunishmentLevel Issued(int slot) const { return _latch.Level(slot); }
 
 private:
-    /** One admin alert per (steamId, detection) per half minute. */
+    /** One admin alert per (steamId, detection) per window. */
     static constexpr int64_t AlertThrottleSec = 30;
 
     bool IsWhitelisted(int64_t steamId) const;

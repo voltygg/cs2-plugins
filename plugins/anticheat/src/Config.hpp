@@ -1,8 +1,8 @@
 #pragma once
 
 // SDK-free so cores and their tests can include it; the ConfigManager alias is in Managers.hpp.
-// Detection thresholds are deliberately absent - every tuned constant is constexpr at the top of
-// its core's source file, so the operational surface below is all an operator has to reason about.
+// Detection thresholds are deliberately absent - every tuned constant is constexpr in its own core,
+// leaving only the operational surface below for an operator to reason about.
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -13,7 +13,6 @@ namespace Anticheat
 
 inline constexpr const char* SettingsPath = "addons/anticheat/configs/settings.jsonc";
 
-/** Per-detection kill switches. */
 struct DetectionToggles
 {
     bool aimbot = true;
@@ -27,21 +26,20 @@ struct DetectionToggles
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DetectionToggles, aimbot, aimlock, antiAim, silentAim, dllInjection,
                                                 invalidCvar, namechanger)
 
-/** Discord reporting; inactive while the url is empty. */
+/** Inactive while the url is empty. */
 struct WebhookSettings
 {
     std::string url;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WebhookSettings, url)
 
-/** The simulator rewrites live player commands; leave it off outside a test box. */
+/** The simulator rewrites live player commands: leave it off outside a test box. */
 struct DebugSettings
 {
     bool simulator = false;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DebugSettings, simulator)
 
-/** "anticheat" section. */
 struct AntiCheatSettings
 {
     bool enabled = true;
@@ -56,7 +54,6 @@ struct AntiCheatSettings
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AntiCheatSettings, enabled, mode, banDurationSec, whitelistSteamIds,
                                                 allowSvCheatsTesting, detections, webhook, debug)
 
-/** Root of settings.jsonc. */
 struct Settings
 {
     AntiCheatSettings anticheat;

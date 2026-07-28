@@ -1,8 +1,7 @@
 #pragma once
 
-// Owns the detection cores, the thin adapters that feed them, and the console surface. Everything
-// global lives here: the sv_cheats gate, the eligibility rule, evidence reset, and the fixed order
-// the modules are dispatched in.
+// Owns the detection cores, the adapters that feed them, and the console surface. The sv_cheats
+// gate, the eligibility rule and evidence reset are all global, so they live here.
 
 #include "Correlation/ShotCorrelator.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
@@ -35,7 +34,7 @@ public:
     void ResetEvidence();
     void OnSlotChanged(int slot);
 
-    /** A new map: pawns, positions and ticks all restart, so no evidence carries over. */
+    /** Pawns, positions and ticks all restart, so no evidence carries over. */
     void OnMapStart();
 
     void OnPlayerFullyConnected(CS2Kit::Players::Player* player);
@@ -47,22 +46,17 @@ public:
      */
     bool DetectionsEnabled() const;
 
-    /** Per-detection kill switch from settings.jsonc. */
     static bool ModuleEnabled(DetectionKind kind);
 
     /** True when @p slot should be judged at all (a connected, non-bot human). */
     static bool IsEligible(int slot);
 
-    /** Routes a core's verdict into the funnel. */
     void Report(int slot, const std::optional<Finding>& finding);
 
-    /**
-     * Cheat-protected client values only mean something while sv_cheats is off and its last disable
-     * has had time to reach the clients.
-     */
+    /** Cheat-protected client values only mean something once a disabled sv_cheats has reached them. */
     bool EnforceCheatCvars() const;
 
-    /** Compact global snapshot; also the `anticheat` section of Engine().Status. */
+    /** The `anticheat` section of Engine().Status. */
     nlohmann::json StatusSnapshot() const;
 
     ShotCorrelatorCore& Correlator() { return _correlator; }
@@ -78,7 +72,7 @@ private:
     void DumpCommand(int slot, const CS2Kit::UserCmdView& cmd);
     /** anticheat_status: the snapshot, then one line per human player. */
     void LogStatus() const;
-    /** Pull mp_teammates_are_enemies into the correlator; it changes which shots count as hostile. */
+    /** Pull mp_teammates_are_enemies into the correlator: it decides which shots are hostile. */
     void RefreshTeamRules();
 
     ResponseManager& _response;

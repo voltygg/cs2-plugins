@@ -1,7 +1,7 @@
 #pragma once
 
-// Plain data the SDK-free cores consume. The adapters fill these from UserCmdView, game events and
-// pawn reads; nothing here may depend on the SDK, so the cores stay doctest-able.
+// Plain data the cores consume, filled by the adapters. Nothing here may depend on the SDK, so the
+// cores stay doctest-able.
 
 #include <chrono>
 #include <cmath>
@@ -12,19 +12,16 @@
 namespace Anticheat
 {
 
-/** Slot capacity the cores allocate per-player state for. */
 inline constexpr int MaxSlots = 64;
 
-/** True for a slot the cores hold state for; every core guards its per-slot arrays with it. */
 inline constexpr bool InSlotRange(int slot)
 {
     return slot >= 0 && slot < MaxSlots;
 }
 
-/** CS2's fixed simulation rate; every tick-to-seconds conversion in the cores goes through it. */
 inline constexpr float TickRate = 64.0f;
 
-/** Monotonic seconds for the cores' rolling evidence windows (wall clock, not game time). */
+/** Monotonic seconds for the rolling evidence windows (wall clock, not game time). */
 inline double NowSeconds()
 {
     using Clock = std::chrono::steady_clock;
@@ -44,7 +41,7 @@ struct Vec3
     float Length() const { return std::sqrt(LengthSqr()); }
 };
 
-/** Pitch/yaw pair; roll lives on CmdSample because only AntiAim reads it. */
+/** Roll lives on CmdSample instead: only AntiAim reads it. */
 struct AimAngles
 {
     float Pitch = 0.0f;
@@ -52,9 +49,8 @@ struct AimAngles
 };
 
 /**
- * One decoded usercmd. CmdNum is the client's `legacy_command_number` - adjacency of CmdNum *and*
- * ClientTick is what makes Aimbot's convergence chain trustworthy. ServerTick is -1 until the
- * command is stamped as the one the server actually simulated for a tick.
+ * One decoded usercmd. Adjacency of CmdNum (`legacy_command_number`) *and* ClientTick is what makes
+ * Aimbot's convergence chain trustworthy. ServerTick is -1 until the command is stamped as simulated.
  */
 struct CmdSample
 {
@@ -76,8 +72,7 @@ struct CmdSample
     float SubtickPitchDelta = 0.0f;
     float SubtickYawDelta = 0.0f;
 
-    /** Input-history angles at the attack index: where the bullet actually went. Empty when the
-     *  command started no attack or the index was capped away by the history limit. */
+    /** Where the bullet actually went. Empty when no attack started or the index was capped away. */
     std::optional<AimAngles> AttackAngles;
 
     bool AttackStarted = false;       // attack1_start_history_index >= 0
@@ -88,13 +83,12 @@ struct CmdSample
     bool HistoryAnglesFinite = true;
     bool SubtickAnglesFinite = true;
 
-    // Stamped when the command is simulated (see ShotCorrelatorCore::OnSimulated).
+    // Stamped by ShotCorrelatorCore::OnSimulated.
     Vec3 EyePos;
     bool Airborne = false;
     bool Scoped = false;
 
     AimAngles BaseAngles() const { return {ViewPitch, ViewYaw}; }
-    /** The angle the bullet travelled along, falling back to the visible view. */
     AimAngles FiringAngles() const { return AttackAngles ? *AttackAngles : BaseAngles(); }
 };
 
@@ -110,8 +104,8 @@ struct PositionSample
 };
 
 /**
- * A correlated shot: the command that fired it joined to the events it produced. Modules read it
- * and stamp their own consumption flags so one shot funds at most one incident per module.
+ * A correlated shot: the command that fired it joined to the events it produced. Modules stamp
+ * their own consumption flags so one shot funds at most one incident per module.
  */
 struct ShotView
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-// Rapid visible name changes are a griefing/evasion tool, not something a client UI can produce by
+// Rapid visible name changes are a griefing/evasion tool, not something the client UI produces by
 // accident. SDK-free.
 
 #include "Core/Finding.hpp"
@@ -21,7 +21,7 @@ public:
     void Reset();
     void OnSlotChanged(int slot);
 
-    /** Record the name a player joined with; the first change is measured against it. */
+    /** The baseline the first change is measured against. */
     void OnBaseline(int slot, std::string_view name);
 
     /** A settings change. Only an actually different name counts. */

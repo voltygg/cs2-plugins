@@ -1,5 +1,5 @@
-// Spin and jitter analysis for AntiAimCore. Separated from the per-command rules purely to keep
-// both translation units readable; the tuned constants live in AntiAimCore.hpp.
+// Spin and jitter analysis for AntiAimCore, split out purely to keep both TUs readable. The tuned
+// constants live in AntiAimCore.hpp.
 
 #include "AntiAimCore.hpp"
 #include "Core/Geometry.hpp"
@@ -39,8 +39,7 @@ void AntiAimCore::EvaluateMotion(SlotData& data, const Command& command, double 
         ResetMotion(data);
     data.LastMotionServerTick = command.ServerTick;
 
-    // Newest-first run of commands on strictly consecutive server ticks; a hole ends the run,
-    // because a lost tick makes any rate computed across it a fiction.
+    // Strictly consecutive server ticks: a lost tick makes any rate computed across it a fiction.
     std::array<const Command*, MotionHistorySize> history{};
     size_t historyCount = 0;
     int64_t wantedTick = command.ServerTick;
@@ -91,7 +90,7 @@ void AntiAimCore::EvaluateMotion(SlotData& data, const Command& command, double 
         }
         else if (data.SpinSeconds[tier] > 0.0f || data.SpinBreakSeconds[tier] > 0.0f)
         {
-            // One second of interruption is forgiven; anything longer restarts the episode.
+            // One second of interruption is forgiven, anything longer restarts the episode.
             data.SpinBreakSeconds[tier] += commandSeconds;
             if (data.SpinBreakSeconds[tier] > SpinBreakAllowance)
             {

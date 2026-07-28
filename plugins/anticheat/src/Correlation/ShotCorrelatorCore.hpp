@@ -1,7 +1,7 @@
 #pragma once
 
 // Joins usercmds to the events they produced, so every aim module works from "this exact command
-// fired this exact bullet at this exact world state" instead of from whatever the engine last
+// fired this exact bullet at this exact world state" rather than from whatever the engine last
 // reported. SDK-free: the adapter feeds it plain samples.
 
 #include "Core/Samples.hpp"
@@ -28,33 +28,33 @@ struct PositionFrame
 class ShotCorrelatorCore
 {
 public:
-    /** Mirrors mp_teammates_are_enemies; changes it only through a reset, since it changes which
-     *  shots count as hostile. */
+    /** Mirrors mp_teammates_are_enemies. Only changed through a reset: it decides which shots are
+     *  hostile. */
     void SetTeammatesAreEnemies(bool value) { _teammatesAreEnemies = value; }
     bool TeammatesAreEnemies() const { return _teammatesAreEnemies; }
 
     /** Map change or config reload: drop every command, shot and frame. */
     void Reset();
 
-    /** Connect or disconnect: invalidate the slot's in-flight shots without touching other slots. */
+    /** Connect or disconnect: invalidate the slot's in-flight shots, leaving other slots alone. */
     void OnSlotChanged(int slot);
 
-    /** Ingest a command that carries a resolvable attack angle. Duplicates (same CmdNum) are dropped. */
+    /** Duplicates (same CmdNum) are dropped. */
     void OnCommand(int slot, const CmdSample& cmd);
 
     /** Stamp the command the server is about to simulate for @p serverTick. */
     void OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, bool airborne, bool scoped);
 
-    /** World snapshot for @p serverTick; a repeat of the newest tick replaces it rather than growing. */
+    /** A repeat of the newest tick replaces it rather than growing the ring. */
     void CaptureFrame(int32_t serverTick, const std::array<PositionSample, MaxSlots>& players);
 
     /** Drop commands and shots that can no longer match an event. */
     void Prune(int32_t serverTick);
 
     /**
-     * weapon_fire for a ballistic weapon. Returns the new shot, or null when zero or several
-     * commands could have fired it - an ambiguous window is evidence of nothing, and its
-     * candidates are consumed so a later event cannot pick one of them arbitrarily.
+     * weapon_fire for a ballistic weapon. Null when zero or several commands could have fired it -
+     * an ambiguous window is evidence of nothing, and its candidates are consumed so a later event
+     * cannot pick one of them arbitrarily.
      */
     ShotView* OnWeaponFire(int slot, std::string_view weapon, int32_t serverTick, const AimAngles& visibleAngles,
                            bool hasVisibleAngles);
@@ -65,9 +65,8 @@ public:
                             int32_t serverTick);
 
     /**
-     * bullet_impact carries only the low byte of the shooter's userid. Resolve it to a slot by
-     * matching that byte against @p userIdBySlot and requiring both the slot and its in-window
-     * shot to be unique; -1 when anything is ambiguous.
+     * bullet_impact carries only the low byte of the shooter's userid. Matches it against
+     * @p userIdBySlot, requiring both the slot and its in-window shot to be unique; -1 otherwise.
      */
     int ResolveImpactShooter(int truncatedUserId, int32_t serverTick, std::span<const int32_t> userIdBySlot) const;
 

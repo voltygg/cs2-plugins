@@ -208,8 +208,7 @@ TEST_CASE("A withheld cvar is not judged while the cheat rules are not being enf
 
 TEST_CASE("A withheld client tunable cvar is no signal at all")
 {
-    // These are the rules whose findings carry weight for a normal player; an engine update that
-    // drops one of them must not turn every connected client into a detection.
+    // An engine update that drops one of these must not turn every connected client into a detection.
     for (std::string_view name : {"m_yaw", "fps_max", "sensitivity", "cl_pitchdown", "cl_pitchup", "cl_yawspeed"})
         CHECK_FALSE(EvaluateMissingCvar(name, "cvar_not_found", Enforcing, MissingRepliesBeforeEvidence).Checked);
     CHECK_FALSE(EvaluateMissingCvar("cl_interp_ratio", "not_a_cvar", Enforcing, MissingRepliesBeforeEvidence).Known);
@@ -261,8 +260,8 @@ TEST_CASE("A withheld cvar latches like an invalid value and shares its latch")
     CHECK(rules.IsLatched(Slot, "cl_showpos"));
     CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
 
-    // A later reply that does carry a valid value re-arms the same latch - and restarts the run,
-    // so the refusal threshold must be met again.
+    // A later reply carrying a valid value re-arms the latch and restarts the run, so the refusal
+    // threshold must be met again.
     CHECK_FALSE(rules.Observe(Slot, "cl_showpos", "0", Enforcing).has_value());
     CHECK_FALSE(rules.IsLatched(Slot, "cl_showpos"));
     for (int reply = 1; reply < MissingRepliesBeforeEvidence; ++reply)

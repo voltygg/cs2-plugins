@@ -41,8 +41,8 @@ void DiscordReporter::Report(int slot, const std::string& playerName, int64_t st
     };
     const nlohmann::json payload{{"embeds", nlohmann::json::array({embed})}};
 
-    // Player names are client-controlled and need not be valid UTF-8; the default dump() throws on
-    // those, and this runs on an engine frame with nothing to catch it.
+    // Player names are client-controlled and need not be valid UTF-8, which the default dump()
+    // throws on - and this runs on an engine frame with nothing to catch it.
     std::string body = payload.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
 
     Engine().Http.Post(settings.webhook.url, std::move(body), {"Content-Type: application/json"}, RequestTimeoutMs,

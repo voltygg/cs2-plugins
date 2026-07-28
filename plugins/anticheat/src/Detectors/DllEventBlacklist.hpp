@@ -1,8 +1,8 @@
 #pragma once
 
-// Game events a stock CS2 client never subscribes to. An injected library that wants to observe the
-// game registers its own legacy listener, and these are the names it ends up asking for. Normal
-// client and game-instructor subscriptions are deliberately absent, so any hit is a real signal.
+// Game events a stock CS2 client never subscribes to, and that an injected library observing the
+// game ends up asking for. Normal client and game-instructor subscriptions are deliberately absent,
+// so any hit is a real signal.
 
 #include <array>
 #include <string_view>

@@ -3,9 +3,7 @@
 // Anti-aim / fake-angle detection: impossible pitch or roll, a base view angle that disagrees with
 // the angles the client says it fired along, one-command attack returns, sustained spin, and exact
 // repeating yaw jitter. Everything feeds one decaying score; motion patterns score it out instantly.
-//
-// Split over two TUs: this one owns ingest, scoring and the per-command rules; the spin/jitter
-// analysis lives in AntiAimMotionCore.cpp.
+// Ingest, scoring and the per-command rules live here; spin/jitter in AntiAimMotionCore.cpp.
 
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
@@ -18,7 +16,7 @@
 namespace Anticheat
 {
 
-/** Tuned constants; here rather than in one .cpp because the two TUs share them. */
+/** In the header rather than a .cpp only because both TUs share them. */
 namespace AntiAimTuning
 {
 inline constexpr size_t CommandHistorySize = 96;
@@ -62,13 +60,12 @@ public:
     void OnSlotChanged(int slot);
     void OnSpawn(int slot);
 
-    /** Ring of the last 96 commands; duplicates (same CmdNum) are dropped. */
+    /** Duplicates (same CmdNum) are dropped. */
     void OnCommand(int slot, const CmdSample& cmd);
 
     /**
-     * The command the server simulates for @p serverTick. @p eligible is false for bots, dead or
-     * disconnected players; @p justTeleported covers the 5 second spawn/teleport grace, during
-     * which fake angles are indistinguishable from an engine-driven angle change.
+     * The command the server simulates for @p serverTick. @p justTeleported covers the spawn and
+     * teleport grace, during which fake angles are indistinguishable from an engine-driven change.
      */
     std::optional<Finding> OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, bool eligible, bool justTeleported,
                                        double nowSec);

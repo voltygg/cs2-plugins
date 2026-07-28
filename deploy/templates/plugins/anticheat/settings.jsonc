@@ -1,12 +1,8 @@
-// Template for anticheat's settings.jsonc - rendered per (server, plugin) by
-// deploy/tools/render.py. DB-less, no per-instance placeholders; every knob is
-// a literal - edit it in git to change it.
-//
-// Detection thresholds are compiled in, not configurable: what is left here is
-// the operational surface. Mode ladder: "observe" (log and report only, this is
-// the dry run) -> "alert" (also notify admins via admin-system) -> "ban" (also
-// kick or ban). Stays in "observe" until each detection has soaked against real
-// traffic on this box; escalate module by module, aim modules last.
+// Template for anticheat's settings.jsonc, rendered by deploy/tools/render.py.
+// DB-less with no per-instance placeholders: every knob is a literal, edited in
+// git. Mode ladder: "observe" (log and report only) -> "alert" (also notify
+// admins) -> "ban" (also kick or ban). Stays in "observe" until each detection
+// has soaked against real traffic here; escalate module by module, aim last.
 {
   "anticheat": {
     "enabled": true,
@@ -28,7 +24,7 @@
       "url": ""
     },
     "debug": {
-      // box-a is the test box; the simulator commands stay available here.
+      // box-a is the test box, so the simulator commands stay available.
       "simulator": true
     }
   }

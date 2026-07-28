@@ -13,7 +13,7 @@ namespace Anticheat
 
 namespace
 {
-/** How often the pump looks for slots whose poll is due; the per-slot deadlines do the real timing. */
+/** Pump cadence only; the per-slot deadlines do the real timing. */
 constexpr int64_t PumpIntervalMs = 1000;
 
 /** A seed in [1, m-1], the only range std::minstd_rand accepts. */
@@ -39,8 +39,7 @@ void InvalidCvarDetector::Initialize()
             SlotState& state = _slots[slot];
             if (!AntiCheatManager::IsEligible(slot))
                 continue;
-            // A map change clears every schedule, and players who ride it out never connect again,
-            // so an eligible slot without one arms itself here rather than waiting forever.
+            // A map change clears every schedule, and players who ride it out never connect again.
             if (state.NextPoll == 0.0)
             {
                 state.NextPoll = now + NextDelaySec();
@@ -89,8 +88,8 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
     if (!Engine().ClientCvars.Available())
         return;
 
-    // Asking for a convar that is already in flight re-points the outstanding request instead of
-    // sending a second one, so the batch never has to check what is pending.
+    // Asking for a convar already in flight re-points the outstanding request rather than sending a
+    // second one, so the batch never has to check what is pending.
     for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
     {
         const std::string name(QueriedCvars[PollCvarIndex(state.Cursor, offset)]);
@@ -120,7 +119,7 @@ void InvalidCvarDetector::OnReply(int slot, CS2Kit::ClientCvarStatus status, std
         !AntiCheatManager::IsEligible(slot))
         return;
 
-    // Both strings borrow the decoded message; the rules core copies whatever ends up as evidence.
+    // Both strings borrow the decoded message. The rules core copies whatever becomes evidence.
     const bool enforce = _manager.EnforceCheatCvars();
     InvalidCvarRules& rules = _manager.InvalidCvars();
     _manager.Report(slot, status == CS2Kit::ClientCvarStatus::ValueIntact

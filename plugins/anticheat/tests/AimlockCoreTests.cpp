@@ -18,9 +18,9 @@ constexpr float TargetX = 500.0f;
 constexpr float TargetSpeed = 20.0f;  // units a tick, enough to move the bearing off a stale aim
 
 /**
- * One observer standing still and one enemy walking sideways at a distance. The observer's aim is
- * generated from the enemy's position @p aimLag ticks in the past, which is exactly what a client
- * with that much visual delay would produce.
+ * One observer standing still and one enemy walking sideways at a distance. The aim is generated
+ * from the enemy's position @p aimLag ticks in the past - what a client with that much visual
+ * delay would produce.
  */
 struct Harness
 {
@@ -192,8 +192,8 @@ TEST_CASE("Episodes counted before a death still count after the respawn")
     REQUIRE(harness.Aimlock.IncidentCount(Observer) == 2);
     REQUIRE(harness.Findings == 0);
 
-    // Dying drops the tracking state but must not drop the evidence, or a cheat that dies between
-    // episodes never reaches the threshold.
+    // Dying drops the tracking state but not the evidence, or a cheat that dies between episodes
+    // never reaches the threshold.
     CHECK_FALSE(harness.Aimlock.OnFrame(Observer, harness.Tick, false, harness.Lag, Now).has_value());
     CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
     CHECK(harness.Aimlock.IncidentCount(Observer) == 2);

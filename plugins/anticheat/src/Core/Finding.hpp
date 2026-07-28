@@ -5,7 +5,6 @@
 namespace Anticheat
 {
 
-/** The detections the plugin ships. Order matches the config toggles. */
 enum class DetectionKind
 {
     Aimbot,
@@ -17,13 +16,11 @@ enum class DetectionKind
     Namechanger,
 };
 
-/** Every kind, for the config toggles and the status report. */
 inline constexpr DetectionKind AllDetectionKinds[] = {
     DetectionKind::Aimbot,       DetectionKind::Aimlock,     DetectionKind::AntiAim,     DetectionKind::SilentAim,
     DetectionKind::DllInjection, DetectionKind::InvalidCvar, DetectionKind::Namechanger,
 };
 
-/** Console/webhook label for @p kind. */
 constexpr const char* DisplayName(DetectionKind kind)
 {
     switch (kind)
@@ -46,7 +43,7 @@ constexpr const char* DisplayName(DetectionKind kind)
     return "UNKNOWN";
 }
 
-/** Space-free token for the admin-system console bridge, whose arguments split on whitespace. */
+/** Space-free: the admin-system console bridge splits its arguments on whitespace. */
 constexpr const char* TokenName(DetectionKind kind)
 {
     switch (kind)
@@ -70,11 +67,9 @@ constexpr const char* TokenName(DetectionKind kind)
 }
 
 /**
- * A confirmed detection. Cores self-threshold on their own rolling windows, so a Finding is
- * already a verdict - the response funnel decides the punishment, not whether one is warranted.
- *
- * KickOnly caps the punishment at a kick even in ban mode: it marks rules (a client cvar out of
- * range) whose false-positive cost must stay recoverable.
+ * A confirmed detection: cores self-threshold on their own rolling windows, so the response funnel
+ * decides the punishment, not whether one is warranted. KickOnly caps it at a kick even in ban
+ * mode, for rules whose false-positive cost must stay recoverable.
  */
 struct Finding
 {

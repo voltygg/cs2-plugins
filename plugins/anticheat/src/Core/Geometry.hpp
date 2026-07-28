@@ -1,9 +1,8 @@
 #pragma once
 
-// Angle math shared by every aim core. Deliberately NOT the kit's AngleMath: that measures
-// pitch/yaw error in a Euclidean plane, which under-reports near the poles and over-reports at
-// large yaw offsets. Aim detection compares directions, so distances here are great-circle
-// (acos of the dot product of the two forward vectors), matching what a bullet actually does.
+// Angle math shared by every aim core. Deliberately NOT the kit's AngleMath, whose Euclidean
+// pitch/yaw error under-reports near the poles and over-reports at large yaw offsets. Distances
+// here are great-circle, matching what a bullet actually does.
 
 #include "Samples.hpp"
 
@@ -18,7 +17,7 @@ namespace Anticheat::Geometry
 inline constexpr double DegreesPerRadian = 180.0 / std::numbers::pi;
 inline constexpr double RadiansPerDegree = std::numbers::pi / 180.0;
 
-/** Head, chest and feet-ish sample points an aimbot may lock onto. */
+/** Feet, chest and head sample points an aimbot may lock onto. */
 inline constexpr float BodyHeights[] = {8.0f, 46.0f, 64.0f};
 inline constexpr int BodyPointCount = static_cast<int>(std::size(BodyHeights));
 
@@ -51,7 +50,7 @@ inline float Dot(const Vec3& a, const Vec3& b)
     return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
 }
 
-/** Great-circle angle between two aim directions, in degrees. NaN when either side is not finite. */
+/** Great-circle angle between two aim directions, in degrees. NaN when either is not finite. */
 inline float AngularDistance(const AimAngles& first, const AimAngles& second)
 {
     if (!IsFinite(first) || !IsFinite(second))

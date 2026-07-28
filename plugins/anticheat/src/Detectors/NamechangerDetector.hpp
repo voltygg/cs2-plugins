@@ -1,7 +1,7 @@
 #pragma once
 
-// Drives NamechangerCore from the two client lifecycle points the engine gives us: the name a
-// player arrives with, and every replicated settings change afterwards.
+// Drives NamechangerCore from the two lifecycle points the engine gives us: the name a player
+// arrives with, and every replicated settings change afterwards.
 
 #include <CS2Kit/Api.hpp>
 #include <string>
@@ -19,7 +19,7 @@ public:
     /** Full connect: the first point the controller's name is meaningful. */
     void OnFullyConnected(CS2Kit::Players::Player* player);
 
-    /** A replicated settings change; only an actually different name counts as one. */
+    /** A replicated settings change; only an actually different name counts. */
     void OnSettingsChanged(CS2Kit::Players::Player* player);
 
 private:

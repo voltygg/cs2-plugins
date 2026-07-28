@@ -17,7 +17,7 @@ constexpr double EvidenceWindowSec = 600.0;  // 10 minutes
 constexpr float MinimumImpactDistance = 100.0f;
 constexpr float MaximumImpactDistance = 10000.0f;
 
-// A deviation this large is beyond every weapon's ceiling, so it is worth more than a marginal one.
+// Beyond every weapon's ceiling, so worth more than a marginal deviation.
 constexpr float BlatantDeviation = 22.5f;
 constexpr int BlatantPoints = 3;
 constexpr int AirbornePoints = 1;  // inaccuracy while jumping makes a wide shot cheap evidence

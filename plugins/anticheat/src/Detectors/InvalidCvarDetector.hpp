@@ -1,11 +1,11 @@
 #pragma once
 
 // Feeds InvalidCvarRules from two tiers: the userinfo copies the engine already holds, and the
-// network convar query for everything else. The query tier only exists while Engine().ClientCvars
-// is available, so a degraded load quietly falls back to the userinfo tier instead of going blind.
+// network convar query for everything else. Without Engine().ClientCvars the query tier is simply
+// absent, so a degraded load falls back to userinfo rather than going blind.
 //
-// A client is never obliged to answer a query, and an unanswered one produces no callback at all -
-// so nothing here waits on a reply or reads silence as evidence.
+// An unanswered query produces no callback at all, so nothing here waits on a reply or reads
+// silence as evidence.
 
 #include "Detectors/InvalidCvarRules.hpp"
 

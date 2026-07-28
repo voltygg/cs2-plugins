@@ -21,8 +21,7 @@ namespace Anticheat
 
 namespace
 {
-/** Origin and view angles jump discontinuously around a teleport; nothing measured across one
- *  means anything, so the whole grace window is treated as unreadable. */
+/** Origin and view angles jump discontinuously around a teleport, so the whole window is unreadable. */
 constexpr float TeleportGraceSec = 5.0f;
 /** A shot older than this has received every event it can, so SilentAim may score it. */
 constexpr int SilentFinalizeAgeTicks = 2;
@@ -57,8 +56,8 @@ CmdSample BuildSample(const CS2Kit::UserCmdView& cmd)
     sample.ButtonsChanged = cmd.ButtonsChanged;
     sample.MouseDx = cmd.MouseDx;
     sample.MouseDy = cmd.MouseDy;
-    // A command that carried no viewangles leaves the view fields at their defaults, which read as
-    // a perfectly ordinary (0,0,0) aim - so the angles are untrusted rather than merely finite.
+    // A command that carried no viewangles leaves the fields at a perfectly ordinary-looking
+    // (0,0,0), so the angles have to be untrusted rather than merely finite.
     sample.BaseAnglesFinite =
         cmd.HasViewAngles && Geometry::IsFinite(sample.BaseAngles()) && std::isfinite(sample.ViewRoll);
 
@@ -73,8 +72,8 @@ CmdSample BuildSample(const CS2Kit::UserCmdView& cmd)
 
     const int attackIndex = cmd.Attack1StartHistoryIndex;
     sample.AttackStarted = attackIndex >= 0;
-    // Only an index the client never sent is a fabrication; one the transport cap dropped is
-    // merely absent, and must never be clamped back into range - that reads another shot's angles.
+    // Only an index the client never sent is a fabrication. One the transport cap dropped is merely
+    // absent, and must never be clamped back into range - that reads another shot's angles.
     sample.AttackIndexInvalid = attackIndex < -1 || attackIndex >= cmd.InputHistoryTotalCount;
     if (const CS2Kit::InputHistorySample* attack = cmd.SampleAt(attackIndex); attack && attack->HasViewAngles)
         sample.AttackAngles = AimAngles{attack->ViewPitch, attack->ViewYaw};
@@ -146,8 +145,7 @@ void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
     if (antiAim)
         _manager.AntiAim().OnCommand(slot, sample);
 
-    // RunCommand is both CS2AC's usercmd ingest and its setup-move stamp: this is the command the
-    // server is about to simulate, so the sample is ingested and stamped in the same pass.
+    // This is the command the server is about to simulate, so ingest and stamp in the same pass.
     const auto serverTick = static_cast<int32_t>(CS2Kit::ServerTick());
     const double now = NowSeconds();
     _manager.Correlator().OnSimulated(slot, sample.CmdNum, serverTick, eye, sample.Airborne, sample.Scoped);
@@ -224,8 +222,7 @@ void ShotCorrelator::OnFrame()
 
 void ShotCorrelator::FinalizeSilentAim(int slot, int32_t serverTick, double nowSec)
 {
-    // Reporting can kick, which clears the slot's shots - so stop at the first verdict and report
-    // it only once the deque is no longer being walked.
+    // Reporting can kick, which clears the slot's shots - so report only after the walk.
     std::optional<Finding> finding;
     for (ShotView& shot : _manager.Correlator().Shots(slot))
     {
@@ -246,8 +243,7 @@ void ShotCorrelator::OnWeaponFire(const CS2Kit::Events::WeaponFire& fire)
     const CS2Kit::PlayerController controller(fire.Slot);
     const QAngle eyeAngles = controller.GetEyeAngles();
     const AimAngles visible{eyeAngles.x, eyeAngles.y};
-    // Without a pawn the field read yields a fabricated (0,0), which reads as a perfectly finite
-    // aim; only a controller that has one can be trusted to have produced a real angle.
+    // Without a pawn the field read fabricates a perfectly finite-looking (0,0).
     const bool hasVisible = controller.IsValid() && controller.GetPawn() != nullptr && Geometry::IsFinite(visible);
 
     ShotView* shot = _manager.Correlator().OnWeaponFire(
@@ -262,9 +258,8 @@ void ShotCorrelator::OnBulletImpact(const CS2Kit::Events::BulletImpact& impact)
         return;
 
     const auto serverTick = static_cast<int32_t>(CS2Kit::ServerTick());
-    // The event's userid is truncated to a byte, so identity alone cannot name the shooter: only a
-    // slot whose in-window shot is unique counts. Without a userid table to match against, the
-    // engine's own best-effort decode is all there is.
+    // The event's userid is truncated to a byte, so only a slot whose in-window shot is unique
+    // counts. Without a userid table the engine's own best-effort decode is all there is.
     int slot = _manager.Correlator().ResolveImpactShooter(impact.TruncatedUserId, serverTick, _userIds);
     if (slot < 0 && !_userIdsResolved)
         slot = impact.Slot;
@@ -303,8 +298,8 @@ void ShotCorrelator::OnPlayerDeath(const CS2Kit::Events::PlayerDeath& death)
     if (!_manager.DetectionsEnabled() || !AntiCheatManager::IsEligible(death.AttackerSlot))
         return;
 
-    // Nothing consumes the death directly; it lands the wallbang flag on the shot, which SilentAim
-    // reads when it finalizes two ticks later.
+    // Nothing consumes the death directly: it only lands the wallbang flag SilentAim reads when it
+    // finalizes two ticks later.
     _manager.Correlator().OnPlayerDeath(death.AttackerSlot, death.VictimSlot, death.Weapon, death.Penetrated > 0,
                                         static_cast<int32_t>(CS2Kit::ServerTick()));
 }

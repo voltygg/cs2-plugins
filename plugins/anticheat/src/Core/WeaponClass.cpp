@@ -8,9 +8,8 @@ namespace Anticheat
 
 namespace
 {
-// Deviation ceilings per weapon class, in degrees. Precision rifles sit lowest because their
-// first shot is near-perfectly accurate; SMGs sit highest because spray plus movement inaccuracy
-// legitimately throws bullets far off the crosshair.
+// Deviation ceilings per weapon class, in degrees. Precision rifles sit lowest (their first shot is
+// near-perfectly accurate), SMGs highest (spray plus movement inaccuracy is legitimately wide).
 constexpr float RifleDeviation = 12.5f;
 constexpr float SniperDeviation = 2.5f;
 constexpr float HeavyPistolDeviation = 4.5f;

@@ -1,8 +1,8 @@
 #pragma once
 
-// Compares where a shot visibly pointed against where its bullet actually landed. Legitimately the
-// two differ by spread and recoil only; writing the fire angle separately from the view opens a gap
-// no weapon can explain. SDK-free.
+// Compares where a shot visibly pointed against where its bullet landed. Legitimately the two
+// differ by spread and recoil only; writing the fire angle separately from the view opens a gap no
+// weapon can explain. SDK-free.
 
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
@@ -24,8 +24,8 @@ public:
     void OnShotUpdated(int slot, ShotView& shot);
 
     /**
-     * Score a shot that is now two ticks old, so every event it could produce has arrived. Only
-     * shots that both hurt someone and reported an impact are judged; the rest are dropped.
+     * Score a shot old enough that every event it could produce has arrived. Only shots that both
+     * hurt someone and reported an impact are judged; the rest are dropped.
      */
     std::optional<Finding> Finalize(int slot, ShotView& shot, double nowSec);
 

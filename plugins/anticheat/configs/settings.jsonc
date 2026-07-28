@@ -3,9 +3,9 @@
     // Master switch. Off means no hooks feed the detection cores.
     "enabled": true,
 
-    // Response funnel: "observe" logs and reports only (this is the dry run),
-    // "alert" also notifies admins via admin-system (as_ac_alert), "ban"
-    // additionally kicks or bans (as_ac_ban). Soak in observe before escalating.
+    // Response funnel. "observe" only logs and reports, "alert" also notifies
+    // admins (as_ac_alert), "ban" also kicks or bans (as_ac_ban). Soak in
+    // observe before escalating.
     "mode": "observe",
 
     // Ban length in seconds for "ban" mode; 0 = permanent.
@@ -14,8 +14,8 @@
     // SteamID64s that are reported but never punished (staff, testers).
     "whitelistSteamIds": [],
 
-    // Detections normally switch off while sv_cheats is on, because cheat-protected
-    // client cvars legitimately change. Set true only on a test box.
+    // Detections switch off while sv_cheats is on, because cheat-protected client
+    // cvars legitimately change. Set true only on a test box.
     "allowSvCheatsTesting": false,
 
     // Per-detection kill switches. Thresholds are compiled in, not configurable.
@@ -29,12 +29,12 @@
       "namechanger": true
     },
 
-    // Discord reporting; inactive while url is empty.
+    // Discord reporting, inactive while url is empty.
     "webhook": {
       "url": ""
     },
 
-    // simulator arms the built-in cheat simulator commands (dev boxes only).
+    // Arms the built-in cheat simulator commands (dev boxes only).
     "debug": {
       "simulator": false
     }

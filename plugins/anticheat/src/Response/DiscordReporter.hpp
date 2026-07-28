@@ -11,8 +11,8 @@ namespace Anticheat
 {
 
 /**
- * Fire-and-forget Discord embed per detection. Dormant while `anticheat.webhook.url` is empty;
- * failures log once and are never retried, because reporting must not affect detection.
+ * Fire-and-forget Discord embed per detection. Dormant while `anticheat.webhook.url` is empty, and
+ * failures log once without retrying: reporting must never affect detection.
  */
 class DiscordReporter
 {
@@ -21,7 +21,7 @@ public:
                 FunnelOutcome outcome);
 
 private:
-    /** One embed per (steamId, detection) per minute, so a spamming detection cannot flood a channel. */
+    /** One embed per (steamId, detection) per window, so no detection can flood a channel. */
     static constexpr int64_t ThrottleSec = 60;
 
     CS2Kit::PairThrottle<int64_t, int> _throttle{ThrottleSec};

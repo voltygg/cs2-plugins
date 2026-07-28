@@ -23,13 +23,12 @@ void AntiCheatManager::Initialize()
     _dumpTicks.BindReset();
     _simulator.Initialize();
 
-    // The teleport tracker binds itself from its own spawn listener, so enabling it here is
-    // enough - and it must not be enabled from inside a spawn listener, because registering a
-    // listener while the event service is dispatching would mutate the map it walks.
+    // The teleport tracker binds itself from its own spawn listener, so it must be enabled here:
+    // registering a listener while the event service dispatches would mutate the map it walks.
     Engine().Teleports.Enable();
 
-    // The movement hook needs a live movement-services instance, so retry from every spawn
-    // until it takes. Install() touches no listener registry.
+    // The movement hook needs a live movement-services instance, so retry from every spawn until it
+    // takes. Install() touches no listener registry.
     Engine().Events.Listen<PlayerSpawn>([](const PlayerSpawn&) { Engine().MovementHook.Install(); });
 
     Engine().MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { DumpCommand(slot, cmd); });
@@ -109,8 +108,8 @@ void AntiCheatManager::DumpCommand(int slot, const CS2Kit::UserCmdView& cmd)
         return;
     --remaining;
 
-    // The attack angles are what the aim modules judge, so show what the index actually resolved
-    // to: present, capped away by the history limit, or never sent at all.
+    // The aim modules judge the attack angles, so show what the index resolved to: present, capped
+    // away by the history limit, or never sent at all.
     const int attackIndex = cmd.Attack1StartHistoryIndex;
     std::string attack = "none";
     if (attackIndex >= 0)

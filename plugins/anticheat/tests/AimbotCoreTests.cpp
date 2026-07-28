@@ -37,8 +37,8 @@ CmdSample AimCmd(int32_t num, int32_t clientTick, float yaw)
 }
 
 /**
- * One damaging shot preceded by one adjacent command. With the eye level with the victim's tallest
- * body point, a level aim of y degrees is off target by exactly y, so the yaws below *are* the
+ * One damaging shot preceded by one adjacent command. The eye is level with the victim's tallest
+ * body point, so a level aim of y degrees is off target by exactly y: the yaws below *are* the
  * before/after errors the convergence rule compares.
  */
 struct Incident
@@ -227,8 +227,8 @@ TEST_CASE("A one command excursion that returns to the surrounding angle counts 
     for (int32_t tick = 99; tick <= 101; ++tick)
         correlator.CaptureFrame(tick, Frame());
 
-    // 0 -> 5 -> 0.2 degrees: the neighbours agree, the shot alone jumps, and the jump is under the
-    // convergence thresholds so only the snap-return rule can catch it.
+    // 0 -> 5 -> 0.2 degrees: the neighbours agree and the shot alone jumps, but under the
+    // convergence thresholds, so only the snap-return rule can catch it.
     aimbot.OnCommand(Attacker, AimCmd(100, 99, 0.0f));
     aimbot.OnCommand(Attacker, AimCmd(101, 100, 5.0f));
     aimbot.OnSimulated(Attacker, 100, 99, Eye, Now);

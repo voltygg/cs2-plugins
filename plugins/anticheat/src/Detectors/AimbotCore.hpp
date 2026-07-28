@@ -22,16 +22,16 @@ public:
     void Reset();
     void OnSlotChanged(int slot);
 
-    /** Ring of recent commands; duplicates (same CmdNum) are dropped. */
+    /** Duplicates (same CmdNum) are dropped. */
     void OnCommand(int slot, const CmdSample& cmd);
 
-    /** Stamp the command being simulated, and re-run a pending evaluation that was waiting on it. */
+    /** Stamps the command, and re-runs a pending evaluation that was waiting on it. */
     std::optional<Finding> OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, double nowSec);
 
-    /** A damaging shot: the only kind of shot this module judges. */
+    /** A damaging shot: the only kind this module judges. */
     std::optional<Finding> OnPlayerHurt(int attackerSlot, int victimSlot, ShotView& shot, double nowSec);
 
-    /** Per-frame nudge so an evaluation waiting on a later command cannot hang forever. */
+    /** Nudge so an evaluation waiting on a later command cannot hang forever. */
     std::optional<Finding> OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec);
 
     int IncidentCount(int slot) const;

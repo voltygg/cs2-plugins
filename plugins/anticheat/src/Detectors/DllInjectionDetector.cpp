@@ -15,7 +15,7 @@ namespace Anticheat
 
 namespace
 {
-/** How often the pump looks for slots whose scan is due; the per-slot deadlines do the real timing. */
+/** Pump cadence only; the per-slot deadlines do the real timing. */
 constexpr int64_t PumpIntervalMs = 1000;
 /** First scan this long after full connect; retried once when no listener exists yet. */
 constexpr double DllInitialScanDelaySec = 10.0;
@@ -39,8 +39,7 @@ void DllInjectionDetector::Initialize()
             SlotState& state = _slots[slot];
             if (!AntiCheatManager::IsEligible(slot))
                 continue;
-            // A map change clears every schedule, and players who ride it out never connect again,
-            // so an eligible slot without one arms itself here rather than waiting forever.
+            // A map change clears every schedule, and players who ride it out never connect again.
             if (state.NextScan == 0.0)
             {
                 state.NextScan = now + DllInitialScanDelaySec;
@@ -57,7 +56,7 @@ void DllInjectionDetector::OnFullyConnected(int slot)
 {
     if (!InSlotRange(slot))
         return;
-    // The client's listener does not exist the instant it joins; the first scan waits for it.
+    // The client's listener does not exist the instant it joins, so the first scan waits for it.
     _slots[slot] = {.NextScan = NowSeconds() + DllInitialScanDelaySec};
 }
 
@@ -76,8 +75,8 @@ void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
 {
     if (!Engine().Events.GetClientLegacyListener(slot))
     {
-        // One grace period for a client that is still settling in; after that a missing listener is
-        // simply nothing to scan, and the slot falls back to the normal cadence.
+        // One grace period for a client still settling in. After that a missing listener is simply
+        // nothing to scan, and the slot falls back to the normal cadence.
         state.NextScan = nowSec + (state.Retried ? DllScanIntervalSec : DllInitialScanDelaySec);
         state.Retried = true;
         return;

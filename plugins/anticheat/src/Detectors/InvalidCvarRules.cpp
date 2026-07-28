@@ -14,7 +14,7 @@ namespace
 constexpr double MaximumMouseYaw = 0.3;
 constexpr double MinimumFpsMax = 64.0;
 constexpr double MinimumSensitivity = 0.0001;
-// The engine caps sensitivity at 8; the ceiling is deliberately loose so a future engine bump
+// The engine caps sensitivity at 8. The ceiling is deliberately loose so a future engine bump
 // cannot turn a legitimate setting into a detection.
 constexpr double MaximumSensitivity = 20.0;
 constexpr double RequiredPitchLimit = 89.0;
@@ -27,7 +27,7 @@ bool EqualsNoCase(std::string_view a, std::string_view b)
            });
 }
 
-/** Whole-string numeric parse; trailing junk makes the value invalid, not merely odd. */
+/** Whole-string parse: trailing junk makes the value invalid, not merely odd. */
 bool ParseNumber(std::string_view text, double& value)
 {
     while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())))
@@ -139,7 +139,7 @@ CvarVerdict EvaluateCvar(std::string_view name, std::string_view value, bool enf
         return Valid();
     }
 
-    // Everything below is protected by sv_cheats, so it only means something once the server's
+    // Everything below is sv_cheats-protected, so it only means something once the server's
     // disabled value has certainly reached the client.
     if (IsCheatProtected(name) && !enforceCheatCvars)
         return Skipped();
@@ -205,7 +205,7 @@ void InvalidCvarRules::OnSlotChanged(int slot)
 std::optional<Finding> InvalidCvarRules::Observe(int slot, std::string_view name, std::string_view value,
                                                  bool enforceCheatCvars)
 {
-    // A reply that carries a value - whatever the value is - ends any run of refusals.
+    // Any reply carrying a value, valid or not, ends the run of refusals.
     if (const int index = CvarIndex(name); InSlotRange(slot) && index >= 0)
         _missingReplies[slot][static_cast<size_t>(index)] = 0;
     return Apply(slot, name, EvaluateCvar(name, value, enforceCheatCvars));

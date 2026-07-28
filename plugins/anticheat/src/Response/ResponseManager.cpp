@@ -14,12 +14,12 @@ namespace Anticheat
 
 namespace
 {
-// The console line has a hard length limit, and a DLL-injection evidence string can run to
-// hundreds of characters; the full text is already in the log and the webhook.
+// The console line has a hard length limit and DLL-injection evidence can run to hundreds of
+// characters. The full text is already in the log and the webhook.
 constexpr size_t MaxReasonLength = 200;
 
-// Reasons travel through ExecuteServerCommand; keep them free of anything the console parser
-// could read as command structure.
+// Reasons travel through ExecuteServerCommand, so strip anything the console parser could read as
+// command structure.
 std::string SanitizeReason(std::string_view reason)
 {
     std::string out;
@@ -89,9 +89,9 @@ void ResponseManager::Handle(int slot, const Finding& finding)
         SanitizeReason(std::format("AntiCheat: {} ({})", DisplayName(finding.Kind), finding.Evidence));
     if (decision.Apply == PunishmentLevel::Kick)
     {
-        // A finding can surface from inside an engine hook on the client object itself (the convar
-        // query reply hook), and kicking disconnects that very client mid-virtual-call. Defer one
-        // tick, then re-resolve the slot in case its player left and somebody else took it.
+        // A finding can surface from inside an engine hook on the client itself (the convar query
+        // reply), where kicking would disconnect it mid-virtual-call. Defer a tick, then re-resolve
+        // the slot in case its player left and somebody else took it.
         Engine().Scheduler.NextTick([slot, steamId, reason] {
             if (Engine().Players.GetPlayerBySlotIfSteamId(slot, steamId))
                 CS2Kit::PlayerController(slot).Kick(reason.c_str());

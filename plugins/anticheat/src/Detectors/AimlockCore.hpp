@@ -1,8 +1,8 @@
 #pragma once
 
-// Detects sustained, unnaturally precise tracking (including through walls): the aim stays inside
-// the target's own angular width for 1.5 seconds while the target moves enough that a human would
-// have drifted off it. SDK-free.
+// Sustained, unnaturally precise tracking (including through walls): the aim stays inside the
+// target's own angular width for 1.5 seconds while the target moves enough that a human would have
+// drifted off it. SDK-free.
 
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
@@ -25,9 +25,9 @@ struct LagEstimate
 };
 
 /**
- * The target snapshot travelled to the client before this aim command travelled back, so the full
- * round trip plus the client's interpolation delay is the age of what the player was looking at.
- * Invalid (and therefore never evidence) for absurd RTT or cl_interp_ratio values.
+ * The snapshot travelled to the client before this command travelled back, so the round trip plus
+ * the interpolation delay is the age of what the player saw. Invalid - and therefore never evidence
+ * - for absurd RTT or cl_interp_ratio values.
  */
 LagEstimate EstimateVisualLag(float rttSeconds, float interpRatio);
 
@@ -80,8 +80,8 @@ private:
         int Samples = 0;
     };
 
-    /** Per-slot tracking state, dropped whenever the player stops being trackable (death,
-     *  ineligibility). Accumulated evidence deliberately lives outside it, in @ref _incidents. */
+    /** Dropped whenever the player stops being trackable (death, ineligibility). Accumulated
+     *  evidence deliberately lives outside it, in @ref _incidents. */
     struct SlotData
     {
         Sample Pending;
@@ -100,8 +100,8 @@ private:
 
     const ShotCorrelatorCore& _shots;
     std::array<SlotData, MaxSlots> _slots{};
-    /** Episode timestamps inside the evidence window; survives death and respawn, so a cheat that
-     *  dies between episodes does not reset its own count. Cleared only by Reset/OnSlotChanged. */
+    /** Episode timestamps inside the evidence window. Survives death and respawn, so a cheat that
+     *  dies between episodes does not reset its own count. */
     std::array<std::deque<double>, MaxSlots> _incidents{};
 };
 

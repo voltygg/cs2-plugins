@@ -22,9 +22,9 @@ inline constexpr std::string_view QueriedCvars[] = {
 };
 
 /**
- * Cvars read straight out of the client's userinfo, where they are always readable and never
- * stall. They are deliberately absent from @ref QueriedCvars: two tiers judging one cvar share a
- * single latch and would flip it back and forth against each other.
+ * Cvars read straight out of the client's userinfo, always readable and never stalling.
+ * Deliberately absent from @ref QueriedCvars: two tiers judging one cvar share a single latch and
+ * would flip it back and forth against each other.
  */
 inline constexpr std::string_view UserInfoCvars[] = {"sensitivity", "m_yaw"};
 
@@ -48,7 +48,7 @@ inline constexpr auto RuledCvars = Detail::MakeRuledCvars();
 /** A replicated sv_cheats change needs time to reach clients before their values mean anything. */
 inline constexpr double SvCheatsPropagationGraceSec = 30.0;
 
-/** Polling interval bounds; randomized inside this range so the schedule is not predictable. */
+/** Randomized inside this range so the schedule is not predictable. */
 inline constexpr float PollIntervalMinSec = 1.0f;
 inline constexpr float PollIntervalMaxSec = 5.0f;
 
@@ -59,9 +59,9 @@ inline constexpr float PollIntervalMaxSec = 5.0f;
 inline constexpr size_t CvarsPerPoll = 4;
 
 /**
- * Consecutive replies that refuse a cheat-protected cvar's value before the refusal is evidence.
- * A single one proves nothing: an engine update that renames or drops a client convar would
- * otherwise turn every player on the server into a detection on the very next poll.
+ * Consecutive replies refusing a cheat-protected cvar's value before the refusal is evidence. A
+ * single one proves nothing: an engine update that renames or drops a client convar would otherwise
+ * turn every player on the server into a detection on the very next poll.
  */
 inline constexpr int MissingRepliesBeforeEvidence = 3;
 
@@ -91,14 +91,12 @@ CvarVerdict EvaluateCvar(std::string_view name, std::string_view value, bool enf
 
 /**
  * A reply that carried no value at all: the client called the cvar missing, not a cvar, or
- * protected. @p statusName only labels the evidence, and @p consecutiveReplies counts the refusals
- * in a row for this cvar including this one.
+ * protected. @p statusName only labels the evidence; @p consecutiveReplies counts the refusals in a
+ * row for this cvar, including this one.
  *
- * Silence is never judged here - a client is under no obligation to answer, and an unanswered query
- * simply never arrives. An answer that refuses the value is different: every name in the table ships
- * with the game. Only the cheat-protected ones are treated as evidence, only once
- * @ref MissingRepliesBeforeEvidence of them arrive back to back, and only as a kick, because a
- * client convar the engine removes in a future update would otherwise punish an entire server.
+ * Silence is never judged - an unanswered query simply never arrives. A refusal is different, since
+ * every name in the table ships with the game, but it is still only evidence for the cheat-protected
+ * ones, only after @ref MissingRepliesBeforeEvidence back to back, and only as a kick.
  */
 CvarVerdict EvaluateMissingCvar(std::string_view name, std::string_view statusName, bool enforceCheatCvars,
                                 int consecutiveReplies);
@@ -110,8 +108,8 @@ CvarVerdict EvaluateMissingCvar(std::string_view name, std::string_view statusNa
 bool ShouldEnforceCheatCvars(bool svCheatsEnabled, double nowSec, double graceUntilSec);
 
 /**
- * Per-slot, per-cvar latch over @ref EvaluateCvar: a cvar that stays invalid reports once, and
- * only reports again after it has read valid in between.
+ * Per-slot, per-cvar latch over @ref EvaluateCvar: a cvar that stays invalid reports once, and only
+ * again after it has read valid in between.
  */
 class InvalidCvarRules
 {
@@ -131,7 +129,7 @@ private:
     std::optional<Finding> Apply(int slot, std::string_view name, const CvarVerdict& verdict);
 
     std::array<std::array<bool, std::size(RuledCvars)>, MaxSlots> _latched{};
-    /** Refusals in a row per cvar; any reply that does carry a value puts it back to zero. */
+    /** Any reply that does carry a value puts the count back to zero. */
     std::array<std::array<int, std::size(RuledCvars)>, MaxSlots> _missingReplies{};
 };
 

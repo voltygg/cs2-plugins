@@ -161,8 +161,8 @@ std::optional<Finding> AntiAimCore::OnSimulated(int slot, int32_t cmdNum, int32_
     }
     data.TeleportGrace = false;
 
-    // A base view angle far from the angles the same command claims it fired along means one of
-    // the two is fabricated. Fast legitimate flicks can do it too, so it only ever supports.
+    // A base view angle far from the angles the same command claims it fired along means one of the
+    // two is fabricated. Fast legitimate flicks can do it too, so this only ever supports.
     const bool historyMismatch = !found->Attack && found->HasHistoryAngles &&
                                  std::isfinite(found->HistoryYawDifference) &&
                                  found->HistoryYawDifference >= CommandYawMismatchAngle;

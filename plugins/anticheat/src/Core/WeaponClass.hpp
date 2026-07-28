@@ -10,14 +10,13 @@ std::string_view NormalizeWeapon(std::string_view weapon);
 
 /**
  * True for weapons that fire a hitscan bullet along the command's aim angles. Grenades, the knife
- * and the bomb produce weapon_fire events that no shot correlation applies to, so they are out.
+ * and the bomb also produce weapon_fire events, but no shot correlation applies to them.
  */
 bool IsBallisticWeapon(std::string_view weapon);
 
 /**
- * Largest angle between a shot's visible aim and its impact point that is still explainable by
- * spread, recoil and lag for @p weapon. Anything above it is only reachable by writing the shot
- * angle separately from the view - the silent-aim signature.
+ * Largest angle between a shot's visible aim and its impact point still explainable by spread,
+ * recoil and lag for @p weapon. Above it, the shot angle was written separately from the view.
  */
 float SilentAimDeviationThreshold(std::string_view weapon);
 

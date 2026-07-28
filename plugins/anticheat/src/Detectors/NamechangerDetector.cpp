@@ -13,8 +13,8 @@ std::string NamechangerDetector::CurrentName(CS2Kit::Players::Player* player)
     return name.empty() ? player->GetName() : name;
 }
 
-// Baselining is bookkeeping, not judgement, so it runs even while detections are gated off - a
-// change measured against a stale name would be a false positive later.
+// Baselining is bookkeeping, not judgement, so it runs even while detections are gated off:
+// a change measured against a stale name would be a false positive later.
 void NamechangerDetector::OnFullyConnected(CS2Kit::Players::Player* player)
 {
     if (!player || !AntiCheatManager::ModuleEnabled(DetectionKind::Namechanger) ||

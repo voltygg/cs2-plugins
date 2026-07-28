@@ -84,7 +84,7 @@ struct Candidate
     bool Valid = false;
 };
 
-/** The single target the aim is already inside; ambiguity between two targets means no episode. */
+/** The single target the aim is already inside; two candidates means no episode. */
 Candidate FindCandidate(const ShotCorrelatorCore& shots, const AimAngles& angles, const Vec3& eyePos,
                         int32_t serverTick, const PositionFrame& frame, int observerSlot, const LagEstimate& lag)
 {
@@ -176,8 +176,8 @@ std::optional<Finding> AimlockCore::OnFrame(int slot, int32_t serverTick, bool a
     auto& data = _slots[slot];
     if (!aliveHuman)
     {
-        // Only the tracking state is unusable across a death; the episodes already counted stay
-        // in _incidents, so dying between them cannot wipe the evidence.
+        // Only the tracking state is unusable across a death - counted episodes stay in _incidents,
+        // so dying between them cannot wipe the evidence.
         data = {};
         return out;
     }
