@@ -1,65 +1,86 @@
 #include "AntiCheatManager.hpp"
 
-#include "Detectors/AimSnapDetector.hpp"
-#include "Detectors/AngleSanityDetector.hpp"
-#include "Detectors/NoFlashDetector.hpp"
-#include "Detectors/ShotAngleDetector.hpp"
-#include "Detectors/SilentAimDetector.hpp"
-#include "Detectors/SpinbotDetector.hpp"
 #include "Managers.hpp"
 
 #include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-#include <algorithm>
 #include <cstdlib>
-#include <mathlib/vector.h>
+#include <format>
+#include <string>
+#include <string_view>
 
 using CS2Kit::Core::Engine;
 using CS2Kit::Core::IsValidSlot;
 namespace Log = CS2Kit::Utils::Log;
-namespace AngleMath = CS2Kit::AngleMath;
 
 namespace Anticheat
 {
 
-using CS2Kit::Events::PlayerBlind;
-using CS2Kit::Events::PlayerDeath;
-using CS2Kit::Events::PlayerHurt;
 using CS2Kit::Events::PlayerSpawn;
-using CS2Kit::Events::WeaponFire;
-
-namespace
-{
-constexpr float NoAimError = 1000.0f;
-
-const DetectorSettings& DetectorConfig()
-{
-    return App().Config.Get().anticheat.detectors;
-}
-}  // namespace
 
 void AntiCheatManager::Initialize()
 {
-    Engine().InputHistory.Enable(App().Config.Get().anticheat.historyDepth);
-    _players.BindReset();
     _dumpTicks.BindReset();
     _simulator.Initialize();
 
-    // The movement hook needs a live pawn; retry from every spawn until it takes.
+    // The teleport tracker binds itself from its own spawn listener, so enabling it here is
+    // enough - and it must not be enabled from inside a spawn listener, because registering a
+    // listener while the event service is dispatching would mutate the map it walks.
+    Engine().Teleports.Enable();
+
+    // The movement hook needs a live movement-services instance, so retry from every spawn
+    // until it takes. Install() touches no listener registry.
     Engine().Events.Listen<PlayerSpawn>([](const PlayerSpawn&) { Engine().MovementHook.Install(); });
 
-    Engine().MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { OnCmd(slot, cmd); });
-    Engine().Events.Listen<WeaponFire>([this](const WeaponFire& e) { OnWeaponFire(e); });
-    Engine().Events.Listen<PlayerHurt>([this](const PlayerHurt& e) { OnPlayerHurt(e); });
-    Engine().Events.Listen<PlayerDeath>([this](const PlayerDeath& e) { OnPlayerDeath(e); });
-    Engine().Events.Listen<PlayerBlind>([this](const PlayerBlind& e) { OnPlayerBlind(e); });
+    Engine().MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { DumpCommand(slot, cmd); });
+    Engine().Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); });
 
-    _cmdReload.emplace("anticheat_reload", "Re-read settings.jsonc.", [](const CCommand&) {
-        if (App().Config.Load(SettingsPath))
-            Log::Info("Settings reloaded (mode={}).", App().Config.Get().anticheat.mode);
+    // sv_cheats going off starts a propagation grace before client values mean anything again.
+    Engine().ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
+        const std::string_view changed = name ? name : "";
+        if (changed == "mp_teammates_are_enemies")
+        {
+            RefreshTeamRules();
+            ResetEvidence();
+            return;
+        }
+        if (changed != "sv_cheats")
+            return;
+        const bool enabled = newValue && std::string_view(newValue) != "0" && std::string_view(newValue) != "false";
+        if (!enabled)
+            _cheatGraceUntil = NowSeconds() + SvCheatsPropagationGraceSec;
+        ResetEvidence();
     });
-    _cmdStatus.emplace("anticheat_status", "Dump per-player anticheat scores.",
-                       [this](const CCommand&) { _response.DumpStatus(); });
+    _cheatGraceUntil = NowSeconds() + SvCheatsPropagationGraceSec;
+
+    RefreshTeamRules();
+    _feed.Initialize();
+    _dllInjection.Initialize();
+    _invalidCvarPoller.Initialize();
+
+    Engine().Status.RegisterSection("anticheat", [this] { return StatusSnapshot(); });
+    RegisterCommands();
+    Log::Info("Detection cores ready (mode={}).", App().Config.Get().anticheat.mode);
+}
+
+void AntiCheatManager::RefreshTeamRules()
+{
+    _correlator.SetTeammatesAreEnemies(Engine().ConVars.GetBool("mp_teammates_are_enemies").value_or(false));
+}
+
+void AntiCheatManager::RegisterCommands()
+{
+    _cmdReload.emplace(
+        "anticheat_reload", "Re-read settings.jsonc and drop all accumulated evidence.", [this](const CCommand&) {
+            if (!App().Config.Load(SettingsPath))
+                return;
+            RefreshTeamRules();
+            ResetEvidence();
+            Log::Info("Settings reloaded (mode={}); evidence cleared.", App().Config.Get().anticheat.mode);
+        });
+
+    _cmdStatus.emplace("anticheat_status", "Print the module state and per-player detection evidence.",
+                       [this](const CCommand&) { LogStatus(); });
 
     _cmdDump.emplace("anticheat_dumpcmd", "Log raw usercmds for a slot: anticheat_dumpcmd <slot> [ticks=64]",
                      [this](const CCommand& args) {
@@ -68,7 +89,7 @@ void AntiCheatManager::Initialize()
                              Log::Warn("Usage: anticheat_dumpcmd <slot> [ticks=64]");
                              return;
                          }
-                         int slot = std::atoi(args.Arg(1));
+                         const int slot = std::atoi(args.Arg(1));
                          if (!IsValidSlot(slot))
                          {
                              Log::Warn("anticheat_dumpcmd: '{}' is not a valid slot.", args.Arg(1));
@@ -79,131 +100,209 @@ void AntiCheatManager::Initialize()
                      });
 }
 
-void AntiCheatManager::OnCmd(int slot, const CS2Kit::UserCmdView& cmd)
+void AntiCheatManager::DumpCommand(int slot, const CS2Kit::UserCmdView& cmd)
 {
     if (!cmd.Valid || !IsValidSlot(slot))
         return;
+    int& remaining = _dumpTicks[slot];
+    if (remaining <= 0)
+        return;
+    --remaining;
 
+    // The attack angles are what the aim modules judge, so show what the index actually resolved
+    // to: present, capped away by the history limit, or never sent at all.
+    const int attackIndex = cmd.Attack1StartHistoryIndex;
+    std::string attack = "none";
+    if (attackIndex >= 0)
+    {
+        if (const CS2Kit::InputHistorySample* sample = cmd.SampleAt(attackIndex))
+            attack = sample->HasViewAngles
+                         ? std::format("[{}] pitch={:.2f} yaw={:.2f}", attackIndex, sample->ViewPitch, sample->ViewYaw)
+                         : std::format("[{}] no angles", attackIndex);
+        else
+            attack = std::format("[{}] {}", attackIndex,
+                                 attackIndex >= cmd.InputHistoryTotalCount ? "out of range" : "capped away");
+    }
+
+    float subtickPitch = 0.0f;
+    float subtickYaw = 0.0f;
+    for (int i = 0; i < cmd.SubtickMoveCount; ++i)
+    {
+        subtickPitch += cmd.SubtickMoves[i].PitchDelta;
+        subtickYaw += cmd.SubtickMoves[i].YawDelta;
+    }
+
+    Log::Info(
+        "[AC dump s{}] cmd={} clientTick={} view=({:.2f},{:.2f},{:.2f}) mouse=({},{}) buttons={:#x}/{:#x} "
+        "subticks={} (dPitch={:.3f} dYaw={:.3f}) history={}/{} attack1={}",
+        slot, cmd.CommandNumber, cmd.ClientTick, cmd.ViewPitch, cmd.ViewYaw, cmd.ViewRoll, cmd.MouseDx, cmd.MouseDy,
+        cmd.ButtonsHeld, cmd.ButtonsChanged, cmd.SubtickMoveCount, subtickPitch, subtickYaw,
+        cmd.InputHistorySampleCount, cmd.InputHistoryTotalCount, attack);
+}
+
+nlohmann::json AntiCheatManager::StatusSnapshot() const
+{
+    const auto& settings = App().Config.Get().anticheat;
+
+    nlohmann::json modules = nlohmann::json::object();
+    for (DetectionKind kind : AllDetectionKinds)
+        modules[TokenName(kind)] = ModuleEnabled(kind);
+
+    return nlohmann::json{
+        {"enabled", settings.enabled},
+        {"mode", ModeName(_response.CurrentMode())},
+        {"detecting", DetectionsEnabled()},
+        {"enforcingCheatCvars", EnforceCheatCvars()},
+        {"modules", std::move(modules)},
+        {"clientCvars", Engine().ClientCvars.Available() ? "available" : "degraded"},
+        {"teleportTracker", Engine().Teleports.Enabled()},
+        {"correlatorFrames", _correlator.FrameCount()},
+        {"webhook", !settings.webhook.url.empty()},
+        {"simulator", settings.debug.simulator},
+    };
+}
+
+void AntiCheatManager::LogStatus() const
+{
+    Log::Info("[AC] {}", StatusSnapshot().dump());
+
+    const double now = NowSeconds();
+    bool any = false;
+    for (const CS2Kit::Players::Player* player : Engine().Players.GetAllPlayers())
+    {
+        const int slot = player ? player->GetSlot() : -1;
+        if (!InSlotRange(slot) || player->IsBot())
+            continue;
+        any = true;
+
+        std::string latched;
+        for (std::string_view cvar : RuledCvars)
+        {
+            if (!_invalidCvars.IsLatched(slot, cvar))
+                continue;
+            if (!latched.empty())
+                latched += ",";
+            latched += cvar;
+        }
+
+        Log::Info(
+            "[AC] s{} {} ({}) punished={} aimbot={} aimlock={}{} antiaim={:.1f} silentaim={} names={} "
+            "cvars=[{}] pending={} poll={:.1f}s shots={} cmds={} gen={}",
+            slot, player->GetName(), player->GetSteamID(), PunishmentName(_response.Issued(slot)),
+            _aimbot.IncidentCount(slot), _aimlock.IncidentCount(slot), _aimlock.IsTracking(slot) ? "/tracking" : "",
+            _antiAim.Score(slot), _silentAim.Score(slot, now), _namechanger.ChangeCount(slot),
+            latched.empty() ? "-" : latched, Engine().ClientCvars.PendingCount(slot),
+            _invalidCvarPoller.PollsIn(slot, now), _correlator.Shots(slot).size(), _correlator.CommandCount(slot),
+            _correlator.Generation(slot));
+    }
+    if (!any)
+        Log::Info("[AC] no human players connected.");
+}
+
+void AntiCheatManager::ResetEvidence()
+{
+    _correlator.Reset();
+    _aimbot.Reset();
+    _aimlock.Reset();
+    _antiAim.Reset();
+    _silentAim.Reset();
+    _namechanger.Reset();
+    _invalidCvars.Reset();
+    _dllInjection.Reset();
+    _invalidCvarPoller.Reset();
+    _response.ResetAll();
+}
+
+void AntiCheatManager::OnMapStart()
+{
+    RefreshTeamRules();
+    ResetEvidence();
+}
+
+void AntiCheatManager::OnSlotChanged(int slot)
+{
+    _correlator.OnSlotChanged(slot);
+    _aimbot.OnSlotChanged(slot);
+    _aimlock.OnSlotChanged(slot);
+    _antiAim.OnSlotChanged(slot);
+    _silentAim.OnSlotChanged(slot);
+    _namechanger.OnSlotChanged(slot);
+    _invalidCvars.OnSlotChanged(slot);
+    _dllInjection.OnSlotChanged(slot);
+    _invalidCvarPoller.OnSlotChanged(slot);
+    _response.OnSlotChanged(slot);
+}
+
+void AntiCheatManager::OnPlayerFullyConnected(CS2Kit::Players::Player* player)
+{
+    if (!player)
+        return;
+    _namechangerDetector.OnFullyConnected(player);
+    _dllInjection.OnFullyConnected(player->GetSlot());
+    _invalidCvarPoller.OnFullyConnected(player->GetSlot());
+}
+
+void AntiCheatManager::OnPlayerSettingsChanged(CS2Kit::Players::Player* player)
+{
+    _namechangerDetector.OnSettingsChanged(player);
+}
+
+bool AntiCheatManager::DetectionsEnabled() const
+{
+    const auto& settings = App().Config.Get().anticheat;
+    if (!settings.enabled)
+        return false;
+    const CS2Kit::RawConVar cheats = Engine().ConVars.Raw("sv_cheats");
+    if (!cheats.Valid())
+        return true;
+    return !cheats.GetBool() || settings.allowSvCheatsTesting;
+}
+
+bool AntiCheatManager::EnforceCheatCvars() const
+{
+    const CS2Kit::RawConVar cheats = Engine().ConVars.Raw("sv_cheats");
+    return ShouldEnforceCheatCvars(cheats.Valid() && cheats.GetBool(), NowSeconds(), _cheatGraceUntil);
+}
+
+bool AntiCheatManager::ModuleEnabled(DetectionKind kind)
+{
+    const auto& detections = App().Config.Get().anticheat.detections;
+    switch (kind)
+    {
+    case DetectionKind::Aimbot:
+        return detections.aimbot;
+    case DetectionKind::Aimlock:
+        return detections.aimlock;
+    case DetectionKind::AntiAim:
+        return detections.antiAim;
+    case DetectionKind::SilentAim:
+        return detections.silentAim;
+    case DetectionKind::DllInjection:
+        return detections.dllInjection;
+    case DetectionKind::InvalidCvar:
+        return detections.invalidCvar;
+    case DetectionKind::Namechanger:
+        return detections.namechanger;
+    }
+    return false;
+}
+
+bool AntiCheatManager::IsEligible(int slot)
+{
+    if (!IsValidSlot(slot))
+        return false;
+    // The pawn flag is unreadable before a player has a pawn, so identity decides it first.
+    const CS2Kit::Players::Player* player = Engine().Players.GetPlayerBySlot(slot);
+    if (!player || player->IsBot())
+        return false;
     CS2Kit::PlayerController controller(slot);
-    if (!controller.IsValid() || (controller.GetFlags() & CS2Kit::Sdk::FL_FAKECLIENT) || !controller.IsAlive())
-        return;
-
-    auto& s = _players[slot];
-    ++s.Tick;
-
-    if (int& dump = _dumpTicks[slot]; dump > 0)
-    {
-        --dump;
-        Log::Info("[AC dump s{}] yaw={:.1f} pitch={:.1f} mouse=({},{}) subticks={} ihist={} atk1={} shotDiverge={:.1f}",
-                  slot, cmd.ViewYaw, cmd.ViewPitch, cmd.MouseDx, cmd.MouseDy, cmd.SubtickMoveCount,
-                  cmd.InputHistorySampleCount, cmd.Attack1StartHistoryIndex,
-                  Detectors::ShotAngle::ShotDivergence(cmd).value_or(-1.0f));
-    }
-
-    float yawDelta = 0.0f;
-    float pitchDelta = 0.0f;
-    if (s.HasPrevAngles)
-    {
-        yawDelta = AngleMath::NormalizeAngleDelta(cmd.ViewYaw - s.PrevYaw);
-        pitchDelta = AngleMath::NormalizeAngleDelta(cmd.ViewPitch - s.PrevPitch);
-    }
-    s.PrevYaw = cmd.ViewYaw;
-    s.PrevPitch = cmd.ViewPitch;
-    s.HasPrevAngles = true;
-
-    const auto& det = DetectorConfig();
-    if (auto d = Detectors::AngleSanity::OnCmd(det.sanity, s, cmd.ViewPitch, cmd.ViewYaw))
-        _response.Handle(slot, *d);
-    if (auto d = Detectors::Spinbot::OnCmd(det.spin, s, Detectors::Spinbot::SpinYawDelta(cmd, yawDelta)))
-        _response.Handle(slot, *d);
-    Detectors::SilentAim::OnCmd(det.silentAim, s, cmd, yawDelta, pitchDelta);
-    Detectors::ShotAngle::OnCmd(det.shotAngle, s, cmd);
+    return controller.IsValid() && !(controller.GetFlags() & CS2Kit::Sdk::FL_FAKECLIENT);
 }
 
-void AntiCheatManager::OnWeaponFire(const WeaponFire& e)
+void AntiCheatManager::Report(int slot, const std::optional<Finding>& finding)
 {
-    if (!IsValidSlot(e.Slot))
-        return;
-
-    auto& s = _players[e.Slot];
-    s.LastFireTick = s.Tick;
-    s.HasFired = true;
-
-    QAngle eye = CS2Kit::PlayerController(e.Slot).GetEyeAngles();
-    s.FirePitch = eye.x;
-    s.FireYaw = eye.y;
-
-    if (auto d = Detectors::AimSnap::OnFire(DetectorConfig().aimSnap, s, e.Slot))
-        _response.Handle(e.Slot, *d);
-}
-
-float AntiCheatManager::AimErrorDeg(int attackerSlot, int victimSlot, const PlayerState& s) const
-{
-    CS2Kit::PlayerController attacker(attackerSlot);
-    CS2Kit::PlayerController victim(victimSlot);
-    if (!attacker.IsValid() || !victim.IsValid())
-        return NoAimError;
-
-    // Aim at the moment of the shot; fall back to live eye angles when the
-    // damage did not follow a recent weapon_fire (e.g. grenades).
-    AngleMath::AimAngles aim;
-    if (s.HasFired && s.Tick - s.LastFireTick <= 8)
-        aim = {.Pitch = s.FirePitch, .Yaw = s.FireYaw};
-    else
-    {
-        QAngle eye = attacker.GetEyeAngles();
-        aim = {.Pitch = eye.x, .Yaw = eye.y};
-    }
-
-    Vector eyePos = attacker.GetEyePosition();
-    Vector head = victim.GetEyePosition();
-    Vector origin = victim.GetAbsOrigin();
-    Vector chest = (head + origin) * 0.5f;
-
-    float toHead = AngleMath::AngularDistance(aim, AngleMath::AnglesToPoint(eyePos, head));
-    float toChest = AngleMath::AngularDistance(aim, AngleMath::AnglesToPoint(eyePos, chest));
-    return std::min(toHead, toChest);
-}
-
-void AntiCheatManager::OnPlayerHurt(const PlayerHurt& e)
-{
-    if (!IsValidSlot(e.AttackerSlot) || !IsValidSlot(e.VictimSlot) || e.AttackerSlot == e.VictimSlot)
-        return;
-
-    auto& s = _players[e.AttackerSlot];
-    double now = NowSeconds();
-    const auto& det = DetectorConfig();
-    float aimError = AimErrorDeg(e.AttackerSlot, e.VictimSlot, s);
-
-    if (auto d = Detectors::AimSnap::OnDamage(det.aimSnap, s, aimError, now))
-        _response.Handle(e.AttackerSlot, *d);
-    if (auto d = Detectors::SilentAim::OnDamage(det.silentAim, s, aimError, now))
-        _response.Handle(e.AttackerSlot, *d);
-    if (auto d = Detectors::ShotAngle::OnDamage(det.shotAngle, s, now))
-        _response.Handle(e.AttackerSlot, *d);
-}
-
-void AntiCheatManager::OnPlayerDeath(const PlayerDeath& e)
-{
-    if (!IsValidSlot(e.AttackerSlot) || !IsValidSlot(e.VictimSlot) || e.AttackerSlot == e.VictimSlot)
-        return;
-
-    auto& s = _players[e.AttackerSlot];
-    double now = NowSeconds();
-    const auto& det = DetectorConfig();
-    float aimError = AimErrorDeg(e.AttackerSlot, e.VictimSlot, s);
-
-    if (auto d = Detectors::Spinbot::OnKill(det.spin, s, e.Headshot, aimError, now))
-        _response.Handle(e.AttackerSlot, *d);
-    if (auto d = Detectors::NoFlash::OnKill(det.noFlash, s, e.Headshot, now))
-        _response.Handle(e.AttackerSlot, *d);
-}
-
-void AntiCheatManager::OnPlayerBlind(const PlayerBlind& e)
-{
-    if (!IsValidSlot(e.Slot))
-        return;
-    Detectors::NoFlash::OnBlind(DetectorConfig().noFlash, _players[e.Slot], e.BlindDuration, NowSeconds());
+    if (finding)
+        _response.Handle(slot, *finding);
 }
 
 }  // namespace Anticheat

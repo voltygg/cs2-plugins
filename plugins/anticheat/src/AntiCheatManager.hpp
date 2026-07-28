@@ -1,20 +1,29 @@
 #pragma once
 
-#include "PlayerMonitor.hpp"
-#include "ResponseManager.hpp"
+// Owns the detection cores, the thin adapters that feed them, and the console surface. Everything
+// global lives here: the sv_cheats gate, the eligibility rule, evidence reset, and the fixed order
+// the modules are dispatched in.
+
+#include "Correlation/ShotCorrelator.hpp"
+#include "Correlation/ShotCorrelatorCore.hpp"
+#include "Detectors/AimbotCore.hpp"
+#include "Detectors/AimlockCore.hpp"
+#include "Detectors/AntiAimCore.hpp"
+#include "Detectors/DllInjectionDetector.hpp"
+#include "Detectors/InvalidCvarDetector.hpp"
+#include "Detectors/NamechangerCore.hpp"
+#include "Detectors/NamechangerDetector.hpp"
+#include "Detectors/SilentAimCore.hpp"
+#include "Response/ResponseManager.hpp"
 #include "Simulator/CheatSimulator.hpp"
 
 #include <CS2Kit/Api.hpp>
+#include <nlohmann/json.hpp>
 #include <optional>
 
 namespace Anticheat
 {
 
-/**
- * Wires the kit feeds (usercmd stream, game events) into the detectors and
- * routes their findings to the ResponseManager. Owns the per-slot detection
- * state and the anticheat_reload / anticheat_status console commands.
- */
 class AntiCheatManager
 {
 public:
@@ -22,21 +31,74 @@ public:
 
     void Initialize();
 
-private:
-    void OnCmd(int slot, const CS2Kit::UserCmdView& cmd);
-    void OnWeaponFire(const CS2Kit::Events::WeaponFire& e);
-    void OnPlayerHurt(const CS2Kit::Events::PlayerHurt& e);
-    void OnPlayerDeath(const CS2Kit::Events::PlayerDeath& e);
-    void OnPlayerBlind(const CS2Kit::Events::PlayerBlind& e);
+    /** Map change, config reload or disconnect: nothing accumulated may survive. */
+    void ResetEvidence();
+    void OnSlotChanged(int slot);
+
+    /** A new map: pawns, positions and ticks all restart, so no evidence carries over. */
+    void OnMapStart();
+
+    void OnPlayerFullyConnected(CS2Kit::Players::Player* player);
+    void OnPlayerSettingsChanged(CS2Kit::Players::Player* player);
 
     /**
-     * Angular error between the attacker's fire-tick aim and the direction to
-     * the victim (best of head/chest). Large sentinel when either side is gone.
+     * Master gate. Off while the plugin is disabled, and while sv_cheats is on unless the operator
+     * opted into testing - cheat-protected client state legitimately changes under sv_cheats.
      */
-    float AimErrorDeg(int attackerSlot, int victimSlot, const PlayerState& s) const;
+    bool DetectionsEnabled() const;
+
+    /** Per-detection kill switch from settings.jsonc. */
+    static bool ModuleEnabled(DetectionKind kind);
+
+    /** True when @p slot should be judged at all (a connected, non-bot human). */
+    static bool IsEligible(int slot);
+
+    /** Routes a core's verdict into the funnel. */
+    void Report(int slot, const std::optional<Finding>& finding);
+
+    /**
+     * Cheat-protected client values only mean something while sv_cheats is off and its last disable
+     * has had time to reach the clients.
+     */
+    bool EnforceCheatCvars() const;
+
+    /** Compact global snapshot; also the `anticheat` section of Engine().Status. */
+    nlohmann::json StatusSnapshot() const;
+
+    ShotCorrelatorCore& Correlator() { return _correlator; }
+    AimbotCore& Aimbot() { return _aimbot; }
+    AimlockCore& Aimlock() { return _aimlock; }
+    AntiAimCore& AntiAim() { return _antiAim; }
+    SilentAimCore& SilentAim() { return _silentAim; }
+    NamechangerCore& Namechanger() { return _namechanger; }
+    InvalidCvarRules& InvalidCvars() { return _invalidCvars; }
+
+private:
+    void RegisterCommands();
+    void DumpCommand(int slot, const CS2Kit::UserCmdView& cmd);
+    /** anticheat_status: the snapshot, then one line per human player. */
+    void LogStatus() const;
+    /** Pull mp_teammates_are_enemies into the correlator; it changes which shots count as hostile. */
+    void RefreshTeamRules();
 
     ResponseManager& _response;
-    CS2Kit::PerSlot<PlayerState> _players;
+
+    ShotCorrelatorCore _correlator;
+    AimbotCore _aimbot{_correlator};
+    AimlockCore _aimlock{_correlator};
+    AntiAimCore _antiAim;
+    SilentAimCore _silentAim;
+    NamechangerCore _namechanger;
+    InvalidCvarRules _invalidCvars;
+
+    ShotCorrelator _feed{*this};
+    NamechangerDetector _namechangerDetector{*this};
+    DllInjectionDetector _dllInjection{*this};
+    InvalidCvarDetector _invalidCvarPoller{*this};
+
+    // Stamped when sv_cheats goes off, so replicated client values get time to catch up.
+    double _cheatGraceUntil = 0.0;
+
     CS2Kit::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
     std::optional<CS2Kit::ServerCommand> _cmdReload;
     std::optional<CS2Kit::ServerCommand> _cmdStatus;

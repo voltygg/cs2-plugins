@@ -53,6 +53,16 @@ plugins/admin-system/
     Database/
   configs/
   database/
+plugins/anticheat/
+  CMakeLists.txt
+  src/
+    Core/
+    Correlation/
+    Detectors/
+    Response/
+    Simulator/
+  configs/
+  tests/
 plugins/bhop/
   CMakeLists.txt
   src/

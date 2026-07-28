@@ -1,14 +1,16 @@
 #include "CheatSimulator.hpp"
 
-#include "../Detectors/Detection.hpp"
-#include "../Managers.hpp"
-#include "../PlayerMonitor.hpp"
+#include "Core/Geometry.hpp"
+#include "Core/Samples.hpp"
+#include "Correlation/ShotCorrelatorCore.hpp"
+#include "Managers.hpp"
 
 #include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <mathlib/vector.h>
 #include <tier1/convar.h>
 
 namespace Anticheat
@@ -18,17 +20,41 @@ using CS2Kit::Core::Engine;
 using CS2Kit::Core::IsValidSlot;
 namespace Log = CS2Kit::Utils::Log;
 
+namespace
+{
+constexpr double SimulationSeconds = 10.0;
+/** Distinct yaws a jitter bind cycles through; three is the middle period AntiAim looks for. */
+constexpr int JitterPeriod = 3;
+/** Roll a fake-angle bind holds; well past AntiAim's 50.01 degree ceiling. */
+constexpr float BadRoll = 60.0f;
+/** Chest height, so the lock reads as a body point rather than a graze. */
+constexpr float LockHeight = 46.0f;
+}  // namespace
+
 void CheatSimulator::Initialize()
 {
     _sim.BindReset();
 
+    if (!Enabled())
+    {
+        Log::Info("Cheat simulator idle; enable anticheat.debug.simulator and reload the plugin to arm it.");
+        return;
+    }
+
     _cmdSpin.emplace("anticheat_sim_spin", "Sim spinbot: anticheat_sim_spin <slot|steamid64> [degPerSec=720]",
                      [this](const CCommand& args) { Arm(args, Kind::Spin, 720.0f); });
-    _cmdAimlock.emplace("anticheat_sim_aimlock", "Sim aimlock: anticheat_sim_aimlock <slot|steamid64> [snapDeg=45]",
-                        [this](const CCommand& args) { Arm(args, Kind::Aimlock, 45.0f); });
-    _cmdSilent.emplace("anticheat_sim_silent",
-                       "Sim silent aim: anticheat_sim_silent <slot|steamid64> [divergenceDeg=15]",
-                       [this](const CCommand& args) { Arm(args, Kind::Silent, 15.0f); });
+    _cmdJitter.emplace("anticheat_sim_jitter", "Sim yaw jitter: anticheat_sim_jitter <slot|steamid64> [stepDeg=20]",
+                       [this](const CCommand& args) { Arm(args, Kind::Jitter, 20.0f); });
+    _cmdBadAngles.emplace("anticheat_sim_badangles",
+                          "Sim impossible pitch and roll: anticheat_sim_badangles <slot|steamid64> [pitch=89.5]",
+                          [this](const CCommand& args) { Arm(args, Kind::BadAngles, 89.5f); });
+    _cmdAimlock.emplace("anticheat_sim_aimlock",
+                        "Sim locking onto the nearest opponent: anticheat_sim_aimlock <slot|steamid64>",
+                        [this](const CCommand& args) { Arm(args, Kind::Aimlock, 0.0f); });
+    _cmdMismatch.emplace(
+        "anticheat_sim_mismatch",
+        "Sim input-history angles diverging from the view: anticheat_sim_mismatch <slot|steamid64> [deg=130]",
+        [this](const CCommand& args) { Arm(args, Kind::Mismatch, 130.0f); });
     _cmdOff.emplace("anticheat_sim_off", "Stop simulating: anticheat_sim_off [slot|steamid64] (omit to clear all)",
                     [this](const CCommand& args) {
                         if (args.ArgC() < 2)
@@ -36,26 +62,26 @@ void CheatSimulator::Initialize()
                             _sim.ResetAll();
                             return;
                         }
-                        int slot = ResolveSlot(args.Arg(1));
+                        const int slot = ResolveSlot(args.Arg(1));
                         if (IsValidSlot(slot))
                             _sim[slot] = {};
                         else
                             Log::Warn("'{}' is not a live slot or steamid64.", args.Arg(1));
                     });
 
-    Log::Info("Cheat simulator ready; enable with anticheat.debug.simulator.enabled.");
+    Log::Info("Cheat simulator armed and ready (anticheat_sim_*).");
 }
 
 bool CheatSimulator::Enabled() const
 {
-    return App().Config.Get().anticheat.debug.simulator.enabled;
+    return App().Config.Get().anticheat.debug.simulator;
 }
 
 int CheatSimulator::ResolveSlot(const char* arg)
 {
     if (std::strlen(arg) > 10)  // too long to be a slot index; treat as a steamid64
     {
-        int64_t steamId = std::strtoll(arg, nullptr, 10);
+        const int64_t steamId = std::strtoll(arg, nullptr, 10);
         auto* player = Engine().Players.GetPlayerBySteamId(steamId);
         return player ? player->GetSlot() : -1;
     }
@@ -66,7 +92,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
 {
     if (!Enabled())
     {
-        Log::Warn("Simulator disabled; set anticheat.debug.simulator.enabled and anticheat_reload.");
+        Log::Warn("Simulator disabled; set anticheat.debug.simulator and reload the plugin.");
         return;
     }
     if (args.ArgC() < 2)
@@ -75,7 +101,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
         return;
     }
 
-    int slot = ResolveSlot(args.Arg(1));
+    const int slot = ResolveSlot(args.Arg(1));
     if (!IsValidSlot(slot))
     {
         Log::Warn("'{}' is not a live slot or steamid64.", args.Arg(1));
@@ -91,15 +117,55 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
         _filtering = true;
     }
 
-    float param = args.ArgC() > 2 ? std::strtof(args.Arg(2), nullptr) : defaultParam;
-    auto& s = _sim[slot];
-    s = {};
-    s.kind = kind;
-    s.param = param;
-    s.holdTicks = kind == Kind::Aimlock ? 8 : 0;
-    s.armed = kind == Kind::Aimlock;
-    s.expireAt = NowSeconds() + 10.0;
-    Log::Info("Simulating slot {} (param {:.1f}) for 10s.", slot, param);
+    auto& state = _sim[slot];
+    state = {};
+    state.kind = kind;
+    state.param = args.ArgC() > 2 ? std::strtof(args.Arg(2), nullptr) : defaultParam;
+    state.expireAt = NowSeconds() + SimulationSeconds;
+    Log::Info("Simulating slot {} (param {:.1f}) for {:.0f}s.", slot, state.param, SimulationSeconds);
+}
+
+bool CheatSimulator::AimAtNearestOpponent(int slot, CS2Kit::UserCmdView& cmd)
+{
+    const CS2Kit::PlayerController self(slot);
+    if (!self.IsValid() || !self.GetPawn())
+        return false;
+
+    const Vector eye = self.GetEyePosition();
+    const Vec3 from{eye.x, eye.y, eye.z};
+    const int team = self.GetTeam();
+    const bool freeForAll = Engine().ConVars.GetBool("mp_teammates_are_enemies").value_or(false);
+
+    Vec3 best;
+    float bestDistance = 0.0f;
+    bool found = false;
+    for (const CS2Kit::Players::Player* player : Engine().Players.GetAllPlayers())
+    {
+        const int other = player ? player->GetSlot() : -1;
+        if (!IsValidSlot(other) || other == slot)
+            continue;
+        const CS2Kit::PlayerController controller(other);
+        if (!controller.IsValid() || !controller.GetPawn() || !controller.IsAlive() ||
+            !ShotCorrelatorCore::AreOpponents(team, controller.GetTeam(), freeForAll))
+            continue;
+
+        const Vector origin = controller.GetAbsOrigin();
+        const Vec3 target{origin.x, origin.y, origin.z + LockHeight};
+        const float distance = (target - from).Length();
+        if (!found || distance < bestDistance)
+        {
+            bestDistance = distance;
+            best = target;
+            found = true;
+        }
+    }
+    if (!found)
+        return false;
+
+    const AimAngles aim = Geometry::Bearing(from, best);
+    cmd.ViewPitch = aim.Pitch;
+    cmd.ViewYaw = aim.Yaw;
+    return true;
 }
 
 void CheatSimulator::OnFilter(int slot, CS2Kit::UserCmdView& cmd)
@@ -107,54 +173,57 @@ void CheatSimulator::OnFilter(int slot, CS2Kit::UserCmdView& cmd)
     if (!Enabled() || !cmd.Valid || !IsValidSlot(slot))
         return;
 
-    auto& s = _sim[slot];
-    if (s.kind == Kind::Off)
+    auto& state = _sim[slot];
+    if (state.kind == Kind::Off)
         return;
-    if (NowSeconds() > s.expireAt)
+    if (NowSeconds() > state.expireAt)
     {
-        s.kind = Kind::Off;
+        state.kind = Kind::Off;
         return;
     }
+    if (!state.anchored)
+    {
+        state.baseYaw = cmd.ViewYaw;
+        state.anchored = true;
+    }
 
-    switch (s.kind)
+    switch (state.kind)
     {
     case Kind::Spin:
     {
-        float step = s.param / TickRate;
-        s.spinYaw = std::fmod(s.spinYaw + step, 360.0f);
-        cmd.ViewYaw = s.spinYaw;
+        const float step = state.param / TickRate;
+        state.spinYaw = std::fmod(state.spinYaw + step, 360.0f);
+        cmd.ViewYaw = state.spinYaw;
         cmd.SubtickMoveCount = 1;
         cmd.SubtickMoves[0] = {};
-        cmd.SubtickMoves[0].YawDelta = step;  // the unwrapped truth the spin detector reads
+        cmd.SubtickMoves[0].YawDelta = step;
         break;
     }
-    case Kind::Aimlock:
-        if (s.armed)  // first tick: snap to (current + snapDeg), then hold it still
-        {
-            s.lockYaw = cmd.ViewYaw + s.param;
-            s.lockPitch = cmd.ViewPitch;
-            s.armed = false;
-        }
-        cmd.ViewYaw = s.lockYaw;
-        cmd.ViewPitch = s.lockPitch;
-        cmd.SubtickMoveCount = 0;  // no motion during the lock, so the snap "settles"
-        if (--s.holdTicks <= 0)
-            s.kind = Kind::Off;
+    case Kind::Jitter:
+        // Exactly repeating yaws: the same three values in the same order, command after command.
+        cmd.ViewYaw = state.baseYaw + state.param * static_cast<float>(state.step % JitterPeriod);
         break;
-    case Kind::Silent:
-        // Diverge the fired shot angle from the visible view; leave the visible view alone.
-        cmd.Attack1StartHistoryIndex = 0;
-        if (cmd.InputHistorySampleCount < 1)
-            cmd.InputHistorySampleCount = 1;
-        cmd.InputHistorySamples[0].HasViewAngles = true;
-        cmd.InputHistorySamples[0].ViewYaw = cmd.ViewYaw + s.param;
-        cmd.InputHistorySamples[0].ViewPitch = cmd.ViewPitch;
-        cmd.MouseDx = 0;
-        cmd.MouseDy = 0;
+    case Kind::BadAngles:
+        cmd.ViewPitch = state.param;
+        cmd.ViewRoll = BadRoll;
+        break;
+    case Kind::Aimlock:
+        AimAtNearestOpponent(slot, cmd);
+        break;
+    case Kind::Mismatch:
+        // The input-history angles the client claims, rewritten away from the view it shows: what
+        // AntiAim's base-vs-history rule reads. It does not reach SilentAim, which judges the
+        // bullet's real impact geometry - untouchable from an edit to the decoded view.
+        cmd.InputHistorySampleCount = 1;
+        cmd.InputHistoryTotalCount = 1;
+        cmd.InputHistorySamples[0] = {
+            .HasViewAngles = true, .ViewPitch = cmd.ViewPitch, .ViewYaw = cmd.ViewYaw + state.param};
+        cmd.Attack1StartHistoryIndex = (cmd.ButtonsHeld & CS2Kit::Sdk::IN_ATTACK) != 0 ? 0 : -1;
         break;
     case Kind::Off:
         break;
     }
+    ++state.step;
 }
 
 }  // namespace Anticheat

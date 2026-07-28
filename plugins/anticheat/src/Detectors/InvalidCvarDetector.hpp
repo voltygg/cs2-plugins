@@ -1,0 +1,58 @@
+#pragma once
+
+// Feeds InvalidCvarRules from two tiers: the userinfo copies the engine already holds, and the
+// network convar query for everything else. The query tier only exists while Engine().ClientCvars
+// is available, so a degraded load quietly falls back to the userinfo tier instead of going blind.
+//
+// A client is never obliged to answer a query, and an unanswered one produces no callback at all -
+// so nothing here waits on a reply or reads silence as evidence.
+
+#include "Detectors/InvalidCvarRules.hpp"
+
+#include <CS2Kit/Api.hpp>
+#include <array>
+#include <cstdint>
+#include <random>
+#include <string_view>
+
+namespace Anticheat
+{
+
+class AntiCheatManager;
+
+class InvalidCvarDetector
+{
+public:
+    explicit InvalidCvarDetector(AntiCheatManager& manager) : _manager(manager) {}
+
+    /** Start the poll pump. Idempotent. */
+    void Initialize();
+
+    /** A player is in the server: arm their first poll. */
+    void OnFullyConnected(int slot);
+
+    void OnSlotChanged(int slot);
+    void Reset();
+
+    /** Seconds until @p slot's next poll, or 0 when it is not armed. Diagnostics only. */
+    double PollsIn(int slot, double nowSec) const;
+
+private:
+    struct SlotState
+    {
+        double NextPoll = 0.0;  // 0 = not armed
+        size_t Cursor = 0;      // where this slot's next batch starts in QueriedCvars
+    };
+
+    void Poll(int slot, SlotState& state);
+    void ReadUserInfo(int slot);
+    void OnReply(int slot, CS2Kit::ClientCvarStatus status, std::string_view name, std::string_view value);
+    double NextDelaySec();
+
+    AntiCheatManager& _manager;
+    std::array<SlotState, MaxSlots> _slots{};
+    std::minstd_rand _random;
+    uint64_t _pump = 0;
+};
+
+}  // namespace Anticheat

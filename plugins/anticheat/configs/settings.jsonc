@@ -1,118 +1,42 @@
 {
-  // Plugin-wide options.
-  "plugin": {
-    "locale": "en"
-  },
-
   "anticheat": {
-    // Response ladder: "observe" logs only, "alert" also notifies admins via
-    // admin-system (as_ac_alert), "ban" additionally auto-bans at ban score
-    // (as_ac_ban). Keep "observe" until thresholds are tuned on the live server.
+    // Master switch. Off means no hooks feed the detection cores.
+    "enabled": true,
+
+    // Response funnel: "observe" logs and reports only (this is the dry run),
+    // "alert" also notifies admins via admin-system (as_ac_alert), "ban"
+    // additionally kicks or bans (as_ac_ban). Soak in observe before escalating.
     "mode": "observe",
-    "alertCooldownSec": 30.0,
-    "historyDepth": 128,
-    "ban": {
-      "durationSec": 0, // 0 = permanent
-      "reason": "AntiCheat: blatant input anomaly"
+
+    // Ban length in seconds for "ban" mode; 0 = permanent.
+    "banDurationSec": 0,
+
+    // SteamID64s that are reported but never punished (staff, testers).
+    "whitelistSteamIds": [],
+
+    // Detections normally switch off while sv_cheats is on, because cheat-protected
+    // client cvars legitimately change. Set true only on a test box.
+    "allowSvCheatsTesting": false,
+
+    // Per-detection kill switches. Thresholds are compiled in, not configurable.
+    "detections": {
+      "aimbot": true,
+      "aimlock": true,
+      "antiAim": true,
+      "silentAim": true,
+      "dllInjection": true,
+      "invalidCvar": true,
+      "namechanger": true
     },
-    "detectors": {
-      // Spinning alone NEVER bans (legit players fake-spin); ban tier needs
-      // minKillEvents kills whose fire-tick aim snapped onto the victim mid-spin.
-      "spin": {
-        "enabled": true,
-        "yawVelocityDegPerSec": 720.0,
-        "minTicks": 32,
-        "killWindowTicks": 8,
-        "onTargetEpsilonDeg": 8.0,
-        "minKillEvents": 3,
-        "eventWindowSec": 120.0,
-        "spinOnlyScore": 5.0,
-        "killEventScore": 40.0,
-        "headshotMultiplier": 1.5,
-        "alertScore": 60.0,
-        "banScore": 90.0,
-        "decayPerSec": 0.5
-      },
-      // Pre-fire flick > minSnapDeg that settles before the shot; only damage
-      // landing on-target within confirmWindowTicks confirms it.
-      "aimSnap": {
-        "enabled": true,
-        "lookbackTicks": 16,
-        "minSnapDeg": 40.0,
-        "settleEpsilonDeg": 1.0,
-        "confirmWindowTicks": 4,
-        "onTargetEpsilonDeg": 8.0,
-        "minEvents": 4,
-        "eventWindowSec": 180.0,
-        "snapScore": 3.0,
-        "confirmedHitScore": 30.0,
-        "alertScore": 60.0,
-        "banScore": 90.0,
-        "decayPerSec": 0.5
-      },
-      // NaN/inf angles or pitch outside +/-maxPitchDeg sustained minTicks.
-      "sanity": {
-        "enabled": true,
-        "maxPitchDeg": 89.5,
-        "minTicks": 4,
-        "minEvents": 1,
-        "eventWindowSec": 60.0,
-        "eventScore": 50.0,
-        "alertScore": 50.0,
-        "banScore": 50.0,
-        "decayPerSec": 0.1
-      },
-      // Viewangle jump with ~zero mouse input = software wrote the aim. Disabled by
-      // default: no reference project reads mousedx/dy and the CS2 client's population
-      // of them is unverified - confirm with anticheat_dumpcmd before enabling.
-      "silentAim": {
-        "enabled": false,
-        "minAngleJumpDeg": 20.0,
-        "maxMouseUnits": 2,
-        "confirmWindowTicks": 4,
-        "onTargetEpsilonDeg": 8.0,
-        "minEvents": 3,
-        "eventWindowSec": 180.0,
-        "eventScore": 35.0,
-        "alertScore": 60.0,
-        "banScore": 85.0,
-        "decayPerSec": 0.5
-      },
-      // Fired shot angle (input_history) diverging from the visible view angle = software
-      // wrote the shot. minDivergenceDeg must clear legit interp/flick divergence; verify
-      // with anticheat_dumpcmd before ban mode.
-      "shotAngle": {
-        "enabled": true,
-        "minDivergenceDeg": 8.0,
-        "confirmWindowTicks": 4,
-        "minEvents": 3,
-        "eventWindowSec": 180.0,
-        "eventScore": 35.0,
-        "alertScore": 60.0,
-        "banScore": 85.0,
-        "decayPerSec": 0.5
-      },
-      // Kills landed while >= minRemainingSec of flash blindness remained.
-      "noFlash": {
-        "enabled": true,
-        "minRemainingSec": 1.0,
-        "minEvents": 3,
-        "eventWindowSec": 120.0,
-        "eventScore": 35.0,
-        "alertScore": 60.0,
-        "banScore": 85.0,
-        "decayPerSec": 0.5
-      }
+
+    // Discord reporting; inactive while url is empty.
+    "webhook": {
+      "url": ""
     },
-    // Test/verification aids; all default off. broadcastDetections chat-broadcasts every
-    // detection (even in observe mode); dryRunBans broadcasts "WOULD BAN ..." instead of
-    // issuing the ban; simulator.enabled arms the built-in cheat simulator (dev builds only).
+
+    // simulator arms the built-in cheat simulator commands (dev boxes only).
     "debug": {
-      "broadcastDetections": false,
-      "dryRunBans": false,
-      "simulator": {
-        "enabled": false
-      }
+      "simulator": false
     }
   }
 }

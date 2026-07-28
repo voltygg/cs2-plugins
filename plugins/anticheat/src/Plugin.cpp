@@ -27,7 +27,7 @@ CS2Kit::PluginInfo AnticheatPlugin::Info() const
     return CS2Kit::PluginInfo{
         .Name = "Anticheat",
         .Author = "m9snoi",
-        .Description = "Detects blatant cheating (spinbot, aimlock, silent aim) from per-tick input analysis.",
+        .Description = "Server-side cheat detection: aim analysis over correlated shots plus client-integrity checks.",
         .Url = "",
         .License = "MIT",
         .Version = CS2Kit::BuildInfo::Version,
@@ -42,12 +42,24 @@ bool AnticheatPlugin::OnLoad(bool /*late*/)
     if (!Anticheat::App().Config.Load(Anticheat::SettingsPath))
         return false;
 
-    Engine().Translations.SetLanguage(Anticheat::App().Config.Get().plugin.locale);
-    Engine().Translations.Load("addons/anticheat/configs/translations");
-
     Anticheat::App().Response.Initialize();
     Anticheat::App().AntiCheat.Initialize();
 
     Log::Info("Loaded v{} (mode={}).", Info().Version, Anticheat::App().Config.Get().anticheat.mode);
     return true;
+}
+
+void AnticheatPlugin::OnServerStartup(const char* /*mapName*/)
+{
+    Anticheat::App().AntiCheat.OnMapStart();
+}
+
+void AnticheatPlugin::OnPlayerFullyConnected(CS2Kit::Players::Player* player)
+{
+    Anticheat::App().AntiCheat.OnPlayerFullyConnected(player);
+}
+
+void AnticheatPlugin::OnPlayerSettingsChanged(CS2Kit::Players::Player* player)
+{
+    Anticheat::App().AntiCheat.OnPlayerSettingsChanged(player);
 }

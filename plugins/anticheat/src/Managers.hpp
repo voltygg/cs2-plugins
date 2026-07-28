@@ -2,7 +2,8 @@
 
 #include "AntiCheatManager.hpp"
 #include "Config.hpp"
-#include "ResponseManager.hpp"
+#include "Response/DiscordReporter.hpp"
+#include "Response/ResponseManager.hpp"
 
 #include <CS2Kit/Api.hpp>
 
@@ -25,7 +26,8 @@ Managers& App();
 struct Managers
 {
     ConfigManager Config;
-    ResponseManager Response;
+    DiscordReporter Reporter;
+    ResponseManager Response{Reporter};
     AntiCheatManager AntiCheat{Response};
 };
 
