@@ -1,16 +1,11 @@
-#pragma once
-
-// Game events a stock CS2 client never subscribes to, and that an injected library observing the
-// game ends up asking for. Normal client and game-instructor subscriptions are deliberately absent,
-// so any hit is a real signal.
-
-#include <array>
-#include <string_view>
-
-namespace Anticheat
+// Game-content facts the detections compare against, kept out of the binary so a CS2
+// update can be answered with a config edit and !anticheat_reload rather than a rebuild.
+// Replaces the compiled-in defaults wholesale when present; delete a section to keep them.
 {
-
-inline constexpr std::array<std::string_view, 117> DllEventBlacklist = {
+  // Events a stock CS2 client never subscribes to, and that an injected library observing
+  // the game ends up asking for. Normal client and game-instructor subscriptions are
+  // deliberately absent, so any hit is a real signal.
+  "dllEventBlacklist": [
     "gameui_hidden",
     "player_chat",
     "player_score",
@@ -127,9 +122,24 @@ inline constexpr std::array<std::string_view, 117> DllEventBlacklist = {
     "instructor_start_lesson",
     "instructor_close_lesson",
     "clientside_lesson_closed",
-    "dynamic_shadow_light_changed",
-};
+    "dynamic_shadow_light_changed"
+  ],
 
-static_assert(DllEventBlacklist.size() == 117, "The DLL injection event list must contain 117 entries.");
-
-}  // namespace Anticheat
+  // tier:       "queried"  asked over the network, "userinfo" read from the client's userinfo
+  // constraint: "equals" | "max" | "range" | "minOrZero" | "off" | "on"
+  // cheat:      only enforced once a disabled sv_cheats has reached the client
+  // kickOnly:   caps the punishment at a kick even in ban mode
+  "cvarRules": [
+    { "name": "fps_max", "tier": "queried", "constraint": "minOrZero", "value": 64.0, "kickOnly": true },
+    { "name": "sv_cheats", "tier": "queried", "constraint": "off", "cheatProtected": true },
+    { "name": "cl_showpos", "tier": "queried", "constraint": "off", "cheatProtected": true },
+    { "name": "cam_showangles", "tier": "queried", "constraint": "off", "cheatProtected": true },
+    { "name": "cl_drawhud", "tier": "queried", "constraint": "on", "cheatProtected": true },
+    { "name": "cl_pitchdown", "tier": "queried", "constraint": "equals", "value": 89.0 },
+    { "name": "cl_pitchup", "tier": "queried", "constraint": "equals", "value": 89.0 },
+    { "name": "cl_yawspeed", "tier": "queried", "constraint": "equals", "value": 210.0 },
+    { "name": "fov_cs_debug", "tier": "queried", "constraint": "equals", "value": 0.0, "cheatProtected": true },
+    { "name": "sensitivity", "tier": "userinfo", "constraint": "range", "value": 0.0001, "max": 20.0 },
+    { "name": "m_yaw", "tier": "userinfo", "constraint": "max", "value": 0.3, "kickOnly": true }
+  ]
+}

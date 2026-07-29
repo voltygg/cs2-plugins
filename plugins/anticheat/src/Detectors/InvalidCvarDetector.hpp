@@ -41,7 +41,7 @@ private:
     struct SlotState
     {
         double NextPoll = 0.0;  // 0 = not armed
-        size_t Cursor = 0;      // where this slot's next batch starts in QueriedCvars
+        size_t Cursor = 0;      // where this slot's next batch starts in the queried tier
     };
 
     void Poll(int slot, SlotState& state);

@@ -33,7 +33,7 @@ void InvalidCvarDetector::Initialize()
     _pump = Engine().Scheduler.Repeat(PumpIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !AntiCheatManager::ModuleEnabled(DetectionKind::InvalidCvar))
             return;
-        const double now = MonotonicSeconds();
+        const double now = TimeUtils::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
             SlotState& state = _slots[slot];
@@ -56,7 +56,7 @@ void InvalidCvarDetector::Initialize()
 void InvalidCvarDetector::OnFullyConnected(int slot)
 {
     if (InSlotRange(slot))
-        _slots[slot] = {.NextPoll = MonotonicSeconds() + NextDelaySec()};
+        _slots[slot] = {.NextPoll = TimeUtils::MonotonicSeconds() + NextDelaySec()};
 }
 
 void InvalidCvarDetector::OnSlotChanged(int slot)
@@ -88,27 +88,34 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
     if (!Engine().ClientCvars.Available())
         return;
 
+    const CvarRuleTable& rules = _manager.InvalidCvars().Rules();
+    const std::vector<std::string_view>& queried = rules.Queried();
+    if (queried.empty())
+        return;
+
     // Asking for a convar already in flight re-points the outstanding request rather than sending a
     // second one, so the batch never has to check what is pending.
     for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
     {
-        const std::string name(QueriedCvars[PollCvarIndex(state.Cursor, offset)]);
+        const std::string name(queried[rules.PollCvarIndex(state.Cursor, offset)]);
         Engine().ClientCvars.Query(slot, name,
                                    [this](int replySlot, CS2Kit::ClientCvarStatus status, std::string_view cvar,
                                           std::string_view value) { OnReply(replySlot, status, cvar, value); });
     }
-    state.Cursor = PollCvarIndex(state.Cursor, CvarsPerPoll);
+    state.Cursor = rules.PollCvarIndex(state.Cursor, CvarsPerPoll);
 }
 
 void InvalidCvarDetector::ReadUserInfo(int slot)
 {
     const bool enforce = _manager.EnforceCheatCvars();
-    for (std::string_view name : UserInfoCvars)
+    for (const CvarRule& rule : _manager.InvalidCvars().Rules().All())
     {
-        const char* value = Engine().NetChannels.GetUserInfoCvar(slot, name.data());
+        if (rule.tier != CvarTier::UserInfo)
+            continue;
+        const char* value = Engine().NetChannels.GetUserInfoCvar(slot, rule.name.c_str());
         if (!value || *value == '\0')
             continue;
-        _manager.Report(slot, _manager.InvalidCvars().Observe(slot, name, value, enforce));
+        _manager.Report(slot, _manager.InvalidCvars().Observe(slot, rule.name, value, enforce));
     }
 }
 

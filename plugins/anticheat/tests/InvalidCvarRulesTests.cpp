@@ -1,6 +1,7 @@
 #include "Detectors/InvalidCvarRules.hpp"
 
 #include <doctest/doctest.h>
+#include <vector>
 
 using namespace Anticheat;
 
@@ -9,6 +10,56 @@ namespace
 constexpr int Slot = 2;
 constexpr bool Enforcing = true;
 constexpr bool NotEnforcing = false;
+
+/**
+ * The rules the plugin ships in configs/detections.jsonc. The engine is what these cases test, so
+ * the table is pinned here rather than read from the file - a deployment edit to the data must not
+ * be able to turn a rule test green.
+ */
+std::vector<CvarRule> ShippedRules()
+{
+    using enum CvarConstraint;
+    return {
+        {.name = "fps_max", .constraint = MinOrZero, .value = 64.0, .kickOnly = true},
+        {.name = "sv_cheats", .constraint = Off, .cheatProtected = true},
+        {.name = "cl_showpos", .constraint = Off, .cheatProtected = true},
+        {.name = "cam_showangles", .constraint = Off, .cheatProtected = true},
+        {.name = "cl_drawhud", .constraint = On, .cheatProtected = true},
+        {.name = "cl_pitchdown", .constraint = Equals, .value = 89.0},
+        {.name = "cl_pitchup", .constraint = Equals, .value = 89.0},
+        {.name = "cl_yawspeed", .constraint = Equals, .value = 210.0},
+        {.name = "fov_cs_debug", .constraint = Equals, .value = 0.0, .cheatProtected = true},
+        {.name = "sensitivity", .tier = CvarTier::UserInfo, .constraint = Range, .value = 0.0001, .max = 20.0},
+        {.name = "m_yaw", .tier = CvarTier::UserInfo, .constraint = Max, .value = 0.3, .kickOnly = true},
+    };
+}
+
+const CvarRuleTable& Rules()
+{
+    static const CvarRuleTable table = [] {
+        CvarRuleTable loaded;
+        loaded.Load(ShippedRules());
+        return loaded;
+    }();
+    return table;
+}
+
+InvalidCvarRules MakeRules()
+{
+    InvalidCvarRules rules;
+    rules.LoadRules(ShippedRules());
+    return rules;
+}
+
+CvarVerdict EvaluateCvar(std::string_view name, std::string_view value, bool enforcing)
+{
+    return Rules().Evaluate(name, value, enforcing);
+}
+
+CvarVerdict EvaluateMissingCvar(std::string_view name, std::string_view statusName, bool enforcing, int replies)
+{
+    return Rules().EvaluateMissing(name, statusName, enforcing, replies);
+}
 
 bool Rejects(std::string_view name, std::string_view value, bool enforcing = Enforcing)
 {
@@ -113,7 +164,7 @@ TEST_CASE("Cheat cvar enforcement waits out the propagation grace after sv_cheat
 
 TEST_CASE("A cvar that stays invalid reports once")
 {
-    InvalidCvarRules rules;
+    InvalidCvarRules rules = MakeRules();
     const std::optional<Finding> first = rules.Observe(Slot, "m_yaw", "0.5", Enforcing);
     REQUIRE(first.has_value());
     CHECK(first->Kind == DetectionKind::InvalidCvar);
@@ -126,7 +177,7 @@ TEST_CASE("A cvar that stays invalid reports once")
 
 TEST_CASE("A cvar that returns to a valid value re-arms the latch")
 {
-    InvalidCvarRules rules;
+    InvalidCvarRules rules = MakeRules();
     REQUIRE(rules.Observe(Slot, "m_yaw", "0.5", Enforcing).has_value());
     CHECK_FALSE(rules.Observe(Slot, "m_yaw", "0.022", Enforcing).has_value());
     CHECK_FALSE(rules.IsLatched(Slot, "m_yaw"));
@@ -135,7 +186,7 @@ TEST_CASE("A cvar that returns to a valid value re-arms the latch")
 
 TEST_CASE("A skipped cheat protected rule leaves the latch untouched")
 {
-    InvalidCvarRules rules;
+    InvalidCvarRules rules = MakeRules();
     REQUIRE(rules.Observe(Slot, "cl_showpos", "1", Enforcing).has_value());
     CHECK(rules.IsLatched(Slot, "cl_showpos"));
     // Enforcement stopping must not silently clear the latch and let the next reply fire again.
@@ -145,7 +196,7 @@ TEST_CASE("A skipped cheat protected rule leaves the latch untouched")
 
 TEST_CASE("Each cvar latches independently and a slot change clears them all")
 {
-    InvalidCvarRules rules;
+    InvalidCvarRules rules = MakeRules();
     REQUIRE(rules.Observe(Slot, "m_yaw", "0.5", Enforcing).has_value());
     REQUIRE(rules.Observe(Slot, "cl_yawspeed", "500", Enforcing).has_value());
     CHECK(rules.IsLatched(Slot, "m_yaw"));
@@ -159,26 +210,58 @@ TEST_CASE("Each cvar latches independently and a slot change clears them all")
 
 TEST_CASE("An unknown cvar name never produces a finding")
 {
-    InvalidCvarRules rules;
+    InvalidCvarRules rules = MakeRules();
     CHECK_FALSE(rules.Observe(Slot, "cl_interp_ratio", "99999", Enforcing).has_value());
     CHECK_FALSE(rules.Observe(-1, "m_yaw", "0.5", Enforcing).has_value());
 }
 
 TEST_CASE("Every cvar the two tiers read is covered by the rule table")
 {
-    for (std::string_view name : RuledCvars)
-        CHECK(EvaluateCvar(name, "0", Enforcing).Known);
-    for (std::string_view name : QueriedCvars)
-        CHECK(EvaluateCvar(name, "0", Enforcing).Known);
-    for (std::string_view name : UserInfoCvars)
-        CHECK(EvaluateCvar(name, "0", Enforcing).Known);
+    REQUIRE_FALSE(Rules().Empty());
+    for (const CvarRule& rule : Rules().All())
+        CHECK(EvaluateCvar(rule.name, "0", Enforcing).Known);
+    CHECK(Rules().Queried().size() + Rules().UserInfo().size() == Rules().Size());
 }
 
-TEST_CASE("The userinfo tier owns its two cvars alone, so one latch never has two sources")
+TEST_CASE("A cvar belongs to one tier alone, so one latch never has two sources")
 {
-    for (std::string_view userInfo : UserInfoCvars)
-        for (std::string_view queried : QueriedCvars)
+    for (std::string_view userInfo : Rules().UserInfo())
+        for (std::string_view queried : Rules().Queried())
             CHECK(userInfo != queried);
+}
+
+TEST_CASE("A second rule for a cvar already in the table is rejected rather than sharing its latch")
+{
+    CvarRuleTable table;
+    CHECK(table.Load({
+              {.name = "m_yaw", .constraint = CvarConstraint::Max, .value = 0.3},
+              {.name = "M_YAW", .tier = CvarTier::UserInfo, .constraint = CvarConstraint::Max, .value = 9.0},
+          }) == 1);
+    REQUIRE(table.Size() == 1);
+    // The first rule wins, so a duplicate cannot loosen one already in force.
+    CHECK(table.Evaluate("m_yaw", "5", Enforcing).Invalid);
+}
+
+TEST_CASE("Malformed rules are dropped and the rest of the table still loads")
+{
+    CvarRuleTable table;
+    CHECK(table.Load({
+              {.name = "", .constraint = CvarConstraint::Equals},
+              {.name = "sensitivity", .constraint = CvarConstraint::Range, .value = 20.0, .max = 1.0},
+              {.name = "cl_yawspeed", .constraint = CvarConstraint::Equals, .value = 210.0},
+          }) == 2);
+    CHECK(table.Size() == 1);
+    CHECK(table.Evaluate("cl_yawspeed", "210", Enforcing).Checked);
+}
+
+TEST_CASE("An empty rule table judges nothing at all")
+{
+    const CvarRuleTable table;
+    CHECK(table.Empty());
+    CHECK_FALSE(table.Evaluate("m_yaw", "9999", Enforcing).Known);
+    CHECK_FALSE(table.EvaluateMissing("sv_cheats", "cvar_protected", Enforcing, 99).Known);
+    // The poll rotation must stay in range rather than divide by zero.
+    CHECK(table.PollCvarIndex(0, 1) == 0);
 }
 
 TEST_CASE("A client that withholds a cheat protected cvar is judged, but only ever for a kick")
@@ -216,7 +299,7 @@ TEST_CASE("A withheld client tunable cvar is no signal at all")
 
 TEST_CASE("Only the third refusal in a row for one cvar becomes a finding")
 {
-    InvalidCvarRules rules;
+    InvalidCvarRules rules = MakeRules();
     CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
     CHECK_FALSE(rules.IsLatched(Slot, "cl_showpos"));
     CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
@@ -226,7 +309,7 @@ TEST_CASE("Only the third refusal in a row for one cvar becomes a finding")
 
 TEST_CASE("A reply that carries a value restarts the run of refusals")
 {
-    InvalidCvarRules rules;
+    InvalidCvarRules rules = MakeRules();
     REQUIRE_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
     REQUIRE_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
     CHECK_FALSE(rules.Observe(Slot, "cl_showpos", "0", Enforcing).has_value());
@@ -239,7 +322,7 @@ TEST_CASE("A reply that carries a value restarts the run of refusals")
 
 TEST_CASE("Refusals of different cvars are counted apart")
 {
-    InvalidCvarRules rules;
+    InvalidCvarRules rules = MakeRules();
     // Interleaved refusals, one short of the threshold for each cvar.
     for (int reply = 1; reply < MissingRepliesBeforeEvidence; ++reply)
     {
@@ -253,7 +336,7 @@ TEST_CASE("Refusals of different cvars are counted apart")
 
 TEST_CASE("A withheld cvar latches like an invalid value and shares its latch")
 {
-    InvalidCvarRules rules;
+    InvalidCvarRules rules = MakeRules();
     for (int reply = 1; reply < MissingRepliesBeforeEvidence; ++reply)
         REQUIRE_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
     REQUIRE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
@@ -271,18 +354,19 @@ TEST_CASE("A withheld cvar latches like an invalid value and shares its latch")
 
 TEST_CASE("Successive polls walk the whole cvar table without repeating within a lap")
 {
-    constexpr size_t total = std::size(QueriedCvars);
-    std::array<int, total> seen{};
+    const size_t total = Rules().Queried().size();
+    REQUIRE(total > CvarsPerPoll);
+    std::vector<int> seen(total, 0);
     size_t cursor = 0;
     for (size_t poll = 0; poll * CvarsPerPoll < total; ++poll)
     {
         for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
-            ++seen[PollCvarIndex(cursor, offset)];
-        cursor = PollCvarIndex(cursor, CvarsPerPoll);
+            ++seen[Rules().PollCvarIndex(cursor, offset)];
+        cursor = Rules().PollCvarIndex(cursor, CvarsPerPoll);
     }
     for (int count : seen)
         CHECK(count >= 1);
-    CHECK(PollCvarIndex(total - 1, 1) == 0);
+    CHECK(Rules().PollCvarIndex(total - 1, 1) == 0);
 }
 
 TEST_CASE("The randomized poll delay stays inside the integrity check interval")

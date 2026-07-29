@@ -30,7 +30,8 @@ void NamechangerDetector::OnSettingsChanged(CS2Kit::Players::Player* player)
         return;
 
     const int slot = player->GetSlot();
-    _manager.Report(slot, _manager.Namechanger().OnNameChanged(slot, CurrentName(player), MonotonicSeconds()));
+    _manager.Report(slot,
+                    _manager.Namechanger().OnNameChanged(slot, CurrentName(player), TimeUtils::MonotonicSeconds()));
 }
 
 }  // namespace Anticheat

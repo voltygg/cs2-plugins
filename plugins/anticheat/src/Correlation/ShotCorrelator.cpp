@@ -142,7 +142,7 @@ void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
 
     // This is the command the server is about to simulate, so ingest and stamp in the same pass.
     const auto serverTick = static_cast<int32_t>(CS2Kit::ServerTick());
-    const double now = MonotonicSeconds();
+    const double now = TimeUtils::MonotonicSeconds();
     _manager.Correlator().OnSimulated(slot, sample.CmdNum, serverTick, eye, sample.Airborne);
     if (aimbot)
         _manager.Report(slot, _manager.Aimbot().OnSimulated(slot, sample.CmdNum, serverTick, eye, now));
@@ -187,7 +187,7 @@ void ShotCorrelator::OnFrame()
         return;
 
     const auto serverTick = static_cast<int32_t>(CS2Kit::ServerTick());
-    const double now = MonotonicSeconds();
+    const double now = TimeUtils::MonotonicSeconds();
 
     std::array<PositionSample, MaxSlots> players{};
     CollectPositions(players);
@@ -244,7 +244,7 @@ void ShotCorrelator::OnWeaponFire(const CS2Kit::Events::WeaponFire& fire)
     ShotView* shot = _manager.Correlator().OnWeaponFire(
         fire.Slot, fire.Weapon, static_cast<int32_t>(CS2Kit::ServerTick()), visible, hasVisible);
     if (shot && AntiCheatManager::ModuleEnabled(DetectionKind::AntiAim))
-        _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, MonotonicSeconds()));
+        _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, TimeUtils::MonotonicSeconds()));
 }
 
 void ShotCorrelator::OnBulletImpact(const CS2Kit::Events::BulletImpact& impact)
@@ -285,7 +285,8 @@ void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
     if (AntiCheatManager::ModuleEnabled(DetectionKind::SilentAim))
         _manager.SilentAim().OnShotUpdated(attacker, *shot);
     if (AntiCheatManager::ModuleEnabled(DetectionKind::Aimbot))
-        _manager.Report(attacker, _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, MonotonicSeconds()));
+        _manager.Report(attacker,
+                        _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, TimeUtils::MonotonicSeconds()));
 }
 
 void ShotCorrelator::OnPlayerDeath(const CS2Kit::Events::PlayerDeath& death)

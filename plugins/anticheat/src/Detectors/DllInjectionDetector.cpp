@@ -1,7 +1,6 @@
 #include "DllInjectionDetector.hpp"
 
 #include "AntiCheatManager.hpp"
-#include "Detectors/DllEventBlacklist.hpp"
 
 #include <format>
 #include <string>
@@ -34,7 +33,7 @@ void DllInjectionDetector::Initialize()
         if (!_manager.DetectionsEnabled() || !AntiCheatManager::ModuleEnabled(DetectionKind::DllInjection))
             return;
 
-        const double now = MonotonicSeconds();
+        const double now = TimeUtils::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
             SlotState& state = _slots[slot];
@@ -58,7 +57,7 @@ void DllInjectionDetector::OnFullyConnected(int slot)
     if (!InSlotRange(slot))
         return;
     // The client's listener does not exist the instant it joins, so the first scan waits for it.
-    _slots[slot] = {.NextScan = MonotonicSeconds() + DllInitialScanDelaySec};
+    _slots[slot] = {.NextScan = TimeUtils::MonotonicSeconds() + DllInitialScanDelaySec};
 }
 
 void DllInjectionDetector::OnSlotChanged(int slot)
@@ -87,8 +86,8 @@ void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
     state.Retried = true;
 
     std::vector<std::string_view> matches;
-    for (std::string_view name : DllEventBlacklist)
-        if (Engine().Events.ClientListensTo(slot, name.data()))
+    for (const std::string& name : _blacklist)
+        if (Engine().Events.ClientListensTo(slot, name.c_str()))
             matches.push_back(name);
     if (matches.empty())
         return;

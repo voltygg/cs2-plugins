@@ -27,8 +27,9 @@ inline constexpr bool InSlotRange(int slot)
  */
 inline constexpr float TickRate = 64.0f;
 
-/** Monotonic seconds for the rolling evidence windows (wall clock, not game time). */
-using CS2Kit::Utils::MonotonicSeconds;
+/** TimeUtils::MonotonicSeconds() drives the rolling evidence windows: real elapsed time, not game
+ *  time, and not the wall clock TimeUtils::Now() reports. */
+using CS2Kit::Utils::TimeUtils;
 
 struct Vec3
 {

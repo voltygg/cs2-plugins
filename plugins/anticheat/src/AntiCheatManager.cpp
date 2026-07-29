@@ -47,12 +47,13 @@ void AntiCheatManager::Initialize()
             return;
         const bool enabled = newValue && std::string_view(newValue) != "0" && std::string_view(newValue) != "false";
         if (!enabled)
-            _cheatGraceUntil = MonotonicSeconds() + SvCheatsPropagationGraceSec;
+            _cheatGraceUntil = TimeUtils::MonotonicSeconds() + SvCheatsPropagationGraceSec;
         ResetEvidence();
     });
-    _cheatGraceUntil = MonotonicSeconds() + SvCheatsPropagationGraceSec;
+    _cheatGraceUntil = TimeUtils::MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
     RefreshTeamRules();
+    LoadDetectionData();
     _feed.Initialize();
     _dllInjection.Initialize();
     _invalidCvarPoller.Initialize();
@@ -67,12 +68,36 @@ void AntiCheatManager::RefreshTeamRules()
     _correlator.SetTeammatesAreEnemies(Engine().ConVars.GetBool("mp_teammates_are_enemies").value_or(false));
 }
 
+void AntiCheatManager::LoadDetectionData()
+{
+    const DetectionData& data = App().Detections.Get();
+    const int rejected = _invalidCvars.LoadRules(data.cvarRules);
+    _dllInjection.SetBlacklist(data.dllEventBlacklist);
+
+    if (rejected > 0)
+        Log::Warn("{} cvar rule(s) were rejected as malformed or duplicated and are not being checked.", rejected);
+    if (_invalidCvars.Rules().Empty())
+        Log::Warn("No cvar rules loaded; the invalid_cvar module has nothing to check.");
+    if (data.dllEventBlacklist.empty())
+        Log::Warn("The DLL event blacklist is empty; the dll_injection module has nothing to check.");
+
+    Log::Info("Detection data: {} cvar rule(s), {} blacklisted event(s).", _invalidCvars.Rules().Size(),
+              data.dllEventBlacklist.size());
+}
+
 void AntiCheatManager::RegisterCommands()
 {
     _cmdReload.emplace(
-        "anticheat_reload", "Re-read settings.jsonc and drop all accumulated evidence.", [this](const CCommand&) {
+        "anticheat_reload", "Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.",
+        [this](const CCommand&) {
             if (!App().Config.Load(SettingsPath))
                 return;
+            // Keeps the rules already in memory when the edit does not parse, so a typo cannot
+            // silently disarm the two table-driven modules.
+            if (!App().Detections.Load(DetectionDataPath))
+                Log::Warn("{} could not be re-read; keeping the tables already loaded.", DetectionDataPath);
+            else
+                LoadDetectionData();
             RefreshTeamRules();
             ResetEvidence();
             Log::Info("Settings reloaded (mode={}); evidence cleared.", App().Config.Get().anticheat.mode);
@@ -165,7 +190,7 @@ void AntiCheatManager::LogStatus() const
 {
     Log::Info("[AC] {}", StatusSnapshot().dump());
 
-    const double now = MonotonicSeconds();
+    const double now = TimeUtils::MonotonicSeconds();
     bool any = false;
     for (const CS2Kit::Players::Player* player : Engine().Players.GetAllPlayers())
     {
@@ -175,13 +200,13 @@ void AntiCheatManager::LogStatus() const
         any = true;
 
         std::string latched;
-        for (std::string_view cvar : RuledCvars)
+        for (const CvarRule& rule : _invalidCvars.Rules().All())
         {
-            if (!_invalidCvars.IsLatched(slot, cvar))
+            if (!_invalidCvars.IsLatched(slot, rule.name))
                 continue;
             if (!latched.empty())
                 latched += ",";
-            latched += cvar;
+            latched += rule.name;
         }
 
         Log::Info(
@@ -200,15 +225,7 @@ void AntiCheatManager::LogStatus() const
 
 void AntiCheatManager::ResetEvidence()
 {
-    _correlator.Reset();
-    _aimbot.Reset();
-    _aimlock.Reset();
-    _antiAim.Reset();
-    _silentAim.Reset();
-    _namechanger.Reset();
-    _invalidCvars.Reset();
-    _dllInjection.Reset();
-    _invalidCvarPoller.Reset();
+    std::apply([](auto&... modules) { (modules.Reset(), ...); }, EvidenceModules());
     _response.ResetAll();
 }
 
@@ -220,15 +237,7 @@ void AntiCheatManager::OnMapStart()
 
 void AntiCheatManager::OnSlotChanged(int slot)
 {
-    _correlator.OnSlotChanged(slot);
-    _aimbot.OnSlotChanged(slot);
-    _aimlock.OnSlotChanged(slot);
-    _antiAim.OnSlotChanged(slot);
-    _silentAim.OnSlotChanged(slot);
-    _namechanger.OnSlotChanged(slot);
-    _invalidCvars.OnSlotChanged(slot);
-    _dllInjection.OnSlotChanged(slot);
-    _invalidCvarPoller.OnSlotChanged(slot);
+    std::apply([slot](auto&... modules) { (modules.OnSlotChanged(slot), ...); }, EvidenceModules());
     _response.OnSlotChanged(slot);
 }
 
@@ -267,7 +276,7 @@ bool AntiCheatManager::DetectionsEnabled() const
 bool AntiCheatManager::EnforceCheatCvars() const
 {
     const CS2Kit::RawConVar& cheats = CheatsConVar();
-    return ShouldEnforceCheatCvars(cheats.Valid() && cheats.GetBool(), MonotonicSeconds(), _cheatGraceUntil);
+    return ShouldEnforceCheatCvars(cheats.Valid() && cheats.GetBool(), TimeUtils::MonotonicSeconds(), _cheatGraceUntil);
 }
 
 bool AntiCheatManager::ModuleEnabled(DetectionKind kind)

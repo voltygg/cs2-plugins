@@ -38,7 +38,8 @@ plugins/anticheat/
     Detectors/     *Core.cpp = SDK-free rules; *Detector.cpp = engine adapter
     Response/      FunnelPolicy (pure decision logic), ResponseManager, DiscordReporter
     Simulator/     CheatSimulator (dev-only input synthesis)
-  configs/settings.jsonc
+  configs/settings.jsonc     operator knobs, rendered per server
+  configs/detections.jsonc   the event and convar tables the detections compare against
   tests/
 ```
 
@@ -116,14 +117,15 @@ than 10000 units are ignored.
 
 A stock client subscribes only to the events its HUD needs. Injected client code
 registers its own legacy listener and asks for events no HUD ever wants; the server can
-read that without touching the client. 117 such names are checked
-(`Detectors/DllEventBlacklist.hpp`), and any hit reports. The first scan waits 10 s after
+read that without touching the client. The names come from `dllEventBlacklist` in
+[`configs/detections.jsonc`](configs/detections.jsonc), and any hit reports. The first scan waits 10 s after
 full connect because a client's listener does not exist the instant it joins - one grace
 retry if it is still absent, then a 120 s rescan cadence.
 
 ### `invalid_cvar` - client settings
 
-Nine client convars are polled over `CSVCMsg_GetCvarValue`, four per poll in rotation
+The convars and the values they must hold come from `cvarRules` in
+[`configs/detections.jsonc`](configs/detections.jsonc). The queried tier is polled over `CSVCMsg_GetCvarValue`, four per poll in rotation
 (the kit refuses a slot's twelfth outstanding query) at a per-slot interval randomized
 between 1 and 5 s so the schedule is not predictable. `sensitivity` and `m_yaw` are read
 straight from userinfo instead, where they are always available - and *only* there, since
@@ -175,10 +177,31 @@ mode. What happens beyond that is `anticheat.mode`:
 
 ## Configuration
 
-`configs/settings.jsonc` - the whole file, one `anticheat` section, no translations. The
-deployed copy is rendered from
+Two files, split by who owns them.
+
+`configs/settings.jsonc` holds the operator knobs - one `anticheat` section, no translations. The
+deployed copy is rendered per server from
 [`deploy/templates/plugins/anticheat/settings.jsonc`](../../deploy/templates/plugins/anticheat/settings.jsonc),
 which carries the same keys (box-a arms the simulator).
+
+[`configs/detections.jsonc`](configs/detections.jsonc) holds the game-content tables - the blacklisted
+event names and the convar rules. These track *Valve's* content rather than this plugin's logic, so a
+CS2 update that renames a convar or adds a HUD event is answered with an edit here and
+`anticheat_reload`, not a rebuild and a redeploy. It ships identically to every server, so it has no
+deploy template. A rule that does not parse is dropped with a warning and the rest of the table still
+loads; an edit that fails to parse at all leaves the previously loaded tables in force.
+
+| Constraint | Meaning |
+| --- | --- |
+| `equals` | must equal `value` |
+| `max` | must not exceed `value` |
+| `range` | must fall within [`value`, `max`] |
+| `minOrZero` | at least `value`, or 0 for "unlimited" |
+| `off` / `on` | must read as false/0, or must not |
+
+`tier` is `queried` (asked over the network) or `userinfo` (read from the client's userinfo); a convar
+must appear in one tier only, since both share a latch. `cheatProtected` defers the rule until a
+disabled `sv_cheats` has reached the client, and `kickOnly` caps the punishment at a kick.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
@@ -202,7 +225,7 @@ which carries the same keys (box-a arms the simulator).
 | Command | Description |
 | --- | --- |
 | `anticheat_status` | Global JSON snapshot (mode, gates, module toggles, `clientCvars` availability, teleport tracker, correlator frames) plus one line per human player: punishment level, per-module counters, latched convars, pending queries, next poll, shots and commands held. The same snapshot is registered as the `anticheat` section of the kit's `Engine().Status`. |
-| `anticheat_reload` | Re-read `settings.jsonc` **and drop all accumulated evidence**, including the punishment latch. |
+| `anticheat_reload` | Re-read `settings.jsonc` and `detections.jsonc`, **and drop all accumulated evidence**, including the punishment latch. |
 | `anticheat_dumpcmd <slot> [ticks=64]` | Log raw usercmds for one slot: view, mouse deltas, buttons, subtick deltas, input-history counts, and what the attack index resolved to (present / capped away / out of range). The tool for checking a suspicion against real traffic. |
 
 ### Cheat simulator

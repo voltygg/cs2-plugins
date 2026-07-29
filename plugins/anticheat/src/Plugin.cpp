@@ -41,6 +41,11 @@ bool AnticheatPlugin::OnLoad(bool /*late*/)
 {
     if (!Anticheat::App().Config.Load(Anticheat::SettingsPath))
         return false;
+    // A missing data file leaves the two table-driven modules inert rather than taking the plugin
+    // down: the aim modules, which carry no data file, are the ones worth keeping alive.
+    if (!Anticheat::App().Detections.Load(Anticheat::DetectionDataPath))
+        Log::Warn("{} could not be read; the DLL injection and invalid cvar modules have nothing to check against.",
+                  Anticheat::DetectionDataPath);
 
     Anticheat::App().Response.Initialize();
     Anticheat::App().AntiCheat.Initialize();

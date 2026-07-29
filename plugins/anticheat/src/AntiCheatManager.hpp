@@ -19,6 +19,7 @@
 #include <CS2Kit/Api.hpp>
 #include <nlohmann/json.hpp>
 #include <optional>
+#include <tuple>
 
 namespace Anticheat
 {
@@ -68,7 +69,17 @@ public:
     InvalidCvarRules& InvalidCvars() { return _invalidCvars; }
 
 private:
+    /** Everything holding per-player evidence: both resets fan out over this, so a new core is
+     *  wired into them here and nowhere else. The response funnel holds punishments, not evidence. */
+    auto EvidenceModules()
+    {
+        return std::tie(_correlator, _aimbot, _aimlock, _antiAim, _silentAim, _namechanger, _invalidCvars,
+                        _dllInjection, _invalidCvarPoller);
+    }
+
     void RegisterCommands();
+    /** Push configs/detections.jsonc into the two table-driven modules. */
+    void LoadDetectionData();
     void DumpCommand(int slot, const CS2Kit::UserCmdView& cmd);
     /** anticheat_status: the snapshot, then one line per human player. */
     void LogStatus() const;

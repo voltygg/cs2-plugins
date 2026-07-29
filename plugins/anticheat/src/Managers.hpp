@@ -2,6 +2,7 @@
 
 #include "AntiCheatManager.hpp"
 #include "Config.hpp"
+#include "Core/DetectionData.hpp"
 #include "Response/DiscordReporter.hpp"
 #include "Response/ResponseManager.hpp"
 
@@ -12,6 +13,9 @@ namespace Anticheat
 
 /** Subclass CS2Kit::JsonConfig instead once you need post-load validation or accessors. */
 using ConfigManager = CS2Kit::JsonConfig<Settings>;
+
+/** The event/convar tables the detections compare against; see Core/DetectionData.hpp. */
+using DetectionDataManager = CS2Kit::JsonConfig<DetectionData>;
 
 struct Managers;
 
@@ -26,6 +30,7 @@ Managers& App();
 struct Managers
 {
     ConfigManager Config;
+    DetectionDataManager Detections;
     DiscordReporter Reporter;
     ResponseManager Response{Reporter};
     AntiCheatManager AntiCheat{Response};

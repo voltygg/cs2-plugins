@@ -9,6 +9,8 @@
 #include <CS2Kit/Api.hpp>
 #include <array>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace Anticheat
 {
@@ -22,6 +24,9 @@ public:
 
     /** Start the scan pump. Idempotent. */
     void Initialize();
+
+    /** The event names to look for, from configs/detections.jsonc. Empty scans nothing. */
+    void SetBlacklist(std::vector<std::string> events) { _blacklist = std::move(events); }
 
     /** A player is in the server: arm their first scan. */
     void OnFullyConnected(int slot);
@@ -39,6 +44,7 @@ private:
     void Scan(int slot, SlotState& state, double nowSec);
 
     AntiCheatManager& _manager;
+    std::vector<std::string> _blacklist;
     std::array<SlotState, MaxSlots> _slots{};
     uint64_t _pump = 0;
 };
