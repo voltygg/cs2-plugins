@@ -93,6 +93,11 @@ private:
     // Stamped when sv_cheats goes off, so replicated client values get time to catch up.
     double _cheatGraceUntil = 0.0;
 
+    /** Resolved once instead of per usercmd: RawConVar holds the convar's value pointer, which
+     *  stays valid, and the by-name lookup behind Raw() is not free. */
+    mutable std::optional<CS2Kit::RawConVar> _svCheats;
+    CS2Kit::RawConVar& CheatsConVar() const;
+
     CS2Kit::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
     std::optional<CS2Kit::ServerCommand> _cmdReload;
     std::optional<CS2Kit::ServerCommand> _cmdStatus;

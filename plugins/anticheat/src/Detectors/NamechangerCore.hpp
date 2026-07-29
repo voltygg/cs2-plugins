@@ -3,11 +3,11 @@
 // Rapid visible name changes are a griefing/evasion tool, not something the client UI produces by
 // accident. SDK-free.
 
+#include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
 
 #include <array>
-#include <deque>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -30,10 +30,13 @@ public:
     int ChangeCount(int slot) const;
 
 private:
+    /** Griefing is a burst, so the window is a minute rather than the aim modules' ten. */
+    using ChangeWindow = EvidenceWindow<60>;
+
     struct SlotData
     {
         std::string LastName;
-        std::deque<double> Changes;
+        ChangeWindow Changes;
         bool Initialized = false;
     };
 

@@ -17,8 +17,8 @@ thread.
 Every detection is a **core**: an SDK-free class over plain sample structs
 (`Core/Samples.hpp`), with all of its tuned constants `constexpr` at the top of its own
 source file and no config surface at all. Cores are unit-tested directly - the whole
-detection layer compiles into `anticheat-tests` without linking the SDK (122 doctest
-cases). The SDK lives in thin adapters that convert engine state into samples and hand
+detection layer compiles into `anticheat-tests` without linking the SDK. The SDK lives in
+thin adapters that convert engine state into samples and hand
 verdicts to the response funnel. The backbone is the **ShotCorrelator**: it joins a
 usercmd to the shot it fired and to the events that shot produced, so every aim module
 reasons about "this exact command fired this exact bullet at this exact world state".
@@ -249,15 +249,20 @@ server entry. Uncomment both to ship it.
 
 ## Maintenance
 
-Four gamedata values drift with CS2 updates and must be re-verified against
+Six gamedata values drift with CS2 updates and must be re-verified against
 SwiftlyS2/CS2Fixes/CS2AC after every game update:
 
 | Entry | Used by | If it drifts |
 | --- | --- | --- |
 | `RunCommand` | `MovementHook` vtable index | **Crash** on the first movement tick. |
 | `UserCmdPB` | usercmd decode | Missing: `Valid=false` views and the aim modules go silent. Stale: garbage angles and buttons, which looks like plausible data. |
+| `UserCmdNumber` | `UserCmdView::CommandNumber` | Missing: falls back to `legacy_command_number`, which a live client leaves at **0** - every command number collapses to 0, no convergence chain ever links, and `aimbot` plus the attack-return half of `antiaim` go permanently silent. |
+| `Teleport` | `TeleportTracker` | `Enable()` returns false, so the post-teleport grace stops suppressing the discontinuity - false positives rather than silence. |
 | `ProcessRespondCvarValue` | `ClientCvarService` vtable index | Sanity-bounded at init, so the stage degrades instead of hooking an unrelated vfunc. |
 | `ServerSideClientSlot` | `ClientCvarService` slot offset | Sanity-bounded too; unchecked it would attribute one client's answer to another player. |
+
+`anticheat_status` reports `teleportTracker` directly. `UserCmdNumber` is the one entry with
+no status field and no log line, so re-verify it explicitly.
 
 The two `ClientCvars` offsets degrade rather than crash: `anticheat_status` reports
 `"clientCvars": "degraded"`, the network convar poll stops, and `invalid_cvar` falls back

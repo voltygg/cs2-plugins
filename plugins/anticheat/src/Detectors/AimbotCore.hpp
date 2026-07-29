@@ -3,6 +3,7 @@
 // Looks only at commands that damaged an enemy, then asks how the aim arrived there: a human
 // decelerates onto a target, an aimbot jumps onto it in one command and stops. SDK-free.
 
+#include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
@@ -49,7 +50,7 @@ private:
     struct SlotData
     {
         std::deque<AimCommand> Commands;
-        std::deque<double> Incidents;
+        LongEvidenceWindow Incidents;
         int32_t PendingShot = 0;
         int VictimSlot = -1;
         bool Pending = false;

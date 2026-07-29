@@ -46,6 +46,8 @@ void ResponseManager::OnSlotChanged(int slot)
 void ResponseManager::ResetAll()
 {
     _latch.Reset();
+    // Keyed by SteamID, so without this the map grows for the lifetime of the server.
+    _alertThrottle.Prune(CS2Kit::TimeUtils::Now(), AlertThrottleSec);
 }
 
 Mode ResponseManager::CurrentMode() const

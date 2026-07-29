@@ -52,10 +52,6 @@ CmdSample BuildSample(const CS2Kit::UserCmdView& cmd)
     sample.ViewPitch = cmd.ViewPitch;
     sample.ViewYaw = cmd.ViewYaw;
     sample.ViewRoll = cmd.ViewRoll;
-    sample.ButtonsHeld = cmd.ButtonsHeld;
-    sample.ButtonsChanged = cmd.ButtonsChanged;
-    sample.MouseDx = cmd.MouseDx;
-    sample.MouseDy = cmd.MouseDy;
     // A command that carried no viewangles leaves the fields at a perfectly ordinary-looking
     // (0,0,0), so the angles have to be untrusted rather than merely finite.
     sample.BaseAnglesFinite =
@@ -105,7 +101,7 @@ void ShotCorrelator::Initialize()
 
     Engine().Events.Listen<CS2Kit::Events::PlayerSpawn>([this](const CS2Kit::Events::PlayerSpawn& e) {
         if (AntiCheatManager::ModuleEnabled(DetectionKind::AntiAim))
-            _manager.AntiAim().OnSpawn(e.Slot);
+            _manager.AntiAim().OnSlotChanged(e.Slot);
     });
     Engine().Events.Listen<CS2Kit::Events::WeaponFire>(
         [this](const CS2Kit::Events::WeaponFire& e) { OnWeaponFire(e); });
@@ -133,7 +129,6 @@ void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
     CmdSample sample = BuildSample(cmd);
     sample.EyePos = eye;
     sample.Airborne = IsAirborne(controller);
-    sample.Scoped = controller.GetPawnField<bool>("CCSPlayerPawn", "m_bIsScoped");
 
     const bool aimbot = AntiCheatManager::ModuleEnabled(DetectionKind::Aimbot);
     const bool aimlock = AntiCheatManager::ModuleEnabled(DetectionKind::Aimlock);
@@ -147,8 +142,8 @@ void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
 
     // This is the command the server is about to simulate, so ingest and stamp in the same pass.
     const auto serverTick = static_cast<int32_t>(CS2Kit::ServerTick());
-    const double now = NowSeconds();
-    _manager.Correlator().OnSimulated(slot, sample.CmdNum, serverTick, eye, sample.Airborne, sample.Scoped);
+    const double now = MonotonicSeconds();
+    _manager.Correlator().OnSimulated(slot, sample.CmdNum, serverTick, eye, sample.Airborne);
     if (aimbot)
         _manager.Report(slot, _manager.Aimbot().OnSimulated(slot, sample.CmdNum, serverTick, eye, now));
     if (aimlock)
@@ -192,7 +187,7 @@ void ShotCorrelator::OnFrame()
         return;
 
     const auto serverTick = static_cast<int32_t>(CS2Kit::ServerTick());
-    const double now = NowSeconds();
+    const double now = MonotonicSeconds();
 
     std::array<PositionSample, MaxSlots> players{};
     CollectPositions(players);
@@ -249,7 +244,7 @@ void ShotCorrelator::OnWeaponFire(const CS2Kit::Events::WeaponFire& fire)
     ShotView* shot = _manager.Correlator().OnWeaponFire(
         fire.Slot, fire.Weapon, static_cast<int32_t>(CS2Kit::ServerTick()), visible, hasVisible);
     if (shot && AntiCheatManager::ModuleEnabled(DetectionKind::AntiAim))
-        _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, NowSeconds()));
+        _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, MonotonicSeconds()));
 }
 
 void ShotCorrelator::OnBulletImpact(const CS2Kit::Events::BulletImpact& impact)
@@ -290,7 +285,7 @@ void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
     if (AntiCheatManager::ModuleEnabled(DetectionKind::SilentAim))
         _manager.SilentAim().OnShotUpdated(attacker, *shot);
     if (AntiCheatManager::ModuleEnabled(DetectionKind::Aimbot))
-        _manager.Report(attacker, _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, NowSeconds()));
+        _manager.Report(attacker, _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, MonotonicSeconds()));
 }
 
 void ShotCorrelator::OnPlayerDeath(const CS2Kit::Events::PlayerDeath& death)

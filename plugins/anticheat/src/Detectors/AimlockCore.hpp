@@ -4,12 +4,12 @@
 // target's own angular width for 1.5 seconds while the target moves enough that a human would have
 // drifted off it. SDK-free.
 
+#include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
 
 #include <array>
-#include <deque>
 #include <optional>
 
 namespace Anticheat
@@ -100,9 +100,9 @@ private:
 
     const ShotCorrelatorCore& _shots;
     std::array<SlotData, MaxSlots> _slots{};
-    /** Episode timestamps inside the evidence window. Survives death and respawn, so a cheat that
-     *  dies between episodes does not reset its own count. */
-    std::array<std::deque<double>, MaxSlots> _incidents{};
+    /** Episodes inside the evidence window. Survives death and respawn, so a cheat that dies
+     *  between episodes does not reset its own count. */
+    std::array<LongEvidenceWindow, MaxSlots> _incidents{};
 };
 
 }  // namespace Anticheat

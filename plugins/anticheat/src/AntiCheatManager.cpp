@@ -47,10 +47,10 @@ void AntiCheatManager::Initialize()
             return;
         const bool enabled = newValue && std::string_view(newValue) != "0" && std::string_view(newValue) != "false";
         if (!enabled)
-            _cheatGraceUntil = NowSeconds() + SvCheatsPropagationGraceSec;
+            _cheatGraceUntil = MonotonicSeconds() + SvCheatsPropagationGraceSec;
         ResetEvidence();
     });
-    _cheatGraceUntil = NowSeconds() + SvCheatsPropagationGraceSec;
+    _cheatGraceUntil = MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
     RefreshTeamRules();
     _feed.Initialize();
@@ -144,8 +144,8 @@ nlohmann::json AntiCheatManager::StatusSnapshot() const
     const auto& settings = App().Config.Get().anticheat;
 
     nlohmann::json modules = nlohmann::json::object();
-    for (DetectionKind kind : AllDetectionKinds)
-        modules[TokenName(kind)] = ModuleEnabled(kind);
+    for (const DetectionInfo& detection : DetectionCatalog)
+        modules[detection.Token] = ModuleEnabled(detection.Kind);
 
     return nlohmann::json{
         {"enabled", settings.enabled},
@@ -165,7 +165,7 @@ void AntiCheatManager::LogStatus() const
 {
     Log::Info("[AC] {}", StatusSnapshot().dump());
 
-    const double now = NowSeconds();
+    const double now = MonotonicSeconds();
     bool any = false;
     for (const CS2Kit::Players::Player* player : Engine().Players.GetAllPlayers())
     {
@@ -246,12 +246,19 @@ void AntiCheatManager::OnPlayerSettingsChanged(CS2Kit::Players::Player* player)
     _namechangerDetector.OnSettingsChanged(player);
 }
 
+CS2Kit::RawConVar& AntiCheatManager::CheatsConVar() const
+{
+    if (!_svCheats)
+        _svCheats = Engine().ConVars.Raw("sv_cheats");
+    return *_svCheats;
+}
+
 bool AntiCheatManager::DetectionsEnabled() const
 {
     const auto& settings = App().Config.Get().anticheat;
     if (!settings.enabled)
         return false;
-    const CS2Kit::RawConVar cheats = Engine().ConVars.Raw("sv_cheats");
+    const CS2Kit::RawConVar& cheats = CheatsConVar();
     if (!cheats.Valid())
         return true;
     return !cheats.GetBool() || settings.allowSvCheatsTesting;
@@ -259,31 +266,13 @@ bool AntiCheatManager::DetectionsEnabled() const
 
 bool AntiCheatManager::EnforceCheatCvars() const
 {
-    const CS2Kit::RawConVar cheats = Engine().ConVars.Raw("sv_cheats");
-    return ShouldEnforceCheatCvars(cheats.Valid() && cheats.GetBool(), NowSeconds(), _cheatGraceUntil);
+    const CS2Kit::RawConVar& cheats = CheatsConVar();
+    return ShouldEnforceCheatCvars(cheats.Valid() && cheats.GetBool(), MonotonicSeconds(), _cheatGraceUntil);
 }
 
 bool AntiCheatManager::ModuleEnabled(DetectionKind kind)
 {
-    const auto& detections = App().Config.Get().anticheat.detections;
-    switch (kind)
-    {
-    case DetectionKind::Aimbot:
-        return detections.aimbot;
-    case DetectionKind::Aimlock:
-        return detections.aimlock;
-    case DetectionKind::AntiAim:
-        return detections.antiAim;
-    case DetectionKind::SilentAim:
-        return detections.silentAim;
-    case DetectionKind::DllInjection:
-        return detections.dllInjection;
-    case DetectionKind::InvalidCvar:
-        return detections.invalidCvar;
-    case DetectionKind::Namechanger:
-        return detections.namechanger;
-    }
-    return false;
+    return DetectionEnabled(App().Config.Get().anticheat.detections, kind);
 }
 
 bool AntiCheatManager::IsEligible(int slot)

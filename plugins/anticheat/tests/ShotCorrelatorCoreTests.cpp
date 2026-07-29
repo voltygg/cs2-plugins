@@ -35,7 +35,7 @@ std::array<PositionSample, MaxSlots> Players()
 void FeedSimulated(ShotCorrelatorCore& core, int32_t cmdNum, int32_t serverTick, float yaw = 0.0f)
 {
     core.OnCommand(Shooter, Cmd(cmdNum, serverTick, yaw));
-    core.OnSimulated(Shooter, cmdNum, serverTick, {0.0f, 0.0f, 64.0f}, false, false);
+    core.OnSimulated(Shooter, cmdNum, serverTick, {0.0f, 0.0f, 64.0f}, false);
 }
 }  // namespace
 
@@ -200,7 +200,7 @@ TEST_CASE("A truncated user id resolves only when both the slot and its shot are
 
     // Once the other player with the same low byte also has an in-window shot, it is ambiguous.
     core.OnCommand(Victim, Cmd(1, 10));
-    core.OnSimulated(Victim, 1, 10, {500.0f, 0.0f, 64.0f}, false, false);
+    core.OnSimulated(Victim, 1, 10, {500.0f, 0.0f, 64.0f}, false);
     REQUIRE(core.OnWeaponFire(Victim, "ak47", 10, {}, false) != nullptr);
     CHECK(core.ResolveImpactShooter(0x05, 10, userIds) == -1);
 }

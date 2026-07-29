@@ -21,11 +21,6 @@ inline constexpr double RadiansPerDegree = std::numbers::pi / 180.0;
 inline constexpr float BodyHeights[] = {8.0f, 46.0f, 64.0f};
 inline constexpr int BodyPointCount = static_cast<int>(std::size(BodyHeights));
 
-inline bool IsFinite(float value)
-{
-    return std::isfinite(value);
-}
-
 inline bool IsFinite(const Vec3& v)
 {
     return std::isfinite(v.X) && std::isfinite(v.Y) && std::isfinite(v.Z);
@@ -65,24 +60,32 @@ inline float AngularSizeDeg(float halfWidth, float distance)
     return static_cast<float>(std::atan2(halfWidth, distance) * DegreesPerRadian);
 }
 
-/** Angle between where @p angles points from @p eye and the direction to @p target. */
-inline float AimErrorDeg(const Vec3& eye, const AimAngles& angles, const Vec3& target)
+/** As @ref AimErrorDeg, for callers that already hold the unit forward vector for their angles. */
+inline float AimErrorDeg(const Vec3& eye, const Vec3& forward, const Vec3& target)
 {
     Vec3 direction = target - eye;
     if (!IsFinite(direction) || direction.LengthSqr() < 1e-6f)
         return 0.0f;
     const float length = direction.Length();
     direction = {direction.X / length, direction.Y / length, direction.Z / length};
-    const float dot = std::clamp(Dot(AimForward(angles), direction), -1.0f, 1.0f);
+    const float dot = std::clamp(Dot(forward, direction), -1.0f, 1.0f);
     return static_cast<float>(std::acos(dot) * DegreesPerRadian);
+}
+
+/** Angle between where @p angles points from @p eye and the direction to @p target. */
+inline float AimErrorDeg(const Vec3& eye, const AimAngles& angles, const Vec3& target)
+{
+    return AimErrorDeg(eye, AimForward(angles), target);
 }
 
 /** Smallest aim error against the three body points above @p feet. */
 inline float NearestBodyAimError(const Vec3& eye, const AimAngles& angles, const Vec3& feet)
 {
+    // One forward vector for all three points: it does not depend on the target.
+    const Vec3 forward = AimForward(angles);
     float best = 180.0f;
     for (float height : BodyHeights)
-        best = std::min(best, AimErrorDeg(eye, angles, {feet.X, feet.Y, feet.Z + height}));
+        best = std::min(best, AimErrorDeg(eye, forward, {feet.X, feet.Y, feet.Z + height}));
     return best;
 }
 

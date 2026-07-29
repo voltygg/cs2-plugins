@@ -1,7 +1,9 @@
 #include "Core/Finding.hpp"
 #include "Response/FunnelPolicy.hpp"
 
+#include <algorithm>
 #include <doctest/doctest.h>
+#include <iterator>
 #include <string_view>
 
 using namespace Anticheat;
@@ -16,19 +18,24 @@ FunnelInput Input(Mode mode, bool kickOnly = false, PunishmentLevel issued = Pun
 }
 }  // namespace
 
-TEST_CASE("Every detection has a display name and a console token free of whitespace")
+TEST_CASE("Every detection has a distinct display name and a console token free of whitespace")
 {
-    constexpr DetectionKind kinds[] = {
-        DetectionKind::Aimbot,       DetectionKind::Aimlock,     DetectionKind::AntiAim,     DetectionKind::SilentAim,
-        DetectionKind::DllInjection, DetectionKind::InvalidCvar, DetectionKind::Namechanger,
-    };
-    for (DetectionKind kind : kinds)
+    for (const DetectionInfo& detection : DetectionCatalog)
     {
-        CHECK(std::string_view(DisplayName(kind)) != "UNKNOWN");
-        const std::string_view token = TokenName(kind);
-        CHECK(token != "unknown");
+        CHECK_FALSE(std::string_view(detection.Display).empty());
+        const std::string_view token = detection.Token;
+        CHECK_FALSE(token.empty());
         // The admin-system bridge takes the detection as one console argument.
         CHECK(token.find(' ') == std::string_view::npos);
+
+        // The catalog is what DisplayName/TokenName answer from, for every kind.
+        CHECK(std::string_view(DisplayName(detection.Kind)) == detection.Display);
+        CHECK(std::string_view(TokenName(detection.Kind)) == token);
+
+        const auto sameToken = [&](const DetectionInfo& other) {
+            return &other != &detection && std::string_view(other.Token) == token;
+        };
+        CHECK(std::none_of(std::begin(DetectionCatalog), std::end(DetectionCatalog), sameToken));
     }
 }
 

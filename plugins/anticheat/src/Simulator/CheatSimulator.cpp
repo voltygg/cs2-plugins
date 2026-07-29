@@ -121,7 +121,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     state = {};
     state.kind = kind;
     state.param = args.ArgC() > 2 ? std::strtof(args.Arg(2), nullptr) : defaultParam;
-    state.expireAt = NowSeconds() + SimulationSeconds;
+    state.expireAt = MonotonicSeconds() + SimulationSeconds;
     Log::Info("Simulating slot {} (param {:.1f}) for {:.0f}s.", slot, state.param, SimulationSeconds);
 }
 
@@ -176,7 +176,7 @@ void CheatSimulator::OnFilter(int slot, CS2Kit::UserCmdView& cmd)
     auto& state = _sim[slot];
     if (state.kind == Kind::Off)
         return;
-    if (NowSeconds() > state.expireAt)
+    if (MonotonicSeconds() > state.expireAt)
     {
         state.kind = Kind::Off;
         return;

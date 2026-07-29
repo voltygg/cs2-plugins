@@ -19,7 +19,6 @@ constexpr float MinimumDistance = 200.0f;
 constexpr float MinimumTargetTravel = 48.0f;  // one and a half player widths, as degrees at that range
 constexpr float MaximumInterpolationTicks = 19.0f;
 constexpr int DetectionThreshold = 3;
-constexpr double EvidenceWindowSec = 600.0;  // 10 minutes
 
 /** 95% of the episode's samples must have been inside the target's angular width. */
 constexpr bool MeetsCoverage(int onTarget, int samples)
@@ -84,22 +83,40 @@ struct Candidate
     bool Valid = false;
 };
 
-/** The single target the aim is already inside; two candidates means no episode. */
+/**
+ * The single target the aim is already inside; two candidates means no episode.
+ *
+ * This runs for every alive player on every frame they are not already tracking, so the search is
+ * ordered to reject early: the observer once, then each target slot once, and only then the lag
+ * hypotheses and body points that need a full evaluation.
+ */
 Candidate FindCandidate(const ShotCorrelatorCore& shots, const AimAngles& angles, const Vec3& eyePos,
                         int32_t serverTick, const PositionFrame& frame, int observerSlot, const LagEstimate& lag)
 {
     Candidate best;
-    if (!lag.Valid)
+    if (!lag.Valid || !InSlotRange(observerSlot) || !Geometry::IsFinite(eyePos) || !Geometry::IsFinite(angles))
         return best;
+
+    const PositionSample& observer = frame.Players[observerSlot];
+    if (!observer.Valid || !observer.Alive || observer.Teleported)
+        return best;
+
+    const int firstLag = std::max(0, lag.Ticks - LagSearchRadius);
+    const int lastLag = lag.Ticks + LagSearchRadius;
 
     int matchedTarget = -1;
     bool ambiguous = false;
-    for (int lagTicks = std::max(0, lag.Ticks - LagSearchRadius); lagTicks <= lag.Ticks + LagSearchRadius; ++lagTicks)
+    for (int targetSlot = 0; targetSlot < MaxSlots; ++targetSlot)
     {
-        for (int targetSlot = 0; targetSlot < MaxSlots; ++targetSlot)
+        if (targetSlot == observerSlot)
+            continue;
+        const PositionSample& currentTarget = frame.Players[targetSlot];
+        if (!currentTarget.Valid || !currentTarget.Alive || currentTarget.Teleported ||
+            !shots.AreOpponents(observer.Team, currentTarget.Team))
+            continue;
+
+        for (int lagTicks = firstLag; lagTicks <= lastLag; ++lagTicks)
         {
-            if (targetSlot == observerSlot)
-                continue;
             for (int bodyPoint = 0; bodyPoint < Geometry::BodyPointCount; ++bodyPoint)
             {
                 const TargetEvaluation evaluation = EvaluateTarget(shots, angles, eyePos, serverTick, frame,
@@ -146,7 +163,7 @@ void AimlockCore::OnSlotChanged(int slot)
     if (!InSlotRange(slot))
         return;
     _slots[slot] = {};
-    _incidents[slot].clear();
+    _incidents[slot].Clear();
 }
 
 void AimlockCore::OnSimulated(int slot, int32_t serverTick, const AimAngles& angles, const Vec3& eyePos)
@@ -337,19 +354,17 @@ void AimlockCore::StartTrack(int slot, SlotData& data, const Sample& sample, con
 void AimlockCore::Count(int slot, SlotData& data, const Hypothesis& hypothesis, double nowSec,
                         std::optional<Finding>& out)
 {
-    std::deque<double>& incidents = _incidents[slot];
-    while (!incidents.empty() && nowSec - incidents.front() >= EvidenceWindowSec)
-        incidents.pop_front();
-    incidents.push_back(nowSec);
+    auto& incidents = _incidents[slot];
+    const int episodes = incidents.Add(nowSec);
 
-    if (static_cast<int>(incidents.size()) >= DetectionThreshold)
+    if (episodes >= DetectionThreshold)
     {
         out = Finding{.Kind = DetectionKind::Aimlock,
                       .Evidence = std::format("{} precise tracking episodes; the latest stayed on target for {}/{} "
                                               "samples while the target moved {:.1f} of {:.1f} required degrees.",
-                                              incidents.size(), hypothesis.OnTargetSamples, data.Current.Samples,
+                                              episodes, hypothesis.OnTargetSamples, data.Current.Samples,
                                               hypothesis.MaxTargetDisplacement, hypothesis.RequiredTargetDisplacement)};
-        incidents.clear();
+        incidents.Clear();
         data.Latched = true;
         data.LatchedTarget = data.Current.TargetSlot;
         data.LatchedBodyPoint = data.Current.BodyPoint;
@@ -360,7 +375,7 @@ void AimlockCore::Count(int slot, SlotData& data, const Hypothesis& hypothesis, 
 
 int AimlockCore::IncidentCount(int slot) const
 {
-    return InSlotRange(slot) ? static_cast<int>(_incidents[slot].size()) : 0;
+    return InSlotRange(slot) ? static_cast<int>(_incidents[slot].Count()) : 0;
 }
 
 bool AimlockCore::IsTracking(int slot) const

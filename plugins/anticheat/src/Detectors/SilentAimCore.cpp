@@ -13,7 +13,6 @@ namespace Anticheat
 namespace
 {
 constexpr int DetectionScore = 12;
-constexpr double EvidenceWindowSec = 600.0;  // 10 minutes
 constexpr float MinimumImpactDistance = 100.0f;
 constexpr float MaximumImpactDistance = 10000.0f;
 
@@ -32,7 +31,7 @@ void SilentAimCore::Reset()
 void SilentAimCore::OnSlotChanged(int slot)
 {
     if (InSlotRange(slot))
-        _incidents[slot].clear();
+        _incidents[slot].Clear();
 }
 
 void SilentAimCore::OnShotUpdated(int slot, ShotView& shot)
@@ -71,13 +70,7 @@ std::optional<Finding> SilentAimCore::Finalize(int slot, ShotView& shot, double 
                        static_cast<int>(shot.Headshot) + static_cast<int>(shot.Wallbang);
 
     auto& incidents = _incidents[slot];
-    while (!incidents.empty() && nowSec - incidents.front().Time >= EvidenceWindowSec)
-        incidents.pop_front();
-    incidents.push_back({nowSec, points});
-
-    int total = 0;
-    for (const auto& incident : incidents)
-        total += incident.Points;
+    const int total = incidents.Add(nowSec, points);
     if (total < DetectionScore)
         return out;
 
@@ -85,19 +78,13 @@ std::optional<Finding> SilentAimCore::Finalize(int slot, ShotView& shot, double 
                   .Evidence = std::format("{:.2f} degrees from visible aim with {} added {} points; the rolling score "
                                           "reached {}/{}.",
                                           shot.SilentMaxDeviation, shot.Weapon, points, total, DetectionScore)};
-    incidents.clear();
+    incidents.Clear();
     return out;
 }
 
 int SilentAimCore::Score(int slot, double nowSec) const
 {
-    if (!InSlotRange(slot))
-        return 0;
-    int total = 0;
-    for (const auto& incident : _incidents[slot])
-        if (nowSec - incident.Time < EvidenceWindowSec)
-            total += incident.Points;
-    return total;
+    return InSlotRange(slot) ? _incidents[slot].Value(nowSec) : 0;
 }
 
 }  // namespace Anticheat

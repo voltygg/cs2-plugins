@@ -33,7 +33,7 @@ void InvalidCvarDetector::Initialize()
     _pump = Engine().Scheduler.Repeat(PumpIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !AntiCheatManager::ModuleEnabled(DetectionKind::InvalidCvar))
             return;
-        const double now = NowSeconds();
+        const double now = MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
             SlotState& state = _slots[slot];
@@ -56,7 +56,7 @@ void InvalidCvarDetector::Initialize()
 void InvalidCvarDetector::OnFullyConnected(int slot)
 {
     if (InSlotRange(slot))
-        _slots[slot] = {.NextPoll = NowSeconds() + NextDelaySec()};
+        _slots[slot] = {.NextPoll = MonotonicSeconds() + NextDelaySec()};
 }
 
 void InvalidCvarDetector::OnSlotChanged(int slot)

@@ -16,7 +16,6 @@ constexpr size_t CommandHistorySize = 128;
 constexpr int SnapWindowTicks = static_cast<int>(TickRate * 0.5f);  // 32
 constexpr float MinimumDistance = 100.0f;
 constexpr int DetectionThreshold = 4;
-constexpr double EvidenceWindowSec = 600.0;  // 10 minutes
 
 // Convergence: a large jump landing far closer to the target than it started. The two branches
 // trade snap size against how completely the error collapsed.
@@ -262,14 +261,11 @@ void AimbotCore::Count(SlotData& data, int32_t incidentCommand, double nowSec, b
     data.LastCountedIncidentCommand = incidentCommand;
     data.HasCountedIncident = true;
 
-    while (!data.Incidents.empty() && nowSec - data.Incidents.front() >= EvidenceWindowSec)
-        data.Incidents.pop_front();
-    data.Incidents.push_back(nowSec);
-    if (static_cast<int>(data.Incidents.size()) < DetectionThreshold)
+    const int incidents = data.Incidents.Add(nowSec);
+    if (incidents < DetectionThreshold)
         return;
 
-    const size_t incidents = data.Incidents.size();
-    data.Incidents.clear();
+    data.Incidents.Clear();
     if (out)
         return;
 
@@ -284,7 +280,7 @@ void AimbotCore::Count(SlotData& data, int32_t incidentCommand, double nowSec, b
 
 int AimbotCore::IncidentCount(int slot) const
 {
-    return InSlotRange(slot) ? static_cast<int>(_slots[slot].Incidents.size()) : 0;
+    return InSlotRange(slot) ? static_cast<int>(_slots[slot].Incidents.Count()) : 0;
 }
 
 }  // namespace Anticheat

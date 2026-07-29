@@ -37,7 +37,6 @@ void ShotCorrelatorCore::Reset()
     for (auto& data : _slots)
         AdvanceGeneration(data);
     _frames.clear();
-    _nextShotId = 1;
 }
 
 void ShotCorrelatorCore::OnSlotChanged(int slot)
@@ -68,8 +67,7 @@ void ShotCorrelatorCore::OnCommand(int slot, const CmdSample& cmd)
         commands.pop_front();
 }
 
-void ShotCorrelatorCore::OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, bool airborne,
-                                     bool scoped)
+void ShotCorrelatorCore::OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, bool airborne)
 {
     if (!InSlotRange(slot) || !Geometry::IsFinite(eyePos))
         return;
@@ -83,7 +81,6 @@ void ShotCorrelatorCore::OnSimulated(int slot, int32_t cmdNum, int32_t serverTic
     found->Cmd.ServerTick = serverTick;
     found->Cmd.EyePos = eyePos;
     found->Cmd.Airborne = airborne;
-    found->Cmd.Scoped = scoped;
     found->Simulated = true;
 }
 
@@ -146,22 +143,17 @@ ShotView* ShotCorrelatorCore::OnWeaponFire(int slot, std::string_view weapon, in
 
     match->Consumed = true;
     ShotView shot;
-    shot.Id = _nextShotId++;
-    if (_nextShotId == 0)
-        _nextShotId = 1;
     shot.Generation = data.Generation;
     shot.Slot = slot;
     shot.CmdNum = match->Cmd.CmdNum;
     shot.ClientTick = match->Cmd.ClientTick;
     shot.ServerTick = match->Cmd.ServerTick;
     shot.FireTick = serverTick;
-    shot.ShotAngles = match->Cmd.FiringAngles();
     shot.VisibleAngles = visibleAngles;
     shot.HasVisibleAngles = hasVisibleAngles && Geometry::IsFinite(visibleAngles);
     shot.EyePos = match->Cmd.EyePos;
     shot.Weapon = NormalizeWeapon(weapon);
     shot.Airborne = match->Cmd.Airborne;
-    shot.Scoped = match->Cmd.Scoped;
 
     data.Shots.push_back(std::move(shot));
     while (data.Shots.size() > PendingShotLimit)
@@ -282,19 +274,12 @@ bool ShotCorrelatorCore::AreOpponents(int teamA, int teamB, bool teammatesAreEne
 
 std::deque<ShotView>& ShotCorrelatorCore::Shots(int slot)
 {
-    static std::deque<ShotView> empty;
-    if (!InSlotRange(slot))
-    {
-        empty.clear();
-        return empty;
-    }
-    return _slots[slot].Shots;
+    return InSlotRange(slot) ? _slots[slot].Shots : _noShots;
 }
 
 const std::deque<ShotView>& ShotCorrelatorCore::Shots(int slot) const
 {
-    static const std::deque<ShotView> empty;
-    return InSlotRange(slot) ? _slots[slot].Shots : empty;
+    return InSlotRange(slot) ? _slots[slot].Shots : _noShots;
 }
 
 uint32_t ShotCorrelatorCore::Generation(int slot) const

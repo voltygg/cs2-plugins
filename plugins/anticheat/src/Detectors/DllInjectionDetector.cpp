@@ -33,7 +33,8 @@ void DllInjectionDetector::Initialize()
     _pump = Engine().Scheduler.Repeat(PumpIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !AntiCheatManager::ModuleEnabled(DetectionKind::DllInjection))
             return;
-        const double now = NowSeconds();
+
+        const double now = MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
             SlotState& state = _slots[slot];
@@ -57,7 +58,7 @@ void DllInjectionDetector::OnFullyConnected(int slot)
     if (!InSlotRange(slot))
         return;
     // The client's listener does not exist the instant it joins, so the first scan waits for it.
-    _slots[slot] = {.NextScan = NowSeconds() + DllInitialScanDelaySec};
+    _slots[slot] = {.NextScan = MonotonicSeconds() + DllInitialScanDelaySec};
 }
 
 void DllInjectionDetector::OnSlotChanged(int slot)

@@ -23,11 +23,6 @@ void AntiAimCore::OnSlotChanged(int slot)
         _slots[slot] = {};
 }
 
-void AntiAimCore::OnSpawn(int slot)
-{
-    OnSlotChanged(slot);
-}
-
 void AntiAimCore::ResetMotion(SlotData& data)
 {
     data.SpinSeconds = {};
@@ -95,14 +90,10 @@ void AntiAimCore::OnCommand(int slot, const CmdSample& cmd)
     captured.Attack = cmd.AttackStarted;
     captured.HasHistoryAngles = cmd.HasHistoryAngles;
     captured.HistoryYawDifference = cmd.MaxHistoryYawDelta;
-    if (!cmd.BaseAnglesFinite || !Geometry::IsFinite(captured.Base) || !std::isfinite(captured.Roll))
-        captured.Problems |= NonFiniteBaseAngles;
-    if (cmd.AttackIndexInvalid)
-        captured.Problems |= InvalidAttackHistory;
-    if (!cmd.HistoryAnglesFinite)
-        captured.Problems |= NonFiniteHistoryAngles;
-    if (!cmd.SubtickAnglesFinite || !std::isfinite(cmd.SubtickPitchDelta) || !std::isfinite(cmd.SubtickYawDelta))
-        captured.Problems |= NonFiniteSubtickAngles;
+    captured.Inconsistent = !cmd.BaseAnglesFinite || !Geometry::IsFinite(captured.Base) ||
+                            !std::isfinite(captured.Roll) || cmd.AttackIndexInvalid || !cmd.HistoryAnglesFinite ||
+                            !cmd.SubtickAnglesFinite || !std::isfinite(cmd.SubtickPitchDelta) ||
+                            !std::isfinite(cmd.SubtickYawDelta);
 
     commands.push_back(captured);
     while (commands.size() > CommandHistorySize)
@@ -166,8 +157,8 @@ std::optional<Finding> AntiAimCore::OnSimulated(int slot, int32_t cmdNum, int32_
     const bool historyMismatch = !found->Attack && found->HasHistoryAngles &&
                                  std::isfinite(found->HistoryYawDifference) &&
                                  found->HistoryYawDifference >= CommandYawMismatchAngle;
-    data.InconsistencyActive = found->Problems != 0 || historyMismatch;
-    if (found->Problems != 0)
+    data.InconsistencyActive = found->Inconsistent || historyMismatch;
+    if (found->Inconsistent)
     {
         AddEvidence(data, InconsistentCommandWeight, "an inconsistent angle command", true, false, nowSec, out);
     }

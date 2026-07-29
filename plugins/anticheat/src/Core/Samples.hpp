@@ -3,7 +3,8 @@
 // Plain data the cores consume, filled by the adapters. Nothing here may depend on the SDK, so the
 // cores stay doctest-able.
 
-#include <chrono>
+#include <CS2Kit/Core/Slot.hpp>
+#include <CS2Kit/Utils/TimeUtils.hpp>
 #include <cmath>
 #include <cstdint>
 #include <optional>
@@ -12,21 +13,17 @@
 namespace Anticheat
 {
 
-inline constexpr int MaxSlots = 64;
+inline constexpr int MaxSlots = CS2Kit::Core::MaxPlayers;
 
 inline constexpr bool InSlotRange(int slot)
 {
-    return slot >= 0 && slot < MaxSlots;
+    return CS2Kit::Core::IsValidSlot(slot);
 }
 
 inline constexpr float TickRate = 64.0f;
 
 /** Monotonic seconds for the rolling evidence windows (wall clock, not game time). */
-inline double NowSeconds()
-{
-    using Clock = std::chrono::steady_clock;
-    return std::chrono::duration<double>(Clock::now().time_since_epoch()).count();
-}
+using CS2Kit::Utils::MonotonicSeconds;
 
 struct Vec3
 {
@@ -49,8 +46,9 @@ struct AimAngles
 };
 
 /**
- * One decoded usercmd. Adjacency of CmdNum (`legacy_command_number`) *and* ClientTick is what makes
- * Aimbot's convergence chain trustworthy. ServerTick is -1 until the command is stamped as simulated.
+ * One decoded usercmd. Adjacency of CmdNum (the engine's own command counter) *and* ClientTick is
+ * what makes Aimbot's convergence chain trustworthy. ServerTick is -1 until the command is stamped
+ * as simulated.
  */
 struct CmdSample
 {
@@ -61,12 +59,6 @@ struct CmdSample
     float ViewPitch = 0.0f;
     float ViewYaw = 0.0f;
     float ViewRoll = 0.0f;
-
-    uint64_t ButtonsHeld = 0;
-    uint64_t ButtonsChanged = 0;
-
-    int32_t MouseDx = 0;
-    int32_t MouseDy = 0;
 
     // Summed subtick view deltas for this command.
     float SubtickPitchDelta = 0.0f;
@@ -86,7 +78,6 @@ struct CmdSample
     // Stamped by ShotCorrelatorCore::OnSimulated.
     Vec3 EyePos;
     bool Airborne = false;
-    bool Scoped = false;
 
     AimAngles BaseAngles() const { return {ViewPitch, ViewYaw}; }
     AimAngles FiringAngles() const { return AttackAngles ? *AttackAngles : BaseAngles(); }
@@ -109,7 +100,6 @@ struct PositionSample
  */
 struct ShotView
 {
-    uint32_t Id = 0;
     uint32_t Generation = 0;
     int Slot = -1;
 
@@ -118,7 +108,6 @@ struct ShotView
     int32_t ServerTick = -1;
     int32_t FireTick = -1;
 
-    AimAngles ShotAngles;     // input-history angles the bullet was fired along
     AimAngles VisibleAngles;  // pawn eye angles at the moment of the fire event
     bool HasVisibleAngles = false;
 
@@ -127,7 +116,6 @@ struct ShotView
     std::string Weapon;  // normalized (no "weapon_" prefix)
 
     bool Airborne = false;
-    bool Scoped = false;
 
     bool ImpactSeen = false;
     bool HurtSeen = false;

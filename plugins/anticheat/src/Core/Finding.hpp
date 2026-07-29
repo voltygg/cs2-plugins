@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+#include <iterator>
 #include <string>
 
 namespace Anticheat
@@ -14,56 +16,56 @@ enum class DetectionKind
     DllInjection,
     InvalidCvar,
     Namechanger,
+    Count,
 };
 
-inline constexpr DetectionKind AllDetectionKinds[] = {
-    DetectionKind::Aimbot,       DetectionKind::Aimlock,     DetectionKind::AntiAim,     DetectionKind::SilentAim,
-    DetectionKind::DllInjection, DetectionKind::InvalidCvar, DetectionKind::Namechanger,
+/** How one detection is named. Token is space-free: the admin-system console bridge splits its
+ *  arguments on whitespace. */
+struct DetectionInfo
+{
+    DetectionKind Kind;
+    const char* Display;
+    const char* Token;
 };
+
+/** The one place a detection is named; adding a kind without a row here fails to compile. */
+inline constexpr DetectionInfo DetectionCatalog[] = {
+    {DetectionKind::Aimbot, "AIMBOT", "aimbot"},
+    {DetectionKind::Aimlock, "AIMLOCK", "aimlock"},
+    {DetectionKind::AntiAim, "ANTIAIM", "antiaim"},
+    {DetectionKind::SilentAim, "SILENTAIM", "silentaim"},
+    {DetectionKind::DllInjection, "DLL INJECTION", "dll_injection"},
+    {DetectionKind::InvalidCvar, "INVALID CVAR", "invalid_cvar"},
+    {DetectionKind::Namechanger, "NAMECHANGER", "namechanger"},
+};
+
+namespace Detail
+{
+constexpr bool CatalogMatchesEnum()
+{
+    if (std::size(DetectionCatalog) != static_cast<size_t>(DetectionKind::Count))
+        return false;
+    for (size_t index = 0; index < std::size(DetectionCatalog); ++index)
+        if (DetectionCatalog[index].Kind != static_cast<DetectionKind>(index))
+            return false;
+    return true;
+}
+}  // namespace Detail
+static_assert(Detail::CatalogMatchesEnum(), "DetectionCatalog must list every DetectionKind in order");
+
+constexpr const DetectionInfo& Info(DetectionKind kind)
+{
+    return DetectionCatalog[static_cast<size_t>(kind)];
+}
 
 constexpr const char* DisplayName(DetectionKind kind)
 {
-    switch (kind)
-    {
-    case DetectionKind::Aimbot:
-        return "AIMBOT";
-    case DetectionKind::Aimlock:
-        return "AIMLOCK";
-    case DetectionKind::AntiAim:
-        return "ANTIAIM";
-    case DetectionKind::SilentAim:
-        return "SILENTAIM";
-    case DetectionKind::DllInjection:
-        return "DLL INJECTION";
-    case DetectionKind::InvalidCvar:
-        return "INVALID CVAR";
-    case DetectionKind::Namechanger:
-        return "NAMECHANGER";
-    }
-    return "UNKNOWN";
+    return Info(kind).Display;
 }
 
-/** Space-free: the admin-system console bridge splits its arguments on whitespace. */
 constexpr const char* TokenName(DetectionKind kind)
 {
-    switch (kind)
-    {
-    case DetectionKind::Aimbot:
-        return "aimbot";
-    case DetectionKind::Aimlock:
-        return "aimlock";
-    case DetectionKind::AntiAim:
-        return "antiaim";
-    case DetectionKind::SilentAim:
-        return "silentaim";
-    case DetectionKind::DllInjection:
-        return "dll_injection";
-    case DetectionKind::InvalidCvar:
-        return "invalid_cvar";
-    case DetectionKind::Namechanger:
-        return "namechanger";
-    }
-    return "unknown";
+    return Info(kind).Token;
 }
 
 /**

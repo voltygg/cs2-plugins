@@ -57,8 +57,8 @@ class AntiAimCore
 {
 public:
     void Reset();
+    /** Also the spawn reset: a fresh pawn invalidates every in-flight command the same way. */
     void OnSlotChanged(int slot);
-    void OnSpawn(int slot);
 
     /** Duplicates (same CmdNum) are dropped. */
     void OnCommand(int slot, const CmdSample& cmd);
@@ -79,14 +79,6 @@ public:
     float Score(int slot) const;
 
 private:
-    enum Problem : uint32_t
-    {
-        NonFiniteBaseAngles = 1u << 0,
-        InvalidAttackHistory = 1u << 1,
-        NonFiniteHistoryAngles = 1u << 2,
-        NonFiniteSubtickAngles = 1u << 3,
-    };
-
     struct Command
     {
         int32_t CmdNum = 0;
@@ -95,7 +87,9 @@ private:
         AimAngles Base;
         float Roll = 0.0f;
         float HistoryYawDifference = 0.0f;
-        uint32_t Problems = 0;
+        /** Non-finite base, history or subtick angles, or an attack index the client never sent.
+         *  All four weigh the same and read the same in the evidence, so they are one flag. */
+        bool Inconsistent = false;
         bool Attack = false;
         bool HasHistoryAngles = false;
         bool Simulated = false;

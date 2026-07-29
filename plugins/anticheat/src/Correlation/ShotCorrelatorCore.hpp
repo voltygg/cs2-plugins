@@ -31,7 +31,6 @@ public:
     /** Mirrors mp_teammates_are_enemies. Only changed through a reset: it decides which shots are
      *  hostile. */
     void SetTeammatesAreEnemies(bool value) { _teammatesAreEnemies = value; }
-    bool TeammatesAreEnemies() const { return _teammatesAreEnemies; }
 
     /** Map change or config reload: drop every command, shot and frame. */
     void Reset();
@@ -43,7 +42,7 @@ public:
     void OnCommand(int slot, const CmdSample& cmd);
 
     /** Stamp the command the server is about to simulate for @p serverTick. */
-    void OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, bool airborne, bool scoped);
+    void OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, bool airborne);
 
     /** A repeat of the newest tick replaces it rather than growing the ring. */
     void CaptureFrame(int32_t serverTick, const std::array<PositionSample, MaxSlots>& players);
@@ -105,7 +104,9 @@ private:
 
     std::array<SlotData, MaxSlots> _slots{};
     std::deque<PositionFrame> _frames;
-    uint32_t _nextShotId = 1;
+    /** Returned for an out-of-range slot, so Shots() never has to hand back a null or a shared
+     *  static. Nothing writes to it. */
+    std::deque<ShotView> _noShots;
     bool _teammatesAreEnemies = false;
 };
 
