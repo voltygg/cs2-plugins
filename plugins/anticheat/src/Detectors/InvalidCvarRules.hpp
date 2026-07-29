@@ -9,8 +9,8 @@
 #include "Core/Samples.hpp"
 
 #include <algorithm>
-#include <array>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -54,32 +54,30 @@ struct CvarVerdict
 };
 
 /**
- * The loaded rules, and the stateless evaluation over them. Empty until Load succeeds, and an empty
- * table judges nothing - a missing or malformed data file leaves the module inert rather than
- * turning every client value into a detection.
+ * The loaded rules, and the stateless evaluation over them. Empty until Load, and an empty table
+ * judges nothing - a missing or malformed data file leaves the module inert rather than turning
+ * every client value into a detection.
+ *
+ * Rules are stored queried tier first, so each tier is a span rather than a second container to
+ * keep in step.
  */
 class CvarRuleTable
 {
 public:
-    /** Keeps the rules that validate, in file order; returns how many were rejected. Duplicate
-     *  names and the two-tiers-one-cvar case are rejected, since latches are keyed by name. */
-    int Load(const std::vector<CvarRule>& rules);
+    /** Keeps the rules that validate, queried tier first; returns the names it dropped. Duplicates
+     *  are rejected, since a second rule for one cvar would share the first one's latch. */
+    std::vector<std::string> Load(const std::vector<CvarRule>& rules);
 
-    void Clear();
-
-    bool Empty() const { return _rules.empty(); }
     size_t Size() const { return _rules.size(); }
-    const std::vector<CvarRule>& All() const { return _rules; }
+    std::span<const CvarRule> All() const { return _rules; }
 
-    /** Matched without regard to case, as the engine spells convars inconsistently. */
-    const CvarRule* Find(std::string_view name) const;
+    /** The poll rotation walks these; the userinfo tier is read directly every poll. */
+    std::span<const CvarRule> Queried() const { return All().first(_queriedCount); }
+    std::span<const CvarRule> UserInfo() const { return All().subspan(_queriedCount); }
 
-    /** Position in the table, which is what latches are keyed by, or -1 when not covered. */
+    /** Position in the table, which is what latches are keyed by, or -1 when not covered.
+     *  Matched without regard to case, as the engine spells convars inconsistently. */
     int IndexOf(std::string_view name) const;
-
-    /** Names of the queried tier, in table order; the poll rotation walks these. */
-    const std::vector<std::string_view>& Queried() const { return _queried; }
-    const std::vector<std::string_view>& UserInfo() const { return _userInfo; }
 
     /** The @p offset-th cvar of a poll starting at @p cursor, wrapping over the queried tier. */
     size_t PollCvarIndex(size_t cursor, size_t offset) const;
@@ -99,10 +97,14 @@ public:
     CvarVerdict EvaluateMissing(std::string_view name, std::string_view statusName, bool enforceCheatCvars,
                                 int consecutiveReplies) const;
 
+    /** As @ref Evaluate, for a rule the caller has already resolved. */
+    CvarVerdict Evaluate(const CvarRule& rule, std::string_view value, bool enforceCheatCvars) const;
+    CvarVerdict EvaluateMissing(const CvarRule& rule, std::string_view statusName, bool enforceCheatCvars,
+                                int consecutiveReplies) const;
+
 private:
     std::vector<CvarRule> _rules;
-    std::vector<std::string_view> _queried;   // views into _rules, rebuilt on every Load
-    std::vector<std::string_view> _userInfo;  // same
+    size_t _queriedCount = 0;
 };
 
 /**
@@ -121,8 +123,9 @@ public:
     void Reset();
     void OnSlotChanged(int slot);
 
-    /** Replaces the rules and drops every latch, since latches are keyed by table position. */
-    int LoadRules(const std::vector<CvarRule>& rules);
+    /** Replaces the rules and drops every latch, since latches are keyed by table position.
+     *  Returns the names of any rules that did not validate. */
+    std::vector<std::string> LoadRules(const std::vector<CvarRule>& rules);
 
     const CvarRuleTable& Rules() const { return _rules; }
 
@@ -133,14 +136,19 @@ public:
                                           bool enforceCheatCvars);
 
     bool IsLatched(int slot, std::string_view name) const;
+    /** For callers already walking the table, which know the position. */
+    bool IsLatchedAt(int slot, size_t index) const;
 
 private:
-    std::optional<Finding> Apply(int slot, std::string_view name, const CvarVerdict& verdict);
+    std::optional<Finding> Apply(int slot, size_t index, const CvarVerdict& verdict);
+    size_t At(int slot, size_t index) const { return static_cast<size_t>(slot) * _rules.Size() + index; }
 
     CvarRuleTable _rules;
-    std::array<std::array<bool, MaxRuledCvars>, MaxSlots> _latched{};
+    // Sized MaxSlots * rule count at load: the table is runtime data, so a compile-time cap would
+    // only put a second limit on what the file may contain.
+    std::vector<uint8_t> _latched;
     /** Any reply that does carry a value puts the count back to zero. */
-    std::array<std::array<int, MaxRuledCvars>, MaxSlots> _missingReplies{};
+    std::vector<int> _missingReplies;
 };
 
 }  // namespace Anticheat

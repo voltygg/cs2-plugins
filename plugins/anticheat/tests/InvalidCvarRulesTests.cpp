@@ -217,7 +217,7 @@ TEST_CASE("An unknown cvar name never produces a finding")
 
 TEST_CASE("Every cvar the two tiers read is covered by the rule table")
 {
-    REQUIRE_FALSE(Rules().Empty());
+    REQUIRE(Rules().Size() > 0);
     for (const CvarRule& rule : Rules().All())
         CHECK(EvaluateCvar(rule.name, "0", Enforcing).Known);
     CHECK(Rules().Queried().size() + Rules().UserInfo().size() == Rules().Size());
@@ -225,43 +225,51 @@ TEST_CASE("Every cvar the two tiers read is covered by the rule table")
 
 TEST_CASE("A cvar belongs to one tier alone, so one latch never has two sources")
 {
-    for (std::string_view userInfo : Rules().UserInfo())
-        for (std::string_view queried : Rules().Queried())
-            CHECK(userInfo != queried);
+    for (const CvarRule& userInfo : Rules().UserInfo())
+        for (const CvarRule& queried : Rules().Queried())
+            CHECK(userInfo.name != queried.name);
 }
 
 TEST_CASE("A second rule for a cvar already in the table is rejected rather than sharing its latch")
 {
     CvarRuleTable table;
-    CHECK(table.Load({
-              {.name = "m_yaw", .constraint = CvarConstraint::Max, .value = 0.3},
-              {.name = "M_YAW", .tier = CvarTier::UserInfo, .constraint = CvarConstraint::Max, .value = 9.0},
-          }) == 1);
+    const std::vector<std::string> rejected = table.Load({
+        {.name = "m_yaw", .constraint = CvarConstraint::Max, .value = 0.3},
+        {.name = "M_YAW", .tier = CvarTier::UserInfo, .constraint = CvarConstraint::Max, .value = 9.0},
+    });
+    REQUIRE(rejected.size() == 1);
+    // Named, so the operator who edited the file does not have to diff it by hand.
+    CHECK(rejected[0] == "M_YAW");
     REQUIRE(table.Size() == 1);
     // The first rule wins, so a duplicate cannot loosen one already in force.
     CHECK(table.Evaluate("m_yaw", "5", Enforcing).Invalid);
 }
 
-TEST_CASE("Malformed rules are dropped and the rest of the table still loads")
-{
-    CvarRuleTable table;
-    CHECK(table.Load({
-              {.name = "", .constraint = CvarConstraint::Equals},
-              {.name = "sensitivity", .constraint = CvarConstraint::Range, .value = 20.0, .max = 1.0},
-              {.name = "cl_yawspeed", .constraint = CvarConstraint::Equals, .value = 210.0},
-          }) == 2);
-    CHECK(table.Size() == 1);
-    CHECK(table.Evaluate("cl_yawspeed", "210", Enforcing).Checked);
-}
-
 TEST_CASE("An empty rule table judges nothing at all")
 {
     const CvarRuleTable table;
-    CHECK(table.Empty());
+    CHECK(table.Size() == 0);
     CHECK_FALSE(table.Evaluate("m_yaw", "9999", Enforcing).Known);
     CHECK_FALSE(table.EvaluateMissing("sv_cheats", "cvar_protected", Enforcing, 99).Known);
     // The poll rotation must stay in range rather than divide by zero.
     CHECK(table.PollCvarIndex(0, 1) == 0);
+}
+
+TEST_CASE("The table stores the queried tier first so each tier is a contiguous span")
+{
+    CvarRuleTable table;
+    table.Load({
+        {.name = "sensitivity", .tier = CvarTier::UserInfo, .constraint = CvarConstraint::Max, .value = 20.0},
+        {.name = "cl_yawspeed", .constraint = CvarConstraint::Equals, .value = 210.0},
+        {.name = "m_yaw", .tier = CvarTier::UserInfo, .constraint = CvarConstraint::Max, .value = 0.3},
+    });
+    REQUIRE(table.Queried().size() == 1);
+    REQUIRE(table.UserInfo().size() == 2);
+    CHECK(table.Queried()[0].name == "cl_yawspeed");
+    // Latches are keyed by position, so the file's order must not change which latch a rule owns
+    // within its tier.
+    CHECK(table.UserInfo()[0].name == "sensitivity");
+    CHECK(table.IndexOf("m_yaw") == 2);
 }
 
 TEST_CASE("A client that withholds a cheat protected cvar is judged, but only ever for a kick")

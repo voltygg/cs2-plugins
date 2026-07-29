@@ -54,146 +54,130 @@ CvarVerdict Skipped()
     return {.Known = true, .Checked = false};
 }
 
-/** Numeric constraints only: the on/off pair reads words as well as numbers. */
-bool NeedsNumber(CvarConstraint constraint)
-{
-    return constraint != CvarConstraint::Off && constraint != CvarConstraint::On;
-}
-
-bool Satisfies(const CvarRule& rule, std::string_view value, bool numeric, double number)
+/**
+ * Why @p rule rejects this value, or nullopt when it accepts it. One switch rather than a
+ * predicate and a message side by side, which nothing forced to agree.
+ */
+std::optional<std::string> Violation(const CvarRule& rule, std::string_view value, bool numeric, double number)
 {
     switch (rule.constraint)
     {
     case CvarConstraint::Equals:
-        return number == rule.value;
+        if (number != rule.value)
+            return std::format("{} is {:.6g}, but it must be {:.6g}.", rule.name, number, rule.value);
+        break;
     case CvarConstraint::Max:
-        return number <= rule.value;
+        if (number > rule.value)
+            return std::format("{} is {:.6g}, but the maximum allowed value is {:.6g}.", rule.name, number, rule.value);
+        break;
     case CvarConstraint::Range:
-        return number >= rule.value && number <= rule.max;
+        if (number < rule.value || number > rule.max)
+            return std::format("{} is {:.6g}, but it must be between {:.6g} and {:.6g}.", rule.name, number, rule.value,
+                               rule.max);
+        break;
     case CvarConstraint::MinOrZero:
-        return number <= 0.0 || number >= rule.value;
+        if (number > 0.0 && number < rule.value)
+            return std::format("{} is {:.6g}, but it must be at least {:.6g} or 0 for unlimited.", rule.name, number,
+                               rule.value);
+        break;
     case CvarConstraint::Off:
-        return IsOff(value, numeric, number);
+        if (!IsOff(value, numeric, number))
+            return std::format("{} is enabled or invalid on the client while sv_cheats is disabled on the server.",
+                               rule.name);
+        break;
     case CvarConstraint::On:
-        return !IsOff(value, numeric, number);
+        if (IsOff(value, numeric, number))
+            return std::format("{} is disabled on the client despite sv_cheats being disabled on the server.",
+                               rule.name);
+        break;
     }
-    return true;
-}
-
-std::string Explain(const CvarRule& rule, double number)
-{
-    switch (rule.constraint)
-    {
-    case CvarConstraint::Equals:
-        return std::format("{} is {:.6g}, but it must be {:.6g}.", rule.name, number, rule.value);
-    case CvarConstraint::Max:
-        return std::format("{} is {:.6g}, but the maximum allowed value is {:.6g}.", rule.name, number, rule.value);
-    case CvarConstraint::Range:
-        return std::format("{} is {:.6g}, but it must be between {:.6g} and {:.6g}.", rule.name, number, rule.value,
-                           rule.max);
-    case CvarConstraint::MinOrZero:
-        return std::format("{} is {:.6g}, but it must be at least {:.6g} or 0 for unlimited.", rule.name, number,
-                           rule.value);
-    case CvarConstraint::Off:
-        return std::format("{} is enabled or invalid on the client while sv_cheats is disabled on the server.",
-                           rule.name);
-    case CvarConstraint::On:
-        return std::format("{} is disabled on the client despite sv_cheats being disabled on the server.", rule.name);
-    }
-    return std::format("{} holds a value the server does not allow.", rule.name);
-}
-
-bool RuleIsSane(const CvarRule& rule)
-{
-    if (rule.name.empty())
-        return false;
-    if (rule.constraint == CvarConstraint::Range && rule.max < rule.value)
-        return false;
-    return true;
+    return std::nullopt;
 }
 }  // namespace
 
-int CvarRuleTable::Load(const std::vector<CvarRule>& rules)
-{
-    Clear();
-
-    int rejected = 0;
-    for (const CvarRule& rule : rules)
-    {
-        // Latches are keyed by name, so a second rule for one cvar would share a latch with the
-        // first and the two would flip it back and forth against each other.
-        if (!RuleIsSane(rule) || Find(rule.name) != nullptr || _rules.size() >= MaxRuledCvars)
-        {
-            ++rejected;
-            continue;
-        }
-        _rules.push_back(rule);
-    }
-
-    for (const CvarRule& rule : _rules)
-        (rule.tier == CvarTier::Queried ? _queried : _userInfo).push_back(rule.name);
-    return rejected;
-}
-
-void CvarRuleTable::Clear()
+std::vector<std::string> CvarRuleTable::Load(const std::vector<CvarRule>& rules)
 {
     _rules.clear();
-    _queried.clear();
-    _userInfo.clear();
-}
+    _queriedCount = 0;
 
-const CvarRule* CvarRuleTable::Find(std::string_view name) const
-{
-    auto found = std::ranges::find_if(_rules, [&](const CvarRule& rule) { return EqualsNoCase(rule.name, name); });
-    return found == _rules.end() ? nullptr : &*found;
+    std::vector<std::string> rejected;
+    for (CvarTier tier : {CvarTier::Queried, CvarTier::UserInfo})
+    {
+        for (const CvarRule& rule : rules)
+        {
+            if (rule.tier != tier)
+                continue;
+            // Latches are keyed by position, so a second rule for one cvar would share the first
+            // one's latch and the two would flip it back and forth against each other.
+            if (IndexOf(rule.name) >= 0)
+            {
+                rejected.push_back(rule.name);
+                continue;
+            }
+            _rules.push_back(rule);
+        }
+        if (tier == CvarTier::Queried)
+            _queriedCount = _rules.size();
+    }
+    return rejected;
 }
 
 int CvarRuleTable::IndexOf(std::string_view name) const
 {
-    const CvarRule* rule = Find(name);
-    return rule ? static_cast<int>(rule - _rules.data()) : -1;
+    for (size_t index = 0; index < _rules.size(); ++index)
+        if (EqualsNoCase(_rules[index].name, name))
+            return static_cast<int>(index);
+    return -1;
 }
 
 size_t CvarRuleTable::PollCvarIndex(size_t cursor, size_t offset) const
 {
-    return _queried.empty() ? 0 : (cursor + offset) % _queried.size();
+    return _queriedCount == 0 ? 0 : (cursor + offset) % _queriedCount;
 }
 
-CvarVerdict CvarRuleTable::Evaluate(std::string_view name, std::string_view value, bool enforceCheatCvars) const
+CvarVerdict CvarRuleTable::Evaluate(const CvarRule& rule, std::string_view value, bool enforceCheatCvars) const
 {
-    const CvarRule* rule = Find(name);
-    if (!rule)
-        return {};
-
     // Cheat-protected rules only mean something once the server's disabled sv_cheats has certainly
     // reached the client.
-    if (rule->cheatProtected && !enforceCheatCvars)
+    if (rule.cheatProtected && !enforceCheatCvars)
         return Skipped();
 
     double number = 0.0;
     const bool numeric = ParseNumber(value, number);
     // A value that is not a number at all is never kick-only, however lenient the rule: an
     // out-of-range number can be misconfiguration, but garbage is a client that fabricated a reply.
-    if (NeedsNumber(rule->constraint) && !numeric)
-        return Invalid(std::format("{} did not return a valid finite number.", rule->name), false);
+    if (ConstraintIsNumeric(rule.constraint) && !numeric)
+        return Invalid(std::format("{} did not return a valid finite number.", rule.name), false);
 
-    if (Satisfies(*rule, value, numeric, number))
-        return Valid();
-    return Invalid(Explain(*rule, number), rule->kickOnly);
+    if (std::optional<std::string> why = Violation(rule, value, numeric, number))
+        return Invalid(std::move(*why), rule.kickOnly);
+    return Valid();
+}
+
+CvarVerdict CvarRuleTable::Evaluate(std::string_view name, std::string_view value, bool enforceCheatCvars) const
+{
+    const int index = IndexOf(name);
+    return index < 0 ? CvarVerdict{} : Evaluate(_rules[static_cast<size_t>(index)], value, enforceCheatCvars);
+}
+
+CvarVerdict CvarRuleTable::EvaluateMissing(const CvarRule& rule, std::string_view statusName, bool enforceCheatCvars,
+                                           int consecutiveReplies) const
+{
+    if (!rule.cheatProtected || !enforceCheatCvars || consecutiveReplies < MissingRepliesBeforeEvidence)
+        return Skipped();
+    return Invalid(std::format("{} could not be read from the client on {} replies in a row (latest status {}), "
+                               "although every stock client reports it.",
+                               rule.name, consecutiveReplies, statusName),
+                   true);
 }
 
 CvarVerdict CvarRuleTable::EvaluateMissing(std::string_view name, std::string_view statusName, bool enforceCheatCvars,
                                            int consecutiveReplies) const
 {
-    const CvarRule* rule = Find(name);
-    if (!rule)
-        return {};
-    if (!rule->cheatProtected || !enforceCheatCvars || consecutiveReplies < MissingRepliesBeforeEvidence)
-        return Skipped();
-    return Invalid(std::format("{} could not be read from the client on {} replies in a row (latest status {}), "
-                               "although every stock client reports it.",
-                               rule->name, consecutiveReplies, statusName),
-                   true);
+    const int index = IndexOf(name);
+    return index < 0
+               ? CvarVerdict{}
+               : EvaluateMissing(_rules[static_cast<size_t>(index)], statusName, enforceCheatCvars, consecutiveReplies);
 }
 
 bool ShouldEnforceCheatCvars(bool svCheatsEnabled, double nowSec, double graceUntilSec)
@@ -203,32 +187,38 @@ bool ShouldEnforceCheatCvars(bool svCheatsEnabled, double nowSec, double graceUn
 
 void InvalidCvarRules::Reset()
 {
-    _latched = {};
-    _missingReplies = {};
+    std::ranges::fill(_latched, uint8_t{0});
+    std::ranges::fill(_missingReplies, 0);
 }
 
 void InvalidCvarRules::OnSlotChanged(int slot)
 {
-    if (!InSlotRange(slot))
+    if (!InSlotRange(slot) || _rules.Size() == 0)
         return;
-    _latched[slot] = {};
-    _missingReplies[slot] = {};
+    const size_t first = At(slot, 0);
+    std::fill_n(_latched.begin() + first, _rules.Size(), uint8_t{0});
+    std::fill_n(_missingReplies.begin() + first, _rules.Size(), 0);
 }
 
-int InvalidCvarRules::LoadRules(const std::vector<CvarRule>& rules)
+std::vector<std::string> InvalidCvarRules::LoadRules(const std::vector<CvarRule>& rules)
 {
-    const int rejected = _rules.Load(rules);
-    Reset();
+    std::vector<std::string> rejected = _rules.Load(rules);
+    _latched.assign(static_cast<size_t>(MaxSlots) * _rules.Size(), 0);
+    _missingReplies.assign(static_cast<size_t>(MaxSlots) * _rules.Size(), 0);
     return rejected;
 }
 
 std::optional<Finding> InvalidCvarRules::Observe(int slot, std::string_view name, std::string_view value,
                                                  bool enforceCheatCvars)
 {
+    const int index = _rules.IndexOf(name);
+    if (!InSlotRange(slot) || index < 0)
+        return {};
+
+    const auto at = static_cast<size_t>(index);
     // Any reply carrying a value, valid or not, ends the run of refusals.
-    if (const int index = _rules.IndexOf(name); InSlotRange(slot) && index >= 0)
-        _missingReplies[slot][static_cast<size_t>(index)] = 0;
-    return Apply(slot, name, _rules.Evaluate(name, value, enforceCheatCvars));
+    _missingReplies[At(slot, at)] = 0;
+    return Apply(slot, at, _rules.Evaluate(_rules.All()[at], value, enforceCheatCvars));
 }
 
 std::optional<Finding> InvalidCvarRules::ObserveMissing(int slot, std::string_view name, std::string_view statusName,
@@ -238,29 +228,29 @@ std::optional<Finding> InvalidCvarRules::ObserveMissing(int slot, std::string_vi
     if (!InSlotRange(slot) || index < 0)
         return {};
 
-    int& consecutive = _missingReplies[slot][static_cast<size_t>(index)];
+    const auto at = static_cast<size_t>(index);
+    int& consecutive = _missingReplies[At(slot, at)];
     if (consecutive < MissingRepliesBeforeEvidence)
         ++consecutive;
-    return Apply(slot, name, _rules.EvaluateMissing(name, statusName, enforceCheatCvars, consecutive));
+    return Apply(slot, at, _rules.EvaluateMissing(_rules.All()[at], statusName, enforceCheatCvars, consecutive));
 }
 
-std::optional<Finding> InvalidCvarRules::Apply(int slot, std::string_view name, const CvarVerdict& verdict)
+std::optional<Finding> InvalidCvarRules::Apply(int slot, size_t index, const CvarVerdict& verdict)
 {
     std::optional<Finding> out;
-    const int index = _rules.IndexOf(name);
-    if (!InSlotRange(slot) || index < 0 || !verdict.Checked)
+    if (!verdict.Checked)
         return out;
 
-    bool& latched = _latched[slot][static_cast<size_t>(index)];
+    uint8_t& latched = _latched[At(slot, index)];
     if (!verdict.Invalid)
     {
-        latched = false;
+        latched = 0;
         return out;
     }
     if (latched)
         return out;
 
-    latched = true;
+    latched = 1;
     out = Finding{.Kind = DetectionKind::InvalidCvar, .KickOnly = verdict.KickOnly, .Evidence = verdict.Reason};
     return out;
 }
@@ -268,7 +258,12 @@ std::optional<Finding> InvalidCvarRules::Apply(int slot, std::string_view name, 
 bool InvalidCvarRules::IsLatched(int slot, std::string_view name) const
 {
     const int index = _rules.IndexOf(name);
-    return InSlotRange(slot) && index >= 0 && _latched[slot][static_cast<size_t>(index)];
+    return index >= 0 && IsLatchedAt(slot, static_cast<size_t>(index));
+}
+
+bool InvalidCvarRules::IsLatchedAt(int slot, size_t index) const
+{
+    return InSlotRange(slot) && index < _rules.Size() && _latched[At(slot, index)] != 0;
 }
 
 }  // namespace Anticheat

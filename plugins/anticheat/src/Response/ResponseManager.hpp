@@ -26,8 +26,9 @@ public:
     /** Disconnect: a new occupant of the slot starts clean. */
     void OnSlotChanged(int slot);
 
-    /** Map change or config reload. */
-    void ResetAll();
+    /** Map change or config reload. Named to match the detection cores, so the manager can fan out
+     *  over all of them at once. */
+    void Reset();
 
     Mode CurrentMode() const;
 

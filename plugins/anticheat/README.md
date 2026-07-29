@@ -128,9 +128,15 @@ plugin's logic, so a CS2 update that renames a convar or adds a HUD event is ans
 edit here and `anticheat_reload` - no rebuild, no redeploy. It ships identically everywhere,
 so it has no deploy template.
 
-A rule that fails to validate is dropped with a warning and the rest still loads. A file that
-fails to parse at all leaves the tables already in memory in force, so a typo cannot silently
-disarm a module.
+Parsing is strict: an unknown constraint or tier spelling, a numeric rule with no bound, an unknown
+key or a renamed section fails the whole load rather than quietly defaulting. A failed load leaves
+the tables already in memory in force, so a typo cannot silently disarm a module - and the shipped
+file is parsed by the test suite, so a bad edit fails the build rather than a server. Duplicate
+convar names are dropped and logged by name.
+
+> Unlike `settings.jsonc`, this file is **replaced on every deploy** - it is versioned content, not
+> per-server state. Editing it on a live server is a hotfix; mirror the change back into the repo or
+> the next deploy reverts it.
 
 Each rule is `{ name, tier, constraint, … }`:
 
@@ -146,7 +152,7 @@ Each rule is `{ name, tier, constraint, … }`:
 
 | Command | Description |
 | --- | --- |
-| `anticheat_status` | Snapshot of gates, module toggles and dependency health, plus a line per human player (punishment level, per-module counters, latched convars, pending queries). Also published as the `anticheat` section of the kit's status service. |
+| `anticheat_status` | Snapshot of gates, module toggles, dependency health and the loaded table sizes (`detectionData`), plus a line per human player (punishment level, per-module counters, latched convars, pending queries). Also published as the `anticheat` section of the kit's status service. **A zero in `detectionData` means that module is inert however its toggle reads.** |
 | `anticheat_reload` | Re-read both config files **and drop all accumulated evidence**, including the punishment latch. |
 | `anticheat_dumpcmd <slot> [ticks=64]` | Log raw usercmds for one slot. The tool for checking a suspicion against real traffic. |
 

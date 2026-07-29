@@ -69,12 +69,12 @@ public:
     InvalidCvarRules& InvalidCvars() { return _invalidCvars; }
 
 private:
-    /** Everything holding per-player evidence: both resets fan out over this, so a new core is
-     *  wired into them here and nowhere else. The response funnel holds punishments, not evidence. */
-    auto EvidenceModules()
+    /** Everything a reset or a slot change has to clear. Both fan out over this, so a new core is
+     *  wired into them here and nowhere else. */
+    auto ResettableModules()
     {
         return std::tie(_correlator, _aimbot, _aimlock, _antiAim, _silentAim, _namechanger, _invalidCvars,
-                        _dllInjection, _invalidCvarPoller);
+                        _dllInjection, _invalidCvarPoller, _response);
     }
 
     void RegisterCommands();

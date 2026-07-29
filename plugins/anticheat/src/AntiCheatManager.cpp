@@ -71,16 +71,18 @@ void AntiCheatManager::RefreshTeamRules()
 void AntiCheatManager::LoadDetectionData()
 {
     const DetectionData& data = App().Detections.Get();
-    const int rejected = _invalidCvars.LoadRules(data.cvarRules);
-    _dllInjection.SetBlacklist(data.dllEventBlacklist);
+    const std::vector<std::string> rejected = _invalidCvars.LoadRules(data.cvarRules);
 
-    if (rejected > 0)
-        Log::Warn("{} cvar rule(s) were rejected as malformed or duplicated and are not being checked.", rejected);
-    if (_invalidCvars.Rules().Empty())
-        Log::Warn("No cvar rules loaded; the invalid_cvar module has nothing to check.");
-    if (data.dllEventBlacklist.empty())
-        Log::Warn("The DLL event blacklist is empty; the dll_injection module has nothing to check.");
+    // Naming them: the operator editing this file is not the one who can read the source.
+    if (!rejected.empty())
+    {
+        std::string names;
+        for (const std::string& name : rejected)
+            names += (names.empty() ? "" : ", ") + name;
+        Log::Warn("Ignoring duplicate cvar rule(s): {}.", names);
+    }
 
+    // A count of zero here is the whole diagnostic for a module that is silently doing nothing.
     Log::Info("Detection data: {} cvar rule(s), {} blacklisted event(s).", _invalidCvars.Rules().Size(),
               data.dllEventBlacklist.size());
 }
@@ -181,6 +183,13 @@ nlohmann::json AntiCheatManager::StatusSnapshot() const
         {"clientCvars", Engine().ClientCvars.Available() ? "available" : "degraded"},
         {"teleportTracker", Engine().Teleports.Enabled()},
         {"correlatorFrames", _correlator.FrameCount()},
+        // A module with an empty table is inert however its toggle reads, so report the tables the
+        // way clientCvars availability is reported: a health check must be able to see it.
+        {"detectionData",
+         {
+             {"cvarRules", _invalidCvars.Rules().Size()},
+             {"blacklistedEvents", App().Detections.Get().dllEventBlacklist.size()},
+         }},
         {"webhook", !settings.webhook.url.empty()},
         {"simulator", settings.debug.simulator},
     };
@@ -200,13 +209,14 @@ void AntiCheatManager::LogStatus() const
         any = true;
 
         std::string latched;
-        for (const CvarRule& rule : _invalidCvars.Rules().All())
+        const std::span<const CvarRule> rules = _invalidCvars.Rules().All();
+        for (size_t index = 0; index < rules.size(); ++index)
         {
-            if (!_invalidCvars.IsLatched(slot, rule.name))
+            if (!_invalidCvars.IsLatchedAt(slot, index))
                 continue;
             if (!latched.empty())
                 latched += ",";
-            latched += rule.name;
+            latched += rules[index].name;
         }
 
         Log::Info(
@@ -225,8 +235,7 @@ void AntiCheatManager::LogStatus() const
 
 void AntiCheatManager::ResetEvidence()
 {
-    std::apply([](auto&... modules) { (modules.Reset(), ...); }, EvidenceModules());
-    _response.ResetAll();
+    std::apply([](auto&... modules) { (modules.Reset(), ...); }, ResettableModules());
 }
 
 void AntiCheatManager::OnMapStart()
@@ -237,8 +246,7 @@ void AntiCheatManager::OnMapStart()
 
 void AntiCheatManager::OnSlotChanged(int slot)
 {
-    std::apply([slot](auto&... modules) { (modules.OnSlotChanged(slot), ...); }, EvidenceModules());
-    _response.OnSlotChanged(slot);
+    std::apply([slot](auto&... modules) { (modules.OnSlotChanged(slot), ...); }, ResettableModules());
 }
 
 void AntiCheatManager::OnPlayerFullyConnected(CS2Kit::Players::Player* player)

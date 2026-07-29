@@ -89,7 +89,7 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
         return;
 
     const CvarRuleTable& rules = _manager.InvalidCvars().Rules();
-    const std::vector<std::string_view>& queried = rules.Queried();
+    const std::span<const CvarRule> queried = rules.Queried();
     if (queried.empty())
         return;
 
@@ -97,8 +97,7 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
     // second one, so the batch never has to check what is pending.
     for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
     {
-        const std::string name(queried[rules.PollCvarIndex(state.Cursor, offset)]);
-        Engine().ClientCvars.Query(slot, name,
+        Engine().ClientCvars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
                                    [this](int replySlot, CS2Kit::ClientCvarStatus status, std::string_view cvar,
                                           std::string_view value) { OnReply(replySlot, status, cvar, value); });
     }
@@ -108,10 +107,8 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
 void InvalidCvarDetector::ReadUserInfo(int slot)
 {
     const bool enforce = _manager.EnforceCheatCvars();
-    for (const CvarRule& rule : _manager.InvalidCvars().Rules().All())
+    for (const CvarRule& rule : _manager.InvalidCvars().Rules().UserInfo())
     {
-        if (rule.tier != CvarTier::UserInfo)
-            continue;
         const char* value = Engine().NetChannels.GetUserInfoCvar(slot, rule.name.c_str());
         if (!value || *value == '\0')
             continue;

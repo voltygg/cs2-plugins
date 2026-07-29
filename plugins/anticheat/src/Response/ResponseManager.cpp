@@ -43,7 +43,7 @@ void ResponseManager::OnSlotChanged(int slot)
     _latch.Clear(slot);
 }
 
-void ResponseManager::ResetAll()
+void ResponseManager::Reset()
 {
     _latch.Reset();
     // Keyed by SteamID, so without this the map grows for the lifetime of the server.

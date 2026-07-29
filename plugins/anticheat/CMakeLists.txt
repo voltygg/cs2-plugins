@@ -21,4 +21,9 @@ if(BUILD_TESTING)
         INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
         LIBRARIES nlohmann_json::nlohmann_json
     )
+
+    # The shipped detection tables are data an operator edits, so parse them at build time rather
+    # than finding out from a warning in a server log.
+    target_compile_definitions(anticheat-tests PRIVATE
+        ANTICHEAT_DETECTIONS_JSONC="${CMAKE_CURRENT_SOURCE_DIR}/configs/detections.jsonc")
 endif()
