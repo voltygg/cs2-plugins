@@ -20,6 +20,11 @@ inline constexpr bool InSlotRange(int slot)
     return CS2Kit::Core::IsValidSlot(slot);
 }
 
+/**
+ * CS2's simulation rate, which is fixed: subtick inputs replaced the variable tickrate CS:GO had,
+ * so there is no `-tickrate`, no sv_tickrate, and no tick-interval field in CGlobalVars to read one
+ * from. Hardcoding it is correct, not a shortcut - every tick-derived threshold below depends on it.
+ */
 inline constexpr float TickRate = 64.0f;
 
 /** Monotonic seconds for the rolling evidence windows (wall clock, not game time). */
