@@ -265,10 +265,12 @@ void AimbotCore::Count(SlotData& data, int32_t incidentCommand, double nowSec, b
     if (incidents < DetectionThreshold)
         return;
 
-    data.Incidents.Clear();
+    // A finding is already in hand from an earlier evaluation in this same pass; leave the window
+    // alone so this crossing is reported on the next one rather than cleared and lost.
     if (out)
         return;
 
+    data.Incidents.Clear();
     out = Finding{
         .Kind = DetectionKind::Aimbot,
         .Evidence = snapReturn

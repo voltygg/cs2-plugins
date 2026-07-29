@@ -204,8 +204,12 @@ void ShotCorrelator::OnFrame()
         if (aimbot)
             _manager.Report(slot, _manager.Aimbot().OnFrame(slot, serverTick, eligible, now));
         if (aimlock)
-            _manager.Report(slot, _manager.Aimlock().OnFrame(slot, serverTick, eligible && players[slot].Alive,
-                                                             MeasureVisualLag(slot), now));
+        {
+            // Two engine reads and a parse per call, so only for the slots the estimate is used on.
+            const bool aliveHuman = eligible && players[slot].Alive;
+            _manager.Report(slot, _manager.Aimlock().OnFrame(slot, serverTick, aliveHuman,
+                                                             aliveHuman ? MeasureVisualLag(slot) : LagEstimate{}, now));
+        }
         if (antiAim)
             _manager.Report(slot, _manager.AntiAim().OnFrame(slot, serverTick, eligible, now));
         if (silentAim && eligible)

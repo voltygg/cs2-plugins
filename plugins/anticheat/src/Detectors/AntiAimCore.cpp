@@ -143,14 +143,12 @@ std::optional<Finding> AntiAimCore::OnSimulated(int slot, int32_t cmdNum, int32_
 
     if (justTeleported)
     {
-        data.TeleportGrace = true;
         data.InvalidActive = data.InconsistencyActive = data.SpinActive = data.JitterActive = false;
         data.PendingShot = -1;
         data.PendingShotTick = -1;
         ResetMotion(data);
         return out;
     }
-    data.TeleportGrace = false;
 
     // A base view angle far from the angles the same command claims it fired along means one of the
     // two is fabricated. Fast legitimate flicks can do it too, so this only ever supports.

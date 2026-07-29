@@ -108,7 +108,6 @@ private:
         bool InconsistencyActive = false;
         bool SpinActive = false;
         bool JitterActive = false;
-        bool TeleportGrace = false;
 
         int32_t LastMismatchEvidenceCommand = -1;
         int32_t PendingShot = -1;
