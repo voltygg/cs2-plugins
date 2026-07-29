@@ -1,34 +1,218 @@
 # Anticheat
 
-Server-side cheat detection for CS2 community servers: aim analysis over correlated
-shots plus client-integrity checks. The detection algorithms are reimplementations of
-the ones in [CS2AC](https://github.com/karola3vax/CS2AC) (karola3vax, AGPL-3.0) - the
-approach and the tuning are theirs, the code here is written against
-[CS2Kit](../../vendor/cs2-kit) and its sample structs.
+Server-side cheat detection for CS2 community servers: aim analysis over correlated shots,
+plus client-integrity checks. No client component, no detours, game thread only.
 
-Everything runs off two feeds the kit already provides: the `RunCommand` movement hook
-(one decoded `UserCmdView` per player per tick) and game events (`weapon_fire`,
-`bullet_impact`, `player_hurt`, `player_death`, `player_spawn`, settings changes). There
-are no detours, no client-side component, and nothing on a thread other than the game
-thread.
+It reads two feeds the kit already provides - the `RunCommand` movement hook (one decoded
+usercmd per player per tick) and game events (`weapon_fire`, `bullet_impact`, `player_hurt`,
+`player_death`, `player_spawn`, settings changes).
+
+Detection algorithms are reimplementations of [CS2AC](https://github.com/karola3vax/CS2AC)
+(karola3vax, AGPL-3.0); the approach and the tuning are theirs, the code is written against
+[CS2Kit](../../vendor/cs2-kit).
+
+> **Start in `observe` mode.** Nothing is done to any player until you say so - see
+> [Rollout](#rollout).
+
+## Detections
+
+Seven modules, each with its own kill switch under `anticheat.detections`. Thresholds are
+compiled in and deliberately not operator-tunable: if a module misfires, turn it off rather
+than loosening it.
+
+| Module | Catches | Reports after |
+| --- | --- | --- |
+| `aimbot` | Aim snapping onto a target on the command that dealt damage | 4 incidents / 10 min |
+| `aimlock` | Aim held inside a *moving* target's width for 1.5 s | 3 episodes / 10 min |
+| `antiaim` | Impossible or fabricated angles, spinning, jitter binds | score 100; spin and jitter fire at once |
+| `silentaim` | Bullet landing far from where the player visibly aimed | 12 points / 10 min |
+| `dll_injection` | Client subscribed to game events no stock HUD wants | first hit |
+| `invalid_cvar` | Client convars outside their allowed values | first hit, then latched |
+| `namechanger` | Visible name-change spam | 5 changes / 60 s |
+
+Every module is gated by: the master `enabled` switch, `sv_cheats` being off (unless
+`allowSvCheatsTesting`), and the player being a connected non-bot human. A map change,
+`anticheat_reload`, an `sv_cheats` flip or an `mp_teammates_are_enemies` change drops all
+accumulated evidence.
+
+### How each one decides
+
+**`aimbot`** judges only commands that actually damaged an enemy. It walks back along
+strictly adjacent commands (any gap ends the chain) for up to 32 ticks looking for
+convergence - a jump over 10° that lands inside 20% of its previous aim error, or over 5°
+inside 10% - plus a one-command snap-return rule. Needs 100+ units of range, opponents, and
+both parties clear of the 5 s teleport grace.
+
+**`aimlock`** wants 1.5 s of aim inside the target's own angular width for 95% of samples
+*while the target moves* at least 48 units of angular travel - a still target proves nothing.
+Two players under the crosshair means no episode. Since clients aim at an interpolated past,
+it carries a set of lag hypotheses (round trip + `cl_interp_ratio`, ±2 ticks) and needs one
+to survive the whole episode; unusable network readings mean no estimate and so never
+evidence. Dying drops the episode in progress but not episodes already counted.
+
+**`antiaim`** runs one decaying score: pitch past 89.01° or roll past 50.01° adds 2, a
+structurally impossible command adds 1, a base view 120°+ from the angles the command claims
+it fired along adds 1 (at most every 4 commands - a fast flick can do it once), a one-command
+attack return adds 5. Spin and jitter are separate and fire immediately: spin needs sustained
+rate *and* 0.85 direction consistency (that is what separates a spinbot from a player
+flicking), jitter needs an exactly repeating yaw pattern - so a legitimate 180 bind, which
+looks identical for a moment, never qualifies.
+
+**`silentaim`** compares the visible eye angles at `weapon_fire` against where the bullet
+landed, scoring only shots that both hurt someone and reported an impact. The ceiling is per
+weapon class (2.5° snipers, 4.3° pistols, 12.5° rifles, 22.5° SMGs - spray and movement
+legitimately throw SMG bullets wide). Headshots and wallbangs score extra; airborne shots
+score less.
+
+**`dll_injection`** looks for client event subscriptions no HUD ever wants, read server-side
+without touching the client. First scan is 10 s after full connect (the listener does not
+exist the instant a player joins), then every 120 s.
+
+**`invalid_cvar`** polls the client and reads userinfo. **Silence is never evidence** - a
+client is under no obligation to answer. A reply that *refuses* a value counts only for
+cheat-protected convars, only after three in a row, and only as a kick, so a convar a future
+CS2 update removes cannot kick a whole server. Each (player, convar) latches: it reports once
+and re-arms only after reading valid.
+
+**`namechanger`** counts distinct visible names. The baseline is kept current even while
+detections are gated off, so a change is never measured against a stale name.
+
+## Response
+
+Every detection is logged and sent to the webhook regardless of mode. `anticheat.mode`
+decides what else happens:
+
+| Mode | Behaviour |
+| --- | --- |
+| `observe` *(default)* | Log and webhook only. The dry run. |
+| `alert` | Also pings admins with the Ban flag, once per (player, detection) per 30 s. |
+| `ban` | Also punishes: kick-only findings kick, the rest ban. |
+
+- **Kick-only findings never ban**, even in `ban` mode - the ones whose false-positive cost
+  must stay recoverable: `m_yaw` out of range, `fps_max` below 64, and a refused
+  cheat-protected convar.
+- **Punishment only escalates.** A later detection cannot demote an issued ban to a kick, and
+  a repeat cannot double-punish. Cleared on disconnect, map change and reload.
+- **Whitelisted SteamID64s** are logged and webhooked but never alerted or punished. So is a
+  player whose SteamID has not resolved yet.
+- **Bans go through admin-system** (`as_ac_ban` / `as_ac_alert`) so persistence, kicking and
+  broadcast stay in one place. Without admin-system loaded, banning degrades to logging;
+  kicks still work.
+- **Discord** is optional and dormant while `webhook.url` is empty. One embed per (player,
+  detection) per minute; failures log once and are not retried.
+
+## Configuration
+
+Two files, split by who owns them.
+
+### `configs/settings.jsonc` - operator knobs
+
+Rendered per server from
+[`deploy/templates/…/settings.jsonc`](../../deploy/templates/plugins/anticheat/settings.jsonc).
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `enabled` | `true` | Master switch. |
+| `mode` | `"observe"` | `observe`, `alert`, or `ban`. |
+| `banDurationSec` | `0` | Auto-ban length; `0` = permanent. |
+| `whitelistSteamIds` | `[]` | Reported but never punished. |
+| `allowSvCheatsTesting` | `false` | Keep detecting while `sv_cheats` is on. Test boxes only. |
+| `detections.*` | `true` | Per-module kill switches (see the table above). |
+| `webhook.url` | `""` | Discord webhook; empty disables reporting. |
+| `debug.simulator` | `false` | Arm the cheat simulator. Dev boxes only. |
+
+### `configs/detections.jsonc` - what the checks compare against
+
+The blacklisted event names and the convar rules. These track *Valve's* content, not this
+plugin's logic, so a CS2 update that renames a convar or adds a HUD event is answered with an
+edit here and `anticheat_reload` - no rebuild, no redeploy. It ships identically everywhere,
+so it has no deploy template.
+
+A rule that fails to validate is dropped with a warning and the rest still loads. A file that
+fails to parse at all leaves the tables already in memory in force, so a typo cannot silently
+disarm a module.
+
+Each rule is `{ name, tier, constraint, … }`:
+
+| Field | Values |
+| --- | --- |
+| `tier` | `queried` (asked over the network) or `userinfo` (read from userinfo). One tier per convar - both share a latch. |
+| `constraint` | `equals` / `max` / `range` / `minOrZero` / `off` / `on` |
+| `value`, `max` | Bounds for the constraint. |
+| `cheatProtected` | Defer until a disabled `sv_cheats` has reached the client. |
+| `kickOnly` | Cap the punishment at a kick. |
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `anticheat_status` | Snapshot of gates, module toggles and dependency health, plus a line per human player (punishment level, per-module counters, latched convars, pending queries). Also published as the `anticheat` section of the kit's status service. |
+| `anticheat_reload` | Re-read both config files **and drop all accumulated evidence**, including the punishment latch. |
+| `anticheat_dumpcmd <slot> [ticks=64]` | Log raw usercmds for one slot. The tool for checking a suspicion against real traffic. |
+
+### Cheat simulator
+
+> ⚠️ **These rewrite live decoded input.** Gameplay is unaffected - the engine still runs the
+> player's real command - but that player's readings become fiction while a sim is running.
+> **Never arm this on a server people are playing on.**
+
+Gated by `anticheat.debug.simulator`, and registered only at load, so enabling it needs a
+plugin reload rather than `anticheat_reload`. Each sim runs for 10 s. box-a's deploy template
+arms it; no other server's should.
+
+| Command | Simulates |
+| --- | --- |
+| `anticheat_sim_spin <target> [degPerSec=720]` | Spinbot. |
+| `anticheat_sim_jitter <target> [stepDeg=20]` | Repeating jitter bind. |
+| `anticheat_sim_badangles <target> [pitch=89.5]` | Impossible pitch and roll. |
+| `anticheat_sim_aimlock <target>` | Locks onto the nearest opponent. |
+| `anticheat_sim_mismatch <target> [deg=130]` | Fired angles diverging from the visible view. |
+| `anticheat_sim_off [target]` | Stop one sim, or all when omitted. |
+
+`<target>` is a slot or a SteamID64. There is no silentaim sim: it scores where the bullet
+actually landed, and the filter only edits the decoded view.
+
+## Rollout
+
+Deployment is currently **held** - `anticheat` is commented out in
+[`deploy/inventory.yml`](../../deploy/inventory.yml) in both the plugin list and box-a's
+server entry. Uncomment both to ship it.
+
+1. **Observe.** Deploy to box-a in `observe` with `webhook.url` set. Soak through real
+   traffic - a week of populated hours, not an empty server.
+2. **Read the misses.** For anything that looks wrong, `anticheat_dumpcmd` the slot and
+   compare against the evidence string. A module producing false positives gets switched off.
+3. **Alert.** Once the observe stream is clean, flip to `alert` and let admins be the funnel
+   for a second soak.
+4. **Ban, one module at a time.** Flip to `ban` with only the modules you trust. Start with
+   `invalidCvar` (worst case is a recoverable kick), then `namechanger` and `dllInjection`,
+   and add the aim modules last - `silentAim`, `antiAim`, then `aimbot` and `aimlock` - with
+   a soak between each.
+
+## Maintenance
+
+Six gamedata values drift with CS2 updates. Re-verify them against SwiftlyS2 / CS2Fixes /
+CS2AC after **every** game update - a quiet detection looks exactly like a clean server.
+
+| Entry | If it drifts |
+| --- | --- |
+| `RunCommand` | **Crash** on the first movement tick. |
+| `UserCmdPB` | Missing: aim modules go silent. Stale: garbage angles that look like plausible data. |
+| `UserCmdNumber` | Command numbers all collapse to 0, so no convergence chain links: `aimbot` and half of `antiaim` go **permanently silent**. No status field, no log line - check this one explicitly. |
+| `Teleport` | The post-teleport grace stops suppressing the discontinuity: false positives rather than silence. |
+| `ProcessRespondCvarValue` | Sanity-bounded at init, so it degrades instead of hooking an unrelated function. |
+| `ServerSideClientSlot` | Sanity-bounded too; unchecked it would credit one client's answer to another player. |
+
+`anticheat_status` surfaces the ones it can: `teleportTracker`, and `"clientCvars":
+"degraded"` when the two `ClientCvars` offsets fail (the network poll stops and
+`invalid_cvar` falls back to userinfo values only).
 
 ## Architecture
 
-Every detection is a **core**: an SDK-free class over plain sample structs
-(`Core/Samples.hpp`), with all of its tuned constants `constexpr` at the top of its own
-source file and no config surface at all. Cores are unit-tested directly - the whole
-detection layer compiles into `anticheat-tests` without linking the SDK. The SDK lives in
-thin adapters that convert engine state into samples and hand
-verdicts to the response funnel. The backbone is the **ShotCorrelator**: it joins a
-usercmd to the shot it fired and to the events that shot produced, so every aim module
-reasons about "this exact command fired this exact bullet at this exact world state".
-Matching is deliberately strict - a `weapon_fire` is only bound to a command when
-*exactly one* candidate sits in the window, and an ambiguous window burns all its
-candidates so a later event cannot claim one arbitrarily. Alongside it the correlator
-keeps 128 ticks of per-slot position frames (origin, eye, team, alive, teleported), and
-the firing angle always comes from the command's input history at
-`Attack1StartHistoryIndex` - an index the transport cap dropped means *absent*, never
-clamped back into range, because clamping reads another shot's angles.
+For contributors. Every detection is a **core**: an SDK-free class over plain sample structs
+with its tuned constants `constexpr` in its own source file. Cores unit-test directly - the
+whole detection layer compiles into `anticheat-tests` without linking the SDK. Thin adapters
+convert engine state into samples and hand verdicts to the response funnel.
 
 ```text
 plugins/anticheat/
@@ -38,256 +222,15 @@ plugins/anticheat/
     Detectors/     *Core.cpp = SDK-free rules; *Detector.cpp = engine adapter
     Response/      FunnelPolicy (pure decision logic), ResponseManager, DiscordReporter
     Simulator/     CheatSimulator (dev-only input synthesis)
-  configs/settings.jsonc     operator knobs, rendered per server
-  configs/detections.jsonc   the event and convar tables the detections compare against
+  configs/         settings.jsonc (per server) + detections.jsonc (shared)
   tests/
 ```
 
-Global gates, all in `AntiCheatManager`: the master `enabled` switch; `sv_cheats` on
-disables every detection unless `allowSvCheatsTesting`; only connected, non-bot humans
-are judged; a map change, an `anticheat_reload`, an `sv_cheats` flip or an
-`mp_teammates_are_enemies` change drops every piece of accumulated evidence.
-
-## Detections
-
-Seven kill switches under `anticheat.detections`. Thresholds are compiled in.
-
-### `aimbot` - snap-onto-target
-
-Judges only commands that actually damaged an enemy. From the damaging command it walks
-backwards along *strictly* adjacent commands (command number -1, client tick exactly -1,
-server tick gap 0 or 1; one hole ends the chain) for up to 32 ticks and looks for
-convergence: a jump larger than 10 deg that leaves the aim inside 20% of its previous
-error, or larger than 5 deg inside 10%. A second rule catches the one-command
-snap-return - the shot's angle more than 5x off a line its neighbours share within
-10 deg. Four incidents in 10 minutes report. Guards: minimum 100 units to the victim,
-both parties outside the 5 s teleport/spawn grace, opponents only
-(`mp_teammates_are_enemies` aware), and any non-finite value ends the chain.
-
-### `aimlock` - inhuman tracking
-
-An episode is 96 ticks (1.5 s) of aim staying inside the target's angular width for at
-least 95% of samples, while the target moves at least 48 units of angular travel across
-the episode - a still target proves nothing. The target must be unambiguous: if two
-players are simultaneously under the crosshair, no episode starts. Because a client aims
-at an interpolated past, the module carries a *set* of lag hypotheses (round trip plus
-`cl_interp_ratio`, searched +/-2 ticks) and requires one of them to survive the whole
-episode. Network sanity is a hard gate: no live channel, RTT outside 0-2 s, or a
-non-numeric interp ratio means no estimate and therefore never evidence. Three episodes
-in 10 minutes report, after which the module stays quiet until the player has been off
-that target for half a second. Minimum range 200 units; teleported or dead players are
-skipped - dying drops the in-progress episode but not the episodes already counted, so a
-cheat cannot clear its own record by dying between them.
-
-### `antiaim` - impossible and fabricated angles
-
-One decaying score (threshold 100, -2/s, mismatch evidence -5/s). Pitch beyond 89.01 deg
-or roll beyond 50.01 deg adds 2. A structurally impossible command - non-finite base,
-history or subtick angles, or an attack index outside `[-1, historyTotalCount)` - adds 1.
-A base view 120 deg or more from the angles the same command claims it fired along adds 1,
-at most every 4 commands, since a fast legitimate flick can do it once. A one-command
-attack return (shot angle more than 30 deg and 5x off neighbours within 10 deg of each
-other) adds 5. The 5 s spawn/teleport grace wipes episode state, because origin and
-angles jump discontinuously there, and continuous conditions are suppressed so a stuck
-bad angle cannot re-fire every tick.
-
-The motion half (spin and jitter) scores out instantly instead. Both run over a
-newest-first run of up to 20 commands on strictly consecutive server ticks - a lost tick
-would make any rate computed across it a fiction. Spin needs 16 samples whose mean and
-latest yaw rate clear a tier and whose direction consistency is at least 0.85 (this is
-what separates a spinbot from a player flicking back and forth), sustained for 15 s at
-320 deg/s, 10 s at 1000, or 10 s at 2200, with one second of interruption forgiven.
-Jitter needs the yaw sequence to repeat on a period of 2, 3 or 5 commands, four full
-repetitions within 0.25 deg, spanning more than 10 deg, sustained 10 s - so a legitimate
-180 bind, which looks identical for a moment, never qualifies.
-
-### `silentaim` - fire angle vs. bullet
-
-Compares the pawn's visible eye angles at `weapon_fire` with where the bullet actually
-landed. Only shots that both hurt someone *and* reported an impact are scored, two ticks
-after the fire, once every event they can produce has arrived. The deviation ceiling is
-per weapon class - 2.5 deg for snipers, 4.3 for pistols, 12.5 for rifles, 22.5 for SMGs
-(spray plus movement inaccuracy legitimately throws SMG bullets far off the crosshair).
-A qualifying shot scores 2 (1 if airborne, where inaccuracy makes a wide shot cheap
-evidence) or 3 when the deviation is past every weapon's ceiling, plus 1 for a headshot
-and 1 for a wallbang; 12 points in 10 minutes report. Impacts closer than 100 or farther
-than 10000 units are ignored.
-
-### `dll_injection` - blacklisted event subscriptions
-
-A stock client subscribes only to the events its HUD needs. Injected client code
-registers its own legacy listener and asks for events no HUD ever wants; the server can
-read that without touching the client. The names come from `dllEventBlacklist` in
-[`configs/detections.jsonc`](configs/detections.jsonc), and any hit reports. The first scan waits 10 s after
-full connect because a client's listener does not exist the instant it joins - one grace
-retry if it is still absent, then a 120 s rescan cadence.
-
-### `invalid_cvar` - client settings
-
-The convars and the values they must hold come from `cvarRules` in
-[`configs/detections.jsonc`](configs/detections.jsonc). The queried tier is polled over `CSVCMsg_GetCvarValue`, four per poll in rotation
-(the kit refuses a slot's twelfth outstanding query) at a per-slot interval randomized
-between 1 and 5 s so the schedule is not predictable. `sensitivity` and `m_yaw` are read
-straight from userinfo instead, where they are always available - and *only* there, since
-two tiers judging one convar would share a single latch and keep flipping it against each
-other. Rules: `m_yaw` at most 0.3, `fps_max` 0 or at least 64, `sensitivity` between
-0.0001 and 20, `cl_pitchdown` and `cl_pitchup` exactly 89, `cl_yawspeed` exactly 210,
-and - only while `sv_cheats` is off and 30 s past its last disable -
-`sv_cheats`/`cl_showpos`/`cam_showangles` off, `cl_drawhud` on, `fov_cs_debug` 0. Silence
-is never evidence: a client is under no obligation to answer. A reply that *refuses* the
-value counts only for the cheat-protected names, only after three such replies in a row
-for the same convar (any reply carrying a value restarts the count), and only as a kick -
-so a convar a future engine update removes cannot kick a whole server off one poll. Each
-(slot, cvar) latches - it reports once and re-arms only after reading valid in between.
-
-### `namechanger` - name spam
-
-Five distinct visible name changes within 60 s. The baseline is taken at full connect and
-kept up to date even while detections are gated off, so a change is never measured
-against a stale name.
-
-## Response funnel
-
-Every detection is logged (`[AC] ...`, `Log::Warn`) and sent to the webhook regardless of
-mode. What happens beyond that is `anticheat.mode`:
-
-| Mode | Behavior |
-| --- | --- |
-| `observe` (default) | Log and report only. This is the dry run. |
-| `alert` | Also notifies admins holding the Ban flag via `as_ac_alert`, one per (player, detection) per 30 s. |
-| `ban` | Also punishes: `KickOnly` findings kick, everything else bans via `as_ac_ban`. |
-
-- **Kick-only set.** Findings whose false-positive cost must stay recoverable never ban,
-  even in `ban` mode: `m_yaw` out of range, `fps_max` below 64, and a cheat-protected
-  convar the client refused to report. Kicks are issued in-process; bans go out over the
-  console bridge.
-- **No-downgrade latch.** A slot's punishment level only ever rises, so a later detection
-  cannot demote an issued ban to a kick and a repeat cannot double-punish. Cleared on
-  disconnect, map change and reload.
-- **Whitelist.** SteamID64s in `whitelistSteamIds` are logged and webhooked but never
-  alerted and never punished. A player whose SteamID is not resolved yet is treated the
-  same way.
-- **Admin-system bridge.** `as_ac_ban <steamid64> <durationSec> <reason...>` and
-  `as_ac_alert <steamid64> <detection> <score>` are admin-system's console commands, so
-  persistence, kick-if-online and broadcast stay in one place. Reasons are stripped of
-  console-structural characters and capped at 200 chars. Without admin-system loaded both
-  are "Unknown command" and the anticheat degrades to logging (kicks still work).
-- **Discord.** Optional, dormant while `webhook.url` is empty. One embed per (player,
-  detection) per minute; delivery failures log once and are never retried.
-
-## Configuration
-
-Two files, split by who owns them.
-
-`configs/settings.jsonc` holds the operator knobs - one `anticheat` section, no translations. The
-deployed copy is rendered per server from
-[`deploy/templates/plugins/anticheat/settings.jsonc`](../../deploy/templates/plugins/anticheat/settings.jsonc),
-which carries the same keys (box-a arms the simulator).
-
-[`configs/detections.jsonc`](configs/detections.jsonc) holds the game-content tables - the blacklisted
-event names and the convar rules. These track *Valve's* content rather than this plugin's logic, so a
-CS2 update that renames a convar or adds a HUD event is answered with an edit here and
-`anticheat_reload`, not a rebuild and a redeploy. It ships identically to every server, so it has no
-deploy template. A rule that does not parse is dropped with a warning and the rest of the table still
-loads; an edit that fails to parse at all leaves the previously loaded tables in force.
-
-| Constraint | Meaning |
-| --- | --- |
-| `equals` | must equal `value` |
-| `max` | must not exceed `value` |
-| `range` | must fall within [`value`, `max`] |
-| `minOrZero` | at least `value`, or 0 for "unlimited" |
-| `off` / `on` | must read as false/0, or must not |
-
-`tier` is `queried` (asked over the network) or `userinfo` (read from the client's userinfo); a convar
-must appear in one tier only, since both share a latch. `cheatProtected` defers the rule until a
-disabled `sv_cheats` has reached the client, and `kickOnly` caps the punishment at a kick.
-
-| Key | Default | Meaning |
-| --- | --- | --- |
-| `enabled` | `true` | Master switch; off means no hook feeds the cores. |
-| `mode` | `"observe"` | Response funnel: `observe`, `alert`, `ban`. |
-| `banDurationSec` | `0` | Auto-ban length in seconds; `0` = permanent. |
-| `whitelistSteamIds` | `[]` | SteamID64s reported but never punished. |
-| `allowSvCheatsTesting` | `false` | Keep detecting while `sv_cheats` is on. Test boxes only. |
-| `detections.aimbot` | `true` | Snap-onto-target. |
-| `detections.aimlock` | `true` | Inhuman tracking episodes. |
-| `detections.antiAim` | `true` | Impossible/fabricated angles, spin, jitter. |
-| `detections.silentAim` | `true` | Fire angle vs. bullet impact. |
-| `detections.dllInjection` | `true` | Blacklisted client event subscriptions. |
-| `detections.invalidCvar` | `true` | Client convar rules. |
-| `detections.namechanger` | `true` | Name-change spam. |
-| `webhook.url` | `""` | Discord webhook; empty disables reporting. |
-| `debug.simulator` | `false` | Arm the cheat simulator commands (dev boxes only). |
-
-## Server console commands
-
-| Command | Description |
-| --- | --- |
-| `anticheat_status` | Global JSON snapshot (mode, gates, module toggles, `clientCvars` availability, teleport tracker, correlator frames) plus one line per human player: punishment level, per-module counters, latched convars, pending queries, next poll, shots and commands held. The same snapshot is registered as the `anticheat` section of the kit's `Engine().Status`. |
-| `anticheat_reload` | Re-read `settings.jsonc` and `detections.jsonc`, **and drop all accumulated evidence**, including the punishment latch. |
-| `anticheat_dumpcmd <slot> [ticks=64]` | Log raw usercmds for one slot: view, mouse deltas, buttons, subtick deltas, input-history counts, and what the attack index resolved to (present / capped away / out of range). The tool for checking a suspicion against real traffic. |
-
-### Cheat simulator
-
-Gated by `anticheat.debug.simulator`. The commands are only registered at load, so
-enabling the flag needs a plugin reload, not just `anticheat_reload`.
-
-**These rewrite live decoded input.** The filter edits the `UserCmdView` every downstream
-listener sees; the engine still runs the player's real command, so gameplay is
-unaffected, but that player's readings become fiction for the duration. Never arm this on
-a server people are playing on.
-
-| Command | Simulates |
-| --- | --- |
-| `anticheat_sim_spin <slot\|steamid64> [degPerSec=720]` | Spinbot (yaw rotation with matching subtick delta). |
-| `anticheat_sim_jitter <slot\|steamid64> [stepDeg=20]` | Exactly repeating three-yaw jitter bind. |
-| `anticheat_sim_badangles <slot\|steamid64> [pitch=89.5]` | Impossible pitch and roll. |
-| `anticheat_sim_aimlock <slot\|steamid64>` | Locks onto the nearest opponent's chest. |
-| `anticheat_sim_mismatch <slot\|steamid64> [deg=130]` | Input-history angles diverging from the visible view, which drives AntiAim's fired-vs-visible mismatch rule. |
-| `anticheat_sim_off [slot\|steamid64]` | Stop one sim, or all when omitted. |
-
-Each sim runs for 10 s. SilentAim has no simulator: it is scored from where the bullet actually
-landed, and the filter only edits the decoded view - the usercmd the engine simulates is untouched.
-
-## Rollout
-
-Deployment is currently held: `anticheat` is commented out in
-[`deploy/inventory.yml`](../../deploy/inventory.yml) for both the plugin list and box-a's
-server entry. Uncomment both to ship it.
-
-1. **Observe.** Deploy to box-a in `observe` with `webhook.url` set. Nothing is ever done
-   to a player; every detection lands in the log and in Discord. Soak through real
-   traffic - a week of populated hours, not an empty server.
-2. **Read the misses.** For anything that looks wrong, `anticheat_dumpcmd` the slot and
-   compare against the evidence string. A module producing false positives gets its
-   toggle turned off; thresholds are not operator-tunable by design.
-3. **Alert.** Flip to `alert` once the observe stream is clean. Admins now get pinged and
-   can `!cc` a suspect manually - a second soak, with humans as the funnel.
-4. **Ban, module by module.** Flip to `ban` with only the modules you trust enabled.
-   Start with the kick-only rules (`invalidCvar` alone - the worst case is a recoverable
-   kick), then `namechanger` and `dllInjection`, and enable the aim modules
-   (`silentAim`, then `antiAim`, then `aimbot` and `aimlock`) last, one at a time, with a
-   soak between each.
-
-## Maintenance
-
-Six gamedata values drift with CS2 updates and must be re-verified against
-SwiftlyS2/CS2Fixes/CS2AC after every game update:
-
-| Entry | Used by | If it drifts |
-| --- | --- | --- |
-| `RunCommand` | `MovementHook` vtable index | **Crash** on the first movement tick. |
-| `UserCmdPB` | usercmd decode | Missing: `Valid=false` views and the aim modules go silent. Stale: garbage angles and buttons, which looks like plausible data. |
-| `UserCmdNumber` | `UserCmdView::CommandNumber` | Missing: falls back to `legacy_command_number`, which a live client leaves at **0** - every command number collapses to 0, no convergence chain ever links, and `aimbot` plus the attack-return half of `antiaim` go permanently silent. |
-| `Teleport` | `TeleportTracker` | `Enable()` returns false, so the post-teleport grace stops suppressing the discontinuity - false positives rather than silence. |
-| `ProcessRespondCvarValue` | `ClientCvarService` vtable index | Sanity-bounded at init, so the stage degrades instead of hooking an unrelated vfunc. |
-| `ServerSideClientSlot` | `ClientCvarService` slot offset | Sanity-bounded too; unchecked it would attribute one client's answer to another player. |
-
-`anticheat_status` reports `teleportTracker` directly. `UserCmdNumber` is the one entry with
-no status field and no log line, so re-verify it explicitly.
-
-The two `ClientCvars` offsets degrade rather than crash: `anticheat_status` reports
-`"clientCvars": "degraded"`, the network convar poll stops, and `invalid_cvar` falls back
-to the two userinfo values. Check that field after every game update - a quiet detection
-looks exactly like a clean server.
+The backbone is the **ShotCorrelator**, which joins a usercmd to the shot it fired and to the
+events that shot produced, so every aim module reasons about "this exact command fired this
+exact bullet at this exact world state". Matching is deliberately strict: a `weapon_fire`
+binds to a command only when *exactly one* candidate sits in the window, and an ambiguous
+window burns all its candidates so a later event cannot claim one arbitrarily. It also keeps
+128 ticks of per-slot position frames. The firing angle always comes from the command's input
+history - an index the transport cap dropped means *absent*, never clamped back into range,
+because clamping reads another shot's angles.
