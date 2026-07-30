@@ -19,6 +19,7 @@ RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contri
   m4 \
   make \
   ninja-build \
+  openssh-client \
   pkg-config \
   perl \
   python3-pip \

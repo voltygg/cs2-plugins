@@ -100,3 +100,15 @@ compiler and build tools on every run. That image is the `build` stage of
 workflow changes. Run it once manually via "Run workflow" before the first CI
 run so the image exists to pull. Alongside the build, CI runs `uv run poe lint`
 and a `clang-format` dry-run.
+
+CircleCI (`.circleci/config.yml`) mirrors all three workflows (CI, toolchain
+image, deploy) so either provider can run when the other is out of minutes.
+CircleCI has no ambient `GITHUB_TOKEN`, so its jobs authenticate to GHCR with a
+PAT stored in the org-level `ghcr` context (`GHCR_USERNAME`, `GHCR_TOKEN`);
+deploy secrets live in the `cs2-deploy` context as base64 (`SSH_KEY_B64`,
+`SERVER_ENV_<ID>_B64`) because CircleCI env vars do not preserve newlines. The
+toolchain image must exist on GHCR before either provider's CI can run -
+bootstrap it from CircleCI by triggering a pipeline with the `force-toolchain`
+parameter set to true. Note that a `prod` push while both providers' deploys
+are enabled deploys twice; disable one side (GHA: disable the workflow in the
+Actions UI; CircleCI: comment out the `deploy` workflow trigger).

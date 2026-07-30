@@ -1,0 +1,307 @@
+# CircleCI mirror of the GitHub Actions workflows (ci.yml, build-toolchain.yml,
+# deploy.yml) so either provider can run CI/CD when the other is out of minutes.
+# Secrets live in CircleCI contexts (see CONTRIBUTING.md "Continuous Integration"):
+#   ghcr:       GHCR_USERNAME, GHCR_TOKEN (PAT with read+write packages)
+#   cs2-deploy: SSH_KEY_B64, SERVER_ENV_<ID>_B64 (base64 of the GHA secrets;
+#               CircleCI env vars do not preserve multiline values)
+version: 2.1
+
+parameters:
+  # "Trigger Pipeline" equivalents of the GHA workflow_dispatch inputs.
+  force-toolchain:
+    type: boolean
+    default: false
+  server:
+    type: string
+    default: ""
+  dry-run:
+    type: boolean
+    default: false
+
+executors:
+  toolchain:
+    docker:
+      - image: ghcr.io/voltygg/cs2-plugins/cs2-plugin-toolchain:latest
+        auth:
+          username: $GHCR_USERNAME
+          password: $GHCR_TOKEN
+    resource_class: large
+  machine-docker:
+    machine:
+      image: ubuntu-2604:current
+    resource_class: large
+
+commands:
+  fetch-submodules:
+    parameters:
+      flags:
+        type: string
+        default: ""
+    steps:
+      - run:
+          name: Fetch submodules
+          command: |
+            git submodule sync --recursive
+            git submodule update --init --depth 1 << parameters.flags >>
+  restore-ccache:
+    steps:
+      # Key shape mirrors the GHA cache: toolchain fingerprint prefix, then
+      # branch, then revision (CircleCI caches are immutable, so the revision
+      # suffix plays the role of GHA's per-run key).
+      - restore_cache:
+          keys:
+            - ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-{{ .Branch }}-
+            - ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-
+  save-ccache:
+    steps:
+      - save_cache:
+          key: ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - /ccache
+  ghcr-login:
+    steps:
+      - run:
+          name: Login to GHCR
+          command: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+
+jobs:
+  build-test:
+    executor: toolchain
+    environment:
+      CCACHE_DIR: /ccache
+      # pch_defines + depend mode are REQUIRED with the kit's PCH: without both,
+      # every PCH-using TU is a permanent ccache miss.
+      CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
+      CCACHE_DEPEND: "1"
+      CCACHE_MAXSIZE: 1G
+    steps:
+      - checkout
+      - fetch-submodules:
+          flags: --recursive
+      - restore-ccache
+      - run:
+          name: Zero ccache stats
+          command: mkdir -p /ccache && ccache -z
+      - run:
+          name: Build (configure -> build)
+          command: |
+            export CCACHE_BASEDIR="$PWD"
+            python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release --no-test
+      - run:
+          name: ccache stats
+          command: ccache -s -v || ccache -s  # -v needs ccache >= 4.4; image ships 4.2
+      - run:
+          name: Test
+          command: ctest --preset linux-steamrt-release
+      - save-ccache
+
+  lint:
+    docker:
+      - image: cimg/base:current
+    resource_class: medium
+    steps:
+      - checkout
+      # Non-recursive: clang-format needs cs2-kit/src, not the nested SDKs.
+      - fetch-submodules
+      - run:
+          name: Install uv
+          command: |
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - run:
+          name: Ruff check (build tooling)
+          command: uv run poe lint
+      - run:
+          name: clang-format check (plugin + cs2-kit sources)
+          command: uv run poe format-check
+
+  build-toolchain:
+    executor: machine-docker
+    steps:
+      - checkout
+      - unless:
+          condition: << pipeline.parameters.force-toolchain >>
+          steps:
+            - run:
+                name: Skip unless toolchain inputs changed
+                command: |
+                  if ! git rev-parse HEAD~1 >/dev/null 2>&1; then
+                    echo "No parent commit; building."
+                    exit 0
+                  fi
+                  if git diff --name-only HEAD~1 HEAD \
+                    | grep -qE '^(deploy/Dockerfile|conanfile\.py|conan\.lock|vendor/cs2-kit|\.circleci/config\.yml)'; then
+                    echo "Toolchain inputs changed; building."
+                  else
+                    echo "No toolchain input changes; skipping."
+                    circleci-agent step halt
+                  fi
+      # First-level submodules only: brings cs2-kit (Conan profiles), not the
+      # nested SDKs.
+      - fetch-submodules
+      - ghcr-login
+      - run:
+          name: Build + push toolchain image (build stage)
+          command: |
+            IMAGE=ghcr.io/voltygg/cs2-plugins/cs2-plugin-toolchain
+            docker buildx create --driver docker-container --use
+            docker buildx build \
+              --file deploy/Dockerfile \
+              --target build \
+              --push \
+              --tag "$IMAGE:latest" \
+              --cache-from "type=registry,ref=$IMAGE:buildcache" \
+              --cache-to "type=registry,ref=$IMAGE:buildcache,mode=max" \
+              .
+
+  build-package:
+    executor: toolchain
+    environment:
+      CCACHE_DIR: /ccache
+      CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
+      CCACHE_DEPEND: "1"
+      CCACHE_MAXSIZE: 1G
+    steps:
+      - checkout
+      - fetch-submodules:
+          flags: --recursive
+      - restore-ccache
+      - run:
+          name: Build Linux plugins
+          command: |
+            export CCACHE_BASEDIR="$PWD"
+            python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release
+      - run:
+          name: Package each declared plugin
+          command: |
+            pip3 install --quiet pyyaml  # inventory reader; not baked into the image
+            for plugin in $(python3 -m deploy.tools.cli plugins --format plain); do
+              python3 -m deploy.tools.cli package "$plugin" linux
+            done
+      - save-ccache
+      - persist_to_workspace:
+          root: .
+          paths:
+            - package
+
+  runtime-image:
+    executor: machine-docker
+    resource_class: medium
+    steps:
+      - checkout
+      - ghcr-login
+      - run:
+          name: Build + push runtime image
+          command: |
+            sudo apt-get update -qq && sudo apt-get install -y -qq python3-yaml
+            RUNTIME_IMAGE=$(python3 -m deploy.tools.cli runtime-image)
+            docker buildx create --driver docker-container --use
+            docker buildx build \
+              --file deploy/Dockerfile \
+              --target runtime \
+              --push \
+              --tag "$RUNTIME_IMAGE" \
+              --cache-from "type=registry,ref=ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:buildcache" \
+              --cache-to "type=registry,ref=ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:buildcache,mode=max" \
+              .
+
+  deploy:
+    docker:
+      - image: cimg/python:3.14
+    resource_class: medium
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install deploy deps
+          command: |
+            sudo apt-get update -qq && sudo apt-get install -y -qq rsync
+            pip install --quiet pyyaml python-dotenv
+      - run:
+          name: Configure SSH
+          command: |
+            mkdir -p ~/.ssh && chmod 700 ~/.ssh
+            if [ -z "$SSH_KEY_B64" ]; then
+              echo "ERROR: SSH_KEY_B64 is empty (cs2-deploy context)" >&2
+              exit 1
+            fi
+            echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/id_deploy
+            chmod 600 ~/.ssh/id_deploy
+      # Sequential loop replaces the GHA fromJSON matrix (CircleCI has no
+      # dynamic matrices without dynamic-config machinery).
+      - run:
+          name: Deploy each active server
+          command: |
+            FILTER="<< pipeline.parameters.server >>"
+            if [ -n "$FILTER" ]; then
+              SERVERS=$(python3 -m deploy.tools.cli matrix --server "$FILTER")
+            else
+              SERVERS=$(python3 -m deploy.tools.cli matrix)
+            fi
+            RUNTIME_IMAGE=$(python3 -m deploy.tools.cli runtime-image)
+            echo "Servers: $SERVERS"
+            echo "Runtime image: $RUNTIME_IMAGE"
+
+            echo "$SERVERS" | python3 -c '
+            import json, sys
+            for s in json.load(sys.stdin):
+                print(s["id"], s["host"], s.get("ssh_port", 22))
+            ' > /tmp/servers.txt
+
+            while read -r id host ssh_port; do
+              ssh-keyscan -p "$ssh_port" "$host" >> ~/.ssh/known_hosts 2>/dev/null
+
+              # Per-server env content, e.g. SERVER_ENV_BOX_A_B64 for box-a
+              # (the GHA per-environment SERVER_ENV secret, base64-encoded).
+              var="SERVER_ENV_$(echo "$id" | tr '[:lower:]-' '[:upper:]_')_B64"
+              env_b64=$(printenv "$var" || true)
+              if [ -z "$env_b64" ]; then
+                echo "ERROR: $var is empty for server '$id' (cs2-deploy context)" >&2
+                exit 1
+              fi
+              mkdir -p "deploy/secrets/servers/$id"
+              echo "$env_b64" | base64 -d > "deploy/secrets/servers/$id/.env"
+
+              ARGS=(deploy --server "$id" --runtime-image "$RUNTIME_IMAGE")
+              if [ "<< pipeline.parameters.dry-run >>" = "true" ]; then ARGS+=(--dry-run); fi
+              SSH_KEY_FILE="$HOME/.ssh/id_deploy" python3 -m deploy.tools.cli "${ARGS[@]}"
+            done < /tmp/servers.txt
+
+workflows:
+  ci:
+    when:
+      and:
+        - not: << pipeline.parameters.force-toolchain >>
+        - not:
+            equal: [prod, << pipeline.git.branch >>]
+    jobs:
+      - build-test:
+          context: ghcr
+      - lint
+
+  toolchain:
+    when:
+      or:
+        - << pipeline.parameters.force-toolchain >>
+        - equal: [main, << pipeline.git.branch >>]
+    jobs:
+      - build-toolchain:
+          context: ghcr
+
+  deploy:
+    when:
+      equal: [prod, << pipeline.git.branch >>]
+    jobs:
+      - build-package:
+          context: ghcr
+      - runtime-image:
+          context: ghcr
+      - deploy:
+          context:
+            - ghcr
+            - cs2-deploy
+          requires:
+            - build-package
+            - runtime-image
