@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "anticheat settings.jsonc",
+  "description": "Runtime configuration for the anticheat plugin. Extend alongside the Settings struct in src/Config.hpp - missing keys fall back to their C++ defaults.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "anticheat": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Master switch. Off means no hooks feed the detection cores."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["observe", "alert", "ban"],
+          "default": "observe",
+          "description": "Response funnel: observe logs/reports, alert also notifies admins, ban also kicks or bans."
+        },
+        "banDurationSec": {
+          "type": "integer",
+          "default": 0,
+          "description": "Ban length in seconds for ban mode; 0 = permanent."
+        },
+        "whitelistSteamIds": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "default": [],
+          "description": "SteamID64s that are reported but never punished (staff, testers)."
+        },
+        "allowSvCheatsTesting": {
+          "type": "boolean",
+          "default": false,
+          "description": "Keep detections armed while sv_cheats is on. Test boxes only."
+        },
+        "detections": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "aimbot": { "type": "boolean", "default": true },
+            "aimlock": { "type": "boolean", "default": true },
+            "antiAim": { "type": "boolean", "default": true },
+            "silentAim": { "type": "boolean", "default": true },
+            "dllInjection": { "type": "boolean", "default": true },
+            "invalidCvar": { "type": "boolean", "default": true },
+            "namechanger": { "type": "boolean", "default": true }
+          }
+        },
+        "webhook": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "default": "",
+              "description": "Discord webhook; inactive while empty."
+            }
+          }
+        },
+        "debug": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "simulator": {
+              "type": "boolean",
+              "default": false,
+              "description": "Arms the built-in cheat simulator commands (dev boxes only)."
+            }
+          }
+        }
+      }
+    }
+  }
+}

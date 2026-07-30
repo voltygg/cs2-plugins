@@ -18,7 +18,3 @@ protected:
     void OnPlayerFullyConnected(CS2Kit::Players::Player* player) override;
     void OnPlayerSettingsChanged(CS2Kit::Players::Player* player) override;
 };
-
-extern AnticheatPlugin g_AnticheatPlugin;
-
-PLUGIN_GLOBALVARS();

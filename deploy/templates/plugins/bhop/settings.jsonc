@@ -3,7 +3,6 @@
 // everything here is a literal knob - edit it in git to change it.
 {
   "plugin": {
-    "logLevel": "info",
     "locale": "ru"
   },
 

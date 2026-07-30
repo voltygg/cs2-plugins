@@ -4,53 +4,39 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/BuildInfo.hpp>
-#include <CS2Kit/Core/Services.hpp>
-#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Core/PluginInfoStamp.hpp>
 
 using CS2Kit::Core::Engine;
-namespace Log = CS2Kit::Utils::Log;
 
-AnticheatPlugin g_AnticheatPlugin;
-PLUGIN_EXPOSE(AnticheatPlugin, g_AnticheatPlugin);
-
-namespace Anticheat
-{
-Managers& App()
-{
-    return AnticheatPlugin::App();
-}
-}  // namespace Anticheat
+CS2KIT_PLUGIN(AnticheatPlugin, Anticheat);
 
 CS2Kit::PluginInfo AnticheatPlugin::Info() const
 {
-    return CS2Kit::PluginInfo{
+    return CS2Kit::WithBuildInfo({
         .Name = "Anticheat",
         .Author = "m9snoi",
         .Description = "Server-side cheat detection: aim analysis over correlated shots plus client-integrity checks.",
-        .Url = "",
-        .License = "MIT",
-        .Version = CS2Kit::BuildInfo::Version,
-        .Date = CS2Kit::BuildInfo::BuildDate,
-        .Commit = CS2Kit::BuildInfo::RepoCommit,
         .LogTag = "ANTICHEAT",
-    };
+    });
 }
 
 bool AnticheatPlugin::OnLoad(bool /*late*/)
 {
-    if (!Anticheat::App().Config.Load(Anticheat::SettingsPath))
+    if (!CS2Kit::LoadStandardConfig(Anticheat::App().Config, {.Addon = "anticheat", .Translations = false}))
         return false;
+
     // A missing data file leaves the two table-driven modules inert rather than taking the plugin
     // down: the aim modules, which carry no data file, are the ones worth keeping alive.
-    if (!Anticheat::App().Detections.Load(Anticheat::DetectionDataPath))
-        Log::Warn("{} could not be read; the DLL injection and invalid cvar modules have nothing to check against.",
-                  Anticheat::DetectionDataPath);
+    Engine().LoadReport.Run("Detection data", [] {
+        if (!Anticheat::App().Detections.Load(Anticheat::DetectionDataPath))
+            return CS2Kit::StageResult::Degraded("file unreadable; DLL injection and invalid cvar modules are inert");
+        return CS2Kit::StageResult::Ok(Anticheat::DetectionDataPath);
+    });
 
     Anticheat::App().Response.Initialize();
     Anticheat::App().AntiCheat.Initialize();
 
-    Log::Info("Loaded v{} (mode={}).", Info().Version, Anticheat::App().Config.Get().anticheat.mode);
+    CS2Kit::Log::Info("Mode: {}.", Anticheat::App().Config.Get().anticheat.mode);
     return true;
 }
 
