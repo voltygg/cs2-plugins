@@ -3,6 +3,7 @@
 #include "../../Core/Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
+#include <CS2Kit/Database/Api.hpp>
 #include <utility>
 
 namespace AdminSystem::Database

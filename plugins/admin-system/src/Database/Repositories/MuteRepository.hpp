@@ -3,6 +3,7 @@
 #include "../../Core/Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
+#include <CS2Kit/Database/Api.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 #include <cstdint>
 #include <format>

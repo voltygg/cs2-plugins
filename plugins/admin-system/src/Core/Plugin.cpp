@@ -15,8 +15,7 @@
 #include <CS2Kit/Core/HookMacros.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
-#include <CS2Kit/Database/Migrator.hpp>
-#include <CS2Kit/Database/PostgresDatabase.hpp>
+#include <CS2Kit/Database/Api.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>

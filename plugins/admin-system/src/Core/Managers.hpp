@@ -13,8 +13,7 @@
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/EffectManager.hpp>
 #include <CS2Kit/Core/Services.hpp>
-#include <CS2Kit/Database/Migrator.hpp>
-#include <CS2Kit/Database/PostgresDatabase.hpp>
+#include <CS2Kit/Database/Api.hpp>
 
 namespace AdminSystem
 {
