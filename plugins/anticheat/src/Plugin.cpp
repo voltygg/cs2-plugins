@@ -22,7 +22,7 @@ CS2Kit::PluginInfo AnticheatPlugin::Info() const
 
 bool AnticheatPlugin::OnLoad(bool /*late*/)
 {
-    if (!CS2Kit::LoadStandardConfig(Anticheat::App().Config, {.Addon = "anticheat", .Translations = false}))
+    if (!CS2Kit::LoadStandardConfig(Anticheat::App().Config, {.Addon = Anticheat::AddonName, .Translations = false}))
         return false;
 
     // A missing data file leaves the two table-driven modules inert rather than taking the plugin

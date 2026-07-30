@@ -30,7 +30,6 @@
 using namespace AdminSystem::Core;
 using namespace AdminSystem::Admin;
 using namespace AdminSystem::Punishments;
-using namespace CS2Kit::Commands;
 using namespace CS2Kit::Core;
 using namespace CS2Kit::Players;
 using namespace CS2Kit::Sdk;
@@ -83,7 +82,7 @@ StageResult ConnectDatabase()
     if (!db.Start(App().Config.GetDatabase()))
         return StageResult::Degraded("unavailable; chat commands will reject all callers");
 
-    const auto migration = CS2Kit::RunMigrations(db, CS2Kit::AddonFile("admin-system", "configs/migrations"),
+    const auto migration = CS2Kit::RunMigrations(db, CS2Kit::AddonFile(AddonName, "configs/migrations"),
                                                  {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
     App().Migration = migration;
     if (!migration)
@@ -198,7 +197,7 @@ bool AdminSystemPlugin::OnLoad(bool late)
     auto& report = Engine().LoadReport;
 
     // "Configuration" + "Translations" stages, via ConfigManager::LoadSettings.
-    if (!CS2Kit::LoadStandardConfig(App().Config, {.Addon = "admin-system"}))
+    if (!CS2Kit::LoadStandardConfig(App().Config, {.Addon = AddonName}))
         return false;
 
     report.Run("Policy", [] {

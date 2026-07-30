@@ -10,12 +10,14 @@
 #include <iterator>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace Anticheat
 {
 
-inline constexpr const char* SettingsPath = "addons/anticheat/configs/settings.jsonc";
+/** The addon folder name - matches the CMake target and keys every addons/ path. */
+inline constexpr std::string_view AddonName = "anticheat";
 
 /** Field names are the JSON keys, so they keep their lowercase spelling. */
 struct DetectionToggles

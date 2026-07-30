@@ -3,6 +3,7 @@
 #include <CS2Kit/Api.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <string_view>
 
 namespace Bhop
 {
@@ -45,7 +46,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, bhop)
 
 using ConfigManager = CS2Kit::JsonConfig<Settings>;
 
-/** settings.jsonc path, shared by the initial load and bhop_reload. */
-inline const std::string SettingsPath = CS2Kit::AddonFile("bhop", "configs/settings.jsonc");
+/** The addon folder name - matches the CMake target and keys every addons/ path. */
+inline constexpr std::string_view AddonName = "bhop";
 
 }  // namespace Bhop

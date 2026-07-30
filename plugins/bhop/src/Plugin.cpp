@@ -20,7 +20,7 @@ CS2Kit::PluginInfo BhopPlugin::Info() const
 
 bool BhopPlugin::OnLoad(bool late)
 {
-    if (!CS2Kit::LoadStandardConfig(Bhop::App().Config, {.Addon = "bhop"}))
+    if (!CS2Kit::LoadStandardConfig(Bhop::App().Config, {.Addon = Bhop::AddonName}))
         return false;
 
     Bhop::App().Bhop.Initialize();

@@ -110,7 +110,7 @@ void BhopManager::ReloadSettings()
 {
     _conVars.Reset();
 
-    if (!_config.Load(SettingsPath))
+    if (!_config.Load(CS2Kit::AddonFile(AddonName, "configs/settings.jsonc")))
     {
         Log::Warn("bhop_reload: settings.jsonc failed to load; keeping previous values in memory.");
         return;

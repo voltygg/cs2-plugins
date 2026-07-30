@@ -186,11 +186,9 @@ bool ChatService::HandleSay(Player* player, std::string_view message, bool isSay
     if (Engine().ChatInput.TryConsume(player->GetSlot(), message))
         return true;
 
-    bool isCommand = (message.front() == '!' || message.front() == '.');
-
-    // Try to dispatch as a registered command. Returns false for unknown commands
-    // (e.g. "!ads") so they fall through to normal chat instead of being silently swallowed.
-    if (isCommand && Engine().Commands.HandleChatMessage(player, std::string(message)))
+    // Returns false for an unprefixed line and for unknown commands (e.g. "!ads"), so both
+    // fall through to normal chat instead of being silently swallowed.
+    if (Engine().Commands.HandleChatMessage(player, message))
         return true;
 
     int64_t steamId = player->GetSteamID();

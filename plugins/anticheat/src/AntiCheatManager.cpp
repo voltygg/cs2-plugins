@@ -92,7 +92,7 @@ void AntiCheatManager::RegisterCommands()
     _cmdReload.emplace(
         "anticheat_reload", "Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.",
         [this](const CCommand&) {
-            if (!App().Config.Load(SettingsPath))
+            if (!App().Config.Load(CS2Kit::AddonFile(AddonName, "configs/settings.jsonc")))
                 return;
             // Keeps the rules already in memory when the edit does not parse, so a typo cannot
             // silently disarm the two table-driven modules.

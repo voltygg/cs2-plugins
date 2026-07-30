@@ -32,5 +32,3 @@ public:
     // the channel when the sender is voice-muted.
     bool Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen);
 };
-
-extern AdminSystemPlugin g_AdminSystemPlugin;

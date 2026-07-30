@@ -6,6 +6,7 @@
 #include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace CS2Kit::Database
@@ -19,6 +20,9 @@ namespace AdminSystem::Core
 {
 
 using DatabaseConfig = CS2Kit::Database::PostgresConfig;
+
+/** The addon folder name - matches the CMake target and keys every addons/ path. */
+inline constexpr std::string_view AddonName = "admin-system";
 
 /** Kit-standard "plugin" section of settings.json (locale). */
 using PluginSettings = CS2Kit::StandardPluginSettings;
