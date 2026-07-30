@@ -35,7 +35,10 @@ ctest --preset windows-msvc-release
 
 Build output lands in `build/<preset>/plugins/<name>/<platform-arch>/`.
 Conan profiles are canonical in `vendor/cs2-kit/conan/profiles/` (no local
-copies). Unit tests use doctest (`test_requires` in both conanfiles) and live in
+copies). Builds precompile `<CS2Kit/Api.hpp>` per plugin (extend with
+`cs2_add_plugin(... PCH_HEADERS ...)`, disable with `-DCS2KIT_DISABLE_PCH=ON`);
+`build.py --no-test` skips the ctest step (CI runs tests separately). Unit
+tests use doctest (`test_requires` in both conanfiles) and live in
 `vendor/cs2-kit/tests/` plus `plugins/<name>/tests/`, wired by the kit's
 `cs2_add_tests()`. One ctest entry per case, so TEST_CASE names must not contain
 `[`, `]` or `;` (configure enforces it). See `vendor/cs2-kit/docs/testing.md`.
@@ -88,18 +91,23 @@ All SDK dependencies live inside cs2-kit's `vendor/`, so admin-system has no
 duplicate SDK submodules. Include style: `#include <CS2Kit/Commands/CommandSpec.hpp>`
 (or just `<CS2Kit/Api.hpp>` for the hoisted short names).
 
-`AdminSystemPlugin` derives from `CS2Kit::PluginBase<Managers>`, which owns the
+Each plugin derives from `CS2Kit::PluginBase<Managers>`, which owns the
 ISmmPlugin boilerplate, standard SourceHook hooks, the PlayerManager lifecycle,
 `CS2Kit::Initialize`/`Shutdown`, and the `Managers` container behind `App()`.
-Plugin-domain rules (permissions, immunity, replies, broadcasts) are injected
-once in OnLoad via `Engine().Policy`.
+`CS2KIT_PLUGIN(Klass, Ns)` in the plugin's Plugin.cpp expands the instance,
+PLUGIN_EXPOSE, and the `App()` trampoline; `CS2Kit::WithBuildInfo` stamps
+Info(), and `CS2Kit::LoadStandardConfig` is the OnLoad config/translations
+prelude. Plugin-domain rules (permissions, immunity, replies, broadcasts) are
+injected once in OnLoad via `Engine().Policy`. DB-using TUs include
+`<CS2Kit/Database/Api.hpp>` for the short DB names - the main `Api.hpp`
+umbrella deliberately excludes pqxx.
 
 Key kit patterns in use here:
 
 - Commands are declarative `CommandSpec`s that self-register via
-  `Registry<CommandSpec>` in `src/Commands/*.cpp`; OnLoad ingests them with
-  `Engine().Commands.RegisterAll(...)`. Typed args (Target/Duration/ReasonTail)
-  are resolved before handlers run.
+  `Registry<CommandSpec>` in `src/Commands/*.cpp`; the kit auto-ingests them
+  after OnLoad. Typed args (Target/Duration/ReasonTail) are resolved before
+  handlers run.
 - Fun effects are `EffectDescriptor`s in `src/Admin/Effects/`, self-registered
   and rendered by menu context rows; punish/unmute/unban wizards are
   `Flow<TState>` chains in `src/Admin/Menu/`.
