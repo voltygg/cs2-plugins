@@ -15,12 +15,22 @@ jobs:
     name: Build + test
     runs-on: ubuntu-latest
     # Prebuilt toolchain image (no per-run image build / tool install). Publish it
-    # first via the "Build toolchain image" workflow.
+    # first via the "Build toolchain image" workflow. To pin by digest (preferred
+    # over :latest for layer reuse and reproducibility): `docker buildx imagetools
+    # inspect ghcr.io/voltygg/cs2-plugins/cs2-plugin-toolchain:latest` and replace
+    # the tag with @sha256:<digest>; bump it when the toolchain workflow publishes.
     container:
       image: ghcr.io/${{ github.repository }}/cs2-plugin-toolchain:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      CCACHE_DIR: /ccache
+      # pch_defines + depend mode are REQUIRED with the kit's precompiled headers:
+      # without both, every PCH-using TU is a permanent ccache miss.
+      CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
+      CCACHE_DEPEND: "1"
+      CCACHE_MAXSIZE: 1G
     steps:
       - name: Checkout (recursive submodules)
         uses: actions/checkout@v7
@@ -29,25 +39,35 @@ jobs:
 
       # No Conan cache: deps are baked into the toolchain image (deploy/Dockerfile).
       # Per-run key so saves persist; branch-scoped restore; MAXSIZE bounds the blob.
+      # The hashFiles() prefix fingerprints the toolchain (the image is rebuilt
+      # exactly when these files change), so a compiler/deps change starts a
+      # fresh cache lineage instead of poisoning hit rates.
       - name: Cache ccache
         uses: actions/cache@v6
         with:
           # Absolute path: `~` differs for actions/cache vs ccache in-container.
           path: /ccache
-          key: ccache-linux-${{ github.ref_name }}-${{ github.run_id }}
+          key: ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
-            ccache-linux-${{ github.ref_name }}-
-            ccache-linux-
+            ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-
+            ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-
 
-      - name: Build + test (configure -> build -> ctest via workflow preset)
-        env:
-          CCACHE_DIR: /ccache
-          CCACHE_SLOPPINESS: time_macros,locale,include_file_ctime,include_file_mtime
-          CCACHE_MAXSIZE: 500M
+      - name: Zero ccache stats
+        run: ccache -z
+
+      - name: Build (configure -> build)
         run: |
           # In-container path for base-dir rewriting (github.workspace is host path).
           export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
-          python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release
+          python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release --no-test
+
+      # Warm reruns of an unchanged tree should show >95% hits; a collapse here
+      # means the PCH/ccache config regressed (see CCACHE_* env above).
+      - name: ccache stats
+        run: ccache -s -v || ccache -s  # -v needs ccache >= 4.4; image ships 4.2
+
+      - name: Test
+        run: ctest --preset linux-steamrt-release
 
   lint:
     name: Lint (ruff + clang-format)
