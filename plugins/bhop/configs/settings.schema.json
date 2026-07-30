@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "bhop settings.jsonc",
+  "description": "Runtime configuration for the bhop plugin. Extend alongside the Settings struct in src/Config.hpp - missing keys fall back to their C++ defaults.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "locale": {
+          "type": "string",
+          "default": "en",
+          "description": "Translation language; matches a file in configs/translations."
+        }
+      }
+    },
+    "bhop": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["enabled", "grants"],
+          "default": "enabled",
+          "description": "enabled = always-on for everyone; grants = per-player via bhop_player."
+        },
+        "autoBunnyhopping": { "type": "boolean", "default": true },
+        "enableBunnyhopping": { "type": "boolean", "default": true },
+        "staminaJumpCost": { "type": "number", "default": 0.0 },
+        "staminaLandCost": { "type": "number", "default": 0.0 },
+        "airAccelerate": { "type": "number", "default": 150.0 },
+        "airMaxWishSpeed": { "type": "number", "default": 60.0 },
+        "maxVelocity": { "type": "number", "default": -1 },
+        "hopBoost": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "factor": { "type": "number", "default": 1.08 },
+            "chainWindowMs": { "type": "integer", "default": 1000 },
+            "maxSpeed": { "type": "number", "default": 1200.0 }
+          }
+        },
+        "notifyPlayer": { "type": "boolean", "default": true }
+      }
+    }
+  }
+}

@@ -16,7 +16,3 @@ protected:
     bool OnLoad(bool late) override;
     void OnPlayerDisconnect(CS2Kit::Player* player) override;
 };
-
-extern BhopPlugin g_BhopPlugin;
-
-PLUGIN_GLOBALVARS();

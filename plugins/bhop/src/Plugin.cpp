@@ -4,51 +4,26 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/BuildInfo.hpp>
-#include <CS2Kit/Core/Services.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
+#include <CS2Kit/Core/PluginInfoStamp.hpp>
 
-using CS2Kit::Core::Engine;
-namespace Log = CS2Kit::Utils::Log;
-
-BhopPlugin g_BhopPlugin;
-PLUGIN_EXPOSE(BhopPlugin, g_BhopPlugin);
-
-namespace Bhop
-{
-Managers& App()
-{
-    return BhopPlugin::App();
-}
-}  // namespace Bhop
+CS2KIT_PLUGIN(BhopPlugin, Bhop);
 
 CS2Kit::PluginInfo BhopPlugin::Info() const
 {
-    return CS2Kit::PluginInfo{
+    return CS2Kit::WithBuildInfo({
         .Name = "Bhop",
         .Author = "m9snoi",
         .Description = "Smooth, client-predicted bunnyhop with per-player session grants.",
-        .Url = "",
-        .License = "MIT",
-        .Version = CS2Kit::BuildInfo::Version,
-        .Date = CS2Kit::BuildInfo::BuildDate,
-        .Commit = CS2Kit::BuildInfo::RepoCommit,
         .LogTag = "BHOP",
-    };
+    });
 }
 
 bool BhopPlugin::OnLoad(bool late)
 {
-    if (!Bhop::App().Config.Load(Bhop::SettingsPath))
+    if (!CS2Kit::LoadStandardConfig(Bhop::App().Config, {.Addon = "bhop"}))
         return false;
 
-    Engine().Translations.SetLanguage(Bhop::App().Config.Get().plugin.locale);
-    Engine().Translations.Load("addons/bhop/configs/translations");
-
     Bhop::App().Bhop.Initialize();
-
-    Log::Info("Loaded v{}.", Info().Version);
     return true;
 }
 

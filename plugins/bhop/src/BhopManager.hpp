@@ -65,8 +65,8 @@ private:
     std::unordered_set<int64_t> _granted;
     // Per-slot mirror of _granted for the movement hot path, where a steamId lookup per tick
     // would be wasteful. Kept in lockstep with _granted by Grant/OnPlayerSpawn/OnPlayerDisconnect.
-    std::array<bool, CS2Kit::Core::MaxPlayers> _grantedSlots{};
-    std::array<std::chrono::steady_clock::time_point, CS2Kit::Core::MaxPlayers> _lastJump{};
+    std::array<bool, CS2Kit::MaxPlayers> _grantedSlots{};
+    std::array<std::chrono::steady_clock::time_point, CS2Kit::MaxPlayers> _lastJump{};
 
     std::optional<CS2Kit::ServerCommand> _cmdPlayer;
     std::optional<CS2Kit::ServerCommand> _cmdReload;

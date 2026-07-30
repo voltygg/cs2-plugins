@@ -7,14 +7,6 @@
 namespace Bhop
 {
 
-/** "plugin" section of settings.jsonc. */
-struct PluginSettings
-{
-    std::string logLevel = "info";
-    std::string locale = "en";
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PluginSettings, logLevel, locale)
-
 /** "bhop.hopBoost" section: server-side velocity boost per chained hop. */
 struct HopBoostSettings
 {
@@ -46,7 +38,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BhopSettings, mode, autoBunnyhop
 /** Root of settings.jsonc. Add a struct + a member here for each new section. */
 struct Settings
 {
-    PluginSettings plugin;
+    CS2Kit::StandardPluginSettings plugin;
     BhopSettings bhop;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, bhop)
@@ -54,6 +46,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, bhop)
 using ConfigManager = CS2Kit::JsonConfig<Settings>;
 
 /** settings.jsonc path, shared by the initial load and bhop_reload. */
-inline constexpr const char* SettingsPath = "addons/bhop/configs/settings.jsonc";
+inline const std::string SettingsPath = CS2Kit::AddonFile("bhop", "configs/settings.jsonc");
 
 }  // namespace Bhop
