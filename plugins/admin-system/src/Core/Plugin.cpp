@@ -11,8 +11,8 @@
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
-#include <CS2Kit/Core/PluginInfoStamp.hpp>
 #include <CS2Kit/Core/HookMacros.hpp>
+#include <CS2Kit/Core/PluginInfoStamp.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Database/Api.hpp>
@@ -197,7 +197,7 @@ bool AdminSystemPlugin::OnLoad(bool late)
 
     auto& report = Engine().LoadReport;
 
-    // "Configuration" + "Translations" stages; picks up ConfigManager::LoadSettings.
+    // "Configuration" + "Translations" stages, via ConfigManager::LoadSettings.
     if (!CS2Kit::LoadStandardConfig(App().Config, {.Addon = "admin-system"}))
         return false;
 

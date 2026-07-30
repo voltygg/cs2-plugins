@@ -20,7 +20,7 @@ namespace AdminSystem::Core
 
 using DatabaseConfig = CS2Kit::Database::PostgresConfig;
 
-/** "plugin" section of settings.json - the kit-standard section (locale). */
+/** Kit-standard "plugin" section of settings.json (locale). */
 using PluginSettings = CS2Kit::StandardPluginSettings;
 
 /** "server" section of settings.jsonc: this server's identity in the shared database.

@@ -15,10 +15,8 @@ jobs:
     name: Build + test
     runs-on: ubuntu-latest
     # Prebuilt toolchain image (no per-run image build / tool install). Publish it
-    # first via the "Build toolchain image" workflow. To pin by digest (preferred
-    # over :latest for layer reuse and reproducibility): `docker buildx imagetools
-    # inspect ghcr.io/voltygg/cs2-plugins/cs2-plugin-toolchain:latest` and replace
-    # the tag with @sha256:<digest>; bump it when the toolchain workflow publishes.
+    # first via the "Build toolchain image" workflow. Pin by @sha256:<digest>
+    # (`docker buildx imagetools inspect <image>`) for reproducible layer reuse.
     container:
       image: ghcr.io/${{ github.repository }}/cs2-plugin-toolchain:latest
       credentials:
@@ -26,8 +24,8 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     env:
       CCACHE_DIR: /ccache
-      # pch_defines + depend mode are REQUIRED with the kit's precompiled headers:
-      # without both, every PCH-using TU is a permanent ccache miss.
+      # pch_defines + depend mode are REQUIRED with the kit's PCH: without both,
+      # every PCH-using TU is a permanent ccache miss.
       CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
       CCACHE_DEPEND: "1"
       CCACHE_MAXSIZE: 1G
@@ -39,9 +37,8 @@ jobs:
 
       # No Conan cache: deps are baked into the toolchain image (deploy/Dockerfile).
       # Per-run key so saves persist; branch-scoped restore; MAXSIZE bounds the blob.
-      # The hashFiles() prefix fingerprints the toolchain (the image is rebuilt
-      # exactly when these files change), so a compiler/deps change starts a
-      # fresh cache lineage instead of poisoning hit rates.
+      # The hashFiles() prefix fingerprints the toolchain, so a compiler/deps change
+      # starts a fresh cache lineage instead of poisoning hit rates.
       - name: Cache ccache
         uses: actions/cache@v6
         with:
@@ -61,8 +58,8 @@ jobs:
           export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
           python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release --no-test
 
-      # Warm reruns of an unchanged tree should show >95% hits; a collapse here
-      # means the PCH/ccache config regressed (see CCACHE_* env above).
+      # Warm reruns of an unchanged tree should show >95% hits; a collapse means
+      # the CCACHE_* env above regressed.
       - name: ccache stats
         run: ccache -s -v || ccache -s  # -v needs ccache >= 4.4; image ships 4.2
 

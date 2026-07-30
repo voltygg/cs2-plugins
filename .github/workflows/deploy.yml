@@ -77,8 +77,7 @@ jobs:
         uses: actions/cache@v6
         with:
           # Absolute path: `~` differs for actions/cache vs ccache in-container.
-          # Key shape mirrors ci.yml (toolchain fingerprint prefix) so deploy and
-          # CI builds share a cache lineage.
+          # Key shape mirrors ci.yml so deploy and CI share a cache lineage.
           path: /ccache
           key: ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
@@ -88,8 +87,8 @@ jobs:
       - name: Build Linux plugins
         env:
           CCACHE_DIR: /ccache
-          # pch_defines + depend mode are REQUIRED with the kit's precompiled
-          # headers; without both, every PCH-using TU is a permanent ccache miss.
+          # pch_defines + depend mode are REQUIRED with the kit's PCH: without
+          # both, every PCH-using TU is a permanent ccache miss.
           CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
           CCACHE_DEPEND: "1"
           CCACHE_MAXSIZE: 1G
