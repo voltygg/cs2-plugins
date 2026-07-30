@@ -20,13 +20,8 @@ namespace AdminSystem::Core
 
 using DatabaseConfig = CS2Kit::Database::PostgresConfig;
 
-/** "plugin" section of settings.json. */
-struct PluginSettings
-{
-    std::string logLevel = "info";
-    std::string locale = "en";
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PluginSettings, logLevel, locale)
+/** "plugin" section of settings.json - the kit-standard section (locale). */
+using PluginSettings = CS2Kit::StandardPluginSettings;
 
 /** "server" section of settings.jsonc: this server's identity in the shared database.
  *  The tag keys per-server admin grants (admin_server_groups) and audit attribution, so it

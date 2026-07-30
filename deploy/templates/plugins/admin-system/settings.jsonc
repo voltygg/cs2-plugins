@@ -5,7 +5,6 @@
 // Non-secret, same-everywhere knobs stay literal here; edit them in git to change them.
 {
   "plugin": {
-    "logLevel": "info",
     "locale": "ru"
   },
   "server": {

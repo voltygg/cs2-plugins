@@ -34,5 +34,3 @@ public:
 };
 
 extern AdminSystemPlugin g_AdminSystemPlugin;
-
-PLUGIN_GLOBALVARS();

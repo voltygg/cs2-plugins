@@ -1,8 +1,6 @@
 {
   "$schema": "./settings.schema.json",
   "plugin": {
-    // Log verbosity: "trace" | "debug" | "info" | "warn" | "error".
-    "logLevel": "info",
     // Default panel/translation language: matches a file in configs/translations (e.g. "en", "ru").
     "locale": "ru"
   },

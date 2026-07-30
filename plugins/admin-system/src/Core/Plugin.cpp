@@ -10,8 +10,8 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/BuildInfo.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Core/PluginInfoStamp.hpp>
 #include <CS2Kit/Core/HookMacros.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
@@ -39,8 +39,7 @@ using namespace CS2Kit::Menu;
 using AdminSystem::App;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 
-AdminSystemPlugin g_AdminSystemPlugin;
-PLUGIN_EXPOSE(AdminSystemPlugin, g_AdminSystemPlugin);
+CS2KIT_PLUGIN(AdminSystemPlugin, AdminSystem);
 
 SH_DECL_HOOK3(IVEngineServer2, SetClientListening, SH_NOATTRIB, 0, bool, CPlayerSlot, CPlayerSlot, bool);
 
@@ -52,14 +51,6 @@ AdminSystemPlugin& AdminSystemPlugin::Get()
 }
 
 using CS2Kit::Core::Engine;
-
-namespace AdminSystem
-{
-Managers& App()
-{
-    return AdminSystemPlugin::App();
-}
-}  // namespace AdminSystem
 
 // ------- Subsystem wiring -----
 
@@ -92,7 +83,7 @@ StageResult ConnectDatabase()
     if (!db.Start(App().Config.GetDatabase()))
         return StageResult::Degraded("unavailable; chat commands will reject all callers");
 
-    const auto migration = CS2Kit::RunMigrations(db, "addons/admin-system/configs/migrations",
+    const auto migration = CS2Kit::RunMigrations(db, CS2Kit::AddonFile("admin-system", "configs/migrations"),
                                                  {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
     App().Migration = migration;
     if (!migration)
@@ -191,17 +182,13 @@ void FlushPlayerSession(Player* player)
 
 PluginInfo AdminSystemPlugin::Info() const
 {
-    return PluginInfo{
+    return CS2Kit::WithBuildInfo({
         .Name = "Admin System",
         .Author = "Sukhrob Ilyosbekov",
         .Description = "Admin System for CS2",
         .Url = "https://github.com/m9snoi-net/cs2-plugins",
-        .License = "MIT",
-        .Version = CS2Kit::BuildInfo::Version,
-        .Date = CS2Kit::BuildInfo::BuildDate,
-        .Commit = CS2Kit::BuildInfo::RepoCommit,
         .LogTag = "ADMIN",
-    };
+    });
 }
 
 bool AdminSystemPlugin::OnLoad(bool late)
@@ -210,19 +197,9 @@ bool AdminSystemPlugin::OnLoad(bool late)
 
     auto& report = Engine().LoadReport;
 
-    const auto config = report.Run("Configuration", [] {
-        if (!App().Config.LoadSettings("addons/admin-system/configs/settings.jsonc"))
-            return StageResult::Failed("failed to load settings.jsonc");
-        return StageResult::Ok();
-    });
-    if (config == StageStatus::Failed)
+    // "Configuration" + "Translations" stages; picks up ConfigManager::LoadSettings.
+    if (!CS2Kit::LoadStandardConfig(App().Config, {.Addon = "admin-system"}))
         return false;
-
-    report.Run("Translations", [] {
-        Engine().Translations.SetLanguage(App().Config.GetPlugin().locale);
-        Engine().Translations.Load("addons/admin-system/configs/translations");
-        return StageResult::Ok();
-    });
 
     report.Run("Policy", [] {
         InstallPolicy();
@@ -242,11 +219,7 @@ bool AdminSystemPlugin::OnLoad(bool late)
         return LoadAdminData();
     });
 
-    report.Run("Commands", [] {
-        // Every command self-registered into the Registry at its definition site; ingest once.
-        Engine().Commands.RegisterAll(CS2Kit::Registry<CS2Kit::CommandSpec>::Items());
-        return StageResult::Ok();
-    });
+    // Self-registered commands are ingested by the kit after OnLoad returns.
 
     report.Run("Punishments", [&] {
         if (!report.IsOk("Database"))
