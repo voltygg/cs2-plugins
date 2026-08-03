@@ -13,7 +13,7 @@ from .common import DEPLOY, load_server_env, repo_path
 
 
 def cmd_matrix(args: argparse.Namespace) -> None:
-    """Print the deploy matrix consumed by GitHub Actions."""
+    """Print the deploy matrix: full JSON for the GHA matrix, ids only for shell loops."""
     from . import inventory
 
     servers = inventory.active_servers(inventory.load())
@@ -21,7 +21,10 @@ def cmd_matrix(args: argparse.Namespace) -> None:
         servers = [server for server in servers if server.get("id") == args.server]
         if not servers:
             raise SystemExit(f"ERROR: server '{args.server}' not found in active inventory servers")
-    print(json.dumps(servers))
+    if args.format == "plain":
+        print("\n".join(server["id"] for server in servers))
+    else:
+        print(json.dumps(servers))
 
 
 def cmd_plugins(args: argparse.Namespace) -> None:
@@ -115,8 +118,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    matrix = sub.add_parser("matrix", help="emit the active deploy server matrix as JSON")
+    matrix = sub.add_parser("matrix", help="emit the active deploy server matrix")
     matrix.add_argument("--server", help="filter to one server id and fail if missing")
+    matrix.add_argument("--format", choices=("json", "plain"), default="json")
     matrix.set_defaults(func=cmd_matrix)
 
     plugins = sub.add_parser("plugins", help="emit declared deploy plugins")

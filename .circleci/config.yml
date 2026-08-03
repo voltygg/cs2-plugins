@@ -1,6 +1,7 @@
 # CircleCI mirror of the GitHub Actions workflows (ci.yml, build-toolchain.yml,
 # deploy.yml) so either provider can run CI/CD when the other is out of minutes.
-# Secrets live in CircleCI contexts (see CONTRIBUTING.md "Continuous Integration"):
+#
+# Secrets live in two contexts; run .circleci/bootstrap.sh to create and fill them:
 #   ghcr:       GHCR_USERNAME, GHCR_TOKEN (PAT with read+write packages)
 #   cs2-deploy: SSH_KEY_B64, SERVER_ENV_<ID>_B64 (base64 of the GHA secrets;
 #               CircleCI env vars do not preserve multiline values)
@@ -26,6 +27,13 @@ executors:
           username: $GHCR_USERNAME
           password: $GHCR_TOKEN
     resource_class: large
+    environment:
+      CCACHE_DIR: /ccache
+      # pch_defines + depend mode are REQUIRED with the kit's PCH: without both,
+      # every PCH-using TU is a permanent ccache miss.
+      CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
+      CCACHE_DEPEND: "1"
+      CCACHE_MAXSIZE: 1G
   machine-docker:
     machine:
       image: ubuntu-2604:current
@@ -50,15 +58,28 @@ commands:
       # suffix plays the role of GHA's per-run key).
       - restore_cache:
           keys:
-            - ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - &ccache_key ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-{{ .Branch }}-{{ .Revision }}
             - ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-{{ .Branch }}-
             - ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-
   save-ccache:
     steps:
       - save_cache:
-          key: ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-{{ .Branch }}-{{ .Revision }}
+          key: *ccache_key
           paths:
             - /ccache
+  build-plugins:
+    steps:
+      - checkout
+      - fetch-submodules:
+          flags: --recursive
+      - restore-ccache
+      - run:
+          name: Build Linux plugins
+          command: |
+            export CCACHE_BASEDIR="$PWD"
+            mkdir -p /ccache && ccache -z
+            python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release
+            ccache -s -v || ccache -s  # -v needs ccache >= 4.4; image ships 4.2
   ghcr-login:
     steps:
       - run:
@@ -68,29 +89,8 @@ commands:
 jobs:
   build-test:
     executor: toolchain
-    environment:
-      CCACHE_DIR: /ccache
-      # pch_defines + depend mode are REQUIRED with the kit's PCH: without both,
-      # every PCH-using TU is a permanent ccache miss.
-      CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
-      CCACHE_DEPEND: "1"
-      CCACHE_MAXSIZE: 1G
     steps:
-      - checkout
-      - fetch-submodules:
-          flags: --recursive
-      - restore-ccache
-      - run:
-          name: Zero ccache stats
-          command: mkdir -p /ccache && ccache -z
-      - run:
-          name: Build (configure -> build)
-          command: |
-            export CCACHE_BASEDIR="$PWD"
-            python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release --no-test
-      - run:
-          name: ccache stats
-          command: ccache -s -v || ccache -s  # -v needs ccache >= 4.4; image ships 4.2
+      - build-plugins
       - run:
           name: Test
           command: ctest --preset linux-steamrt-release
@@ -157,21 +157,8 @@ jobs:
 
   build-package:
     executor: toolchain
-    environment:
-      CCACHE_DIR: /ccache
-      CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
-      CCACHE_DEPEND: "1"
-      CCACHE_MAXSIZE: 1G
     steps:
-      - checkout
-      - fetch-submodules:
-          flags: --recursive
-      - restore-ccache
-      - run:
-          name: Build Linux plugins
-          command: |
-            export CCACHE_BASEDIR="$PWD"
-            python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release
+      - build-plugins
       - run:
           name: Package each declared plugin
           command: |
@@ -210,6 +197,8 @@ jobs:
     docker:
       - image: cimg/python:3.14
     resource_class: medium
+    environment:
+      SSH_KEY_FILE: /home/circleci/.ssh/id_deploy
     steps:
       - checkout
       - attach_workspace:
@@ -221,14 +210,12 @@ jobs:
             pip install --quiet pyyaml python-dotenv
       - run:
           name: Configure SSH
+          # No ssh-keyscan: remote.py already passes StrictHostKeyChecking=accept-new.
           command: |
+            [ -n "$SSH_KEY_B64" ] || { echo "ERROR: SSH_KEY_B64 is empty (cs2-deploy context)" >&2; exit 1; }
             mkdir -p ~/.ssh && chmod 700 ~/.ssh
-            if [ -z "$SSH_KEY_B64" ]; then
-              echo "ERROR: SSH_KEY_B64 is empty (cs2-deploy context)" >&2
-              exit 1
-            fi
-            echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/id_deploy
-            chmod 600 ~/.ssh/id_deploy
+            echo "$SSH_KEY_B64" | base64 -d > "$SSH_KEY_FILE"
+            chmod 600 "$SSH_KEY_FILE"
       # Sequential loop replaces the GHA fromJSON matrix (CircleCI has no
       # dynamic matrices without dynamic-config machinery).
       - run:
@@ -236,23 +223,15 @@ jobs:
           command: |
             FILTER="<< pipeline.parameters.server >>"
             if [ -n "$FILTER" ]; then
-              SERVERS=$(python3 -m deploy.tools.cli matrix --server "$FILTER")
+              SERVERS=$(python3 -m deploy.tools.cli matrix --server "$FILTER" --format plain)
             else
-              SERVERS=$(python3 -m deploy.tools.cli matrix)
+              SERVERS=$(python3 -m deploy.tools.cli matrix --format plain)
             fi
             RUNTIME_IMAGE=$(python3 -m deploy.tools.cli runtime-image)
             echo "Servers: $SERVERS"
             echo "Runtime image: $RUNTIME_IMAGE"
 
-            echo "$SERVERS" | python3 -c '
-            import json, sys
-            for s in json.load(sys.stdin):
-                print(s["id"], s["host"], s.get("ssh_port", 22))
-            ' > /tmp/servers.txt
-
-            while read -r id host ssh_port; do
-              ssh-keyscan -p "$ssh_port" "$host" >> ~/.ssh/known_hosts 2>/dev/null
-
+            for id in $SERVERS; do
               # Per-server env content, e.g. SERVER_ENV_BOX_A_B64 for box-a
               # (the GHA per-environment SERVER_ENV secret, base64-encoded).
               var="SERVER_ENV_$(echo "$id" | tr '[:lower:]-' '[:upper:]_')_B64"
@@ -266,8 +245,8 @@ jobs:
 
               ARGS=(deploy --server "$id" --runtime-image "$RUNTIME_IMAGE")
               if [ "<< pipeline.parameters.dry-run >>" = "true" ]; then ARGS+=(--dry-run); fi
-              SSH_KEY_FILE="$HOME/.ssh/id_deploy" python3 -m deploy.tools.cli "${ARGS[@]}"
-            done < /tmp/servers.txt
+              python3 -m deploy.tools.cli "${ARGS[@]}"
+            done
 
 workflows:
   ci:

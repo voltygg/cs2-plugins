@@ -112,3 +112,6 @@ bootstrap it from CircleCI by triggering a pipeline with the `force-toolchain`
 parameter set to true. Note that a `prod` push while both providers' deploys
 are enabled deploys twice; disable one side (GHA: disable the workflow in the
 Actions UI; CircleCI: comment out the `deploy` workflow trigger).
+
+Contexts are created and filled by `./.circleci/bootstrap.sh`; see
+[.circleci/README.md](.circleci/README.md) for the full setup walkthrough.
