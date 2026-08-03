@@ -23,7 +23,7 @@ A full admin suite for CS2 community servers: punishments, fun effects, a WASD a
 
 ## Installation
 
-1. Download the latest release from [Releases](https://github.com/m9snoi-net/cs2-plugins/releases)
+1. Download the latest release from [Releases](https://github.com/voltygg/cs2-plugins/releases)
 2. Extract to your server's `csgo/` folder
 3. Configure database and plugin settings in `addons/admin-system/configs/settings.jsonc` (set a unique `server.tag` per server - see [Multi-Server Setup](#multi-server-setup))
 4. (Optional) The plugin applies all migrations automatically on load. To pre-create the schema manually, run the files in [configs/migrations/](configs/migrations/) in order: `psql -d admin_system -f configs/migrations/0001_initial_schema.sql` (then `0002_...`, etc.)

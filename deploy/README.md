@@ -160,7 +160,7 @@ Manual path:
 
 ```bash
 docker build -f deploy/Dockerfile --target runtime \
-  -t ghcr.io/m9snoi-net/cs2-plugins/cs2-server-runtime:latest .
+  -t ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:latest .
 docker compose -f deploy/docker-compose.build.yml run --rm --build build
 uv run poe deploy-package admin-system linux
 uv run poe deploy-server --server box-a

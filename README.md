@@ -19,7 +19,7 @@ Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C
 
 ## Installation
 
-Grab the latest build from [Releases](https://github.com/m9snoi-net/cs2-plugins/releases) and extract it into your server's `csgo/` folder. Per-plugin configuration is covered in each plugin's README.
+Grab the latest build from [Releases](https://github.com/voltygg/cs2-plugins/releases) and extract it into your server's `csgo/` folder. Per-plugin configuration is covered in each plugin's README.
 
 ## Building
 
@@ -27,7 +27,7 @@ Grab the latest build from [Releases](https://github.com/m9snoi-net/cs2-plugins/
 
 ```bash
 # Clone with submodules (--recursive pulls CS2Kit and its nested SDK submodules)
-git clone --recursive https://github.com/m9snoi-net/cs2-plugins.git
+git clone --recursive https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
 
 docker compose -f deploy/docker-compose.build.yml run --rm --build build
@@ -39,7 +39,7 @@ Requires Visual Studio 2026 Build Tools. CMake 4.3.4+, Conan 2.29.1+, and Ninja
 are pinned in `pyproject.toml`, so `uv sync` installs them (or install globally).
 
 ```bash
-git clone --recursive https://github.com/m9snoi-net/cs2-plugins.git
+git clone --recursive https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
 
 uv run poe build

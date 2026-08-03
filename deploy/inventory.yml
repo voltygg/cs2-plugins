@@ -8,7 +8,7 @@ defaults:
   ssh_port: 22
   cs2_root: /home/steam/cs2
   deploy_root: /home/steam/cs2/deploy
-  runtime_image: ghcr.io/m9snoi-net/cs2-plugins/cs2-server-runtime:latest
+  runtime_image: ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:latest
 
 database:
   # VPS-host Postgres, reached from bridge containers via host-gateway.

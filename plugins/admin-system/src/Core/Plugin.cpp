@@ -185,7 +185,7 @@ PluginInfo AdminSystemPlugin::Info() const
         .Name = "Admin System",
         .Author = "Sukhrob Ilyosbekov",
         .Description = "Admin System for CS2",
-        .Url = "https://github.com/m9snoi-net/cs2-plugins",
+        .Url = "https://github.com/voltygg/cs2-plugins",
         .LogTag = "ADMIN",
     });
 }
