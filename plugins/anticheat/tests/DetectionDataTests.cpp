@@ -92,8 +92,8 @@ TEST_CASE("An unknown key is a typo, not a preference")
 {
     // The likeliest way to disarm a rule by accident: a near-miss on a real key name.
     CHECK_THROWS(Parse(FileWith(R"({"name": "a", "constraint": "max", "value": 1, "kickonly": true})")));
-    CHECK_THROWS(nlohmann::json::parse(R"({"dllEventBlacklist": [], "cvarRules": [], "extra": 1})")
-                     .get<DetectionData>());
+    CHECK_THROWS(
+        nlohmann::json::parse(R"({"dllEventBlacklist": [], "cvarRules": [], "extra": 1})").get<DetectionData>());
 }
 
 TEST_CASE("A renamed section fails the load rather than silently emptying a table")
@@ -106,8 +106,8 @@ TEST_CASE("A renamed section fails the load rather than silently emptying a tabl
 
 TEST_CASE("A section of the wrong shape is rejected")
 {
-    CHECK_THROWS(nlohmann::json::parse(R"({"dllEventBlacklist": "player_chat", "cvarRules": []})")
-                     .get<DetectionData>());
+    CHECK_THROWS(
+        nlohmann::json::parse(R"({"dllEventBlacklist": "player_chat", "cvarRules": []})").get<DetectionData>());
     CHECK_THROWS(Parse(R"("not-an-object")"));
     CHECK_THROWS(Parse(FileWith(R"("not-an-object")")));
 }
@@ -121,8 +121,8 @@ TEST_CASE("The shipped detections.jsonc parses and loads with nothing rejected")
 
     DetectionData data;
     // Same call the kit's loader makes, comments and all.
-    REQUIRE_NOTHROW(data = nlohmann::json::parse(text.str(), nullptr, true, /*ignore_comments=*/true)
-                               .get<DetectionData>());
+    REQUIRE_NOTHROW(
+        data = nlohmann::json::parse(text.str(), nullptr, true, /*ignore_comments=*/true).get<DetectionData>());
 
     CHECK_FALSE(data.dllEventBlacklist.empty());
     CHECK_FALSE(data.cvarRules.empty());
