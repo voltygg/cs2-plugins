@@ -2,6 +2,7 @@
 # pqxx joins the PCH here because Managers.hpp (via Database/Api.hpp) pulls it
 # into most of this plugin's TUs; it is deliberately not in the kit-wide PCH.
 cs2_add_plugin(admin-system
+    DESCRIPTION "Admin groups, punishments, reports and the fun-command menu"
     LIBRARIES
         cs2-contracts
         libpqxx::pqxx
