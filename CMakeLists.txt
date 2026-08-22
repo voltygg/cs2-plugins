@@ -10,7 +10,7 @@ set(CS2KIT_ENABLE_POSTGRES ON)
 
 add_subdirectory(vendor/cs2-kit)
 
-# Header-only cross-plugin interfaces; must precede the plugins that link it.
+# Must precede the plugins that link it.
 add_subdirectory(plugins/contracts)
 
 add_subdirectory(plugins/admin-system)

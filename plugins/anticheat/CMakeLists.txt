@@ -1,8 +1,7 @@
 # Sources default to a CONFIGURE_DEPENDS glob of src/*.cpp in cs2_add_plugin.
 cs2_add_plugin(anticheat
     DESCRIPTION "Behavioural anticheat: detection cores, correlation and response"
-    # Advisory: without admin-system the detectors still run and report, but bans and
-    # admin alerts have nowhere to go (ResponseManager handles the null and says so).
+    # Advisory: without it the detectors still run, but bans and alerts have nowhere to go.
     DEPENDS "admin-system>=1.0"
     LIBRARIES
         cs2-contracts

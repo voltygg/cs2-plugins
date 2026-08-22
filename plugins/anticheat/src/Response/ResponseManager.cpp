@@ -15,8 +15,8 @@ namespace Anticheat
 
 namespace
 {
-// The reason doubles as the kick message and the chat broadcast, and DLL-injection evidence can
-// run to hundreds of characters. The full text is already in the log and the webhook.
+// The reason is also the kick message and the chat broadcast, and DLL-injection evidence runs
+// long. The full text is already in the log and the webhook.
 constexpr size_t MaxReasonLength = 200;
 
 /** admin-system's cross-plugin surface, or nullptr when that plugin is not loaded. */
@@ -103,8 +103,7 @@ void ResponseManager::Handle(int slot, const Finding& finding)
     auto* admin = AdminActions();
     if (!admin)
     {
-        // Degraded, not silent: the console command simply vanished when admin-system was absent,
-        // and the detection was lost with no trace.
+        // Say so: the old console command vanished silently when admin-system was absent.
         Log::Warn("[AC] cannot ban {}: admin-system is not loaded (no {}).", steamId,
                   Contracts::IAdminActions::InterfaceName);
         return;
