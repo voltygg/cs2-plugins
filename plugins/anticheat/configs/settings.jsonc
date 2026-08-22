@@ -5,7 +5,7 @@
     "enabled": true,
 
     // Response funnel. "observe" only logs and reports, "alert" also notifies
-    // admins (as_ac_alert), "ban" also kicks or bans (as_ac_ban). Soak in
+    // admins, "ban" also kicks or bans - both via admin-system. Soak in
     // observe before escalating.
     "mode": "observe",
 

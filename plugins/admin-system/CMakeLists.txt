@@ -3,6 +3,7 @@
 # into most of this plugin's TUs; it is deliberately not in the kit-wide PCH.
 cs2_add_plugin(admin-system
     LIBRARIES
+        cs2-contracts
         libpqxx::pqxx
         nlohmann_json::nlohmann_json
     PCH_HEADERS

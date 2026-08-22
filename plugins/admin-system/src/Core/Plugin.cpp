@@ -118,8 +118,9 @@ StageResult StartPunishments()
         AdminSystem::Database::ServerRepository{}.Heartbeat(App().Config.GetServer().tag);
     });
 
-    // Console surface the anticheat plugin drives (bans need the DB, alerts need admin data).
-    App().AntiCheat.RegisterConsoleCommands();
+    // Typed surface the anticheat plugin drives (bans need the DB, alerts need admin data).
+    // Published last in this stage so a peer never sees a half-initialised implementation.
+    App().AdminActions.Publish();
 
     return loaded ? StageResult::Ok() : StageResult::Degraded("failed to load active punishments");
 }
@@ -243,6 +244,9 @@ bool AdminSystemPlugin::OnLoad(bool late)
             FlushPlayerSession(p);
     });
     Defer([] { Engine().Players.Clear(); });
+    // Deferred cleanups run in reverse registration order, so this one runs first: stop answering
+    // other plugins' MetaFactory queries before the managers it delegates to are torn down.
+    Defer([] { App().AdminActions.Unpublish(); });
 
     return true;
 }

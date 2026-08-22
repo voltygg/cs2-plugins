@@ -95,7 +95,7 @@ decides what else happens:
   a repeat cannot double-punish. Cleared on disconnect, map change and reload.
 - **Whitelisted SteamID64s** are logged and webhooked but never alerted or punished. So is a
   player whose SteamID has not resolved yet.
-- **Bans go through admin-system** (`as_ac_ban` / `as_ac_alert`) so persistence, kicking and
+- **Bans go through admin-system** (the `Contracts::IAdminActions` interface it publishes) so persistence, kicking and
   broadcast stay in one place. Without admin-system loaded, banning degrades to logging;
   kicks still work.
 - **Discord** is optional and dormant while `webhook.url` is empty. One embed per (player,

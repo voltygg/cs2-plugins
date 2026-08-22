@@ -19,8 +19,8 @@ enum class DetectionKind
     Count,
 };
 
-/** How one detection is named. Token is space-free: the admin-system console bridge splits its
- *  arguments on whitespace. */
+/** How one detection is named. Token is space-free so it works as a detector key in alerts,
+ *  webhooks and log lines. */
 struct DetectionInfo
 {
     DetectionKind Kind;

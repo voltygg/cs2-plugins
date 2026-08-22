@@ -3,10 +3,10 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/FreezeManager.hpp"
-#include "../Commands/AntiCheatBridge.hpp"
 #include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "../Reports/ReportManager.hpp"
+#include "AdminActionsService.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
 
@@ -41,7 +41,8 @@ struct Managers
     // Constructed after the kit's Services (and its Scheduler) are live - PluginBase guarantees it.
     CS2Kit::EffectManager Effects{CS2Kit::Engine().Scheduler};
     Admin::CheatCheck::CheatCheckManager CheatCheck;
-    Core::AntiCheatBridge AntiCheat;
+    /** Published to other plugins in OnLoad; withdrawn in OnUnload before these managers die. */
+    Core::AdminActionsService AdminActions;
     /** Load-time migration outcome, surfaced in the `admin_status` db section. Set by OnLoad. */
     CS2Kit::MigrationResult Migration;
 };

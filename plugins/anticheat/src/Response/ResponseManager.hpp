@@ -11,7 +11,8 @@ namespace Anticheat
 
 /**
  * Cores already self-threshold, so this only decides how loudly to react. Bans go through
- * admin-system's console bridge (as_ac_ban) to keep persistence, kick and broadcast in one place.
+ * admin-system's Contracts::IAdminActions to keep persistence, kick and broadcast in one place;
+ * when that plugin is absent the interface is simply missing and the ban is logged as skipped.
  */
 class ResponseManager
 {

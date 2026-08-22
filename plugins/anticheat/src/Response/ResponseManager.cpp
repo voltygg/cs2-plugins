@@ -3,6 +3,7 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Utils/Log.hpp>
+#include <Contracts/IAdminActions.hpp>
 #include <algorithm>
 #include <format>
 
@@ -14,22 +15,19 @@ namespace Anticheat
 
 namespace
 {
-// The console line has a hard length limit and DLL-injection evidence can run to hundreds of
-// characters. The full text is already in the log and the webhook.
+// The reason doubles as the kick message and the chat broadcast, and DLL-injection evidence can
+// run to hundreds of characters. The full text is already in the log and the webhook.
 constexpr size_t MaxReasonLength = 200;
 
-// Reasons travel through ExecuteServerCommand, so strip anything the console parser could read as
-// command structure.
-std::string SanitizeReason(std::string_view reason)
+/** admin-system's cross-plugin surface, or nullptr when that plugin is not loaded. */
+Contracts::IAdminActions* AdminActions()
 {
-    std::string out;
-    out.reserve(reason.size());
-    for (char c : reason)
-        if (c != '"' && c != ';' && c != '\n' && c != '\r')
-            out += c;
-    if (out.size() > MaxReasonLength)
-        out.resize(MaxReasonLength);
-    return out;
+    return Engine().Exchange.Get<Contracts::IAdminActions>();
+}
+
+std::string TrimReason(std::string_view reason)
+{
+    return std::string(reason.substr(0, std::min(reason.size(), MaxReasonLength)));
 }
 }  // namespace
 
@@ -81,14 +79,16 @@ void ResponseManager::Handle(int slot, const Finding& finding)
 
     if (decision.SendAlert &&
         _alertThrottle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, CS2Kit::TimeUtils::Now()))
-        Engine().ConVars.ExecuteServerCommand(
-            std::format("as_ac_alert {} {} 1", steamId, TokenName(finding.Kind)).c_str());
+    {
+        if (auto* admin = AdminActions())
+            admin->AlertAdmins(steamId, TokenName(finding.Kind), 1);
+    }
 
     if (decision.Apply == PunishmentLevel::None || !_latch.Raise(slot, decision.Apply))
         return;
 
     const std::string reason =
-        SanitizeReason(std::format("AntiCheat: {} ({})", DisplayName(finding.Kind), finding.Evidence));
+        TrimReason(std::format("AntiCheat: {} ({})", DisplayName(finding.Kind), finding.Evidence));
     if (decision.Apply == PunishmentLevel::Kick)
     {
         // A finding can surface from inside an engine hook on the client itself (the convar query
@@ -100,8 +100,19 @@ void ResponseManager::Handle(int slot, const Finding& finding)
         });
         return;
     }
-    Engine().ConVars.ExecuteServerCommand(
-        std::format("as_ac_ban {} {} {}", steamId, App().Config.Get().anticheat.banDurationSec, reason).c_str());
+    auto* admin = AdminActions();
+    if (!admin)
+    {
+        // Degraded, not silent: the console command simply vanished when admin-system was absent,
+        // and the detection was lost with no trace.
+        Log::Warn("[AC] cannot ban {}: admin-system is not loaded (no {}).", steamId,
+                  Contracts::IAdminActions::InterfaceName);
+        return;
+    }
+
+    if (const auto result = admin->Ban(steamId, App().Config.Get().anticheat.banDurationSec, reason);
+        result != Contracts::BanResult::Ok)
+        Log::Warn("[AC] ban for {} rejected by admin-system (code {}).", steamId, static_cast<int>(result));
 }
 
 }  // namespace Anticheat
