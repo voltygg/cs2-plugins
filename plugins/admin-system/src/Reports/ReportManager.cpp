@@ -1,26 +1,25 @@
 #include "ReportManager.hpp"
 
-#include "../Core/Managers.hpp"
+#include "../Core/App.hpp"
 #include "../Database/Repositories/ReportRepository.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/Services.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/TimeUtils.hpp>
+#include <CS2Kit/Core/Log.hpp>
+#include <CS2Kit/Core/TimeUtils.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <algorithm>
 #include <utility>
 
-using CS2Kit::App::Engine;
-using CS2Kit::Utils::TimeUtils;
+using CS2Kit::Core::TimeUtils;
 
 namespace AdminSystem::Reports
 {
 
-namespace Log = CS2Kit::Utils::Log;
+namespace Log = CS2Kit::Core::Log;
 
 ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<int64_t> targetSteamId, int64_t now) const
 {
-    const auto& config = App().Config.GetReports();
+    const auto& config = _app.Config.GetReports();
     if (!config.enabled)
         return {ReportDenial::Disabled};
 
@@ -70,8 +69,8 @@ void ReportManager::Submit(const CS2Kit::Player& reporter, const CS2Kit::Player&
         .TargetIp = target.GetIpAddress(),
         .ReasonCode = reasonCode,
         .Reason = reasonText,
-        .ServerTag = App().Config.GetServer().tag,
-        .MapName = Engine().Core.CurrentMap,
+        .ServerTag = _app.Config.GetServer().tag,
+        .MapName = _app.Runtime.CurrentMap,
         .CreatedAt = now,
     };
 
@@ -79,7 +78,7 @@ void ReportManager::Submit(const CS2Kit::Player& reporter, const CS2Kit::Player&
     Log::Info("Report: {} ({}) reported {} ({}) for '{}' [{}]", report.ReporterName, reporterSteamId, report.TargetName,
               targetSteamId, reasonText, reasonCode);
 
-    Database::ReportRepository{}.CreateAsync(
+    Database::ReportRepository{_app.Db}.CreateAsync(
         report, [this, reporterSteamId, targetSteamId, onDone = std::move(onDone)](bool ok) {
             // The write is the only database-health signal there is, so a failure refunds the
             // attempt rather than costing the reporter a cooldown.
@@ -96,7 +95,7 @@ void ReportManager::Arm(int64_t reporterSteamId, int64_t targetSteamId, int64_t 
     _perTarget.Acquire({reporterSteamId, targetSteamId}, now);
 
     // Both maps only grow here, so this is the one place worth sweeping.
-    const auto& config = App().Config.GetReports();
+    const auto& config = _app.Config.GetReports();
     const int64_t horizon = std::max(config.cooldownSec, config.duplicateWindowSec);
     _anyTarget.Prune(now, horizon);
     _perTarget.Prune(now, horizon);

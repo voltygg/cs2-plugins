@@ -1,12 +1,11 @@
 #include "Plugin.hpp"
 
 #include "Config.hpp"
-#include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/App/PluginInfoStamp.hpp>
 
-CS2KIT_PLUGIN(BhopPlugin, Bhop);
+CS2KIT_PLUGIN(BhopPlugin);
 
 CS2Kit::PluginInfo BhopPlugin::Info() const
 {
@@ -18,16 +17,13 @@ CS2Kit::PluginInfo BhopPlugin::Info() const
     });
 }
 
-bool BhopPlugin::OnLoad(bool late)
+bool BhopPlugin::OnLoad(CS2Kit::Runtime& runtime, bool late)
 {
-    if (!CS2Kit::LoadStandardConfig(Bhop::App().Config, {.Addon = Bhop::AddonName}))
-        return false;
-
-    Bhop::App().Bhop.Initialize();
-    return true;
+    _app.emplace(runtime);
+    return _app->Start();
 }
 
 void BhopPlugin::OnPlayerDisconnect(CS2Kit::Player* player)
 {
-    Bhop::App().Bhop.OnPlayerDisconnect(player);
+    _app->Bhop.OnPlayerDisconnect(player);
 }

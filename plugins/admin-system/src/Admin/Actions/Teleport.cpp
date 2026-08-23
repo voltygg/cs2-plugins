@@ -26,7 +26,7 @@ const Action Goto{Flag(Permission::Control), /*requireAlive*/ true, [](const Act
                       return "broadcast.goto";
                   }};
 
-void Swap(int adminSlot, int firstSlot, int secondSlot)
+void Swap(App& app, int adminSlot, int firstSlot, int secondSlot)
 {
     if (firstSlot == secondSlot)
         return;
@@ -38,7 +38,7 @@ void Swap(int adminSlot, int firstSlot, int secondSlot)
         return;
 
     PawnOps::SwapOrigins(ctxA.TargetCtrl, ctxB.TargetCtrl);
-    Broadcast(ctxA, ctxB, "broadcast.swapped");
+    Broadcast(app, ctxA, ctxB, "broadcast.swapped");
 }
 
 }  // namespace AdminSystem::Admin::Actions

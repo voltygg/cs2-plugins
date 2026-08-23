@@ -4,7 +4,7 @@
 // cores stay doctest-able.
 
 #include <CS2Kit/Core/Slot.hpp>
-#include <CS2Kit/Utils/TimeUtils.hpp>
+#include <CS2Kit/Core/TimeUtils.hpp>
 #include <cmath>
 #include <cstdint>
 #include <optional>
@@ -29,7 +29,7 @@ inline constexpr float TickRate = 64.0f;
 
 /** TimeUtils::MonotonicSeconds() drives the rolling evidence windows: real elapsed time, not game
  *  time, and not the wall clock TimeUtils::Now() reports. */
-using CS2Kit::Utils::TimeUtils;
+using CS2Kit::Core::TimeUtils;
 
 struct Vec3
 {

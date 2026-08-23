@@ -2,11 +2,8 @@
 #include "EffectRegistry.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/Services.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <format>
-
-using CS2Kit::App::Engine;
-using CS2Kit::App::EngineOrNull;
 
 namespace AdminSystem::Admin::Effects
 {
@@ -25,13 +22,13 @@ const Effect Bhop{.Permission = Flag(Permission::Bhop),
                   .Scope = EffectScope::Session,  // session grant: survives the death sweep
                   .Setup = [](const ActionContext& ctx) -> EffectInstance {
                       int64_t steamId = ctx.Target->GetSteamID();
-                      Engine().Sdk.ConVars.ExecuteServerCommand(std::format("bhop_player {} 1", steamId).c_str());
-                      return {.OnStop = [steamId]() {
-                          if (auto* engine = EngineOrNull())
-                              engine->Sdk.ConVars.ExecuteServerCommand(std::format("bhop_player {} 0", steamId).c_str());
+                      auto& conVars = ctx.Rt.ConVars;
+                      conVars.ExecuteServerCommand(std::format("bhop_player {} 1", steamId).c_str());
+                      // The effect manager is a plugin member, so it is torn down before the
+                      // runtime - this reference outlives every OnStop it can reach.
+                      return {.OnStop = [&conVars, steamId]() {
+                          conVars.ExecuteServerCommand(std::format("bhop_player {} 0", steamId).c_str());
                       }};
                   }};
-
-static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 50, .Toggle = &Bhop});
 
 }  // namespace AdminSystem::Admin::Effects

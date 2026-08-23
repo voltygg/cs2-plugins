@@ -2,26 +2,31 @@
 
 #include "Descriptors.hpp"
 
-#include <CS2Kit/Core/Registry.hpp>
+#include <array>
 
 namespace AdminSystem::Admin::Effects
 {
 
 /**
- * @brief One auto-listed row in the Effects action menu. Data-only so each descriptor .cpp
- * self-registers at its definition site:
+ * @brief One row in the Effects action menu.
  *
- *   static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 10, .Toggle = &Ghost});
- *
- * Exactly one of Toggle/Param is set. Registration order across TUs is unspecified, so the
- * menu sorts by Order. Hide is deliberately not registered - it is a self-only Control row
- * plus the !hide command, not an auto-listed effect.
+ * Exactly one of Toggle/Param is set, and the table below is the menu's order - listed in one
+ * place rather than assembled from per-TU static initializers, so what the menu shows is
+ * readable without opening every descriptor file. Hide is deliberately absent: it is a
+ * self-only Control row plus the !hide command, not an auto-listed effect.
  */
 struct EffectEntry
 {
     int Order = 0;
     const Effect* Toggle = nullptr;
     const ParamEffect* Param = nullptr;
+};
+
+/** Every auto-listed effect, in menu order. */
+inline constexpr std::array MenuEffects{
+    EffectEntry{.Order = 10, .Toggle = &Ghost},    EffectEntry{.Order = 20, .Toggle = &Disco},
+    EffectEntry{.Order = 30, .Toggle = &Wallhack}, EffectEntry{.Order = 40, .Param = &Model},
+    EffectEntry{.Order = 50, .Toggle = &Bhop},
 };
 
 }  // namespace AdminSystem::Admin::Effects

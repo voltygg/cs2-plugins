@@ -6,6 +6,11 @@
 #include <string>
 #include <unordered_map>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Admin
 {
 
@@ -20,6 +25,8 @@ namespace AdminSystem::Admin
 class FreezeManager
 {
 public:
+    explicit FreezeManager(App& app) : _app(app) {}
+
     FreezeManager() = default;
 
     /**
@@ -54,6 +61,8 @@ public:
     void NotifyFrozen(int64_t steamId);
 
 private:
+    App& _app;
+
     /** Plain admin_activity write, no enforcement attached. */
     void RecordAudit(int64_t adminSteamId, const std::string& adminName, const std::string& action,
                      int64_t targetSteamId, const std::string& targetName, const std::string& detail);

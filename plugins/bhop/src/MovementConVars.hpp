@@ -23,6 +23,8 @@ namespace Bhop
 class MovementConVars
 {
 public:
+    explicit MovementConVars(CS2Kit::ConVarService& conVars) : _conVars(conVars) {}
+
     ~MovementConVars() { RestoreGlobal(); }  // unload leaves the server's convars as we found them
 
     /** (Re)resolve the override set from @p settings; clears any previous set first. */
@@ -59,6 +61,7 @@ private:
 
     void RestoreGlobal();
 
+    CS2Kit::ConVarService& _conVars;
     std::vector<ConVarOverride> _overrides;
     bool _globalApplied = false;
     bool _flipped = false;

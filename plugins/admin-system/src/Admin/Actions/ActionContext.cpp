@@ -1,12 +1,12 @@
 #include "ActionContext.hpp"
 
+#include "../../Core/App.hpp"
 #include "../../Core/ChatService.hpp"
-#include "../../Core/Managers.hpp"
 
 namespace AdminSystem::Admin::Actions
 {
 
-// The dispatcher is stateless - policy comes from Engine().Core.Policy, set once in OnLoad.
+// The dispatcher is stateless - policy comes from app.Runtime.Policy, set once in OnLoad.
 using CS2Kit::Players::ActionDispatcher;
 
 ActionContext Resolve(int adminSlot, int targetSlot, const std::string& requiredFlag)
@@ -22,12 +22,12 @@ void Broadcast(const ActionContext& ctx, const std::string& translationKey)
     ActionDispatcher{}.Broadcast(ctx, translationKey);
 }
 
-void Broadcast(const ActionContext& first, const ActionContext& second, const std::string& translationKey)
+void Broadcast(App& app, const ActionContext& first, const ActionContext& second, const std::string& translationKey)
 {
     if (!first.Caller || !first.Target || !second.Target)
         return;
-    App().Chat.BroadcastAction(translationKey, first.Caller->GetName(),
-                               {{"a", first.Target->GetName()}, {"b", second.Target->GetName()}});
+    app.Chat.BroadcastAction(translationKey, first.Caller->GetName(),
+                             {{"a", first.Target->GetName()}, {"b", second.Target->GetName()}});
 }
 
 void Run(int adminSlot, int targetSlot, const Action& action)

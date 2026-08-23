@@ -2,6 +2,7 @@
 
 #include "../Entities/Report.hpp"
 
+#include <CS2Kit/Database/Api.hpp>
 #include <functional>
 
 namespace AdminSystem::Database
@@ -11,9 +12,14 @@ namespace AdminSystem::Database
 class ReportRepository
 {
 public:
+    explicit ReportRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+
     /** @p onDone reports the write outcome on the game thread. Not fire-and-forget like the other
      *  repositories, because the reporter is told whether their report landed. */
     void CreateAsync(const Report& report, std::function<void(bool ok)> onDone = {});
+
+private:
+    CS2Kit::PostgresDatabase& _db;
 };
 
 }  // namespace AdminSystem::Database

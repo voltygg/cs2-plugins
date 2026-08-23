@@ -4,9 +4,14 @@
 #include <CS2Kit/Menu/Menu.hpp>
 #include <memory>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<CS2Kit::MenuView> BuildTeamPickerMenu(int adminSlot, int targetSlot);
+std::shared_ptr<CS2Kit::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
 
 }  // namespace AdminSystem::Admin::Menu

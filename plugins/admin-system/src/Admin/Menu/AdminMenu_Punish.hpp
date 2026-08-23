@@ -6,10 +6,15 @@
 #include <memory>
 #include <string>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(int adminSlot);
-std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(int adminSlot, int targetSlot);
+std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(AdminSystem::App& app, int adminSlot);
+std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
 
 }  // namespace AdminSystem::Admin::Menu

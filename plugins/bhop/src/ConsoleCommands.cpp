@@ -1,11 +1,11 @@
 #include "BhopManager.hpp"
 
-#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Core/Log.hpp>
 #include <charconv>
 #include <cstring>
 #include <tier1/convar.h>
 
-namespace Log = CS2Kit::Utils::Log;
+namespace Log = CS2Kit::Log;
 
 namespace Bhop
 {

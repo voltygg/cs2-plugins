@@ -2,6 +2,7 @@
 
 #include "../Entities/Ban.hpp"
 
+#include <CS2Kit/Database/Api.hpp>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -18,6 +19,8 @@ namespace AdminSystem::Database
 class BanRepository
 {
 public:
+    explicit BanRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+
     /** Blocking - load-time only. */
     std::vector<Ban> FindAllActive();
 
@@ -29,6 +32,9 @@ public:
 
     void RemoveAsync(int64_t banId, int64_t removedBy, const std::string& reason);
     void ExpireOldAsync();
+
+private:
+    CS2Kit::PostgresDatabase& _db;
 };
 
 }  // namespace AdminSystem::Database

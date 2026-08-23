@@ -8,6 +8,11 @@
 #include <memory>
 #include <string>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Admin::Menu
 {
 
@@ -31,12 +36,12 @@ struct PendingPunishment
  * punishments, reason -> confirm for kick/warn. Every step (and the final confirm)
  * re-validates the target and the admin's permission, then issues.
  */
-void StartPunishFlow(int adminSlot, PendingPunishment pending);
+void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pending);
 
 /** Quick Punish list of the configured templates the admin may use on this target. */
-std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(int adminSlot, int targetSlot);
+std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
 
 /** True if at least one configured template is usable by @p adminSlot against @p targetSlot. */
-bool AnyTemplateUsable(int adminSlot, int targetSlot);
+bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, int targetSlot);
 
 }  // namespace AdminSystem::Admin::Menu

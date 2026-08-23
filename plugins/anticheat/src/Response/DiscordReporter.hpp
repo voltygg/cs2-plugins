@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config.hpp"
 #include "Core/Finding.hpp"
 #include "Response/FunnelPolicy.hpp"
 
@@ -17,6 +18,8 @@ namespace Anticheat
 class DiscordReporter
 {
 public:
+    DiscordReporter(CS2Kit::Runtime& runtime, ConfigManager& config) : _rt(runtime), _config(config) {}
+
     void Report(int slot, const std::string& playerName, int64_t steamId, const Finding& finding,
                 FunnelOutcome outcome);
 
@@ -24,6 +27,8 @@ private:
     /** One embed per (steamId, detection) per window, so no detection can flood a channel. */
     static constexpr int64_t ThrottleSec = 60;
 
+    CS2Kit::Runtime& _rt;
+    ConfigManager& _config;
     CS2Kit::PairThrottle<int64_t, int> _throttle{ThrottleSec};
 };
 

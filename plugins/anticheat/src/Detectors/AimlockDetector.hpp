@@ -12,6 +12,6 @@ namespace Anticheat
  * without a live channel or a numeric interp value: a guessed lag would let the module test
  * hypotheses the client never held.
  */
-LagEstimate MeasureVisualLag(int slot);
+LagEstimate MeasureVisualLag(CS2Kit::Runtime& rt, int slot);
 
 }  // namespace Anticheat

@@ -10,7 +10,7 @@ namespace AdminSystem::Admin::Effects
 
 // The effect scaffold (descriptors + policy-checked dispatch) lives in the kit; these aliases
 // keep descriptor files and call sites on the established local names. Dispatch with
-// CS2Kit::ToggleEffect / ApplyEffect / ClearEffect against App().Effects.
+// CS2Kit::ToggleEffect / ApplyEffect / ClearEffect against the plugin App effect manager.
 using Effect = CS2Kit::EffectDescriptor;
 using ParamEffect = CS2Kit::ParamEffectDescriptor;
 using EffectInstance = CS2Kit::EffectInstance;
@@ -28,7 +28,7 @@ extern const Effect Ghost;
  * clears their scoreboard name, and grants glow vision (all live players outlined through walls,
  * visible only to them) for covert cheater observation; the toggle is silent - no broadcast.
  * Toggling off restores the original team and name. Self-only in practice - invoked via
- * ToggleEffect(App().Effects, adminSlot, adminSlot, Hide).
+ * ToggleEffect(app.Effects, adminSlot, adminSlot, Hide).
  */
 extern const Effect Hide;
 

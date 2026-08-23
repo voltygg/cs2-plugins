@@ -1,11 +1,11 @@
 #include "VoiceMute.hpp"
 
-#include <CS2Kit/Utils/TimeUtils.hpp>
+#include <CS2Kit/Core/TimeUtils.hpp>
 
 namespace AdminSystem::Database
 {
 
-using namespace CS2Kit::Utils;
+using namespace CS2Kit::Core;
 
 bool VoiceMute::IsExpired() const
 {

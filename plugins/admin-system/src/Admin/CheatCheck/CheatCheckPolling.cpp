@@ -1,28 +1,26 @@
+#include "../../Core/App.hpp"
 #include "../../Core/Config.hpp"
-#include "../../Core/Managers.hpp"
 #include "CheatCheckManager.hpp"
 #include "CheatCheckRoomApi.hpp"
 #include "CheatCheckView.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/Services.hpp>
+#include <CS2Kit/Core/ChatColors.hpp>
+#include <CS2Kit/Core/Log.hpp>
+#include <CS2Kit/Core/TimeUtils.hpp>
+#include <CS2Kit/Core/Translations.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Utils/ChatColors.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/TimeUtils.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <algorithm>
 #include <format>
-
-using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::CheatCheck
 {
 
-using CS2Kit::Utils::TimeUtils;
-namespace Log = CS2Kit::Utils::Log;
-namespace ChatColors = CS2Kit::Utils::ChatColors;
+using CS2Kit::Core::TimeUtils;
+namespace Log = CS2Kit::Core::Log;
+namespace ChatColors = CS2Kit::Core::ChatColors;
 
 namespace
 {
@@ -37,11 +35,11 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
     if (pc.RoomCode.empty() || pc.PollInFlight || TimeUtils::Now() < pc.NextPollAtSec)
         return;
 
-    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
+    auto* target = _app.Runtime.Players.GetPlayerBySlot(targetSlot);
     if (!target)
         return;  // disconnect cleanup tears the check down
 
-    const auto& cfg = App().Config.GetCheatCheck().websiteAutoRoom;
+    const auto& cfg = _app.Config.GetCheatCheck().websiteAutoRoom;
     auto request = BuildPresenceRequest(cfg, pc.RoomCode, target->GetSteamID());
     if (!request)
     {
@@ -53,9 +51,9 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 
     pc.PollInFlight = true;
     const uint64_t seq = pc.RequestSeq;
-    CS2Kit::Http::Get(Engine().Http, std::move(*request), [this, targetSlot, seq](const CS2Kit::HttpResult& result) {
-        OnPresenceResponse(targetSlot, seq, result);
-    });
+    CS2Kit::Http::Get(
+        _app.Runtime.Http, std::move(*request),
+        [this, targetSlot, seq](const CS2Kit::HttpResult& result) { OnPresenceResponse(targetSlot, seq, result); });
 }
 
 void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result)
@@ -66,7 +64,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const C
     if (!pc.Active || pc.RequestSeq != seq)  // stale: cancelled, expired, re-called, or slot reused
         return;
 
-    const auto& cfg = App().Config.GetCheatCheck().websiteAutoRoom;
+    const auto& cfg = _app.Config.GetCheatCheck().websiteAutoRoom;
     pc.PollInFlight = false;
     pc.NextPollAtSec = TimeUtils::Now() + cfg.pollIntervalSec;
 
@@ -83,30 +81,31 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const C
     if (*present == pc.SuspectJoined)
         return;
 
-    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
+    auto* target = _app.Runtime.Players.GetPlayerBySlot(targetSlot);
     const std::string targetName = target ? target->GetName() : std::string();
 
     if (*present)
     {
         pc.SuspectJoined = true;
         pc.PausedRemainingSec = std::max<int64_t>(pc.DeadlineSec - TimeUtils::Now(), 0);
-        ReplyToAdmin(pc, [&targetName, adminSlot = pc.AdminSlot] {
+        ReplyToAdmin(pc, [this, &targetName, adminSlot = pc.AdminSlot] {
             return std::format(
                 "{}{}", ChatColors::Green,
-                Engine().Utils.Translations.Get("cheatCheck.suspectJoined", adminSlot, {{"name", targetName}}));
+                _app.Runtime.Translations.Get("cheatCheck.suspectJoined", adminSlot, {{"name", targetName}}));
         });
     }
     else
     {
         pc.SuspectJoined = false;
         pc.DeadlineSec = TimeUtils::Now() + std::max(pc.PausedRemainingSec, MinResumeSec);
-        ReplyToAdmin(pc, [&targetName, adminSlot = pc.AdminSlot] {
-            return std::format("{}{}", ChatColors::Red,
-                               Engine().Utils.Translations.Get("cheatCheck.suspectLeft", adminSlot, {{"name", targetName}}));
+        ReplyToAdmin(pc, [this, &targetName, adminSlot = pc.AdminSlot] {
+            return std::format(
+                "{}{}", ChatColors::Red,
+                _app.Runtime.Translations.Get("cheatCheck.suspectLeft", adminSlot, {{"name", targetName}}));
         });
     }
 
-    View::RenderPanel(targetSlot, pc);
+    View::RenderPanel(_app, targetSlot, pc);
 }
 
 }  // namespace AdminSystem::Admin::CheatCheck

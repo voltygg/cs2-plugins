@@ -1,7 +1,7 @@
 #pragma once
 
 // Feeds InvalidCvarRules from two tiers: the userinfo copies the engine already holds, and the
-// network convar query for everything else. Without Engine().Sdk.ClientCvars the query tier is simply
+// network convar query for everything else. Without _manager.Rt().ClientCvars the query tier is simply
 // absent, so a degraded load falls back to userinfo rather than going blind.
 //
 // An unanswered query produces no callback at all, so nothing here waits on a reply or reads

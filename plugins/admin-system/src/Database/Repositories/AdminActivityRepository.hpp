@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Database/Api.hpp>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -24,12 +25,17 @@ struct ActivityCounts
 class AdminActivityRepository
 {
 public:
+    explicit AdminActivityRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+
     void Record(int64_t adminSteamId, const std::string& adminName, const std::string& action, int64_t targetSteamId,
                 const std::string& targetName, const std::string& detail, const std::string& serverTag);
 
     /** Per-type action counts for one admin since @p sinceEpoch, across all servers; delivered
      *  on the game thread (FIFO after any audit insert enqueued before it). */
     void CountSinceAsync(int64_t adminSteamId, int64_t sinceEpoch, std::function<void(ActivityCounts)> onDone);
+
+private:
+    CS2Kit::PostgresDatabase& _db;
 };
 
 }  // namespace AdminSystem::Database

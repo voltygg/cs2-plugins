@@ -11,6 +11,11 @@
 #include <unordered_set>
 #include <vector>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Punishments
 {
 
@@ -25,6 +30,8 @@ namespace AdminSystem::Punishments
 class PunishmentManager
 {
 public:
+    explicit PunishmentManager(App& app) : _app(app) {}
+
     PunishmentManager() = default;
 
     bool LoadActivePunishments();
@@ -65,6 +72,8 @@ public:
     void ExpireOldPunishments();
 
 private:
+    App& _app;
+
     /** Re-query the three active lists off-thread and swap the caches when the rows arrive. */
     void RefreshCachesAsync();
 

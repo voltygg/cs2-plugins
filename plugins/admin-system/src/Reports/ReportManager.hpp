@@ -1,12 +1,17 @@
 #pragma once
 
 #include <CS2Kit/Api.hpp>
+#include <CS2Kit/Core/SlotThrottle.hpp>
 #include <CS2Kit/Players/Player.hpp>
-#include <CS2Kit/Utils/SlotThrottle.hpp>
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
+
+namespace AdminSystem
+{
+struct App;
+}
 
 namespace AdminSystem::Reports
 {
@@ -38,6 +43,8 @@ struct ReportGate
 class ReportManager
 {
 public:
+    explicit ReportManager(App& app) : _app(app) {}
+
     ReportManager() = default;
 
     /** Enabled/cooldown gate - the `!report` entry check, before a target is chosen. */
@@ -55,6 +62,8 @@ public:
                 const std::string& reasonText, std::function<void(bool ok)> onDone);
 
 private:
+    App& _app;
+
     /** Both CanReport overloads, parameterized by @p now so a submit gates and stamps from one
      *  clock read. @p targetSteamId engages the per-target duplicate window. */
     ReportGate EvaluateGate(int64_t reporterSteamId, std::optional<int64_t> targetSteamId, int64_t now) const;

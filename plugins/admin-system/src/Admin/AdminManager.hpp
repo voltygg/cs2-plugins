@@ -7,6 +7,11 @@
 #include <string>
 #include <unordered_map>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Admin
 {
 
@@ -33,6 +38,8 @@ struct AdminChatStyle
 class AdminManager
 {
 public:
+    explicit AdminManager(App& app) : _app(app) {}
+
     AdminManager() = default;
 
     bool LoadAdmins();
@@ -92,6 +99,8 @@ public:
     }
 
 private:
+    App& _app;
+
     /** True if a resolved bitmask carries @p flag, or the root flag ('z') that grants everything. */
     static bool HasBit(uint32_t resolved, char flag)
     {

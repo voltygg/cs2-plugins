@@ -12,6 +12,11 @@
 #include <optional>
 #include <string>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Admin::CheatCheck
 {
 
@@ -25,6 +30,8 @@ constexpr int MaxSlots = CS2Kit::Sdk::MaxPlayers;
 class CheatCheckManager
 {
 public:
+    explicit CheatCheckManager(App& app) : _app(app) {}
+
     CheatCheckManager() = default;
 
     enum class SubmitResult
@@ -53,6 +60,8 @@ public:
     void CancelAll();
 
 private:
+    App& _app;
+
     void Tick(int targetSlot);
     void Expire(int targetSlot);
     void ResetCheck(int targetSlot);  // cancel timer + clear panel + reset state, silently

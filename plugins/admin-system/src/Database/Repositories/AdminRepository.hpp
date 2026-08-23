@@ -3,6 +3,7 @@
 #include "../Entities/Admin.hpp"
 #include "../Entities/AdminGroup.hpp"
 
+#include <CS2Kit/Database/Api.hpp>
 #include <cstdint>
 #include <functional>
 #include <pqxx/pqxx>
@@ -30,6 +31,8 @@ struct FrozenAdmin
 class AdminRepository
 {
 public:
+    explicit AdminRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+
     std::vector<Admin> FindAll();
 
     /** Persist the per-admin chat overrides set via the admin chat-settings menu. */
@@ -52,16 +55,24 @@ public:
 
 private:
     Admin ParseRow(const pqxx::row& row);
+
+private:
+    CS2Kit::PostgresDatabase& _db;
 };
 
 /** Repository for the admin_groups table. Load-time only. */
 class AdminGroupRepository
 {
 public:
+    explicit AdminGroupRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+
     std::vector<AdminGroup> FindAll();
 
 private:
     AdminGroup ParseRow(const pqxx::row& row);
+
+private:
+    CS2Kit::PostgresDatabase& _db;
 };
 
 }  // namespace AdminSystem::Database

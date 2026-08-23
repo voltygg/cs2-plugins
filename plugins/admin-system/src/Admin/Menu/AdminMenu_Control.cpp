@@ -1,23 +1,21 @@
 #include "AdminMenu_Control.hpp"
 
-#include "../../Core/Managers.hpp"
+#include "../../Core/App.hpp"
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/Descriptors.hpp"
 #include "PresetSubmenu.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/Services.hpp>
+#include <CS2Kit/Core/Translations.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 #include <memory>
-
-using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -37,12 +35,12 @@ constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
 constexpr int SizeDefault = 4;   // index of 100 in SizePresets
 }  // namespace
 
-std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(AdminSystem::App& app, int adminSlot)
 {
-    auto& tr = Engine().Utils.Translations;
-    auto& adminMgr = App().Admins;
+    auto& tr = app.Runtime.Translations;
+    auto& adminMgr = app.Admins;
 
-    auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
+    auto* admin = app.Runtime.Players.GetPlayerBySlot(adminSlot);
     if (!admin)
         return nullptr;
 
@@ -53,30 +51,30 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
     // Self-only Hide toggle sits at the top of the Control list before player picks.
     builder.AddToggle(
         tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
-        [adminSlot](int) { return App().Effects.IsActive(adminSlot, Effects::Hide.Id); },
-        [adminSlot](int) { CS2Kit::ToggleEffect(App().Effects, adminSlot, adminSlot, Effects::Hide); }, hasB);
+        [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, Effects::Hide.Id); },
+        [&app, adminSlot](int) { CS2Kit::ToggleEffect(app.Effects, adminSlot, adminSlot, Effects::Hide); }, hasB);
 
     CS2Kit::Menu::AppendPlayerRows(
         builder, adminSlot,
-        [](int admin, int target) {
-            auto actions = BuildControlActionsMenu(admin, target);
+        [&app](int admin, int target) {
+            auto actions = BuildControlActionsMenu(app, admin, target);
             if (actions)
-                Engine().Menus.OpenMenu(admin, actions);
+                app.Runtime.Menus.OpenMenu(admin, actions);
         },
         tr.Get("common.noPlayers", adminSlot));
 
     return builder.Build();
 }
 
-std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int targetSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
-    auto& tr = Engine().Utils.Translations;
+    auto& tr = app.Runtime.Translations;
 
-    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
-    if (!target || !Engine().Players.GetPlayerBySlot(adminSlot))
+    auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
+    if (!target || !app.Runtime.Players.GetPlayerBySlot(adminSlot))
         return nullptr;
 
-    CS2Kit::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &App().Effects};
+    CS2Kit::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
     bool hasS = ctx.Allowed(Flag(Permission::Control));
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));
@@ -84,12 +82,13 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int tar
 
     // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
     // (no broadcast / bool result), so they stay plain buttons rather than Actions descriptors.
-    const bool checkActive = App().CheatCheck.IsActive(targetSlot);
+    const bool checkActive = app.CheatCheck.IsActive(targetSlot);
     builder.AddButton(
-        ctx.Tr("action.callCheck"), [adminSlot, targetSlot](int) { Actions::CallCheck(adminSlot, targetSlot); }, hasS);
+        ctx.Tr("action.callCheck"),
+        [&app, adminSlot, targetSlot](int) { Actions::CallCheck(app, adminSlot, targetSlot); }, hasS);
     builder.AddButton(
-        ctx.Tr("action.cancelCheck"), [adminSlot, targetSlot](int) { Actions::CancelCheck(adminSlot, targetSlot); },
-        hasS && checkActive);
+        ctx.Tr("action.cancelCheck"),
+        [&app, adminSlot, targetSlot](int) { Actions::CancelCheck(app, adminSlot, targetSlot); }, hasS && checkActive);
 
     builder.AddActionRow("action.kill", Actions::Kill)
         .AddActionRow("action.bring", Actions::Bring)
@@ -107,7 +106,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int tar
 
     builder.AddSubmenu(
         ctx.Tr("action.changeTeam"),
-        [adminSlot, targetSlot](int) { return BuildTeamPickerMenu(adminSlot, targetSlot); }, hasS);
+        [&app, adminSlot, targetSlot](int) { return BuildTeamPickerMenu(app, adminSlot, targetSlot); }, hasS);
 
     return builder.Build();
 }

@@ -1,17 +1,16 @@
 #include "AntiCheatManager.hpp"
 
-#include "Managers.hpp"
+#include "App.hpp"
 
+#include <CS2Kit/Core/Log.hpp>
 #include <CS2Kit/Core/Slot.hpp>
-#include <CS2Kit/Utils/Log.hpp>
 #include <cstdlib>
 #include <format>
 #include <string>
 #include <string_view>
 
-using CS2Kit::App::Engine;
 using CS2Kit::Core::IsValidSlot;
-namespace Log = CS2Kit::Utils::Log;
+namespace Log = CS2Kit::Core::Log;
 
 namespace Anticheat
 {
@@ -25,17 +24,18 @@ void AntiCheatManager::Initialize()
 
     // The teleport tracker binds itself from its own spawn listener, so it must be enabled here:
     // registering a listener while the event service dispatches would mutate the map it walks.
-    Engine().Sdk.Teleports.Enable();
+    _rt.Teleports.Enable();
 
     // The movement hook needs a live movement-services instance, so retry from every spawn until it
     // takes. Install() touches no listener registry.
-    Engine().Sdk.Events.Listen<PlayerSpawn>([](const PlayerSpawn&) { Engine().Sdk.MovementHook.Install(); });
+    _spawnInstall = _rt.Events.Listen<PlayerSpawn>([this](const PlayerSpawn&) { _rt.MovementHook.Install(); });
 
-    Engine().Sdk.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { DumpCommand(slot, cmd); });
-    Engine().Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); });
+    _dumpCommand =
+        _rt.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { DumpCommand(slot, cmd); });
+    _slotChanged = _rt.Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); });
 
     // sv_cheats going off starts a propagation grace before client values mean anything again.
-    Engine().Sdk.ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
+    _rt.ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
         const std::string_view changed = name ? name : "";
         if (changed == "mp_teammates_are_enemies")
         {
@@ -58,19 +58,19 @@ void AntiCheatManager::Initialize()
     _dllInjection.Initialize();
     _invalidCvarPoller.Initialize();
 
-    Engine().Status.RegisterSection("anticheat", [this] { return StatusSnapshot(); });
+    _rt.Status.RegisterSection("anticheat", [this] { return StatusSnapshot(); });
     RegisterCommands();
-    Log::Info("Detection cores ready (mode={}).", App().Config.Get().anticheat.mode);
+    Log::Info("Detection cores ready (mode={}).", _config.Get().anticheat.mode);
 }
 
 void AntiCheatManager::RefreshTeamRules()
 {
-    _correlator.SetTeammatesAreEnemies(Engine().Sdk.ConVars.GetBool("mp_teammates_are_enemies").value_or(false));
+    _correlator.SetTeammatesAreEnemies(_rt.ConVars.GetBool("mp_teammates_are_enemies").value_or(false));
 }
 
 void AntiCheatManager::LoadDetectionData()
 {
-    const DetectionData& data = App().Detections.Get();
+    const DetectionData& data = _detections.Get();
     const std::vector<std::string> rejected = _invalidCvars.LoadRules(data.cvarRules);
 
     // Naming them: the operator editing this file is not the one who can read the source.
@@ -92,17 +92,17 @@ void AntiCheatManager::RegisterCommands()
     _cmdReload.emplace(
         "anticheat_reload", "Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.",
         [this](const CCommand&) {
-            if (!App().Config.Load(CS2Kit::AddonFile(AddonName, "configs/settings.jsonc")))
+            if (!_config.Load(CS2Kit::AddonFile(AddonName, "configs/settings.jsonc")))
                 return;
             // Keeps the rules already in memory when the edit does not parse, so a typo cannot
             // silently disarm the two table-driven modules.
-            if (!App().Detections.Load(DetectionDataPath))
+            if (!_detections.Load(DetectionDataPath))
                 Log::Warn("{} could not be re-read; keeping the tables already loaded.", DetectionDataPath);
             else
                 LoadDetectionData();
             RefreshTeamRules();
             ResetEvidence();
-            Log::Info("Settings reloaded (mode={}); evidence cleared.", App().Config.Get().anticheat.mode);
+            Log::Info("Settings reloaded (mode={}); evidence cleared.", _config.Get().anticheat.mode);
         });
 
     _cmdStatus.emplace("anticheat_status", "Print the module state and per-player detection evidence.",
@@ -168,7 +168,7 @@ void AntiCheatManager::DumpCommand(int slot, const CS2Kit::UserCmdView& cmd)
 
 nlohmann::json AntiCheatManager::StatusSnapshot() const
 {
-    const auto& settings = App().Config.Get().anticheat;
+    const auto& settings = _config.Get().anticheat;
 
     nlohmann::json modules = nlohmann::json::object();
     for (const DetectionInfo& detection : DetectionCatalog)
@@ -180,15 +180,15 @@ nlohmann::json AntiCheatManager::StatusSnapshot() const
         {"detecting", DetectionsEnabled()},
         {"enforcingCheatCvars", EnforceCheatCvars()},
         {"modules", std::move(modules)},
-        {"clientCvars", Engine().Sdk.ClientCvars.Available() ? "available" : "degraded"},
-        {"teleportTracker", Engine().Sdk.Teleports.Enabled()},
+        {"clientCvars", _rt.ClientCvars.Available() ? "available" : "degraded"},
+        {"teleportTracker", _rt.Teleports.Enabled()},
         {"correlatorFrames", _correlator.FrameCount()},
         // A module with an empty table is inert however its toggle reads, so report the tables the
         // way clientCvars availability is reported: a health check must be able to see it.
         {"detectionData",
          {
              {"cvarRules", _invalidCvars.Rules().Size()},
-             {"blacklistedEvents", App().Detections.Get().dllEventBlacklist.size()},
+             {"blacklistedEvents", _detections.Get().dllEventBlacklist.size()},
          }},
         {"webhook", !settings.webhook.url.empty()},
         {"simulator", settings.debug.simulator},
@@ -201,7 +201,7 @@ void AntiCheatManager::LogStatus() const
 
     const double now = TimeUtils::MonotonicSeconds();
     bool any = false;
-    for (const CS2Kit::Players::Player* player : Engine().Players.GetAllPlayers())
+    for (const CS2Kit::Players::Player* player : _rt.Players.GetAllPlayers())
     {
         const int slot = player ? player->GetSlot() : -1;
         if (!InSlotRange(slot) || player->IsBot())
@@ -225,9 +225,8 @@ void AntiCheatManager::LogStatus() const
             slot, player->GetName(), player->GetSteamID(), PunishmentName(_response.Issued(slot)),
             _aimbot.IncidentCount(slot), _aimlock.IncidentCount(slot), _aimlock.IsTracking(slot) ? "/tracking" : "",
             _antiAim.Score(slot), _silentAim.Score(slot, now), _namechanger.ChangeCount(slot),
-            latched.empty() ? "-" : latched, Engine().Sdk.ClientCvars.PendingCount(slot),
-            _invalidCvarPoller.PollsIn(slot, now), _correlator.Shots(slot).size(), _correlator.CommandCount(slot),
-            _correlator.Generation(slot));
+            latched.empty() ? "-" : latched, _rt.ClientCvars.PendingCount(slot), _invalidCvarPoller.PollsIn(slot, now),
+            _correlator.Shots(slot).size(), _correlator.CommandCount(slot), _correlator.Generation(slot));
     }
     if (!any)
         Log::Info("[AC] no human players connected.");
@@ -266,13 +265,13 @@ void AntiCheatManager::OnPlayerSettingsChanged(CS2Kit::Players::Player* player)
 CS2Kit::RawConVar& AntiCheatManager::CheatsConVar() const
 {
     if (!_svCheats)
-        _svCheats = Engine().Sdk.ConVars.Raw("sv_cheats");
+        _svCheats = _rt.ConVars.Raw("sv_cheats");
     return *_svCheats;
 }
 
 bool AntiCheatManager::DetectionsEnabled() const
 {
-    const auto& settings = App().Config.Get().anticheat;
+    const auto& settings = _config.Get().anticheat;
     if (!settings.enabled)
         return false;
     const CS2Kit::RawConVar& cheats = CheatsConVar();
@@ -287,9 +286,9 @@ bool AntiCheatManager::EnforceCheatCvars() const
     return ShouldEnforceCheatCvars(cheats.Valid() && cheats.GetBool(), TimeUtils::MonotonicSeconds(), _cheatGraceUntil);
 }
 
-bool AntiCheatManager::ModuleEnabled(DetectionKind kind)
+bool AntiCheatManager::ModuleEnabled(DetectionKind kind) const
 {
-    return DetectionEnabled(App().Config.Get().anticheat.detections, kind);
+    return DetectionEnabled(_config.Get().anticheat.detections, kind);
 }
 
 bool AntiCheatManager::IsEligible(int slot)
@@ -297,7 +296,7 @@ bool AntiCheatManager::IsEligible(int slot)
     if (!IsValidSlot(slot))
         return false;
     // The pawn flag is unreadable before a player has a pawn, so identity decides it first.
-    const CS2Kit::Players::Player* player = Engine().Players.GetPlayerBySlot(slot);
+    const CS2Kit::Players::Player* player = _rt.Players.GetPlayerBySlot(slot);
     if (!player || player->IsBot())
         return false;
     CS2Kit::PlayerController controller(slot);

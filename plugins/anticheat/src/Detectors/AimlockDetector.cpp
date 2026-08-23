@@ -5,17 +5,15 @@
 #include <charconv>
 #include <string_view>
 
-using CS2Kit::App::Engine;
-
 namespace Anticheat
 {
 
-LagEstimate MeasureVisualLag(int slot)
+LagEstimate MeasureVisualLag(CS2Kit::Runtime& rt, int slot)
 {
-    if (!CS2Kit::Core::IsValidSlot(slot) || !Engine().Sdk.NetChannels.GetNetInfo(slot))
+    if (!CS2Kit::Core::IsValidSlot(slot) || !rt.NetChannels.GetNetInfo(slot))
         return {};
 
-    const char* interp = Engine().Sdk.NetChannels.GetUserInfoCvar(slot, "cl_interp_ratio");
+    const char* interp = rt.NetChannels.GetUserInfoCvar(slot, "cl_interp_ratio");
     if (!interp)
         return {};
 
@@ -25,7 +23,7 @@ LagEstimate MeasureVisualLag(int slot)
     if (parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size())
         return {};
 
-    return EstimateVisualLag(Engine().Sdk.NetChannels.EngineLatency(slot), ratio);
+    return EstimateVisualLag(rt.NetChannels.EngineLatency(slot), ratio);
 }
 
 }  // namespace Anticheat

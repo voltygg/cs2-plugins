@@ -1,14 +1,12 @@
 #include "DllInjectionDetector.hpp"
 
 #include "AntiCheatManager.hpp"
-#include "Managers.hpp"
+#include "App.hpp"
 
 #include <format>
 #include <string>
 #include <string_view>
 #include <vector>
-
-using CS2Kit::App::Engine;
 
 namespace Anticheat
 {
@@ -30,15 +28,15 @@ void DllInjectionDetector::Initialize()
     if (_pump != 0)
         return;
 
-    _pump = Engine().Core.Scheduler.Repeat(PumpIntervalMs, [this] {
-        if (!_manager.DetectionsEnabled() || !AntiCheatManager::ModuleEnabled(DetectionKind::DllInjection))
+    _pump = _manager.Rt().Scheduler.Repeat(PumpIntervalMs, [this] {
+        if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::DllInjection))
             return;
 
         const double now = TimeUtils::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
             SlotState& state = _slots[slot];
-            if (!AntiCheatManager::IsEligible(slot))
+            if (!_manager.IsEligible(slot))
                 continue;
             // A map change clears every schedule, and players who ride it out never connect again.
             if (state.NextScan == 0.0)
@@ -74,7 +72,7 @@ void DllInjectionDetector::Reset()
 
 void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
 {
-    if (!Engine().Sdk.Events.GetClientLegacyListener(slot))
+    if (!_manager.Rt().Events.GetClientLegacyListener(slot))
     {
         // One grace period for a client still settling in. After that a missing listener is simply
         // nothing to scan, and the slot falls back to the normal cadence.
@@ -89,8 +87,8 @@ void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
     // Read through at scan time rather than holding a copy: one owner for the table, and a reload
     // cannot leave this detector checking a stale list.
     std::vector<std::string_view> matches;
-    for (const std::string& name : App().Detections.Get().dllEventBlacklist)
-        if (Engine().Sdk.Events.ClientListensTo(slot, name.c_str()))
+    for (const std::string& name : _manager.Detections().Get().dllEventBlacklist)
+        if (_manager.Rt().Events.ClientListensTo(slot, name.c_str()))
             matches.push_back(name);
     if (matches.empty())
         return;

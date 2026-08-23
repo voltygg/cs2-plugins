@@ -1,23 +1,30 @@
 #pragma once
 
 #include <CS2Kit/Api.hpp>
+#include <CS2Kit/Core/SlotThrottle.hpp>
 #include <CS2Kit/Players/Player.hpp>
-#include <CS2Kit/Utils/SlotThrottle.hpp>
 #include <cstdint>
 #include <map>
 #include <string>
 #include <string_view>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Core
 {
 
 /**
- * Renders admin-system chat semantics on top of `Engine().Sdk.Messages`:
+ * Renders admin-system chat semantics on top of `_app.Runtime.Messages`:
  * styled per-command replies, punishment broadcasts, and prefix-tagged admin chat.
  */
 class ChatService
 {
 public:
+    explicit ChatService(App& app) : _app(app) {}
+
     ChatService() = default;
 
     /**
@@ -79,6 +86,8 @@ public:
     void NotifyVoiceMuted(CS2Kit::Player* player);
 
 private:
+    App& _app;
+
     /** Phrase at `translationKey`, or the key itself so a missing translation is obvious. */
     std::string BroadcastPhrase(const std::string& translationKey) const;
 

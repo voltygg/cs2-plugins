@@ -26,7 +26,9 @@ namespace Bhop
 class BhopManager
 {
 public:
-    explicit BhopManager(ConfigManager& config) : _config(config) {}
+    BhopManager(CS2Kit::Runtime& runtime, ConfigManager& config)
+        : _rt(runtime), _config(config), _conVars(runtime.ConVars)
+    {}
 
     /** Parse settings, apply the mode, register listeners and console commands. */
     void Initialize();
@@ -58,9 +60,17 @@ private:
 
     bool IsActiveSlot(int slot) const;
 
+    CS2Kit::Runtime& _rt;
     ConfigManager& _config;
     Mode _mode = Mode::Enabled;
     MovementConVars _conVars;
+
+    // Held for the life of the manager; each unregisters when this object goes.
+    CS2Kit::Subscription _spawn;
+    CS2Kit::Subscription _jump;
+    CS2Kit::Subscription _roundStart;
+    CS2Kit::Subscription _runCommandPre;
+    CS2Kit::Subscription _runCommandPost;
 
     std::unordered_set<int64_t> _granted;
     // Per-slot mirror of _granted for the movement hot path, where a steamId lookup per tick

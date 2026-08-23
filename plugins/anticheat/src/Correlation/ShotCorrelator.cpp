@@ -13,7 +13,6 @@
 #include <mathlib/vector.h>
 #include <optional>
 
-using CS2Kit::App::Engine;
 using CS2Kit::Core::IsValidSlot;
 
 namespace Anticheat
@@ -96,26 +95,26 @@ void ShotCorrelator::Initialize()
 {
     _userIds.fill(-1);
 
-    Engine().Sdk.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { OnCommand(slot, cmd); });
-    Engine().Core.Scheduler.EveryFrame([this] { OnFrame(); });
+    _manager.Rt().MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { OnCommand(slot, cmd); });
+    _manager.Rt().Scheduler.EveryFrame([this] { OnFrame(); });
 
-    Engine().Sdk.Events.Listen<CS2Kit::Events::PlayerSpawn>([this](const CS2Kit::Events::PlayerSpawn& e) {
-        if (AntiCheatManager::ModuleEnabled(DetectionKind::AntiAim))
+    _manager.Rt().Events.Listen<CS2Kit::Events::PlayerSpawn>([this](const CS2Kit::Events::PlayerSpawn& e) {
+        if (_manager.ModuleEnabled(DetectionKind::AntiAim))
             _manager.AntiAim().OnSlotChanged(e.Slot);
     });
-    Engine().Sdk.Events.Listen<CS2Kit::Events::WeaponFire>(
+    _manager.Rt().Events.Listen<CS2Kit::Events::WeaponFire>(
         [this](const CS2Kit::Events::WeaponFire& e) { OnWeaponFire(e); });
-    Engine().Sdk.Events.Listen<CS2Kit::Events::BulletImpact>(
+    _manager.Rt().Events.Listen<CS2Kit::Events::BulletImpact>(
         [this](const CS2Kit::Events::BulletImpact& e) { OnBulletImpact(e); });
     // player_hurt carries the hitgroup SilentAim scores headshots from, which the typed view omits.
-    Engine().Sdk.Events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); });
-    Engine().Sdk.Events.Listen<CS2Kit::Events::PlayerDeath>(
+    _manager.Rt().Events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); });
+    _manager.Rt().Events.Listen<CS2Kit::Events::PlayerDeath>(
         [this](const CS2Kit::Events::PlayerDeath& e) { OnPlayerDeath(e); });
 }
 
 void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
 {
-    if (!cmd.Valid || !_manager.DetectionsEnabled() || !AntiCheatManager::IsEligible(slot))
+    if (!cmd.Valid || !_manager.DetectionsEnabled() || !_manager.IsEligible(slot))
         return;
 
     CS2Kit::PlayerController controller(slot);
@@ -130,9 +129,9 @@ void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
     sample.EyePos = eye;
     sample.Airborne = IsAirborne(controller);
 
-    const bool aimbot = AntiCheatManager::ModuleEnabled(DetectionKind::Aimbot);
-    const bool aimlock = AntiCheatManager::ModuleEnabled(DetectionKind::Aimlock);
-    const bool antiAim = AntiCheatManager::ModuleEnabled(DetectionKind::AntiAim);
+    const bool aimbot = _manager.ModuleEnabled(DetectionKind::Aimbot);
+    const bool aimlock = _manager.ModuleEnabled(DetectionKind::Aimlock);
+    const bool antiAim = _manager.ModuleEnabled(DetectionKind::AntiAim);
 
     _manager.Correlator().OnCommand(slot, sample);
     if (aimbot)
@@ -149,18 +148,18 @@ void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
     if (aimlock)
         _manager.Aimlock().OnSimulated(slot, serverTick, sample.BaseAngles(), eye);
     if (antiAim)
-        _manager.Report(slot,
-                        _manager.AntiAim().OnSimulated(slot, sample.CmdNum, serverTick, true,
-                                                       Engine().Sdk.Teleports.JustTeleported(slot, TeleportGraceSec), now));
+        _manager.Report(
+            slot, _manager.AntiAim().OnSimulated(slot, sample.CmdNum, serverTick, true,
+                                                 _manager.Rt().Teleports.JustTeleported(slot, TeleportGraceSec), now));
 }
 
 void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& players)
 {
     _userIds.fill(-1);
-    IVEngineServer2* engine = Engine().Sdk.Interfaces.Engine;
+    IVEngineServer2* engine = _manager.Rt().Interfaces.Engine;
     _userIdsResolved = engine != nullptr;
 
-    for (const CS2Kit::Players::Player* player : Engine().Players.GetAllPlayers())
+    for (const CS2Kit::Players::Player* player : _manager.Rt().Players.GetAllPlayers())
     {
         const int slot = player ? player->GetSlot() : -1;
         if (!IsValidSlot(slot))
@@ -177,7 +176,7 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
                          .Team = controller.GetTeam(),
                          .Valid = true,
                          .Alive = controller.IsAlive(),
-                         .Teleported = Engine().Sdk.Teleports.JustTeleported(slot, TeleportGraceSec)};
+                         .Teleported = _manager.Rt().Teleports.JustTeleported(slot, TeleportGraceSec)};
     }
 }
 
@@ -193,22 +192,23 @@ void ShotCorrelator::OnFrame()
     CollectPositions(players);
     _manager.Correlator().CaptureFrame(serverTick, players);
 
-    const bool aimbot = AntiCheatManager::ModuleEnabled(DetectionKind::Aimbot);
-    const bool aimlock = AntiCheatManager::ModuleEnabled(DetectionKind::Aimlock);
-    const bool antiAim = AntiCheatManager::ModuleEnabled(DetectionKind::AntiAim);
-    const bool silentAim = AntiCheatManager::ModuleEnabled(DetectionKind::SilentAim);
+    const bool aimbot = _manager.ModuleEnabled(DetectionKind::Aimbot);
+    const bool aimlock = _manager.ModuleEnabled(DetectionKind::Aimlock);
+    const bool antiAim = _manager.ModuleEnabled(DetectionKind::AntiAim);
+    const bool silentAim = _manager.ModuleEnabled(DetectionKind::SilentAim);
 
     for (int slot = 0; slot < MaxSlots; ++slot)
     {
-        const bool eligible = AntiCheatManager::IsEligible(slot);
+        const bool eligible = _manager.IsEligible(slot);
         if (aimbot)
             _manager.Report(slot, _manager.Aimbot().OnFrame(slot, serverTick, eligible, now));
         if (aimlock)
         {
             // Two engine reads and a parse per call, so only for the slots the estimate is used on.
             const bool aliveHuman = eligible && players[slot].Alive;
-            _manager.Report(slot, _manager.Aimlock().OnFrame(slot, serverTick, aliveHuman,
-                                                             aliveHuman ? MeasureVisualLag(slot) : LagEstimate{}, now));
+            _manager.Report(slot, _manager.Aimlock().OnFrame(
+                                      slot, serverTick, aliveHuman,
+                                      aliveHuman ? MeasureVisualLag(_manager.Rt(), slot) : LagEstimate{}, now));
         }
         if (antiAim)
             _manager.Report(slot, _manager.AntiAim().OnFrame(slot, serverTick, eligible, now));
@@ -236,7 +236,7 @@ void ShotCorrelator::FinalizeSilentAim(int slot, int32_t serverTick, double nowS
 
 void ShotCorrelator::OnWeaponFire(const CS2Kit::Events::WeaponFire& fire)
 {
-    if (!_manager.DetectionsEnabled() || !AntiCheatManager::IsEligible(fire.Slot))
+    if (!_manager.DetectionsEnabled() || !_manager.IsEligible(fire.Slot))
         return;
 
     const CS2Kit::PlayerController controller(fire.Slot);
@@ -247,7 +247,7 @@ void ShotCorrelator::OnWeaponFire(const CS2Kit::Events::WeaponFire& fire)
 
     ShotView* shot = _manager.Correlator().OnWeaponFire(
         fire.Slot, fire.Weapon, static_cast<int32_t>(CS2Kit::ServerTick()), visible, hasVisible);
-    if (shot && AntiCheatManager::ModuleEnabled(DetectionKind::AntiAim))
+    if (shot && _manager.ModuleEnabled(DetectionKind::AntiAim))
         _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, TimeUtils::MonotonicSeconds()));
 }
 
@@ -262,11 +262,11 @@ void ShotCorrelator::OnBulletImpact(const CS2Kit::Events::BulletImpact& impact)
     int slot = _manager.Correlator().ResolveImpactShooter(impact.TruncatedUserId, serverTick, _userIds);
     if (slot < 0 && !_userIdsResolved)
         slot = impact.Slot;
-    if (!AntiCheatManager::IsEligible(slot))
+    if (!_manager.IsEligible(slot))
         return;
 
     ShotView* shot = _manager.Correlator().OnBulletImpact(slot, {impact.X, impact.Y, impact.Z}, serverTick);
-    if (shot && AntiCheatManager::ModuleEnabled(DetectionKind::SilentAim))
+    if (shot && _manager.ModuleEnabled(DetectionKind::SilentAim))
         _manager.SilentAim().OnShotUpdated(slot, *shot);
 }
 
@@ -277,7 +277,7 @@ void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
 
     const int attacker = event->GetPlayerSlot("attacker").Get();
     const int victim = event->GetPlayerSlot("userid").Get();
-    if (!AntiCheatManager::IsEligible(attacker) || !IsValidSlot(victim))
+    if (!_manager.IsEligible(attacker) || !IsValidSlot(victim))
         return;
 
     const bool headshot = event->GetInt("hitgroup", HitGroupGeneric) == HitGroupHead;
@@ -286,16 +286,16 @@ void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
     if (!shot)
         return;
 
-    if (AntiCheatManager::ModuleEnabled(DetectionKind::SilentAim))
+    if (_manager.ModuleEnabled(DetectionKind::SilentAim))
         _manager.SilentAim().OnShotUpdated(attacker, *shot);
-    if (AntiCheatManager::ModuleEnabled(DetectionKind::Aimbot))
+    if (_manager.ModuleEnabled(DetectionKind::Aimbot))
         _manager.Report(attacker,
                         _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, TimeUtils::MonotonicSeconds()));
 }
 
 void ShotCorrelator::OnPlayerDeath(const CS2Kit::Events::PlayerDeath& death)
 {
-    if (!_manager.DetectionsEnabled() || !AntiCheatManager::IsEligible(death.AttackerSlot))
+    if (!_manager.DetectionsEnabled() || !_manager.IsEligible(death.AttackerSlot))
         return;
 
     // Nothing consumes the death directly: it only lands the wallbang flag SilentAim reads when it

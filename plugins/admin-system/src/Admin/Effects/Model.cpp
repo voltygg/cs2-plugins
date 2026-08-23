@@ -4,11 +4,9 @@
 #include "EffectRegistry.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/Services.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
-
-using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Effects
 {
@@ -49,15 +47,15 @@ const std::vector<FunModel>& FunModels()
     return models;
 }
 
-void PrecacheModels()
+void PrecacheModels(CS2Kit::Runtime& runtime)
 {
     for (const auto& model : FunModels())
     {
-        Engine().Sdk.Precache.Add(model.Path);
+        runtime.Precache.Add(model.Path);
     }
 
-    Engine().Sdk.Precache.Add(DefaultModelT);
-    Engine().Sdk.Precache.Add(DefaultModelCt);
+    runtime.Precache.Add(DefaultModelT);
+    runtime.Precache.Add(DefaultModelCt);
 }
 
 const ParamEffect Model{.Permission = Flag(Permission::Fun),
@@ -78,20 +76,18 @@ const ParamEffect Model{.Permission = Flag(Permission::Fun),
                             },
                         .Setup = [](const ActionContext& ctx, int param) -> EffectInstance {
                             // Dispatch already bounds-checked param and required the target alive.
-                            Engine().Sdk.EntityOps.SetModel(ctx.TargetCtrl.GetPawn(), FunModels()[param].Path.c_str());
+                            ctx.Rt.EntityOps.SetModel(ctx.TargetCtrl.GetPawn(), FunModels()[param].Path.c_str());
 
                             // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
                             // team default when cleared while alive (a no-op on death, where IsAlive is false).
                             int targetSlot = ctx.Target->GetSlot();
-                            return {.OnStop = [targetSlot]() {
+                            return {.OnStop = [&ops = ctx.Rt.EntityOps, targetSlot]() {
                                 PlayerController pc(targetSlot);
                                 if (!pc.IsValid() || !pc.IsAlive())
                                     return;
                                 if (const char* def = DefaultModelForTeam(pc.GetTeam()))
-                                    Engine().Sdk.EntityOps.SetModel(pc.GetPawn(), def);
+                                    ops.SetModel(pc.GetPawn(), def);
                             }};
                         }};
-
-static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 40, .Param = &Model});
 
 }  // namespace AdminSystem::Admin::Effects

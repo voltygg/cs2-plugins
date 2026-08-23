@@ -16,12 +16,18 @@
 namespace Anticheat
 {
 
+class AntiCheatManager;
+
 class CheatSimulator
 {
 public:
+    explicit CheatSimulator(AntiCheatManager& manager) : _manager(manager) {}
+
     void Initialize();
 
 private:
+    AntiCheatManager& _manager;
+
     enum class Kind
     {
         Off,
@@ -46,9 +52,9 @@ private:
     void OnFilter(int slot, CS2Kit::UserCmdView& cmd);
     void Arm(const CCommand& args, Kind kind, float defaultParam);
     /** Point the command at the nearest opponent's chest; false with nobody to lock onto. */
-    static bool AimAtNearestOpponent(int slot, CS2Kit::UserCmdView& cmd);
+    bool AimAtNearestOpponent(int slot, CS2Kit::UserCmdView& cmd);
 
-    static int ResolveSlot(const char* arg);
+    int ResolveSlot(const char* arg);
 
     bool Enabled() const;
 

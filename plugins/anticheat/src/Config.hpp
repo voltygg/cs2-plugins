@@ -1,6 +1,8 @@
 #pragma once
 
-// SDK-free so cores and their tests can include it; the ConfigManager alias is in Managers.hpp.
+#include <CS2Kit/App/JsonConfig.hpp>
+
+// SDK-free so cores and their tests can include it: JsonConfig is header-only over nlohmann.
 // Detection thresholds are deliberately absent - every tuned constant is constexpr in its own core,
 // leaving only the operational surface below for an operator to reason about.
 #include "Core/Finding.hpp"
@@ -79,5 +81,8 @@ struct Settings
     AntiCheatSettings anticheat;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, anticheat)
+
+/** Subclass CS2Kit::JsonConfig instead once you need post-load validation or accessors. */
+using ConfigManager = CS2Kit::App::JsonConfig<Settings>;
 
 }  // namespace Anticheat

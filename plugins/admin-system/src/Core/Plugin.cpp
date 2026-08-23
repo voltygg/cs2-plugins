@@ -1,185 +1,22 @@
 #include "Plugin.hpp"
 
-#include "../Admin/AdminManager.hpp"
-#include "../Admin/CheatCheck/CheatCheckManager.hpp"
-#include "../Admin/Effects/Model.hpp"
-#include "../Database/Repositories/ServerRepository.hpp"
-#include "../Punishments/PunishmentManager.hpp"
-#include "ChatService.hpp"
+#include "App.hpp"
 #include "Config.hpp"
-#include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Commands/CommandManager.hpp>
-#include <CS2Kit/Core/HookMacros.hpp>
 #include <CS2Kit/App/PluginInfoStamp.hpp>
-#include <CS2Kit/Core/Scheduler.hpp>
-#include <CS2Kit/App/Services.hpp>
-#include <CS2Kit/Database/Api.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Players/Player.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Sdk/GameEventService.hpp>
-#include <CS2Kit/Sdk/GameInterfaces.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
-#include <nlohmann/json.hpp>
+#include <CS2Kit/Core/HookMacros.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <string>
 
-using namespace AdminSystem::Core;
-using namespace AdminSystem::Admin;
-using namespace AdminSystem::Punishments;
-using namespace CS2Kit::App;
-using namespace CS2Kit::Core;
-using namespace CS2Kit::Players;
-using namespace CS2Kit::Sdk;
-using namespace CS2Kit::Utils;
-using namespace CS2Kit::Menu;
-using AdminSystem::App;
-using AdminSystem::Admin::CheatCheck::CheatCheckManager;
+using CS2Kit::Player;
+using CS2Kit::PluginInfo;
+using CS2Kit::Sdk::PlayerController;
+namespace Log = CS2Kit::Log;
 
-CS2KIT_PLUGIN(AdminSystemPlugin, AdminSystem);
+CS2KIT_PLUGIN(AdminSystemPlugin);
 
 SH_DECL_HOOK3(IVEngineServer2, SetClientListening, SH_NOATTRIB, 0, bool, CPlayerSlot, CPlayerSlot, bool);
-
-AdminSystemPlugin::~AdminSystemPlugin() = default;
-
-AdminSystemPlugin& AdminSystemPlugin::Get()
-{
-    return g_AdminSystemPlugin;
-}
-
-using CS2Kit::App::Engine;
-
-// ------- Subsystem wiring -----
-
-namespace
-{
-
-// The one policy the kit consults everywhere: command permissions, action targeting,
-// result replies, and action broadcasts. Lambdas resolve App() at call time.
-void InstallPolicy()
-{
-    Engine().Core.Policy = {
-        .HasPermission =
-            [](int64_t steamId, const std::string& permission) {
-                return App().Admins.HasAnyPermission(steamId, permission);
-            },
-        .CanTarget = [](Player& caller,
-                        Player& target) { return App().Admins.CanTarget(caller.GetSteamID(), target.GetSteamID()); },
-        .Reply = [](int slot, std::string_view message) { App().Chat.Reply(slot, message); },
-        .Broadcast =
-            [](Player& caller, Player* target, const std::string& key) {
-                if (target)
-                    App().Chat.BroadcastAction(key, caller.GetName(), target->GetName());
-            },
-    };
-}
-
-StageResult ConnectDatabase()
-{
-    auto& db = App().Db;
-    if (!db.Start(App().Config.GetDatabase()))
-        return StageResult::Degraded("unavailable; chat commands will reject all callers");
-
-    const auto migration = CS2Kit::RunMigrations(db, CS2Kit::AddonFile(AddonName, "configs/migrations"),
-                                                 {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
-    App().Migration = migration;
-    if (!migration)
-        return StageResult::Degraded("migrations failed; not loading admins against an out-of-date schema");
-
-    const auto& server = App().Config.GetServer();
-    if (!AdminSystem::Database::ServerRepository{}.Upsert(server.tag, server.name))
-        Log::Warn("Failed to register server '{}' in the servers table.", server.tag);
-
-    return StageResult::Ok();
-}
-
-StageResult LoadAdminData()
-{
-    auto& adminMgr = App().Admins;
-    const bool groups = adminMgr.LoadGroups();
-    const bool admins = adminMgr.LoadAdmins();
-    App().Freeze.RefreshFromDatabase();
-    if (!groups || !admins)
-        return StageResult::Degraded("failed to load groups/admins from DB");
-    return StageResult::Ok();
-}
-
-StageResult StartPunishments()
-{
-    const bool loaded = App().Punishments.LoadActivePunishments();
-
-    // Every minute: sweep expired bans/mutes, pick up admin freezes issued on other servers
-    // sharing this database, and advance this server's registry heartbeat.
-    Engine().Core.Scheduler.Repeat(60'000, []() {
-        App().Punishments.ExpireOldPunishments();
-        App().Freeze.RefreshFromDatabase();
-        AdminSystem::Database::ServerRepository{}.Heartbeat(App().Config.GetServer().tag);
-    });
-
-    // Typed surface the anticheat plugin drives (bans need the DB, alerts need admin data).
-    // Published last in this stage so a peer never sees a half-initialised implementation.
-    App().AdminActions.Publish();
-
-    return loaded ? StageResult::Ok() : StageResult::Degraded("failed to load active punishments");
-}
-
-void RegisterGameEventListeners()
-{
-    namespace Events = CS2Kit::Events;
-    auto& events = Engine().Sdk.Events;
-    events.Listen<Events::PlayerDeath>([](const Events::PlayerDeath& e) {
-        // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
-        if (e.VictimSlot >= 0)
-            App().Effects.CancelPerLife(e.VictimSlot);
-    });
-    events.Listen<Events::RoundEnd>([](const Events::RoundEnd&) { App().Effects.CancelRoundScoped(); });
-    events.Listen<Events::RoundPrestart>([](const Events::RoundPrestart&) { App().Effects.CancelRoundScoped(); });
-}
-
-// Domain sections on top of the kit's (build/load/gamedata/uptime), plus the command that
-// reports them. Health adds the database to the kit's baseline: an admin plugin that cannot
-// reach its database is not healthy even though the load itself succeeded.
-void InstallStatusReporting()
-{
-    auto& status = Engine().Status;
-
-    status.RegisterSection("db", [] {
-        // Live worker state, not the load-time stage result: a database that died (or recovered)
-        // after load must show as such.
-        return nlohmann::json{{"connected", App().Db.IsConnected()},
-                              {"migrationVersion", App().Migration.CurrentVersion},
-                              {"migrationsApplied", App().Migration.Applied}};
-    });
-
-    status.RegisterSection("admins", [] {
-        return nlohmann::json{{"cached", App().Admins.AdminCount()}, {"groups", App().Admins.GroupCount()}};
-    });
-
-    status.RegisterSection("commands", [] { return nlohmann::json{{"registered", Engine().Commands.Count()}}; });
-
-    status.RegisterSection("server", [] {
-        const auto& server = App().Config.GetServer();
-        return nlohmann::json{{"tag", server.tag}, {"name", server.name}};
-    });
-
-    status.InstallCommand("admin_status",
-                          "Report plugin health; 'admin_status json' emits a machine-readable STATUS_JSON line.",
-                          [] { return App().Db.IsConnected(); });
-}
-
-// Persist a finished session; shared by the disconnect hook and the unload sweep. No-ops for bots.
-void FlushPlayerSession(Player* player)
-{
-    if (player)
-        App().PlayerRepo.RecordDisconnect(player->GetSteamID(), player->GetName(), player->GetPlaytime());
-}
-
-}  // namespace
-
-// ------- Plugin lifecycle -----
 
 PluginInfo AdminSystemPlugin::Info() const
 {
@@ -192,64 +29,18 @@ PluginInfo AdminSystemPlugin::Info() const
     });
 }
 
-bool AdminSystemPlugin::OnLoad(bool late)
+bool AdminSystemPlugin::OnLoad(CS2Kit::Runtime& runtime, bool /*late*/)
 {
     Log::Info("Loading v{}...", Info().Version);
+    _app.emplace(runtime);
+    _app->Version = Info().Version;
+    return _app->Start();
+}
 
-    auto& report = Engine().Core.LoadReport;
-
-    // "Configuration" + "Translations" stages, via ConfigManager::LoadSettings.
-    if (!CS2Kit::LoadStandardConfig(App().Config, {.Addon = AddonName}))
-        return false;
-
-    report.Run("Policy", [] {
-        InstallPolicy();
-        // Freeze the player while an admin menu is open so WASD navigation doesn't also walk them around.
-        Engine().Menus.SetFreezePlayer(true);
-        return StageResult::Ok();
-    });
-
-    if (report.Run("Database", [] { return ConnectDatabase(); }) == StageStatus::Ok)
-        // Stop drains queued writes (a ban issued just before unload must land) and drops
-        // undispatched completions before the managers they would touch are destroyed.
-        Defer([] { App().Db.Stop(); });
-
-    report.Run("Admins", [&] {
-        if (!report.IsOk("Database"))
-            return StageResult::Skipped("database unavailable");
-        return LoadAdminData();
-    });
-
-    // Self-registered commands are ingested by the kit after OnLoad returns.
-
-    report.Run("Punishments", [&] {
-        if (!report.IsOk("Database"))
-            return StageResult::Skipped("database unavailable");
-        return StartPunishments();
-    });
-
-    report.Run("Events", [] {
-        RegisterGameEventListeners();
-        // Queue fun-model assets; they replicate to clients from the next map load.
-        AdminSystem::Admin::Effects::PrecacheModels();
-        return StageResult::Ok();
-    });
-
-    InstallStatusReporting();
-
-    Defer([] { App().CheatCheck.CancelAll(); });
-    Defer([] { App().Effects.CancelAll(); });
-    // Unload fires no disconnect hooks, so fold open sessions here or lose their playtime.
-    Defer([] {
-        for (auto* p : Engine().Players.GetAllPlayers())
-            FlushPlayerSession(p);
-    });
-    Defer([] { Engine().Players.Clear(); });
-    // Deferred cleanups run in reverse registration order, so this one runs first: stop answering
-    // other plugins' MetaFactory queries before the managers it delegates to are torn down.
-    Defer([] { App().AdminActions.Unpublish(); });
-
-    return true;
+void AdminSystemPlugin::OnRegisterHooks(CS2Kit::Runtime& runtime)
+{
+    _clientListening = CS2KIT_SCOPED_HOOK(IVEngineServer2, SetClientListening, runtime.Interfaces.Engine,
+                                          SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
 }
 
 void AdminSystemPlugin::OnPlayerConnect(Player* player)
@@ -257,64 +48,59 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
     if (!player)
         return;
 
-    App().PlayerRepo.RecordConnect(player->GetSteamID(), player->GetName(), player->GetIpAddress());
+    auto& app = *_app;
+    app.PlayerRepo.RecordConnect(player->GetSteamID(), player->GetName(), player->GetIpAddress());
 
     // Register the admin's panel language up front so every slot-aware Translations::Get (menus,
     // cheat-check, mute notices) renders in their language without per-command setup.
-    if (const auto* row = App().Admins.GetAdmin(player->GetSteamID()))
-        Engine().Utils.Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
+    if (const auto* row = app.Admins.GetAdmin(player->GetSteamID()))
+        app.Runtime.Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
 
     // A frozen admin gets told up front instead of discovering it on their first denied command.
     // Deferred a tick like the ban kick below so the freshly-connected client receives the line.
-    if (App().Freeze.IsFrozen(player->GetSteamID()))
+    if (app.Freeze.IsFrozen(player->GetSteamID()))
     {
         int64_t steamId = player->GetSteamID();
-        Engine().Core.Scheduler.NextTick([steamId]() { App().Freeze.NotifyFrozen(steamId); });
+        app.Runtime.Scheduler.NextTick([&app, steamId] { app.Freeze.NotifyFrozen(steamId); });
     }
 
     // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so we defer
     // to the next game frame via the scheduler -- the player is fully connected by then. Bots have
     // no real SteamID and never match an active ban.
-    if (auto ban = App().Punishments.GetActiveBan(player->GetSteamID()))
+    if (auto ban = app.Punishments.GetActiveBan(player->GetSteamID()))
     {
         int slot = player->GetSlot();
         std::string reason = ban->Reason;
-        Engine().Core.Scheduler.NextTick([slot, reason]() { PlayerController(slot).Kick(reason.c_str()); });
+        app.Runtime.Scheduler.NextTick([slot, reason] { PlayerController(slot).Kick(reason.c_str()); });
     }
 }
 
 void AdminSystemPlugin::OnPlayerDisconnect(Player* player)
 {
-    if (player)
-    {
-        FlushPlayerSession(player);
-        App().Effects.CancelAllForSlot(player->GetSlot());
-        App().CheatCheck.CancelAllForSlot(player->GetSlot());
-    }
+    if (!player)
+        return;
+
+    _app->FlushPlayerSession(player);
+    _app->Effects.CancelAllForSlot(player->GetSlot());
+    _app->CheatCheck.CancelAllForSlot(player->GetSlot());
 }
 
 bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)
 {
-    return App().Chat.HandleSay(player, std::string(message), teamChat);
-}
-
-void AdminSystemPlugin::OnRegisterHooks()
-{
-    CS2KIT_SCOPED_HOOK(IVEngineServer2, SetClientListening, Engine().Sdk.Interfaces.Engine,
-                       SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
+    return _app->Chat.HandleSay(player, std::string(message), teamChat);
 }
 
 bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen)
 {
     if (bListen)
     {
-        if (auto* sender = Engine().Players.GetPlayerBySlot(iSender.Get()))
+        if (auto* sender = _app->Runtime.Players.GetPlayerBySlot(iSender.Get()))
         {
-            if (App().Punishments.IsVoiceMuted(sender->GetSteamID()))
+            if (_app->Punishments.IsVoiceMuted(sender->GetSteamID()))
             {
                 // Tell the muted player they're being suppressed; ChatService rate-limits this
                 // so the per-receiver explosion of hook calls collapses to one chat line.
-                App().Chat.NotifyVoiceMuted(sender);
+                _app->Chat.NotifyVoiceMuted(sender);
                 RETURN_META_VALUE_NEWPARAMS(MRES_HANDLED, false, &IVEngineServer2::SetClientListening,
                                             (iReceiver, iSender, false));
             }

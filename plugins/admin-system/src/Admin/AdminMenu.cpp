@@ -1,6 +1,6 @@
 #include "AdminMenu.hpp"
 
-#include "../Core/Managers.hpp"
+#include "../Core/App.hpp"
 #include "../Core/Plugin.hpp"
 #include "AdminManager.hpp"
 #include "Menu/AdminMenu_ChatSettings.hpp"
@@ -9,26 +9,24 @@
 #include "Menu/AdminMenu_Punish.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/Services.hpp>
+#include <CS2Kit/Core/Translations.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <format>
-
-using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin
 {
 
+using CS2Kit::Core::Translations;
 using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Players::PlayerManager;
-using CS2Kit::Utils::Translations;
 
-std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(int adminSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int adminSlot)
 {
-    auto& tr = Engine().Utils.Translations;
-    auto& adminMgr = App().Admins;
-    auto& plrMgr = Engine().Players;
+    auto& tr = app.Runtime.Translations;
+    auto& adminMgr = app.Admins;
+    auto& plrMgr = app.Runtime.Players;
 
     auto* adminPlayer = plrMgr.GetPlayerBySlot(adminSlot);
     if (!adminPlayer)
@@ -38,21 +36,24 @@ std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(int adminSlot)
 
     // Version rendered small and gray next to the gold panel title, matching the pager style.
     auto title = std::format("{} <font class='fontSize-s' color='#887755'>v{}</font>", tr.Get("panel.admin", adminSlot),
-                             AdminSystemPlugin::Get().GetVersion());
+                             app.Version);
 
     return MenuBuilder(title)
         .AddSubmenu(
-            tr.Get("category.punish", adminSlot), [adminSlot](int) { return Menu::BuildPunishMenu(adminSlot); },
+            tr.Get("category.punish", adminSlot),
+            [&app, adminSlot](int) { return Menu::BuildPunishMenu(app, adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "cdoe"))
         .AddSubmenu(
-            tr.Get("category.control", adminSlot), [adminSlot](int) { return Menu::BuildControlMenu(adminSlot); },
+            tr.Get("category.control", adminSlot),
+            [&app, adminSlot](int) { return Menu::BuildControlMenu(app, adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "bsz"))
         .AddSubmenu(
-            tr.Get("category.effects", adminSlot), [adminSlot](int) { return Menu::BuildEffectsMenu(adminSlot); },
+            tr.Get("category.effects", adminSlot),
+            [&app, adminSlot](int) { return Menu::BuildEffectsMenu(app, adminSlot); },
             adminMgr.HasAnyPermission(adminSid, "fjz"))
         .AddSubmenu(
             tr.Get("category.chatSettings", adminSlot),
-            [adminSlot](int) { return Menu::BuildChatSettingsMenu(adminSlot); }, adminMgr.IsAdmin(adminSid))
+            [&app, adminSlot](int) { return Menu::BuildChatSettingsMenu(app, adminSlot); }, adminMgr.IsAdmin(adminSid))
         .Build();
 }
 

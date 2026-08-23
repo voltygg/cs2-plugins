@@ -1,8 +1,8 @@
 #include "IssuePunishment.hpp"
 
 #include "../Admin/FreezeManager.hpp"
+#include "../Core/App.hpp"
 #include "../Core/ChatService.hpp"
-#include "../Core/Managers.hpp"
 #include "PunishmentManager.hpp"
 
 #include <CS2Kit/Api.hpp>
@@ -34,15 +34,16 @@ void Fill(T& punishment, const Player& target, const Player& admin, const std::s
     }
 }
 
-bool Issue(const Player& admin, const Player& target, PunishType type, const std::string& reason, int64_t durationSec)
+bool Issue(App& app, const Player& admin, const Player& target, PunishType type, const std::string& reason,
+           int64_t durationSec)
 {
-    auto& pm = App().Punishments;
+    auto& pm = app.Punishments;
     switch (type)
     {
     case PunishType::Kick:
     {
         CS2Kit::PlayerController(target.GetSlot()).Kick(reason.c_str());
-        App().Chat.BroadcastPunishment("kicked", admin.GetName(), target.GetName(), reason, 0);
+        app.Chat.BroadcastPunishment("kicked", admin.GetName(), target.GetName(), reason, 0);
         return true;
     }
     case PunishType::Ban:
@@ -76,22 +77,22 @@ bool Issue(const Player& admin, const Player& target, PunishType type, const std
 
 }  // namespace
 
-bool IssuePunishment(const Player& admin, const Player& target, PunishType type, const std::string& reason,
+bool IssuePunishment(App& app, const Player& admin, const Player& target, PunishType type, const std::string& reason,
                      int64_t durationSec)
 {
     // Capture identity up front: a kick invalidates `target` before the audit write below.
     int64_t targetSteamId = target.GetSteamID();
     std::string targetName = target.GetName();
 
-    if (!Issue(admin, target, type, reason, durationSec))
+    if (!Issue(app, admin, target, type, reason, durationSec))
         return false;
 
     // Audit + abuse-rate check. Covers chat commands and the menu (both land here); the
     // warning->ban auto-escalation calls PunishmentManager directly and is deliberately
     // not counted against the admin.
     auto detail = durationSec > 0 ? std::format("{}; {}s", reason, durationSec) : reason;
-    App().Freeze.RecordPunishment(admin.GetSteamID(), admin.GetName(), AuditActionName(type), targetSteamId, targetName,
-                                  detail);
+    app.Freeze.RecordPunishment(admin.GetSteamID(), admin.GetName(), AuditActionName(type), targetSteamId, targetName,
+                                detail);
     return true;
 }
 

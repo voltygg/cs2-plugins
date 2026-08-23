@@ -1,5 +1,5 @@
 #include "../Admin/Effects/Descriptors.hpp"
-#include "../Core/Managers.hpp"
+#include "../Core/App.hpp"
 #include "../Core/Permissions.hpp"
 
 #include <CS2Kit/Api.hpp>
@@ -8,28 +8,21 @@ namespace AdminSystem::Commands
 {
 
 using namespace CS2Kit::Commands;
-using CS2Kit::Registry;
 
-namespace
+void RegisterAdminSelfCommands(CS2Kit::CommandManager& commands, App& app)
 {
-
-const bool _registered = [] {
-    Registry<CommandSpec>::Add({
+    commands.Register({
         .Name = "hide",
         .Description = "Toggle stealth-spectator mode on yourself.",
         .Usage = "!hide",
         .Permission = Flag(Permission::Hide),
         .Handler =
-            [](CommandContext& c) {
+            [&app](CommandContext& c) {
                 int slot = c.CallerSlot();
-                CS2Kit::ToggleEffect(App().Effects, slot, slot, AdminSystem::Admin::Effects::Hide);
+                CS2Kit::ToggleEffect(app.Effects, slot, slot, AdminSystem::Admin::Effects::Hide);
                 return CommandResult{true, ""};
             },
     });
-
-    return true;
-}();
-
-}  // namespace
+}
 
 }  // namespace AdminSystem::Commands

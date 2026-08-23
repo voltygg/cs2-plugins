@@ -1,12 +1,11 @@
 #include "DiscordReporter.hpp"
 
-#include "Managers.hpp"
+#include "App.hpp"
 
-#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Core/Log.hpp>
 #include <nlohmann/json.hpp>
 
-using CS2Kit::App::Engine;
-namespace Log = CS2Kit::Utils::Log;
+namespace Log = CS2Kit::Core::Log;
 
 namespace Anticheat
 {
@@ -20,7 +19,7 @@ constexpr int EmbedColor = 0xE04F4F;
 void DiscordReporter::Report(int slot, const std::string& playerName, int64_t steamId, const Finding& finding,
                              FunnelOutcome outcome)
 {
-    const auto& settings = App().Config.Get().anticheat;
+    const auto& settings = _config.Get().anticheat;
     if (settings.webhook.url.empty())
         return;
     if (!_throttle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, CS2Kit::TimeUtils::Now()))
@@ -45,11 +44,11 @@ void DiscordReporter::Report(int slot, const std::string& playerName, int64_t st
     // throws on - and this runs on an engine frame with nothing to catch it.
     std::string body = payload.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
 
-    Engine().Http.Post(settings.webhook.url, std::move(body), {"Content-Type: application/json"}, RequestTimeoutMs,
-                       [](const CS2Kit::HttpResult& result) {
-                           if (!result.Ok)
-                               Log::Warn("Webhook delivery failed: {}", result.Error);
-                       });
+    _rt.Http.Post(settings.webhook.url, std::move(body), {"Content-Type: application/json"}, RequestTimeoutMs,
+                  [](const CS2Kit::HttpResult& result) {
+                      if (!result.Ok)
+                          Log::Warn("Webhook delivery failed: {}", result.Error);
+                  });
 }
 
 }  // namespace Anticheat

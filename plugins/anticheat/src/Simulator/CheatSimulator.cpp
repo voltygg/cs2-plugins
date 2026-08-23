@@ -1,12 +1,13 @@
 #include "CheatSimulator.hpp"
 
+#include "AntiCheatManager.hpp"
+#include "App.hpp"
 #include "Core/Geometry.hpp"
 #include "Core/Samples.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
-#include "Managers.hpp"
 
+#include <CS2Kit/Core/Log.hpp>
 #include <CS2Kit/Core/Slot.hpp>
-#include <CS2Kit/Utils/Log.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -16,9 +17,8 @@
 namespace Anticheat
 {
 
-using CS2Kit::App::Engine;
 using CS2Kit::Core::IsValidSlot;
-namespace Log = CS2Kit::Utils::Log;
+namespace Log = CS2Kit::Core::Log;
 
 namespace
 {
@@ -74,7 +74,7 @@ void CheatSimulator::Initialize()
 
 bool CheatSimulator::Enabled() const
 {
-    return App().Config.Get().anticheat.debug.simulator;
+    return _manager.Config().Get().anticheat.debug.simulator;
 }
 
 int CheatSimulator::ResolveSlot(const char* arg)
@@ -82,7 +82,7 @@ int CheatSimulator::ResolveSlot(const char* arg)
     if (std::strlen(arg) > 10)  // too long to be a slot index; treat as a steamid64
     {
         const int64_t steamId = std::strtoll(arg, nullptr, 10);
-        auto* player = Engine().Players.GetPlayerBySteamId(steamId);
+        auto* player = _manager.Rt().Players.GetPlayerBySteamId(steamId);
         return player ? player->GetSlot() : -1;
     }
     return std::atoi(arg);
@@ -112,7 +112,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     // disabled simulator then costs nothing on the per-tick movement path.
     if (!_filtering)
     {
-        Engine().Sdk.MovementHook.ListenFilterCmd(
+        _manager.Rt().MovementHook.ListenFilterCmd(
             [this](int filtered, CS2Kit::UserCmdView& cmd) { OnFilter(filtered, cmd); });
         _filtering = true;
     }
@@ -134,12 +134,12 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, CS2Kit::UserCmdView& cmd)
     const Vector eye = self.GetEyePosition();
     const Vec3 from{eye.x, eye.y, eye.z};
     const int team = self.GetTeam();
-    const bool freeForAll = Engine().Sdk.ConVars.GetBool("mp_teammates_are_enemies").value_or(false);
+    const bool freeForAll = _manager.Rt().ConVars.GetBool("mp_teammates_are_enemies").value_or(false);
 
     Vec3 best;
     float bestDistance = 0.0f;
     bool found = false;
-    for (const CS2Kit::Players::Player* player : Engine().Players.GetAllPlayers())
+    for (const CS2Kit::Players::Player* player : _manager.Rt().Players.GetAllPlayers())
     {
         const int other = player ? player->GetSlot() : -1;
         if (!IsValidSlot(other) || other == slot)

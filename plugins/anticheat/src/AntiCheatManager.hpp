@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Config.hpp"
+#include "Core/DetectionData.hpp"
+
 // Owns the detection cores, the adapters that feed them, and the console surface. The sv_cheats
 // gate, the eligibility rule and evidence reset are all global, so they live here.
 
@@ -27,7 +30,19 @@ namespace Anticheat
 class AntiCheatManager
 {
 public:
-    explicit AntiCheatManager(ResponseManager& response) : _response(response) {}
+    AntiCheatManager(CS2Kit::Runtime& runtime, ConfigManager& config, DetectionDataManager& detections,
+                     ResponseManager& response)
+        : _rt(runtime), _config(config), _detections(detections), _response(response), _simulator(*this)
+    {}
+
+    /** The kit runtime, for the detectors and adapters this manager owns. */
+    CS2Kit::Runtime& Rt() { return _rt; }
+
+    /** Plugin settings, likewise. */
+    ConfigManager& Config() { return _config; }
+
+    /** The shipped detection tables. */
+    DetectionDataManager& Detections() { return _detections; }
 
     void Initialize();
 
@@ -47,17 +62,17 @@ public:
      */
     bool DetectionsEnabled() const;
 
-    static bool ModuleEnabled(DetectionKind kind);
+    bool ModuleEnabled(DetectionKind kind) const;
 
     /** True when @p slot should be judged at all (a connected, non-bot human). */
-    static bool IsEligible(int slot);
+    bool IsEligible(int slot);
 
     void Report(int slot, const std::optional<Finding>& finding);
 
     /** Cheat-protected client values only mean something once a disabled sv_cheats has reached them. */
     bool EnforceCheatCvars() const;
 
-    /** The `anticheat` section of Engine().Status. */
+    /** The `anticheat` section of _rt.Status. */
     nlohmann::json StatusSnapshot() const;
 
     ShotCorrelatorCore& Correlator() { return _correlator; }
@@ -86,7 +101,14 @@ private:
     /** Pull mp_teammates_are_enemies into the correlator: it decides which shots are hostile. */
     void RefreshTeamRules();
 
+    CS2Kit::Runtime& _rt;
+    ConfigManager& _config;
+    DetectionDataManager& _detections;
     ResponseManager& _response;
+
+    CS2Kit::Subscription _spawnInstall;
+    CS2Kit::Subscription _dumpCommand;
+    CS2Kit::Subscription _slotChanged;
 
     ShotCorrelatorCore _correlator;
     AimbotCore _aimbot{_correlator};

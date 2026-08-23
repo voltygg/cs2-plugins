@@ -1,27 +1,25 @@
 #include "CheatCheckManager.hpp"
 
+#include "../../Core/App.hpp"
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Config.hpp"
-#include "../../Core/Managers.hpp"
 #include "../Actions/Descriptors.hpp"
 #include "CheatCheckRoomApi.hpp"
 #include "CheatCheckView.hpp"
 
 #include <CS2Kit/Api.hpp>
+#include <CS2Kit/Core/ChatColors.hpp>
+#include <CS2Kit/Core/Log.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
-#include <CS2Kit/App/Services.hpp>
+#include <CS2Kit/Core/TimeUtils.hpp>
+#include <CS2Kit/Core/Translations.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
-#include <CS2Kit/Utils/ChatColors.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/TimeUtils.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
 #include <format>
-
-using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::CheatCheck
 {
@@ -29,13 +27,13 @@ namespace AdminSystem::Admin::CheatCheck
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
 using CS2Kit::Core::Scheduler;
+using CS2Kit::Core::TimeUtils;
 using CS2Kit::Players::PlayerManager;
 using CS2Kit::Sdk::MessageSystem;
 using CS2Kit::Sdk::MoveType;
 using CS2Kit::Sdk::PlayerController;
-using CS2Kit::Utils::TimeUtils;
-namespace Log = CS2Kit::Utils::Log;
-namespace ChatColors = CS2Kit::Utils::ChatColors;
+namespace Log = CS2Kit::Core::Log;
+namespace ChatColors = CS2Kit::Core::ChatColors;
 
 namespace
 {
@@ -53,14 +51,14 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     if (!ValidSlot(adminSlot) || !ValidSlot(targetSlot))
         return false;
 
-    auto& plrMgr = Engine().Players;
+    auto& plrMgr = _app.Runtime.Players;
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
     auto* target = plrMgr.GetPlayerBySlot(targetSlot);
     if (!admin || !target)
         return false;
 
     PlayerController targetCtrl(targetSlot);
-    const auto& cfg = App().Config.GetCheatCheck();
+    const auto& cfg = _app.Config.GetCheatCheck();
 
     // Re-call: keep the original movetype/team (target is already frozen/spectated, so reading now is stale).
     // PriorTeam is 0 (sentinel) unless we actually move them, so the restore decision survives a config reload.
@@ -87,19 +85,19 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
         targetCtrl.ChangeTeam(CS2Kit::Sdk::TeamSpectator);
 
     int interval = cfg.panelRefreshMs > 0 ? cfg.panelRefreshMs : 100;
-    pc.TickTimer = Engine().Core.Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
+    pc.TickTimer = _app.Runtime.Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
 
     ResolveUrl(targetSlot);
-    View::Render(targetSlot, pc);
+    View::Render(_app, targetSlot, pc);
 
-    App().Chat.BroadcastAction("broadcast.cheatCheckCalled", admin->GetName(), target->GetName());
+    _app.Chat.BroadcastAction("broadcast.cheatCheckCalled", admin->GetName(), target->GetName());
     return true;
 }
 
 void CheatCheckManager::ResolveUrl(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
-    const auto& cfg = App().Config.GetCheatCheck();
+    const auto& cfg = _app.Config.GetCheatCheck();
 
     switch (pc.Mode)
     {
@@ -118,14 +116,14 @@ void CheatCheckManager::ResolveUrl(int targetSlot)
 void CheatCheckManager::RequestRoom(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
-    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
+    auto* target = _app.Runtime.Players.GetPlayerBySlot(targetSlot);
 
     std::optional<RoomRequest> request;
     if (target)
     {
-        auto* admin = Engine().Players.GetPlayerBySlot(pc.AdminSlot);
-        request = BuildRoomRequest(App().Config.GetCheatCheck().websiteAutoRoom, target->GetSteamID(),
-                                   target->GetName(), pc.AdminSteamId, admin ? admin->GetName() : std::string_view{});
+        auto* admin = _app.Runtime.Players.GetPlayerBySlot(pc.AdminSlot);
+        request = BuildRoomRequest(_app.Config.GetCheatCheck().websiteAutoRoom, target->GetSteamID(), target->GetName(),
+                                   pc.AdminSteamId, admin ? admin->GetName() : std::string_view{});
     }
 
     if (!request)
@@ -137,9 +135,9 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     }
 
     const uint64_t seq = pc.RequestSeq;
-    CS2Kit::Http::Post(Engine().Http, std::move(*request), [this, targetSlot, seq](const CS2Kit::HttpResult& result) {
-        OnRoomResponse(targetSlot, seq, result);
-    });
+    CS2Kit::Http::Post(
+        _app.Runtime.Http, std::move(*request),
+        [this, targetSlot, seq](const CS2Kit::HttpResult& result) { OnRoomResponse(targetSlot, seq, result); });
 }
 
 void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result)
@@ -150,7 +148,7 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Ki
     if (!pc.Active || pc.RequestSeq != seq)  // stale: cancelled, expired, re-called, or slot reused
         return;
 
-    const auto& roomCfg = App().Config.GetCheatCheck().websiteAutoRoom;
+    const auto& roomCfg = _app.Config.GetCheatCheck().websiteAutoRoom;
     if (auto urls = ParseRoomResponse(roomCfg, result))
     {
         pc.ResolvedUrl = std::move(urls->PlayerUrl);
@@ -166,7 +164,7 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Ki
 
         if (!urls->CheckerUrl.empty())
             RelayCheckerUrl(targetSlot, urls->CheckerUrl);
-        View::Render(targetSlot, pc);
+        View::Render(_app, targetSlot, pc);
         return;
     }
 
@@ -183,19 +181,20 @@ void CheatCheckManager::OnRoomFailed(int targetSlot)
     auto& pc = _checks[targetSlot];
     FallbackToFixed(pc);
 
-    ReplyToAdmin(pc, [adminSlot = pc.AdminSlot] {
-        return std::format("{}{}", ChatColors::Red, Engine().Utils.Translations.Get("cheatCheck.apiFailed", adminSlot));
+    ReplyToAdmin(pc, [this, adminSlot = pc.AdminSlot] {
+        return std::format("{}{}", ChatColors::Red, _app.Runtime.Translations.Get("cheatCheck.apiFailed", adminSlot));
     });
 
-    View::Render(targetSlot, pc);
+    View::Render(_app, targetSlot, pc);
 }
 
 void CheatCheckManager::RelayCheckerUrl(int targetSlot, const std::string& checkerUrl)
 {
     if (auto slot = ResolveAdminSlot(_checks[targetSlot]))
     {
-        App().Chat.ReplyLink(
-            *slot, std::format("{}{}", ChatColors::Green, Engine().Utils.Translations.Get("cheatCheck.checkerUrl", *slot)),
+        _app.Chat.ReplyLink(
+            *slot,
+            std::format("{}{}", ChatColors::Green, _app.Runtime.Translations.Get("cheatCheck.checkerUrl", *slot)),
             checkerUrl);
     }
 }
@@ -215,7 +214,7 @@ void CheatCheckManager::Tick(int targetSlot)
     }
 
     PollPresenceIfDue(targetSlot);
-    View::RenderPanel(targetSlot, pc);
+    View::RenderPanel(_app, targetSlot, pc);
 }
 
 CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSlot, const std::string& link)
@@ -232,33 +231,33 @@ CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSl
 
     pc.ResolvedUrl = link;
 
-    auto* caller = Engine().Players.GetPlayerBySlot(callerSlot);
+    auto* caller = _app.Runtime.Players.GetPlayerBySlot(callerSlot);
     std::string name = caller ? caller->GetName() : std::string();
 
     if (auto slot = ResolveAdminSlot(pc))
     {
-        App().Chat.ReplyLink(
+        _app.Chat.ReplyLink(
             *slot,
-            std::format("{}{} {}{}", ChatColors::Green, Engine().Utils.Translations.Get("cheatCheck.linkReceived", *slot),
+            std::format("{}{} {}{}", ChatColors::Green, _app.Runtime.Translations.Get("cheatCheck.linkReceived", *slot),
                         ChatColors::Default, name),
             link);
     }
 
-    View::RenderPanel(callerSlot, pc);
+    View::RenderPanel(_app, callerSlot, pc);
     return SubmitResult::Relayed;
 }
 
 void CheatCheckManager::FallbackToFixed(PendingCheck& pc)
 {
     pc.AwaitingUrl = false;
-    const auto& cfg = App().Config.GetCheatCheck();
+    const auto& cfg = _app.Config.GetCheatCheck();
     if (!cfg.fixedLink.url.empty())
         pc.ResolvedUrl = cfg.fixedLink.url;
 }
 
 std::optional<int> CheatCheckManager::ResolveAdminSlot(const PendingCheck& pc) const
 {
-    if (!Engine().Players.GetPlayerBySlotIfSteamId(pc.AdminSlot, pc.AdminSteamId))
+    if (!_app.Runtime.Players.GetPlayerBySlotIfSteamId(pc.AdminSlot, pc.AdminSteamId))
         return std::nullopt;
     return pc.AdminSlot;
 }
@@ -266,15 +265,15 @@ std::optional<int> CheatCheckManager::ResolveAdminSlot(const PendingCheck& pc) c
 void CheatCheckManager::ReplyToAdmin(const PendingCheck& pc, const std::function<std::string()>& buildMessage)
 {
     if (auto slot = ResolveAdminSlot(pc))
-        App().Chat.Reply(*slot, buildMessage());
+        _app.Chat.Reply(*slot, buildMessage());
 }
 
 void CheatCheckManager::ResetCheck(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
     if (pc.TickTimer)
-        Engine().Core.Scheduler.Cancel(pc.TickTimer);
-    Engine().Sdk.Messages.ClearCenterHtml(targetSlot);
+        _app.Runtime.Scheduler.Cancel(pc.TickTimer);
+    _app.Runtime.Messages.ClearCenterHtml(targetSlot);
     pc = PendingCheck{};
 }
 
@@ -283,7 +282,7 @@ bool CheatCheckManager::Cancel(int targetSlot)
     if (!ValidSlot(targetSlot) || !_checks[targetSlot].Active)
         return false;
 
-    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
+    auto* target = _app.Runtime.Players.GetPlayerBySlot(targetSlot);
     std::string targetName = target ? target->GetName() : std::string();
 
     const MoveType restore = _checks[targetSlot].PriorMoveType;
@@ -291,16 +290,16 @@ bool CheatCheckManager::Cancel(int targetSlot)
     ResetCheck(targetSlot);
     Unfreeze(targetSlot, restore, restoreTeam);
 
-    App().Chat.BroadcastAction("broadcast.cheatCheckCleared", "", targetName);
+    _app.Chat.BroadcastAction("broadcast.cheatCheckCleared", "", targetName);
     return true;
 }
 
 void CheatCheckManager::Expire(int targetSlot)
 {
-    const auto& cfg = App().Config.GetCheatCheck();
+    const auto& cfg = _app.Config.GetCheatCheck();
     const bool kick = cfg.autoKick;
 
-    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
+    auto* target = _app.Runtime.Players.GetPlayerBySlot(targetSlot);
     std::string targetName = target ? target->GetName() : std::string();
 
     const MoveType restore = _checks[targetSlot].PriorMoveType;
@@ -312,7 +311,7 @@ void CheatCheckManager::Expire(int targetSlot)
     else
         Unfreeze(targetSlot, restore, restoreTeam);
 
-    App().Chat.BroadcastAction("broadcast.cheatCheckTimedOut", "", targetName);
+    _app.Chat.BroadcastAction("broadcast.cheatCheckTimedOut", "", targetName);
 }
 
 void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int restoreTeam)

@@ -1,6 +1,6 @@
 #include "Config.hpp"
 
-#include <CS2Kit/Utils/Validation.hpp>
+#include <CS2Kit/Core/Validation.hpp>
 #include <algorithm>
 #include <format>
 #include <optional>
@@ -8,7 +8,7 @@
 namespace AdminSystem::Core
 {
 
-using namespace CS2Kit::Utils;
+using namespace CS2Kit::Core;
 
 bool ConfigManager::LoadSettings(const std::string& path)
 {

@@ -1,34 +1,33 @@
 #include "AdminActionsService.hpp"
 
 #include "../Database/Entities/Ban.hpp"
-#include "Managers.hpp"
+#include "App.hpp"
 #include "Permissions.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/SteamId.hpp>
+#include <CS2Kit/Core/Log.hpp>
+#include <CS2Kit/Core/SteamId.hpp>
 #include <string>
 
-namespace Log = CS2Kit::Utils::Log;
+namespace Log = CS2Kit::Core::Log;
 using Contracts::BanResult;
-using CS2Kit::App::Engine;
 
 namespace AdminSystem::Core
 {
 
 void AdminActionsService::Publish()
 {
-    Engine().Exchange.Publish<Contracts::IAdminActions>(this);
+    _app.Runtime.Exchange.Publish<Contracts::IAdminActions>(this);
 }
 
 void AdminActionsService::Unpublish()
 {
-    Engine().Exchange.Unpublish<Contracts::IAdminActions>();
+    _app.Runtime.Exchange.Unpublish<Contracts::IAdminActions>();
 }
 
 BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::string_view reason)
 {
-    if (!CS2Kit::Utils::SteamId::IsValid(steamId))
+    if (!CS2Kit::Core::SteamId::IsValid(steamId))
     {
         Log::Warn("IAdminActions::Ban: {} is not a SteamID64.", steamId);
         return BanResult::InvalidSteamId;
@@ -40,13 +39,13 @@ BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::st
     ban.AdminName = "AntiCheat";
     ban.Reason = std::string(reason);
     ban.Duration = durationSec;
-    if (auto* target = Engine().Players.GetPlayerBySteamId(steamId))
+    if (auto* target = _app.Runtime.Players.GetPlayerBySteamId(steamId))
     {
         ban.TargetName = target->GetName();
         ban.TargetIp = target->GetIpAddress();
     }
 
-    if (!App().Punishments.IssueBan(ban))
+    if (!_app.Punishments.IssueBan(ban))
     {
         Log::Warn("IAdminActions::Ban: failed to persist ban for {}.", steamId);
         return BanResult::PersistFailed;
@@ -58,17 +57,17 @@ BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::st
 
 void AdminActionsService::AlertAdmins(int64_t steamId, std::string_view detector, int score)
 {
-    auto* suspect = Engine().Players.GetPlayerBySteamId(steamId);
+    auto* suspect = _app.Runtime.Players.GetPlayerBySteamId(steamId);
     const std::string suspectName = suspect ? suspect->GetName() : std::to_string(steamId);
     const std::string detectorName(detector);
     const std::string scoreText = std::to_string(score);
 
-    for (auto* admin : Engine().Players.GetAllPlayers())
+    for (auto* admin : _app.Runtime.Players.GetAllPlayers())
     {
-        if (!App().Admins.HasPermission(admin->GetSteamID(), Permission::Ban))
+        if (!_app.Admins.HasPermission(admin->GetSteamID(), Permission::Ban))
             continue;
-        Engine().Sdk.Messages.ReplyKey(admin->GetSlot(), "anticheat.alert",
-                                   {{"name", suspectName}, {"detector", detectorName}, {"score", scoreText}});
+        _app.Runtime.Messages.ReplyKey(admin->GetSlot(), "anticheat.alert",
+                                       {{"name", suspectName}, {"detector", detectorName}, {"score", scoreText}});
     }
 }
 

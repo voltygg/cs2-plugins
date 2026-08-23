@@ -26,6 +26,14 @@ class CS2PluginsConan(ConanFile):
     def build_requirements(self):
         self.test_requires("doctest/2.5.2")
 
+    def layout(self):
+        # Where cs2kit-build and the CMake presets expect the toolchain. Declared here rather
+        # than passed on the command line, so the recipe is the one description of it.
+        toolchain = "windows-msvc" if self.settings.os == "Windows" else "linux-steamrt"
+        preset = f"{toolchain}-{str(self.settings.build_type).lower()}"
+        self.folders.build = f"build/{preset}"
+        self.folders.generators = f"build/{preset}/generators"
+
     def generate(self):
         deps = CMakeDeps(self)
         deps.generate()

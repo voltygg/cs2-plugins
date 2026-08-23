@@ -2,12 +2,10 @@
 #include "EffectRegistry.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/Services.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <array>
 #include <cstdint>
-
-using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Effects
 {
@@ -58,7 +56,5 @@ const Effect Disco{.Permission = Flag(Permission::Fun),
                                                         savedColor == 0 ? ColorOpaqueWhite : savedColor);
                                    }};
                    }};
-
-static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 20, .Toggle = &Disco});
 
 }  // namespace AdminSystem::Admin::Effects

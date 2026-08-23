@@ -1,54 +1,51 @@
 #include "AdminMenu_Effects.hpp"
 
-#include "../../Core/Managers.hpp"
+#include "../../Core/App.hpp"
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/EffectRegistry.hpp"
 #include "PlayerPicker.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <algorithm>
 #include <format>
 #include <vector>
-
-using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
 
 using CS2Kit::Menu::MenuBuilder;
 
-std::shared_ptr<CS2Kit::MenuView> BuildEffectsMenu(int adminSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
 {
-    auto& tr = Engine().Utils.Translations;
-    return BuildPlayerPicker(adminSlot, tr.Get("category.effects", adminSlot), [](int admin, int target) {
-        auto actions = BuildEffectsActionsMenu(admin, target);
+    auto& tr = app.Runtime.Translations;
+    return BuildPlayerPicker(app, adminSlot, tr.Get("category.effects", adminSlot), [&app](int admin, int target) {
+        auto actions = BuildEffectsActionsMenu(app, admin, target);
         if (actions)
-            Engine().Menus.OpenMenu(admin, actions);
+            app.Runtime.Menus.OpenMenu(admin, actions);
     });
 }
 
-std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(int adminSlot, int targetSlot)
+std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
-    auto& tr = Engine().Utils.Translations;
+    auto& tr = app.Runtime.Translations;
 
-    auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
-    if (!target || !Engine().Players.GetPlayerBySlot(adminSlot))
+    auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
+    if (!target || !app.Runtime.Players.GetPlayerBySlot(adminSlot))
         return nullptr;
 
-    CS2Kit::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &App().Effects};
+    CS2Kit::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
     bool hasS = ctx.Allowed(Flag(Permission::Control));
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->GetName()));
     builder.WithContext(ctx);
 
-    auto registered = CS2Kit::Registry<Effects::EffectEntry>::Items();
-    std::vector<Effects::EffectEntry> entries(registered.begin(), registered.end());
+    std::vector<Effects::EffectEntry> entries(Effects::MenuEffects.begin(), Effects::MenuEffects.end());
     std::ranges::sort(entries, {}, &Effects::EffectEntry::Order);
     for (const auto& entry : entries)
     {
@@ -63,12 +60,12 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(int adminSlot, int tar
     // Swap opens a second player picker, then runs the dual-target Swap.
     builder.AddButton(
         ctx.Tr("action.swap"),
-        [adminSlot, targetSlot](int slot) {
+        [&app, adminSlot, targetSlot](int slot) {
             auto picker = BuildPlayerPicker(
-                adminSlot, Engine().Utils.Translations.Get("common.selectSwapTarget", adminSlot),
-                [first = targetSlot](int a, int second) {
-                    Actions::Swap(a, first, second);
-                    Engine().Menus.CloseAllMenus(a);
+                app, adminSlot, app.Runtime.Translations.Get("common.selectSwapTarget", adminSlot),
+                [&app, first = targetSlot](int a, int second) {
+                    Actions::Swap(app, a, first, second);
+                    app.Runtime.Menus.CloseAllMenus(a);
                 },
                 [first = targetSlot](int candidate) {
                     // Gray out partners Swap would reject: the already-picked player and the dead.
@@ -76,7 +73,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(int adminSlot, int tar
                     return candidate != first && ctrl.IsValid() && ctrl.IsAlive();
                 });
             if (picker)
-                Engine().Menus.OpenMenu(slot, picker);
+                app.Runtime.Menus.OpenMenu(slot, picker);
         },
         hasS);
 

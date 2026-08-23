@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config.hpp"
 #include "Core/Finding.hpp"
 #include "Response/DiscordReporter.hpp"
 #include "Response/FunnelPolicy.hpp"
@@ -17,7 +18,9 @@ namespace Anticheat
 class ResponseManager
 {
 public:
-    explicit ResponseManager(DiscordReporter& reporter) : _reporter(reporter) {}
+    ResponseManager(CS2Kit::Runtime& runtime, ConfigManager& config, DiscordReporter& reporter)
+        : _rt(runtime), _config(config), _reporter(reporter)
+    {}
 
     void Initialize();
 
@@ -42,6 +45,8 @@ private:
 
     bool IsWhitelisted(int64_t steamId) const;
 
+    CS2Kit::Runtime& _rt;
+    ConfigManager& _config;
     DiscordReporter& _reporter;
     PunishmentLatch _latch;
     CS2Kit::PairThrottle<int64_t, int> _alertThrottle{AlertThrottleSec};

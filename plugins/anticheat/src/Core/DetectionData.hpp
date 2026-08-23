@@ -1,5 +1,7 @@
 #pragma once
 
+#include <CS2Kit/App/JsonConfig.hpp>
+
 // Game-content facts the detections compare against - Valve's event names and client convars, not
 // this plugin's logic. They live in configs/detections.jsonc so a CS2 update that renames a convar
 // or adds a HUD event is answered with a config edit and anticheat_reload, not a rebuild.
@@ -151,5 +153,8 @@ inline void from_json(const nlohmann::json& j, DetectionData& data)
     j.at("dllEventBlacklist").get_to(data.dllEventBlacklist);
     j.at("cvarRules").get_to(data.cvarRules);
 }
+
+/** The event/convar tables the detections compare against. */
+using DetectionDataManager = CS2Kit::App::JsonConfig<DetectionData>;
 
 }  // namespace Anticheat

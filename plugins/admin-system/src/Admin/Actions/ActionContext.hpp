@@ -5,11 +5,16 @@
 #include <CS2Kit/Players/ActionDispatcher.hpp>
 #include <string>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Admin::Actions
 {
 
 // The action scaffold lives in the kit; the plugin supplies its permission/immunity/broadcast
-// policy through Engine().Core.Policy (set once in OnLoad). These aliases keep descriptor files and
+// policy through app.Runtime.Policy (set once in OnLoad). These aliases keep descriptor files and
 // call sites on the established local names.
 using ActionContext = CS2Kit::Players::ActionContext;
 using Action = CS2Kit::Players::Action;
@@ -26,7 +31,7 @@ ActionContext Resolve(int adminSlot, int targetSlot, const std::string& required
 void Broadcast(const ActionContext& ctx, const std::string& translationKey);
 
 /** Two-target variant: the phrase at `translationKey` receives the target names as {a} and {b}. */
-void Broadcast(const ActionContext& first, const ActionContext& second, const std::string& translationKey);
+void Broadcast(App& app, const ActionContext& first, const ActionContext& second, const std::string& translationKey);
 
 void Run(int adminSlot, int targetSlot, const Action& action);
 void Run(int adminSlot, int targetSlot, int param, const ParamAction& action);

@@ -1,14 +1,11 @@
 #include "Plugin.hpp"
 
 #include "Config.hpp"
-#include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/App/PluginInfoStamp.hpp>
 
-using CS2Kit::App::Engine;
-
-CS2KIT_PLUGIN(AnticheatPlugin, Anticheat);
+CS2KIT_PLUGIN(AnticheatPlugin);
 
 CS2Kit::PluginInfo AnticheatPlugin::Info() const
 {
@@ -20,37 +17,23 @@ CS2Kit::PluginInfo AnticheatPlugin::Info() const
     });
 }
 
-bool AnticheatPlugin::OnLoad(bool /*late*/)
+bool AnticheatPlugin::OnLoad(CS2Kit::Runtime& runtime, bool /*late*/)
 {
-    if (!CS2Kit::LoadStandardConfig(Anticheat::App().Config, {.Addon = Anticheat::AddonName, .Translations = false}))
-        return false;
-
-    // A missing data file leaves the two table-driven modules inert rather than taking the plugin
-    // down: the aim modules, which carry no data file, are the ones worth keeping alive.
-    Engine().Core.LoadReport.Run("Detection data", [] {
-        if (!Anticheat::App().Detections.Load(Anticheat::DetectionDataPath))
-            return CS2Kit::StageResult::Degraded("file unreadable; DLL injection and invalid cvar modules are inert");
-        return CS2Kit::StageResult::Ok(Anticheat::DetectionDataPath);
-    });
-
-    Anticheat::App().Response.Initialize();
-    Anticheat::App().AntiCheat.Initialize();
-
-    CS2Kit::Log::Info("Mode: {}.", Anticheat::App().Config.Get().anticheat.mode);
-    return true;
+    _app.emplace(runtime);
+    return _app->Start();
 }
 
 void AnticheatPlugin::OnServerStartup(const char* /*mapName*/)
 {
-    Anticheat::App().AntiCheat.OnMapStart();
+    _app->AntiCheat.OnMapStart();
 }
 
-void AnticheatPlugin::OnPlayerFullyConnected(CS2Kit::Players::Player* player)
+void AnticheatPlugin::OnPlayerFullyConnected(CS2Kit::Player* player)
 {
-    Anticheat::App().AntiCheat.OnPlayerFullyConnected(player);
+    _app->AntiCheat.OnPlayerFullyConnected(player);
 }
 
-void AnticheatPlugin::OnPlayerSettingsChanged(CS2Kit::Players::Player* player)
+void AnticheatPlugin::OnPlayerSettingsChanged(CS2Kit::Player* player)
 {
-    Anticheat::App().AntiCheat.OnPlayerSettingsChanged(player);
+    _app->AntiCheat.OnPlayerSettingsChanged(player);
 }

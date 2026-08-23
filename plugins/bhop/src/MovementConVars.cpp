@@ -1,13 +1,11 @@
 #include "MovementConVars.hpp"
 
-#include <CS2Kit/App/Services.hpp>
-#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Core/Log.hpp>
+#include <CS2Kit/Runtime.hpp>
 #include <format>
 
 using namespace CS2Kit;
-using CS2Kit::App::Engine;
-using CS2Kit::App::EngineOrNull;
-namespace Log = CS2Kit::Utils::Log;
+namespace Log = CS2Kit::Log;
 
 namespace Bhop
 {
@@ -31,7 +29,7 @@ void MovementConVars::Build(const BhopSettings& settings)
                               .IsFloat = isFloat,
                               .Value = value,
                               .NetValue = FormatConVarValue(isFloat, value),
-                              .Raw = Engine().Sdk.ConVars.Raw(name)});
+                              .Raw = _conVars.Raw(name)});
         if (!_overrides.back().Raw.Valid())
             Log::Warn("ConVar '{}' not found; bhop override skipped in grants mode.", name);
     };
@@ -60,7 +58,7 @@ void MovementConVars::Reset()
 
 void MovementConVars::ApplyGlobal()
 {
-    auto& conVars = Engine().Sdk.ConVars;
+    auto& conVars = _conVars;
     for (auto& entry : _overrides)
     {
         if (!_globalApplied)
@@ -81,29 +79,25 @@ void MovementConVars::RestoreGlobal()
     if (!_globalApplied)
         return;
 
-    auto* engine = EngineOrNull();
-    if (engine)
-    {
-        for (const auto& entry : _overrides)
-            engine->Sdk.ConVars.ExecuteServerCommand(
-                std::format("{} {}", entry.Name, FormatConVarValue(entry.IsFloat, entry.SavedValue)).c_str());
-    }
+    for (const auto& entry : _overrides)
+        _conVars.ExecuteServerCommand(
+            std::format("{} {}", entry.Name, FormatConVarValue(entry.IsFloat, entry.SavedValue)).c_str());
     _globalApplied = false;
 }
 
 void MovementConVars::ReplicateOverrides(int slot) const
 {
     for (const auto& entry : _overrides)
-        Engine().Sdk.ConVars.ReplicateToClient(slot, entry.Name, entry.NetValue.c_str());
+        _conVars.ReplicateToClient(slot, entry.Name, entry.NetValue.c_str());
 }
 
 void MovementConVars::ReplicateServerValues(int slot) const
 {
     for (const auto& entry : _overrides)
     {
-        auto value = Engine().Sdk.ConVars.GetString(entry.Name);
+        auto value = _conVars.GetString(entry.Name);
         if (value)
-            Engine().Sdk.ConVars.ReplicateToClient(slot, entry.Name, value->c_str());
+            _conVars.ReplicateToClient(slot, entry.Name, value->c_str());
     }
 }
 

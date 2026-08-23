@@ -1,21 +1,21 @@
 #include "PlayerPicker.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/Services.hpp>
-#include <CS2Kit/Menu/MenuPresets.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
-#include <utility>
+#include "../../Core/App.hpp"
 
-using CS2Kit::App::Engine;
+#include <CS2Kit/Api.hpp>
+#include <CS2Kit/Core/Translations.hpp>
+#include <CS2Kit/Menu/MenuPresets.hpp>
+#include <CS2Kit/Runtime.hpp>
+#include <utility>
 
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<CS2Kit::MenuView> BuildPlayerPicker(int adminSlot, const std::string& title,
+std::shared_ptr<CS2Kit::MenuView> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, const std::string& title,
                                                     std::function<void(int adminSlot, int targetSlot)> onPick,
                                                     std::function<bool(int targetSlot)> isEnabled)
 {
-    auto& tr = Engine().Utils.Translations;
+    auto& tr = app.Runtime.Translations;
     return ::CS2Kit::Menu::BuildPlayerPicker(adminSlot, title, std::move(onPick), tr.Get("common.noPlayers", adminSlot),
                                              std::move(isEnabled));
 }

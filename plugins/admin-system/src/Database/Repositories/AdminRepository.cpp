@@ -1,6 +1,6 @@
 #include "AdminRepository.hpp"
 
-#include "../../Core/Managers.hpp"
+#include "../../Core/App.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Database/Api.hpp>
@@ -40,7 +40,7 @@ std::vector<std::string> ParseTextArray(const pqxx::field& field)
 
 std::vector<Admin> AdminRepository::FindAll()
 {
-    auto result = App().Db.QueryBlocking("find_all_admins", "SELECT * FROM admins");
+    auto result = _db.QueryBlocking("find_all_admins", "SELECT * FROM admins");
     if (!result)
         return {};
 
@@ -53,60 +53,60 @@ std::vector<Admin> AdminRepository::FindAll()
 void AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                                       const std::string& messageColor)
 {
-    App().Db.Exec("update_admin_chat_style",
-                  "UPDATE admins SET display_prefix = $2, name_color = $3, message_color = $4, "
-                  "updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE steam_id = $1",
-                  pqxx::params{steamId, displayPrefix, nameColor, messageColor});
+    _db.Exec("update_admin_chat_style",
+             "UPDATE admins SET display_prefix = $2, name_color = $3, message_color = $4, "
+             "updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE steam_id = $1",
+             pqxx::params{steamId, displayPrefix, nameColor, messageColor});
 }
 
 void AdminRepository::UpdateLanguage(int64_t steamId, const std::string& lang)
 {
-    App().Db.Exec("update_admin_language",
-                  "UPDATE admins SET language = $2, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
-                  "WHERE steam_id = $1",
-                  pqxx::params{steamId, lang});
+    _db.Exec("update_admin_language",
+             "UPDATE admins SET language = $2, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
+             "WHERE steam_id = $1",
+             pqxx::params{steamId, lang});
 }
 
 bool AdminRepository::SetFrozen(int64_t steamId, int64_t frozenBy, const std::string& reason)
 {
-    auto result = App().Db.QueryBlocking("set_admin_frozen",
-                                         "UPDATE admins SET is_frozen = TRUE, "
-                                         "frozen_at = EXTRACT(EPOCH FROM NOW())::BIGINT, frozen_by = $2, "
-                                         "freeze_reason = $3, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
-                                         "WHERE steam_id = $1",
-                                         pqxx::params{steamId, frozenBy, reason});
+    auto result = _db.QueryBlocking("set_admin_frozen",
+                                    "UPDATE admins SET is_frozen = TRUE, "
+                                    "frozen_at = EXTRACT(EPOCH FROM NOW())::BIGINT, frozen_by = $2, "
+                                    "freeze_reason = $3, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
+                                    "WHERE steam_id = $1",
+                                    pqxx::params{steamId, frozenBy, reason});
     return result.has_value();
 }
 
 bool AdminRepository::ClearFrozen(int64_t steamId)
 {
-    auto result = App().Db.QueryBlocking("clear_admin_frozen",
-                                         "UPDATE admins SET is_frozen = FALSE, frozen_at = 0, frozen_by = 0, "
-                                         "freeze_reason = '', updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
-                                         "WHERE steam_id = $1",
-                                         pqxx::params{steamId});
+    auto result = _db.QueryBlocking("clear_admin_frozen",
+                                    "UPDATE admins SET is_frozen = FALSE, frozen_at = 0, frozen_by = 0, "
+                                    "freeze_reason = '', updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
+                                    "WHERE steam_id = $1",
+                                    pqxx::params{steamId});
     return result.has_value();
 }
 
 void AdminRepository::FindFrozenAsync(std::function<void(std::vector<FrozenAdmin>)> onDone)
 {
-    App().Db.Query("find_frozen_admins",
-                   "SELECT steam_id, name, frozen_at, frozen_by, freeze_reason FROM admins WHERE is_frozen = TRUE", {},
-                   [onDone = std::move(onDone)](CS2Kit::DbResult<pqxx::result> result) {
-                       if (!result || !onDone)
-                           return;  // DB error already logged; keep the caller's cached set.
+    _db.Query("find_frozen_admins",
+              "SELECT steam_id, name, frozen_at, frozen_by, freeze_reason FROM admins WHERE is_frozen = TRUE", {},
+              [onDone = std::move(onDone)](CS2Kit::DbResult<pqxx::result> result) {
+                  if (!result || !onDone)
+                      return;  // DB error already logged; keep the caller's cached set.
 
-                       std::vector<FrozenAdmin> frozen;
-                       for (const auto& row : *result)
-                       {
-                           frozen.push_back({.SteamId = row["steam_id"].as<int64_t>(),
-                                             .Name = row["name"].c_str(),
-                                             .FrozenAt = row["frozen_at"].as<int64_t>(),
-                                             .FrozenBy = row["frozen_by"].as<int64_t>(),
-                                             .Reason = row["freeze_reason"].c_str()});
-                       }
-                       onDone(std::move(frozen));
-                   });
+                  std::vector<FrozenAdmin> frozen;
+                  for (const auto& row : *result)
+                  {
+                      frozen.push_back({.SteamId = row["steam_id"].as<int64_t>(),
+                                        .Name = row["name"].c_str(),
+                                        .FrozenAt = row["frozen_at"].as<int64_t>(),
+                                        .FrozenBy = row["frozen_by"].as<int64_t>(),
+                                        .Reason = row["freeze_reason"].c_str()});
+                  }
+                  onDone(std::move(frozen));
+              });
 }
 
 Admin AdminRepository::ParseRow(const pqxx::row& row)
@@ -133,7 +133,7 @@ Admin AdminRepository::ParseRow(const pqxx::row& row)
 
 std::vector<AdminGroup> AdminGroupRepository::FindAll()
 {
-    auto result = App().Db.QueryBlocking("find_all_admin_groups", "SELECT * FROM admin_groups");
+    auto result = _db.QueryBlocking("find_all_admin_groups", "SELECT * FROM admin_groups");
     if (!result)
         return {};
 

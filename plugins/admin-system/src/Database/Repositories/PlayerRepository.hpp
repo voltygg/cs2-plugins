@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Database/Api.hpp>
 #include <cstdint>
 #include <string>
 
@@ -11,6 +12,8 @@ namespace AdminSystem::Database
 class PlayerRepository
 {
 public:
+    explicit PlayerRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+
     /**
      * Upsert on connect: first connect inserts the row; reconnects refresh name/ip/last_seen
      * and bump total_connections. No-op for bots (steamId <= 0).
@@ -22,6 +25,9 @@ public:
      * seconds to total_playtime. No-op for bots (steamId <= 0).
      */
     void RecordDisconnect(int64_t steamId, const std::string& name, int64_t sessionSeconds);
+
+private:
+    CS2Kit::PostgresDatabase& _db;
 };
 
 }  // namespace AdminSystem::Database

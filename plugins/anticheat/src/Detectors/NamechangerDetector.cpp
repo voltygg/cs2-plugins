@@ -17,16 +17,15 @@ std::string NamechangerDetector::CurrentName(CS2Kit::Players::Player* player)
 // a change measured against a stale name would be a false positive later.
 void NamechangerDetector::OnFullyConnected(CS2Kit::Players::Player* player)
 {
-    if (!player || !AntiCheatManager::ModuleEnabled(DetectionKind::Namechanger) ||
-        !AntiCheatManager::IsEligible(player->GetSlot()))
+    if (!player || !_manager.ModuleEnabled(DetectionKind::Namechanger) || !_manager.IsEligible(player->GetSlot()))
         return;
     _manager.Namechanger().OnBaseline(player->GetSlot(), CurrentName(player));
 }
 
 void NamechangerDetector::OnSettingsChanged(CS2Kit::Players::Player* player)
 {
-    if (!player || !_manager.DetectionsEnabled() || !AntiCheatManager::ModuleEnabled(DetectionKind::Namechanger) ||
-        !AntiCheatManager::IsEligible(player->GetSlot()))
+    if (!player || !_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::Namechanger) ||
+        !_manager.IsEligible(player->GetSlot()))
         return;
 
     const int slot = player->GetSlot();

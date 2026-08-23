@@ -3,6 +3,11 @@
 #include <cstdint>
 #include <string>
 
+namespace AdminSystem
+{
+struct App;
+}
+
 namespace AdminSystem::Reports
 {
 
@@ -21,6 +26,6 @@ struct PendingReport
 };
 
 /** Open the report player picker for @p reporterSlot - the `!report` entry point. */
-void OpenReportMenu(int reporterSlot);
+void OpenReportMenu(AdminSystem::App& app, int reporterSlot);
 
 }  // namespace AdminSystem::Reports

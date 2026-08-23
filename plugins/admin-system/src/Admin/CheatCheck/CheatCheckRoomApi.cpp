@@ -3,7 +3,7 @@
 #include "../../Core/Config.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Utils/StringUtils.hpp>
+#include <CS2Kit/Core/StringUtils.hpp>
 #include <map>
 #include <utility>
 
@@ -44,7 +44,7 @@ std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom&
     if (code.empty())
         return std::nullopt;
 
-    using CS2Kit::Utils::StringUtils;
+    using CS2Kit::Core::StringUtils;
     return RoomUrls{
         .PlayerUrl = cfg.playerUrlTemplate.empty()
                          ? code
