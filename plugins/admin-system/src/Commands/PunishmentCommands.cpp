@@ -26,8 +26,8 @@ CommandResult Punish(App& app, CommandContext& c, PunishType type, const std::st
                      const char* failedKey)
 {
     // Captured before issuing: bans and kicks can drop the target immediately.
-    std::string targetName = c.Target->GetName();
-    if (!IssuePunishment(app, *c.Caller, *c.Target, type, reason, c.DurationSec))
+    std::string targetName = c.Target().GetName();
+    if (!IssuePunishment(app, *c.Caller, c.Target(), type, reason, c.Duration().value_or(0)))
         return c.Fail(failedKey);
     return c.Ok(successKey, {{"name", targetName}});
 }
@@ -39,7 +39,6 @@ void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app)
     commands.Register({
         .Name = "kick",
         .Description = "Kick a player.",
-        .Usage = "!kick <target> [reason]",
         .Permission = Flag(Permission::Kick),
         .Args = {Target(), ReasonTail("reason.kickedByAdmin")},
         // Kick has no DB write, so IssuePunishment cannot fail and the failure key is never read.
@@ -52,7 +51,6 @@ void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app)
     commands.Register({
         .Name = "ban",
         .Description = "Ban a player. Duration: minutes (e.g. 30) or 30s/5m/2h/7d; 0/'perm' = permanent.",
-        .Usage = "!ban <target> <duration> [reason]",
         .Permission = Flag(Permission::Ban),
         .Args = {Target(), Duration(), ReasonTail()},
         .Handler =
@@ -66,7 +64,6 @@ void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app)
     commands.Register({
         .Name = "unban",
         .Description = "Lift an active ban for the given SteamID.",
-        .Usage = "!unban <steamId> [reason]",
         .Permission = Flag(Permission::Unban),
         .Args = {SteamId64("cmd.unbanUsage"), ReasonTail("reason.unbannedByAdmin")},
         .Handler =
@@ -81,7 +78,6 @@ void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app)
         .Name = "voice_mute",
         .Aliases = {"vmute", "mute"},
         .Description = "Voice-mute a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.",
-        .Usage = "!voice_mute <target> <duration> [reason]",
         .Permission = Flag(Permission::Mute),
         .Args = {Target(), Duration(), ReasonTail("reason.voiceMutedByAdmin")},
         .Handler =
@@ -94,15 +90,14 @@ void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app)
         .Name = "voice_unmute",
         .Aliases = {"vunmute", "unmute"},
         .Description = "Lift an active voice mute on the target.",
-        .Usage = "!voice_unmute <target>",
         .Permission = Flag(Permission::Mute),
         .Args = {Target()},
         .Handler =
             [&app](CommandContext& c) {
                 bool removed = app.Punishments.RemoveVoiceMuteBySteamId(
-                    c.Target->GetSteamID(), c.Caller->GetSteamID(),
+                    c.Target().GetSteamID(), c.Caller->GetSteamID(),
                     app.Runtime.Translations.Get("reason.voiceUnmutedByAdmin"));
-                Tokens tokens{{"name", c.Target->GetName()}};
+                Tokens tokens{{"name", c.Target().GetName()}};
                 return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
             },
     });
@@ -111,7 +106,6 @@ void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app)
         .Name = "text_mute",
         .Aliases = {"tmute", "gag"},
         .Description = "Text-mute (chat-block) a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.",
-        .Usage = "!text_mute <target> <duration> [reason]",
         .Permission = Flag(Permission::Mute),
         .Args = {Target(), Duration(), ReasonTail("reason.textMutedByAdmin")},
         .Handler =
@@ -124,15 +118,14 @@ void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app)
         .Name = "text_unmute",
         .Aliases = {"tunmute", "ungag"},
         .Description = "Lift an active text mute on the target.",
-        .Usage = "!text_unmute <target>",
         .Permission = Flag(Permission::Mute),
         .Args = {Target()},
         .Handler =
             [&app](CommandContext& c) {
                 bool removed =
-                    app.Punishments.RemoveTextMuteBySteamId(c.Target->GetSteamID(), c.Caller->GetSteamID(),
+                    app.Punishments.RemoveTextMuteBySteamId(c.Target().GetSteamID(), c.Caller->GetSteamID(),
                                                             app.Runtime.Translations.Get("reason.textUnmutedByAdmin"));
-                Tokens tokens{{"name", c.Target->GetName()}};
+                Tokens tokens{{"name", c.Target().GetName()}};
                 return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
             },
     });
@@ -140,7 +133,6 @@ void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app)
     commands.Register({
         .Name = "warn",
         .Description = "Issue a warning. Auto-escalates to a ban once the threshold is reached.",
-        .Usage = "!warn <target> [reason]",
         .Permission = Flag(Permission::Mute),
         .Args = {Target(), ReasonTail("reason.warnedByAdmin")},
         .Handler =

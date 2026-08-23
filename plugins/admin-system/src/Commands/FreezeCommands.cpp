@@ -22,7 +22,6 @@ void RegisterFreezeCommands(CS2Kit::CommandManager& commands, App& app)
     commands.Register({
         .Name = "freeze_admin",
         .Description = "Freeze all admin privileges of another admin pending review.",
-        .Usage = "!freeze_admin <target|steamId> [reason]",
         .Permission = Flag(Permission::FreezeAdmins),
         // TargetOrSteamId: a numeric token addresses an offline admin (they are in the loaded
         // admins map); anything else resolves an online player.
@@ -30,7 +29,7 @@ void RegisterFreezeCommands(CS2Kit::CommandManager& commands, App& app)
         .Handler =
             [&app](CommandContext& c) {
                 int64_t targetSteamId = c.SteamId;
-                std::string targetName = c.Target ? c.Target->GetName() : std::to_string(targetSteamId);
+                std::string targetName = c.HasTarget() ? c.Target().GetName() : std::to_string(targetSteamId);
 
                 const auto* row = app.Admins.GetAdmin(targetSteamId);
                 if (!row)
@@ -57,7 +56,6 @@ void RegisterFreezeCommands(CS2Kit::CommandManager& commands, App& app)
     commands.Register({
         .Name = "unfreeze_admin",
         .Description = "Restore a frozen admin's privileges after reviewing their case.",
-        .Usage = "!unfreeze_admin <steamId|name>",
         .Permission = Flag(Permission::FreezeAdmins),
         // The target may be offline and not even resolvable as a player - it is matched against
         // the frozen list itself, so this stays a bespoke Word argument.
@@ -98,7 +96,6 @@ void RegisterFreezeCommands(CS2Kit::CommandManager& commands, App& app)
     commands.Register({
         .Name = "frozen_admins",
         .Description = "List admins whose privileges are currently frozen.",
-        .Usage = "!frozen_admins",
         .Permission = Flag(Permission::FreezeAdmins),
         .Handler =
             [&app](CommandContext& c) {
@@ -121,7 +118,7 @@ void RegisterFreezeCommands(CS2Kit::CommandManager& commands, App& app)
                     }
                     chat.Reply(slot, std::format("  {} ({}) - {}: {}", row.Name, row.SteamId, by, row.Reason));
                 }
-                return CommandResult{true, ""};
+                return CommandResult::Silent();
             },
     });
 }

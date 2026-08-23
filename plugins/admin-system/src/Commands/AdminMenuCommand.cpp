@@ -18,22 +18,21 @@ void RegisterAdminMenuCommand(CS2Kit::CommandManager& commands, App& app)
         .Name = "admin",
         .Aliases = {"a", "menu"},
         .Description = "Open the admin menu",
-        .Usage = "!admin",
         .Handler =
             [&app](CommandContext& c) {
                 // Any registered admin may open the menu; each category inside is gated by its own flags.
                 if (!app.Admins.IsAdmin(c.Caller->GetSteamID()))
-                    return CommandResult{false, "You do not have permission to use this command."};
+                    return c.Fail("cmd.noPermission");
 
                 int slot = c.CallerSlot();
 
                 // Panel language is registered at connect (see AdminSystemPlugin::OnPlayerConnect).
                 auto menu = AdminSystem::Admin::BuildAdminMainMenu(app, slot);
                 if (!menu)
-                    return CommandResult{false, "Failed to open admin menu"};
+                    return c.Fail("cmd.menuFailed");
 
                 app.Runtime.Menus.OpenMenu(slot, menu);
-                return CommandResult{true, ""};  // menu UI is the feedback; no chat reply needed
+                return CommandResult::Silent();  // the menu is the feedback
             },
     });
 }

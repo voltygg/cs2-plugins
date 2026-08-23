@@ -18,7 +18,6 @@ void RegisterReportCommand(CS2Kit::CommandManager& commands, App& app)
         .Name = "report",
         .Aliases = {"r"},
         .Description = "Report a player to the server staff.",
-        .Usage = "!report",
         // No .Permission - reporting is open to every player. No .Args either: the menu is the
         // only entry point, so a typed target or reason is deliberately unsupported.
         .Handler =
@@ -36,7 +35,7 @@ void RegisterReportCommand(CS2Kit::CommandManager& commands, App& app)
                 }
 
                 AdminSystem::Reports::OpenReportMenu(app, c.CallerSlot());
-                return CommandResult{true, ""};  // the menu is the feedback; no chat reply
+                return CommandResult::Silent();
             },
     });
 }

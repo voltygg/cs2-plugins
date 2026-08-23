@@ -21,13 +21,12 @@ void RegisterInfoCommands(CS2Kit::CommandManager& commands, App& app)
         .Name = "who",
         .Aliases = {"players"},
         .Description = "List online players, their group prefix, and immunity.",
-        .Usage = "!who",
         .Permission = Flag(Permission::Hide),
         .Handler =
             [&app](CommandContext& c) {
                 auto players = app.Runtime.Players.GetAllPlayers();
                 if (players.empty())
-                    return CommandResult{true, "No players online."};
+                    return c.Ok("cmd.noPlayersOnline");
 
                 auto& adminMgr = app.Admins;
                 auto& chat = app.Chat;
@@ -42,7 +41,7 @@ void RegisterInfoCommands(CS2Kit::CommandManager& commands, App& app)
                     chat.Reply(slot, std::format("  #{} {} [{}] (immunity {})", p->GetSlot(), p->GetName(), tag,
                                                  adminMgr.GetImmunity(p->GetSteamID())));
                 }
-                return CommandResult{true, ""};
+                return CommandResult::Silent();
             },
     });
 
@@ -50,14 +49,12 @@ void RegisterInfoCommands(CS2Kit::CommandManager& commands, App& app)
         .Name = "admin_reload",
         .Aliases = {"reload_admins"},
         .Description = "Reload admins and groups from the database without restarting.",
-        .Usage = "!admin_reload",
         .Permission = Flag(Permission::Root),
         .Handler =
-            [&app](CommandContext&) {
+            [&app](CommandContext& c) {
                 bool ok = app.Admins.Reload();
                 app.Freeze.RefreshFromDatabase();
-                return CommandResult{ok,
-                                     ok ? "Admins and groups reloaded from database." : "Reload failed (check logs)."};
+                return ok ? c.Ok("cmd.adminReloadDone") : c.Fail("cmd.adminReloadFailed");
             },
     });
 }

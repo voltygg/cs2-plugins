@@ -19,7 +19,6 @@ void RegisterCheatCheckCommands(CS2Kit::CommandManager& commands, App& app)
     commands.Register({
         .Name = "cc",
         .Description = "Submit your verification link for a pending cheat check.",
-        .Usage = "!cc <link>",
         .Args = {Word()},
         .Handler =
             [&app](CommandContext& c) {
@@ -39,14 +38,13 @@ void RegisterCheatCheckCommands(CS2Kit::CommandManager& commands, App& app)
     commands.Register({
         .Name = "check",
         .Description = "Start a cheat check on a player.",
-        .Usage = "!check <target>",
         .Permission = Flag(Permission::Control),
         .Args = {Target()},
         .Handler =
             [&app](CommandContext& c) {
-                if (!AdminSystem::Admin::Actions::CallCheck(app, c.CallerSlot(), c.Target->GetSlot()))
+                if (!AdminSystem::Admin::Actions::CallCheck(app, c.CallerSlot(), c.Target().GetSlot()))
                     return c.Fail("common.noPermission");
-                return c.Ok("cheatCheck.started", {{"name", c.Target->GetName()}});
+                return c.Ok("cheatCheck.started", {{"name", c.Target().GetName()}});
             },
     });
 
@@ -54,16 +52,13 @@ void RegisterCheatCheckCommands(CS2Kit::CommandManager& commands, App& app)
         .Name = "cccancel",
         .Aliases = {"uncheck"},
         .Description = "Cancel a pending cheat check on a player.",
-        .Usage = "!cccancel <target>",
         .Permission = Flag(Permission::Control),
         .Args = {Target()},
         .Handler =
             [&app](CommandContext& c) {
-                if (!AdminSystem::Admin::Actions::CancelCheck(app, c.CallerSlot(), c.Target->GetSlot()))
+                if (!AdminSystem::Admin::Actions::CancelCheck(app, c.CallerSlot(), c.Target().GetSlot()))
                     return c.Fail("cheatCheck.noActiveCheck");
-                return CommandResult{
-                    true, std::format("{} {}", app.Runtime.Translations.Get("cheatCheck.cancelled", c.CallerSlot()),
-                                      c.Target->GetName())};
+                return c.Ok("cheatCheck.cancelled", {{"name", c.Target().GetName()}});
             },
     });
 }
