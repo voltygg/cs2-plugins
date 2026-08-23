@@ -59,6 +59,6 @@ guide and [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
 uv run poe new-plugin my-plugin
 ```
 
-Stamps `plugins/my-plugin/` from CS2Kit's template tree (PluginBase skeleton,
+Stamps `plugins/my-plugin/` from CS2Kit's template tree (MetamodPlugin skeleton,
 settings.jsonc, translations, an example `!ping` command) and registers it in
 the root `CMakeLists.txt`. It builds and loads as-is.

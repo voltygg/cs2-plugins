@@ -99,30 +99,33 @@ The SDKs are Conan packages behind cs2-kit, which re-exports them transitively.
 Include style: `#include <CS2Kit/Commands/CommandSpec.hpp>` (or just
 `<CS2Kit/Api.hpp>` for the hoisted short names).
 
-Each plugin derives from `CS2Kit::PluginBase<Managers>`, which owns the
-ISmmPlugin boilerplate, standard SourceHook hooks, the PlayerManager lifecycle,
-`CS2Kit::Initialize`/`Shutdown`, and the `Managers` container behind `App()`.
-`CS2KIT_PLUGIN(Klass, Ns)` in the plugin's Plugin.cpp expands the instance,
-PLUGIN_EXPOSE, and the `App()` trampoline; `CS2Kit::WithBuildInfo` stamps
-Info(), and `CS2Kit::LoadStandardConfig` is the OnLoad config/translations
-prelude. Plugin-domain rules (permissions, immunity, replies, broadcasts) are
-injected once in OnLoad via `Engine().Policy`. DB-using TUs include
-`<CS2Kit/Database/Api.hpp>` for the short DB names - the main `Api.hpp`
-umbrella deliberately excludes pqxx.
+Each plugin derives from `CS2Kit::MetamodPlugin`, which owns the ISmmPlugin
+boilerplate, the standard SourceHook hooks and the PlayerManager lifecycle, and
+creates the `CS2Kit::Runtime` for one load cycle. `OnLoad(Runtime&, bool late)`
+receives it; each plugin builds its own `App` struct there (`src/App.hpp`, or
+`src/Core/App.hpp` in admin-system) and drops it in `OnUnload`, so nothing
+survives a `meta reload`. `CS2KIT_PLUGIN(Klass)` in Plugin.cpp expands the
+instance and PLUGIN_EXPOSE; `CS2Kit::WithBuildInfo` stamps Info(), and
+`CS2Kit::LoadStandardConfig` is the OnLoad config/translations prelude.
+Plugin-domain rules (permissions, immunity, replies, broadcasts) are injected
+once via `Runtime::Policy`. DB-using TUs include `<CS2Kit/Database/Api.hpp>` for
+the short DB names - the main `Api.hpp` umbrella deliberately excludes pqxx.
 
 Key kit patterns in use here:
 
-- Commands are declarative `CommandSpec`s that self-register via
-  `Registry<CommandSpec>` in `src/Commands/*.cpp`; the kit auto-ingests them
-  after OnLoad. Typed args (Target/Duration/ReasonTail) are resolved before
-  handlers run.
-- Fun effects are `EffectDescriptor`s in `src/Admin/Effects/`, self-registered
-  and rendered by menu context rows; punish/unmute/unban wizards are
-  `Flow<TState>` chains in `src/Admin/Menu/`.
+- Commands are declarative `CommandSpec`s. Each `src/Commands/*.cpp` exposes a
+  `RegisterXCommands(CommandManager&, App&)` that `App::Start()` calls, so a
+  handler is handed what it needs instead of reaching for it. Typed args
+  (Target/Duration/ReasonTail) are resolved before handlers run.
+- Fun effects are `EffectDescriptor`s in `src/Admin/Effects/`, listed in the
+  explicit `MenuEffects` table and rendered by menu context rows;
+  punish/unmute/unban wizards are `Flow<TState>` chains in `src/Admin/Menu/`.
+- Listener registrations return a `CS2Kit::Subscription`; hold it as a member
+  next to whatever the callback captures rather than unregistering by hand.
 - Repositories declare entity column tables (`Table`/`Key`/`Columns()`) and use
   the kit's `FromRow`/`InsertSql`/`SelectSql` mapping; hand-written SQL remains
   only for bespoke UPDATE/WHERE clauses.
-- All player-facing text goes through `Engine().Messages` and translation keys.
+- All player-facing text goes through `Runtime::Messages` and translation keys.
 
 ## Reference Projects
 
@@ -144,8 +147,10 @@ not edit them or add them to the build.
 - Database access is async-first: `Query`/`Exec` with cache-first managers
   during gameplay; `QueryBlocking`/`WithConnection` only at load time
   (migrations, admin loads, `!admin_reload`).
-- Services/managers, not singletons. Use `Engine()` for cs2-kit services and
-  `App()` for plugin managers.
+- No singletons and no ambient lookups in plugin code: the runtime arrives in
+  `OnLoad`, and each manager takes the collaborators it uses through its
+  constructor. Free functions that are leaves of the graph (menu builders,
+  command bodies) may take the whole `App&`.
 - Prefer the umbrella short names (`CS2Kit::Type` via `#include <CS2Kit/Api.hpp>`)
   over `CS2Kit::Module::Type`. In `.hpp` never use a namespace-scope
   using-directive; `using namespace CS2Kit::X;` is allowed only in `.cpp` (TU-local).

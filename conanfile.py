@@ -13,7 +13,7 @@ class CS2PluginsConan(ConanFile):
 
     # cpr, nlohmann_json and libpqxx arrive transitively through cs2-kit, along with
     # the HL2SDK and Metamod packages.
-    requires = ("cs2-kit/[~1]",)
+    requires = ("cs2-kit/[~1.1]",)
 
     default_options = {
         "*:shared": False,

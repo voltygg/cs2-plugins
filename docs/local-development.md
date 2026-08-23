@@ -121,5 +121,5 @@ which is a publish problem, not a local one. Check that your profile matches
 ### Missing generated protobuf headers
 
 Nothing generates protobuf locally any more: the `hl2sdk-cs2` package ships the
-`.pb.h`/`.pb.cc` pre-generated, and cs2-kit compiles them from
-`CS2KIT_HL2SDK_PROTO_SOURCES`.
+`.pb.h`/`.pb.cc` pre-generated, and its build module attaches them to the kit's
+library via `hl2sdk_attach_generated_sources()`.
