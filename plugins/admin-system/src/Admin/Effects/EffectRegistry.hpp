@@ -17,16 +17,14 @@ namespace AdminSystem::Admin::Effects
  */
 struct EffectEntry
 {
-    int Order = 0;
     const Effect* Toggle = nullptr;
     const ParamEffect* Param = nullptr;
 };
 
-/** Every auto-listed effect, in menu order. */
+/** Every auto-listed effect, in the order the menu renders them. */
 inline constexpr std::array MenuEffects{
-    EffectEntry{.Order = 10, .Toggle = &Ghost},    EffectEntry{.Order = 20, .Toggle = &Disco},
-    EffectEntry{.Order = 30, .Toggle = &Wallhack}, EffectEntry{.Order = 40, .Param = &Model},
-    EffectEntry{.Order = 50, .Toggle = &Bhop},
+    EffectEntry{.Toggle = &Ghost}, EffectEntry{.Toggle = &Disco}, EffectEntry{.Toggle = &Wallhack},
+    EffectEntry{.Param = &Model},  EffectEntry{.Toggle = &Bhop},
 };
 
 }  // namespace AdminSystem::Admin::Effects

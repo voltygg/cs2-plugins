@@ -71,6 +71,7 @@ private:
     CS2Kit::Subscription _roundStart;
     CS2Kit::Subscription _runCommandPre;
     CS2Kit::Subscription _runCommandPost;
+    CS2Kit::Subscription _autoHopPump;
 
     std::unordered_set<int64_t> _granted;
     // Per-slot mirror of _granted for the movement hot path, where a steamId lookup per tick

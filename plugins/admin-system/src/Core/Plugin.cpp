@@ -32,8 +32,7 @@ PluginInfo AdminSystemPlugin::Info() const
 bool AdminSystemPlugin::OnLoad(CS2Kit::Runtime& runtime, bool /*late*/)
 {
     Log::Info("Loading v{}...", Info().Version);
-    _app.emplace(runtime);
-    _app->Version = Info().Version;
+    _app.emplace(runtime, Info().Version);
     return _app->Start();
 }
 
@@ -87,7 +86,7 @@ void AdminSystemPlugin::OnPlayerDisconnect(Player* player)
 
 bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)
 {
-    return _app->PlayerChat.HandleSay(player, std::string(message), teamChat);
+    return _app->PlayerChat.HandleSay(player, message, teamChat);
 }
 
 bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen)

@@ -37,7 +37,7 @@ namespace AdminSystem
  */
 struct App
 {
-    explicit App(CS2Kit::Runtime& runtime) : Runtime(runtime) {}
+    App(CS2Kit::Runtime& runtime, std::string version) : Runtime(runtime), Version(std::move(version)) {}
     ~App();
     App(const App&) = delete;
     App& operator=(const App&) = delete;
@@ -49,8 +49,8 @@ struct App
     void FlushPlayerSession(CS2Kit::Player* player);
 
     CS2Kit::Runtime& Runtime;
-    /** Plugin version, for the menu title. Set by the plugin from its Info(). */
-    std::string Version;
+    /** Plugin version, for the menu title. */
+    const std::string Version;
 
     Core::ConfigManager Config;
     CS2Kit::PostgresDatabase Db;
@@ -79,6 +79,7 @@ private:
     void InstallStatusReporting();
     void RegisterCommands();
 
+    CS2Kit::Subscription _maintenance;
     CS2Kit::Subscription _playerDeath;
     CS2Kit::Subscription _roundEnd;
     CS2Kit::Subscription _roundPrestart;

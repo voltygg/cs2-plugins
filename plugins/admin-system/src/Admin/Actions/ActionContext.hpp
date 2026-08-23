@@ -28,12 +28,9 @@ using OptKey = CS2Kit::Players::OptKey;
  */
 ActionContext Resolve(int adminSlot, int targetSlot, const std::string& requiredFlag);
 
-void Broadcast(const ActionContext& ctx, const std::string& translationKey);
-
-/** Two-target variant: the phrase at `translationKey` receives the target names as {a} and {b}. */
+/** Two-target broadcast: the phrase at `translationKey` receives the target names as {a} and {b}. */
 void Broadcast(App& app, const ActionContext& first, const ActionContext& second, const std::string& translationKey);
 
-void Run(int adminSlot, int targetSlot, const Action& action);
 void Run(int adminSlot, int targetSlot, int param, const ParamAction& action);
 
 }  // namespace AdminSystem::Admin::Actions

@@ -100,7 +100,7 @@ StageResult App::StartPunishments()
 
     // Every minute: sweep expired bans/mutes, pick up admin freezes issued on other servers
     // sharing this database, and advance this server's registry heartbeat.
-    Runtime.Scheduler.Repeat(60'000, [this] {
+    _maintenance = Runtime.Scheduler.Repeat(60'000, [this] {
         Punishments.ExpireOldPunishments();
         Freeze.RefreshFromDatabase();
         Database::ServerRepository{Db}.Heartbeat(Config.GetServer().tag);
@@ -174,7 +174,7 @@ bool App::Start()
     auto& report = Runtime.LoadReport;
 
     // "Configuration" + "Translations" stages, via ConfigManager::LoadSettings.
-    if (!CS2Kit::LoadStandardConfig(Config, {.Addon = Core::AddonName}))
+    if (!CS2Kit::LoadStandardConfig(Runtime, Config, {.Addon = Core::AddonName}))
         return false;
 
     report.Run("Policy", [this] {

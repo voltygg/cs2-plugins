@@ -12,9 +12,7 @@
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Runtime.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
-#include <algorithm>
 #include <format>
-#include <vector>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -45,9 +43,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app,
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->GetName()));
     builder.WithContext(ctx);
 
-    std::vector<Effects::EffectEntry> entries(Effects::MenuEffects.begin(), Effects::MenuEffects.end());
-    std::ranges::sort(entries, {}, &Effects::EffectEntry::Order);
-    for (const auto& entry : entries)
+    for (const auto& entry : Effects::MenuEffects)
     {
         if (entry.Toggle)
             builder.AddEffectToggleRow(*entry.Toggle);

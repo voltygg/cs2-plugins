@@ -7,7 +7,7 @@ namespace Bhop
 
 bool App::Start()
 {
-    if (!CS2Kit::LoadStandardConfig(Config, {.Addon = AddonName}))
+    if (!CS2Kit::LoadStandardConfig(Runtime, Config, {.Addon = AddonName}))
         return false;
 
     Bhop.Initialize();

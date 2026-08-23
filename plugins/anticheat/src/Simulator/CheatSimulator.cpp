@@ -110,11 +110,10 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
 
     // The filter rewrites live player commands, so it stays uninstalled until the first Arm. A
     // disabled simulator then costs nothing on the per-tick movement path.
-    if (!_filtering)
+    if (!_filter)
     {
-        _manager.Rt().MovementHook.ListenFilterCmd(
+        _filter = _manager.Rt().MovementHook.ListenFilterCmd(
             [this](int filtered, CS2Kit::UserCmdView& cmd) { OnFilter(filtered, cmd); });
-        _filtering = true;
     }
 
     auto& state = _sim[slot];

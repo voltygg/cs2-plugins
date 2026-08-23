@@ -109,6 +109,7 @@ private:
     CS2Kit::Subscription _spawnInstall;
     CS2Kit::Subscription _dumpCommand;
     CS2Kit::Subscription _slotChanged;
+    CS2Kit::Subscription _cvarChanged;
 
     ShotCorrelatorCore _correlator;
     AimbotCore _aimbot{_correlator};

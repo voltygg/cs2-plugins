@@ -24,7 +24,7 @@ std::minstd_rand::result_type Seed()
 
 void InvalidCvarDetector::Initialize()
 {
-    if (_pump != 0)
+    if (_pump)
         return;
 
     _random.seed(Seed());

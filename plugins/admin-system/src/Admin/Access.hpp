@@ -25,16 +25,9 @@ class Access
 public:
     Access(AdminManager& admins, const FreezeManager& freeze) : _admins(admins), _freeze(freeze) {}
 
-    bool HasPermission(int64_t steamId, char flag)
+    bool HasPermission(int64_t steamId, Permission flag)
     {
-        return !_freeze.IsFrozen(steamId) && _admins.HasPermission(steamId, flag);
-    }
-
-    bool HasPermission(int64_t steamId, Permission flag) { return HasPermission(steamId, static_cast<char>(flag)); }
-
-    bool HasAllPermissions(int64_t steamId, const std::string& flags)
-    {
-        return !_freeze.IsFrozen(steamId) && _admins.HasAllPermissions(steamId, flags);
+        return !_freeze.IsFrozen(steamId) && _admins.HasPermission(steamId, static_cast<char>(flag));
     }
 
     bool HasAnyPermission(int64_t steamId, const std::string& flags)

@@ -7,7 +7,7 @@ namespace Anticheat
 
 bool App::Start()
 {
-    if (!CS2Kit::LoadStandardConfig(Config, {.Addon = AddonName, .Translations = false}))
+    if (!CS2Kit::LoadStandardConfig(Runtime, Config, {.Addon = AddonName, .Translations = false}))
         return false;
 
     // A missing data file leaves the two table-driven modules inert rather than taking the plugin

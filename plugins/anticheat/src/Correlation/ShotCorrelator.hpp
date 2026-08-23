@@ -11,6 +11,7 @@
 #include <CS2Kit/Api.hpp>
 #include <array>
 #include <cstdint>
+#include <vector>
 
 class IGameEvent;
 
@@ -42,6 +43,7 @@ private:
     void FinalizeSilentAim(int slot, int32_t serverTick, double nowSec);
 
     AntiCheatManager& _manager;
+    std::vector<CS2Kit::Subscription> _subscriptions;
     std::array<int32_t, MaxSlots> _userIds{};
     bool _userIdsResolved = false;  // false when the engine interface never answered
 };

@@ -35,7 +35,7 @@ void AntiCheatManager::Initialize()
     _slotChanged = _rt.Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); });
 
     // sv_cheats going off starts a propagation grace before client values mean anything again.
-    _rt.ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
+    _cvarChanged = _rt.ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
         const std::string_view changed = name ? name : "";
         if (changed == "mp_teammates_are_enemies")
         {

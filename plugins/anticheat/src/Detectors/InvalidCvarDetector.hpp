@@ -52,7 +52,7 @@ private:
     AntiCheatManager& _manager;
     std::array<SlotState, MaxSlots> _slots{};
     std::minstd_rand _random;
-    uint64_t _pump = 0;
+    CS2Kit::Subscription _pump;
 };
 
 }  // namespace Anticheat

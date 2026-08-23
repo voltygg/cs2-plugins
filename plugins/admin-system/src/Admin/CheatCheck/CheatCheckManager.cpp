@@ -267,11 +267,8 @@ void CheatCheckManager::ReplyToAdmin(const PendingCheck& pc, const std::function
 
 void CheatCheckManager::ResetCheck(int targetSlot)
 {
-    auto& pc = _checks[targetSlot];
-    if (pc.TickTimer)
-        _rt.Scheduler.Cancel(pc.TickTimer);
     _rt.Messages.ClearCenterHtml(targetSlot);
-    pc = PendingCheck{};
+    _checks[targetSlot] = PendingCheck{};  // move-assign drops the tick timer
 }
 
 bool CheatCheckManager::Cancel(int targetSlot)

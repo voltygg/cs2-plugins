@@ -95,21 +95,24 @@ void ShotCorrelator::Initialize()
 {
     _userIds.fill(-1);
 
-    _manager.Rt().MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { OnCommand(slot, cmd); });
-    _manager.Rt().Scheduler.EveryFrame([this] { OnFrame(); });
+    auto& events = _manager.Rt().Events;
 
-    _manager.Rt().Events.Listen<CS2Kit::Events::PlayerSpawn>([this](const CS2Kit::Events::PlayerSpawn& e) {
+    _subscriptions.push_back(_manager.Rt().MovementHook.ListenPreCmd(
+        [this](int slot, const CS2Kit::UserCmdView& cmd) { OnCommand(slot, cmd); }));
+    _subscriptions.push_back(_manager.Rt().Scheduler.EveryFrame([this] { OnFrame(); }));
+
+    _subscriptions.push_back(events.Listen<CS2Kit::Events::PlayerSpawn>([this](const CS2Kit::Events::PlayerSpawn& e) {
         if (_manager.ModuleEnabled(DetectionKind::AntiAim))
             _manager.AntiAim().OnSlotChanged(e.Slot);
-    });
-    _manager.Rt().Events.Listen<CS2Kit::Events::WeaponFire>(
-        [this](const CS2Kit::Events::WeaponFire& e) { OnWeaponFire(e); });
-    _manager.Rt().Events.Listen<CS2Kit::Events::BulletImpact>(
-        [this](const CS2Kit::Events::BulletImpact& e) { OnBulletImpact(e); });
+    }));
+    _subscriptions.push_back(
+        events.Listen<CS2Kit::Events::WeaponFire>([this](const CS2Kit::Events::WeaponFire& e) { OnWeaponFire(e); }));
+    _subscriptions.push_back(events.Listen<CS2Kit::Events::BulletImpact>(
+        [this](const CS2Kit::Events::BulletImpact& e) { OnBulletImpact(e); }));
     // player_hurt carries the hitgroup SilentAim scores headshots from, which the typed view omits.
-    _manager.Rt().Events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); });
-    _manager.Rt().Events.Listen<CS2Kit::Events::PlayerDeath>(
-        [this](const CS2Kit::Events::PlayerDeath& e) { OnPlayerDeath(e); });
+    _subscriptions.push_back(events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); }));
+    _subscriptions.push_back(
+        events.Listen<CS2Kit::Events::PlayerDeath>([this](const CS2Kit::Events::PlayerDeath& e) { OnPlayerDeath(e); }));
 }
 
 void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)

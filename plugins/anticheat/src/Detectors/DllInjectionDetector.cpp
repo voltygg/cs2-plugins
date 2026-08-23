@@ -25,7 +25,7 @@ constexpr size_t DllEvidenceCharBudget = 700;
 
 void DllInjectionDetector::Initialize()
 {
-    if (_pump != 0)
+    if (_pump)
         return;
 
     _pump = _manager.Rt().Scheduler.Repeat(PumpIntervalMs, [this] {

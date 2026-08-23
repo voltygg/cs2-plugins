@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Core/TimeUtils.hpp>
 #include <CS2Kit/Database/Column.hpp>
 #include <cstdint>
 #include <optional>
@@ -28,7 +29,7 @@ struct Ban
     std::optional<std::string> RemovedReason;
 
     bool IsPermanent() const { return ExpiresAt == 0; }
-    bool IsExpired() const;
+    bool IsExpired() const { return !IsPermanent() && CS2Kit::Core::TimeUtils::IsExpired(ExpiresAt); }
 
     static constexpr const char* Table = "bans";
     static constexpr const char* Key = "id";

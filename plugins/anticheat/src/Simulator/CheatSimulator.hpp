@@ -59,7 +59,8 @@ private:
     bool Enabled() const;
 
     CS2Kit::PerSlot<SimState> _sim;
-    bool _filtering = false;  // movement filter installed (lazily, on the first Arm)
+    // Movement filter, installed lazily on the first Arm; empty while the simulator is idle.
+    CS2Kit::Subscription _filter;
     std::optional<CS2Kit::ServerCommand> _cmdSpin;
     std::optional<CS2Kit::ServerCommand> _cmdJitter;
     std::optional<CS2Kit::ServerCommand> _cmdBadAngles;

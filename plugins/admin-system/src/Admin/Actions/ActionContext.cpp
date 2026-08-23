@@ -14,25 +14,12 @@ ActionContext Resolve(int adminSlot, int targetSlot, const std::string& required
     return ActionDispatcher{}.Resolve(adminSlot, targetSlot, requiredFlag);
 }
 
-void Broadcast(const ActionContext& ctx, const std::string& translationKey)
-{
-    // An empty key means "no message" - silent effects (Hide) and one-shots leave it blank.
-    if (translationKey.empty())
-        return;
-    ActionDispatcher{}.Broadcast(ctx, translationKey);
-}
-
 void Broadcast(App& app, const ActionContext& first, const ActionContext& second, const std::string& translationKey)
 {
     if (!first.Caller || !first.Target || !second.Target)
         return;
     app.Chat.BroadcastAction(translationKey, first.Caller->GetName(),
                              {{"a", first.Target->GetName()}, {"b", second.Target->GetName()}});
-}
-
-void Run(int adminSlot, int targetSlot, const Action& action)
-{
-    ActionDispatcher{}.Run(adminSlot, targetSlot, action);
 }
 
 void Run(int adminSlot, int targetSlot, int param, const ParamAction& action)
