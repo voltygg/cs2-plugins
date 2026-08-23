@@ -1,7 +1,7 @@
 #pragma once
 
 // Feeds InvalidCvarRules from two tiers: the userinfo copies the engine already holds, and the
-// network convar query for everything else. Without _manager.Rt().ClientCvars the query tier is simply
+// network convar query for everything else. Without _rt.ClientCvars the query tier is simply
 // absent, so a degraded load falls back to userinfo rather than going blind.
 //
 // An unanswered query produces no callback at all, so nothing here waits on a reply or reads
@@ -23,7 +23,7 @@ class AntiCheatManager;
 class InvalidCvarDetector
 {
 public:
-    explicit InvalidCvarDetector(AntiCheatManager& manager) : _manager(manager) {}
+    InvalidCvarDetector(AntiCheatManager& manager, CS2Kit::Runtime& runtime) : _manager(manager), _rt(runtime) {}
 
     /** Start the poll pump. Idempotent. */
     void Initialize();
@@ -50,6 +50,7 @@ private:
     double NextDelaySec();
 
     AntiCheatManager& _manager;
+    CS2Kit::Runtime& _rt;
     std::array<SlotState, MaxSlots> _slots{};
     std::minstd_rand _random;
     CS2Kit::Subscription _pump;

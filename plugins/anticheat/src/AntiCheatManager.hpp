@@ -32,17 +32,12 @@ class AntiCheatManager
 public:
     AntiCheatManager(CS2Kit::Runtime& runtime, ConfigManager& config, DetectionDataManager& detections,
                      ResponseManager& response)
-        : _rt(runtime), _config(config), _detections(detections), _response(response), _simulator(*this)
+        : _rt(runtime),
+          _config(config),
+          _detections(detections),
+          _response(response),
+          _simulator(*this, runtime, config)
     {}
-
-    /** The kit runtime, for the detectors and adapters this manager owns. */
-    CS2Kit::Runtime& Rt() { return _rt; }
-
-    /** Plugin settings, likewise. */
-    ConfigManager& Config() { return _config; }
-
-    /** The shipped detection tables. */
-    DetectionDataManager& Detections() { return _detections; }
 
     void Initialize();
 
@@ -119,10 +114,10 @@ private:
     NamechangerCore _namechanger;
     InvalidCvarRules _invalidCvars;
 
-    ShotCorrelator _feed{*this};
+    ShotCorrelator _feed{*this, _rt};
     NamechangerDetector _namechangerDetector{*this};
-    DllInjectionDetector _dllInjection{*this};
-    InvalidCvarDetector _invalidCvarPoller{*this};
+    DllInjectionDetector _dllInjection{*this, _rt, _detections};
+    InvalidCvarDetector _invalidCvarPoller{*this, _rt};
 
     // Stamped when sv_cheats goes off, so replicated client values get time to catch up.
     double _cheatGraceUntil = 0.0;

@@ -28,7 +28,7 @@ void InvalidCvarDetector::Initialize()
         return;
 
     _random.seed(Seed());
-    _pump = _manager.Rt().Scheduler.Repeat(PumpIntervalMs, [this] {
+    _pump = _rt.Scheduler.Repeat(PumpIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::InvalidCvar))
             return;
         const double now = TimeUtils::MonotonicSeconds();
@@ -83,7 +83,7 @@ double InvalidCvarDetector::NextDelaySec()
 void InvalidCvarDetector::Poll(int slot, SlotState& state)
 {
     ReadUserInfo(slot);
-    if (!_manager.Rt().ClientCvars.Available())
+    if (!_rt.ClientCvars.Available())
         return;
 
     const CvarRuleTable& rules = _manager.InvalidCvars().Rules();
@@ -95,9 +95,9 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
     // second one, so the batch never has to check what is pending.
     for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
     {
-        _manager.Rt().ClientCvars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
-                                        [this](int replySlot, CS2Kit::ClientCvarStatus status, std::string_view cvar,
-                                               std::string_view value) { OnReply(replySlot, status, cvar, value); });
+        _rt.ClientCvars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
+                              [this](int replySlot, CS2Kit::ClientCvarStatus status, std::string_view cvar,
+                                     std::string_view value) { OnReply(replySlot, status, cvar, value); });
     }
     state.Cursor = rules.PollCvarIndex(state.Cursor, CvarsPerPoll);
 }
@@ -107,7 +107,7 @@ void InvalidCvarDetector::ReadUserInfo(int slot)
     const bool enforce = _manager.EnforceCheatCvars();
     for (const CvarRule& rule : _manager.InvalidCvars().Rules().UserInfo())
     {
-        const char* value = _manager.Rt().NetChannels.GetUserInfoCvar(slot, rule.name.c_str());
+        const char* value = _rt.NetChannels.GetUserInfoCvar(slot, rule.name.c_str());
         if (!value || *value == '\0')
             continue;
         _manager.Report(slot, _manager.InvalidCvars().Observe(slot, rule.name, value, enforce));

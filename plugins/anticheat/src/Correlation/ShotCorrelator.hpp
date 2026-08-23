@@ -23,7 +23,7 @@ class AntiCheatManager;
 class ShotCorrelator
 {
 public:
-    explicit ShotCorrelator(AntiCheatManager& manager) : _manager(manager) {}
+    ShotCorrelator(AntiCheatManager& manager, CS2Kit::Runtime& runtime) : _manager(manager), _rt(runtime) {}
 
     /** Install the usercmd, per-frame and game-event listeners. */
     void Initialize();
@@ -43,6 +43,7 @@ private:
     void FinalizeSilentAim(int slot, int32_t serverTick, double nowSec);
 
     AntiCheatManager& _manager;
+    CS2Kit::Runtime& _rt;
     std::vector<CS2Kit::Subscription> _subscriptions;
     std::array<int32_t, MaxSlots> _userIds{};
     bool _userIdsResolved = false;  // false when the engine interface never answered

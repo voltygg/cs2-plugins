@@ -4,6 +4,7 @@
 // own legacy listener and asks for events no HUD ever wants - a fingerprint the server can read
 // without touching the client. No core: the check is one engine query plus a schedule.
 
+#include "Core/DetectionData.hpp"
 #include "Core/Samples.hpp"
 
 #include <CS2Kit/Api.hpp>
@@ -18,7 +19,9 @@ class AntiCheatManager;
 class DllInjectionDetector
 {
 public:
-    explicit DllInjectionDetector(AntiCheatManager& manager) : _manager(manager) {}
+    DllInjectionDetector(AntiCheatManager& manager, CS2Kit::Runtime& runtime, DetectionDataManager& detections)
+        : _manager(manager), _rt(runtime), _detections(detections)
+    {}
 
     /** Start the scan pump. Idempotent. */
     void Initialize();
@@ -39,6 +42,8 @@ private:
     void Scan(int slot, SlotState& state, double nowSec);
 
     AntiCheatManager& _manager;
+    CS2Kit::Runtime& _rt;
+    DetectionDataManager& _detections;
     std::array<SlotState, MaxSlots> _slots{};
     CS2Kit::Subscription _pump;
 };

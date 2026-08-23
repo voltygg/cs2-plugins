@@ -9,6 +9,8 @@
 // divergence rule. SilentAim is deliberately absent - only the real usercmd can move where the
 // bullet actually landed.
 
+#include "../Config.hpp"
+
 #include <CS2Kit/Api.hpp>
 #include <cstdint>
 #include <optional>
@@ -21,12 +23,16 @@ class AntiCheatManager;
 class CheatSimulator
 {
 public:
-    explicit CheatSimulator(AntiCheatManager& manager) : _manager(manager) {}
+    CheatSimulator(AntiCheatManager& manager, CS2Kit::Runtime& runtime, ConfigManager& config)
+        : _manager(manager), _rt(runtime), _config(config)
+    {}
 
     void Initialize();
 
 private:
     AntiCheatManager& _manager;
+    CS2Kit::Runtime& _rt;
+    ConfigManager& _config;
 
     enum class Kind
     {

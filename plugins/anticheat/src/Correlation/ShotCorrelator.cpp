@@ -95,11 +95,11 @@ void ShotCorrelator::Initialize()
 {
     _userIds.fill(-1);
 
-    auto& events = _manager.Rt().Events;
+    auto& events = _rt.Events;
 
-    _subscriptions.push_back(_manager.Rt().MovementHook.ListenPreCmd(
-        [this](int slot, const CS2Kit::UserCmdView& cmd) { OnCommand(slot, cmd); }));
-    _subscriptions.push_back(_manager.Rt().Scheduler.EveryFrame([this] { OnFrame(); }));
+    _subscriptions.push_back(
+        _rt.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { OnCommand(slot, cmd); }));
+    _subscriptions.push_back(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
     _subscriptions.push_back(events.Listen<CS2Kit::Events::PlayerSpawn>([this](const CS2Kit::Events::PlayerSpawn& e) {
         if (_manager.ModuleEnabled(DetectionKind::AntiAim))
@@ -151,18 +151,18 @@ void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
     if (aimlock)
         _manager.Aimlock().OnSimulated(slot, serverTick, sample.BaseAngles(), eye);
     if (antiAim)
-        _manager.Report(
-            slot, _manager.AntiAim().OnSimulated(slot, sample.CmdNum, serverTick, true,
-                                                 _manager.Rt().Teleports.JustTeleported(slot, TeleportGraceSec), now));
+        _manager.Report(slot,
+                        _manager.AntiAim().OnSimulated(slot, sample.CmdNum, serverTick, true,
+                                                       _rt.Teleports.JustTeleported(slot, TeleportGraceSec), now));
 }
 
 void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& players)
 {
     _userIds.fill(-1);
-    IVEngineServer2* engine = _manager.Rt().Interfaces.Engine;
+    IVEngineServer2* engine = _rt.Interfaces.Engine;
     _userIdsResolved = engine != nullptr;
 
-    for (const CS2Kit::Players::Player* player : _manager.Rt().Players.GetAllPlayers())
+    for (const CS2Kit::Players::Player* player : _rt.Players.GetAllPlayers())
     {
         const int slot = player ? player->GetSlot() : -1;
         if (!IsValidSlot(slot))
@@ -179,7 +179,7 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
                          .Team = controller.GetTeam(),
                          .Valid = true,
                          .Alive = controller.IsAlive(),
-                         .Teleported = _manager.Rt().Teleports.JustTeleported(slot, TeleportGraceSec)};
+                         .Teleported = _rt.Teleports.JustTeleported(slot, TeleportGraceSec)};
     }
 }
 
@@ -209,9 +209,9 @@ void ShotCorrelator::OnFrame()
         {
             // Two engine reads and a parse per call, so only for the slots the estimate is used on.
             const bool aliveHuman = eligible && players[slot].Alive;
-            _manager.Report(slot, _manager.Aimlock().OnFrame(
-                                      slot, serverTick, aliveHuman,
-                                      aliveHuman ? MeasureVisualLag(_manager.Rt(), slot) : LagEstimate{}, now));
+            _manager.Report(slot,
+                            _manager.Aimlock().OnFrame(slot, serverTick, aliveHuman,
+                                                       aliveHuman ? MeasureVisualLag(_rt, slot) : LagEstimate{}, now));
         }
         if (antiAim)
             _manager.Report(slot, _manager.AntiAim().OnFrame(slot, serverTick, eligible, now));

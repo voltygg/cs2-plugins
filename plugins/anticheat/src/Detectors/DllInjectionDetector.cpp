@@ -28,7 +28,7 @@ void DllInjectionDetector::Initialize()
     if (_pump)
         return;
 
-    _pump = _manager.Rt().Scheduler.Repeat(PumpIntervalMs, [this] {
+    _pump = _rt.Scheduler.Repeat(PumpIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::DllInjection))
             return;
 
@@ -72,7 +72,7 @@ void DllInjectionDetector::Reset()
 
 void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
 {
-    if (!_manager.Rt().Events.GetClientLegacyListener(slot))
+    if (!_rt.Events.GetClientLegacyListener(slot))
     {
         // One grace period for a client still settling in. After that a missing listener is simply
         // nothing to scan, and the slot falls back to the normal cadence.
@@ -87,8 +87,8 @@ void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
     // Read through at scan time rather than holding a copy: one owner for the table, and a reload
     // cannot leave this detector checking a stale list.
     std::vector<std::string_view> matches;
-    for (const std::string& name : _manager.Detections().Get().dllEventBlacklist)
-        if (_manager.Rt().Events.ClientListensTo(slot, name.c_str()))
+    for (const std::string& name : _detections.Get().dllEventBlacklist)
+        if (_rt.Events.ClientListensTo(slot, name.c_str()))
             matches.push_back(name);
     if (matches.empty())
         return;
