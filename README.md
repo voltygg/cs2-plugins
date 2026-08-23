@@ -2,7 +2,7 @@
 
 A C++23 Metamod:Source plugin monorepo for Counter-Strike 2 community servers. Each plugin lives under `plugins/<name>/` with its own sources, configs, and CMake target.
 
-Built on top of **[CS2Kit](https://github.com/suxrobGM/cs2-kit)** - a reusable C++23 library for CS2 plugin development (declarative commands, WASD menus, async PostgreSQL, engine SDK wrappers) - consumed as the `vendor/cs2-kit` submodule. CS2Kit is the only submodule; all SDK dependencies (hl2sdk-cs2, mmsource-2.0, etc.) are nested inside it.
+Built on top of **[CS2Kit](https://github.com/voltygg/cs2-kit)** - a reusable C++23 library for CS2 plugin development (declarative commands, WASD menus, async PostgreSQL, engine SDK wrappers). CS2Kit, the HL2SDK and Metamod all arrive as Conan packages from a public remote; this repo has no submodules.
 
 ## Plugins
 
@@ -26,8 +26,7 @@ Grab the latest build from [Releases](https://github.com/voltygg/cs2-plugins/rel
 ### Linux (Docker)
 
 ```bash
-# Clone with submodules (--recursive pulls CS2Kit and its nested SDK submodules)
-git clone --recursive https://github.com/voltygg/cs2-plugins.git
+git clone https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
 
 docker compose -f deploy/docker-compose.build.yml run --rm --build build
@@ -36,13 +35,15 @@ docker compose -f deploy/docker-compose.build.yml run --rm --build build
 ### Windows
 
 Requires Visual Studio 2026 Build Tools. CMake 4.3.4+, Conan 2.29.1+, and Ninja
-are pinned in `pyproject.toml`, so `uv sync` installs them (or install globally).
+are pinned by the `cs2-kit` distribution, so `uv sync` installs them.
 
 ```bash
-git clone --recursive https://github.com/voltygg/cs2-plugins.git
+git clone https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
 
-uv run poe build
+uv sync
+uv run poe bootstrap   # Conan profiles + remote, then a first build
+uv run poe build       # the loop from then on
 ```
 
 The default Windows preset is `windows-msvc-release`; use

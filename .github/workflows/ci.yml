@@ -30,10 +30,7 @@ jobs:
       CCACHE_DEPEND: "1"
       CCACHE_MAXSIZE: 1G
     steps:
-      - name: Checkout (recursive submodules)
-        uses: actions/checkout@v7
-        with:
-          submodules: recursive
+      - uses: actions/checkout@v7
 
       # No Conan cache: deps are baked into the toolchain image (deploy/Dockerfile).
       # Per-run key so saves persist; branch-scoped restore; MAXSIZE bounds the blob.
@@ -56,7 +53,7 @@ jobs:
         run: |
           # In-container path for base-dir rewriting (github.workspace is host path).
           export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
-          python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release --no-test
+          cs2kit-build linux-steamrt-release --no-test
 
       # Warm reruns of an unchanged tree should show >95% hits; a collapse means
       # the CCACHE_* env above regressed.
@@ -70,11 +67,7 @@ jobs:
     name: Lint (ruff + clang-format)
     runs-on: ubuntu-latest
     steps:
-      # Non-recursive: clang-format needs cs2-kit/src, not the nested SDKs.
-      - name: Checkout (cs2-kit only, non-recursive)
-        uses: actions/checkout@v7
-        with:
-          submodules: true
+      - uses: actions/checkout@v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v8.2.0
@@ -82,5 +75,5 @@ jobs:
       - name: Ruff check (build tooling)
         run: uv run poe lint
 
-      - name: clang-format check (plugin + cs2-kit sources)
+      - name: clang-format check
         run: uv run poe format-check

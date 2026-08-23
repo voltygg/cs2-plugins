@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DEPLOY = ROOT / "deploy"
 
 
-# Duplicates buildtools.die on purpose: CI runs deploy tooling without submodules.
+# Duplicates buildtools.die on purpose: the deploy tooling must not depend on cs2-kit.
 def die(message: str) -> NoReturn:
     """Exit the current command with a deploy-tooling error message."""
     raise SystemExit(f"ERROR: {message}")

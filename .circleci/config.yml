@@ -40,17 +40,6 @@ executors:
     resource_class: large
 
 commands:
-  fetch-submodules:
-    parameters:
-      flags:
-        type: string
-        default: ""
-    steps:
-      - run:
-          name: Fetch submodules
-          command: |
-            git submodule sync --recursive
-            git submodule update --init --depth 1 << parameters.flags >>
   restore-ccache:
     steps:
       # Key shape mirrors the GHA cache: toolchain fingerprint prefix, then
@@ -70,15 +59,13 @@ commands:
   build-plugins:
     steps:
       - checkout
-      - fetch-submodules:
-          flags: --recursive
       - restore-ccache
       - run:
           name: Build Linux plugins
           command: |
             export CCACHE_BASEDIR="$PWD"
             mkdir -p /ccache && ccache -z
-            python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release
+            cs2kit-build linux-steamrt-release
             ccache -s -v || ccache -s  # -v needs ccache >= 4.4; image ships 4.2
   ghcr-login:
     steps:
@@ -102,8 +89,6 @@ jobs:
     resource_class: medium
     steps:
       - checkout
-      # Non-recursive: clang-format needs cs2-kit/src, not the nested SDKs.
-      - fetch-submodules
       - run:
           name: Install uv
           command: |
@@ -113,7 +98,7 @@ jobs:
           name: Ruff check (build tooling)
           command: uv run poe lint
       - run:
-          name: clang-format check (plugin + cs2-kit sources)
+          name: clang-format check
           command: uv run poe format-check
 
   build-toolchain:
@@ -131,15 +116,12 @@ jobs:
                     exit 0
                   fi
                   if git diff --name-only HEAD~1 HEAD \
-                    | grep -qE '^(deploy/Dockerfile|conanfile\.py|conan\.lock|vendor/cs2-kit|\.circleci/config\.yml)'; then
+                    | grep -qE '^(deploy/Dockerfile|conanfile\.py|conan\.lock|\.circleci/config\.yml)'; then
                     echo "Toolchain inputs changed; building."
                   else
                     echo "No toolchain input changes; skipping."
                     circleci-agent step halt
                   fi
-      # First-level submodules only: brings cs2-kit (Conan profiles), not the
-      # nested SDKs.
-      - fetch-submodules
       - ghcr-login
       - run:
           name: Build + push toolchain image (build stage)

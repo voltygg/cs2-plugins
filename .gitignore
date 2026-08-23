@@ -78,3 +78,6 @@ references/
 .VSCodeCounter/
 
 .playwright-mcp/
+
+# Local cs2-kit checkout for `conan editable add vendor/cs2-kit`; not part of the build.
+vendor/

@@ -67,7 +67,7 @@ developer-local path baked into that file.
 
 - **Rebuild the toolchain image:** Trigger Pipeline with `force-toolchain` =
   `true`. Otherwise `build-toolchain` halts itself unless `deploy/Dockerfile`,
-  `conanfile.py`, `conan.lock`, `vendor/cs2-kit`, or this config changed.
+  `conanfile.py`, `conan.lock`, or this config changed.
 - **Deploy one server:** set the `server` parameter to an inventory id.
 - **Preview a deploy:** set `dry-run` = `true` (rsync only, no compose).
 

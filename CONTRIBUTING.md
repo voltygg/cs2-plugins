@@ -1,15 +1,16 @@
 # Contributing to Admin System
 
 A monorepo of C++23 Metamod:Source plugins for CS2 community servers. Reusable
-engine abstractions live in the `vendor/cs2-kit/` submodule; each plugin lives
-under `plugins/<name>/`.
+engine abstractions live in [cs2-kit](https://github.com/voltygg/cs2-kit),
+consumed as a Conan package; each plugin lives under `plugins/<name>/`.
 
 ## Setup
 
-One command does the setup: submodules, Conan dependencies, SDK protobuf
-generation into `build/`, and a first CMake build.
+Two commands: `uv sync` provisions the toolchain, `bootstrap` installs the kit's
+Conan profiles and the public remote and runs a first build.
 
 ```bash
+uv sync
 uv run poe bootstrap
 ```
 
@@ -23,8 +24,8 @@ Required tools:
 - Ninja
 - MSVC on Windows, GCC 14 on Linux (Steam Runtime sniper toolchain)
 
-The CMake, Conan, and Ninja pins are also listed in `pyproject.toml`; `uv sync`
-installs them into the project environment.
+The CMake, Conan, Ninja and clang-format pins live in the `cs2-kit` Python
+distribution, which `pyproject.toml` depends on; `uv sync` installs them all.
 
 ## Building
 
@@ -49,8 +50,8 @@ Available presets:
 
 ## Adding Code
 
-The build auto-discovers `.cpp` files under `plugins/<name>/src/` and
-`vendor/cs2-kit/src/`. Add a new source file in the right tree and rebuild.
+The build auto-discovers `.cpp` files under `plugins/<name>/src/`. Add a new
+source file there and rebuild.
 
 To add a new plugin, create `plugins/<new>/src/`, configs, and
 `plugins/<new>/CMakeLists.txt` that calls `cs2_add_plugin(<new> ...)`. Add the
@@ -74,12 +75,21 @@ them in the root `CMakeLists.txt` and link their imported targets (e.g.
 - Keep source files around 300-350 LOC when practical.
 - Comments are rare. Add one only when the reason is non-obvious.
 
-## cs2-kit Submodule
+## Changing cs2-kit alongside a plugin
 
-`vendor/cs2-kit/` is a Git submodule. If your change touches shared code there:
+The kit is a Conan package, not a subdirectory, so point Conan at a local
+checkout while you work on both:
 
-1. Commit inside `vendor/cs2-kit/` first and push that commit.
-2. Then commit the updated submodule pointer in admin-system.
+```bash
+git clone https://github.com/voltygg/cs2-kit.git ../cs2-kit
+conan editable add ../cs2-kit
+uv run poe build          # picks up kit edits directly
+conan editable remove cs2-kit
+```
+
+Land the kit change first (its own repo, its own PR). A `v*` tag there publishes
+a new package; bump the range in `conanfile.py` only if the new version falls
+outside `[~1]`.
 
 ## Before You Push
 

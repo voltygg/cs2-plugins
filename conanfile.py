@@ -11,16 +11,16 @@ class CS2PluginsConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     package_type = "shared-library"
 
-    requires = (
-        "libpqxx/7.10.0",
-        "cpr/1.11.2",
-        "nlohmann_json/3.11.3",
-    )
+    # cpr, nlohmann_json and libpqxx arrive transitively through cs2-kit, along with
+    # the HL2SDK and Metamod packages.
+    requires = ("cs2-kit/[~1]",)
 
     default_options = {
         "*:shared": False,
         "openssl/*:no_apps": True,
         "openssl/*:no_fips": True,
+        # admin-system and anticheat both use the Database module.
+        "cs2-kit/*:with_postgres": True,
     }
 
     def build_requirements(self):

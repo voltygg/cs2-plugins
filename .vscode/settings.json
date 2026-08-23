@@ -24,9 +24,7 @@
     "**/.mypy_cache": true
   },
   "search.exclude": {
-    "vendor/cs2-kit/vendor": true,
-    "vendor/cs2-kit/build": true,
-    "**/vcpkg_installed": true,
+    "vendor": true,
     "**/references": true
   },
   "[json]": {
@@ -47,17 +45,11 @@
   "ruff.lineLength": 100,
   "mypy-type-checker.args": ["--config-file=${workspaceFolder}/pyproject.toml"],
   "python.analysis.typeCheckingMode": "basic",
-  // scripts/ import buildtools off a sys.path entry added at runtime.
-  "python.analysis.extraPaths": ["vendor/cs2-kit/scripts"],
 
   "[sql]": {
     "editor.defaultFormatter": "adpyke.vscode-sql-formatter",
     "editor.tabSize": 2
   },
   "sql-formatter.dialect": "pl/sql",
-  "VSCodeCounter.exclude": [
-    "references",
-    "vendor/cs2-kit/vendor",
-    "vcpkg_installed"
-  ]
+  "VSCodeCounter.exclude": ["references", "vendor"]
 }

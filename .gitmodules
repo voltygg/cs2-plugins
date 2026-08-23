@@ -1,5 +1,0 @@
-[submodule "vendor/cs2-kit"]
-	path = vendor/cs2-kit
-	url = https://github.com/voltygg/cs2-kit.git
-	branch = main
-	update = merge

@@ -68,10 +68,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Checkout (recursive submodules)
-        uses: actions/checkout@v7
-        with:
-          submodules: recursive
+      - uses: actions/checkout@v7
 
       - name: Cache ccache
         uses: actions/cache@v6
@@ -95,7 +92,7 @@ jobs:
         run: |
           # In-container path for base-dir rewriting (github.workspace is host path).
           export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
-          python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release
+          cs2kit-build linux-steamrt-release
 
       - name: Package each declared plugin
         run: |

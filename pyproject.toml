@@ -7,34 +7,28 @@ requires-python = ">=3.14"
 license = { text = "MIT" }
 
 dependencies = [
-    "cmake>=4.3.4",
-    "conan>=2.29.1",
-    "ninja>=1.13.0",
+    # Brings the build tasks below plus the pinned CMake/Conan/Ninja/clang-format.
+    # Move to a v* tag when reproducibility matters more than tracking the kit.
+    "cs2-kit @ git+https://github.com/voltygg/cs2-kit.git@main",
     "ruff>=0.14.0",
     "poethepoet>=0.47.0",
     "python-dotenv>=1.2.0",
     "pyyaml>=6.0",
-    "clang-format==22.1.5",
 ]
 
 [tool.uv]
 package = false
 
-[tool.poe.env]
-# Lets repo scripts `import buildtools` from the vendored kit.
-PYTHONPATH = "${POE_ROOT}/vendor/cs2-kit/scripts"
-
 [tool.poe.tasks]
-build = "python vendor/cs2-kit/scripts/build.py"
-build-linux = "python vendor/cs2-kit/scripts/build.py linux-steamrt-release"
-bootstrap = "python vendor/cs2-kit/scripts/bootstrap.py"
-new-plugin = "python vendor/cs2-kit/scripts/new_plugin.py"
-update-submodules = "python scripts/update_submodules.py"
+build = "cs2kit-build"
+build-linux = "cs2kit-build linux-steamrt-release"
+bootstrap = "cs2kit-bootstrap"
+new-plugin = "cs2kit-new-plugin"
 deploy = "python -m deploy.tools.cli local"
 start-server = "python scripts/start_server.py"
 lint = "ruff check ."
-format = "python vendor/cs2-kit/scripts/format.py plugins vendor/cs2-kit/src vendor/cs2-kit/include vendor/cs2-kit/tests"
-format-check = "python vendor/cs2-kit/scripts/format.py --check plugins vendor/cs2-kit/src vendor/cs2-kit/include vendor/cs2-kit/tests"
+format = "cs2kit-format plugins"
+format-check = "cs2kit-format --check plugins"
 deploy-package = "python -m deploy.tools.cli package"
 deploy-render = "python -m deploy.tools.cli render"
 deploy-server = "python -m deploy.tools.cli deploy"

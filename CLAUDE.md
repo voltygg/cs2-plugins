@@ -3,8 +3,10 @@
 ## Project Overview
 
 C++23 Metamod:Source plugin monorepo for CS2 community servers. Reusable engine
-abstractions live in `vendor/cs2-kit/`, which is consumed as the
-`CS2Kit::CS2Kit` CMake target.
+abstractions live in [cs2-kit](https://github.com/voltygg/cs2-kit), consumed as
+the `cs2-kit` Conan package (`find_package(cs2-kit CONFIG REQUIRED)` ->
+`CS2Kit::CS2Kit`). There are no submodules: cs2-kit, hl2sdk-cs2 and
+metamod-source all arrive prebuilt from the public voltygg Cloudsmith remote.
 
 Each plugin lives under `plugins/<name>/` with its own `src/`, `configs/`,
 and `CMakeLists.txt` (`cs2_add_plugin(<name> ...)` + a root
@@ -34,14 +36,15 @@ ctest --preset windows-msvc-release
 ```
 
 Build output lands in `build/<preset>/plugins/<name>/<platform-arch>/`.
-Conan profiles are canonical in `vendor/cs2-kit/conan/profiles/` (no local
-copies). Builds precompile `<CS2Kit/Api.hpp>` per plugin (extend with
-`cs2_add_plugin(... PCH_HEADERS ...)`, disable with `-DCS2KIT_DISABLE_PCH=ON`);
-`build.py --no-test` skips the ctest step (CI runs tests separately). Unit
-tests use doctest (`test_requires` in both conanfiles) and live in
-`vendor/cs2-kit/tests/` plus `plugins/<name>/tests/`, wired by the kit's
-`cs2_add_tests()`. One ctest entry per case, so TEST_CASE names must not contain
-`[`, `]` or `;` (configure enforces it). See `vendor/cs2-kit/docs/testing.md`.
+Conan profiles and the remote are installed once with
+`conan config install https://github.com/voltygg/cs2-kit.git -sf conan`
+(`uv run poe bootstrap` does it). Builds precompile `<CS2Kit/Api.hpp>` per plugin
+(extend with `cs2_add_plugin(... PCH_HEADERS ...)`, disable with
+`-DCS2KIT_DISABLE_PCH=ON`); `cs2kit-build --no-test` skips the ctest step (CI runs
+tests separately). Unit tests use doctest (`test_requires` in conanfile.py) and
+live in `plugins/<name>/tests/`, wired by the kit's `cs2_add_tests()`. One ctest
+entry per case, so TEST_CASE names must not contain `[`, `]` or `;` (configure
+enforces it).
 
 ## Project Structure
 
@@ -70,26 +73,31 @@ plugins/bhop/
   CMakeLists.txt
   src/
   configs/
+plugins/contracts/
 CMakeLists.txt
 CMakePresets.json
 conanfile.py
+conan.lock
 scripts/
-vendor/cs2-kit/
 ```
 
-The build plumbing lives in the kit: `cs2_add_plugin` and the .vdf template come
-from `vendor/cs2-kit/cmake/CS2Plugin.cmake` (available after
-`add_subdirectory(vendor/cs2-kit)`), `CMakePresets.json` just includes the kit's
-presets, and the `build`/`bootstrap`/`format` poe tasks invoke the kit's
-cwd-based scripts directly (poe sets PYTHONPATH so scripts `import buildtools`).
-Local `scripts/` holds server tooling; all deploy commands (remote and local)
-live in the `deploy/tools` package (`python -m deploy.tools.cli`).
+The build plumbing lives in the kit: `cs2_add_plugin`, `cs2_add_tests` and the
+.vdf/manifest templates reach this repo as CMakeDeps build modules, so they are
+available right after `find_package(cs2-kit CONFIG REQUIRED)`. The
+`build`/`bootstrap`/`format`/`new-plugin` poe tasks are the `cs2kit-*` console
+scripts from the `cs2-kit` Python distribution, which `pyproject.toml` depends on
+and which also pins CMake/Conan/Ninja/clang-format. Local `scripts/` holds server
+tooling; all deploy commands (remote and local) live in the `deploy/tools`
+package (`python -m deploy.tools.cli`).
+
+To work on the kit and a plugin together: `conan editable add <cs2-kit checkout>`
+(see CONTRIBUTING.md).
 
 ## CS2Kit Integration
 
-All SDK dependencies live inside cs2-kit's `vendor/`, so admin-system has no
-duplicate SDK submodules. Include style: `#include <CS2Kit/Commands/CommandSpec.hpp>`
-(or just `<CS2Kit/Api.hpp>` for the hoisted short names).
+The SDKs are Conan packages behind cs2-kit, which re-exports them transitively.
+Include style: `#include <CS2Kit/Commands/CommandSpec.hpp>` (or just
+`<CS2Kit/Api.hpp>` for the hoisted short names).
 
 Each plugin derives from `CS2Kit::PluginBase<Managers>`, which owns the
 ISmmPlugin boilerplate, standard SourceHook hooks, the PlayerManager lifecycle,

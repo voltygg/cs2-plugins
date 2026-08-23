@@ -11,8 +11,6 @@ on:
       - .github/workflows/build-toolchain.yml
       - conanfile.py
       - conan.lock
-      # Profiles live in the cs2-kit submodule; a pointer bump can change them.
-      - vendor/cs2-kit
   workflow_dispatch:
 
 permissions:
@@ -28,11 +26,7 @@ jobs:
     name: Build + push toolchain image
     runs-on: ubuntu-latest
     steps:
-      # First-level submodules only: brings cs2-kit (Conan profiles), not the
-      # nested SDKs.
       - uses: actions/checkout@v7
-        with:
-          submodules: true
 
       - name: Resolve image ref
         id: img
