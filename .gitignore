@@ -79,5 +79,6 @@ references/
 
 .playwright-mcp/
 
-# Local cs2-kit checkout for `conan editable add vendor/cs2-kit`; not part of the build.
-vendor/
+# Scratch space for local checkouts; cs2-kit is the dev-convenience submodule.
+vendor/*
+!vendor/cs2-kit

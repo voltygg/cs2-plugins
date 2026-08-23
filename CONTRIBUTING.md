@@ -80,12 +80,17 @@ them in the root `CMakeLists.txt` and link their imported targets (e.g.
 The kit is a Conan package, not a subdirectory, so point Conan at a local
 checkout while you work on both:
 
+`vendor/cs2-kit` is a submodule for exactly this (`git submodule update --init` on an
+older clone); any sibling checkout works too.
+
 ```bash
-git clone https://github.com/voltygg/cs2-kit.git ../cs2-kit
-conan editable add ../cs2-kit
+conan editable add vendor/cs2-kit
 uv run poe build          # picks up kit edits directly
 conan editable remove cs2-kit
 ```
+
+It is a checkout, not a version - without the editable, the build uses the Conan package
+from `conanfile.py`.
 
 Land the kit change first (its own repo, its own PR). A `v*` tag there publishes
 a new package; bump the range in `conanfile.py` only if the new version falls

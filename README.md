@@ -2,7 +2,7 @@
 
 A C++23 Metamod:Source plugin monorepo for Counter-Strike 2 community servers. Each plugin lives under `plugins/<name>/` with its own sources, configs, and CMake target.
 
-Built on top of **[CS2Kit](https://github.com/voltygg/cs2-kit)** - a reusable C++23 library for CS2 plugin development (declarative commands, WASD menus, async PostgreSQL, engine SDK wrappers). CS2Kit, the HL2SDK and Metamod all arrive as Conan packages from a public remote; this repo has no submodules.
+Built on top of **[CS2Kit](https://github.com/voltygg/cs2-kit)** - a reusable C++23 library for CS2 plugin development (declarative commands, WASD menus, async PostgreSQL, engine SDK wrappers). CS2Kit, the HL2SDK and Metamod all arrive as Conan packages from a public remote. The one submodule, `vendor/cs2-kit`, is a developer convenience for working on the kit and this repo together - it is not needed to build.
 
 ## Plugins
 

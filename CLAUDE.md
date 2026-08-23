@@ -5,8 +5,12 @@
 C++23 Metamod:Source plugin monorepo for CS2 community servers. Reusable engine
 abstractions live in [cs2-kit](https://github.com/voltygg/cs2-kit), consumed as
 the `cs2-kit` Conan package (`find_package(cs2-kit CONFIG REQUIRED)` ->
-`CS2Kit::CS2Kit`). There are no submodules: cs2-kit, hl2sdk-cs2 and
-metamod-source all arrive prebuilt from the public voltygg Cloudsmith remote.
+`CS2Kit::CS2Kit`). cs2-kit, hl2sdk-cs2 and metamod-source all arrive prebuilt
+from the public voltygg Cloudsmith remote; `conanfile.py` pins the version.
+
+`vendor/cs2-kit` is a submodule of the same repo, there so one IDE covers both. It
+is inert until `conan editable add vendor/cs2-kit`, and `ignore = all` keeps its
+pointer out of this repo's status.
 
 Each plugin lives under `plugins/<name>/` with its own `src/`, `configs/`,
 and `CMakeLists.txt` (`cs2_add_plugin(<name> ...)` + a root
