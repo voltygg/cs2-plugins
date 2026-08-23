@@ -53,7 +53,7 @@ private:
     CS2Kit::Runtime& _rt;
     std::array<SlotState, MaxSlots> _slots{};
     std::minstd_rand _random;
-    CS2Kit::Subscription _pump;
+    CS2Kit::Subscription _pollTimer;
 };
 
 }  // namespace Anticheat

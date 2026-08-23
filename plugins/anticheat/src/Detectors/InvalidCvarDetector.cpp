@@ -12,7 +12,7 @@ namespace Anticheat
 namespace
 {
 /** Pump cadence only; the per-slot deadlines do the real timing. */
-constexpr int64_t PumpIntervalMs = 1000;
+constexpr int64_t PollIntervalMs = 1000;
 
 /** A seed in [1, m-1], the only range std::minstd_rand accepts. */
 std::minstd_rand::result_type Seed()
@@ -24,11 +24,11 @@ std::minstd_rand::result_type Seed()
 
 void InvalidCvarDetector::Initialize()
 {
-    if (_pump)
+    if (_pollTimer)
         return;
 
     _random.seed(Seed());
-    _pump = _rt.Scheduler.Repeat(PumpIntervalMs, [this] {
+    _pollTimer = _rt.Scheduler.Repeat(PollIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::InvalidCvar))
             return;
         const double now = TimeUtils::MonotonicSeconds();

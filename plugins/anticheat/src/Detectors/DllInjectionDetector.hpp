@@ -45,7 +45,7 @@ private:
     CS2Kit::Runtime& _rt;
     DetectionDataManager& _detections;
     std::array<SlotState, MaxSlots> _slots{};
-    CS2Kit::Subscription _pump;
+    CS2Kit::Subscription _scanTimer;
 };
 
 }  // namespace Anticheat

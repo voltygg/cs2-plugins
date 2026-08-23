@@ -36,7 +36,7 @@ void BhopManager::Initialize()
     // Post-simulation is the placement that works: hooking before the player's RunCommand kept
     // missing the landing (still airborne at pre time, vertical velocity re-zeroed by the landing
     // inside that same command).
-    _autoHopPump = _rt.Scheduler.EveryFrame([this] {
+    _autoHopTimer = _rt.Scheduler.EveryFrame([this] {
         if (_mode != Mode::Grants)
             return;
         for (int slot = 0; slot < Core::MaxPlayers; ++slot)

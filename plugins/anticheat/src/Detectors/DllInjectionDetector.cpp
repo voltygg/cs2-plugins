@@ -14,7 +14,7 @@ namespace Anticheat
 namespace
 {
 /** Pump cadence only; the per-slot deadlines do the real timing. */
-constexpr int64_t PumpIntervalMs = 1000;
+constexpr int64_t ScanIntervalMs = 1000;
 /** First scan this long after full connect; retried once when no listener exists yet. */
 constexpr double DllInitialScanDelaySec = 10.0;
 /** Rescan cadence once the first scan succeeded. */
@@ -25,10 +25,10 @@ constexpr size_t DllEvidenceCharBudget = 700;
 
 void DllInjectionDetector::Initialize()
 {
-    if (_pump)
+    if (_scanTimer)
         return;
 
-    _pump = _rt.Scheduler.Repeat(PumpIntervalMs, [this] {
+    _scanTimer = _rt.Scheduler.Repeat(ScanIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::DllInjection))
             return;
 
