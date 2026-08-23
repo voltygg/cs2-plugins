@@ -9,7 +9,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .common import DEPLOY, load_server_env, repo_path
+from .common import DEPLOY, die, load_server_env, materialize_server_env, repo_path
 
 
 def cmd_matrix(args: argparse.Namespace) -> None:
@@ -43,9 +43,17 @@ def cmd_runtime_image(_args: argparse.Namespace) -> None:
 
 
 def cmd_package(args: argparse.Namespace) -> None:
-    from . import bundle
+    from . import bundle, inventory
 
-    bundle.package_plugin(args.plugin, args.platform, args.out)
+    if args.all:
+        plugins = inventory.used_plugins(inventory.load())
+    elif args.plugin:
+        plugins = [args.plugin]
+    else:
+        die("package needs a plugin name or --all")
+
+    for plugin in plugins:
+        bundle.package_plugin(plugin, args.platform, args.out)
 
 
 def cmd_render(args: argparse.Namespace) -> None:
@@ -58,14 +66,26 @@ def cmd_render(args: argparse.Namespace) -> None:
 
 
 def cmd_deploy(args: argparse.Namespace) -> None:
-    from . import remote
+    from . import inventory, remote
 
-    remote.deploy_server(
-        args.server,
-        args.package_dir,
-        args.runtime_image,
-        dry_run=args.dry_run,
-    )
+    if args.all:
+        servers = [server["id"] for server in inventory.active_servers(inventory.load())]
+    elif args.server:
+        servers = [args.server]
+    else:
+        die("deploy needs --server or --all")
+
+    # One image for the whole sweep, resolved once rather than per provider in YAML.
+    runtime_image = args.runtime_image or inventory.runtime_image(inventory.load())
+
+    for server_id in servers:
+        materialize_server_env(server_id)
+        remote.deploy_server(
+            server_id,
+            args.package_dir,
+            runtime_image,
+            dry_run=args.dry_run,
+        )
 
 
 def cmd_update(args: argparse.Namespace) -> None:
@@ -90,6 +110,36 @@ def cmd_rcon(args: argparse.Namespace) -> None:
     from . import rcon
 
     rcon.run_commands(args.commands, server_id=args.server, instance_name=args.instance)
+
+
+# Rebuilding the toolchain image is expensive, so both providers gate it on whether its
+# inputs moved. GitHub Actions can express that as a paths: filter; CircleCI cannot, and
+# reimplemented it as fifteen lines of git-diff plus `circleci-agent step halt`.
+TOOLCHAIN_INPUTS = (
+    "deploy/Dockerfile",
+    "conanfile.py",
+    "conan.lock",
+    ".circleci/config.yml",
+    ".github/workflows/build-toolchain.yml",
+)
+
+
+def cmd_toolchain_changed(args: argparse.Namespace) -> None:
+    """Exit 0 when this commit touched a toolchain input, 1 when it did not."""
+    import subprocess
+
+    revisions = subprocess.run(["git", "rev-parse", args.base], capture_output=True)
+    if revisions.returncode:
+        print(f"no {args.base}; treating the toolchain as changed")
+        raise SystemExit(0)
+
+    changed = subprocess.run(
+        ["git", "diff", "--name-only", args.base, "HEAD"],
+        check=True, text=True, capture_output=True,
+    ).stdout.split()
+    hits = sorted(set(changed) & set(TOOLCHAIN_INPUTS))
+    print(f"toolchain inputs changed: {' '.join(hits)}" if hits else "no toolchain input changes")
+    raise SystemExit(0 if hits else 1)
 
 
 def cmd_local(args: argparse.Namespace) -> None:
@@ -130,9 +180,10 @@ def build_parser() -> argparse.ArgumentParser:
     runtime = sub.add_parser("runtime-image", help="emit the configured server runtime image")
     runtime.set_defaults(func=cmd_runtime_image)
 
-    package = sub.add_parser("package", help="package one built plugin for Docker deploy")
-    package.add_argument("plugin")
+    package = sub.add_parser("package", help="package built plugins for Docker deploy")
+    package.add_argument("plugin", nargs="?")
     package.add_argument("platform", choices=("linux", "windows"), nargs="?", default="linux")
+    package.add_argument("--all", action="store_true", help="every plugin the inventory declares")
     package.add_argument("--out")
     package.set_defaults(func=cmd_package)
 
@@ -144,12 +195,18 @@ def build_parser() -> argparse.ArgumentParser:
     render.add_argument("--no-env", action="store_true", help="do not load server .env first")
     render.set_defaults(func=cmd_render)
 
-    deploy = sub.add_parser("deploy", help="render and deploy one server over SSH")
-    deploy.add_argument("--server", required=True)
+    deploy = sub.add_parser("deploy", help="render and deploy servers over SSH")
+    deploy.add_argument("--server")
+    deploy.add_argument("--all", action="store_true", help="every active inventory server")
     deploy.add_argument("--package-dir", default="package")
-    deploy.add_argument("--runtime-image")
+    deploy.add_argument("--runtime-image", help="default: the inventory's runtime image")
     deploy.add_argument("--dry-run", action="store_true")
     deploy.set_defaults(func=cmd_deploy)
+
+    toolchain = sub.add_parser("toolchain-changed",
+                               help="exit 0 if this commit touched a toolchain input")
+    toolchain.add_argument("--base", default="HEAD~1", help="revision to diff against")
+    toolchain.set_defaults(func=cmd_toolchain_changed)
 
     update = sub.add_parser("update", help="restart instances to pull the latest CS2 build")
     update.add_argument("--server", required=True)

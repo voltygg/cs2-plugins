@@ -28,12 +28,9 @@ executors:
           password: $GHCR_TOKEN
     resource_class: large
     environment:
+      # The rest of the ccache settings - the sloppiness flags the kit's PCH needs, the
+      # size cap, the base-dir rewrite - come from `cs2kit build`.
       CCACHE_DIR: /ccache
-      # pch_defines + depend mode are REQUIRED with the kit's PCH: without both,
-      # every PCH-using TU is a permanent ccache miss.
-      CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
-      CCACHE_DEPEND: "1"
-      CCACHE_MAXSIZE: 1G
   machine-docker:
     machine:
       image: ubuntu-2604:current
@@ -62,11 +59,7 @@ commands:
       - restore-ccache
       - run:
           name: Build Linux plugins
-          command: |
-            export CCACHE_BASEDIR="$PWD"
-            mkdir -p /ccache && ccache -z
-            cs2kit-build linux-steamrt-release
-            ccache -s -v || ccache -s  # -v needs ccache >= 4.4; image ships 4.2
+          command: mkdir -p /ccache && cs2kit build linux-steamrt-release
   ghcr-login:
     steps:
       - run:
@@ -108,20 +101,13 @@ jobs:
       - unless:
           condition: << pipeline.parameters.force-toolchain >>
           steps:
+            # GitHub Actions expresses this as a paths: filter; CircleCI cannot, so it
+            # asks the CLI, which owns the list of inputs both providers care about.
             - run:
                 name: Skip unless toolchain inputs changed
                 command: |
-                  if ! git rev-parse HEAD~1 >/dev/null 2>&1; then
-                    echo "No parent commit; building."
-                    exit 0
-                  fi
-                  if git diff --name-only HEAD~1 HEAD \
-                    | grep -qE '^(deploy/Dockerfile|conanfile\.py|conan\.lock|\.circleci/config\.yml)'; then
-                    echo "Toolchain inputs changed; building."
-                  else
-                    echo "No toolchain input changes; skipping."
-                    circleci-agent step halt
-                  fi
+                  pip3 install --quiet pyyaml
+                  python3 -m deploy.tools.cli toolchain-changed || circleci-agent step halt
       - ghcr-login
       - run:
           name: Build + push toolchain image (build stage)
@@ -142,12 +128,8 @@ jobs:
     steps:
       - build-plugins
       - run:
-          name: Package each declared plugin
-          command: |
-            pip3 install --quiet pyyaml  # inventory reader; not baked into the image
-            for plugin in $(python3 -m deploy.tools.cli plugins --format plain); do
-              python3 -m deploy.tools.cli package "$plugin" linux
-            done
+          name: Package every declared plugin
+          command: python3 -m deploy.tools.cli package --all linux
       - save-ccache
       - persist_to_workspace:
           root: .
@@ -198,37 +180,18 @@ jobs:
             mkdir -p ~/.ssh && chmod 700 ~/.ssh
             echo "$SSH_KEY_B64" | base64 -d > "$SSH_KEY_FILE"
             chmod 600 "$SSH_KEY_FILE"
-      # Sequential loop replaces the GHA fromJSON matrix (CircleCI has no
-      # dynamic matrices without dynamic-config machinery).
+      # `deploy --all` is the sequential stand-in for the GHA fromJSON matrix (CircleCI
+      # has no dynamic matrices without dynamic-config machinery). The per-server
+      # SERVER_ENV_<ID>_B64 lookup lives in the CLI, alongside the GHA-side SERVER_ENV
+      # it is the base64 twin of.
       - run:
-          name: Deploy each active server
+          name: Deploy the active servers
           command: |
             FILTER="<< pipeline.parameters.server >>"
-            if [ -n "$FILTER" ]; then
-              SERVERS=$(python3 -m deploy.tools.cli matrix --server "$FILTER" --format plain)
-            else
-              SERVERS=$(python3 -m deploy.tools.cli matrix --format plain)
-            fi
-            RUNTIME_IMAGE=$(python3 -m deploy.tools.cli runtime-image)
-            echo "Servers: $SERVERS"
-            echo "Runtime image: $RUNTIME_IMAGE"
-
-            for id in $SERVERS; do
-              # Per-server env content, e.g. SERVER_ENV_BOX_A_B64 for box-a
-              # (the GHA per-environment SERVER_ENV secret, base64-encoded).
-              var="SERVER_ENV_$(echo "$id" | tr '[:lower:]-' '[:upper:]_')_B64"
-              env_b64=$(printenv "$var" || true)
-              if [ -z "$env_b64" ]; then
-                echo "ERROR: $var is empty for server '$id' (cs2-deploy context)" >&2
-                exit 1
-              fi
-              mkdir -p "deploy/secrets/servers/$id"
-              echo "$env_b64" | base64 -d > "deploy/secrets/servers/$id/.env"
-
-              ARGS=(deploy --server "$id" --runtime-image "$RUNTIME_IMAGE")
-              if [ "<< pipeline.parameters.dry-run >>" = "true" ]; then ARGS+=(--dry-run); fi
-              python3 -m deploy.tools.cli "${ARGS[@]}"
-            done
+            ARGS=(deploy)
+            if [ -n "$FILTER" ]; then ARGS+=(--server "$FILTER"); else ARGS+=(--all); fi
+            if [ "<< pipeline.parameters.dry-run >>" = "true" ]; then ARGS+=(--dry-run); fi
+            python3 -m deploy.tools.cli "${ARGS[@]}"
 
 workflows:
   ci:

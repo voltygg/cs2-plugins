@@ -20,15 +20,15 @@ dependencies = [
 package = false
 
 [tool.poe.tasks]
-build = "cs2kit-build"
-build-linux = "cs2kit-build linux-steamrt-release"
-bootstrap = "cs2kit-bootstrap"
-new-plugin = "cs2kit-new-plugin"
+build = "cs2kit build"
+build-linux = "cs2kit build linux-steamrt-release"
+bootstrap = "cs2kit bootstrap"
+new-plugin = "cs2kit new-plugin"
 deploy = "python -m deploy.tools.cli local"
 start-server = "python scripts/start_server.py"
 lint = "ruff check ."
-format = "cs2kit-format plugins"
-format-check = "cs2kit-format --check plugins"
+format = "cs2kit format plugins"
+format-check = "cs2kit format --check plugins"
 deploy-package = "python -m deploy.tools.cli package"
 deploy-render = "python -m deploy.tools.cli render"
 deploy-server = "python -m deploy.tools.cli deploy"

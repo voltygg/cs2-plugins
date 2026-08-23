@@ -23,12 +23,10 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     env:
+      # The rest of the ccache settings - the sloppiness flags the kit's PCH needs, the
+      # size cap, the base-dir rewrite - are applied by `cs2kit build`, which is where
+      # the PCH they compensate for is defined.
       CCACHE_DIR: /ccache
-      # pch_defines + depend mode are REQUIRED with the kit's PCH: without both,
-      # every PCH-using TU is a permanent ccache miss.
-      CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
-      CCACHE_DEPEND: "1"
-      CCACHE_MAXSIZE: 1G
     steps:
       - uses: actions/checkout@v7
 
@@ -46,19 +44,10 @@ jobs:
             ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-
             ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-
 
-      - name: Zero ccache stats
-        run: ccache -z
-
+      # Prints ccache statistics either side of the build; a warm rerun of an
+      # unchanged tree should show >95% hits.
       - name: Build (configure -> build)
-        run: |
-          # In-container path for base-dir rewriting (github.workspace is host path).
-          export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
-          cs2kit-build linux-steamrt-release --no-test
-
-      # Warm reruns of an unchanged tree should show >95% hits; a collapse means
-      # the CCACHE_* env above regressed.
-      - name: ccache stats
-        run: ccache -s -v || ccache -s  # -v needs ccache >= 4.4; image ships 4.2
+        run: cs2kit build linux-steamrt-release --no-test
 
       - name: Test
         run: ctest --preset linux-steamrt-release

@@ -40,7 +40,7 @@ Conan profiles and the remote are installed once with
 `conan config install https://github.com/voltygg/cs2-kit.git -sf conan`
 (`uv run poe bootstrap` does it). Builds precompile `<CS2Kit/Api.hpp>` per plugin
 (extend with `cs2_add_plugin(... PCH_HEADERS ...)`, disable with
-`-DCS2KIT_DISABLE_PCH=ON`); `cs2kit-build --no-test` skips the ctest step (CI runs
+`-DCS2KIT_DISABLE_PCH=ON`); `cs2kit build --no-test` skips the ctest step (CI runs
 tests separately). Unit tests use doctest (`test_requires` in conanfile.py) and
 live in `plugins/<name>/tests/`, wired by the kit's `cs2_add_tests()`. One ctest
 entry per case, so TEST_CASE names must not contain `[`, `]` or `;` (configure

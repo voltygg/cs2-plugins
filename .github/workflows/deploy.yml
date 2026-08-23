@@ -31,31 +31,25 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       servers: ${{ steps.resolve.outputs.servers }}
-      plugins: ${{ steps.resolve.outputs.plugins }}
       runtime_image: ${{ steps.resolve.outputs.runtime_image }}
     steps:
       - uses: actions/checkout@v7
 
+      # A bare runner, so the inventory reader's one dependency is not present.
       - name: Install inventory deps
         run: sudo apt-get update && sudo apt-get install -y python3-yaml
 
+      # Only the matrix has to come out as a value: it feeds strategy.matrix, which is
+      # the one thing the deploy job cannot resolve for itself.
       - name: Resolve inventory
         id: resolve
         run: |
           FILTER='${{ github.event.inputs.server }}'
-          if [ -n "$FILTER" ]; then
-            SERVERS=$(python3 -m deploy.tools.cli matrix --server "$FILTER")
-          else
-            SERVERS=$(python3 -m deploy.tools.cli matrix)
-          fi
-          PLUGINS=$(python3 -m deploy.tools.cli plugins)
+          SERVERS=$(python3 -m deploy.tools.cli matrix ${FILTER:+--server "$FILTER"})
           RUNTIME_IMAGE=$(python3 -m deploy.tools.cli runtime-image)
-
           echo "servers=$SERVERS" >> "$GITHUB_OUTPUT"
-          echo "plugins=$PLUGINS" >> "$GITHUB_OUTPUT"
           echo "runtime_image=$RUNTIME_IMAGE" >> "$GITHUB_OUTPUT"
           echo "Servers: $SERVERS"
-          echo "Plugins: $PLUGINS"
           echo "Runtime image: $RUNTIME_IMAGE"
 
   build:
@@ -81,24 +75,14 @@ jobs:
             ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-
             ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-
 
+      # The rest of the ccache settings come from `cs2kit build`; see ci.yml.
       - name: Build Linux plugins
         env:
           CCACHE_DIR: /ccache
-          # pch_defines + depend mode are REQUIRED with the kit's PCH: without
-          # both, every PCH-using TU is a permanent ccache miss.
-          CCACHE_SLOPPINESS: pch_defines,time_macros,locale,include_file_ctime,include_file_mtime
-          CCACHE_DEPEND: "1"
-          CCACHE_MAXSIZE: 1G
-        run: |
-          # In-container path for base-dir rewriting (github.workspace is host path).
-          export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
-          cs2kit-build linux-steamrt-release
+        run: cs2kit build linux-steamrt-release
 
-      - name: Package each declared plugin
-        run: |
-          for plugin in $(echo '${{ needs.prepare.outputs.plugins }}' | python3 -c "import json,sys; print(' '.join(json.load(sys.stdin)))"); do
-            python3 -m deploy.tools.cli package "$plugin" linux
-          done
+      - name: Package every declared plugin
+        run: python3 -m deploy.tools.cli package --all linux
 
       - name: Upload plugin bundles
         uses: actions/upload-artifact@v7
@@ -157,9 +141,7 @@ jobs:
           path: package
 
       - name: Install deploy deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-yaml python3-dotenv rsync
+        run: sudo apt-get update && sudo apt-get install -y python3-yaml python3-dotenv rsync
 
       - name: Configure SSH
         run: |

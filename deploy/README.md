@@ -136,11 +136,16 @@ named `SERVER_ENV` on the environment matching the server's `environment:`:
 cp deploy/secrets/servers/box-a/.env.example /tmp/box-a.env
 ```
 
-CI writes `SERVER_ENV` to `deploy/secrets/servers/<id>/.env` at deploy time. For
-local/manual deploys, keep a gitignored `.env` in that dir instead. In GitHub
-Actions, keep the deploy private key in the separate `SSH_KEY` Environment
-secret; `SERVER_ENV` is only the env-file content. Local `.env` files should use
-`SSH_KEY_FILE=/path/to/key`, not `SSH_KEY`.
+`cli deploy` writes that content to `deploy/secrets/servers/<id>/.env` before it
+runs, so neither provider's YAML has to know the path. It reads
+`SERVER_ENV_<ID>_B64` first - CircleCI env vars cannot hold newlines, so its
+context carries the base64 twin of the same secret - then `SERVER_ENV`, and
+finally an existing file, which is the local case. Keep a gitignored `.env` in
+that directory for local/manual deploys.
+
+The deploy private key is separate: `SSH_KEY` (GitHub Environment secret) or
+`SSH_KEY_B64` (CircleCI context). `SERVER_ENV` is only the env-file content.
+Local `.env` files should use `SSH_KEY_FILE=/path/to/key`, not `SSH_KEY`.
 
 ## Deploy
 
