@@ -2,6 +2,7 @@
 
 #include <CS2Kit/Core/SlotThrottle.hpp>
 #include <cstdint>
+#include <optional>
 #include <string_view>
 
 namespace CS2Kit
@@ -76,6 +77,11 @@ private:
     // Once per minute per player: the voice hook fires every keypress and chat spam produces
     // dozens of say events, so unthrottled notices would out-spam the spam itself.
     static constexpr int64_t MuteNoticeIntervalSec = 60;
+
+    /** The red "you are muted" line plus its optional reason, for either mute kind. The two
+     *  entities share ExpiresAt/Reason, so the notice differs only in which key names it. */
+    template <class TMute>
+    void ReplyMuteNotice(int slot, const char* noticeKey, const std::optional<TMute>& mute);
 
     CS2Kit::SlotThrottle _voiceMuteNotice{MuteNoticeIntervalSec};
     CS2Kit::SlotThrottle _textMuteNotice{MuteNoticeIntervalSec};

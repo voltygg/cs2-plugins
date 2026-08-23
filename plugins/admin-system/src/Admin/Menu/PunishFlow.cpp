@@ -126,8 +126,13 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
                           [&app](int slot) { return app.Runtime.Translations.Get("duration.customPrompt", slot); },
                           [](const PendingPunishment& p) { return IsTimed(p.Type); })
         ->AddOptionsStep([stepTitle](int slot) { return stepTitle(slot, "punish.selectReason"); },
-                         [&app](int) { return app.Config.GetPunishments().reasonPresets; },
-                         [](PendingPunishment& p, std::string reason) { p.Reason = std::move(reason); },
+                         [&app](int) {
+                             std::vector<PunishFlowT::Option> presets;
+                             for (const auto& reason : app.Config.GetPunishments().reasonPresets)
+                                 presets.emplace_back(reason, reason);
+                             return presets;
+                         },
+                         [](PendingPunishment& p, const std::string& label, const std::string&) { p.Reason = label; },
                          [&app](int slot) { return app.Runtime.Translations.Get("punish.customReason", slot); },
                          [&app](int slot) { return app.Runtime.Translations.Get("punish.customReasonPrompt", slot); })
         ->Start(adminSlot);

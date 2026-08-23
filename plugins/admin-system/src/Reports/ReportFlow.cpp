@@ -9,7 +9,6 @@
 #include <CS2Kit/Core/StringUtils.hpp>
 #include <CS2Kit/Core/Translations.hpp>
 #include <CS2Kit/Menu/Flow.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Runtime.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
@@ -21,7 +20,6 @@
 #include <vector>
 
 using CS2Kit::Core::StringUtils;
-using CS2Kit::Menu::MenuBuilder;
 
 namespace AdminSystem::Reports
 {
@@ -61,44 +59,6 @@ std::optional<std::string> ValidatePending(App& app, int slot, const PendingRepo
     return std::nullopt;
 }
 
-/** Hand-built rather than Flow::AddOptionsStep so each row carries its stable `code` alongside the
- *  localized label, instead of recovering one from the other. */
-std::shared_ptr<CS2Kit::MenuView> BuildReasonStep(App& app, int slot, ReportFlowT& flow)
-{
-    auto self = flow.shared_from_this();
-    auto& tr = app.Runtime.Translations;
-    const auto& config = app.Config.GetReports();
-
-    MenuBuilder builder(tr.Get("report.selectReason", slot));
-    for (const auto& reason : config.reasons)
-    {
-        std::string label = ReasonLabel(app, reason, slot);
-        builder.AddButton(label, [self, code = reason.code, label](int pickedBy) {
-            self->State().ReasonCode = code;
-            self->State().ReasonText = label;
-            self->Advance(pickedBy);
-        });
-    }
-
-    if (config.allowCustomReason)
-    {
-        builder.AddInput(
-            tr.Get("report.customReason", slot), tr.Get("report.customReasonPrompt", slot),
-            [](int) { return std::string(); },
-            [self](int typedBy, std::string_view text) {
-                std::string value = StringUtils::Trim(std::string(text));
-                if (value.empty())
-                    return false;  // re-prompt
-                self->State().ReasonCode = CustomReasonCode;
-                self->State().ReasonText = std::move(value);
-                self->Advance(typedBy);
-                return true;
-            });
-    }
-
-    return builder.Build();
-}
-
 void Submit(App& app, int reporterSlot, PendingReport& pending)
 {
     auto* reporter = app.Runtime.Players.GetPlayerBySlot(reporterSlot);
@@ -128,7 +88,24 @@ void StartReportFlow(App& app, int reporterSlot, int targetSlot)
     ReportFlowT::Create(
         PendingReport{.TargetSlot = targetSlot, .TargetSteamId = target->GetSteamID(), .TargetName = target->GetName()})
         ->OnValidate([&app](int slot, const PendingReport& p) { return ValidatePending(app, slot, p); })
-        ->AddStep([&app](int slot, ReportFlowT& flow) { return BuildReasonStep(app, slot, flow); })
+        ->AddOptionsStep([&app](int slot) { return app.Runtime.Translations.Get("report.selectReason", slot); },
+                         [&app](int slot) {
+                             std::vector<ReportFlowT::Option> reasons;
+                             for (const auto& reason : app.Config.GetReports().reasons)
+                                 reasons.emplace_back(ReasonLabel(app, reason, slot), reason.code);
+                             return reasons;
+                         },
+                         [](PendingReport& p, const std::string& label, const std::string& code) {
+                             p.ReasonText = label;
+                             p.ReasonCode = code;
+                         },
+                         [&app](int slot) {
+                             return app.Config.GetReports().allowCustomReason
+                                        ? app.Runtime.Translations.Get("report.customReason", slot)
+                                        : std::string();
+                         },
+                         [&app](int slot) { return app.Runtime.Translations.Get("report.customReasonPrompt", slot); },
+                         CustomReasonCode)
         ->WithConfirm([&app](int slot) { return app.Runtime.Translations.Get("report.confirmTitle", slot); },
                       [&app](int slot, const PendingReport& pending) {
                           auto& tr = app.Runtime.Translations;

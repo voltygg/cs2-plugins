@@ -34,6 +34,23 @@ std::string MuteExpiryText(CS2Kit::Translations& tr, int64_t expiresAt, int slot
 
 }  // namespace
 
+template <class TMute>
+void PlayerChat::ReplyMuteNotice(int slot, const char* noticeKey, const std::optional<TMute>& mute)
+{
+    auto& tr = _rt.Translations;
+    if (!mute)
+    {
+        _chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get(noticeKey, slot)));
+        return;
+    }
+
+    _chat.Reply(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get(noticeKey, slot), ChatColors::Default,
+                                  ChatColors::Olive, MuteExpiryText(tr, mute->ExpiresAt, slot)));
+    if (!mute->Reason.empty())
+        _chat.Reply(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
+                                      ChatColors::Default, mute->Reason));
+}
+
 void PlayerChat::RebroadcastAdminChat(const Player* admin, std::string_view message, bool /*teamOnly*/)
 {
     if (!admin)
@@ -82,23 +99,7 @@ bool PlayerChat::HandleSay(Player* player, std::string_view message, bool isSayT
     {
         int slot = player->GetSlot();
         if (_textMuteNotice.TryAcquire(slot, TimeUtils::Now()))
-        {
-            auto mute = _punishments.GetActiveTextMute(steamId);
-            auto& tr = _rt.Translations;
-            if (mute)
-            {
-                _chat.Reply(slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.text", slot),
-                                              ChatColors::Default, ChatColors::Olive,
-                                              MuteExpiryText(tr, mute->ExpiresAt, slot)));
-                if (!mute->Reason.empty())
-                    _chat.Reply(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
-                                                  ChatColors::Default, mute->Reason));
-            }
-            else
-            {
-                _chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.text", slot)));
-            }
-        }
+            ReplyMuteNotice(slot, "muteNotice.text", _punishments.GetActiveTextMute(steamId));
         return true;
     }
 
@@ -121,21 +122,7 @@ void PlayerChat::NotifyVoiceMuted(Player* player)
     if (!_voiceMuteNotice.TryAcquire(slot, TimeUtils::Now()))
         return;
 
-    auto mute = _punishments.GetActiveVoiceMute(player->GetSteamID());
-    auto& tr = _rt.Translations;
-    if (mute)
-    {
-        _chat.Reply(slot,
-                    std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot), ChatColors::Default,
-                                ChatColors::Olive, MuteExpiryText(tr, mute->ExpiresAt, slot)));
-        if (!mute->Reason.empty())
-            _chat.Reply(slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
-                                          ChatColors::Default, mute->Reason));
-    }
-    else
-    {
-        _chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot)));
-    }
+    ReplyMuteNotice(slot, "muteNotice.voice", _punishments.GetActiveVoiceMute(player->GetSteamID()));
 }
 
 }  // namespace AdminSystem::Core
