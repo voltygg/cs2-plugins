@@ -138,13 +138,14 @@ wheels = [
 
 [[package]]
 name = "cs2-kit"
-version = "1.0.0"
-source = { git = "https://github.com/voltygg/cs2-kit.git?rev=main#429ada6de63ac17a8ce3f4b60ed488d4ff4c6e7a" }
+version = "1.1.0"
+source = { git = "https://github.com/voltygg/cs2-kit.git?rev=main#ab43d8670d6a6209d15f9b8c70732f16b3fdcef1" }
 dependencies = [
     { name = "clang-format" },
     { name = "cmake" },
     { name = "conan" },
     { name = "ninja" },
+    { name = "pyyaml" },
 ]
 
 [[package]]

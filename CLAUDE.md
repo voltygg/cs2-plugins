@@ -146,8 +146,10 @@ not edit them or add them to the build.
   `camelCase` locals/params, `PascalCase` constants.
 - Use `std::format`, designated initializers, and `int64_t` for SteamIDs.
 - Main-thread only. Do not add threads or mutexes in game code; the only
-  threads/mutexes live inside the kit's `PostgresDatabase` worker and
-  `HttpClient`, both of which replay completions on the game thread.
+  threads/mutexes live inside the kit's `PostgresDatabase` worker, `HttpClient`,
+  and the deferred-log queue those two feed - all three replay on the game
+  thread. Log from a worker with the normal `Log::` calls; `Core::Emit` queues
+  the line rather than letting a worker reach tier0.
 - Database access is async-first: `Query`/`Exec` with cache-first managers
   during gameplay; `QueryBlocking`/`WithConnection` only at load time
   (migrations, admin loads, `!admin_reload`).

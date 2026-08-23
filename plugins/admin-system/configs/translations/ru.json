@@ -137,6 +137,8 @@
   "cmd": {
     "badDuration": "Неверная длительность. Используйте минуты (напр. 30), 30s/5m/2h/7d или 'perm'.",
     "badSteamId": "'{token}' - некорректный SteamID64.",
+    "badNumber": "'{token}' не является числом.",
+    "noPermission": "У вас нет прав на эту команду.",
     "kickSuccess": "Кикнут {name}.",
     "banSuccess": "Забанен {name}.",
     "banFailed": "Не удалось выдать бан (ошибка базы данных).",
