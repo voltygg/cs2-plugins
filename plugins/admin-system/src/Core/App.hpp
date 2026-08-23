@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Admin/Access.hpp"
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/FreezeManager.hpp"
@@ -9,6 +10,7 @@
 #include "AdminActionsService.hpp"
 #include "ChatService.hpp"
 #include "Config.hpp"
+#include "PlayerChat.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/EffectManager.hpp>
@@ -22,12 +24,16 @@ namespace AdminSystem
  * Everything this plugin owns for one Load/Unload cycle. The plugin creates it in OnLoad and
  * drops it in OnUnload, so no state survives a `meta reload`.
  *
- * The managers form a cycle - admin state gates freezing and freezing gates admin state - so
- * each takes this container by reference rather than an enumerated list of siblings. That keeps
- * the dependency in the constructor signature and out of process-global state; commands, menus
- * and effects, which have no such cycle, are handed the specific managers they use.
+ * Every member takes the collaborators it actually uses, so this list is the whole object graph
+ * and reading a constructor tells you what a manager can reach. Declaration order is dependency
+ * order; destruction is the reverse, which is what makes the subscriptions and the database stop
+ * before the things their callbacks touch.
  *
- * Members are declared in dependency order and destroyed in reverse.
+ * Two splits exist to keep that order possible at all. @ref Admin::Access composes the flag
+ * store and the freeze set instead of letting them call each other, and @ref Core::PlayerChat
+ * holds the inbound chat rules that read admin/punishment state while @ref Core::ChatService
+ * stays pure output. Free functions (menus, commands, actions) still take this container - they
+ * are leaves, and enumerating five managers per builder would cost more than it explains.
  */
 struct App
 {
@@ -49,15 +55,18 @@ struct App
     Core::ConfigManager Config;
     CS2Kit::PostgresDatabase Db;
     Database::PlayerRepository PlayerRepo{Db};
-    Admin::AdminManager Admins{*this};
-    Admin::FreezeManager Freeze{*this};
-    Punishments::PunishmentManager Punishments{*this};
-    Core::ChatService Chat{*this};
-    Reports::ReportManager Reports{*this};
+    Core::ChatService Chat{Runtime, Config};
+    Admin::AdminManager Admins{Db, Config};
+    Admin::FreezeManager Freeze{Db, Config, Runtime, Chat, Admins};
+    /** The permission gate: granted flags minus abuse-protection freezes. Ask this, not Admins. */
+    Admin::Access Access{Admins, Freeze};
+    Punishments::PunishmentManager Punishments{Db, Config, Runtime, Chat};
+    Core::PlayerChat PlayerChat{Runtime, Config, Chat, Admins, Punishments};
+    Reports::ReportManager Reports{Db, Config, Runtime};
     CS2Kit::EffectManager Effects{Runtime.Scheduler};
-    Admin::CheatCheck::CheatCheckManager CheatCheck{*this};
+    Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Config, Chat};
     /** Published to other plugins in Start; withdrawn before these managers die. */
-    Core::AdminActionsService AdminActions{*this};
+    Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
     /** Load-time migration outcome, surfaced in the `admin_status` db section. */
     CS2Kit::MigrationResult Migration;
 

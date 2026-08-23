@@ -1,7 +1,5 @@
 #include "ServerRepository.hpp"
 
-#include "../../Core/App.hpp"
-
 #include <CS2Kit/Api.hpp>
 
 namespace AdminSystem::Database

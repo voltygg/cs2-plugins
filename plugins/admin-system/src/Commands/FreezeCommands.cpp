@@ -40,7 +40,7 @@ void RegisterFreezeCommands(CS2Kit::CommandManager& commands, App& app)
                 if (targetSteamId == c.Caller->GetSteamID())
                     return c.Fail("cmd.freezeSelf");
 
-                if (!app.Admins.CanTarget(c.Caller->GetSteamID(), targetSteamId))
+                if (!app.Access.CanTarget(c.Caller->GetSteamID(), targetSteamId))
                     return c.Fail("cmd.freezeNoOutrank", {{"name", targetName}});
 
                 if (app.Freeze.IsFrozen(targetSteamId))

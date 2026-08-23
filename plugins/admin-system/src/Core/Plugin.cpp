@@ -87,7 +87,7 @@ void AdminSystemPlugin::OnPlayerDisconnect(Player* player)
 
 bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)
 {
-    return _app->Chat.HandleSay(player, std::string(message), teamChat);
+    return _app->PlayerChat.HandleSay(player, std::string(message), teamChat);
 }
 
 bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen)
@@ -100,7 +100,7 @@ bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSl
             {
                 // Tell the muted player they're being suppressed; ChatService rate-limits this
                 // so the per-receiver explosion of hook calls collapses to one chat line.
-                _app->Chat.NotifyVoiceMuted(sender);
+                _app->PlayerChat.NotifyVoiceMuted(sender);
                 RETURN_META_VALUE_NEWPARAMS(MRES_HANDLED, false, &IVEngineServer2::SetClientListening,
                                             (iReceiver, iSender, false));
             }

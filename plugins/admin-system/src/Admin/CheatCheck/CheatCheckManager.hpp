@@ -12,10 +12,16 @@
 #include <optional>
 #include <string>
 
-namespace AdminSystem
+namespace CS2Kit
 {
-struct App;
+class Runtime;
 }
+
+namespace AdminSystem::Core
+{
+class ChatService;
+class ConfigManager;
+}  // namespace AdminSystem::Core
 
 namespace AdminSystem::Admin::CheatCheck
 {
@@ -30,9 +36,9 @@ constexpr int MaxSlots = CS2Kit::Sdk::MaxPlayers;
 class CheatCheckManager
 {
 public:
-    explicit CheatCheckManager(App& app) : _app(app) {}
-
-    CheatCheckManager() = default;
+    CheatCheckManager(CS2Kit::Runtime& runtime, const Core::ConfigManager& config, Core::ChatService& chat)
+        : _rt(runtime), _config(config), _chat(chat)
+    {}
 
     enum class SubmitResult
     {
@@ -60,7 +66,9 @@ public:
     void CancelAll();
 
 private:
-    App& _app;
+    CS2Kit::Runtime& _rt;
+    const Core::ConfigManager& _config;
+    Core::ChatService& _chat;
 
     void Tick(int targetSlot);
     void Expire(int targetSlot);

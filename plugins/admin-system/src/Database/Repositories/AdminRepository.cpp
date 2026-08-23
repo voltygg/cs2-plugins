@@ -1,7 +1,5 @@
 #include "AdminRepository.hpp"
 
-#include "../../Core/App.hpp"
-
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Database/Api.hpp>
 #include <pqxx/array>

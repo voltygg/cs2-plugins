@@ -8,9 +8,19 @@
 #include <optional>
 #include <string>
 
-namespace AdminSystem
+namespace CS2Kit
 {
-struct App;
+class Runtime;
+}
+
+namespace CS2Kit::Database
+{
+class PostgresDatabase;
+}
+
+namespace AdminSystem::Core
+{
+class ConfigManager;
 }
 
 namespace AdminSystem::Reports
@@ -43,9 +53,9 @@ struct ReportGate
 class ReportManager
 {
 public:
-    explicit ReportManager(App& app) : _app(app) {}
-
-    ReportManager() = default;
+    ReportManager(CS2Kit::Database::PostgresDatabase& db, const Core::ConfigManager& config, CS2Kit::Runtime& runtime)
+        : _db(db), _config(config), _rt(runtime)
+    {}
 
     /** Enabled/cooldown gate - the `!report` entry check, before a target is chosen. */
     ReportGate CanReport(int64_t reporterSteamId) const;
@@ -62,7 +72,9 @@ public:
                 const std::string& reasonText, std::function<void(bool ok)> onDone);
 
 private:
-    App& _app;
+    CS2Kit::Database::PostgresDatabase& _db;
+    const Core::ConfigManager& _config;
+    CS2Kit::Runtime& _rt;
 
     /** Both CanReport overloads, parameterized by @p now so a submit gates and stamps from one
      *  clock read. @p targetSteamId engages the per-target duplicate window. */

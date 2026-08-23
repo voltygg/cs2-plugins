@@ -1,6 +1,5 @@
 #include "CheatCheckView.hpp"
 
-#include "../../Core/App.hpp"
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Config.hpp"
 
@@ -51,14 +50,14 @@ PanelState PanelStateFor(const PendingCheck& pc)
 
 }  // namespace
 
-void RenderPanel(App& app, int slot, const PendingCheck& pc)
+void RenderPanel(CS2Kit::Runtime& rt, const Core::ConfigManager& config, int slot, const PendingCheck& pc)
 {
-    if (!app.Runtime.Players.GetPlayerBySlot(slot))
+    if (!rt.Players.GetPlayerBySlot(slot))
     {
         return;
     }
 
-    auto& tr = app.Runtime.Translations;
+    auto& tr = rt.Translations;
 
     int64_t remain = pc.DeadlineSec - TimeUtils::Now();
     int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
@@ -85,7 +84,7 @@ void RenderPanel(App& app, int slot, const PendingCheck& pc)
         break;
     }
 
-    const auto& cfg = app.Config.GetCheatCheck();
+    const auto& cfg = config.GetCheatCheck();
 
     // Operator-configured (trusted) banner image rendered atop the panel; CS2 fetches it client-side.
     std::string html;
@@ -109,13 +108,13 @@ void RenderPanel(App& app, int slot, const PendingCheck& pc)
         html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick", slot));
     }
 
-    app.Runtime.Messages.SendCenterHtml(slot, html);
+    rt.Messages.SendCenterHtml(slot, html);
 }
 
-void Render(App& app, int slot, const PendingCheck& pc)
+void Render(CS2Kit::Runtime& rt, const Core::ConfigManager& config, Core::ChatService& chat, int slot,
+            const PendingCheck& pc)
 {
-    auto& tr = app.Runtime.Translations;
-    auto& chat = app.Chat;
+    auto& tr = rt.Translations;
 
     chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle", slot)));
 
@@ -138,7 +137,7 @@ void Render(App& app, int slot, const PendingCheck& pc)
         break;
     }
 
-    RenderPanel(app, slot, pc);
+    RenderPanel(rt, config, slot, pc);
 }
 
 }  // namespace AdminSystem::Admin::CheatCheck::View

@@ -7,9 +7,14 @@
 #include <string>
 #include <unordered_map>
 
-namespace AdminSystem
+namespace CS2Kit::Database
 {
-struct App;
+class PostgresDatabase;
+}
+
+namespace AdminSystem::Core
+{
+class ConfigManager;
 }
 
 namespace AdminSystem::Admin
@@ -31,16 +36,18 @@ struct AdminChatStyle
 };
 
 /**
- * Central authority for admin permissions, flag resolution, and immunity checks.
- * Admins are loaded from JSON config and/or database. Flags are resolved into
- * uint32_t bitmasks for O(1) permission checks ('a'=bit0 ... 'z'=bit25).
+ * Owns admin records: flag resolution, immunity, and chat styling. Admins are loaded from the
+ * database and their flags resolved into uint32_t bitmasks for O(1) checks ('a'=bit0 ... 'z'=bit25).
+ *
+ * The permission answers here are the admin's *granted* flags and nothing else. Abuse-protection
+ * freezes are layered on top by @ref Access, which is what command, menu and action code asks -
+ * keeping the freeze gate out of here is what breaks the AdminManager/FreezeManager cycle.
  */
 class AdminManager
 {
 public:
-    explicit AdminManager(App& app) : _app(app) {}
-
-    AdminManager() = default;
+    AdminManager(CS2Kit::Database::PostgresDatabase& db, const Core::ConfigManager& config) : _db(db), _config(config)
+    {}
 
     bool LoadAdmins();
     bool LoadGroups();
@@ -57,11 +64,6 @@ public:
      */
     bool CanTarget(int64_t adminSteamId, int64_t targetSteamId);
 
-    /** True if the admin both holds @p flag and outranks the target (HasPermission && CanTarget). */
-    bool CanActOn(int64_t adminSteamId, int64_t targetSteamId, Permission flag)
-    {
-        return HasPermission(adminSteamId, flag) && CanTarget(adminSteamId, targetSteamId);
-    }
     void AddAdmin(const Database::Admin& admin);
     void AddGroup(const Database::AdminGroup& group);
     void RemoveAdmin(int64_t steamId);
@@ -99,7 +101,8 @@ public:
     }
 
 private:
-    App& _app;
+    CS2Kit::Database::PostgresDatabase& _db;
+    const Core::ConfigManager& _config;
 
     /** True if a resolved bitmask carries @p flag, or the root flag ('z') that grants everything. */
     static bool HasBit(uint32_t resolved, char flag)

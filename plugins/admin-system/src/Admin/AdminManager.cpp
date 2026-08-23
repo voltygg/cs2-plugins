@@ -1,6 +1,5 @@
 #include "AdminManager.hpp"
 
-#include "../Core/App.hpp"
 #include "../Core/Config.hpp"
 #include "../Database/Repositories/AdminRepository.hpp"
 #include "../Database/Repositories/ServerRepository.hpp"
@@ -24,7 +23,7 @@ bool AdminManager::LoadAdmins()
 {
     try
     {
-        AdminRepository repo{_app.Db};
+        AdminRepository repo{_db};
         auto admins = repo.FindAll();
 
         _admins.clear();
@@ -39,8 +38,8 @@ bool AdminManager::LoadAdmins()
         // Merge this server's admin_server_groups grants into the in-memory Groups vectors so
         // flag/immunity/chat-style resolution below sees the effective per-server set. Grants
         // for unknown admins are skipped, like unknown group names in admins.groups.
-        Db::AdminServerGroupRepository serverGroupRepo{_app.Db};
-        for (auto& [steamId, groupNames] : serverGroupRepo.FindByServerTag(_app.Config.GetServer().tag))
+        Db::AdminServerGroupRepository serverGroupRepo{_db};
+        for (auto& [steamId, groupNames] : serverGroupRepo.FindByServerTag(_config.GetServer().tag))
         {
             auto it = _admins.find(steamId);
             if (it == _admins.end())
@@ -72,7 +71,7 @@ bool AdminManager::LoadGroups()
 {
     try
     {
-        AdminGroupRepository repo{_app.Db};
+        AdminGroupRepository repo{_db};
         auto groups = repo.FindAll();
 
         _groups.clear();
@@ -115,20 +114,12 @@ const Database::Admin* AdminManager::GetAdmin(int64_t steamId)
 
 bool AdminManager::HasPermission(int64_t steamId, char flag)
 {
-    // Abuse-protection: a frozen admin is denied everything. Every permission surface
-    // (commands, menu, actions) funnels through these three methods, so this is the one gate.
-    if (_app.Freeze.IsFrozen(steamId))
-        return false;
-
     auto it = _resolvedFlags.find(steamId);
     return it != _resolvedFlags.end() && HasBit(it->second, flag);
 }
 
 bool AdminManager::HasAllPermissions(int64_t steamId, const std::string& flags)
 {
-    if (_app.Freeze.IsFrozen(steamId))
-        return false;
-
     auto it = _resolvedFlags.find(steamId);
     if (it == _resolvedFlags.end())
         return false;
@@ -144,9 +135,6 @@ bool AdminManager::HasAllPermissions(int64_t steamId, const std::string& flags)
 
 bool AdminManager::HasAnyPermission(int64_t steamId, const std::string& flags)
 {
-    if (_app.Freeze.IsFrozen(steamId))
-        return false;
-
     auto it = _resolvedFlags.find(steamId);
     if (it == _resolvedFlags.end())
         return false;
@@ -246,7 +234,7 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
     }
     else
     {
-        const auto& fallback = _app.Config.GetChat();
+        const auto& fallback = _config.GetChat();
         style.Prefix = fallback.fallbackPrefix;
         style.PrefixColor = fallback.fallbackPrefixColor;
         style.NameColor = fallback.fallbackNameColor;
@@ -274,7 +262,7 @@ bool AdminManager::UpdateChatStyle(int64_t steamId, bool displayPrefix, const st
         return false;
 
     // Cache-first: the next chat line uses the new style immediately; the persist rides the worker.
-    Database::AdminRepository{_app.Db}.UpdateChatStyle(steamId, displayPrefix, nameColor, messageColor);
+    Database::AdminRepository{_db}.UpdateChatStyle(steamId, displayPrefix, nameColor, messageColor);
 
     auto& admin = it->second;
     admin.DisplayPrefix = displayPrefix;
@@ -291,7 +279,7 @@ bool AdminManager::UpdateLanguage(int64_t steamId, const std::string& lang)
     if (it == _admins.end())
         return false;
 
-    Database::AdminRepository{_app.Db}.UpdateLanguage(steamId, lang);
+    Database::AdminRepository{_db}.UpdateLanguage(steamId, lang);
     it->second.Language = lang;
     return true;
 }

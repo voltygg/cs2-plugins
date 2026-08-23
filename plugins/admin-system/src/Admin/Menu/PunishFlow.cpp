@@ -40,7 +40,7 @@ bool CanStillPunish(App& app, int adminSlot, int targetSlot, PunishType type)
     auto* target = plrMgr.GetPlayerBySlot(targetSlot);
     if (!admin || !target)
         return false;
-    return app.Admins.CanActOn(admin->GetSteamID(), target->GetSteamID(), PermissionFor(type));
+    return app.Access.CanActOn(admin->GetSteamID(), target->GetSteamID(), PermissionFor(type));
 }
 
 /** Flow validation: the target may have left (or the slot rehosts another player) and the

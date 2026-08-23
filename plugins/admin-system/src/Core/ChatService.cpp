@@ -1,39 +1,22 @@
 #include "ChatService.hpp"
 
-#include "../Admin/AdminManager.hpp"
-#include "../Punishments/PunishmentManager.hpp"
-#include "App.hpp"
 #include "Config.hpp"
 
-#include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/ChatColors.hpp>
 #include <CS2Kit/Core/StringUtils.hpp>
 #include <CS2Kit/Core/TimeUtils.hpp>
 #include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/ChatInputCapture.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <format>
 
 namespace AdminSystem::Core
 {
 
-using namespace CS2Kit::Players;
 using namespace CS2Kit::Core;
-using AdminSystem::Admin::AdminManager;
-using AdminSystem::Punishments::PunishmentManager;
-using CS2Kit::Commands::CommandManager;
 
 namespace
 {
-
-/** Localized expiry suffix for mute notices addressed to @p slot. */
-std::string MuteExpiryText(CS2Kit::Translations& tr, int64_t expiresAt, int slot)
-{
-    return TimeUtils::FormatExpiry(expiresAt, TimeUtils::Now(), tr.Get("muteNotice.permanent", slot),
-                                   tr.Get("muteNotice.expiresIn", slot));
-}
 
 /** Layout for "{prefix} {actor} {phrase}" action lines. */
 struct AdminLineStyle
@@ -76,25 +59,25 @@ std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorN
 
 void ChatService::Reply(int slot, std::string_view message)
 {
-    _app.Runtime.Messages.Reply(slot, message);
+    _rt.Messages.Reply(slot, message);
 }
 
 void ChatService::ReplyLink(int slot, std::string_view label, std::string_view url)
 {
-    _app.Runtime.Messages.Reply(slot, label);
-    _app.Runtime.Messages.Reply(slot, std::format("{}{}", ChatColors::Olive, url));
+    _rt.Messages.Reply(slot, label);
+    _rt.Messages.Reply(slot, std::format("{}{}", ChatColors::Olive, url));
 }
 
 void ChatService::NoPermission(int slot)
 {
-    auto msg = std::format("{}{}", ChatColors::Red, _app.Runtime.Translations.Get("common.noPermission", slot));
-    _app.Runtime.Messages.Reply(slot, msg);
+    auto msg = std::format("{}{}", ChatColors::Red, _rt.Translations.Get("common.noPermission", slot));
+    _rt.Messages.Reply(slot, msg);
 }
 
 void ChatService::BroadcastPunishment(std::string_view action, std::string_view adminName, std::string_view targetName,
                                       std::string_view reason, int64_t durationSec)
 {
-    const auto& cfg = _app.Config.GetChat();
+    const auto& cfg = _config.GetChat();
     if (!cfg.broadcastPunishments)
         return;
 
@@ -112,145 +95,37 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
         std::format("{}{} {}{}{} {}{}{} {} for {}{}{}{}", ChatColors::Green, cfg.fallbackPrefix, ChatColors::Default,
                     adminName, ChatColors::Default, ChatColors::Red, action, ChatColors::Default, targetName,
                     ChatColors::Olive, reason, ChatColors::Default, durationSuffix);
-    _app.Runtime.Messages.Broadcast(line);
+    _rt.Messages.Broadcast(line);
 }
 
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
                                   std::string_view targetName)
 {
-    const auto& cfg = _app.Config.GetChat();
+    const auto& cfg = _config.GetChat();
     if (!cfg.broadcastPunishments)
         return;
 
     AdminLineStyle style{.Prefix = cfg.fallbackPrefix};
     auto phrase = BroadcastPhrase(translationKey);
-    _app.Runtime.Messages.Broadcast(targetName.empty() ? FormatAdminLine(style, adminName, phrase)
-                                                       : FormatAdminLine(style, adminName, phrase, targetName));
+    _rt.Messages.Broadcast(targetName.empty() ? FormatAdminLine(style, adminName, phrase)
+                                              : FormatAdminLine(style, adminName, phrase, targetName));
 }
 
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
                                   const std::map<std::string, std::string>& nameTokens)
 {
-    const auto& cfg = _app.Config.GetChat();
+    const auto& cfg = _config.GetChat();
     if (!cfg.broadcastPunishments)
         return;
 
-    _app.Runtime.Messages.Broadcast(FormatAdminLine(AdminLineStyle{.Prefix = cfg.fallbackPrefix}, adminName,
-                                                    BroadcastPhrase(translationKey), nameTokens));
+    _rt.Messages.Broadcast(FormatAdminLine(AdminLineStyle{.Prefix = cfg.fallbackPrefix}, adminName,
+                                           BroadcastPhrase(translationKey), nameTokens));
 }
 
 std::string ChatService::BroadcastPhrase(const std::string& translationKey) const
 {
-    auto phrase = _app.Runtime.Translations.Get(translationKey);
+    auto phrase = _rt.Translations.Get(translationKey);
     return phrase.empty() ? translationKey : phrase;  // Render a missing translation's key literally.
-}
-
-void ChatService::RebroadcastAdminChat(const Player* admin, std::string_view message, bool /*teamOnly*/)
-{
-    if (!admin)
-        return;
-
-    auto style = _app.Admins.GetChatStyle(admin->GetSteamID());
-
-    auto prefixColor = ChatColors::ParseNamed(style.PrefixColor);
-
-    // Hiding the prefix is an incognito signal: default the name and message colors too, so
-    // custom colors don't still mark the admin as staff. Render-only - the saved colors return
-    // when the prefix is re-enabled.
-    auto nameColor = style.DisplayPrefix ? ChatColors::ParseNamed(style.NameColor) : ChatColors::Default;
-    auto messageColor = style.DisplayPrefix ? ChatColors::ParseNamed(style.MessageColor) : ChatColors::Default;
-
-    // {prefixColor}{prefix} {nameColor}{name}{Default}: {messageColor}{message}
-    std::string line;
-    if (style.HasPrefix())
-        line = std::format("{}{} {}{}{}: {}{}", prefixColor, style.Prefix, nameColor, admin->GetName(),
-                           ChatColors::Default, messageColor, message);
-    else
-        line = std::format("{}{}{}: {}{}", nameColor, admin->GetName(), ChatColors::Default, messageColor, message);
-
-    // Team-only filtering isn't implemented yet (no stable team accessor on Player), so admin chat
-    // currently broadcasts to everyone regardless of say vs say_team.
-    _app.Runtime.Messages.Broadcast(line);
-}
-
-bool ChatService::HandleSay(Player* player, std::string_view message, bool isSayTeam)
-{
-    if (!player || message.empty())
-        return false;
-
-    // Menu free-text input: if a chat capture is pending for this player, the line is
-    // their menu answer, not a chat message. Always supersede so it isn't broadcast.
-    if (_app.Runtime.ChatInput.TryConsume(player->GetSlot(), message))
-        return true;
-
-    // Returns false for an unprefixed line and for unknown commands (e.g. "!ads"), so both
-    // fall through to normal chat instead of being silently swallowed.
-    if (_app.Runtime.Commands.HandleChatMessage(player, message))
-        return true;
-
-    int64_t steamId = player->GetSteamID();
-    if (_app.Punishments.IsTextMuted(steamId))
-    {
-        int slot = player->GetSlot();
-        if (_textMuteNotice.TryAcquire(slot, TimeUtils::Now()))
-        {
-            auto mute = _app.Punishments.GetActiveTextMute(steamId);
-            auto& tr = _app.Runtime.Translations;
-            if (mute)
-            {
-                _app.Runtime.Messages.Reply(
-                    slot,
-                    std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.text", slot), ChatColors::Default,
-                                ChatColors::Olive, MuteExpiryText(_app.Runtime.Translations, mute->ExpiresAt, slot)));
-                if (!mute->Reason.empty())
-                    _app.Runtime.Messages.Reply(
-                        slot, std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
-                                          ChatColors::Default, mute->Reason));
-            }
-            else
-            {
-                _app.Runtime.Messages.Reply(slot,
-                                            std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.text", slot)));
-            }
-        }
-        return true;
-    }
-
-    const auto& chatCfg = _app.Config.GetChat();
-    if (chatCfg.tagAdminChatMessages && _app.Admins.IsAdmin(steamId))
-    {
-        RebroadcastAdminChat(player, message, isSayTeam);
-        return true;
-    }
-
-    return false;
-}
-
-void ChatService::NotifyVoiceMuted(Player* player)
-{
-    if (!player)
-        return;
-
-    int slot = player->GetSlot();
-    if (!_voiceMuteNotice.TryAcquire(slot, TimeUtils::Now()))
-        return;
-
-    auto mute = _app.Punishments.GetActiveVoiceMute(player->GetSteamID());
-    auto& tr = _app.Runtime.Translations;
-    if (mute)
-    {
-        _app.Runtime.Messages.Reply(
-            slot, std::format("{}{}{} {}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot), ChatColors::Default,
-                              ChatColors::Olive, MuteExpiryText(_app.Runtime.Translations, mute->ExpiresAt, slot)));
-        if (!mute->Reason.empty())
-            _app.Runtime.Messages.Reply(slot,
-                                        std::format("{}{}: {}{}", ChatColors::Gray, tr.Get("muteNotice.reason", slot),
-                                                    ChatColors::Default, mute->Reason));
-    }
-    else
-    {
-        _app.Runtime.Messages.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("muteNotice.voice", slot)));
-    }
 }
 
 }  // namespace AdminSystem::Core

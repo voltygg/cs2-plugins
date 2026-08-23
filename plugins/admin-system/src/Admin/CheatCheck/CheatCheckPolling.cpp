@@ -1,4 +1,3 @@
-#include "../../Core/App.hpp"
 #include "../../Core/Config.hpp"
 #include "CheatCheckManager.hpp"
 #include "CheatCheckRoomApi.hpp"
@@ -35,11 +34,11 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
     if (pc.RoomCode.empty() || pc.PollInFlight || TimeUtils::Now() < pc.NextPollAtSec)
         return;
 
-    auto* target = _app.Runtime.Players.GetPlayerBySlot(targetSlot);
+    auto* target = _rt.Players.GetPlayerBySlot(targetSlot);
     if (!target)
         return;  // disconnect cleanup tears the check down
 
-    const auto& cfg = _app.Config.GetCheatCheck().websiteAutoRoom;
+    const auto& cfg = _config.GetCheatCheck().websiteAutoRoom;
     auto request = BuildPresenceRequest(cfg, pc.RoomCode, target->GetSteamID());
     if (!request)
     {
@@ -51,9 +50,9 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 
     pc.PollInFlight = true;
     const uint64_t seq = pc.RequestSeq;
-    CS2Kit::Http::Get(
-        _app.Runtime.Http, std::move(*request),
-        [this, targetSlot, seq](const CS2Kit::HttpResult& result) { OnPresenceResponse(targetSlot, seq, result); });
+    CS2Kit::Http::Get(_rt.Http, std::move(*request), [this, targetSlot, seq](const CS2Kit::HttpResult& result) {
+        OnPresenceResponse(targetSlot, seq, result);
+    });
 }
 
 void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result)
@@ -64,7 +63,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const C
     if (!pc.Active || pc.RequestSeq != seq)  // stale: cancelled, expired, re-called, or slot reused
         return;
 
-    const auto& cfg = _app.Config.GetCheatCheck().websiteAutoRoom;
+    const auto& cfg = _config.GetCheatCheck().websiteAutoRoom;
     pc.PollInFlight = false;
     pc.NextPollAtSec = TimeUtils::Now() + cfg.pollIntervalSec;
 
@@ -81,7 +80,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const C
     if (*present == pc.SuspectJoined)
         return;
 
-    auto* target = _app.Runtime.Players.GetPlayerBySlot(targetSlot);
+    auto* target = _rt.Players.GetPlayerBySlot(targetSlot);
     const std::string targetName = target ? target->GetName() : std::string();
 
     if (*present)
@@ -89,9 +88,8 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const C
         pc.SuspectJoined = true;
         pc.PausedRemainingSec = std::max<int64_t>(pc.DeadlineSec - TimeUtils::Now(), 0);
         ReplyToAdmin(pc, [this, &targetName, adminSlot = pc.AdminSlot] {
-            return std::format(
-                "{}{}", ChatColors::Green,
-                _app.Runtime.Translations.Get("cheatCheck.suspectJoined", adminSlot, {{"name", targetName}}));
+            return std::format("{}{}", ChatColors::Green,
+                               _rt.Translations.Get("cheatCheck.suspectJoined", adminSlot, {{"name", targetName}}));
         });
     }
     else
@@ -99,13 +97,12 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const C
         pc.SuspectJoined = false;
         pc.DeadlineSec = TimeUtils::Now() + std::max(pc.PausedRemainingSec, MinResumeSec);
         ReplyToAdmin(pc, [this, &targetName, adminSlot = pc.AdminSlot] {
-            return std::format(
-                "{}{}", ChatColors::Red,
-                _app.Runtime.Translations.Get("cheatCheck.suspectLeft", adminSlot, {{"name", targetName}}));
+            return std::format("{}{}", ChatColors::Red,
+                               _rt.Translations.Get("cheatCheck.suspectLeft", adminSlot, {{"name", targetName}}));
         });
     }
 
-    View::RenderPanel(_app, targetSlot, pc);
+    View::RenderPanel(_rt, _config, targetSlot, pc);
 }
 
 }  // namespace AdminSystem::Admin::CheatCheck

@@ -1,7 +1,8 @@
 #include "AdminActionsService.hpp"
 
+#include "../Admin/Access.hpp"
 #include "../Database/Entities/Ban.hpp"
-#include "App.hpp"
+#include "../Punishments/PunishmentManager.hpp"
 #include "Permissions.hpp"
 
 #include <CS2Kit/Api.hpp>
@@ -17,12 +18,12 @@ namespace AdminSystem::Core
 
 void AdminActionsService::Publish()
 {
-    _app.Runtime.Exchange.Publish<Contracts::IAdminActions>(this);
+    _rt.Exchange.Publish<Contracts::IAdminActions>(this);
 }
 
 void AdminActionsService::Unpublish()
 {
-    _app.Runtime.Exchange.Unpublish<Contracts::IAdminActions>();
+    _rt.Exchange.Unpublish<Contracts::IAdminActions>();
 }
 
 BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::string_view reason)
@@ -39,13 +40,13 @@ BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::st
     ban.AdminName = "AntiCheat";
     ban.Reason = std::string(reason);
     ban.Duration = durationSec;
-    if (auto* target = _app.Runtime.Players.GetPlayerBySteamId(steamId))
+    if (auto* target = _rt.Players.GetPlayerBySteamId(steamId))
     {
         ban.TargetName = target->GetName();
         ban.TargetIp = target->GetIpAddress();
     }
 
-    if (!_app.Punishments.IssueBan(ban))
+    if (!_punishments.IssueBan(ban))
     {
         Log::Warn("IAdminActions::Ban: failed to persist ban for {}.", steamId);
         return BanResult::PersistFailed;
@@ -57,17 +58,17 @@ BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::st
 
 void AdminActionsService::AlertAdmins(int64_t steamId, std::string_view detector, int score)
 {
-    auto* suspect = _app.Runtime.Players.GetPlayerBySteamId(steamId);
+    auto* suspect = _rt.Players.GetPlayerBySteamId(steamId);
     const std::string suspectName = suspect ? suspect->GetName() : std::to_string(steamId);
     const std::string detectorName(detector);
     const std::string scoreText = std::to_string(score);
 
-    for (auto* admin : _app.Runtime.Players.GetAllPlayers())
+    for (auto* admin : _rt.Players.GetAllPlayers())
     {
-        if (!_app.Admins.HasPermission(admin->GetSteamID(), Permission::Ban))
+        if (!_access.HasPermission(admin->GetSteamID(), Permission::Ban))
             continue;
-        _app.Runtime.Messages.ReplyKey(admin->GetSlot(), "anticheat.alert",
-                                       {{"name", suspectName}, {"detector", detectorName}, {"score", scoreText}});
+        _rt.Messages.ReplyKey(admin->GetSlot(), "anticheat.alert",
+                              {{"name", suspectName}, {"detector", detectorName}, {"score", scoreText}});
     }
 }
 

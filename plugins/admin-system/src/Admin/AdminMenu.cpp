@@ -26,6 +26,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int 
 {
     auto& tr = app.Runtime.Translations;
     auto& adminMgr = app.Admins;
+    auto& access = app.Access;
     auto& plrMgr = app.Runtime.Players;
 
     auto* adminPlayer = plrMgr.GetPlayerBySlot(adminSlot);
@@ -42,15 +43,15 @@ std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int 
         .AddSubmenu(
             tr.Get("category.punish", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildPunishMenu(app, adminSlot); },
-            adminMgr.HasAnyPermission(adminSid, "cdoe"))
+            access.HasAnyPermission(adminSid, "cdoe"))
         .AddSubmenu(
             tr.Get("category.control", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildControlMenu(app, adminSlot); },
-            adminMgr.HasAnyPermission(adminSid, "bsz"))
+            access.HasAnyPermission(adminSid, "bsz"))
         .AddSubmenu(
             tr.Get("category.effects", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildEffectsMenu(app, adminSlot); },
-            adminMgr.HasAnyPermission(adminSid, "fjz"))
+            access.HasAnyPermission(adminSid, "fjz"))
         .AddSubmenu(
             tr.Get("category.chatSettings", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildChatSettingsMenu(app, adminSlot); }, adminMgr.IsAdmin(adminSid))

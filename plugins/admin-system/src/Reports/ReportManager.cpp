@@ -1,6 +1,6 @@
 #include "ReportManager.hpp"
 
-#include "../Core/App.hpp"
+#include "../Core/Config.hpp"
 #include "../Database/Repositories/ReportRepository.hpp"
 
 #include <CS2Kit/Api.hpp>
@@ -19,7 +19,7 @@ namespace Log = CS2Kit::Core::Log;
 
 ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<int64_t> targetSteamId, int64_t now) const
 {
-    const auto& config = _app.Config.GetReports();
+    const auto& config = _config.GetReports();
     if (!config.enabled)
         return {ReportDenial::Disabled};
 
@@ -69,8 +69,8 @@ void ReportManager::Submit(const CS2Kit::Player& reporter, const CS2Kit::Player&
         .TargetIp = target.GetIpAddress(),
         .ReasonCode = reasonCode,
         .Reason = reasonText,
-        .ServerTag = _app.Config.GetServer().tag,
-        .MapName = _app.Runtime.CurrentMap,
+        .ServerTag = _config.GetServer().tag,
+        .MapName = _rt.CurrentMap,
         .CreatedAt = now,
     };
 
@@ -78,7 +78,7 @@ void ReportManager::Submit(const CS2Kit::Player& reporter, const CS2Kit::Player&
     Log::Info("Report: {} ({}) reported {} ({}) for '{}' [{}]", report.ReporterName, reporterSteamId, report.TargetName,
               targetSteamId, reasonText, reasonCode);
 
-    Database::ReportRepository{_app.Db}.CreateAsync(
+    Database::ReportRepository{_db}.CreateAsync(
         report, [this, reporterSteamId, targetSteamId, onDone = std::move(onDone)](bool ok) {
             // The write is the only database-health signal there is, so a failure refunds the
             // attempt rather than costing the reporter a cooldown.
@@ -95,7 +95,7 @@ void ReportManager::Arm(int64_t reporterSteamId, int64_t targetSteamId, int64_t 
     _perTarget.Acquire({reporterSteamId, targetSteamId}, now);
 
     // Both maps only grow here, so this is the one place worth sweeping.
-    const auto& config = _app.Config.GetReports();
+    const auto& config = _config.GetReports();
     const int64_t horizon = std::max(config.cooldownSec, config.duplicateWindowSec);
     _anyTarget.Prune(now, horizon);
     _perTarget.Prune(now, horizon);

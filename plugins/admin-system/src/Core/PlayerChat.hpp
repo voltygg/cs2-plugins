@@ -1,0 +1,84 @@
+#pragma once
+
+#include <CS2Kit/Core/SlotThrottle.hpp>
+#include <cstdint>
+#include <string_view>
+
+namespace CS2Kit
+{
+class Runtime;
+}
+
+namespace CS2Kit::Players
+{
+class Player;
+}
+
+namespace AdminSystem::Admin
+{
+class AdminManager;
+}
+
+namespace AdminSystem::Punishments
+{
+class PunishmentManager;
+}
+
+namespace AdminSystem::Core
+{
+
+class ChatService;
+class ConfigManager;
+
+/**
+ * The inbound half of chat: what a player says, and what they are allowed to say.
+ *
+ * Split from @ref ChatService because this side reads admin and punishment state while the
+ * output side is read by those same managers - keeping both in one class made the object graph
+ * cyclic. Constructed after them, so it holds them directly.
+ */
+class PlayerChat
+{
+public:
+    PlayerChat(CS2Kit::Runtime& runtime, const ConfigManager& config, ChatService& chat, Admin::AdminManager& admins,
+               Punishments::PunishmentManager& punishments)
+        : _rt(runtime), _config(config), _chat(chat), _admins(admins), _punishments(punishments)
+    {}
+
+    /**
+     * Apply admin-system semantics to a player's say/say_team message:
+     * dispatch registered chat commands, drop messages from text-muted players, and rebroadcast
+     * admin chat with a colored prefix. Returns true when the original message should be
+     * superseded (the hook caller must skip the engine's default broadcast).
+     */
+    bool HandleSay(CS2Kit::Players::Player* player, std::string_view message, bool isSayTeam);
+
+    /**
+     * Re-emit an admin's regular chat with their group's colored prefix attached.
+     * Caller is expected to SUPERCEDE the original say/say_team in the chat hook.
+     */
+    void RebroadcastAdminChat(const CS2Kit::Players::Player* admin, std::string_view message, bool teamOnly);
+
+    /**
+     * Notify a voice-muted player that the engine is suppressing their microphone. Rate-limited
+     * to avoid spam: the SetClientListening hook fires once per (receiver, sender) pair every
+     * time the player keys voice, which can easily hit dozens of calls in a single press.
+     */
+    void NotifyVoiceMuted(CS2Kit::Players::Player* player);
+
+private:
+    CS2Kit::Runtime& _rt;
+    const ConfigManager& _config;
+    ChatService& _chat;
+    Admin::AdminManager& _admins;
+    Punishments::PunishmentManager& _punishments;
+
+    // Once per minute per player: the voice hook fires every keypress and chat spam produces
+    // dozens of say events, so unthrottled notices would out-spam the spam itself.
+    static constexpr int64_t MuteNoticeIntervalSec = 60;
+
+    CS2Kit::SlotThrottle _voiceMuteNotice{MuteNoticeIntervalSec};
+    CS2Kit::SlotThrottle _textMuteNotice{MuteNoticeIntervalSec};
+};
+
+}  // namespace AdminSystem::Core

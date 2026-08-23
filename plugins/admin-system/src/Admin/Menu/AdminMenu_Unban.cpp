@@ -43,7 +43,7 @@ void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
         // The Unban flag may have been revoked (e.g. !admin_reload) while the menu was open.
         ->OnValidate([&app](int slot, const BanRow&) -> std::optional<std::string> {
             auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
-            if (!admin || !app.Admins.HasPermission(admin->GetSteamID(), Permission::Unban))
+            if (!admin || !app.Access.HasPermission(admin->GetSteamID(), Permission::Unban))
                 return "punish.notAllowed";
             return std::nullopt;
         })

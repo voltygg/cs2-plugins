@@ -35,11 +35,11 @@ std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(AdminSystem::App& app, int adm
 
     builder.AddSubmenu(
         tr.Get("action.unban", adminSlot), [&app](int slot) { return BuildUnbanMenu(app, slot); },
-        app.Admins.HasPermission(admin->GetSteamID(), Permission::Unban));
+        app.Access.HasPermission(admin->GetSteamID(), Permission::Unban));
 
     builder.AddSubmenu(
         tr.Get("action.unmute", adminSlot), [&app](int slot) { return BuildUnmuteMenu(app, slot); },
-        app.Admins.HasPermission(admin->GetSteamID(), Permission::Mute));
+        app.Access.HasPermission(admin->GetSteamID(), Permission::Mute));
 
     CS2Kit::Menu::AppendPlayerRows(
         builder, adminSlot,
@@ -56,7 +56,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(AdminSystem::App& app, int adm
 std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
     auto& tr = app.Runtime.Translations;
-    auto& adminMgr = app.Admins;
+    auto& access = app.Access;
     auto& plrMgr = app.Runtime.Players;
 
     auto* target = plrMgr.GetPlayerBySlot(targetSlot);
@@ -90,7 +90,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(AdminSystem::App& app, 
         builder.AddButton(
             tr.Get(ActionTranslationKey(type), adminSlot),
             [&app, pending = std::move(pending)](int slot) { StartPunishFlow(app, slot, pending); },
-            adminMgr.CanActOn(adminSid, targetSid, PermissionFor(type)));
+            access.CanActOn(adminSid, targetSid, PermissionFor(type)));
     }
 
     return builder.Build();

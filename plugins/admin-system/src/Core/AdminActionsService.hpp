@@ -2,17 +2,27 @@
 
 #include <Contracts/IAdminActions.hpp>
 
-namespace AdminSystem
+namespace CS2Kit
 {
-struct App;
+class Runtime;
+}
+
+namespace AdminSystem::Admin
+{
+class Access;
+}
+
+namespace AdminSystem::Punishments
+{
+class PunishmentManager;
 }
 
 namespace AdminSystem::Core
 {
 
 /**
- * admin-system's side of the cross-plugin admin surface, published into _app.Runtime.Exchange
- * in OnLoad.
+ * admin-system's side of the cross-plugin admin surface, published into the runtime's
+ * ServiceExchange in OnLoad.
  *
  * Bans land with AdminSteamId=0 / AdminName="AntiCheat": there is no admin to attribute,
  * and automated bans must not count against anyone's abuse-rate stats.
@@ -20,7 +30,9 @@ namespace AdminSystem::Core
 class AdminActionsService final : public Contracts::IAdminActions
 {
 public:
-    explicit AdminActionsService(AdminSystem::App& app) : _app(app) {}
+    AdminActionsService(CS2Kit::Runtime& runtime, Punishments::PunishmentManager& punishments, Admin::Access& access)
+        : _rt(runtime), _punishments(punishments), _access(access)
+    {}
 
     void Publish();
     /** Called before the managers this delegates to are destroyed. */
@@ -30,7 +42,9 @@ public:
     void AlertAdmins(int64_t steamId, std::string_view detector, int score) override;
 
 private:
-    AdminSystem::App& _app;
+    CS2Kit::Runtime& _rt;
+    Punishments::PunishmentManager& _punishments;
+    Admin::Access& _access;
 };
 
 }  // namespace AdminSystem::Core

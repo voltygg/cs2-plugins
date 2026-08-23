@@ -38,13 +38,13 @@ constexpr int SizeDefault = 4;   // index of 100 in SizePresets
 std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
-    auto& adminMgr = app.Admins;
+    auto& access = app.Access;
 
     auto* admin = app.Runtime.Players.GetPlayerBySlot(adminSlot);
     if (!admin)
         return nullptr;
 
-    bool hasB = adminMgr.HasPermission(admin->GetSteamID(), Permission::Hide);
+    bool hasB = access.HasPermission(admin->GetSteamID(), Permission::Hide);
 
     MenuBuilder builder(tr.Get("category.control", adminSlot));
 

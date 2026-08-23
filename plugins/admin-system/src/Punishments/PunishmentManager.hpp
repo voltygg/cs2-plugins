@@ -11,10 +11,21 @@
 #include <unordered_set>
 #include <vector>
 
-namespace AdminSystem
+namespace CS2Kit
 {
-struct App;
+class Runtime;
 }
+
+namespace CS2Kit::Database
+{
+class PostgresDatabase;
+}
+
+namespace AdminSystem::Core
+{
+class ChatService;
+class ConfigManager;
+}  // namespace AdminSystem::Core
 
 namespace AdminSystem::Punishments
 {
@@ -30,9 +41,10 @@ namespace AdminSystem::Punishments
 class PunishmentManager
 {
 public:
-    explicit PunishmentManager(App& app) : _app(app) {}
-
-    PunishmentManager() = default;
+    PunishmentManager(CS2Kit::Database::PostgresDatabase& db, const Core::ConfigManager& config,
+                      CS2Kit::Runtime& runtime, Core::ChatService& chat)
+        : _db(db), _config(config), _rt(runtime), _chat(chat)
+    {}
 
     bool LoadActivePunishments();
     /** Snapshot of the cached active bans, newest first (drives the unban menu). */
@@ -72,7 +84,10 @@ public:
     void ExpireOldPunishments();
 
 private:
-    App& _app;
+    CS2Kit::Database::PostgresDatabase& _db;
+    const Core::ConfigManager& _config;
+    CS2Kit::Runtime& _rt;
+    Core::ChatService& _chat;
 
     /** Re-query the three active lists off-thread and swap the caches when the rows arrive. */
     void RefreshCachesAsync();

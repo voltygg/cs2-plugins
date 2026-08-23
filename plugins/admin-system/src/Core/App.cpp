@@ -55,9 +55,9 @@ void App::InstallPolicy()
 {
     Runtime.Policy = {
         .HasPermission = [this](int64_t steamId,
-                                const std::string& permission) { return Admins.HasAnyPermission(steamId, permission); },
+                                const std::string& permission) { return Access.HasAnyPermission(steamId, permission); },
         .CanTarget = [this](Player& caller,
-                            Player& target) { return Admins.CanTarget(caller.GetSteamID(), target.GetSteamID()); },
+                            Player& target) { return Access.CanTarget(caller.GetSteamID(), target.GetSteamID()); },
         .Reply = [this](int slot, std::string_view message) { Chat.Reply(slot, message); },
         .Broadcast =
             [this](Player& caller, Player* target, const std::string& key) {

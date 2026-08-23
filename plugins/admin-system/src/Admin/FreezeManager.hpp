@@ -6,18 +6,31 @@
 #include <string>
 #include <unordered_map>
 
-namespace AdminSystem
+namespace CS2Kit
 {
-struct App;
+class Runtime;
 }
+
+namespace CS2Kit::Database
+{
+class PostgresDatabase;
+}
+
+namespace AdminSystem::Core
+{
+class ChatService;
+class ConfigManager;
+}  // namespace AdminSystem::Core
 
 namespace AdminSystem::Admin
 {
 
+class AdminManager;
+
 /**
- * Admin-abuse protection. A frozen admin has ALL admin permissions denied - the gate lives
- * inside AdminManager::HasPermission/HasAnyPermission/HasAllPermissions, which every command,
- * menu, and action check funnels through. Freeze state is stored on the shared admins table,
+ * Admin-abuse protection. A frozen admin has ALL admin permissions denied - the gate lives in
+ * @ref Access, which every command, menu, and action check funnels through. Freeze state is
+ * stored on the shared admins table,
  * so it applies network-wide; RefreshFromDatabase() runs on the 60s timer to pick up freezes
  * issued from other servers. Freeze/unfreeze history is recorded in admin_activity, and this
  * manager's _frozen map is the single in-memory source of freeze truth.
@@ -25,9 +38,10 @@ namespace AdminSystem::Admin
 class FreezeManager
 {
 public:
-    explicit FreezeManager(App& app) : _app(app) {}
-
-    FreezeManager() = default;
+    FreezeManager(CS2Kit::Database::PostgresDatabase& db, const Core::ConfigManager& config, CS2Kit::Runtime& runtime,
+                  Core::ChatService& chat, AdminManager& admins)
+        : _db(db), _config(config), _rt(runtime), _chat(chat), _admins(admins)
+    {}
 
     /**
      * Re-read the frozen set from the database (boot, 60s timer, !admin_reload) and notify
@@ -61,7 +75,11 @@ public:
     void NotifyFrozen(int64_t steamId);
 
 private:
-    App& _app;
+    CS2Kit::Database::PostgresDatabase& _db;
+    const Core::ConfigManager& _config;
+    CS2Kit::Runtime& _rt;
+    Core::ChatService& _chat;
+    AdminManager& _admins;
 
     /** Plain admin_activity write, no enforcement attached. */
     void RecordAudit(int64_t adminSteamId, const std::string& adminName, const std::string& action,

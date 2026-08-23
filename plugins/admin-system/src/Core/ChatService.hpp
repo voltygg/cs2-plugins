@@ -1,31 +1,32 @@
 #pragma once
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/SlotThrottle.hpp>
-#include <CS2Kit/Players/Player.hpp>
 #include <cstdint>
 #include <map>
 #include <string>
 #include <string_view>
 
-namespace AdminSystem
+namespace CS2Kit
 {
-struct App;
+class Runtime;
 }
 
 namespace AdminSystem::Core
 {
 
+class ConfigManager;
+
 /**
- * Renders admin-system chat semantics on top of `_app.Runtime.Messages`:
- * styled per-command replies, punishment broadcasts, and prefix-tagged admin chat.
+ * Renders admin-system chat semantics on top of `CS2Kit::Runtime::Messages`: styled per-command
+ * replies and admin action/punishment broadcasts.
+ *
+ * Output only, and deliberately so - it reads nothing but the runtime and config, which is what
+ * lets the managers that broadcast (freezes, punishments, cheat checks) depend on it without a
+ * cycle. Reading a player's chat back is @ref PlayerChat's job.
  */
 class ChatService
 {
 public:
-    explicit ChatService(App& app) : _app(app) {}
-
-    ChatService() = default;
+    ChatService(CS2Kit::Runtime& runtime, const ConfigManager& config) : _rt(runtime), _config(config) {}
 
     /**
      * Send a single-line reply to one player. Color codes inside `message` are honored;
@@ -64,39 +65,12 @@ public:
     void BroadcastAction(const std::string& translationKey, std::string_view adminName,
                          const std::map<std::string, std::string>& nameTokens);
 
-    /**
-     * Re-emit an admin's regular chat with their group's colored prefix attached.
-     * Caller is expected to SUPERCEDE the original say/say_team in the chat hook.
-     */
-    void RebroadcastAdminChat(const CS2Kit::Player* admin, std::string_view message, bool teamOnly);
-
-    /**
-     * Apply admin-system semantics to a player's say/say_team message:
-     * dispatch registered chat commands, drop messages from text-muted players, and rebroadcast
-     * admin chat with a colored prefix. Returns true when the original message should be
-     * superseded (the hook caller must skip the engine's default broadcast).
-     */
-    bool HandleSay(CS2Kit::Player* player, std::string_view message, bool isSayTeam);
-
-    /**
-     * Notify a voice-muted player that the engine is suppressing their microphone. Rate-limited
-     * to avoid spam: the SetClientListening hook fires once per (receiver, sender) pair every
-     * time the player keys voice, which can easily hit dozens of calls in a single press.
-     */
-    void NotifyVoiceMuted(CS2Kit::Player* player);
-
 private:
-    App& _app;
+    CS2Kit::Runtime& _rt;
+    const ConfigManager& _config;
 
     /** Phrase at `translationKey`, or the key itself so a missing translation is obvious. */
     std::string BroadcastPhrase(const std::string& translationKey) const;
-
-    // Once per minute per player: the voice hook fires every keypress and chat spam produces
-    // dozens of say events, so unthrottled notices would out-spam the spam itself.
-    static constexpr int64_t MuteNoticeIntervalSec = 60;
-
-    CS2Kit::SlotThrottle _voiceMuteNotice{MuteNoticeIntervalSec};
-    CS2Kit::SlotThrottle _textMuteNotice{MuteNoticeIntervalSec};
 };
 
 }  // namespace AdminSystem::Core
