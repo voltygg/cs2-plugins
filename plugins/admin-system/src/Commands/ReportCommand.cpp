@@ -1,6 +1,7 @@
 #include "../Core/App.hpp"
 #include "../Reports/ReportFlow.hpp"
 #include "../Reports/ReportManager.hpp"
+#include "Commands.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <string>

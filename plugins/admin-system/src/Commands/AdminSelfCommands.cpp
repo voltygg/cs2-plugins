@@ -1,6 +1,7 @@
 #include "../Admin/Effects/Descriptors.hpp"
 #include "../Core/App.hpp"
 #include "../Core/Permissions.hpp"
+#include "Commands.hpp"
 
 #include <CS2Kit/Api.hpp>
 

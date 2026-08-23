@@ -3,6 +3,7 @@
 #include "../Admin/Effects/Model.hpp"
 #include "../Database/Repositories/ServerRepository.hpp"
 #include "Config.hpp"
+#include "../Commands/Commands.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Database/Api.hpp>
@@ -16,17 +17,6 @@ namespace Log = CS2Kit::Log;
 
 namespace AdminSystem
 {
-
-namespace Commands
-{
-void RegisterAdminMenuCommand(CS2Kit::CommandManager& commands, App& app);
-void RegisterAdminSelfCommands(CS2Kit::CommandManager& commands, App& app);
-void RegisterCheatCheckCommands(CS2Kit::CommandManager& commands, App& app);
-void RegisterFreezeCommands(CS2Kit::CommandManager& commands, App& app);
-void RegisterInfoCommands(CS2Kit::CommandManager& commands, App& app);
-void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app);
-void RegisterReportCommand(CS2Kit::CommandManager& commands, App& app);
-}  // namespace Commands
 
 App::~App()
 {

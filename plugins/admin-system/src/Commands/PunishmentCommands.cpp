@@ -3,6 +3,7 @@
 #include "../Core/Permissions.hpp"
 #include "../Punishments/IssuePunishment.hpp"
 #include "../Punishments/PunishmentManager.hpp"
+#include "Commands.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Translations.hpp>

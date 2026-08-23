@@ -1,6 +1,7 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/AdminMenu.hpp"
 #include "../Core/App.hpp"
+#include "Commands.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>

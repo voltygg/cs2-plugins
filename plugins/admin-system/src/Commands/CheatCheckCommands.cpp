@@ -2,6 +2,7 @@
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Core/App.hpp"
 #include "../Core/Permissions.hpp"
+#include "Commands.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Runtime.hpp>

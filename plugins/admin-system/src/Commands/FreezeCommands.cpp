@@ -3,6 +3,7 @@
 #include "../Core/App.hpp"
 #include "../Core/ChatService.hpp"
 #include "../Core/Permissions.hpp"
+#include "Commands.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/StringUtils.hpp>
