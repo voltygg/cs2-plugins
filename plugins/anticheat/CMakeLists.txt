@@ -3,6 +3,8 @@ cs2_add_plugin(anticheat
     DESCRIPTION "Behavioural anticheat: detection cores, correlation and response"
     # Advisory: without it the detectors still run, but bans and alerts have nowhere to go.
     DEPENDS "admin-system>=1.0"
+    # Bans go out through IAdminActions, not a database of its own.
+    COMPONENTS App
     LIBRARIES
         cs2-contracts
         nlohmann_json::nlohmann_json
