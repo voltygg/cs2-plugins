@@ -2,12 +2,12 @@
 #include "EffectRegistry.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <array>
 #include <cstdint>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Effects
 {

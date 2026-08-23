@@ -7,7 +7,7 @@
 #include "Labels.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/Flow.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -52,11 +52,11 @@ void StartUnmuteConfirm(int adminSlot, MuteRow row)
         })
         ->WithConfirm(
             [](int slot) {
-                auto& tr = Engine().Translations;
+                auto& tr = Engine().Utils.Translations;
                 return std::format("{}: {}", tr.Get("punish.confirmTitle", slot), tr.Get("action.unmute", slot));
             },
             [](int slot, const MuteRow& r) {
-                auto& tr = Engine().Translations;
+                auto& tr = Engine().Utils.Translations;
                 std::vector<std::pair<std::string, std::string>> rows;
                 rows.emplace_back(tr.Get("punish.target", slot), r.Name);
                 rows.emplace_back(tr.Get(r.IsVoice ? "action.voiceMute" : "action.textMute", slot), "");
@@ -64,10 +64,10 @@ void StartUnmuteConfirm(int adminSlot, MuteRow row)
                 rows.emplace_back(tr.Get("punish.reason", slot), StringUtils::TruncateUtf8(r.Reason, 40));
                 return rows;
             },
-            [](int slot) { return Engine().Translations.Get("punish.confirm", slot); },
-            [](int slot) { return Engine().Translations.Get("punish.cancel", slot); })
+            [](int slot) { return Engine().Utils.Translations.Get("punish.confirm", slot); },
+            [](int slot) { return Engine().Utils.Translations.Get("punish.cancel", slot); })
         ->OnFinish([](int slot, MuteRow& r) {
-            auto& tr = Engine().Translations;
+            auto& tr = Engine().Utils.Translations;
             auto* admin = Engine().Players.GetPlayerBySlot(slot);
             if (!admin)
                 return;
@@ -89,7 +89,7 @@ void StartUnmuteConfirm(int adminSlot, MuteRow row)
 template <typename TMute>
 void AppendMuteRows(MenuBuilder& builder, const std::vector<TMute>& mutes, bool isVoice, int adminSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     for (const auto& mute : mutes)
     {
         MuteRow row{.Id = mute.Id,
@@ -108,7 +108,7 @@ void AppendMuteRows(MenuBuilder& builder, const std::vector<TMute>& mutes, bool 
 
 std::shared_ptr<CS2Kit::MenuView> BuildUnmuteMenu(int adminSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
 
     MenuBuilder builder(tr.Get("unmute.title", adminSlot));
 

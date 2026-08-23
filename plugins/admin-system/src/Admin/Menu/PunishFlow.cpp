@@ -8,7 +8,7 @@
 #include "Labels.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/Flow.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -58,7 +58,7 @@ std::optional<std::string> ValidatePending(int slot, const PendingPunishment& pe
 
 void Issue(int adminSlot, PendingPunishment& pending)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
     auto* target = Engine().Players.GetPlayerBySlot(pending.TargetSlot);
     if (!admin || !target)
@@ -86,12 +86,12 @@ PunishFlowT::Ptr MakeBaseFlow(PendingPunishment pending)
         ->OnValidate(ValidatePending)
         ->WithConfirm(
             [type](int slot) {
-                auto& tr = Engine().Translations;
+                auto& tr = Engine().Utils.Translations;
                 return std::format("{}: {}", tr.Get("punish.confirmTitle", slot),
                                    tr.Get(ActionTranslationKey(type), slot));
             },
             [](int slot, const PendingPunishment& p) {
-                auto& tr = Engine().Translations;
+                auto& tr = Engine().Utils.Translations;
                 std::vector<std::pair<std::string, std::string>> rows;
                 rows.emplace_back(tr.Get("punish.target", slot), p.TargetName);
                 if (IsTimed(p.Type))
@@ -99,8 +99,8 @@ PunishFlowT::Ptr MakeBaseFlow(PendingPunishment pending)
                 rows.emplace_back(tr.Get("punish.reason", slot), StringUtils::TruncateUtf8(p.Reason, 40));
                 return rows;
             },
-            [](int slot) { return Engine().Translations.Get("punish.confirm", slot); },
-            [](int slot) { return Engine().Translations.Get("punish.cancel", slot); })
+            [](int slot) { return Engine().Utils.Translations.Get("punish.confirm", slot); },
+            [](int slot) { return Engine().Utils.Translations.Get("punish.cancel", slot); })
         ->OnFinish(Issue);
 }
 
@@ -110,7 +110,7 @@ void StartPunishFlow(int adminSlot, PendingPunishment pending)
 {
     auto type = pending.Type;
     auto stepTitle = [type](int slot, const char* suffixKey) {
-        auto& tr = Engine().Translations;
+        auto& tr = Engine().Utils.Translations;
         return std::format("{}: {}", tr.Get(ActionTranslationKey(type), slot), tr.Get(suffixKey, slot));
     };
 
@@ -123,14 +123,14 @@ void StartPunishFlow(int adminSlot, PendingPunishment pending)
                               return presets;
                           },
                           [](PendingPunishment& p, int seconds) { p.DurationSec = seconds; },
-                          [](int slot) { return Engine().Translations.Get("duration.custom", slot); },
-                          [](int slot) { return Engine().Translations.Get("duration.customPrompt", slot); },
+                          [](int slot) { return Engine().Utils.Translations.Get("duration.custom", slot); },
+                          [](int slot) { return Engine().Utils.Translations.Get("duration.customPrompt", slot); },
                           [](const PendingPunishment& p) { return IsTimed(p.Type); })
         ->AddOptionsStep([stepTitle](int slot) { return stepTitle(slot, "punish.selectReason"); },
                          [](int) { return App().Config.GetPunishments().reasonPresets; },
                          [](PendingPunishment& p, std::string reason) { p.Reason = std::move(reason); },
-                         [](int slot) { return Engine().Translations.Get("punish.customReason", slot); },
-                         [](int slot) { return Engine().Translations.Get("punish.customReasonPrompt", slot); })
+                         [](int slot) { return Engine().Utils.Translations.Get("punish.customReason", slot); },
+                         [](int slot) { return Engine().Utils.Translations.Get("punish.customReasonPrompt", slot); })
         ->Start(adminSlot);
 }
 
@@ -146,7 +146,7 @@ bool AnyTemplateUsable(int adminSlot, int targetSlot)
 
 std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
     if (!target)
         return nullptr;

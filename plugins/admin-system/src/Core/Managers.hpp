@@ -12,7 +12,7 @@
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/EffectManager.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Database/Api.hpp>
 
 namespace AdminSystem
@@ -39,7 +39,7 @@ struct Managers
     Core::ChatService Chat;
     Reports::ReportManager Reports;
     // Constructed after the kit's Services (and its Scheduler) are live - PluginBase guarantees it.
-    CS2Kit::EffectManager Effects{CS2Kit::Engine().Scheduler};
+    CS2Kit::EffectManager Effects{CS2Kit::Engine().Core.Scheduler};
     Admin::CheatCheck::CheatCheckManager CheatCheck;
     /** Published to other plugins in OnLoad; withdrawn in OnUnload before these managers die. */
     Core::AdminActionsService AdminActions;

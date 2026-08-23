@@ -3,7 +3,7 @@
 #include "../Core/Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 
 namespace AdminSystem::Commands
@@ -11,7 +11,7 @@ namespace AdminSystem::Commands
 
 using namespace CS2Kit::Commands;
 using CS2Kit::Registry;
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace
 {

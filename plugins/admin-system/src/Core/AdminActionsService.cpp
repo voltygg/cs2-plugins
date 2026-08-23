@@ -11,7 +11,7 @@
 
 namespace Log = CS2Kit::Utils::Log;
 using Contracts::BanResult;
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Core
 {
@@ -67,7 +67,7 @@ void AdminActionsService::AlertAdmins(int64_t steamId, std::string_view detector
     {
         if (!App().Admins.HasPermission(admin->GetSteamID(), Permission::Ban))
             continue;
-        Engine().Messages.ReplyKey(admin->GetSlot(), "anticheat.alert",
+        Engine().Sdk.Messages.ReplyKey(admin->GetSlot(), "anticheat.alert",
                                    {{"name", suspectName}, {"detector", detectorName}, {"score", scoreText}});
     }
 }

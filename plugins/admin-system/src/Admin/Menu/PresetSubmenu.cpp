@@ -4,13 +4,13 @@
 #include "../Actions/Descriptors.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -21,7 +21,7 @@ using CS2Kit::Utils::Translations;
 
 std::shared_ptr<CS2Kit::MenuView> BuildTeamPickerMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     MenuBuilder builder(tr.Get("action.changeTeam", adminSlot));
 
     auto addTeam = [&](const std::string& label, int team) {

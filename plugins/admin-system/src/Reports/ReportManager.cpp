@@ -4,13 +4,13 @@
 #include "../Database/Repositories/ReportRepository.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 #include <algorithm>
 #include <utility>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 using CS2Kit::Utils::TimeUtils;
 
 namespace AdminSystem::Reports
@@ -71,7 +71,7 @@ void ReportManager::Submit(const CS2Kit::Player& reporter, const CS2Kit::Player&
         .ReasonCode = reasonCode,
         .Reason = reasonText,
         .ServerTag = App().Config.GetServer().tag,
-        .MapName = Engine().CurrentMap,
+        .MapName = Engine().Core.CurrentMap,
         .CreatedAt = now,
     };
 

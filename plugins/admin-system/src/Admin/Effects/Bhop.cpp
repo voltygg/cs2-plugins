@@ -2,11 +2,11 @@
 #include "EffectRegistry.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <format>
 
-using CS2Kit::Core::Engine;
-using CS2Kit::Core::EngineOrNull;
+using CS2Kit::App::Engine;
+using CS2Kit::App::EngineOrNull;
 
 namespace AdminSystem::Admin::Effects
 {
@@ -25,10 +25,10 @@ const Effect Bhop{.Permission = Flag(Permission::Bhop),
                   .Scope = EffectScope::Session,  // session grant: survives the death sweep
                   .Setup = [](const ActionContext& ctx) -> EffectInstance {
                       int64_t steamId = ctx.Target->GetSteamID();
-                      Engine().ConVars.ExecuteServerCommand(std::format("bhop_player {} 1", steamId).c_str());
+                      Engine().Sdk.ConVars.ExecuteServerCommand(std::format("bhop_player {} 1", steamId).c_str());
                       return {.OnStop = [steamId]() {
                           if (auto* engine = EngineOrNull())
-                              engine->ConVars.ExecuteServerCommand(std::format("bhop_player {} 0", steamId).c_str());
+                              engine->Sdk.ConVars.ExecuteServerCommand(std::format("bhop_player {} 0", steamId).c_str());
                       }};
                   }};
 

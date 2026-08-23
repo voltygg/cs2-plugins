@@ -4,7 +4,7 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/PluginInfoStamp.hpp>
+#include <CS2Kit/App/PluginInfoStamp.hpp>
 
 CS2KIT_PLUGIN(BhopPlugin, Bhop);
 

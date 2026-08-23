@@ -9,7 +9,7 @@
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
@@ -21,7 +21,7 @@
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::CheatCheck
 {
@@ -87,7 +87,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
         targetCtrl.ChangeTeam(CS2Kit::Sdk::TeamSpectator);
 
     int interval = cfg.panelRefreshMs > 0 ? cfg.panelRefreshMs : 100;
-    pc.TickTimer = Engine().Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
+    pc.TickTimer = Engine().Core.Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
 
     ResolveUrl(targetSlot);
     View::Render(targetSlot, pc);
@@ -184,7 +184,7 @@ void CheatCheckManager::OnRoomFailed(int targetSlot)
     FallbackToFixed(pc);
 
     ReplyToAdmin(pc, [adminSlot = pc.AdminSlot] {
-        return std::format("{}{}", ChatColors::Red, Engine().Translations.Get("cheatCheck.apiFailed", adminSlot));
+        return std::format("{}{}", ChatColors::Red, Engine().Utils.Translations.Get("cheatCheck.apiFailed", adminSlot));
     });
 
     View::Render(targetSlot, pc);
@@ -195,7 +195,7 @@ void CheatCheckManager::RelayCheckerUrl(int targetSlot, const std::string& check
     if (auto slot = ResolveAdminSlot(_checks[targetSlot]))
     {
         App().Chat.ReplyLink(
-            *slot, std::format("{}{}", ChatColors::Green, Engine().Translations.Get("cheatCheck.checkerUrl", *slot)),
+            *slot, std::format("{}{}", ChatColors::Green, Engine().Utils.Translations.Get("cheatCheck.checkerUrl", *slot)),
             checkerUrl);
     }
 }
@@ -239,7 +239,7 @@ CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSl
     {
         App().Chat.ReplyLink(
             *slot,
-            std::format("{}{} {}{}", ChatColors::Green, Engine().Translations.Get("cheatCheck.linkReceived", *slot),
+            std::format("{}{} {}{}", ChatColors::Green, Engine().Utils.Translations.Get("cheatCheck.linkReceived", *slot),
                         ChatColors::Default, name),
             link);
     }
@@ -273,8 +273,8 @@ void CheatCheckManager::ResetCheck(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
     if (pc.TickTimer)
-        Engine().Scheduler.Cancel(pc.TickTimer);
-    Engine().Messages.ClearCenterHtml(targetSlot);
+        Engine().Core.Scheduler.Cancel(pc.TickTimer);
+    Engine().Sdk.Messages.ClearCenterHtml(targetSlot);
     pc = PendingCheck{};
 }
 

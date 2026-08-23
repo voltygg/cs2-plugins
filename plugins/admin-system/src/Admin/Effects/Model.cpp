@@ -4,11 +4,11 @@
 #include "EffectRegistry.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Effects
 {
@@ -53,11 +53,11 @@ void PrecacheModels()
 {
     for (const auto& model : FunModels())
     {
-        Engine().Precache.Add(model.Path);
+        Engine().Sdk.Precache.Add(model.Path);
     }
 
-    Engine().Precache.Add(DefaultModelT);
-    Engine().Precache.Add(DefaultModelCt);
+    Engine().Sdk.Precache.Add(DefaultModelT);
+    Engine().Sdk.Precache.Add(DefaultModelCt);
 }
 
 const ParamEffect Model{.Permission = Flag(Permission::Fun),
@@ -78,7 +78,7 @@ const ParamEffect Model{.Permission = Flag(Permission::Fun),
                             },
                         .Setup = [](const ActionContext& ctx, int param) -> EffectInstance {
                             // Dispatch already bounds-checked param and required the target alive.
-                            Engine().EntityOps.SetModel(ctx.TargetCtrl.GetPawn(), FunModels()[param].Path.c_str());
+                            Engine().Sdk.EntityOps.SetModel(ctx.TargetCtrl.GetPawn(), FunModels()[param].Path.c_str());
 
                             // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
                             // team default when cleared while alive (a no-op on death, where IsAlive is false).
@@ -88,7 +88,7 @@ const ParamEffect Model{.Permission = Flag(Permission::Fun),
                                 if (!pc.IsValid() || !pc.IsAlive())
                                     return;
                                 if (const char* def = DefaultModelForTeam(pc.GetTeam()))
-                                    Engine().EntityOps.SetModel(pc.GetPawn(), def);
+                                    Engine().Sdk.EntityOps.SetModel(pc.GetPawn(), def);
                             }};
                         }};
 

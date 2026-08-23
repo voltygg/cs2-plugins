@@ -2,11 +2,11 @@
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Sdk/EntityKeyValues.hpp>
 #include <mathlib/vector.h>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Actions
 {
@@ -18,7 +18,7 @@ constexpr float ExplosionCleanupSeconds = 1.0f;
 constexpr int EnvExplosionNoDamage = 1;
 
 const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                       auto& ops = Engine().EntityOps;
+                       auto& ops = Engine().Sdk.EntityOps;
                        if (ops.CanSpawn())
                        {
                            CS2Kit::EntityKeyValues kv;
@@ -31,7 +31,7 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
                        }
 
                        int slot = ctx.Target->GetSlot();
-                       Engine().Scheduler.Delay(SmiteSlayDelayMs, [slot]() {
+                       Engine().Core.Scheduler.Delay(SmiteSlayDelayMs, [slot]() {
                            CS2Kit::PlayerController pc(slot);
                            if (pc.IsValid() && pc.IsAlive())
                                pc.Slay();

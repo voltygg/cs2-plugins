@@ -7,7 +7,7 @@
 #include "PunishFlow.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/MenuPresets.hpp>
@@ -17,7 +17,7 @@
 #include <string>
 #include <utility>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -27,7 +27,7 @@ using CS2Kit::Menu::MenuBuilder;
 
 std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(int adminSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
 
     auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
     if (!admin)
@@ -57,7 +57,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(int adminSlot)
 
 std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     auto& adminMgr = App().Admins;
     auto& plrMgr = Engine().Players;
 

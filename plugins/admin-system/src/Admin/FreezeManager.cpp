@@ -7,7 +7,7 @@
 #include "../Database/Repositories/AdminActivityRepository.hpp"
 #include "AdminManager.hpp"
 
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
@@ -22,7 +22,7 @@ namespace AdminSystem::Admin
 namespace Db = AdminSystem::Database;
 namespace Log = CS2Kit::Utils::Log;
 namespace ChatColors = CS2Kit::Utils::ChatColors;
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 using CS2Kit::Utils::TimeUtils;
 
 void FreezeManager::RefreshFromDatabase()
@@ -152,8 +152,8 @@ void FreezeManager::NotifyFrozen(int64_t steamId)
 
     const auto* row = GetFrozen(steamId);
     int slot = player->GetSlot();
-    auto notice = Engine().Translations.Get("freeze.notice", slot, {{"reason", row ? row->Reason : ""}});
-    Engine().Messages.Reply(slot, std::format("{}{}", ChatColors::Red, notice));
+    auto notice = Engine().Utils.Translations.Get("freeze.notice", slot, {{"reason", row ? row->Reason : ""}});
+    Engine().Sdk.Messages.Reply(slot, std::format("{}{}", ChatColors::Red, notice));
 }
 
 }  // namespace AdminSystem::Admin

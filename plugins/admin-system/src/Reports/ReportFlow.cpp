@@ -6,7 +6,7 @@
 #include "ReportManager.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/Flow.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 using CS2Kit::Menu::MenuBuilder;
 using CS2Kit::Utils::StringUtils;
 
@@ -40,7 +40,7 @@ constexpr const char* CustomReasonCode = "other";
 std::string ReasonLabel(const Core::ReportReason& reason, int slot)
 {
     const std::string key = "report.reasons." + reason.code;
-    std::string text = Engine().Translations.Get(key, slot);
+    std::string text = Engine().Utils.Translations.Get(key, slot);
     return text == key ? reason.label : text;
 }
 
@@ -67,7 +67,7 @@ std::optional<std::string> ValidatePending(int slot, const PendingReport& pendin
 std::shared_ptr<CS2Kit::MenuView> BuildReasonStep(int slot, ReportFlowT& flow)
 {
     auto self = flow.shared_from_this();
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     const auto& config = App().Config.GetReports();
 
     MenuBuilder builder(tr.Get("report.selectReason", slot));
@@ -115,7 +115,7 @@ void Submit(int reporterSlot, PendingReport& pending)
                              auto* player = Engine().Players.GetPlayerBySteamId(reporterSteamId);
                              if (!player)
                                  return;
-                             Engine().Messages.ReplyKey(player->GetSlot(), ok ? "report.submitted" : "report.failed",
+                             Engine().Sdk.Messages.ReplyKey(player->GetSlot(), ok ? "report.submitted" : "report.failed",
                                                         {{"name", name}});
                          });
 }
@@ -130,17 +130,17 @@ void StartReportFlow(int reporterSlot, int targetSlot)
         PendingReport{.TargetSlot = targetSlot, .TargetSteamId = target->GetSteamID(), .TargetName = target->GetName()})
         ->OnValidate(ValidatePending)
         ->AddStep(BuildReasonStep)
-        ->WithConfirm([](int slot) { return Engine().Translations.Get("report.confirmTitle", slot); },
+        ->WithConfirm([](int slot) { return Engine().Utils.Translations.Get("report.confirmTitle", slot); },
                       [](int slot, const PendingReport& pending) {
-                          auto& tr = Engine().Translations;
+                          auto& tr = Engine().Utils.Translations;
                           std::vector<std::pair<std::string, std::string>> rows;
                           rows.emplace_back(tr.Get("report.target", slot), pending.TargetName);
                           rows.emplace_back(tr.Get("report.reason", slot),
                                             StringUtils::TruncateUtf8(pending.ReasonText, 40));
                           return rows;
                       },
-                      [](int slot) { return Engine().Translations.Get("report.confirm", slot); },
-                      [](int slot) { return Engine().Translations.Get("report.cancel", slot); })
+                      [](int slot) { return Engine().Utils.Translations.Get("report.confirm", slot); },
+                      [](int slot) { return Engine().Utils.Translations.Get("report.cancel", slot); })
         ->OnFinish(Submit)
         ->Start(reporterSlot);
 }
@@ -155,7 +155,7 @@ void OpenReportMenu(int reporterSlot)
 
     const int64_t reporterSteamId = reporter->GetSteamID();
     auto menu = Admin::Menu::BuildPlayerPicker(
-        reporterSlot, Engine().Translations.Get("report.selectTarget", reporterSlot),
+        reporterSlot, Engine().Utils.Translations.Get("report.selectTarget", reporterSlot),
         [](int slot, int targetSlot) { StartReportFlow(slot, targetSlot); },
         // The kit picker lists every connected player, so ineligible targets are greyed out here
         // rather than filtered out of the roster.

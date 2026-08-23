@@ -4,7 +4,7 @@
 #include "../../Core/Config.hpp"
 #include "../../Core/Managers.hpp"
 
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
@@ -13,7 +13,7 @@
 #include <format>
 #include <string>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::CheatCheck::View
 {
@@ -60,7 +60,7 @@ void RenderPanel(int slot, const PendingCheck& pc)
         return;
     }
 
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
 
     int64_t remain = pc.DeadlineSec - TimeUtils::Now();
     int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
@@ -111,12 +111,12 @@ void RenderPanel(int slot, const PendingCheck& pc)
         html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick", slot));
     }
 
-    Engine().Messages.SendCenterHtml(slot, html);
+    Engine().Sdk.Messages.SendCenterHtml(slot, html);
 }
 
 void Render(int slot, const PendingCheck& pc)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     auto& chat = App().Chat;
 
     chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle", slot)));

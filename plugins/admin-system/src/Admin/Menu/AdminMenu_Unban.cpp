@@ -7,7 +7,7 @@
 #include "Labels.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/Flow.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -51,21 +51,21 @@ void StartUnbanConfirm(int adminSlot, BanRow row)
         })
         ->WithConfirm(
             [](int slot) {
-                auto& tr = Engine().Translations;
+                auto& tr = Engine().Utils.Translations;
                 return std::format("{}: {}", tr.Get("punish.confirmTitle", slot), tr.Get("action.unban", slot));
             },
             [](int slot, const BanRow& r) {
-                auto& tr = Engine().Translations;
+                auto& tr = Engine().Utils.Translations;
                 std::vector<std::pair<std::string, std::string>> rows;
                 rows.emplace_back(tr.Get("punish.target", slot), r.Name);
                 rows.emplace_back(tr.Get("punish.duration", slot), ExpiryLabel(r.ExpiresAt, slot));
                 rows.emplace_back(tr.Get("punish.reason", slot), StringUtils::TruncateUtf8(r.Reason, 40));
                 return rows;
             },
-            [](int slot) { return Engine().Translations.Get("punish.confirm", slot); },
-            [](int slot) { return Engine().Translations.Get("punish.cancel", slot); })
+            [](int slot) { return Engine().Utils.Translations.Get("punish.confirm", slot); },
+            [](int slot) { return Engine().Utils.Translations.Get("punish.cancel", slot); })
         ->OnFinish([](int slot, BanRow& r) {
-            auto& tr = Engine().Translations;
+            auto& tr = Engine().Utils.Translations;
             auto* admin = Engine().Players.GetPlayerBySlot(slot);
             if (!admin)
                 return;
@@ -84,7 +84,7 @@ void StartUnbanConfirm(int adminSlot, BanRow row)
 
 std::shared_ptr<CS2Kit::MenuView> BuildUnbanMenu(int adminSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
 
     MenuBuilder builder(tr.Get("unban.title", adminSlot));
 

@@ -16,7 +16,7 @@
 namespace Anticheat
 {
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 using CS2Kit::Core::IsValidSlot;
 namespace Log = CS2Kit::Utils::Log;
 
@@ -112,7 +112,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     // disabled simulator then costs nothing on the per-tick movement path.
     if (!_filtering)
     {
-        Engine().MovementHook.ListenFilterCmd(
+        Engine().Sdk.MovementHook.ListenFilterCmd(
             [this](int filtered, CS2Kit::UserCmdView& cmd) { OnFilter(filtered, cmd); });
         _filtering = true;
     }
@@ -134,7 +134,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, CS2Kit::UserCmdView& cmd)
     const Vector eye = self.GetEyePosition();
     const Vec3 from{eye.x, eye.y, eye.z};
     const int team = self.GetTeam();
-    const bool freeForAll = Engine().ConVars.GetBool("mp_teammates_are_enemies").value_or(false);
+    const bool freeForAll = Engine().Sdk.ConVars.GetBool("mp_teammates_are_enemies").value_or(false);
 
     Vec3 best;
     float bestDistance = 0.0f;

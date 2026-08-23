@@ -9,13 +9,13 @@
 #include "Menu/AdminMenu_Punish.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin
 {
@@ -26,7 +26,7 @@ using CS2Kit::Utils::Translations;
 
 std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(int adminSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     auto& adminMgr = App().Admins;
     auto& plrMgr = Engine().Players;
 

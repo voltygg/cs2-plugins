@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 using CS2Kit::Core::IsValidSlot;
 namespace Log = CS2Kit::Utils::Log;
 
@@ -25,17 +25,17 @@ void AntiCheatManager::Initialize()
 
     // The teleport tracker binds itself from its own spawn listener, so it must be enabled here:
     // registering a listener while the event service dispatches would mutate the map it walks.
-    Engine().Teleports.Enable();
+    Engine().Sdk.Teleports.Enable();
 
     // The movement hook needs a live movement-services instance, so retry from every spawn until it
     // takes. Install() touches no listener registry.
-    Engine().Events.Listen<PlayerSpawn>([](const PlayerSpawn&) { Engine().MovementHook.Install(); });
+    Engine().Sdk.Events.Listen<PlayerSpawn>([](const PlayerSpawn&) { Engine().Sdk.MovementHook.Install(); });
 
-    Engine().MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { DumpCommand(slot, cmd); });
+    Engine().Sdk.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { DumpCommand(slot, cmd); });
     Engine().Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); });
 
     // sv_cheats going off starts a propagation grace before client values mean anything again.
-    Engine().ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
+    Engine().Sdk.ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
         const std::string_view changed = name ? name : "";
         if (changed == "mp_teammates_are_enemies")
         {
@@ -65,7 +65,7 @@ void AntiCheatManager::Initialize()
 
 void AntiCheatManager::RefreshTeamRules()
 {
-    _correlator.SetTeammatesAreEnemies(Engine().ConVars.GetBool("mp_teammates_are_enemies").value_or(false));
+    _correlator.SetTeammatesAreEnemies(Engine().Sdk.ConVars.GetBool("mp_teammates_are_enemies").value_or(false));
 }
 
 void AntiCheatManager::LoadDetectionData()
@@ -180,8 +180,8 @@ nlohmann::json AntiCheatManager::StatusSnapshot() const
         {"detecting", DetectionsEnabled()},
         {"enforcingCheatCvars", EnforceCheatCvars()},
         {"modules", std::move(modules)},
-        {"clientCvars", Engine().ClientCvars.Available() ? "available" : "degraded"},
-        {"teleportTracker", Engine().Teleports.Enabled()},
+        {"clientCvars", Engine().Sdk.ClientCvars.Available() ? "available" : "degraded"},
+        {"teleportTracker", Engine().Sdk.Teleports.Enabled()},
         {"correlatorFrames", _correlator.FrameCount()},
         // A module with an empty table is inert however its toggle reads, so report the tables the
         // way clientCvars availability is reported: a health check must be able to see it.
@@ -225,7 +225,7 @@ void AntiCheatManager::LogStatus() const
             slot, player->GetName(), player->GetSteamID(), PunishmentName(_response.Issued(slot)),
             _aimbot.IncidentCount(slot), _aimlock.IncidentCount(slot), _aimlock.IsTracking(slot) ? "/tracking" : "",
             _antiAim.Score(slot), _silentAim.Score(slot, now), _namechanger.ChangeCount(slot),
-            latched.empty() ? "-" : latched, Engine().ClientCvars.PendingCount(slot),
+            latched.empty() ? "-" : latched, Engine().Sdk.ClientCvars.PendingCount(slot),
             _invalidCvarPoller.PollsIn(slot, now), _correlator.Shots(slot).size(), _correlator.CommandCount(slot),
             _correlator.Generation(slot));
     }
@@ -266,7 +266,7 @@ void AntiCheatManager::OnPlayerSettingsChanged(CS2Kit::Players::Player* player)
 CS2Kit::RawConVar& AntiCheatManager::CheatsConVar() const
 {
     if (!_svCheats)
-        _svCheats = Engine().ConVars.Raw("sv_cheats");
+        _svCheats = Engine().Sdk.ConVars.Raw("sv_cheats");
     return *_svCheats;
 }
 

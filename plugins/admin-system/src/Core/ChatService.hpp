@@ -12,7 +12,7 @@ namespace AdminSystem::Core
 {
 
 /**
- * Renders admin-system chat semantics on top of `Engine().Messages`:
+ * Renders admin-system chat semantics on top of `Engine().Sdk.Messages`:
  * styled per-command replies, punishment broadcasts, and prefix-tagged admin chat.
  */
 class ChatService

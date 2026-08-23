@@ -4,7 +4,7 @@
 #include "../AdminManager.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/MenuPresets.hpp>
@@ -16,7 +16,7 @@
 #include <string_view>
 #include <unordered_map>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -65,7 +65,7 @@ int IndexForColor(std::string_view color)
 
 std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(int viewerSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     const auto& keys = ColorLabelKeys();
 
     std::vector<ChoiceOption<std::string>::Choice> choices;
@@ -141,14 +141,14 @@ void AddColorChoice(MenuBuilder& builder, const std::string& title, int64_t stea
 std::string LanguageLabel(const std::string& code, int viewerSlot)
 {
     std::string key = "lang." + code;
-    std::string label = Engine().Translations.Get(key, viewerSlot);
+    std::string label = Engine().Utils.Translations.Get(key, viewerSlot);
     return label == key ? code : label;
 }
 
 // Sorted so the choice order is stable across the rebuild we trigger on commit.
 std::vector<std::string> AvailableLanguagesSorted()
 {
-    auto langs = Engine().Translations.GetAvailableLanguages();
+    auto langs = Engine().Utils.Translations.GetAvailableLanguages();
     std::sort(langs.begin(), langs.end());
     return langs;
 }
@@ -176,10 +176,10 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, int viewerSlot)
     int initialIndex = IndexForLanguage(langs, admin ? admin->Language : std::string("en"));
 
     builder.AddChoice<std::string>(
-        Engine().Translations.Get("chat.panelLanguage", viewerSlot), std::move(choices),
+        Engine().Utils.Translations.Get("chat.panelLanguage", viewerSlot), std::move(choices),
         [steamId](int menuSlot, const std::string& lang) {
             App().Admins.UpdateLanguage(steamId, lang);
-            Engine().Translations.SetPlayerLanguage(menuSlot, lang);
+            Engine().Utils.Translations.SetPlayerLanguage(menuSlot, lang);
             // Rebuild so the baked labels re-render in the new language. Use the by-value
             // menuSlot (not a capture): CloseMenu frees this option and its captures, so
             // nothing read after it may live in the lambda's closure.
@@ -194,7 +194,7 @@ void AddLanguageChoice(MenuBuilder& builder, int64_t steamId, int viewerSlot)
 
 std::shared_ptr<CS2Kit::MenuView> BuildChatSettingsMenu(int adminSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
     if (!admin)
         return nullptr;

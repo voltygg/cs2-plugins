@@ -4,9 +4,9 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/PluginInfoStamp.hpp>
+#include <CS2Kit/App/PluginInfoStamp.hpp>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 CS2KIT_PLUGIN(AnticheatPlugin, Anticheat);
 
@@ -27,7 +27,7 @@ bool AnticheatPlugin::OnLoad(bool /*late*/)
 
     // A missing data file leaves the two table-driven modules inert rather than taking the plugin
     // down: the aim modules, which carry no data file, are the ones worth keeping alive.
-    Engine().LoadReport.Run("Detection data", [] {
+    Engine().Core.LoadReport.Run("Detection data", [] {
         if (!Anticheat::App().Detections.Load(Anticheat::DetectionDataPath))
             return CS2Kit::StageResult::Degraded("file unreadable; DLL injection and invalid cvar modules are inert");
         return CS2Kit::StageResult::Ok(Anticheat::DetectionDataPath);

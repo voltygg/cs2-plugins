@@ -5,7 +5,7 @@
 #include "../Core/Permissions.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <format>
@@ -16,7 +16,7 @@ namespace AdminSystem::Commands
 using namespace CS2Kit::Commands;
 using namespace CS2Kit::Utils;
 using CS2Kit::Registry;
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace
 {
@@ -105,7 +105,7 @@ const bool _registered = [] {
         .Permission = Flag(Permission::FreezeAdmins),
         .Handler =
             [](CommandContext& c) {
-                auto& tr = Engine().Translations;
+                auto& tr = Engine().Utils.Translations;
                 int slot = c.CallerSlot();
 
                 const auto& frozen = App().Freeze.Frozen();

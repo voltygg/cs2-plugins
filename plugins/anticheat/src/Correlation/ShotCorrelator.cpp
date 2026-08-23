@@ -13,7 +13,7 @@
 #include <mathlib/vector.h>
 #include <optional>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 using CS2Kit::Core::IsValidSlot;
 
 namespace Anticheat
@@ -96,20 +96,20 @@ void ShotCorrelator::Initialize()
 {
     _userIds.fill(-1);
 
-    Engine().MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { OnCommand(slot, cmd); });
-    Engine().Scheduler.EveryFrame([this] { OnFrame(); });
+    Engine().Sdk.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { OnCommand(slot, cmd); });
+    Engine().Core.Scheduler.EveryFrame([this] { OnFrame(); });
 
-    Engine().Events.Listen<CS2Kit::Events::PlayerSpawn>([this](const CS2Kit::Events::PlayerSpawn& e) {
+    Engine().Sdk.Events.Listen<CS2Kit::Events::PlayerSpawn>([this](const CS2Kit::Events::PlayerSpawn& e) {
         if (AntiCheatManager::ModuleEnabled(DetectionKind::AntiAim))
             _manager.AntiAim().OnSlotChanged(e.Slot);
     });
-    Engine().Events.Listen<CS2Kit::Events::WeaponFire>(
+    Engine().Sdk.Events.Listen<CS2Kit::Events::WeaponFire>(
         [this](const CS2Kit::Events::WeaponFire& e) { OnWeaponFire(e); });
-    Engine().Events.Listen<CS2Kit::Events::BulletImpact>(
+    Engine().Sdk.Events.Listen<CS2Kit::Events::BulletImpact>(
         [this](const CS2Kit::Events::BulletImpact& e) { OnBulletImpact(e); });
     // player_hurt carries the hitgroup SilentAim scores headshots from, which the typed view omits.
-    Engine().Events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); });
-    Engine().Events.Listen<CS2Kit::Events::PlayerDeath>(
+    Engine().Sdk.Events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); });
+    Engine().Sdk.Events.Listen<CS2Kit::Events::PlayerDeath>(
         [this](const CS2Kit::Events::PlayerDeath& e) { OnPlayerDeath(e); });
 }
 
@@ -151,13 +151,13 @@ void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
     if (antiAim)
         _manager.Report(slot,
                         _manager.AntiAim().OnSimulated(slot, sample.CmdNum, serverTick, true,
-                                                       Engine().Teleports.JustTeleported(slot, TeleportGraceSec), now));
+                                                       Engine().Sdk.Teleports.JustTeleported(slot, TeleportGraceSec), now));
 }
 
 void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& players)
 {
     _userIds.fill(-1);
-    IVEngineServer2* engine = Engine().Interfaces.Engine;
+    IVEngineServer2* engine = Engine().Sdk.Interfaces.Engine;
     _userIdsResolved = engine != nullptr;
 
     for (const CS2Kit::Players::Player* player : Engine().Players.GetAllPlayers())
@@ -177,7 +177,7 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
                          .Team = controller.GetTeam(),
                          .Valid = true,
                          .Alive = controller.IsAlive(),
-                         .Teleported = Engine().Teleports.JustTeleported(slot, TeleportGraceSec)};
+                         .Teleported = Engine().Sdk.Teleports.JustTeleported(slot, TeleportGraceSec)};
     }
 }
 

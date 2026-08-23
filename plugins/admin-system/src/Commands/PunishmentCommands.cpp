@@ -5,7 +5,7 @@
 #include "../Punishments/PunishmentManager.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <string>
 
@@ -16,7 +16,7 @@ using namespace CS2Kit::Commands;
 using namespace AdminSystem::Punishments;
 using CS2Kit::Registry;
 using CS2Kit::Tokens;
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace
 {
@@ -99,7 +99,7 @@ const bool _registered = [] {
             [](CommandContext& c) {
                 bool removed =
                     App().Punishments.RemoveVoiceMuteBySteamId(c.Target->GetSteamID(), c.Caller->GetSteamID(),
-                                                               Engine().Translations.Get("reason.voiceUnmutedByAdmin"));
+                                                               Engine().Utils.Translations.Get("reason.voiceUnmutedByAdmin"));
                 Tokens tokens{{"name", c.Target->GetName()}};
                 return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
             },
@@ -129,7 +129,7 @@ const bool _registered = [] {
             [](CommandContext& c) {
                 bool removed =
                     App().Punishments.RemoveTextMuteBySteamId(c.Target->GetSteamID(), c.Caller->GetSteamID(),
-                                                              Engine().Translations.Get("reason.textUnmutedByAdmin"));
+                                                              Engine().Utils.Translations.Get("reason.textUnmutedByAdmin"));
                 Tokens tokens{{"name", c.Target->GetName()}};
                 return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
             },

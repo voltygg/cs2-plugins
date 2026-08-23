@@ -8,7 +8,7 @@
 #include <string_view>
 #include <vector>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace Anticheat
 {
@@ -30,7 +30,7 @@ void DllInjectionDetector::Initialize()
     if (_pump != 0)
         return;
 
-    _pump = Engine().Scheduler.Repeat(PumpIntervalMs, [this] {
+    _pump = Engine().Core.Scheduler.Repeat(PumpIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !AntiCheatManager::ModuleEnabled(DetectionKind::DllInjection))
             return;
 
@@ -74,7 +74,7 @@ void DllInjectionDetector::Reset()
 
 void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
 {
-    if (!Engine().Events.GetClientLegacyListener(slot))
+    if (!Engine().Sdk.Events.GetClientLegacyListener(slot))
     {
         // One grace period for a client still settling in. After that a missing listener is simply
         // nothing to scan, and the slot falls back to the normal cadence.
@@ -90,7 +90,7 @@ void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
     // cannot leave this detector checking a stale list.
     std::vector<std::string_view> matches;
     for (const std::string& name : App().Detections.Get().dllEventBlacklist)
-        if (Engine().Events.ClientListensTo(slot, name.c_str()))
+        if (Engine().Sdk.Events.ClientListensTo(slot, name.c_str()))
             matches.push_back(name);
     if (matches.empty())
         return;

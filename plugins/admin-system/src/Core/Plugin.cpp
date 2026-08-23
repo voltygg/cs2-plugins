@@ -12,9 +12,9 @@
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/HookMacros.hpp>
-#include <CS2Kit/Core/PluginInfoStamp.hpp>
+#include <CS2Kit/App/PluginInfoStamp.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Database/Api.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/Player.hpp>
@@ -30,6 +30,7 @@
 using namespace AdminSystem::Core;
 using namespace AdminSystem::Admin;
 using namespace AdminSystem::Punishments;
+using namespace CS2Kit::App;
 using namespace CS2Kit::Core;
 using namespace CS2Kit::Players;
 using namespace CS2Kit::Sdk;
@@ -49,7 +50,7 @@ AdminSystemPlugin& AdminSystemPlugin::Get()
     return g_AdminSystemPlugin;
 }
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 // ------- Subsystem wiring -----
 
@@ -60,7 +61,7 @@ namespace
 // result replies, and action broadcasts. Lambdas resolve App() at call time.
 void InstallPolicy()
 {
-    Engine().Policy = {
+    Engine().Core.Policy = {
         .HasPermission =
             [](int64_t steamId, const std::string& permission) {
                 return App().Admins.HasAnyPermission(steamId, permission);
@@ -112,7 +113,7 @@ StageResult StartPunishments()
 
     // Every minute: sweep expired bans/mutes, pick up admin freezes issued on other servers
     // sharing this database, and advance this server's registry heartbeat.
-    Engine().Scheduler.Repeat(60'000, []() {
+    Engine().Core.Scheduler.Repeat(60'000, []() {
         App().Punishments.ExpireOldPunishments();
         App().Freeze.RefreshFromDatabase();
         AdminSystem::Database::ServerRepository{}.Heartbeat(App().Config.GetServer().tag);
@@ -128,7 +129,7 @@ StageResult StartPunishments()
 void RegisterGameEventListeners()
 {
     namespace Events = CS2Kit::Events;
-    auto& events = Engine().Events;
+    auto& events = Engine().Sdk.Events;
     events.Listen<Events::PlayerDeath>([](const Events::PlayerDeath& e) {
         // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
         if (e.VictimSlot >= 0)
@@ -195,7 +196,7 @@ bool AdminSystemPlugin::OnLoad(bool late)
 {
     Log::Info("Loading v{}...", Info().Version);
 
-    auto& report = Engine().LoadReport;
+    auto& report = Engine().Core.LoadReport;
 
     // "Configuration" + "Translations" stages, via ConfigManager::LoadSettings.
     if (!CS2Kit::LoadStandardConfig(App().Config, {.Addon = AddonName}))
@@ -261,14 +262,14 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
     // Register the admin's panel language up front so every slot-aware Translations::Get (menus,
     // cheat-check, mute notices) renders in their language without per-command setup.
     if (const auto* row = App().Admins.GetAdmin(player->GetSteamID()))
-        Engine().Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
+        Engine().Utils.Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
 
     // A frozen admin gets told up front instead of discovering it on their first denied command.
     // Deferred a tick like the ban kick below so the freshly-connected client receives the line.
     if (App().Freeze.IsFrozen(player->GetSteamID()))
     {
         int64_t steamId = player->GetSteamID();
-        Engine().Scheduler.NextTick([steamId]() { App().Freeze.NotifyFrozen(steamId); });
+        Engine().Core.Scheduler.NextTick([steamId]() { App().Freeze.NotifyFrozen(steamId); });
     }
 
     // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so we defer
@@ -278,7 +279,7 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
     {
         int slot = player->GetSlot();
         std::string reason = ban->Reason;
-        Engine().Scheduler.NextTick([slot, reason]() { PlayerController(slot).Kick(reason.c_str()); });
+        Engine().Core.Scheduler.NextTick([slot, reason]() { PlayerController(slot).Kick(reason.c_str()); });
     }
 }
 
@@ -299,7 +300,7 @@ bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, b
 
 void AdminSystemPlugin::OnRegisterHooks()
 {
-    CS2KIT_SCOPED_HOOK(IVEngineServer2, SetClientListening, Engine().Interfaces.Engine,
+    CS2KIT_SCOPED_HOOK(IVEngineServer2, SetClientListening, Engine().Sdk.Interfaces.Engine,
                        SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
 }
 

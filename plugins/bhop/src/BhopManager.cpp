@@ -1,6 +1,6 @@
 #include "BhopManager.hpp"
 
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
@@ -9,7 +9,7 @@
 #include <mathlib/vector.h>
 
 using namespace CS2Kit;
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 namespace Log = CS2Kit::Utils::Log;
 
 namespace Bhop
@@ -20,7 +20,7 @@ void BhopManager::Initialize()
     ApplySettings();
     RegisterConsoleCommands();
 
-    auto& events = Engine().Events;
+    auto& events = Engine().Sdk.Events;
     events.Listen<Events::PlayerSpawn>([this](const Events::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); });
     events.Listen<Events::PlayerJump>([this](const Events::PlayerJump& e) { OnPlayerJump(e.Slot); });
     // Gamemode cfg re-exec on map change can reset the convars; re-asserting is cheap.
@@ -29,8 +29,8 @@ void BhopManager::Initialize()
             _conVars.ApplyGlobal();
     });
 
-    Engine().MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); });
-    Engine().MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); });
+    Engine().Sdk.MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); });
+    Engine().Sdk.MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); });
 
     // Server-authoritative auto-hop for grants. The 2026 subtick jump code does not honor the
     // flipped sv_autobunnyhopping, so the client (predicting with the replicated overrides)
@@ -38,7 +38,7 @@ void BhopManager::Initialize()
     // Post-simulation is the placement that works: hooking before the player's RunCommand kept
     // missing the landing (still airborne at pre time, vertical velocity re-zeroed by the landing
     // inside that same command).
-    Engine().Scheduler.EveryFrame([this] {
+    Engine().Core.Scheduler.EveryFrame([this] {
         if (_mode != Mode::Grants)
             return;
         for (int slot = 0; slot < Core::MaxPlayers; ++slot)
@@ -90,7 +90,7 @@ void BhopManager::Grant(int64_t steamId, bool enabled)
     {
         if (enabled)
         {
-            Engine().MovementHook.Install();
+            Engine().Sdk.MovementHook.Install();
             _conVars.ReplicateOverrides(slot);
         }
         else
@@ -102,7 +102,7 @@ void BhopManager::Grant(int64_t steamId, bool enabled)
     if (_config.Get().bhop.notifyPlayer)
     {
         const char* key = enabled ? "bhop.granted" : "bhop.revoked";
-        Engine().Messages.Send(slot, Engine().Translations.Get(key, slot), MessageKind::Center);
+        Engine().Sdk.Messages.Send(slot, Engine().Utils.Translations.Get(key, slot), MessageKind::Center);
     }
 }
 
@@ -192,7 +192,7 @@ void BhopManager::OnPlayerJump(int slot)
 
 void BhopManager::ForceAutoHop(int slot)
 {
-    if (!(Engine().Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
+    if (!(Engine().Sdk.Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
         return;
 
     PlayerController controller(slot);
@@ -208,7 +208,7 @@ void BhopManager::ForceAutoHop(int slot)
         return;  // already ascending: the engine (or last frame's hop) took this jump
 
     constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0); engine default
-    velocity.z = Engine().ConVars.GetFloat("sv_jump_impulse").value_or(DefaultJumpImpulse);
+    velocity.z = Engine().Sdk.ConVars.GetFloat("sv_jump_impulse").value_or(DefaultJumpImpulse);
     controller.SetVelocity(velocity);
     // Leave the ground in the same frame: if the next movement command still sees FL_ONGROUND
     // it can re-ground and zero the vertical velocity for a tick - the "laggy jump" hitch.
@@ -231,7 +231,7 @@ void BhopManager::OnPlayerSpawn(int slot)
     if (granted)
     {
         // The connect/map-change convar snapshot clobbered the client's override; re-send.
-        Engine().MovementHook.Install();
+        Engine().Sdk.MovementHook.Install();
         _conVars.ReplicateOverrides(slot);
     }
 }

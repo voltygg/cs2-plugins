@@ -5,7 +5,7 @@
 #include <CS2Kit/Utils/Log.hpp>
 #include <nlohmann/json.hpp>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 namespace Log = CS2Kit::Utils::Log;
 
 namespace Anticheat

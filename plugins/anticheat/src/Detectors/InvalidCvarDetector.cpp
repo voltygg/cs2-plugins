@@ -6,7 +6,7 @@
 #include <chrono>
 #include <string>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace Anticheat
 {
@@ -30,7 +30,7 @@ void InvalidCvarDetector::Initialize()
         return;
 
     _random.seed(Seed());
-    _pump = Engine().Scheduler.Repeat(PumpIntervalMs, [this] {
+    _pump = Engine().Core.Scheduler.Repeat(PumpIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !AntiCheatManager::ModuleEnabled(DetectionKind::InvalidCvar))
             return;
         const double now = TimeUtils::MonotonicSeconds();
@@ -85,7 +85,7 @@ double InvalidCvarDetector::NextDelaySec()
 void InvalidCvarDetector::Poll(int slot, SlotState& state)
 {
     ReadUserInfo(slot);
-    if (!Engine().ClientCvars.Available())
+    if (!Engine().Sdk.ClientCvars.Available())
         return;
 
     const CvarRuleTable& rules = _manager.InvalidCvars().Rules();
@@ -97,7 +97,7 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
     // second one, so the batch never has to check what is pending.
     for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
     {
-        Engine().ClientCvars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
+        Engine().Sdk.ClientCvars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
                                    [this](int replySlot, CS2Kit::ClientCvarStatus status, std::string_view cvar,
                                           std::string_view value) { OnReply(replySlot, status, cvar, value); });
     }
@@ -109,7 +109,7 @@ void InvalidCvarDetector::ReadUserInfo(int slot)
     const bool enforce = _manager.EnforceCheatCvars();
     for (const CvarRule& rule : _manager.InvalidCvars().Rules().UserInfo())
     {
-        const char* value = Engine().NetChannels.GetUserInfoCvar(slot, rule.name.c_str());
+        const char* value = Engine().Sdk.NetChannels.GetUserInfoCvar(slot, rule.name.c_str());
         if (!value || *value == '\0')
             continue;
         _manager.Report(slot, _manager.InvalidCvars().Observe(slot, rule.name, value, enforce));

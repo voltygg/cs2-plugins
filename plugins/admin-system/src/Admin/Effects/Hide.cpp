@@ -1,13 +1,13 @@
 #include "Descriptors.hpp"
 
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Sdk/GlowVision.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/TransmitFilter.hpp>
 #include <memory>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Effects
 {
@@ -43,7 +43,7 @@ const Effect Hide{.Permission = Flag(Permission::Hide),
                       ctx.TargetCtrl.ChangeTeam(TeamSpectator);
 
                       int slot = ctx.Target->GetSlot();
-                      Engine().Transmit.SetControllerHidden(slot, true);
+                      Engine().Sdk.Transmit.SetControllerHidden(slot, true);
 
                       // Hide is persistent, so the reconcile tick rebuilds the glow clones after
                       // round restarts and tracks spawns/deaths/team changes across rounds.
@@ -54,7 +54,7 @@ const Effect Hide{.Permission = Flag(Permission::Hide),
                               .OnStop =
                                   [slot, savedTeam, savedName, glow]() {
                                       glow->Destroy();
-                                      Engine().Transmit.SetControllerHidden(slot, false);
+                                      Engine().Sdk.Transmit.SetControllerHidden(slot, false);
                                       PlayerController pc(slot);
                                       if (!pc.IsValid())
                                           return;

@@ -5,7 +5,7 @@
 #include "CheatCheckView.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <format>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::CheatCheck
 {
@@ -93,7 +93,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const C
         ReplyToAdmin(pc, [&targetName, adminSlot = pc.AdminSlot] {
             return std::format(
                 "{}{}", ChatColors::Green,
-                Engine().Translations.Get("cheatCheck.suspectJoined", adminSlot, {{"name", targetName}}));
+                Engine().Utils.Translations.Get("cheatCheck.suspectJoined", adminSlot, {{"name", targetName}}));
         });
     }
     else
@@ -102,7 +102,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const C
         pc.DeadlineSec = TimeUtils::Now() + std::max(pc.PausedRemainingSec, MinResumeSec);
         ReplyToAdmin(pc, [&targetName, adminSlot = pc.AdminSlot] {
             return std::format("{}{}", ChatColors::Red,
-                               Engine().Translations.Get("cheatCheck.suspectLeft", adminSlot, {{"name", targetName}}));
+                               Engine().Utils.Translations.Get("cheatCheck.suspectLeft", adminSlot, {{"name", targetName}}));
         });
     }
 

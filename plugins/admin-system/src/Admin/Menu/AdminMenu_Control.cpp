@@ -7,7 +7,7 @@
 #include "PresetSubmenu.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/MenuPresets.hpp>
@@ -17,7 +17,7 @@
 #include <format>
 #include <memory>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -39,7 +39,7 @@ constexpr int SizeDefault = 4;   // index of 100 in SizePresets
 
 std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     auto& adminMgr = App().Admins;
 
     auto* admin = Engine().Players.GetPlayerBySlot(adminSlot);
@@ -70,7 +70,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(int adminSlot)
 
 std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
 
     auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
     if (!target || !Engine().Players.GetPlayerBySlot(adminSlot))

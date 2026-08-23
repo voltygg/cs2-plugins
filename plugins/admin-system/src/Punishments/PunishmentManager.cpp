@@ -8,7 +8,7 @@
 #include "../Database/Repositories/WarningRepository.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <utility>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Punishments
 {
@@ -37,7 +37,7 @@ namespace
 // that were already negotiated before the (un)mute landed.
 void RefreshVoiceChannel(int64_t senderSteamId, bool muted)
 {
-    auto* engine = Engine().Interfaces.Engine;
+    auto* engine = Engine().Sdk.Interfaces.Engine;
     if (!engine)
         return;
 

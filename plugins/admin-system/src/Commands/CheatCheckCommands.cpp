@@ -4,7 +4,7 @@
 #include "../Core/Permissions.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <format>
 
 namespace AdminSystem::Commands
@@ -13,7 +13,7 @@ namespace AdminSystem::Commands
 using namespace CS2Kit::Commands;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 using CS2Kit::Registry;
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace
 {
@@ -65,7 +65,7 @@ const bool _registered = [] {
                 if (!AdminSystem::Admin::Actions::CancelCheck(c.CallerSlot(), c.Target->GetSlot()))
                     return c.Fail("cheatCheck.noActiveCheck");
                 return CommandResult{
-                    true, std::format("{} {}", Engine().Translations.Get("cheatCheck.cancelled", c.CallerSlot()),
+                    true, std::format("{} {}", Engine().Utils.Translations.Get("cheatCheck.cancelled", c.CallerSlot()),
                                       c.Target->GetName())};
             },
     });

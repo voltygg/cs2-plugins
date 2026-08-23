@@ -7,7 +7,7 @@
 #include "PlayerPicker.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -16,7 +16,7 @@
 #include <format>
 #include <vector>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -25,7 +25,7 @@ using CS2Kit::Menu::MenuBuilder;
 
 std::shared_ptr<CS2Kit::MenuView> BuildEffectsMenu(int adminSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
     return BuildPlayerPicker(adminSlot, tr.Get("category.effects", adminSlot), [](int admin, int target) {
         auto actions = BuildEffectsActionsMenu(admin, target);
         if (actions)
@@ -35,7 +35,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsMenu(int adminSlot)
 
 std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(int adminSlot, int targetSlot)
 {
-    auto& tr = Engine().Translations;
+    auto& tr = Engine().Utils.Translations;
 
     auto* target = Engine().Players.GetPlayerBySlot(targetSlot);
     if (!target || !Engine().Players.GetPlayerBySlot(adminSlot))
@@ -65,7 +65,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(int adminSlot, int tar
         ctx.Tr("action.swap"),
         [adminSlot, targetSlot](int slot) {
             auto picker = BuildPlayerPicker(
-                adminSlot, Engine().Translations.Get("common.selectSwapTarget", adminSlot),
+                adminSlot, Engine().Utils.Translations.Get("common.selectSwapTarget", adminSlot),
                 [first = targetSlot](int a, int second) {
                     Actions::Swap(a, first, second);
                     Engine().Menus.CloseAllMenus(a);

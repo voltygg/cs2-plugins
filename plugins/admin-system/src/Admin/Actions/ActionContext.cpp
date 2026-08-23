@@ -6,7 +6,7 @@
 namespace AdminSystem::Admin::Actions
 {
 
-// The dispatcher is stateless - policy comes from Engine().Policy, set once in OnLoad.
+// The dispatcher is stateless - policy comes from Engine().Core.Policy, set once in OnLoad.
 using CS2Kit::Players::ActionDispatcher;
 
 ActionContext Resolve(int adminSlot, int targetSlot, const std::string& requiredFlag)

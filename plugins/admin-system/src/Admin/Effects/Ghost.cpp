@@ -2,10 +2,10 @@
 #include "EffectRegistry.hpp"
 
 #include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/App/Services.hpp>
 #include <CS2Kit/Sdk/TransmitFilter.hpp>
 
-using CS2Kit::Core::Engine;
+using CS2Kit::App::Engine;
 
 namespace AdminSystem::Admin::Effects
 {
@@ -23,8 +23,8 @@ const Effect Ghost{.Permission = Flag(Permission::Fun),
                    .OffKey = "broadcast.ghostOff",
                    .Setup = [](const ActionContext& ctx) -> EffectInstance {
                        int slot = ctx.Target->GetSlot();
-                       Engine().Transmit.SetPawnHidden(slot, true);
-                       return {.OnStop = [slot]() { Engine().Transmit.SetPawnHidden(slot, false); }};
+                       Engine().Sdk.Transmit.SetPawnHidden(slot, true);
+                       return {.OnStop = [slot]() { Engine().Sdk.Transmit.SetPawnHidden(slot, false); }};
                    }};
 
 static const bool _registered = CS2Kit::Registry<EffectEntry>::Add({.Order = 10, .Toggle = &Ghost});
