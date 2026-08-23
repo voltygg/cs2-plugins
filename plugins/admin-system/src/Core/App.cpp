@@ -100,11 +100,11 @@ StageResult App::StartPunishments()
 
     // Every minute: sweep expired bans/mutes, pick up admin freezes issued on other servers
     // sharing this database, and advance this server's registry heartbeat.
-    _maintenance = Runtime.Scheduler.Repeat(60'000, [this] {
+    _subs.push_back(Runtime.Scheduler.Repeat(60'000, [this] {
         Punishments.ExpireOldPunishments();
         Freeze.RefreshFromDatabase();
         Database::ServerRepository{Db}.Heartbeat(Config.GetServer().tag);
-    });
+    }));
 
     // Typed surface the anticheat plugin drives (bans need the DB, alerts need admin data).
     // Published last in this stage so a peer never sees a half-initialised implementation.
@@ -117,14 +117,14 @@ void App::RegisterGameEventListeners()
 {
     namespace Events = CS2Kit::Events;
     auto& events = Runtime.Events;
-    _playerDeath = events.Listen<Events::PlayerDeath>([this](const Events::PlayerDeath& e) {
+    _subs.push_back(events.Listen<Events::PlayerDeath>([this](const Events::PlayerDeath& e) {
         // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
         if (e.VictimSlot >= 0)
             Effects.CancelPerLife(e.VictimSlot);
-    });
-    _roundEnd = events.Listen<Events::RoundEnd>([this](const Events::RoundEnd&) { Effects.CancelRoundScoped(); });
-    _roundPrestart =
-        events.Listen<Events::RoundPrestart>([this](const Events::RoundPrestart&) { Effects.CancelRoundScoped(); });
+    }));
+    _subs.push_back(events.Listen<Events::RoundEnd>([this](const Events::RoundEnd&) { Effects.CancelRoundScoped(); }));
+    _subs.push_back(
+        events.Listen<Events::RoundPrestart>([this](const Events::RoundPrestart&) { Effects.CancelRoundScoped(); }));
 }
 
 // Domain sections on top of the kit's (build/load/gamedata/uptime), plus the command that

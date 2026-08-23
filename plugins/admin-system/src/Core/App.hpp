@@ -16,6 +16,7 @@
 #include <CS2Kit/Core/EffectManager.hpp>
 #include <CS2Kit/Database/Api.hpp>
 #include <string>
+#include <vector>
 
 namespace AdminSystem
 {
@@ -79,10 +80,9 @@ private:
     void InstallStatusReporting();
     void RegisterCommands();
 
-    CS2Kit::Subscription _maintenance;
-    CS2Kit::Subscription _playerDeath;
-    CS2Kit::Subscription _roundEnd;
-    CS2Kit::Subscription _roundPrestart;
+    /** Listener registrations, released together. Declared last: reverse member destruction
+     *  stops the callbacks before the state they capture goes away. */
+    std::vector<CS2Kit::Subscription> _subs;
 };
 
 }  // namespace AdminSystem

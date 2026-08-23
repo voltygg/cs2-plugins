@@ -19,16 +19,17 @@ void BhopManager::Initialize()
     RegisterConsoleCommands();
 
     auto& events = _rt.Events;
-    _spawn = events.Listen<Events::PlayerSpawn>([this](const Events::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); });
-    _jump = events.Listen<Events::PlayerJump>([this](const Events::PlayerJump& e) { OnPlayerJump(e.Slot); });
+    _subs.push_back(
+        events.Listen<Events::PlayerSpawn>([this](const Events::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
+    _subs.push_back(events.Listen<Events::PlayerJump>([this](const Events::PlayerJump& e) { OnPlayerJump(e.Slot); }));
     // Gamemode cfg re-exec on map change can reset the convars; re-asserting is cheap.
-    _roundStart = events.Listen<Events::RoundStart>([this](const Events::RoundStart&) {
+    _subs.push_back(events.Listen<Events::RoundStart>([this](const Events::RoundStart&) {
         if (_mode == Mode::Enabled)
             _conVars.ApplyGlobal();
-    });
+    }));
 
-    _runCommandPre = _rt.MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); });
-    _runCommandPost = _rt.MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); });
+    _subs.push_back(_rt.MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); }));
+    _subs.push_back(_rt.MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); }));
 
     // Server-authoritative auto-hop for grants. The 2026 subtick jump code does not honor the
     // flipped sv_autobunnyhopping, so the client (predicting with the replicated overrides)
@@ -36,13 +37,13 @@ void BhopManager::Initialize()
     // Post-simulation is the placement that works: hooking before the player's RunCommand kept
     // missing the landing (still airborne at pre time, vertical velocity re-zeroed by the landing
     // inside that same command).
-    _autoHopTimer = _rt.Scheduler.EveryFrame([this] {
+    _subs.push_back(_rt.Scheduler.EveryFrame([this] {
         if (_mode != Mode::Grants)
             return;
         for (int slot = 0; slot < Core::MaxPlayers; ++slot)
             if (_grantedSlots[slot])
                 ForceAutoHop(slot);
-    });
+    }));
 }
 
 void BhopManager::ApplySettings()

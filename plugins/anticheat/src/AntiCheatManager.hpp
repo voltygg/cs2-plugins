@@ -23,6 +23,7 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <tuple>
+#include <vector>
 
 namespace Anticheat
 {
@@ -101,10 +102,9 @@ private:
     DetectionDataManager& _detections;
     ResponseManager& _response;
 
-    CS2Kit::Subscription _spawnInstall;
-    CS2Kit::Subscription _dumpCommand;
-    CS2Kit::Subscription _slotChanged;
-    CS2Kit::Subscription _cvarChanged;
+    /** Listener registrations, released together. Declared last: reverse member destruction
+     *  stops the callbacks before the state they capture goes away. */
+    std::vector<CS2Kit::Subscription> _subs;
 
     ShotCorrelatorCore _correlator;
     AimbotCore _aimbot{_correlator};

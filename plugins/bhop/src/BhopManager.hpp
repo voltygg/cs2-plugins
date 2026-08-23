@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <optional>
 #include <unordered_set>
+#include <vector>
 
 namespace Bhop
 {
@@ -66,12 +67,9 @@ private:
     MovementConVars _conVars;
 
     // Held for the life of the manager; each unregisters when this object goes.
-    CS2Kit::Subscription _spawn;
-    CS2Kit::Subscription _jump;
-    CS2Kit::Subscription _roundStart;
-    CS2Kit::Subscription _runCommandPre;
-    CS2Kit::Subscription _runCommandPost;
-    CS2Kit::Subscription _autoHopTimer;
+    /** Listener registrations, released together. Declared last: reverse member destruction
+     *  stops the callbacks before the state they capture goes away. */
+    std::vector<CS2Kit::Subscription> _subs;
 
     std::unordered_set<int64_t> _granted;
     // Per-slot mirror of _granted for the movement hot path, where a steamId lookup per tick

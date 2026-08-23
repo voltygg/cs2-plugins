@@ -28,14 +28,14 @@ void AntiCheatManager::Initialize()
 
     // The movement hook needs a live movement-services instance, so retry from every spawn until it
     // takes. Install() touches no listener registry.
-    _spawnInstall = _rt.Events.Listen<PlayerSpawn>([this](const PlayerSpawn&) { _rt.MovementHook.Install(); });
+    _subs.push_back(_rt.Events.Listen<PlayerSpawn>([this](const PlayerSpawn&) { _rt.MovementHook.Install(); }));
 
-    _dumpCommand =
-        _rt.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { DumpCommand(slot, cmd); });
-    _slotChanged = _rt.Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); });
+    _subs.push_back(
+        _rt.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { DumpCommand(slot, cmd); }));
+    _subs.push_back(_rt.Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); }));
 
     // sv_cheats going off starts a propagation grace before client values mean anything again.
-    _cvarChanged = _rt.ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
+    _subs.push_back(_rt.ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
         const std::string_view changed = name ? name : "";
         if (changed == "mp_teammates_are_enemies")
         {
@@ -49,7 +49,7 @@ void AntiCheatManager::Initialize()
         if (!enabled)
             _cheatGraceUntil = TimeUtils::MonotonicSeconds() + SvCheatsPropagationGraceSec;
         ResetEvidence();
-    });
+    }));
     _cheatGraceUntil = TimeUtils::MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
     RefreshTeamRules();
