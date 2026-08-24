@@ -66,16 +66,15 @@ private:
     Mode _mode = Mode::Enabled;
     MovementConVars _conVars;
 
-    // Held for the life of the manager; each unregisters when this object goes.
-    /** Listener registrations, released together. Declared last: reverse member destruction
-     *  stops the callbacks before the state they capture goes away. */
-    std::vector<CS2Kit::Subscription> _subs;
-
     std::unordered_set<int64_t> _granted;
     // Per-slot mirror of _granted for the movement hot path, where a steamId lookup per tick
     // would be wasteful. Kept in lockstep with _granted by Grant/OnPlayerSpawn/OnPlayerDisconnect.
     std::array<bool, CS2Kit::MaxPlayers> _grantedSlots{};
     std::array<std::chrono::steady_clock::time_point, CS2Kit::MaxPlayers> _lastJump{};
+
+    /** Listener registrations, released together. Declared last: reverse member destruction
+     *  stops the callbacks before the state they capture goes away. */
+    std::vector<CS2Kit::Subscription> _subs;
 };
 
 }  // namespace Bhop

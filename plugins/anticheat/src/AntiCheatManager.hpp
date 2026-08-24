@@ -102,10 +102,6 @@ private:
     DetectionDataManager& _detections;
     ResponseManager& _response;
 
-    /** Listener registrations, released together. Declared last: reverse member destruction
-     *  stops the callbacks before the state they capture goes away. */
-    std::vector<CS2Kit::Subscription> _subs;
-
     ShotCorrelatorCore _correlator;
     AimbotCore _aimbot{_correlator};
     AimlockCore _aimlock{_correlator};
@@ -131,6 +127,10 @@ private:
     /** anticheat_dumpcmd stays a raw ConCommand; see RegisterCommands. */
     std::optional<CS2Kit::ServerCommand> _cmdDump;
     CheatSimulator _simulator;
+
+    /** Listener registrations, released together. Declared last: reverse member destruction
+     *  stops the callbacks before the state they capture goes away. */
+    std::vector<CS2Kit::Subscription> _subs;
 };
 
 }  // namespace Anticheat
