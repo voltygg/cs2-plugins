@@ -13,7 +13,7 @@ struct App;
 namespace AdminSystem::Admin::Actions
 {
 
-// The action scaffold lives in the kit; the plugin supplies its permission/immunity/broadcast
+// The action scaffold lives in the framework; the plugin supplies its permission/immunity/broadcast
 // policy through app.Runtime.Policy (set once in OnLoad). These aliases keep descriptor files and
 // call sites on the established local names.
 using ActionContext = VoltMod::Players::ActionContext;

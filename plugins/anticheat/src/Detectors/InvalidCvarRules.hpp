@@ -27,7 +27,7 @@ inline constexpr float PollIntervalMaxSec = 5.0f;
 
 /**
  * Cvars asked for per poll. The queried tier is walked in rotation rather than queried in one
- * burst: the kit refuses a slot's twelfth outstanding query.
+ * burst: the framework refuses a slot's twelfth outstanding query.
  */
 inline constexpr size_t CvarsPerPoll = 4;
 

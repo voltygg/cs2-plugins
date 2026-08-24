@@ -1,15 +1,21 @@
-# CS2 Plugins
+# CS2 plugins
 
-A C++23 Metamod:Source plugin monorepo for Counter-Strike 2 community servers. Each plugin lives under `plugins/<name>/` with its own sources, configs, and CMake target.
+C++23 Metamod:Source plugins for Counter-Strike 2 community servers. Each
+plugin lives under `plugins/<name>/` with its own source, configuration, and
+CMake target.
 
-Built on top of **[VoltMod](https://github.com/voltygg/voltmod)** - a reusable C++23 library for CS2 plugin development (declarative commands, WASD menus, async PostgreSQL, engine SDK wrappers). VoltMod, the HL2SDK and Metamod all arrive as Conan packages from a public remote. The one submodule, `vendor/voltmod`, is a developer convenience for working on the kit and this repo together - it is not needed to build.
+The plugins use [VoltMod](https://github.com/voltygg/voltmod), a reusable C++23
+framework that provides declarative commands, WASD menus, asynchronous
+PostgreSQL, and Source SDK wrappers. VoltMod, the HL2SDK, and Metamod are Conan
+packages from a public remote. The `vendor/voltmod` submodule is for developing
+the framework and these plugins together; it is not required for a normal build.
 
 ## Plugins
 
 | Plugin | Description |
 | --- | --- |
-| [admin-system](plugins/admin-system/README.md) | Full admin suite: punishments, fun effects, WASD admin menu, multi-server admin groups, abuse protection, cheat-check |
-| [bhop](plugins/bhop/README.md) | Smooth, client-predicted auto-bunnyhop with air acceleration; server-wide or per-player session grants driven by admin-system |
+| [admin-system](plugins/admin-system/README.md) | Admin commands and menu, punishments, fun effects, shared admin groups, abuse protection, and cheat-check workflows |
+| [bhop](plugins/bhop/README.md) | Client-predicted auto-bunnyhop with air acceleration and optional per-player session grants from admin-system |
 
 ## Requirements
 
@@ -17,13 +23,15 @@ Built on top of **[VoltMod](https://github.com/voltygg/voltmod)** - a reusable C
 - [Metamod:Source 2.0](https://www.sourcemm.net/)
 - PostgreSQL 18+ (for plugins that use the database)
 
-## Installation
+## Install a release
 
-Grab the latest build from [Releases](https://github.com/voltygg/cs2-plugins/releases) and extract it into your server's `csgo/` folder. Per-plugin configuration is covered in each plugin's README.
+Download the latest build from [Releases](https://github.com/voltygg/cs2-plugins/releases)
+and extract it into the server's `csgo/` folder. Each plugin README describes
+its configuration.
 
 ## Building
 
-### Linux (Docker)
+### Linux with Docker
 
 ```bash
 git clone https://github.com/voltygg/cs2-plugins.git
@@ -34,31 +42,32 @@ docker compose -f deploy/docker-compose.build.yml run --rm --build build
 
 ### Windows
 
-Requires Visual Studio 2026 Build Tools. CMake 4.3.4+, Conan 2.29.1+, and Ninja
-are pinned by the `voltmod` distribution, so `uv sync` installs them.
+Visual Studio 2026 Build Tools is required. The `voltmod` distribution pins
+CMake 4.3.4+, Conan 2.29.1+, and Ninja, so `uv sync` installs them.
 
 ```bash
 git clone https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
 
 uv sync
-uv run poe bootstrap   # Conan profiles + remote, then a first build
-uv run poe build       # the loop from then on
+uv run poe bootstrap   # install Conan profiles and the remote, then build once
+uv run poe build       # subsequent builds
 ```
 
-The default Windows preset is `windows-msvc-release`; use
-`uv run poe build windows-msvc-debug` for a debug build. Output lands in
+The default Windows preset is `windows-msvc-release`. Use
+`uv run poe build windows-msvc-debug` for a debug build. Output is written to
 `build/<preset>/plugins/<name>/<platform-arch>/`.
 
 See [docs/local-development.md](docs/local-development.md) for the full setup
 guide and [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
 
-## Adding a plugin
+## Add a plugin
 
 ```bash
 uv run poe new-plugin my-plugin
 ```
 
-Stamps `plugins/my-plugin/` from VoltMod's template tree (MetamodPlugin skeleton,
-settings.jsonc, translations, an example `!ping` command) and registers it in
-the root `CMakeLists.txt`. It builds and loads as-is.
+This stamps `plugins/my-plugin/` from VoltMod's template tree with a
+`MetamodPlugin` skeleton, `settings.jsonc`, translations, and an example
+`!ping` command. It also registers the plugin in the root `CMakeLists.txt`, so
+the generated plugin builds and loads without further wiring.

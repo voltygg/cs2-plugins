@@ -1,8 +1,8 @@
 #pragma once
 
-// Angle math shared by every aim core. Deliberately NOT the kit's AngleMath, whose Euclidean
-// pitch/yaw error under-reports near the poles and over-reports at large yaw offsets. Distances
-// here are great-circle, matching what a bullet actually does.
+// Shared angle math for aim cores. It differs from the framework's AngleMath:
+// that helper uses Euclidean pitch/yaw error, while this file uses great-circle
+// distance to match bullet travel.
 
 #include "Samples.hpp"
 

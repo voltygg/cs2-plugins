@@ -1,13 +1,13 @@
-# Deploy
+# Deployment
 
-Dockerized deployment for this CS2 plugin monorepo. The server runtime image is
-based on `joedwards32/cs2`; this repo renders Compose files, plugin bundles,
+This repository deploys the CS2 plugins in Docker. The server runtime image is
+based on `joedwards32/cs2`. The tools render Compose files, plugin bundles,
 Metamod setup hooks, and per-server plugin settings.
 
 `uv run poe deploy` and `uv run poe start-server` remain
 local Windows dev tools.
 
-## Shape
+## Layout
 
 ```text
 deploy/inventory.yml          declared plugins + Docker hosts
@@ -20,15 +20,15 @@ deploy/templates/compose.service.yml one CS2 service block, filled per instance
 deploy/secrets/               per-server env template (real values in GitHub secrets)
 ```
 
-Published images use only `:latest`:
+Published images use only the `:latest` tag:
 
 ```text
 ghcr.io/<repo>/cs2-server-runtime:latest
 ```
 
-Each CS2 instance is one container. Containers on the same VPS share one
-persistent CS2 install mounted at `/home/steam/cs2-dedicated`; generated deploy
-files stay separate under `/home/steam/cs2/deploy`.
+Each CS2 instance runs in one container. Containers on the same VPS share a
+persistent CS2 install mounted at `/home/steam/cs2-dedicated`; generated
+deployment files remain separate under `/home/steam/cs2/deploy`.
 
 ```text
 /home/steam/cs2/deploy                       generated Compose/env/bundles/pre-hook files
@@ -37,13 +37,14 @@ files stay separate under `/home/steam/cs2/deploy`.
 ```
 
 Game files are shared, but each instance gets its own `csgo/addons` tree bind-
-mounted over the shared install, so instances on one box can run different plugin
-sets. The rendered `pre.sh` hook copies the instance's plugin bundle into its
-addons tree, installs or refreshes Metamod, and patches the shared `gameinfo.gi`
-before launch. The addons dir is runtime state under `deploy_root`; rsync (no
-`--delete`) leaves it untouched on redeploy so Metamod persists.
+mounted over the shared install. Instances on one host can therefore run
+different plugin sets. Before launch, the rendered `pre.sh` hook copies the
+instance bundle into its addons tree, installs or refreshes Metamod, and patches
+the shared `gameinfo.gi`. The addons directory is runtime state under
+`deploy_root`; rsync does not use `--delete`, so Metamod remains in place on a
+redeploy.
 
-Metamod is re-checked on every launch against the build recorded in
+Metamod is checked on every launch against the build recorded in
 `addons/metamod/.mms-build` and reinstalled when the latest snapshot differs - a
 CS2 update can retire symbols an older Metamod links against, leaving it unable
 to load. Set `MMS_URL` to pin a build, `MMS_BASE` to change the mirror.
@@ -58,14 +59,15 @@ sudo bash deploy/scripts/bootstrap-host.sh
 sudo bash deploy/scripts/bootstrap-host.sh --skip-docker
 ```
 
-This installs Docker + Compose when missing, creates the deploy user, opens SSH
-and the CS2 UDP port range, and prepares `~/cs2/deploy` and `~/cs2/server`.
+The script installs Docker and Compose when needed, creates the deployment user,
+opens SSH and the CS2 UDP port range, and prepares `~/cs2/deploy` and
+`~/cs2/server`.
 
 ## One-time: shared database
 
-Create the app login role and one database per plugin. The Postgres is not
-publicly reachable, so `--server` is simplest: the inventory is parsed locally
-and the DDL runs on the box over SSH.
+Create the application login role and one database per plugin. PostgreSQL is not
+publicly reachable, so `--server` is the simplest path: the inventory is parsed
+locally and the DDL runs on the host over SSH.
 
 ```bash
 DB_PASSWORD='<app-role-pw>' PGPASSWORD='<superuser-pw>' \
@@ -84,7 +86,7 @@ uv run poe deploy-tunnel --server box-a
 uv run poe deploy-tunnel --host 203.0.113.10 --identity ~/.ssh/id_deploy
 ```
 
-Then in another shell:
+In another shell, connect through the tunnel:
 
 ```bash
 psql "host=127.0.0.1 port=5433 dbname=admin_system user=cs2_app"
@@ -123,12 +125,12 @@ from the instance `hostname`. That tag keys per-server admin grants
 (`admin_server_groups`) in the shared database, so treat box ids and instance
 names as **stable** - renaming one orphans the grants that reference its tag.
 
-`inventory.yml` owns non-secret topology: hosts, ports, deploy roots, image refs,
+`inventory.yml` owns non-secret topology: hosts, ports, deployment roots, image refs,
 plugins, instances, and database names. Local server `.env` files own secrets
 and local file paths such as `SSH_KEY_FILE`, `DB_PASSWORD`, `PGPASSWORD`, `GSLT_*`,
 `RCON_*`, and `CHEAT_API_KEY`.
 
-Fill the template and paste its full contents into a GitHub Environment secret
+Copy the template and paste its full contents into a GitHub Environment secret
 named `SERVER_ENV` on the environment matching the server's `environment:`:
 
 ```bash
@@ -160,7 +162,7 @@ docker compose pull
 docker compose up -d cs2-main
 ```
 
-Manual path:
+For a manual deployment, run:
 
 ```bash
 docker build -f deploy/Dockerfile --target runtime \
@@ -175,11 +177,11 @@ containers.
 
 ## Updating / staying current
 
-SteamCMD runs only when a container starts, so a long-running instance never
-picks up a Valve update and joins fail with "client out of date". `deploy-server`
-won't fix it (an unchanged `:latest` image makes `up -d` a no-op) - the reliable
-trigger is a **restart**. When clients report being out of date, restart each
-instance one at a time (the command waits for SteamCMD between instances):
+SteamCMD runs only when a container starts. A long-running instance therefore
+does not pick up a Valve update, and clients may receive "client out of date".
+`deploy-server` does not fix this when the `:latest` image is unchanged because
+`up -d` is a no-op. Restart each instance one at a time; the command waits for
+SteamCMD between instances:
 
 ```bash
 uv run poe deploy-update --server box-a
@@ -188,7 +190,7 @@ uv run poe deploy-update --server box-a --dry-run   # print the SSH commands onl
 
 ## Cleanup
 
-Remove this repo's CS2 Docker stack, generated deploy files, shared CS2 install,
+Remove this repository's CS2 Docker stack, generated deployment files, shared CS2 install,
 and runtime images:
 
 ```bash

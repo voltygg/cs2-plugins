@@ -32,7 +32,7 @@ namespace ChatColors = VoltMod::Core::ChatColors;
 
 // Translation-key suffix per canonical VoltMod color name. Compound names ("lightblue")
 // don't survive a generic "uppercase first letter" rule, so the small lookup keeps the
-// JSON keys stable and lets us reuse the kit's @ref ChatColors::Palette for everything else.
+// JSON keys stable and lets us reuse the framework's @ref ChatColors::Palette for everything else.
 const std::unordered_map<std::string_view, std::string_view>& ColorLabelKeys()
 {
     static const std::unordered_map<std::string_view, std::string_view> kKeys = {
@@ -73,7 +73,7 @@ std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(App& app, int v
     // ChatColors::Default which is itself a real overrideable color.
     choices.push_back({tr.Get("color.groupDefault", viewerSlot), std::string{}});
 
-    // The kit renders the palette; colors without a translation key fall back to their name.
+    // The framework renders the palette; colors without a translation key fall back to their name.
     auto palette = ::VoltMod::Menu::BuildPaletteChoices([&](std::string_view name) -> std::string {
         if (auto it = keys.find(name); it != keys.end())
             return tr.Get(std::string(it->second), viewerSlot);

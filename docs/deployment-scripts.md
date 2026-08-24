@@ -1,7 +1,7 @@
-# Deployment Scripts
+# Deployment scripts
 
-Deployment scripts copy built Metamod:Source plugins to a CS2 server and also
-deploy the shared voltmod gamedata.
+The deployment tools copy built Metamod:Source plugins to a CS2 server and copy
+VoltMod's shared gamedata with them.
 
 ## Usage
 
@@ -19,7 +19,7 @@ The default Windows build preset is `windows-msvc-release`; override it with
 CS2_BUILD_PRESET=windows-msvc-debug uv run poe deploy --plugin-name admin-system
 ```
 
-## Build Output
+## Build output
 
 The scripts expect binaries under:
 
@@ -34,7 +34,7 @@ build/windows-msvc-release/plugins/admin-system/windows-x86_64/admin-system.dll
 build/linux-steamrt-release/plugins/admin-system/linux-x86_64/admin-system.so
 ```
 
-## Server Layout
+## Server layout
 
 Files are deployed under the CS2 server `csgo/` directory:
 
@@ -54,9 +54,10 @@ Linux package bundles use:
 addons/<plugin>/bin/linuxsteamrt64/<plugin>.so
 ```
 
-## Adding Another Plugin
+## Add a plugin
 
-1. Create `plugins/<new>/src/`, `plugins/<new>/CMakeLists.txt`, configs, and
+1. Create `plugins/<new>/src/`, `plugins/<new>/CMakeLists.txt`, configuration
+   files, and
    `plugins/<new>/<new>.vdf`.
 2. Call `voltmod_add_plugin(<new> VERSION <version> ...)` in that plugin CMake file.
 3. Add `add_subdirectory(plugins/<new>)` to the root `CMakeLists.txt`.
