@@ -14,7 +14,11 @@ RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contri
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-ENV PATH=/opt/voltmod/bin:$PATH UV_PYTHON_INSTALL_DIR=/opt/uv-python CONAN_HOME=/root/.conan2
+ENV PATH=/opt/voltmod/bin:$PATH \
+  VIRTUAL_ENV=/opt/voltmod \
+  UV_PYTHON_INSTALL_DIR=/opt/uv-python \
+  CONAN_HOME=/root/.conan2
+
 RUN uv venv --python 3.14 /opt/voltmod \
   && uv pip install --python /opt/voltmod/bin/python --no-cache \
   "voltmod @ git+https://github.com/voltygg/voltmod.git@${VOLTMOD_REF}"
