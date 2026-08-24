@@ -4,7 +4,7 @@ Dockerized deployment for this CS2 plugin monorepo. The server runtime image is
 based on `joedwards32/cs2`; this repo renders Compose files, plugin bundles,
 Metamod setup hooks, and per-server plugin settings.
 
-`uv run poe deploy` (the `local` subcommand) and `scripts/start_server.py` remain
+`uv run poe deploy` and `uv run poe start-server` remain
 local Windows dev tools.
 
 ## Shape

@@ -68,15 +68,15 @@ def cmd_render(args: argparse.Namespace) -> None:
 def cmd_deploy(args: argparse.Namespace) -> None:
     from . import inventory, remote
 
+    data = inventory.load()
     if args.all:
-        servers = [server["id"] for server in inventory.active_servers(inventory.load())]
+        servers = [server["id"] for server in inventory.active_servers(data)]
     elif args.server:
         servers = [args.server]
     else:
         die("deploy needs --server or --all")
 
-    # One image for the whole sweep, resolved once rather than per provider in YAML.
-    runtime_image = args.runtime_image or inventory.runtime_image(inventory.load())
+    runtime_image = args.runtime_image or inventory.runtime_image(data)
 
     for server_id in servers:
         materialize_server_env(server_id)
@@ -118,6 +118,21 @@ def cmd_local(args: argparse.Namespace) -> None:
     local.deploy_local(args.server_path, args.plugin_name)
 
 
+def cmd_start(args: argparse.Namespace) -> None:
+    from . import local
+
+    local.start_server(
+        args.server_path,
+        args.steamcmd_path,
+        args.map,
+        args.gslt_token,
+        args.max_players,
+        args.port,
+        args.rcon_password,
+        check_update=args.check_update,
+    )
+
+
 def cmd_tunnel_db(args: argparse.Namespace) -> None:
     from . import remote
 
@@ -138,70 +153,74 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    matrix = sub.add_parser("matrix", help="emit the active deploy server matrix")
+    def command(name: str, help_text: str, handler) -> argparse.ArgumentParser:
+        child = sub.add_parser(name, help=help_text)
+        child.set_defaults(func=handler)
+        return child
+
+    matrix = command("matrix", "emit the active deploy server matrix", cmd_matrix)
     matrix.add_argument("--server", help="filter to one server id and fail if missing")
     matrix.add_argument("--format", choices=("json", "plain"), default="json")
-    matrix.set_defaults(func=cmd_matrix)
 
-    plugins = sub.add_parser("plugins", help="emit declared deploy plugins")
+    plugins = command("plugins", "emit declared deploy plugins", cmd_plugins)
     plugins.add_argument("--format", choices=("json", "plain"), default="json")
-    plugins.set_defaults(func=cmd_plugins)
 
-    runtime = sub.add_parser("runtime-image", help="emit the configured server runtime image")
-    runtime.set_defaults(func=cmd_runtime_image)
+    command("runtime-image", "emit the configured server runtime image", cmd_runtime_image)
 
-    package = sub.add_parser("package", help="package built plugins for Docker deploy")
+    package = command("package", "package built plugins for Docker deploy", cmd_package)
     package.add_argument("plugin", nargs="?")
     package.add_argument("platform", choices=("linux", "windows"), nargs="?", default="linux")
     package.add_argument("--all", action="store_true", help="every plugin the inventory declares")
     package.add_argument("--out")
-    package.set_defaults(func=cmd_package)
 
-    render = sub.add_parser("render", help="render compose artifacts for one server")
+    render = command("render", "render compose artifacts for one server", cmd_render)
     render.add_argument("--server", required=True)
     render.add_argument("--package-dir", default="package")
     render.add_argument("--out-dir")
     render.add_argument("--runtime-image")
     render.add_argument("--no-env", action="store_true", help="do not load server .env first")
-    render.set_defaults(func=cmd_render)
 
-    deploy = sub.add_parser("deploy", help="render and deploy servers over SSH")
+    deploy = command("deploy", "render and deploy servers over SSH", cmd_deploy)
     deploy.add_argument("--server")
     deploy.add_argument("--all", action="store_true", help="every active inventory server")
     deploy.add_argument("--package-dir", default="package")
     deploy.add_argument("--runtime-image", help="default: the inventory's runtime image")
     deploy.add_argument("--dry-run", action="store_true")
-    deploy.set_defaults(func=cmd_deploy)
 
-    update = sub.add_parser("update", help="restart instances to pull the latest CS2 build")
+    update = command("update", "restart instances to pull the latest CS2 build", cmd_update)
     update.add_argument("--server", required=True)
     update.add_argument("--dry-run", action="store_true")
-    update.set_defaults(func=cmd_update)
 
-    cleanup = sub.add_parser("cleanup", help="remove one deployed CS2 server stack")
+    cleanup = command("cleanup", "remove one deployed CS2 server stack", cmd_cleanup)
     cleanup.add_argument("--server", required=True)
     cleanup.add_argument("--yes", action="store_true", help="confirm destructive cleanup")
     cleanup.add_argument("--dry-run", action="store_true", help="print cleanup actions only")
-    cleanup.set_defaults(func=cmd_cleanup)
 
-    dbs = sub.add_parser("ensure-dbs", help="ensure the shared Postgres role/databases")
+    dbs = command("ensure-dbs", "ensure the shared Postgres role/databases", cmd_ensure_dbs)
     dbs.add_argument("--admin-user", default="postgres")
     dbs.add_argument("--server")
     dbs.add_argument("--dry-run", action="store_true")
-    dbs.set_defaults(func=cmd_ensure_dbs)
 
-    local = sub.add_parser("local", help="deploy built plugins into a local CS2 server tree")
+    local = command("local", "deploy built plugins into a local CS2 server tree", cmd_local)
     local.add_argument("--server-path", default="C:/cs2-server")
     local.add_argument("--plugin-name", default="")
-    local.set_defaults(func=cmd_local)
 
-    rcon = sub.add_parser("rcon", help="run console commands on a live instance over RCON")
+    start = command("start", "start a local CS2 dedicated server", cmd_start)
+    start.add_argument("--server-path", default="C:/cs2-server")
+    start.add_argument("--steamcmd-path", default="C:/Program Files/steamcmd/steamcmd.exe")
+    start.add_argument("--map", default="de_dust2")
+    start.add_argument("--gslt-token", default="")
+    start.add_argument("--max-players", type=int, default=64)
+    start.add_argument("--port", type=int, default=27015)
+    start.add_argument("--rcon-password", default="")
+    start.add_argument("--check-update", action="store_true")
+
+    rcon = command("rcon", "run console commands on a live instance over RCON", cmd_rcon)
     rcon.add_argument("commands", nargs="+", help="one or more console commands (quote each)")
     rcon.add_argument("--server", help="server id (optional when the inventory has one)")
     rcon.add_argument("--instance", help="instance name (optional when the server has one)")
-    rcon.set_defaults(func=cmd_rcon)
 
-    tunnel = sub.add_parser("tunnel-db", help="open an SSH tunnel to a server Postgres")
+    tunnel = command("tunnel-db", "open an SSH tunnel to a server Postgres", cmd_tunnel_db)
     tunnel.add_argument("--server")
     tunnel.add_argument("--host")
     tunnel.add_argument("--ssh-user")
@@ -210,7 +229,6 @@ def build_parser() -> argparse.ArgumentParser:
     tunnel.add_argument("--db-port")
     tunnel.add_argument("--local-port")
     tunnel.add_argument("-i", "--identity")
-    tunnel.set_defaults(func=cmd_tunnel_db)
 
     return parser
 

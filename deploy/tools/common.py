@@ -13,7 +13,6 @@ ROOT = Path(__file__).resolve().parents[2]
 DEPLOY = ROOT / "deploy"
 
 
-# Duplicates buildtools.die on purpose: the deploy tooling must not depend on voltmod.
 def die(message: str) -> NoReturn:
     """Exit the current command with a deploy-tooling error message."""
     raise SystemExit(f"ERROR: {message}")
@@ -58,16 +57,7 @@ def server_env_file(server_id: str) -> Path:
 
 
 def materialize_server_env(server_id: str) -> None:
-    """Write <server>/.env from the environment when CI supplied it there.
-
-    Both providers hand the same content over, in the only shape each can carry:
-    GitHub Actions sets SERVER_ENV per deployment environment, while CircleCI env vars
-    cannot hold newlines, so it sets SERVER_ENV_<ID>_B64 instead. Resolving that here
-    means neither provider's YAML has to know the file layout or the name mangling.
-
-    A checkout that already has the file and no env var set is left alone - that is the
-    local case.
-    """
+    """Write the server .env supplied by CI, preserving an existing local file."""
     variable = "SERVER_ENV_" + server_id.upper().replace("-", "_") + "_B64"
     if encoded := os.environ.get(variable):
         content = base64.b64decode(encoded).decode("utf-8")
@@ -76,13 +66,14 @@ def materialize_server_env(server_id: str) -> None:
     elif server_env_file(server_id).is_file():
         return
     else:
-        die(f"no env for {server_id}: set SERVER_ENV or {variable}, or write "
-            f"{server_env_file(server_id)}")
+        die(
+            f"no env for {server_id}: set SERVER_ENV or {variable}, or write "
+            f"{server_env_file(server_id)}"
+        )
 
     path = server_env_file(server_id)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content.rstrip("\n") + "\n",
-                    encoding="utf-8", newline="\n")
+    path.write_text(content.rstrip("\n") + "\n", encoding="utf-8", newline="\n")
 
 
 def load_server_env(server_id: str, *, required: bool) -> None:

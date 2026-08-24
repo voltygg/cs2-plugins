@@ -1,19 +1,4 @@
-"""Source RCON client for deployed CS2 instances.
-
-Resolves host/port from deploy/inventory.yml and the password from the server's
-.env (RCON_<instance>), so a live server can be driven straight from the repo:
-
-    uv run poe rcon status
-    uv run poe rcon "sv_autobunnyhopping" "bhop_reload"
-    uv run poe rcon --server box-a --instance main "changelevel de_dust2"
-
-Any convar read, plugin command, or map change works - the fastest way to test
-a hypothesis against the running server without a deploy cycle.
-
-The RCON TCP port is not reachable from outside the box (the in-game `rcon`
-command rides the game connection instead), so commands run through a short-
-lived SSH port forward using the same key the deploy tooling uses.
-"""
+"""Run Source RCON commands through a short-lived SSH tunnel."""
 
 from __future__ import annotations
 
@@ -21,6 +6,7 @@ import os
 import socket
 import struct
 import time
+from contextlib import closing
 from typing import Any
 
 from . import inventory
@@ -28,7 +14,7 @@ from .common import die, load_server_env
 from .remote import open_tunnel
 
 _SERVERDATA_AUTH = 3
-_SERVERDATA_AUTH_RESPONSE = 2  # shares the value with EXECCOMMAND (protocol quirk)
+_SERVERDATA_AUTH_RESPONSE = 2
 _SERVERDATA_EXECCOMMAND = 2
 _SERVERDATA_RESPONSE_VALUE = 0
 _AUTH_FAILED_ID = -1
@@ -80,13 +66,8 @@ class RconClient:
         command_id = self._next_id
         self._next_id += 2
         _send_packet(self._sock, command_id, _SERVERDATA_EXECCOMMAND, command)
-        # CS2 captures a command's console output asynchronously: if the end-marker arrives in
-        # the same TCP segment as the command (typical over an SSH tunnel), the server answers
-        # the marker before any output is flushed and the response reads empty. Give the
-        # capture window a beat before sending the marker.
+        # Let CS2 flush command output before sending the end marker.
         time.sleep(0.25)
-        # Empty RESPONSE_VALUE sentinel: the server echoes it after the command's
-        # response packets, marking the end of a multi-packet response.
         _send_packet(self._sock, command_id + 1, _SERVERDATA_RESPONSE_VALUE, "")
 
         parts: list[str] = []
@@ -140,14 +121,11 @@ def run_commands(
     server, rcon_port, password = _resolve_target(server_id, instance_name)
     tunnel, local_port = open_tunnel(server, "127.0.0.1", rcon_port)
     try:
-        client = RconClient("127.0.0.1", local_port, password)
-        try:
+        with closing(RconClient("127.0.0.1", local_port, password)) as client:
             for command in commands:
                 response = client.execute(command)
                 print(f"### {command}")
                 if response:
                     print(response)
-        finally:
-            client.close()
     finally:
         tunnel.terminate()

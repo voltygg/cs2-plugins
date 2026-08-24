@@ -23,8 +23,7 @@ def deploy_server(
     dry_run: bool,
 ) -> None:
     """Render and apply one server's Docker Compose tree over SSH."""
-    server = inventory.find_server(inventory.load(), server_id)
-    load_server_env(server_id, required=True)
+    server = _load_server(server_id, env_required=True)
 
     render_dir = DEPLOY / ".render" / server_id
     render.render(server_id, repo_path(package_dir), render_dir, runtime_image)
@@ -38,7 +37,7 @@ def deploy_server(
     print(f"    instances:       {_instances_summary(server) or '<none>'}")
 
     cs2_root = str(server["cs2_root"]).rstrip("/")
-    # pre-create addons dirs as the steam user so Docker doesn't make them root
+    # Prevent Docker from creating bind-mount directories as root.
     mkdir_paths = [remote_root, f"{cs2_root}/server"]
     mkdir_paths += [
         f"{remote_root}/instances/{instance['name']}/addons"
@@ -59,21 +58,14 @@ def deploy_server(
     for instance in server.get("instances", []):
         _compose_service(server, remote_root_q, "up -d", str(instance["name"]))
     _check_services(server, remote_root_q)
-    # Each pull of :latest strands the previous digest as a dangling <none> image (multi-GB
-    # runtime layers). Prune only after the new containers are confirmed healthy.
+    # Prune old runtime layers only after the new containers are healthy.
     run_ssh(server, "docker image prune -f")
     print(f"=== Deploy to {server_id} complete ===")
 
 
 def update_server(server_id: str, *, dry_run: bool) -> None:
-    """Restart one server's instances so SteamCMD pulls the latest CS2 build.
-
-    The runtime image runs SteamCMD only at container start, so a long-running
-    container never picks up Valve updates. Restarting re-execs the entrypoint
-    and updates the shared install in the cs2_root volume.
-    """
-    server = inventory.find_server(inventory.load(), server_id)
-    load_server_env(server_id, required=False)
+    """Restart instances sequentially so SteamCMD updates their shared install."""
+    server = _load_server(server_id, env_required=False)
 
     remote_root_q = shlex.quote(str(server["deploy_root"]))
     target = ssh_target(server)
@@ -81,8 +73,6 @@ def update_server(server_id: str, *, dry_run: bool) -> None:
     print(f"=== Updating CS2 on {server_id} ({target}) ===")
     print(f"    instances: {_instances_summary(server) or '<none>'}")
 
-    # Sequential: instances share one CS2 install; concurrent SteamCMD writes
-    # to the same volume must be avoided.
     for instance in server.get("instances", []):
         _compose_service(server, remote_root_q, "restart", str(instance["name"]), dry_run=dry_run)
 
@@ -99,7 +89,7 @@ def cleanup_server(server_id: str, *, yes: bool, dry_run: bool) -> None:
     if not yes and not dry_run:
         die("cleanup is destructive; pass --yes or use --dry-run")
 
-    server = inventory.find_server(inventory.load(), server_id)
+    server = _load_server(server_id)
     remote_root = str(server["deploy_root"])
     cs2_root = str(server["cs2_root"])
     _require_safe_remote_path(remote_root, "deploy_root")
@@ -154,13 +144,9 @@ def tunnel_db(
 ) -> None:
     """Open an SSH local port forward to a server-side Postgres port."""
     server = _load_optional_server(server_id)
-    host = host_arg or (server and str(server["host"])) or os.environ.get("VPS_HOST", "")
-    ssh_user = (
-        ssh_user_arg or (server and str(server["ssh_user"])) or os.environ.get("SSH_USER", "steam")
-    )
-    ssh_port = (
-        ssh_port_arg or (server and str(server["ssh_port"])) or os.environ.get("SSH_PORT", "22")
-    )
+    host = _setting(host_arg, server, "host", "VPS_HOST")
+    ssh_user = _setting(ssh_user_arg, server, "ssh_user", "SSH_USER", "steam")
+    ssh_port = _setting(ssh_port_arg, server, "ssh_port", "SSH_PORT", "22")
     db_host = db_host_arg or os.environ.get("DB_HOST", "localhost")
     db_port = db_port_arg or os.environ.get("DB_PORT", "5432")
     local_port = local_port_arg or os.environ.get("LOCAL_PORT", "5433")
@@ -277,9 +263,28 @@ def run_ssh(
 def _load_optional_server(server_id: str | None) -> dict[str, Any] | None:
     if not server_id:
         return None
+    return _load_server(server_id, env_required=False)
+
+
+def _load_server(server_id: str, *, env_required: bool | None = None) -> dict[str, Any]:
     server = inventory.find_server(inventory.load(), server_id)
-    load_server_env(server_id, required=False)
+    if env_required is not None:
+        load_server_env(server_id, required=env_required)
     return server
+
+
+def _setting(
+    value: str | None,
+    server: dict[str, Any] | None,
+    key: str,
+    env_name: str,
+    default: str = "",
+) -> str:
+    if value:
+        return value
+    if server and server.get(key) is not None:
+        return str(server[key])
+    return os.environ.get(env_name, default)
 
 
 def _instances_summary(server: dict[str, Any]) -> str:

@@ -1,18 +1,83 @@
-"""Deploy built plugin binaries, configs, and voltmod gamedata to a local CS2 server.
-
-Run via poe (`uv run poe deploy`): it sets PYTHONPATH so the vendored kit's
-buildtools resolves.
-"""
+"""Local CS2 server deployment and launch helpers."""
 
 import os
 import shutil
+import subprocess
 from pathlib import Path
 
-import buildtools
+from voltmod import buildtools
 
 from .common import ROOT, die
 
 BUILD_PRESET = os.environ.get("CS2_BUILD_PRESET", "windows-msvc-release")
+
+
+def update_server(steamcmd: Path, server_path: Path) -> None:
+    """Update the server when SteamCMD is available."""
+    if not steamcmd.is_file():
+        print(f"WARNING: SteamCMD not found at {steamcmd}; skipping update.")
+        return
+
+    result = subprocess.run(
+        [
+            str(steamcmd),
+            "+force_install_dir",
+            str(server_path),
+            "+login",
+            "anonymous",
+            "+app_update",
+            "730",
+            "validate",
+            "+quit",
+        ]
+    )
+    if result.returncode:
+        print(f"WARNING: SteamCMD update failed ({result.returncode}); using existing files.")
+
+
+def start_server(
+    server_path: str,
+    steamcmd_path: str,
+    map_name: str,
+    gslt_token: str,
+    max_players: int,
+    port: int,
+    rcon_password: str,
+    *,
+    check_update: bool,
+) -> None:
+    """Optionally update, then run the local CS2 dedicated server."""
+    root = Path(server_path)
+    if check_update:
+        update_server(Path(steamcmd_path), root)
+
+    win64 = root / "game" / "bin" / "win64"
+    executable = win64 / "cs2.exe"
+    if not executable.is_file():
+        die(f"CS2 executable not found: {executable}")
+
+    command = [
+        str(executable),
+        "-dedicated",
+        "-console",
+        "-usercon",
+        "+map",
+        map_name,
+        "-maxplayers",
+        str(max_players),
+        "-port",
+        str(port),
+        "+game_mode",
+        "0",
+    ]
+    if gslt_token:
+        command += ["+sv_setsteamaccount", gslt_token]
+    if rcon_password:
+        command += ["+rcon_password", rcon_password]
+
+    mode = "public" if gslt_token else "LAN"
+    print(f"=== Starting CS2: {map_name}, {max_players} players, port {port}, {mode} ===")
+    subprocess.run(command, cwd=win64)
 
 
 def plugin_names(requested: str) -> list[str]:
@@ -21,7 +86,11 @@ def plugin_names(requested: str) -> list[str]:
         if not (ROOT / "plugins" / requested).is_dir():
             die(f"plugin 'plugins/{requested}' not found")
         return [requested]
-    names = sorted(p.name for p in (ROOT / "plugins").iterdir() if p.is_dir())
+    names = sorted(
+        path.name
+        for path in (ROOT / "plugins").iterdir()
+        if path.is_dir() and (path / "src").is_dir()
+    )
     if not names:
         die("no plugins found under plugins/")
     return names
@@ -37,7 +106,6 @@ def deploy_plugin(name: str, csgo: Path, *, named: bool) -> None:
         print(f"  (skipped - no build at {build_dir})")
         return
 
-    # Stage via the shared install() rules, then merge into the server tree.
     staging = build_dir / "_deploy-staging" / name
     shutil.rmtree(staging, ignore_errors=True)
     try:
@@ -50,7 +118,7 @@ def deploy_plugin(name: str, csgo: Path, *, named: bool) -> None:
             "--prefix",
             str(staging),
         )
-    except Exception:
+    except subprocess.CalledProcessError:
         if named:
             die(f"cmake --install failed for {name} (is it built?)")
         print(f"  (skipped - cmake --install produced nothing for {name})")
@@ -59,7 +127,7 @@ def deploy_plugin(name: str, csgo: Path, *, named: bool) -> None:
     shutil.copytree(staging / "addons", csgo / "addons", dirs_exist_ok=True)
     print("  -> addons/ (binary, vdf, configs, voltmod gamedata)")
 
-    # settings.jsonc is seeded on first deploy and never clobbered.
+    # Preserve operator-edited settings after the first deploy.
     settings_src = ROOT / "plugins" / name / "configs" / "settings.jsonc"
     settings_dst = csgo / "addons" / name / "configs" / "settings.jsonc"
     if settings_src.is_file():

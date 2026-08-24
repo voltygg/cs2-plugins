@@ -1,16 +1,4 @@
-#!/usr/bin/env python3
-"""Render Docker Compose deployment artifacts for one server.
-
-Inputs:
-  * deploy/inventory.yml for servers/plugins/database defaults.
-  * exported environment variables loaded from secrets/servers/<id>/.env.
-  * package/<plugin>/addons bundles produced by `python -m deploy.tools.cli package`.
-
-Outputs under deploy/.render/<server>/:
-  * docker-compose.yml
-  * instances/<name>/.env and instances/<name>/pre.sh
-  * instances/<name>/bundles/addons/... that instance's plugin tree + settings
-"""
+"""Render Docker Compose files and per-instance plugin bundles."""
 
 from __future__ import annotations
 
@@ -29,6 +17,7 @@ from .common import DEPLOY, die
 
 PRE_HOOK_TEMPLATE = DEPLOY / "templates" / "pre.sh"
 COMPOSE_SERVICE_TEMPLATE = DEPLOY / "templates" / "compose.service.yml"
+PLACEHOLDER = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 def json_string_content(value: str) -> str:
@@ -43,14 +32,12 @@ def strip_jsonc(raw: str) -> str:
 
 def replace_vars(text: str, env: dict[str, str]) -> str:
     """Substitute ${KEY} placeholders from env."""
-    for key, value in env.items():
-        text = text.replace("${" + key + "}", value)
-    return text
+    return PLACEHOLDER.sub(lambda match: env.get(match.group(1), match.group(0)), text)
 
 
 def check_placeholders(text: str) -> None:
     """Fail on any ${VAR} placeholder that survived substitution."""
-    leftover = sorted(set(re.findall(r"\$\{[A-Za-z_][A-Za-z0-9_]*\}", text)))
+    leftover = sorted(set(match.group(0) for match in PLACEHOLDER.finditer(text)))
     if leftover:
         die("unsubstituted placeholders: " + ", ".join(leftover))
 
@@ -74,8 +61,7 @@ def render_settings(
         "SERVER_TAG": f"{server_id}-{instance_name}",
         "SERVER_NAME": str(instance.get("hostname", f"CS2 {instance_name}")),
     }
-    # DB vars are only required when the plugin declares a database in inventory.yml;
-    # the leftover-placeholder check below still catches a template expecting ${DB_*}.
+    # DB variables are required only when the plugin declares a database.
     required = ["SERVER_TAG"]
     if db_name:
         required += ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_SSLMODE"]
@@ -117,11 +103,6 @@ def copy_plugin_bundle(
     render_settings(data, server_id, instance, plugin, settings_out)
 
 
-def dotenv_value(value: str) -> str:
-    """Encode a value for a dotenv file."""
-    return json.dumps(value)
-
-
 def write_env_file(instance: dict[str, Any], out: Path) -> None:
     """Write one CS2 instance env_file consumed by Docker Compose."""
     name = str(instance["name"])
@@ -138,12 +119,11 @@ def write_env_file(instance: dict[str, Any], out: Path) -> None:
             f"CS2_HOSTNAME_{name}", str(instance.get("hostname", f"CS2 {name}"))
         ),
     }
-    # Opt-in VAC-off for cheat testing. "-insecure" alone works; "+exec
-    # server.cfg" alongside it re-enables VAC (joedwards32/CS2#17).
+    # Do not add +exec server.cfg here; that can re-enable VAC after -insecure.
     if instance.get("insecure"):
         env["CS2_ADDITIONAL_ARGS"] = "-insecure"
     out.parent.mkdir(parents=True, exist_ok=True)
-    lines = [f"{key}={dotenv_value(value)}" for key, value in env.items()]
+    lines = [f"{key}={json.dumps(value)}" for key, value in env.items()]
     out.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
@@ -173,7 +153,7 @@ def render_compose(server: dict[str, Any], runtime_image: str) -> str:
             "CS2_SERVER_DIR": cs2_server_dir,
         }
         rendered = replace_vars(template, env)
-        # indent the service block under the top-level `services:` mapping
+        # Nest the service block below `services:`.
         indented = "\n".join(("  " + line if line else line) for line in rendered.splitlines())
         blocks.append(indented)
 
