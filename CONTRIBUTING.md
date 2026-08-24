@@ -54,7 +54,7 @@ The build auto-discovers `.cpp` files under `plugins/<name>/src/`. Add a new
 source file there and rebuild.
 
 To add a new plugin, create `plugins/<new>/src/`, configs, and
-`plugins/<new>/CMakeLists.txt` that calls `voltmod_add_plugin(<new> ...)`. Add the
+`plugins/<new>/CMakeLists.txt` that calls `voltmod_add_plugin(<new> VERSION <version> ...)`. Add the
 plugin with `add_subdirectory(plugins/<new>)` in the root `CMakeLists.txt`.
 
 Add new third-party C++ dependencies to `conanfile.py`, then `find_package`

@@ -1,5 +1,6 @@
 # Sources default to a CONFIGURE_DEPENDS glob of src/*.cpp in voltmod_add_plugin.
 voltmod_add_plugin(anticheat
+    VERSION 1.0.0
     DESCRIPTION "Behavioural anticheat: detection cores, correlation and response"
     # Advisory: without it the detectors still run, but bans and alerts have nowhere to go.
     DEPENDS "admin-system>=1.0"

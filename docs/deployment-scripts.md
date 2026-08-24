@@ -58,7 +58,7 @@ addons/<plugin>/bin/linuxsteamrt64/<plugin>.so
 
 1. Create `plugins/<new>/src/`, `plugins/<new>/CMakeLists.txt`, configs, and
    `plugins/<new>/<new>.vdf`.
-2. Call `voltmod_add_plugin(<new> ...)` in that plugin CMake file.
+2. Call `voltmod_add_plugin(<new> VERSION <version> ...)` in that plugin CMake file.
 3. Add `add_subdirectory(plugins/<new>)` to the root `CMakeLists.txt`.
 4. Add any new third-party C++ deps to `conanfile.py`, `find_package` them in
    the root `CMakeLists.txt`, and link their imported targets in the plugin

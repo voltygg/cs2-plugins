@@ -1,16 +1,12 @@
 # Conan rebinds class attributes at runtime; ignore the Pyright false positives.
 # pyright: reportAttributeAccessIssue=false
 
-import os
-
 from conan import ConanFile
 from conan.tools.cmake import CMakeDeps, CMakeToolchain
 
 
 class CS2PluginsConan(ConanFile):
-    name = "cs2-plugins"
     settings = "os", "compiler", "build_type", "arch"
-    package_type = "shared-library"
 
     # cpr, nlohmann_json and libpqxx arrive transitively through voltmod, along with
     # the HL2SDK and Metamod packages.
@@ -23,11 +19,6 @@ class CS2PluginsConan(ConanFile):
         # admin-system and anticheat both use the Database module.
         "voltmod/*:with_postgres": True,
     }
-
-    def set_version(self):
-        # version.txt, same as CMakeLists.txt reads.
-        with open(os.path.join(self.recipe_folder, "version.txt"), encoding="utf-8") as handle:
-            self.version = handle.read().strip()
 
     def build_requirements(self):
         self.test_requires("doctest/2.5.2")

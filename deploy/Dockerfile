@@ -25,7 +25,7 @@ RUN uv venv --python 3.14 /opt/voltmod \
 
 RUN conan config install https://github.com/voltygg/voltmod.git -sf conan
 
-COPY conanfile.py conan.lock version.txt /app/
+COPY conanfile.py conan.lock /app/
 RUN conan install /app --build=missing \
   '--build=!hl2sdk-cs2/*' '--build=!metamod-source/*' \
   --lockfile /app/conan.lock \

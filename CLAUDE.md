@@ -13,7 +13,7 @@ is inert until `conan editable add vendor/voltmod`, and `ignore = all` keeps its
 pointer out of this repo's status.
 
 Each plugin lives under `plugins/<name>/` with its own `src/`, `configs/`,
-and `CMakeLists.txt` (`voltmod_add_plugin(<name> ...)` + a root
+and `CMakeLists.txt` (`voltmod_add_plugin(<name> VERSION <version> ...)` + a root
 `add_subdirectory()`; the .vdf is generated at install time). Scaffold a new
 plugin with `uv run poe new-plugin <name>`.
 
