@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 4.3)
 
-project(cs2-plugins VERSION 1.0.0 LANGUAGES CXX)
+# version.txt is the one place this repo's version is written; conanfile.py reads the
+# same file, and cs2_add_plugin stamps it into every plugin manifest.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/version.txt" CS2_PLUGINS_VERSION)
+string(STRIP "${CS2_PLUGINS_VERSION}" CS2_PLUGINS_VERSION)
+
+project(cs2-plugins VERSION ${CS2_PLUGINS_VERSION} LANGUAGES CXX)
 
 include(CTest)
 
