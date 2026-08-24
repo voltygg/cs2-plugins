@@ -8,7 +8,7 @@ license = { text = "MIT" }
 
 dependencies = [
     # Brings the build tasks below plus the pinned CMake/Conan/Ninja/clang-format.
-    # Move to a v* tag when reproducibility matters more than tracking the kit.
+    # Move to a v* tag when reproducibility matters more than tracking the framework.
     "voltmod @ git+https://github.com/voltygg/voltmod.git@main",
     "ruff>=0.14.0",
     "poethepoet>=0.47.0",

@@ -12,7 +12,7 @@
 namespace VoltMod::Database
 {
 // PostgresConfig's mapper must share its namespace so ADL finds it. Defined here rather than
-// in the kit so the kit header stays nlohmann-free.
+// in the framework so the framework header stays nlohmann-free.
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PostgresConfig, host, port, database, username, password, sslMode)
 }  // namespace VoltMod::Database
 
@@ -24,7 +24,7 @@ using DatabaseConfig = VoltMod::Database::PostgresConfig;
 /** The addon folder name - matches the CMake target and keys every addons/ path. */
 inline constexpr std::string_view AddonName = "admin-system";
 
-/** Kit-standard "plugin" section of settings.json (locale). */
+/** Framework-standard "plugin" section of settings.json (locale). */
 using PluginSettings = VoltMod::StandardPluginSettings;
 
 /** "server" section of settings.jsonc: this server's identity in the shared database.
@@ -199,7 +199,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, databa
                                                 reports, cheatCheck)
 
 /**
- * Loads and owns settings.json (via the kit's JsonConfig). All admin/group data is owned by the
+ * Loads and owns settings.json (via the framework's JsonConfig). All admin/group data is owned by the
  * database (`admins` and `admin_groups` tables) - this manager only exposes plugin/DB/punishment/
  * chat config plus the validated runtime forms of the string-typed punishment settings.
  */

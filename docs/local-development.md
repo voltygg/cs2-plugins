@@ -1,7 +1,7 @@
-# Local Development Setup for Windows
+# Local development on Windows
 
-This project builds with Conan 2.29.1+ and CMake 4.3.4+ presets. AMBuild and
-vcpkg are no longer part of the workflow.
+This project uses Conan 2.29.1+ and CMake 4.3.4+ presets. AMBuild and vcpkg are
+not part of the build.
 
 ## Prerequisites
 
@@ -10,14 +10,15 @@ vcpkg are no longer part of the workflow.
 - Visual Studio 2026 Build Tools with Desktop development with C++
 - CMake 4.3.4+, Conan 2.29.1+, and Ninja installed globally or through `uv sync`
 
-Option A (recommended): the pins ride the `voltmod` distribution this project
-depends on, so one command installs everything:
+The recommended option is to use the `voltmod` distribution that this project
+depends on. It carries the tool versions, so one command installs them:
 
 ```powershell
 uv sync
 ```
 
-Option B: install them globally with pipx if they are not already available:
+If the tools are not available through the project environment, install them
+globally with pipx:
 
 ```powershell
 pipx install "conan>=2.29.1"
@@ -32,19 +33,20 @@ git clone https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
 ```
 
-There are no submodules - voltmod, the HL2SDK and Metamod are Conan packages.
+There are no required submodules. VoltMod, the HL2SDK, and Metamod are Conan
+packages.
 
 ## Build
 
-The build auto-loads the MSVC environment via `vcvars64.bat`, so a plain shell
-works on Windows.
+The build loads the MSVC environment through `vcvars64.bat`, so it works from a
+regular shell.
 
 ```bash
 uv sync
 uv run poe bootstrap
 ```
 
-`bootstrap` installs the kit's Conan profiles and the public remote, then builds.
+`bootstrap` installs the framework's Conan profiles and the public remote, then builds.
 After the first build:
 
 ```bash
@@ -52,9 +54,9 @@ uv run poe build windows-msvc-release
 uv run poe build windows-msvc-debug
 ```
 
-The build script runs `conan install`, configures CMake, and builds the
-requested preset via the workflow preset. It prefers tools from the project
-venv, then `uv run`, then `PATH`.
+The build task runs `conan install`, configures CMake, and builds the requested
+preset through the workflow preset. It looks for tools in the project
+environment, then through `uv run`, then on `PATH`.
 
 ## CMake Presets
 
@@ -77,7 +79,7 @@ For example:
 build/windows-msvc-release/plugins/admin-system/windows-x86_64/admin-system.dll
 ```
 
-## Deploy To A Local Server
+## Deploy to a local server
 
 ```bash
 uv run poe deploy --server-path "C:/cs2-server" --plugin-name admin-system
@@ -93,7 +95,8 @@ CS2_BUILD_PRESET=windows-msvc-debug uv run poe deploy --plugin-name admin-system
 
 ### Conan cannot find a compiler
 
-Run from an x64 Native Tools shell on Windows, or set `CC` and `CXX` on Linux:
+On Windows, run from an x64 Native Tools shell if the automatic environment setup
+does not work. On Linux, set `CC` and `CXX`:
 
 ```bash
 CC=gcc-14 CXX=g++-14 uv run poe build-linux
@@ -121,5 +124,5 @@ which is a publish problem, not a local one. Check that your profile matches
 ### Missing generated protobuf headers
 
 Nothing generates protobuf locally any more: the `hl2sdk-cs2` package ships the
-`.pb.h`/`.pb.cc` pre-generated, and its build module attaches them to the kit's
+`.pb.h`/`.pb.cc` pre-generated, and its build module attaches them to the framework's
 library via `hl2sdk_attach_generated_sources()`.

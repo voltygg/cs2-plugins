@@ -8,7 +8,7 @@
 namespace AdminSystem::Admin::Effects
 {
 
-// The effect scaffold (descriptors + policy-checked dispatch) lives in the kit; these aliases
+// The effect scaffold (descriptors + policy-checked dispatch) lives in the framework; these aliases
 // keep descriptor files and call sites on the established local names. Dispatch with
 // VoltMod::ToggleEffect / ApplyEffect / ClearEffect against the plugin App effect manager.
 using Effect = VoltMod::EffectDescriptor;

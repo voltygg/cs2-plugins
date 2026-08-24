@@ -120,7 +120,7 @@ TEST_CASE("The shipped detections.jsonc parses and loads with nothing rejected")
     text << file.rdbuf();
 
     DetectionData data;
-    // Same call the kit's loader makes, comments and all.
+    // Same loader call.
     REQUIRE_NOTHROW(
         data = nlohmann::json::parse(text.str(), nullptr, true, /*ignore_comments=*/true).get<DetectionData>());
 

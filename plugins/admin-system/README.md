@@ -1,6 +1,8 @@
 # Admin System
 
-A full admin suite for CS2 community servers: punishments, fun effects, a WASD admin menu, multi-server admin groups sharing one database, abuse protection with an audit trail, and cheat-check workflows.
+A full admin suite for CS2 community servers. It provides punishments, fun
+effects, a WASD admin menu, shared multi-server admin groups, abuse protection
+with an audit trail, and cheat-check workflows.
 
 ## Features
 
@@ -21,14 +23,19 @@ A full admin suite for CS2 community servers: punishments, fun effects, a WASD a
 - [Metamod:Source 2.0](https://www.sourcemm.net/)
 - PostgreSQL 18+
 
-## Installation
+## Install
 
-1. Download the latest release from [Releases](https://github.com/voltygg/cs2-plugins/releases)
-2. Extract to your server's `csgo/` folder
-3. Configure database and plugin settings in `addons/admin-system/configs/settings.jsonc` (set a unique `server.tag` per server - see [Multi-Server Setup](#multi-server-setup))
-4. (Optional) The plugin applies all migrations automatically on load. To pre-create the schema manually, run the files in [configs/migrations/](configs/migrations/) in order: `psql -d admin_system -f configs/migrations/0001_initial_schema.sql` (then `0002_...`, etc.)
-5. Edit [database/seed-admin.sql](database/seed-admin.sql) with your SteamID64 and run it: `psql -d admin_system -f database/seed-admin.sql`
-6. Restart the server (or run `!admin_reload` if it was already running)
+1. Download the latest release from [Releases](https://github.com/voltygg/cs2-plugins/releases).
+2. Extract it into the server's `csgo/` folder.
+3. Configure the database and plugin settings in
+   `addons/admin-system/configs/settings.jsonc`. Give each server a unique
+   `server.tag` (see [Multi-Server Setup](#multi-server-setup)).
+4. Let the plugin apply migrations on load, or run the files in
+   [configs/migrations/](configs/migrations/) in order. For example:
+   `psql -d admin_system -f configs/migrations/0001_initial_schema.sql`.
+5. Set your SteamID64 in [database/seed-admin.sql](database/seed-admin.sql) and
+   run `psql -d admin_system -f database/seed-admin.sql`.
+6. Restart the server. If it is already running, use `!admin_reload`.
 
 ## Commands
 
@@ -60,7 +67,7 @@ A full admin suite for CS2 community servers: punishments, fun effects, a WASD a
 
 Runtime configuration lives in [configs/settings.jsonc](configs/settings.jsonc) (server identity, database, punishments, abuse protection, chat, reports, cheat-check). Player-facing text comes from [configs/translations/](configs/translations/) - one JSON file per language, all of which must stay key-parallel. Admin groups (with their chat prefix and colors) and individual admins live in the `admin_groups` and `admins` PostgreSQL tables; per-server group grants live in `admin_server_groups`, every admin action is audited in `admin_activity`, and player reports land in `player_reports` -- see [configs/migrations/](configs/migrations/). Run `!admin_reload` after editing those tables to refresh in-memory state without restarting.
 
-## Multi-Server Setup
+## Multi-server setup
 
 Several game servers can share one PostgreSQL database. Each server declares a stable identity in `settings.jsonc`:
 
@@ -91,7 +98,7 @@ ON CONFLICT (admin_steam_id, server_tag, group_name) DO NOTHING;
 
 Run `!admin_reload` on the affected server to pick up grant changes without a restart.
 
-## Admin Abuse Protection
+## Admin abuse protection
 
 Protects the community from rogue admins (e.g. a purchased admin account mass-banning players). A **frozen** admin keeps their DB rows but is denied *every* admin permission - commands, the admin menu, and all actions - on every server sharing the database, until a reviewer unfreezes them.
 
@@ -112,7 +119,7 @@ Protects the community from rogue admins (e.g. a purchased admin account mass-ba
 
 **What happens on freeze:** the freeze is broadcast in chat, the frozen admin is notified (immediately if online, on connect otherwise, and within ~60 seconds on other servers), and their recent punishments stay active so the reviewer can inspect `admin_activity` / the punishment tables and revert selectively. Freezes and unfreezes are themselves recorded in `admin_activity`.
 
-## Player Reports
+## Player reports
 
 Lets ordinary players flag a cheater or griefer without leaving the server. `!report` (or `!r`) opens a WASD menu: pick the offender, pick a reason, confirm. The report is written to the `player_reports` table and **only the reporter** is told - nothing is broadcast, no admin is notified in-game, and there is no in-game triage command. An upstream website reads the table and owns the workflow.
 

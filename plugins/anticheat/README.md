@@ -1,17 +1,20 @@
 # Anticheat
 
-Server-side cheat detection for CS2 community servers: aim analysis over correlated shots,
-plus client-integrity checks. No client component, no detours, game thread only.
+Server-side cheat detection for CS2 community servers. The plugin analyzes
+correlated shots and checks client integrity. It has no client component or
+detours and runs on the game thread.
 
-It reads two feeds the kit already provides - the `RunCommand` movement hook (one decoded
-usercmd per player per tick) and game events (`weapon_fire`, `bullet_impact`, `player_hurt`,
-`player_death`, `player_spawn`, settings changes).
+It reads two feeds supplied by the VoltMod framework: the `RunCommand` movement
+hook (one decoded usercmd per player per tick) and game events (`weapon_fire`,
+`bullet_impact`, `player_hurt`, `player_death`, `player_spawn`, and settings
+changes).
 
 Detection algorithms are reimplementations of [CS2AC](https://github.com/karola3vax/CS2AC)
 (karola3vax, AGPL-3.0); the approach and the tuning are theirs, the code is written against
 [VoltMod](https://github.com/voltygg/voltmod).
 
-> **Start in `observe` mode.** Nothing is done to any player until you say so - see
+> **Start in `observe` mode.** Nothing is done to a player until you choose a response
+> mode. See
 > [Rollout](#rollout).
 
 ## Detections
@@ -35,7 +38,7 @@ Every module is gated by: the master `enabled` switch, `sv_cheats` being off (un
 `anticheat_reload`, an `sv_cheats` flip or an `mp_teammates_are_enemies` change drops all
 accumulated evidence.
 
-### How each one decides
+### How each detector decides
 
 **`aimbot`** judges only commands that actually damaged an enemy. It walks back along
 strictly adjacent commands (any gap ends the chain) for up to 32 ticks looking for
@@ -77,7 +80,7 @@ and re-arms only after reading valid.
 **`namechanger`** counts distinct visible names. The baseline is kept current even while
 detections are gated off, so a change is never measured against a stale name.
 
-## Response
+## Responses
 
 Every detection is logged and sent to the webhook regardless of mode. `anticheat.mode`
 decides what else happens:
@@ -105,10 +108,10 @@ decides what else happens:
 
 Two files, split by who owns them.
 
-### `configs/settings.jsonc` - operator knobs
+### `configs/settings.jsonc` - operator settings
 
 Rendered per server from
-[`deploy/templates/…/settings.jsonc`](../../deploy/templates/plugins/anticheat/settings.jsonc).
+[`deploy/templates/plugins/anticheat/settings.jsonc`](../../deploy/templates/plugins/anticheat/settings.jsonc).
 
 | Key | Default | Meaning |
 | --- | --- | --- |
@@ -121,12 +124,12 @@ Rendered per server from
 | `webhook.url` | `""` | Discord webhook; empty disables reporting. |
 | `debug.simulator` | `false` | Arm the cheat simulator. Dev boxes only. |
 
-### `configs/detections.jsonc` - what the checks compare against
+### `configs/detections.jsonc` - detection data
 
-The blacklisted event names and the convar rules. These track *Valve's* content, not this
-plugin's logic, so a CS2 update that renames a convar or adds a HUD event is answered with an
-edit here and `anticheat_reload` - no rebuild, no redeploy. It ships identically everywhere,
-so it has no deploy template.
+This file contains blacklisted event names and convar rules. It tracks *Valve's*
+content rather than this plugin's logic. If a CS2 update renames a convar or adds
+a HUD event, edit this file and run `anticheat_reload`; no rebuild or redeploy is
+needed. The file is identical on every server, so it has no deploy template.
 
 Parsing is strict: an unknown constraint or tier spelling, a numeric rule with no bound, an unknown
 key or a renamed section fails the whole load rather than quietly defaulting. A failed load leaves
@@ -152,7 +155,7 @@ Each rule is `{ name, tier, constraint, … }`:
 
 | Command | Description |
 | --- | --- |
-| `anticheat_status` | Snapshot of gates, module toggles, dependency health and the loaded table sizes (`detectionData`), plus a line per human player (punishment level, per-module counters, latched convars, pending queries). Also published as the `anticheat` section of the kit's status service. **A zero in `detectionData` means that module is inert however its toggle reads.** |
+| `anticheat_status` | Snapshot of gates, module toggles, dependency health and the loaded table sizes (`detectionData`), plus a line per human player (punishment level, per-module counters, latched convars, pending queries). Also published as the `anticheat` section of the framework's status service. **A zero in `detectionData` means that module is inert however its toggle reads.** |
 | `anticheat_reload` | Re-read both config files **and drop all accumulated evidence**, including the punishment latch. |
 | `anticheat_dumpcmd <slot> [ticks=64]` | Log raw usercmds for one slot. The tool for checking a suspicion against real traffic. |
 
@@ -180,20 +183,21 @@ actually landed, and the filter only edits the decoded view.
 
 ## Rollout
 
-Deployment is currently **held** - `anticheat` is commented out in
+Deployment is currently **held**. `anticheat` is commented out in
 [`deploy/inventory.yml`](../../deploy/inventory.yml) in both the plugin list and box-a's
 server entry. Uncomment both to ship it.
 
-1. **Observe.** Deploy to box-a in `observe` with `webhook.url` set. Soak through real
-   traffic - a week of populated hours, not an empty server.
-2. **Read the misses.** For anything that looks wrong, `anticheat_dumpcmd` the slot and
-   compare against the evidence string. A module producing false positives gets switched off.
-3. **Alert.** Once the observe stream is clean, flip to `alert` and let admins be the funnel
-   for a second soak.
-4. **Ban, one module at a time.** Flip to `ban` with only the modules you trust. Start with
-   `invalidCvar` (worst case is a recoverable kick), then `namechanger` and `dllInjection`,
-   and add the aim modules last - `silentAim`, `antiAim`, then `aimbot` and `aimlock` - with
-   a soak between each.
+1. **Observe.** Deploy to box-a in `observe` with `webhook.url` set. Collect a
+   week of populated hours rather than testing only on an empty server.
+2. **Review misses.** For anything suspicious, run `anticheat_dumpcmd` for the
+   slot and compare the output with the evidence string. Disable a detector that
+   produces false positives.
+3. **Alert.** When the observe stream is clean, switch to `alert` for a second
+   soak and let admins review the alerts.
+4. **Ban one detector at a time.** Switch to `ban` with only trusted detectors.
+   Start with `invalidCvar` (the worst case is a recoverable kick), then
+   `namechanger` and `dllInjection`. Add the aim detectors last:
+   `silentAim`, `antiAim`, `aimbot`, and `aimlock`, with a soak between changes.
 
 ## Maintenance
 

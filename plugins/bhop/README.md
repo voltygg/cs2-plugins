@@ -1,35 +1,34 @@
 # Bhop
 
-Smooth, ping-free auto-bunnyhop for CS2 servers: hold JUMP to hop, keep your landing
-speed, and accelerate while chaining hops. Built on [VoltMod](https://github.com/voltygg/voltmod).
+Client-predicted auto-bunnyhop for CS2 servers. Hold JUMP to hop, keep your
+landing speed, and gain speed while chaining hops. The plugin uses
+[VoltMod](https://github.com/voltygg/voltmod).
 
 ## Why it feels smooth
 
-Server-forced jumping rubber-bands because the client doesn't predict it. This plugin
-makes the **client itself** predict everything:
+Server-forced jumping can rubber-band because the client does not predict it.
+This plugin keeps the client and server convars in agreement:
 
-- In `enabled` mode, the movement convars are set server-wide through the engine, so
-  they replicate to every client and all hops are client-predicted.
-- In `grants` mode, a granted player's client receives the convar values via a
-  per-client `CNETMsg_SetConVar` (its prediction auto-jumps), while the server flips
-  the same convars only around that player's movement processing
-  (`CPlayer_MovementServices::RunCommand` hook). Both sides agree; nobody else is
-  affected.
+- In `enabled` mode, movement convars are set server-wide and replicated to every
+  client, so all hops are client-predicted.
+- In `grants` mode, a granted player's client receives the convar values through
+  `CNETMsg_SetConVar`. The server applies the same values only around that
+  player's `CPlayer_MovementServices::RunCommand` call, so other players are
+  unaffected.
 
-Speed gain comes from two layers:
+Speed comes from two layers:
 
-1. **Air acceleration** (`sv_airaccelerate`, `sv_air_max_wishspeed`) - strafe mid-air
-   to gain speed, fully client-predicted.
-2. **Hop-chain boost** (optional) - each jump chained within `chainWindowMs` of the
-   previous one scales horizontal velocity by `factor`, capped at `maxSpeed`, so speed
-   builds from simply holding JUMP.
+1. **Air acceleration** (`sv_airaccelerate`, `sv_air_max_wishspeed`) lets players
+   gain speed while strafing in the air. This is client-predicted.
+2. **Hop-chain boost** (optional) scales horizontal velocity by `factor` for each
+   jump within `chainWindowMs` of the previous jump, up to `maxSpeed`.
 
 ## Modes
 
 | Mode | Behavior |
 | --- | --- |
-| `enabled` | Bhop for everyone, always on. Convar changes are restored on unload and re-asserted each round start. |
-| `grants` | Off by default. Individual players get session-only bhop via `bhop_player`; cleared on disconnect. |
+| `enabled` | Bhop is always on for everyone. Convar changes are restored on unload and re-applied at each round start. |
+| `grants` | Bhop is off by default. `bhop_player` grants it for the current session; the grant is cleared on disconnect. |
 
 ## Server console commands
 
@@ -58,20 +57,20 @@ Speed gain comes from two layers:
 | `bhop.hopBoost.maxSpeed` | `1200.0` | Horizontal speed cap for the boost. |
 | `bhop.notifyPlayer` | `true` | Center-message the player on grant/revoke. |
 
-The hop boost is server-authoritative (one small velocity correction per hop, like a
-boost pad). If it feels rough at very high ping, lower `factor` or disable it - the
-convar layer alone is entirely client-predicted.
+The hop boost is server-authoritative: it applies one small velocity correction per
+hop, similar to a boost pad. If it feels rough at high ping, lower `factor` or
+disable the boost. The convar layer remains fully client-predicted.
 
 ## Admin-system integration
 
-The admin-system plugin ships a **Bunnyhop** effect (admin menu → Effects, permission
-flag `j`) that toggles a session grant through `bhop_player`. Run this plugin in
-`grants` mode on regular servers so admins can hand out bhop for fun; without the bhop
-plugin loaded the toggle is inert.
+The admin-system plugin provides a **Bunnyhop** effect in its Effects menu
+(permission flag `j`). It toggles a session grant through `bhop_player`. Run this
+plugin in `grants` mode when admins should grant bhop to individual players. The
+effect is inert if this plugin is not loaded.
 
-## Maintenance note
+## Maintenance
 
-`grants` mode hooks `CPlayer_MovementServices::RunCommand` by vtable index (gamedata
-`"RunCommand"`, currently windows 22 / linux 23). The index drifts with CS2 updates -
-re-verify it against SwiftlyS2/CS2Fixes gamedata after every game update. `enabled`
-mode uses no hooks and is update-proof.
+`grants` mode hooks `CPlayer_MovementServices::RunCommand` by vtable index
+(`"RunCommand"` gamedata, currently Windows 22 / Linux 23). Re-check the index
+against SwiftlyS2 or CS2Fixes gamedata after every CS2 update. `enabled` mode
+uses no hook.

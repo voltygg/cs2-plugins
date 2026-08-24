@@ -25,7 +25,7 @@ extern const Action Unbury;
 extern const ParamAction SetSpeed;
 
 // Cosmetic
-/** Param is the model-size percent (100 = normal); the body divides by 100 and the kit clamps it. */
+/** Param is the model-size percent (100 = normal); the body divides by 100 and the framework clamps it. */
 extern const ParamAction SetSize;
 
 // Teleport
@@ -51,7 +51,7 @@ extern const Action Slap;
 /**
  * Theatrical instakill: a no-damage env_explosion at the target (stock fireball +
  * boom, works on every map without precaching), then Slay after a 300 ms beat.
- * Falls back to the plain delayed Slay when the kit's entity-ops signatures are
+ * Falls back to the plain delayed Slay when the framework's entity-ops signatures are
  * unresolved. Requires the Fun flag.
  */
 extern const Action Smite;

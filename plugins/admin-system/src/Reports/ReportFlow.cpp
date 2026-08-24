@@ -133,7 +133,7 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
     auto menu = Admin::Menu::BuildPlayerPicker(
         app, reporterSlot, app.Runtime.Translations.Get("report.selectTarget", reporterSlot),
         [&app](int slot, int targetSlot) { StartReportFlow(app, slot, targetSlot); },
-        // The kit picker lists every connected player, so ineligible targets are greyed out here
+        // The framework picker lists every connected player, so ineligible targets are greyed out here
         // rather than filtered out of the roster.
         [&app, reporterSlot, reporterSteamId](int targetSlot) {
             if (targetSlot == reporterSlot)

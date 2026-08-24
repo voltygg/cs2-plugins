@@ -39,7 +39,7 @@ void App::FlushPlayerSession(Player* player)
         PlayerRepo.RecordDisconnect(player->GetSteamID(), player->GetName(), player->GetPlaytime());
 }
 
-// The one policy the kit consults everywhere: command permissions, action targeting, result
+// The one policy the framework consults everywhere: command permissions, action targeting, result
 // replies, and action broadcasts.
 void App::InstallPolicy()
 {
@@ -117,8 +117,8 @@ void App::RegisterGameEventListeners()
         events.Listen<Events::RoundPrestart>([this](const Events::RoundPrestart&) { Effects.CancelRoundScoped(); }));
 }
 
-// Domain sections on top of the kit's (build/load/gamedata/uptime), plus the command that
-// reports them. Health adds the database to the kit's baseline: an admin plugin that cannot
+// Domain sections on top of the framework's (build/load/gamedata/uptime), plus the command that
+// reports them. Health adds the database to the framework's baseline: an admin plugin that cannot
 // reach its database is not healthy even though the load itself succeeded.
 void App::InstallStatusReporting()
 {
