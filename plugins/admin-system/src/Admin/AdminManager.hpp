@@ -7,7 +7,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace CS2Kit::Database
+namespace VoltMod::Database
 {
 class PostgresDatabase;
 }
@@ -46,7 +46,7 @@ struct AdminChatStyle
 class AdminManager
 {
 public:
-    AdminManager(CS2Kit::Database::PostgresDatabase& db, const Core::ConfigManager& config) : _db(db), _config(config)
+    AdminManager(VoltMod::Database::PostgresDatabase& db, const Core::ConfigManager& config) : _db(db), _config(config)
     {}
 
     bool LoadAdmins();
@@ -101,7 +101,7 @@ public:
     }
 
 private:
-    CS2Kit::Database::PostgresDatabase& _db;
+    VoltMod::Database::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
 
     /** True if a resolved bitmask carries @p flag, or the root flag ('z') that grants everything. */

@@ -1,7 +1,7 @@
 # Dev convenience: one IDE, both repos. Not a build input - conanfile.py pins the version
-# unless you `conan editable add vendor/cs2-kit`. ignore = all keeps the moving pointer out
+# unless you `conan editable add vendor/voltmod`. ignore = all keeps the moving pointer out
 # of this repo's status; drop it to track the gitlink instead.
-[submodule "vendor/cs2-kit"]
-	path = vendor/cs2-kit
-	url = https://github.com/voltygg/cs2-kit.git
+[submodule "vendor/voltmod"]
+	path = vendor/voltmod
+	url = https://github.com/voltygg/voltmod.git
 	ignore = all

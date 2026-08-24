@@ -1,11 +1,11 @@
 #include "MovementConVars.hpp"
 
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <format>
 
-using namespace CS2Kit;
-namespace Log = CS2Kit::Log;
+using namespace VoltMod;
+namespace Log = VoltMod::Log;
 
 namespace Bhop
 {

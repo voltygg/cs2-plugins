@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CS2Kit/App/JsonConfig.hpp>
+#include <VoltMod/App/JsonConfig.hpp>
 
 // Game-content facts the detections compare against - Valve's event names and client convars, not
 // this plugin's logic. They live in configs/detections.jsonc so a CS2 update that renames a convar
@@ -155,6 +155,6 @@ inline void from_json(const nlohmann::json& j, DetectionData& data)
 }
 
 /** The event/convar tables the detections compare against. */
-using DetectionDataManager = CS2Kit::App::JsonConfig<DetectionData>;
+using DetectionDataManager = VoltMod::App::JsonConfig<DetectionData>;
 
 }  // namespace Anticheat

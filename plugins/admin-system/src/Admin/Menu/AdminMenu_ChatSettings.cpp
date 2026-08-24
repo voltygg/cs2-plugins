@@ -3,14 +3,14 @@
 #include "../../Core/App.hpp"
 #include "../AdminManager.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/ChatColors.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Menu/MenuPresets.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
+#include <VoltMod/Menu/MenuPresets.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <algorithm>
 #include <string>
 #include <string_view>
@@ -19,18 +19,18 @@
 namespace AdminSystem::Admin::Menu
 {
 
-using CS2Kit::Core::Translations;
-using CS2Kit::Menu::ChoiceOption;
-using CS2Kit::Menu::MenuBuilder;
-using CS2Kit::Menu::MenuManager;
-using CS2Kit::Players::PlayerManager;
+using VoltMod::Core::Translations;
+using VoltMod::Menu::ChoiceOption;
+using VoltMod::Menu::MenuBuilder;
+using VoltMod::Menu::MenuManager;
+using VoltMod::Players::PlayerManager;
 
 namespace
 {
 
-namespace ChatColors = CS2Kit::Core::ChatColors;
+namespace ChatColors = VoltMod::Core::ChatColors;
 
-// Translation-key suffix per canonical CS2Kit color name. Compound names ("lightblue")
+// Translation-key suffix per canonical VoltMod color name. Compound names ("lightblue")
 // don't survive a generic "uppercase first letter" rule, so the small lookup keeps the
 // JSON keys stable and lets us reuse the kit's @ref ChatColors::Palette for everything else.
 const std::unordered_map<std::string_view, std::string_view>& ColorLabelKeys()
@@ -46,7 +46,7 @@ const std::unordered_map<std::string_view, std::string_view>& ColorLabelKeys()
 }
 
 // The DB stores empty string when the admin wants their group default; index 0 in the
-// rendered choice list maps to that empty value. We then append every CS2Kit canonical
+// rendered choice list maps to that empty value. We then append every VoltMod canonical
 // color, so the list automatically grows when new colors are added upstream.
 int IndexForColor(std::string_view color)
 {
@@ -74,7 +74,7 @@ std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(App& app, int v
     choices.push_back({tr.Get("color.groupDefault", viewerSlot), std::string{}});
 
     // The kit renders the palette; colors without a translation key fall back to their name.
-    auto palette = ::CS2Kit::Menu::BuildPaletteChoices([&](std::string_view name) -> std::string {
+    auto palette = ::VoltMod::Menu::BuildPaletteChoices([&](std::string_view name) -> std::string {
         if (auto it = keys.find(name); it != keys.end())
             return tr.Get(std::string(it->second), viewerSlot);
         return {};
@@ -191,7 +191,7 @@ void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, int view
 
 }  // namespace
 
-std::shared_ptr<CS2Kit::MenuView> BuildChatSettingsMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::MenuView> BuildChatSettingsMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     auto* admin = app.Runtime.Players.GetPlayerBySlot(adminSlot);

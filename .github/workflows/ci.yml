@@ -24,7 +24,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     env:
       # The rest of the ccache settings - the sloppiness flags the kit's PCH needs, the
-      # size cap, the base-dir rewrite - are applied by `cs2kit build`, which is where
+      # size cap, the base-dir rewrite - are applied by `voltmod build`, which is where
       # the PCH they compensate for is defined.
       CCACHE_DIR: /ccache
     steps:
@@ -47,7 +47,7 @@ jobs:
       # Prints ccache statistics either side of the build; a warm rerun of an
       # unchanged tree should show >95% hits.
       - name: Build (configure -> build)
-        run: cs2kit build linux-steamrt-release --no-test
+        run: voltmod build linux-steamrt-release --no-test
 
       - name: Test
         run: ctest --preset linux-steamrt-release

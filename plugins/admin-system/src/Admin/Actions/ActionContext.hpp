@@ -2,7 +2,7 @@
 
 #include "../../Core/Permissions.hpp"
 
-#include <CS2Kit/Players/ActionDispatcher.hpp>
+#include <VoltMod/Players/ActionDispatcher.hpp>
 #include <string>
 
 namespace AdminSystem
@@ -16,10 +16,10 @@ namespace AdminSystem::Admin::Actions
 // The action scaffold lives in the kit; the plugin supplies its permission/immunity/broadcast
 // policy through app.Runtime.Policy (set once in OnLoad). These aliases keep descriptor files and
 // call sites on the established local names.
-using ActionContext = CS2Kit::Players::ActionContext;
-using Action = CS2Kit::Players::Action;
-using ParamAction = CS2Kit::Players::ParamAction;
-using OptKey = CS2Kit::Players::OptKey;
+using ActionContext = VoltMod::Players::ActionContext;
+using Action = VoltMod::Players::Action;
+using ParamAction = VoltMod::Players::ParamAction;
+using OptKey = VoltMod::Players::OptKey;
 
 /**
  * @brief Resolve admin + target slot pair through the plugin's dispatcher, applying the

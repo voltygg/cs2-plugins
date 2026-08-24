@@ -3,16 +3,16 @@
 #include "../Core/App.hpp"
 #include "Commands.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
+#include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Commands
 {
 
-using namespace CS2Kit::Commands;
+using namespace VoltMod::Commands;
 
-void RegisterAdminMenuCommand(CS2Kit::CommandManager& commands, App& app)
+void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app)
 {
     commands.Register({
         .Name = "admin",

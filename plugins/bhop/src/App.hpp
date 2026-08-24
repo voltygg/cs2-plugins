@@ -3,7 +3,7 @@
 #include "BhopManager.hpp"
 #include "Config.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 
 namespace Bhop
 {
@@ -17,12 +17,12 @@ namespace Bhop
  */
 struct App
 {
-    explicit App(CS2Kit::Runtime& runtime) : Runtime(runtime) {}
+    explicit App(VoltMod::Runtime& runtime) : Runtime(runtime) {}
 
     /** Load settings and start the bhop policy. False aborts the plugin load. */
     bool Start();
 
-    CS2Kit::Runtime& Runtime;
+    VoltMod::Runtime& Runtime;
     ConfigManager Config;
     BhopManager Bhop{Runtime, Config};
 };

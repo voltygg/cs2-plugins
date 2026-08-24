@@ -1,7 +1,7 @@
-# Sources default to a CONFIGURE_DEPENDS glob of src/*.cpp inside cs2_add_plugin.
+# Sources default to a CONFIGURE_DEPENDS glob of src/*.cpp inside voltmod_add_plugin.
 # pqxx joins the PCH here because App.hpp (via Database/Api.hpp) pulls it
 # into most of this plugin's TUs; it is deliberately not in the kit-wide PCH.
-cs2_add_plugin(admin-system
+voltmod_add_plugin(admin-system
     DESCRIPTION "Admin groups, punishments, reports and the fun-command menu"
     FEATURES DATABASE
     LIBRARIES

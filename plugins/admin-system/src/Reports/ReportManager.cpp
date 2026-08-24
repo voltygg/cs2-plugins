@@ -3,19 +3,19 @@
 #include "../Core/Config.hpp"
 #include "../Database/Repositories/ReportRepository.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Core/TimeUtils.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <algorithm>
 #include <utility>
 
-using CS2Kit::Core::TimeUtils;
+using VoltMod::Core::TimeUtils;
 
 namespace AdminSystem::Reports
 {
 
-namespace Log = CS2Kit::Core::Log;
+namespace Log = VoltMod::Core::Log;
 
 ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<int64_t> targetSteamId, int64_t now) const
 {
@@ -46,7 +46,7 @@ bool ReportManager::CanReport(int64_t reporterSteamId, int64_t targetSteamId) co
     return static_cast<bool>(EvaluateGate(reporterSteamId, targetSteamId, TimeUtils::Now()));
 }
 
-void ReportManager::Submit(const CS2Kit::Player& reporter, const CS2Kit::Player& target, const std::string& reasonCode,
+void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Player& target, const std::string& reasonCode,
                            const std::string& reasonText, std::function<void(bool)> onDone)
 {
     const int64_t reporterSteamId = reporter.GetSteamID();

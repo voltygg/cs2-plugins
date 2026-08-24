@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CS2Kit/Database/Api.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -25,7 +25,7 @@ struct ActivityCounts
 class AdminActivityRepository
 {
 public:
-    explicit AdminActivityRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+    explicit AdminActivityRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
 
     void Record(int64_t adminSteamId, const std::string& adminName, const std::string& action, int64_t targetSteamId,
                 const std::string& targetName, const std::string& detail, const std::string& serverTag);
@@ -35,7 +35,7 @@ public:
     void CountSinceAsync(int64_t adminSteamId, int64_t sinceEpoch, std::function<void(ActivityCounts)> onDone);
 
 private:
-    CS2Kit::PostgresDatabase& _db;
+    VoltMod::PostgresDatabase& _db;
 };
 
 }  // namespace AdminSystem::Database

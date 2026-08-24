@@ -1,9 +1,9 @@
 #include "Descriptors.hpp"
 #include "EffectRegistry.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/TransmitFilter.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/TransmitFilter.hpp>
 
 namespace AdminSystem::Admin::Effects
 {

@@ -4,17 +4,17 @@
 #include "../Core/Permissions.hpp"
 #include "Commands.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <format>
 
 namespace AdminSystem::Commands
 {
 
-using namespace CS2Kit::Commands;
+using namespace VoltMod::Commands;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 
-void RegisterCheatCheckCommands(CS2Kit::CommandManager& commands, App& app)
+void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app)
 {
     commands.Register({
         .Name = "cc",

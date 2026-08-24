@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CS2Kit/Database/Column.hpp>
+#include <VoltMod/Database/Column.hpp>
 #include <cstdint>
 #include <string>
 #include <tuple>
@@ -30,7 +30,7 @@ struct Report
      *  (status/handled_by/handled_at/resolution) are omitted and keep their database defaults. */
     static constexpr auto Columns()
     {
-        using CS2Kit::Database::Column;
+        using VoltMod::Database::Column;
         return std::tuple{
             Column{"id", &Report::Id},
             Column{"reporter_steam_id", &Report::ReporterSteamId},

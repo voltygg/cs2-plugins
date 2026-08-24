@@ -1,8 +1,8 @@
 #include "Descriptors.hpp"
 #include "EffectRegistry.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <format>
 
 namespace AdminSystem::Admin::Effects

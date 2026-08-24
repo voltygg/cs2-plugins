@@ -11,12 +11,12 @@
 #include <unordered_set>
 #include <vector>
 
-namespace CS2Kit
+namespace VoltMod
 {
 class Runtime;
 }
 
-namespace CS2Kit::Database
+namespace VoltMod::Database
 {
 class PostgresDatabase;
 }
@@ -41,8 +41,8 @@ namespace AdminSystem::Punishments
 class PunishmentManager
 {
 public:
-    PunishmentManager(CS2Kit::Database::PostgresDatabase& db, const Core::ConfigManager& config,
-                      CS2Kit::Runtime& runtime, Core::ChatService& chat)
+    PunishmentManager(VoltMod::Database::PostgresDatabase& db, const Core::ConfigManager& config,
+                      VoltMod::Runtime& runtime, Core::ChatService& chat)
         : _db(db), _config(config), _rt(runtime), _chat(chat)
     {}
 
@@ -84,9 +84,9 @@ public:
     void ExpireOldPunishments();
 
 private:
-    CS2Kit::Database::PostgresDatabase& _db;
+    VoltMod::Database::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     Core::ChatService& _chat;
 
     /** Re-query the three active lists off-thread and swap the caches when the rows arrive. */

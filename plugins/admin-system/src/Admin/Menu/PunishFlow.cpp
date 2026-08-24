@@ -7,13 +7,13 @@
 #include "../AdminManager.hpp"
 #include "Labels.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/StringUtils.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Menu/Flow.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Menu/Flow.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <format>
 #include <optional>
 #include <string>
@@ -25,9 +25,9 @@ namespace AdminSystem::Admin::Menu
 
 using namespace AdminSystem::Punishments;
 
-using CS2Kit::Core::StringUtils;
-using CS2Kit::Menu::MenuBuilder;
-using PunishFlowT = CS2Kit::Flow<PendingPunishment>;
+using VoltMod::Core::StringUtils;
+using VoltMod::Menu::MenuBuilder;
+using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 
 namespace
 {
@@ -148,7 +148,7 @@ bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, int targetSlot)
     return false;
 }
 
-std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
     auto& tr = app.Runtime.Translations;
     auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);

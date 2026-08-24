@@ -5,28 +5,28 @@
 #include "ChatService.hpp"
 #include "Config.hpp"
 
-#include <CS2Kit/Commands/CommandManager.hpp>
-#include <CS2Kit/Core/ChatColors.hpp>
-#include <CS2Kit/Core/TimeUtils.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Players/Player.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/ChatInputCapture.hpp>
-#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <VoltMod/Commands/CommandManager.hpp>
+#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Players/Player.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/ChatInputCapture.hpp>
+#include <VoltMod/Sdk/UserMessage.hpp>
 #include <format>
 #include <string>
 
 namespace AdminSystem::Core
 {
 
-using namespace CS2Kit::Players;
-using namespace CS2Kit::Core;
+using namespace VoltMod::Players;
+using namespace VoltMod::Core;
 
 namespace
 {
 
 /** Localized expiry suffix for mute notices addressed to @p slot. */
-std::string MuteExpiryText(CS2Kit::Translations& tr, int64_t expiresAt, int slot)
+std::string MuteExpiryText(VoltMod::Translations& tr, int64_t expiresAt, int slot)
 {
     return TimeUtils::FormatExpiry(expiresAt, TimeUtils::Now(), tr.Get("muteNotice.permanent", slot),
                                    tr.Get("muteNotice.expiresIn", slot));

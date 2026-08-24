@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CS2Kit/Database/Api.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <cstdint>
 #include <string>
 
@@ -12,7 +12,7 @@ namespace AdminSystem::Database
 class PlayerRepository
 {
 public:
-    explicit PlayerRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+    explicit PlayerRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
 
     /**
      * Upsert on connect: first connect inserts the row; reconnects refresh name/ip/last_seen
@@ -27,7 +27,7 @@ public:
     void RecordDisconnect(int64_t steamId, const std::string& name, int64_t sessionSeconds);
 
 private:
-    CS2Kit::PostgresDatabase& _db;
+    VoltMod::PostgresDatabase& _db;
 };
 
 }  // namespace AdminSystem::Database

@@ -6,22 +6,22 @@
 #include "../Database/Repositories/AdminActivityRepository.hpp"
 #include "AdminManager.hpp"
 
-#include <CS2Kit/Core/ChatColors.hpp>
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Core/TimeUtils.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/UserMessage.hpp>
 #include <format>
 
 namespace AdminSystem::Admin
 {
 
 namespace Db = AdminSystem::Database;
-namespace Log = CS2Kit::Core::Log;
-namespace ChatColors = CS2Kit::Core::ChatColors;
-using CS2Kit::Core::TimeUtils;
+namespace Log = VoltMod::Core::Log;
+namespace ChatColors = VoltMod::Core::ChatColors;
+using VoltMod::Core::TimeUtils;
 
 void FreezeManager::RefreshFromDatabase()
 {

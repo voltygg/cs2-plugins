@@ -5,15 +5,15 @@
 #include "../Core/ChatService.hpp"
 #include "PunishmentManager.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Sdk/PlayerController.hpp>
 #include <format>
 
 namespace AdminSystem::Punishments
 {
 
 using namespace AdminSystem::Database;
-using CS2Kit::Players::Player;
+using VoltMod::Players::Player;
 
 namespace
 {
@@ -42,7 +42,7 @@ bool Issue(App& app, const Player& admin, const Player& target, PunishType type,
     {
     case PunishType::Kick:
     {
-        CS2Kit::PlayerController(target.GetSlot()).Kick(reason.c_str());
+        VoltMod::PlayerController(target.GetSlot()).Kick(reason.c_str());
         app.Chat.BroadcastPunishment("kicked", admin.GetName(), target.GetName(), reason, 0);
         return true;
     }

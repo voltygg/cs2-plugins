@@ -6,14 +6,14 @@
 
 #include <igameevents.h>
 
-#include <CS2Kit/Core/Slot.hpp>
+#include <VoltMod/Core/Slot.hpp>
 #include <algorithm>
 #include <cmath>
 #include <eiface.h>
 #include <mathlib/vector.h>
 #include <optional>
 
-using CS2Kit::Core::IsValidSlot;
+using VoltMod::Core::IsValidSlot;
 
 namespace Anticheat
 {
@@ -33,17 +33,17 @@ Vec3 ToVec3(const Vector& v)
     return {v.x, v.y, v.z};
 }
 
-bool IsAirborne(const CS2Kit::PlayerController& controller)
+bool IsAirborne(const VoltMod::PlayerController& controller)
 {
     const uint32_t ground = controller.GetPawnField<uint32_t>("CBaseEntity", "m_hGroundEntity");
     const bool grounded = controller.GetPawnField<bool>("CCSPlayerPawn", "m_bOnGroundLastTick") ||
-                          ((controller.GetFlags() & CS2Kit::Sdk::FL_ONGROUND) && ground != InvalidEntityHandle);
-    const auto walk = static_cast<uint8_t>(CS2Kit::MoveType::Walk);
+                          ((controller.GetFlags() & VoltMod::Sdk::FL_ONGROUND) && ground != InvalidEntityHandle);
+    const auto walk = static_cast<uint8_t>(VoltMod::MoveType::Walk);
     return !grounded && controller.GetPawnField<uint8_t>("CBaseEntity", "m_MoveType") == walk &&
            controller.GetPawnField<uint8_t>("CBaseEntity", "m_nActualMoveType") == walk;
 }
 
-CmdSample BuildSample(const CS2Kit::UserCmdView& cmd)
+CmdSample BuildSample(const VoltMod::UserCmdView& cmd)
 {
     CmdSample sample;
     sample.CmdNum = cmd.CommandNumber;
@@ -58,7 +58,7 @@ CmdSample BuildSample(const CS2Kit::UserCmdView& cmd)
 
     for (int i = 0; i < cmd.SubtickMoveCount; ++i)
     {
-        const CS2Kit::SubtickMove& move = cmd.SubtickMoves[i];
+        const VoltMod::SubtickMove& move = cmd.SubtickMoves[i];
         sample.SubtickPitchDelta += move.PitchDelta;
         sample.SubtickYawDelta += move.YawDelta;
         sample.SubtickAnglesFinite =
@@ -70,12 +70,12 @@ CmdSample BuildSample(const CS2Kit::UserCmdView& cmd)
     // Only an index the client never sent is a fabrication. One the transport cap dropped is merely
     // absent, and must never be clamped back into range - that reads another shot's angles.
     sample.AttackIndexInvalid = attackIndex < -1 || attackIndex >= cmd.InputHistoryTotalCount;
-    if (const CS2Kit::InputHistorySample* attack = cmd.SampleAt(attackIndex); attack && attack->HasViewAngles)
+    if (const VoltMod::InputHistorySample* attack = cmd.SampleAt(attackIndex); attack && attack->HasViewAngles)
         sample.AttackAngles = AimAngles{attack->ViewPitch, attack->ViewYaw};
 
     for (int i = 0; i < cmd.InputHistorySampleCount; ++i)
     {
-        const CS2Kit::InputHistorySample& entry = cmd.InputHistorySamples[i];
+        const VoltMod::InputHistorySample& entry = cmd.InputHistorySamples[i];
         if (!entry.HasViewAngles)
             continue;
         sample.HasHistoryAngles = true;
@@ -98,29 +98,29 @@ void ShotCorrelator::Initialize()
     auto& events = _rt.Events;
 
     _subscriptions.push_back(
-        _rt.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { OnCommand(slot, cmd); }));
+        _rt.MovementHook.ListenPreCmd([this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); }));
     _subscriptions.push_back(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
-    _subscriptions.push_back(events.Listen<CS2Kit::Events::PlayerSpawn>([this](const CS2Kit::Events::PlayerSpawn& e) {
+    _subscriptions.push_back(events.Listen<VoltMod::Events::PlayerSpawn>([this](const VoltMod::Events::PlayerSpawn& e) {
         if (_manager.ModuleEnabled(DetectionKind::AntiAim))
             _manager.AntiAim().OnSlotChanged(e.Slot);
     }));
     _subscriptions.push_back(
-        events.Listen<CS2Kit::Events::WeaponFire>([this](const CS2Kit::Events::WeaponFire& e) { OnWeaponFire(e); }));
-    _subscriptions.push_back(events.Listen<CS2Kit::Events::BulletImpact>(
-        [this](const CS2Kit::Events::BulletImpact& e) { OnBulletImpact(e); }));
+        events.Listen<VoltMod::Events::WeaponFire>([this](const VoltMod::Events::WeaponFire& e) { OnWeaponFire(e); }));
+    _subscriptions.push_back(events.Listen<VoltMod::Events::BulletImpact>(
+        [this](const VoltMod::Events::BulletImpact& e) { OnBulletImpact(e); }));
     // player_hurt carries the hitgroup SilentAim scores headshots from, which the typed view omits.
     _subscriptions.push_back(events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); }));
     _subscriptions.push_back(
-        events.Listen<CS2Kit::Events::PlayerDeath>([this](const CS2Kit::Events::PlayerDeath& e) { OnPlayerDeath(e); }));
+        events.Listen<VoltMod::Events::PlayerDeath>([this](const VoltMod::Events::PlayerDeath& e) { OnPlayerDeath(e); }));
 }
 
-void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
+void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)
 {
     if (!cmd.Valid || !_manager.DetectionsEnabled() || !_manager.IsEligible(slot))
         return;
 
-    CS2Kit::PlayerController controller(slot);
+    VoltMod::PlayerController controller(slot);
     if (!controller.IsValid() || !controller.GetPawn())
         return;
 
@@ -143,7 +143,7 @@ void ShotCorrelator::OnCommand(int slot, const CS2Kit::UserCmdView& cmd)
         _manager.AntiAim().OnCommand(slot, sample);
 
     // This is the command the server is about to simulate, so ingest and stamp in the same pass.
-    const auto serverTick = static_cast<int32_t>(CS2Kit::ServerTick());
+    const auto serverTick = static_cast<int32_t>(VoltMod::ServerTick());
     const double now = TimeUtils::MonotonicSeconds();
     _manager.Correlator().OnSimulated(slot, sample.CmdNum, serverTick, eye, sample.Airborne);
     if (aimbot)
@@ -162,7 +162,7 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
     IVEngineServer2* engine = _rt.Interfaces.Engine;
     _userIdsResolved = engine != nullptr;
 
-    for (const CS2Kit::Players::Player* player : _rt.Players.GetAllPlayers())
+    for (const VoltMod::Players::Player* player : _rt.Players.GetAllPlayers())
     {
         const int slot = player ? player->GetSlot() : -1;
         if (!IsValidSlot(slot))
@@ -170,7 +170,7 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
         if (engine)
             _userIds[slot] = engine->GetPlayerUserId(CPlayerSlot(slot)).Get();
 
-        const CS2Kit::PlayerController controller(slot);
+        const VoltMod::PlayerController controller(slot);
         if (!controller.IsValid() || !controller.GetPawn())
             continue;
 
@@ -188,7 +188,7 @@ void ShotCorrelator::OnFrame()
     if (!_manager.DetectionsEnabled())
         return;
 
-    const auto serverTick = static_cast<int32_t>(CS2Kit::ServerTick());
+    const auto serverTick = static_cast<int32_t>(VoltMod::ServerTick());
     const double now = TimeUtils::MonotonicSeconds();
 
     std::array<PositionSample, MaxSlots> players{};
@@ -237,29 +237,29 @@ void ShotCorrelator::FinalizeSilentAim(int slot, int32_t serverTick, double nowS
     _manager.Report(slot, finding);
 }
 
-void ShotCorrelator::OnWeaponFire(const CS2Kit::Events::WeaponFire& fire)
+void ShotCorrelator::OnWeaponFire(const VoltMod::Events::WeaponFire& fire)
 {
     if (!_manager.DetectionsEnabled() || !_manager.IsEligible(fire.Slot))
         return;
 
-    const CS2Kit::PlayerController controller(fire.Slot);
+    const VoltMod::PlayerController controller(fire.Slot);
     const QAngle eyeAngles = controller.GetEyeAngles();
     const AimAngles visible{eyeAngles.x, eyeAngles.y};
     // Without a pawn the field read fabricates a perfectly finite-looking (0,0).
     const bool hasVisible = controller.IsValid() && controller.GetPawn() != nullptr && Geometry::IsFinite(visible);
 
     ShotView* shot = _manager.Correlator().OnWeaponFire(
-        fire.Slot, fire.Weapon, static_cast<int32_t>(CS2Kit::ServerTick()), visible, hasVisible);
+        fire.Slot, fire.Weapon, static_cast<int32_t>(VoltMod::ServerTick()), visible, hasVisible);
     if (shot && _manager.ModuleEnabled(DetectionKind::AntiAim))
         _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, TimeUtils::MonotonicSeconds()));
 }
 
-void ShotCorrelator::OnBulletImpact(const CS2Kit::Events::BulletImpact& impact)
+void ShotCorrelator::OnBulletImpact(const VoltMod::Events::BulletImpact& impact)
 {
     if (!_manager.DetectionsEnabled())
         return;
 
-    const auto serverTick = static_cast<int32_t>(CS2Kit::ServerTick());
+    const auto serverTick = static_cast<int32_t>(VoltMod::ServerTick());
     // The event's userid is truncated to a byte, so only a slot whose in-window shot is unique
     // counts. Without a userid table the engine's own best-effort decode is all there is.
     int slot = _manager.Correlator().ResolveImpactShooter(impact.TruncatedUserId, serverTick, _userIds);
@@ -285,7 +285,7 @@ void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
 
     const bool headshot = event->GetInt("hitgroup", HitGroupGeneric) == HitGroupHead;
     ShotView* shot =
-        _manager.Correlator().OnPlayerHurt(attacker, victim, headshot, static_cast<int32_t>(CS2Kit::ServerTick()));
+        _manager.Correlator().OnPlayerHurt(attacker, victim, headshot, static_cast<int32_t>(VoltMod::ServerTick()));
     if (!shot)
         return;
 
@@ -296,7 +296,7 @@ void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
                         _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, TimeUtils::MonotonicSeconds()));
 }
 
-void ShotCorrelator::OnPlayerDeath(const CS2Kit::Events::PlayerDeath& death)
+void ShotCorrelator::OnPlayerDeath(const VoltMod::Events::PlayerDeath& death)
 {
     if (!_manager.DetectionsEnabled() || !_manager.IsEligible(death.AttackerSlot))
         return;
@@ -304,7 +304,7 @@ void ShotCorrelator::OnPlayerDeath(const CS2Kit::Events::PlayerDeath& death)
     // Nothing consumes the death directly: it only lands the wallbang flag SilentAim reads when it
     // finalizes two ticks later.
     _manager.Correlator().OnPlayerDeath(death.AttackerSlot, death.VictimSlot, death.Weapon, death.Penetrated > 0,
-                                        static_cast<int32_t>(CS2Kit::ServerTick()));
+                                        static_cast<int32_t>(VoltMod::ServerTick()));
 }
 
 }  // namespace Anticheat

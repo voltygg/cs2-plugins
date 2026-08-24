@@ -1,7 +1,7 @@
 #pragma once
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Http/RestJsonApi.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Http/RestJsonApi.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -16,7 +16,7 @@ namespace AdminSystem::Admin::CheatCheck
 {
 
 /** A ready-to-send create-room HTTP POST, derived from config + the players involved. */
-using RoomRequest = CS2Kit::Http::HttpRequest;
+using RoomRequest = VoltMod::Http::HttpRequest;
 
 /** URLs extracted from a successful create-room response. */
 struct RoomUrls
@@ -39,7 +39,7 @@ std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoo
  * Parse the create-room response into player/checker URLs per the config's field + template rules.
  * Returns nullopt on transport/HTTP/parse failure or when no player URL could be resolved.
  */
-std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg, const CS2Kit::HttpResult& result);
+std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result);
 
 /**
  * Build the presence GET from the websiteAutoRoom config. Substitutes {code}/{steamId} into the
@@ -52,6 +52,6 @@ std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAut
  * Read the in-room flag from a presence response. Returns nullopt on transport/HTTP/parse
  * failure so callers can distinguish "not in the room" from "API broke".
  */
-std::optional<bool> ParsePresence(const Core::CheatCheckWebsiteAutoRoom& cfg, const CS2Kit::HttpResult& result);
+std::optional<bool> ParsePresence(const Core::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result);
 
 }  // namespace AdminSystem::Admin::CheatCheck

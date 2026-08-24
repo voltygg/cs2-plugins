@@ -16,7 +16,7 @@ enum class BanResult : int
 };
 
 /**
- * @brief Admin-system actions offered to other plugins through CS2Kit's ServiceExchange.
+ * @brief Admin-system actions offered to other plugins through VoltMod's ServiceExchange.
  *
  * Published by admin-system in OnLoad, consumed by anticheat. Callers get nullptr from the
  * exchange when admin-system is not loaded.

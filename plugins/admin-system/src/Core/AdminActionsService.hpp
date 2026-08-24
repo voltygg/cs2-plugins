@@ -2,7 +2,7 @@
 
 #include <Contracts/IAdminActions.hpp>
 
-namespace CS2Kit
+namespace VoltMod
 {
 class Runtime;
 }
@@ -30,7 +30,7 @@ namespace AdminSystem::Core
 class AdminActionsService final : public Contracts::IAdminActions
 {
 public:
-    AdminActionsService(CS2Kit::Runtime& runtime, Punishments::PunishmentManager& punishments, Admin::Access& access)
+    AdminActionsService(VoltMod::Runtime& runtime, Punishments::PunishmentManager& punishments, Admin::Access& access)
         : _rt(runtime), _punishments(punishments), _access(access)
     {}
 
@@ -42,7 +42,7 @@ public:
     void AlertAdmins(int64_t steamId, std::string_view detector, int score) override;
 
 private:
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     Punishments::PunishmentManager& _punishments;
     Admin::Access& _access;
 };

@@ -6,13 +6,13 @@
 #include "AdminMenu_Unmute.hpp"
 #include "PunishFlow.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Menu/MenuPresets.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
+#include <VoltMod/Menu/MenuPresets.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <format>
 #include <string>
 #include <utility>
@@ -21,9 +21,9 @@ namespace AdminSystem::Admin::Menu
 {
 
 using namespace AdminSystem::Punishments;
-using CS2Kit::Menu::MenuBuilder;
+using VoltMod::Menu::MenuBuilder;
 
-std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
 
@@ -41,7 +41,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(AdminSystem::App& app, int adm
         tr.Get("action.unmute", adminSlot), [&app](int slot) { return BuildUnmuteMenu(app, slot); },
         app.Access.HasPermission(admin->GetSteamID(), Permission::Mute));
 
-    CS2Kit::Menu::AppendPlayerRows(
+    VoltMod::Menu::AppendPlayerRows(
         builder, adminSlot,
         [&app](int admin, int target) {
             auto actions = BuildPunishActionsMenu(app, admin, target);
@@ -53,7 +53,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(AdminSystem::App& app, int adm
     return builder.Build();
 }
 
-std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
     auto& tr = app.Runtime.Translations;
     auto& access = app.Access;

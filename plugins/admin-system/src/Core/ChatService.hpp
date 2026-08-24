@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-namespace CS2Kit
+namespace VoltMod
 {
 class Runtime;
 }
@@ -16,7 +16,7 @@ namespace AdminSystem::Core
 class ConfigManager;
 
 /**
- * Renders admin-system chat semantics on top of `CS2Kit::Runtime::Messages`: styled per-command
+ * Renders admin-system chat semantics on top of `VoltMod::Runtime::Messages`: styled per-command
  * replies and admin action/punishment broadcasts.
  *
  * Output only, and deliberately so - it reads nothing but the runtime and config, which is what
@@ -26,7 +26,7 @@ class ConfigManager;
 class ChatService
 {
 public:
-    ChatService(CS2Kit::Runtime& runtime, const ConfigManager& config) : _rt(runtime), _config(config) {}
+    ChatService(VoltMod::Runtime& runtime, const ConfigManager& config) : _rt(runtime), _config(config) {}
 
     /**
      * Send a single-line reply to one player. Color codes inside `message` are honored;
@@ -66,7 +66,7 @@ public:
                          const std::map<std::string, std::string>& nameTokens);
 
 private:
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     const ConfigManager& _config;
 
     /** Phrase at `translationKey`, or the key itself so a missing translation is obvious. */

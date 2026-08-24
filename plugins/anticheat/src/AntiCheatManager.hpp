@@ -19,7 +19,7 @@
 #include "Response/ResponseManager.hpp"
 #include "Simulator/CheatSimulator.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <tuple>
@@ -31,7 +31,7 @@ namespace Anticheat
 class AntiCheatManager
 {
 public:
-    AntiCheatManager(CS2Kit::Runtime& runtime, ConfigManager& config, DetectionDataManager& detections,
+    AntiCheatManager(VoltMod::Runtime& runtime, ConfigManager& config, DetectionDataManager& detections,
                      ResponseManager& response)
         : _rt(runtime),
           _config(config),
@@ -49,8 +49,8 @@ public:
     /** Pawns, positions and ticks all restart, so no evidence carries over. */
     void OnMapStart();
 
-    void OnPlayerFullyConnected(CS2Kit::Players::Player* player);
-    void OnPlayerSettingsChanged(CS2Kit::Players::Player* player);
+    void OnPlayerFullyConnected(VoltMod::Players::Player* player);
+    void OnPlayerSettingsChanged(VoltMod::Players::Player* player);
 
     /**
      * Master gate. Off while the plugin is disabled, and while sv_cheats is on unless the operator
@@ -91,13 +91,13 @@ private:
     void RegisterCommands();
     /** Push configs/detections.jsonc into the two table-driven modules. */
     void LoadDetectionData();
-    void DumpCommand(int slot, const CS2Kit::UserCmdView& cmd);
+    void DumpCommand(int slot, const VoltMod::UserCmdView& cmd);
     /** anticheat_status: the snapshot, then one line per human player. */
     void LogStatus() const;
     /** Pull mp_teammates_are_enemies into the correlator: it decides which shots are hostile. */
     void RefreshTeamRules();
 
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     ConfigManager& _config;
     DetectionDataManager& _detections;
     ResponseManager& _response;
@@ -120,15 +120,15 @@ private:
 
     /** Resolved once instead of per usercmd: RawConVar holds the convar's value pointer, which
      *  stays valid, and the by-name lookup behind Raw() is not free. */
-    mutable std::optional<CS2Kit::RawConVar> _svCheats;
-    CS2Kit::RawConVar& CheatsConVar() const;
+    mutable std::optional<VoltMod::RawConVar> _svCheats;
+    VoltMod::RawConVar& CheatsConVar() const;
 
-    CS2Kit::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
+    VoltMod::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
     CheatSimulator _simulator;
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */
-    std::vector<CS2Kit::Subscription> _subs;
+    std::vector<VoltMod::Subscription> _subs;
 };
 
 }  // namespace Anticheat

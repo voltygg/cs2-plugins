@@ -10,7 +10,7 @@ vcpkg are no longer part of the workflow.
 - Visual Studio 2026 Build Tools with Desktop development with C++
 - CMake 4.3.4+, Conan 2.29.1+, and Ninja installed globally or through `uv sync`
 
-Option A (recommended): the pins ride the `cs2-kit` distribution this project
+Option A (recommended): the pins ride the `voltmod` distribution this project
 depends on, so one command installs everything:
 
 ```powershell
@@ -32,7 +32,7 @@ git clone https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
 ```
 
-There are no submodules - cs2-kit, the HL2SDK and Metamod are Conan packages.
+There are no submodules - voltmod, the HL2SDK and Metamod are Conan packages.
 
 ## Build
 
@@ -105,11 +105,11 @@ The SDK packages come from the public Cloudsmith remote. Register it and the
 profiles in one command:
 
 ```bash
-conan config install https://github.com/voltygg/cs2-kit.git -sf conan
+conan config install https://github.com/voltygg/voltmod.git -sf conan
 ```
 
 `uv run poe bootstrap` does this for you; `poe build` also adds the remote if it
-is missing (set `CS2KIT_SKIP_REMOTE_SETUP=1` to manage remotes yourself).
+is missing (set `VOLTMOD_SKIP_REMOTE_SETUP=1` to manage remotes yourself).
 
 ### ERROR: Missing binary: hl2sdk-cs2/...
 

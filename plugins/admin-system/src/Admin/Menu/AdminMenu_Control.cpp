@@ -6,22 +6,22 @@
 #include "../Effects/Descriptors.hpp"
 #include "PresetSubmenu.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Menu/MenuPresets.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/Entity.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
+#include <VoltMod/Menu/MenuPresets.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/Entity.hpp>
 #include <format>
 #include <memory>
 
 namespace AdminSystem::Admin::Menu
 {
 
-using CS2Kit::Menu::MenuBuilder;
-using namespace CS2Kit::Sdk;
+using VoltMod::Menu::MenuBuilder;
+using namespace VoltMod::Sdk;
 
 namespace
 {
@@ -35,7 +35,7 @@ constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
 constexpr int SizeDefault = 4;   // index of 100 in SizePresets
 }  // namespace
 
-std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     auto& access = app.Access;
@@ -52,9 +52,9 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(AdminSystem::App& app, int ad
     builder.AddToggle(
         tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
         [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, Effects::Hide.Id); },
-        [&app, adminSlot](int) { CS2Kit::ToggleEffect(app.Effects, adminSlot, adminSlot, Effects::Hide); }, hasB);
+        [&app, adminSlot](int) { VoltMod::ToggleEffect(app.Effects, adminSlot, adminSlot, Effects::Hide); }, hasB);
 
-    CS2Kit::Menu::AppendPlayerRows(
+    VoltMod::Menu::AppendPlayerRows(
         builder, adminSlot,
         [&app](int admin, int target) {
             auto actions = BuildControlActionsMenu(app, admin, target);
@@ -66,7 +66,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlMenu(AdminSystem::App& app, int ad
     return builder.Build();
 }
 
-std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
     auto& tr = app.Runtime.Translations;
 
@@ -74,7 +74,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(AdminSystem::App& app,
     if (!target || !app.Runtime.Players.GetPlayerBySlot(adminSlot))
         return nullptr;
 
-    CS2Kit::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
+    VoltMod::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
     bool hasS = ctx.Allowed(Flag(Permission::Control));
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));
@@ -93,14 +93,14 @@ std::shared_ptr<CS2Kit::MenuView> BuildControlActionsMenu(AdminSystem::App& app,
     builder.AddActionRow("action.kill", Actions::Kill)
         .AddActionRow("action.bring", Actions::Bring)
         .AddActionRow("action.goto", Actions::Goto)
-        .AddStateToggleRow("action.freeze", CS2Kit::InMoveType(CS2Kit::MoveType::None), Actions::Freeze)
-        .AddStateToggleRow("action.noclip", CS2Kit::InMoveType(CS2Kit::MoveType::NoClip), Actions::Noclip)
+        .AddStateToggleRow("action.freeze", VoltMod::InMoveType(VoltMod::MoveType::None), Actions::Freeze)
+        .AddStateToggleRow("action.noclip", VoltMod::InMoveType(VoltMod::MoveType::NoClip), Actions::Noclip)
         // HP/Armor/Speed/Size are inline Choice rows: A/D cycles preset values, E applies and closes.
         .AddPresetChoiceRow("action.health", "HP", HealthPresets, Actions::SetHealth)
         .AddPresetChoiceRow("action.armor", "AP", ArmorPresets, Actions::SetArmor)
         .AddPresetChoiceRow("action.speed", "%", SpeedPresets, Actions::SetSpeed, SpeedDefault)
         .AddPresetChoiceRow("action.size", "%", SizePresets, Actions::SetSize, SizeDefault)
-        .AddStateToggleRow("action.godmode", CS2Kit::HasPawnFlag(CS2Kit::Sdk::FL_GODMODE), Actions::Godmode)
+        .AddStateToggleRow("action.godmode", VoltMod::HasPawnFlag(VoltMod::Sdk::FL_GODMODE), Actions::Godmode)
         .AddActionRow("action.bury", Actions::Bury)
         .AddActionRow("action.unbury", Actions::Unbury);
 

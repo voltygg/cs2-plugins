@@ -3,24 +3,24 @@
 #include "App.hpp"
 #include "Config.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/PluginInfoStamp.hpp>
-#include <CS2Kit/Core/HookMacros.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/App/PluginInfoStamp.hpp>
+#include <VoltMod/Core/HookMacros.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <string>
 
-using CS2Kit::Player;
-using CS2Kit::PluginInfo;
-using CS2Kit::Sdk::PlayerController;
-namespace Log = CS2Kit::Log;
+using VoltMod::Player;
+using VoltMod::PluginInfo;
+using VoltMod::Sdk::PlayerController;
+namespace Log = VoltMod::Log;
 
-CS2KIT_PLUGIN(AdminSystemPlugin);
+VOLTMOD_PLUGIN(AdminSystemPlugin);
 
 SH_DECL_HOOK3(IVEngineServer2, SetClientListening, SH_NOATTRIB, 0, bool, CPlayerSlot, CPlayerSlot, bool);
 
 PluginInfo AdminSystemPlugin::Info() const
 {
-    return CS2Kit::WithBuildInfo({
+    return VoltMod::WithBuildInfo({
         .Name = "Admin System",
         .Author = "Sukhrob Ilyosbekov",
         .Description = "Admin System for CS2",
@@ -29,16 +29,16 @@ PluginInfo AdminSystemPlugin::Info() const
     });
 }
 
-bool AdminSystemPlugin::OnLoad(CS2Kit::Runtime& runtime, bool /*late*/)
+bool AdminSystemPlugin::OnLoad(VoltMod::Runtime& runtime, bool /*late*/)
 {
     Log::Info("Loading v{}...", Info().Version);
     _app.emplace(runtime, Info().Version);
     return _app->Start();
 }
 
-void AdminSystemPlugin::OnRegisterHooks(CS2Kit::Runtime& runtime)
+void AdminSystemPlugin::OnRegisterHooks(VoltMod::Runtime& runtime)
 {
-    _clientListening = CS2KIT_SCOPED_HOOK(IVEngineServer2, SetClientListening, runtime.Interfaces.Engine,
+    _clientListening = VOLTMOD_SCOPED_HOOK(IVEngineServer2, SetClientListening, runtime.Interfaces.Engine,
                                           SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
 }
 

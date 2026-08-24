@@ -1,19 +1,19 @@
 #pragma once
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/SlotThrottle.hpp>
-#include <CS2Kit/Players/Player.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/SlotThrottle.hpp>
+#include <VoltMod/Players/Player.hpp>
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
 
-namespace CS2Kit
+namespace VoltMod
 {
 class Runtime;
 }
 
-namespace CS2Kit::Database
+namespace VoltMod::Database
 {
 class PostgresDatabase;
 }
@@ -53,7 +53,7 @@ struct ReportGate
 class ReportManager
 {
 public:
-    ReportManager(CS2Kit::Database::PostgresDatabase& db, const Core::ConfigManager& config, CS2Kit::Runtime& runtime)
+    ReportManager(VoltMod::Database::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime)
         : _db(db), _config(config), _rt(runtime)
     {}
 
@@ -68,13 +68,13 @@ public:
      * outcome on the game thread; false also covers a refused gate. A failed write releases the
      * cooldown, so an outage costs the reporter nothing.
      */
-    void Submit(const CS2Kit::Player& reporter, const CS2Kit::Player& target, const std::string& reasonCode,
+    void Submit(const VoltMod::Player& reporter, const VoltMod::Player& target, const std::string& reasonCode,
                 const std::string& reasonText, std::function<void(bool ok)> onDone);
 
 private:
-    CS2Kit::Database::PostgresDatabase& _db;
+    VoltMod::Database::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
 
     /** Both CanReport overloads, parameterized by @p now so a submit gates and stamps from one
      *  clock read. @p targetSteamId engages the per-target duplicate window. */
@@ -86,8 +86,8 @@ private:
     void Release(int64_t reporterSteamId, int64_t targetSteamId);
 
     /** Intervals come from reloadable config, so they are passed per call rather than constructed. */
-    CS2Kit::Throttle<int64_t> _anyTarget;               // reporter -> last report of anyone
-    CS2Kit::PairThrottle<int64_t, int64_t> _perTarget;  // (reporter, target) -> last report of that player
+    VoltMod::Throttle<int64_t> _anyTarget;               // reporter -> last report of anyone
+    VoltMod::PairThrottle<int64_t, int64_t> _perTarget;  // (reporter, target) -> last report of that player
 };
 
 }  // namespace AdminSystem::Reports

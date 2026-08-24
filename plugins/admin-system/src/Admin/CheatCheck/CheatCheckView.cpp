@@ -3,12 +3,12 @@
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Config.hpp"
 
-#include <CS2Kit/Core/ChatColors.hpp>
-#include <CS2Kit/Core/StringUtils.hpp>
-#include <CS2Kit/Core/TimeUtils.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/UserMessage.hpp>
 #include <format>
 #include <string>
 
@@ -17,11 +17,11 @@ namespace AdminSystem::Admin::CheatCheck::View
 
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
-using CS2Kit::Core::StringUtils;
-using CS2Kit::Core::TimeUtils;
-using CS2Kit::Players::PlayerManager;
-using CS2Kit::Sdk::MessageSystem;
-namespace ChatColors = CS2Kit::Core::ChatColors;
+using VoltMod::Core::StringUtils;
+using VoltMod::Core::TimeUtils;
+using VoltMod::Players::PlayerManager;
+using VoltMod::Sdk::MessageSystem;
+namespace ChatColors = VoltMod::Core::ChatColors;
 
 namespace
 {
@@ -50,7 +50,7 @@ PanelState PanelStateFor(const PendingCheck& pc)
 
 }  // namespace
 
-void RenderPanel(CS2Kit::Runtime& rt, const Core::ConfigManager& config, int slot, const PendingCheck& pc)
+void RenderPanel(VoltMod::Runtime& rt, const Core::ConfigManager& config, int slot, const PendingCheck& pc)
 {
     if (!rt.Players.GetPlayerBySlot(slot))
     {
@@ -111,7 +111,7 @@ void RenderPanel(CS2Kit::Runtime& rt, const Core::ConfigManager& config, int slo
     rt.Messages.SendCenterHtml(slot, html);
 }
 
-void Render(CS2Kit::Runtime& rt, const Core::ConfigManager& config, Core::ChatService& chat, int slot,
+void Render(VoltMod::Runtime& rt, const Core::ConfigManager& config, Core::ChatService& chat, int slot,
             const PendingCheck& pc)
 {
     auto& tr = rt.Translations;

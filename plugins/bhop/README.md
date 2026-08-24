@@ -1,7 +1,7 @@
 # Bhop
 
 Smooth, ping-free auto-bunnyhop for CS2 servers: hold JUMP to hop, keep your landing
-speed, and accelerate while chaining hops. Built on [CS2Kit](https://github.com/voltygg/cs2-kit).
+speed, and accelerate while chaining hops. Built on [VoltMod](https://github.com/voltygg/voltmod).
 
 ## Why it feels smooth
 

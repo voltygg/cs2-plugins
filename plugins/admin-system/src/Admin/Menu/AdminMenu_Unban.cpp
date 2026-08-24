@@ -6,12 +6,12 @@
 #include "../AdminManager.hpp"
 #include "Labels.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/StringUtils.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Menu/Flow.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Menu/Flow.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -22,8 +22,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
-using CS2Kit::Core::StringUtils;
-using CS2Kit::Menu::MenuBuilder;
+using VoltMod::Core::StringUtils;
+using VoltMod::Menu::MenuBuilder;
 
 namespace
 {
@@ -39,7 +39,7 @@ struct BanRow
 
 void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
 {
-    CS2Kit::Flow<BanRow>::Create(std::move(row))
+    VoltMod::Flow<BanRow>::Create(std::move(row))
         // The Unban flag may have been revoked (e.g. !admin_reload) while the menu was open.
         ->OnValidate([&app](int slot, const BanRow&) -> std::optional<std::string> {
             auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
@@ -80,7 +80,7 @@ void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
 
 }  // namespace
 
-std::shared_ptr<CS2Kit::MenuView> BuildUnbanMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::MenuView> BuildUnbanMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
 

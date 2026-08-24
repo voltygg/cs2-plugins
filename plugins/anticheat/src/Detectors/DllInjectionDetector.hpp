@@ -7,7 +7,7 @@
 #include "Core/DetectionData.hpp"
 #include "Core/Samples.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <array>
 #include <cstdint>
 
@@ -19,7 +19,7 @@ class AntiCheatManager;
 class DllInjectionDetector
 {
 public:
-    DllInjectionDetector(AntiCheatManager& manager, CS2Kit::Runtime& runtime, DetectionDataManager& detections)
+    DllInjectionDetector(AntiCheatManager& manager, VoltMod::Runtime& runtime, DetectionDataManager& detections)
         : _manager(manager), _rt(runtime), _detections(detections)
     {}
 
@@ -42,10 +42,10 @@ private:
     void Scan(int slot, SlotState& state, double nowSec);
 
     AntiCheatManager& _manager;
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     DetectionDataManager& _detections;
     std::array<SlotState, MaxSlots> _slots{};
-    CS2Kit::Subscription _scanTimer;
+    VoltMod::Subscription _scanTimer;
 };
 
 }  // namespace Anticheat

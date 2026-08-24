@@ -1,7 +1,7 @@
 #include "AdminRepository.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Database/Api.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <pqxx/array>
 #include <utility>
 
@@ -90,7 +90,7 @@ void AdminRepository::FindFrozenAsync(std::function<void(std::vector<FrozenAdmin
 {
     _db.Query("find_frozen_admins",
               "SELECT steam_id, name, frozen_at, frozen_by, freeze_reason FROM admins WHERE is_frozen = TRUE", {},
-              [onDone = std::move(onDone)](CS2Kit::DbResult<pqxx::result> result) {
+              [onDone = std::move(onDone)](VoltMod::DbResult<pqxx::result> result) {
                   if (!result || !onDone)
                       return;  // DB error already logged; keep the caller's cached set.
 

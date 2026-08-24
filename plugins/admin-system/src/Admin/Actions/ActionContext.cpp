@@ -7,7 +7,7 @@ namespace AdminSystem::Admin::Actions
 {
 
 // The dispatcher is stateless - policy comes from app.Runtime.Policy, set once in OnLoad.
-using CS2Kit::Players::ActionDispatcher;
+using VoltMod::Players::ActionDispatcher;
 
 ActionContext Resolve(int adminSlot, int targetSlot, const std::string& requiredFlag)
 {

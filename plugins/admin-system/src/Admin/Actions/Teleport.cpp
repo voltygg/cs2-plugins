@@ -1,12 +1,12 @@
 ﻿#include "Descriptors.hpp"
 
-#include <CS2Kit/Sdk/PawnOps.hpp>
+#include <VoltMod/Sdk/PawnOps.hpp>
 #include <mathlib/vector.h>
 
 namespace AdminSystem::Admin::Actions
 {
 
-namespace PawnOps = CS2Kit::Sdk::PawnOps;
+namespace PawnOps = VoltMod::Sdk::PawnOps;
 
 const Action Bring{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                        if (!ctx.CallerCtrl.IsValid())

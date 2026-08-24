@@ -5,19 +5,19 @@
 #include "../Core/Permissions.hpp"
 #include "Commands.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/StringUtils.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <format>
 
 namespace AdminSystem::Commands
 {
 
-using namespace CS2Kit::Commands;
-using namespace CS2Kit::Core;
+using namespace VoltMod::Commands;
+using namespace VoltMod::Core;
 
-void RegisterFreezeCommands(CS2Kit::CommandManager& commands, App& app)
+void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
 {
     commands.Register({
         .Name = "freeze_admin",

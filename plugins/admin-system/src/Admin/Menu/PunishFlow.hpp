@@ -2,8 +2,8 @@
 
 #include "../../Punishments/PunishType.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Menu/Menu.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Menu/Menu.hpp>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -39,7 +39,7 @@ struct PendingPunishment
 void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pending);
 
 /** Quick Punish list of the configured templates the admin may use on this target. */
-std::shared_ptr<CS2Kit::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
+std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
 
 /** True if at least one configured template is usable by @p adminSlot against @p targetSlot. */
 bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, int targetSlot);

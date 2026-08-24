@@ -1,7 +1,7 @@
 #include "AdminActivityRepository.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Database/Api.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <utility>
 
 namespace AdminSystem::Database
@@ -27,7 +27,7 @@ void AdminActivityRepository::CountSinceAsync(int64_t adminSteamId, int64_t sinc
               "COUNT(*) FILTER (WHERE action = 'warn') AS warnings "
               "FROM admin_activity WHERE admin_steam_id = $1 AND created_at >= $2",
               pqxx::params{adminSteamId, sinceEpoch},
-              [onDone = std::move(onDone)](CS2Kit::DbResult<pqxx::result> result) {
+              [onDone = std::move(onDone)](VoltMod::DbResult<pqxx::result> result) {
                   if (!result || result->empty() || !onDone)
                       return;
                   const auto& row = (*result)[0];

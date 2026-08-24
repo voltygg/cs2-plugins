@@ -1,15 +1,15 @@
 #include "Descriptors.hpp"
 #include "EffectRegistry.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Sdk/GlowVision.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Sdk/GlowVision.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
-using CS2Kit::Sdk::GlowVision;
+using VoltMod::Sdk::GlowVision;
 
 const Effect Wallhack{.Permission = Flag(Permission::Wallhack),
                       .Id = static_cast<int>(EffectId::Wallhack),

@@ -1,5 +1,5 @@
 -- 0002 Per-server admin scoping + admin-abuse freeze protection
--- Applied automatically on plugin load by CS2Kit::Database / AdminSystem::Database::RunMigrations.
+-- Applied automatically on plugin load by VoltMod::Database / AdminSystem::Database::RunMigrations.
 -- Forward-only: never edit an applied migration; add a new NNNN_*.sql instead.
 
 -- ------- TABLES -----

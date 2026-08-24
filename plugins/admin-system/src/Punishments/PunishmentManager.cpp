@@ -5,13 +5,13 @@
 #include "../Database/Repositories/PunishmentRepository.hpp"
 #include "../Database/Repositories/WarningRepository.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Core/TimeUtils.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/GameInterfaces.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/GameInterfaces.hpp>
+#include <VoltMod/Sdk/PlayerController.hpp>
 #include <algorithm>
 #include <utility>
 
@@ -19,8 +19,8 @@ namespace AdminSystem::Punishments
 {
 
 using namespace AdminSystem::Database;
-using namespace CS2Kit::Players;
-using namespace CS2Kit::Core;
+using namespace VoltMod::Players;
+using namespace VoltMod::Core;
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
 
@@ -31,7 +31,7 @@ namespace
 // connected listeners. Our SetClientListening hook will still enforce the cached
 // IsVoiceMuted() decision; this just forces the engine to re-evaluate any channels
 // that were already negotiated before the (un)mute landed.
-void RefreshVoiceChannel(CS2Kit::Runtime& rt, int64_t senderSteamId, bool muted)
+void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, bool muted)
 {
     auto* engine = rt.Interfaces.Engine;
     if (!engine)
@@ -170,7 +170,7 @@ bool PunishmentManager::IssueBan(Ban& ban)
 
     // Kick the player if currently connected.
     if (auto* player = _rt.Players.GetPlayerBySteamId(ban.TargetSteamId))
-        CS2Kit::PlayerController(player->GetSlot()).Kick(ban.Reason.c_str());
+        VoltMod::PlayerController(player->GetSlot()).Kick(ban.Reason.c_str());
 
     _chat.BroadcastPunishment("banned", ban.AdminName, ban.TargetName, ban.Reason, ban.Duration);
     return true;

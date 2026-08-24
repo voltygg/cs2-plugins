@@ -4,21 +4,21 @@
 #include "../Actions/ActionContext.hpp"
 #include "../Actions/Descriptors.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/PawnOps.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/PawnOps.hpp>
 
 namespace AdminSystem::Admin::Menu
 {
 
-using CS2Kit::Core::Translations;
-using CS2Kit::Menu::MenuBuilder;
-using CS2Kit::Menu::MenuManager;
+using VoltMod::Core::Translations;
+using VoltMod::Menu::MenuBuilder;
+using VoltMod::Menu::MenuManager;
 
-std::shared_ptr<CS2Kit::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
     auto& tr = app.Runtime.Translations;
     MenuBuilder builder(tr.Get("action.changeTeam", adminSlot));
@@ -30,9 +30,9 @@ std::shared_ptr<CS2Kit::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, int
         });
     };
 
-    addTeam(tr.Get("team.ct", adminSlot), CS2Kit::Sdk::TeamCT);
-    addTeam(tr.Get("team.t", adminSlot), CS2Kit::Sdk::TeamT);
-    addTeam(tr.Get("team.spec", adminSlot), CS2Kit::Sdk::TeamSpectator);
+    addTeam(tr.Get("team.ct", adminSlot), VoltMod::Sdk::TeamCT);
+    addTeam(tr.Get("team.t", adminSlot), VoltMod::Sdk::TeamT);
+    addTeam(tr.Get("team.spec", adminSlot), VoltMod::Sdk::TeamSpectator);
 
     return builder.Build();
 }

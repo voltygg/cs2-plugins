@@ -2,7 +2,7 @@
 
 A C++23 Metamod:Source plugin monorepo for Counter-Strike 2 community servers. Each plugin lives under `plugins/<name>/` with its own sources, configs, and CMake target.
 
-Built on top of **[CS2Kit](https://github.com/voltygg/cs2-kit)** - a reusable C++23 library for CS2 plugin development (declarative commands, WASD menus, async PostgreSQL, engine SDK wrappers). CS2Kit, the HL2SDK and Metamod all arrive as Conan packages from a public remote. The one submodule, `vendor/cs2-kit`, is a developer convenience for working on the kit and this repo together - it is not needed to build.
+Built on top of **[VoltMod](https://github.com/voltygg/voltmod)** - a reusable C++23 library for CS2 plugin development (declarative commands, WASD menus, async PostgreSQL, engine SDK wrappers). VoltMod, the HL2SDK and Metamod all arrive as Conan packages from a public remote. The one submodule, `vendor/voltmod`, is a developer convenience for working on the kit and this repo together - it is not needed to build.
 
 ## Plugins
 
@@ -35,7 +35,7 @@ docker compose -f deploy/docker-compose.build.yml run --rm --build build
 ### Windows
 
 Requires Visual Studio 2026 Build Tools. CMake 4.3.4+, Conan 2.29.1+, and Ninja
-are pinned by the `cs2-kit` distribution, so `uv sync` installs them.
+are pinned by the `voltmod` distribution, so `uv sync` installs them.
 
 ```bash
 git clone https://github.com/voltygg/cs2-plugins.git
@@ -59,6 +59,6 @@ guide and [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
 uv run poe new-plugin my-plugin
 ```
 
-Stamps `plugins/my-plugin/` from CS2Kit's template tree (MetamodPlugin skeleton,
+Stamps `plugins/my-plugin/` from VoltMod's template tree (MetamodPlugin skeleton,
 settings.jsonc, translations, an example `!ping` command) and registers it in
 the root `CMakeLists.txt`. It builds and loads as-is.

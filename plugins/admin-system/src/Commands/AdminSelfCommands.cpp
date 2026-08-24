@@ -3,14 +3,14 @@
 #include "../Core/Permissions.hpp"
 #include "Commands.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 
 namespace AdminSystem::Commands
 {
 
-using namespace CS2Kit::Commands;
+using namespace VoltMod::Commands;
 
-void RegisterAdminSelfCommands(CS2Kit::CommandManager& commands, App& app)
+void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app)
 {
     commands.Register({
         .Name = "hide",
@@ -19,7 +19,7 @@ void RegisterAdminSelfCommands(CS2Kit::CommandManager& commands, App& app)
         .Handler =
             [&app](CommandContext& c) {
                 int slot = c.CallerSlot();
-                CS2Kit::ToggleEffect(app.Effects, slot, slot, AdminSystem::Admin::Effects::Hide);
+                VoltMod::ToggleEffect(app.Effects, slot, slot, AdminSystem::Admin::Effects::Hide);
                 return CommandResult::Silent();
             },
     });

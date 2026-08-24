@@ -19,6 +19,6 @@ const std::vector<FunModel>& FunModels();
 
 /** Queue every fun model plus the team-default restore models for precache. Call once in OnLoad;
  *  the paths only reach clients from the NEXT map load (see PrecacheService). */
-void PrecacheModels(CS2Kit::Runtime& runtime);
+void PrecacheModels(VoltMod::Runtime& runtime);
 
 }  // namespace AdminSystem::Admin::Effects

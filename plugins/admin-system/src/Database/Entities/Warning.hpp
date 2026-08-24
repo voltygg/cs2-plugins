@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CS2Kit/Database/Column.hpp>
+#include <VoltMod/Database/Column.hpp>
 #include <cstdint>
 #include <string>
 #include <tuple>
@@ -25,7 +25,7 @@ struct Warning
     static constexpr const char* Key = "id";
     static constexpr auto Columns()
     {
-        using CS2Kit::Database::Column;
+        using VoltMod::Database::Column;
         return std::tuple{
             Column{"id", &Warning::Id},
             Column{"target_steam_id", &Warning::TargetSteamId},

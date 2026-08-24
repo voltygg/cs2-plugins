@@ -3,16 +3,16 @@
 #include "Descriptors.hpp"
 #include "EffectRegistry.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/PawnOps.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/PawnOps.hpp>
+#include <VoltMod/Sdk/PlayerController.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
-using CS2Kit::Sdk::PlayerController;
+using VoltMod::Sdk::PlayerController;
 
 namespace
 {
@@ -25,9 +25,9 @@ constexpr const char* DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
 // The team-default restore model, or nullptr for spectator/unassigned (nothing to restore).
 const char* DefaultModelForTeam(int team)
 {
-    if (team == CS2Kit::Sdk::TeamT)
+    if (team == VoltMod::Sdk::TeamT)
         return DefaultModelT;
-    if (team == CS2Kit::Sdk::TeamCT)
+    if (team == VoltMod::Sdk::TeamCT)
         return DefaultModelCt;
     return nullptr;
 }
@@ -47,7 +47,7 @@ const std::vector<FunModel>& FunModels()
     return models;
 }
 
-void PrecacheModels(CS2Kit::Runtime& runtime)
+void PrecacheModels(VoltMod::Runtime& runtime)
 {
     for (const auto& model : FunModels())
     {

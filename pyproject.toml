@@ -9,7 +9,7 @@ license = { text = "MIT" }
 dependencies = [
     # Brings the build tasks below plus the pinned CMake/Conan/Ninja/clang-format.
     # Move to a v* tag when reproducibility matters more than tracking the kit.
-    "cs2-kit @ git+https://github.com/voltygg/cs2-kit.git@main",
+    "voltmod @ git+https://github.com/voltygg/voltmod.git@main",
     "ruff>=0.14.0",
     "poethepoet>=0.47.0",
     "python-dotenv>=1.2.0",
@@ -20,15 +20,15 @@ dependencies = [
 package = false
 
 [tool.poe.tasks]
-build = "cs2kit build"
-build-linux = "cs2kit build linux-steamrt-release"
-bootstrap = "cs2kit bootstrap"
-new-plugin = "cs2kit new-plugin"
+build = "voltmod build"
+build-linux = "voltmod build linux-steamrt-release"
+bootstrap = "voltmod bootstrap"
+new-plugin = "voltmod new-plugin"
 deploy = "python -m deploy.tools.cli local"
 start-server = "python scripts/start_server.py"
 lint = "ruff check ."
-format = "cs2kit format plugins"
-format-check = "cs2kit format --check plugins"
+format = "voltmod format plugins"
+format-check = "voltmod format --check plugins"
 deploy-package = "python -m deploy.tools.cli package"
 deploy-render = "python -m deploy.tools.cli render"
 deploy-server = "python -m deploy.tools.cli deploy"

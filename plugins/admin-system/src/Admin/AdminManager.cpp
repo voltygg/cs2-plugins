@@ -4,7 +4,7 @@
 #include "../Database/Repositories/AdminRepository.hpp"
 #include "../Database/Repositories/ServerRepository.hpp"
 
-#include <CS2Kit/Core/Log.hpp>
+#include <VoltMod/Core/Log.hpp>
 #include <algorithm>
 #include <utility>
 
@@ -12,7 +12,7 @@ namespace AdminSystem::Admin
 {
 
 namespace Db = AdminSystem::Database;
-namespace Log = CS2Kit::Core::Log;
+namespace Log = VoltMod::Core::Log;
 using Core::ConfigManager;
 using Db::Admin;
 using Db::AdminGroup;

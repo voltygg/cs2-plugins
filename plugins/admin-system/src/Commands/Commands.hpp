@@ -1,6 +1,6 @@
 #pragma once
 
-namespace CS2Kit::Commands
+namespace VoltMod::Commands
 {
 class CommandManager;
 }
@@ -15,13 +15,13 @@ struct App;
  */
 namespace Commands
 {
-void RegisterAdminMenuCommand(CS2Kit::Commands::CommandManager& commands, App& app);
-void RegisterAdminSelfCommands(CS2Kit::Commands::CommandManager& commands, App& app);
-void RegisterCheatCheckCommands(CS2Kit::Commands::CommandManager& commands, App& app);
-void RegisterFreezeCommands(CS2Kit::Commands::CommandManager& commands, App& app);
-void RegisterInfoCommands(CS2Kit::Commands::CommandManager& commands, App& app);
-void RegisterPunishmentCommands(CS2Kit::Commands::CommandManager& commands, App& app);
-void RegisterReportCommand(CS2Kit::Commands::CommandManager& commands, App& app);
+void RegisterAdminMenuCommand(VoltMod::Commands::CommandManager& commands, App& app);
+void RegisterAdminSelfCommands(VoltMod::Commands::CommandManager& commands, App& app);
+void RegisterCheatCheckCommands(VoltMod::Commands::CommandManager& commands, App& app);
+void RegisterFreezeCommands(VoltMod::Commands::CommandManager& commands, App& app);
+void RegisterInfoCommands(VoltMod::Commands::CommandManager& commands, App& app);
+void RegisterPunishmentCommands(VoltMod::Commands::CommandManager& commands, App& app);
+void RegisterReportCommand(VoltMod::Commands::CommandManager& commands, App& app);
 }  // namespace Commands
 
 }  // namespace AdminSystem

@@ -2,30 +2,30 @@
 
 #include "../Punishments/PunishType.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Database/PostgresDatabase.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Database/PostgresDatabase.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
 #include <vector>
 
-namespace CS2Kit::Database
+namespace VoltMod::Database
 {
 // PostgresConfig's mapper must share its namespace so ADL finds it. Defined here rather than
 // in the kit so the kit header stays nlohmann-free.
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PostgresConfig, host, port, database, username, password, sslMode)
-}  // namespace CS2Kit::Database
+}  // namespace VoltMod::Database
 
 namespace AdminSystem::Core
 {
 
-using DatabaseConfig = CS2Kit::Database::PostgresConfig;
+using DatabaseConfig = VoltMod::Database::PostgresConfig;
 
 /** The addon folder name - matches the CMake target and keys every addons/ path. */
 inline constexpr std::string_view AddonName = "admin-system";
 
 /** Kit-standard "plugin" section of settings.json (locale). */
-using PluginSettings = CS2Kit::StandardPluginSettings;
+using PluginSettings = VoltMod::StandardPluginSettings;
 
 /** "server" section of settings.jsonc: this server's identity in the shared database.
  *  The tag keys per-server admin grants (admin_server_groups) and audit attribution, so it
@@ -56,7 +56,7 @@ struct PunishmentTemplate
 {
     std::string name;
     std::string type;      // "ban" | "voiceMute" | "textMute"
-    std::string duration;  // CS2Kit::ParseDuration grammar: 30s/5m/2h/7d, "perm"/"0" = permanent
+    std::string duration;  // VoltMod::ParseDuration grammar: 30s/5m/2h/7d, "perm"/"0" = permanent
     std::string reason;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentTemplate, name, type, duration, reason)
@@ -203,7 +203,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, databa
  * database (`admins` and `admin_groups` tables) - this manager only exposes plugin/DB/punishment/
  * chat config plus the validated runtime forms of the string-typed punishment settings.
  */
-class ConfigManager : public CS2Kit::JsonConfig<Settings>
+class ConfigManager : public VoltMod::JsonConfig<Settings>
 {
 public:
     ConfigManager() = default;

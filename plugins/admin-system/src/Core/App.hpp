@@ -12,9 +12,9 @@
 #include "Config.hpp"
 #include "PlayerChat.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/EffectManager.hpp>
-#include <CS2Kit/Database/Api.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/EffectManager.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <string>
 #include <vector>
 
@@ -38,7 +38,7 @@ namespace AdminSystem
  */
 struct App
 {
-    App(CS2Kit::Runtime& runtime, std::string version) : Runtime(runtime), Version(std::move(version)) {}
+    App(VoltMod::Runtime& runtime, std::string version) : Runtime(runtime), Version(std::move(version)) {}
     ~App();
     App(const App&) = delete;
     App& operator=(const App&) = delete;
@@ -47,14 +47,14 @@ struct App
     bool Start();
 
     /** Persist a finished session; shared by the disconnect hook and the unload sweep. */
-    void FlushPlayerSession(CS2Kit::Player* player);
+    void FlushPlayerSession(VoltMod::Player* player);
 
-    CS2Kit::Runtime& Runtime;
+    VoltMod::Runtime& Runtime;
     /** Plugin version, for the menu title. */
     const std::string Version;
 
     Core::ConfigManager Config;
-    CS2Kit::PostgresDatabase Db;
+    VoltMod::PostgresDatabase Db;
     Database::PlayerRepository PlayerRepo{Db};
     Core::ChatService Chat{Runtime, Config};
     Admin::AdminManager Admins{Db, Config};
@@ -64,25 +64,25 @@ struct App
     Punishments::PunishmentManager Punishments{Db, Config, Runtime, Chat};
     Core::PlayerChat PlayerChat{Runtime, Config, Chat, Admins, Punishments};
     Reports::ReportManager Reports{Db, Config, Runtime};
-    CS2Kit::EffectManager Effects{Runtime.Scheduler};
+    VoltMod::EffectManager Effects{Runtime.Scheduler};
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Config, Chat};
     /** Published to other plugins in Start; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
     /** Load-time migration outcome, surfaced in the `admin_status` db section. */
-    CS2Kit::MigrationResult Migration;
+    VoltMod::MigrationResult Migration;
 
 private:
     void InstallPolicy();
-    CS2Kit::StageResult ConnectDatabase();
-    CS2Kit::StageResult LoadAdminData();
-    CS2Kit::StageResult StartPunishments();
+    VoltMod::StageResult ConnectDatabase();
+    VoltMod::StageResult LoadAdminData();
+    VoltMod::StageResult StartPunishments();
     void RegisterGameEventListeners();
     void InstallStatusReporting();
     void RegisterCommands();
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */
-    std::vector<CS2Kit::Subscription> _subs;
+    std::vector<VoltMod::Subscription> _subs;
 };
 
 }  // namespace AdminSystem

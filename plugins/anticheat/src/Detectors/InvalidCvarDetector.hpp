@@ -9,7 +9,7 @@
 
 #include "Detectors/InvalidCvarRules.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <array>
 #include <cstdint>
 #include <random>
@@ -23,7 +23,7 @@ class AntiCheatManager;
 class InvalidCvarDetector
 {
 public:
-    InvalidCvarDetector(AntiCheatManager& manager, CS2Kit::Runtime& runtime) : _manager(manager), _rt(runtime) {}
+    InvalidCvarDetector(AntiCheatManager& manager, VoltMod::Runtime& runtime) : _manager(manager), _rt(runtime) {}
 
     /** Start the poll pump. Idempotent. */
     void Initialize();
@@ -46,14 +46,14 @@ private:
 
     void Poll(int slot, SlotState& state);
     void ReadUserInfo(int slot);
-    void OnReply(int slot, CS2Kit::ClientCvarStatus status, std::string_view name, std::string_view value);
+    void OnReply(int slot, VoltMod::ClientCvarStatus status, std::string_view name, std::string_view value);
     double NextDelaySec();
 
     AntiCheatManager& _manager;
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     std::array<SlotState, MaxSlots> _slots{};
     std::minstd_rand _random;
-    CS2Kit::Subscription _pollTimer;
+    VoltMod::Subscription _pollTimer;
 };
 
 }  // namespace Anticheat

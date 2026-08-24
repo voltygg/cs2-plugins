@@ -1,7 +1,7 @@
 # Contributing to Admin System
 
 A monorepo of C++23 Metamod:Source plugins for CS2 community servers. Reusable
-engine abstractions live in [cs2-kit](https://github.com/voltygg/cs2-kit),
+engine abstractions live in [voltmod](https://github.com/voltygg/voltmod),
 consumed as a Conan package; each plugin lives under `plugins/<name>/`.
 
 ## Setup
@@ -24,7 +24,7 @@ Required tools:
 - Ninja
 - MSVC on Windows, GCC 14 on Linux (Steam Runtime sniper toolchain)
 
-The CMake, Conan, Ninja and clang-format pins live in the `cs2-kit` Python
+The CMake, Conan, Ninja and clang-format pins live in the `voltmod` Python
 distribution, which `pyproject.toml` depends on; `uv sync` installs them all.
 
 ## Building
@@ -54,7 +54,7 @@ The build auto-discovers `.cpp` files under `plugins/<name>/src/`. Add a new
 source file there and rebuild.
 
 To add a new plugin, create `plugins/<new>/src/`, configs, and
-`plugins/<new>/CMakeLists.txt` that calls `cs2_add_plugin(<new> ...)`. Add the
+`plugins/<new>/CMakeLists.txt` that calls `voltmod_add_plugin(<new> ...)`. Add the
 plugin with `add_subdirectory(plugins/<new>)` in the root `CMakeLists.txt`.
 
 Add new third-party C++ dependencies to `conanfile.py`, then `find_package`
@@ -70,23 +70,23 @@ them in the root `CMakeLists.txt` and link their imported targets (e.g.
 - C#-style naming: `PascalCase` types/methods, `_camelCase` members,
   `camelCase` locals/params, `PascalCase` constants, `camelCase` JSON keys.
 - Use `std::format`, designated initializers, and `int64_t` for SteamIDs.
-- Services and managers, not singletons. Use `Engine()` for cs2-kit services and
+- Services and managers, not singletons. Use `Engine()` for voltmod services and
   `App()` for plugin managers.
 - Keep source files around 300-350 LOC when practical.
 - Comments are rare. Add one only when the reason is non-obvious.
 
-## Changing cs2-kit alongside a plugin
+## Changing voltmod alongside a plugin
 
 The kit is a Conan package, not a subdirectory, so point Conan at a local
 checkout while you work on both:
 
-`vendor/cs2-kit` is a submodule for exactly this (`git submodule update --init` on an
+`vendor/voltmod` is a submodule for exactly this (`git submodule update --init` on an
 older clone); any sibling checkout works too.
 
 ```bash
-conan editable add vendor/cs2-kit
+conan editable add vendor/voltmod
 uv run poe build          # picks up kit edits directly
-conan editable remove cs2-kit
+conan editable remove voltmod
 ```
 
 It is a checkout, not a version - without the editable, the build uses the Conan package

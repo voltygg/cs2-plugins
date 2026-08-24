@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CS2Kit/App/JsonConfig.hpp>
+#include <VoltMod/App/JsonConfig.hpp>
 
 // SDK-free so cores and their tests can include it: JsonConfig is header-only over nlohmann.
 // Detection thresholds are deliberately absent - every tuned constant is constexpr in its own core,
@@ -82,7 +82,7 @@ struct Settings
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, anticheat)
 
-/** Subclass CS2Kit::JsonConfig instead once you need post-load validation or accessors. */
-using ConfigManager = CS2Kit::App::JsonConfig<Settings>;
+/** Subclass VoltMod::JsonConfig instead once you need post-load validation or accessors. */
+using ConfigManager = VoltMod::App::JsonConfig<Settings>;
 
 }  // namespace Anticheat

@@ -1,9 +1,9 @@
 #include "Descriptors.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Scheduler.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/EntityKeyValues.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Scheduler.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/EntityKeyValues.hpp>
 #include <mathlib/vector.h>
 
 namespace AdminSystem::Admin::Actions
@@ -19,7 +19,7 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
                        auto& ops = ctx.Rt.EntityOps;
                        if (ops.CanSpawn())
                        {
-                           CS2Kit::EntityKeyValues kv;
+                           VoltMod::EntityKeyValues kv;
                            kv.Set("origin", ctx.TargetCtrl.GetAbsOrigin()).Set("spawnflags", EnvExplosionNoDamage);
                            if (auto* boom = ops.Spawn("env_explosion", kv))
                            {
@@ -30,7 +30,7 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
 
                        int slot = ctx.Target->GetSlot();
                        ctx.Rt.Scheduler.Delay(SmiteSlayDelayMs, [slot]() {
-                           CS2Kit::PlayerController pc(slot);
+                           VoltMod::PlayerController pc(slot);
                            if (pc.IsValid() && pc.IsAlive())
                                pc.Slay();
                        });

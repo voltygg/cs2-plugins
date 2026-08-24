@@ -3,19 +3,19 @@
 #include "../Actions/ActionContext.hpp"
 #include "EffectId.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 // The effect scaffold (descriptors + policy-checked dispatch) lives in the kit; these aliases
 // keep descriptor files and call sites on the established local names. Dispatch with
-// CS2Kit::ToggleEffect / ApplyEffect / ClearEffect against the plugin App effect manager.
-using Effect = CS2Kit::EffectDescriptor;
-using ParamEffect = CS2Kit::ParamEffectDescriptor;
-using EffectInstance = CS2Kit::EffectInstance;
-using EffectChoice = CS2Kit::EffectChoice;
-using EffectScope = CS2Kit::EffectScope;
+// VoltMod::ToggleEffect / ApplyEffect / ClearEffect against the plugin App effect manager.
+using Effect = VoltMod::EffectDescriptor;
+using ParamEffect = VoltMod::ParamEffectDescriptor;
+using EffectInstance = VoltMod::EffectInstance;
+using EffectChoice = VoltMod::EffectChoice;
+using EffectScope = VoltMod::EffectScope;
 
 /** Disco: cycles bright render colors on a timer, auto-cancelling after a fixed duration. */
 extern const Effect Disco;

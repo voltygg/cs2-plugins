@@ -37,7 +37,7 @@ extern const Action Goto;
 void Swap(App& app, int adminSlot, int firstSlot, int secondSlot);
 
 // Team
-/** Param is the destination team (CS2Kit::Sdk::TeamSpectator/TeamT/TeamCT); out-of-range values are ignored. */
+/** Param is the destination team (VoltMod::Sdk::TeamSpectator/TeamT/TeamCT); out-of-range values are ignored. */
 extern const ParamAction ChangeTeam;
 
 // Slap

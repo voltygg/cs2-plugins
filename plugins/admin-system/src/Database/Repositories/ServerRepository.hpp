@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CS2Kit/Database/Api.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -13,7 +13,7 @@ namespace AdminSystem::Database
 class ServerRepository
 {
 public:
-    explicit ServerRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+    explicit ServerRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
 
     /** Insert or refresh this server's registry row. Blocking - called once at boot. */
     bool Upsert(const std::string& tag, const std::string& name);
@@ -22,20 +22,20 @@ public:
     void Heartbeat(const std::string& tag);
 
 private:
-    CS2Kit::PostgresDatabase& _db;
+    VoltMod::PostgresDatabase& _db;
 };
 
 /** Read side of admin_server_groups: which extra groups each admin holds on one server. */
 class AdminServerGroupRepository
 {
 public:
-    explicit AdminServerGroupRepository(CS2Kit::PostgresDatabase& db) : _db(db) {}
+    explicit AdminServerGroupRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
 
     /** steamId -> group names granted on @p serverTag. Blocking - load-time only. */
     std::unordered_map<int64_t, std::vector<std::string>> FindByServerTag(const std::string& serverTag);
 
 private:
-    CS2Kit::PostgresDatabase& _db;
+    VoltMod::PostgresDatabase& _db;
 };
 
 }  // namespace AdminSystem::Database

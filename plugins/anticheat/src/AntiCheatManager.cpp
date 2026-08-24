@@ -2,21 +2,21 @@
 
 #include "App.hpp"
 
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Core/Slot.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/Slot.hpp>
 #include <charconv>
 #include <format>
 #include <optional>
 #include <string>
 #include <string_view>
 
-using CS2Kit::Core::IsValidSlot;
-namespace Log = CS2Kit::Core::Log;
+using VoltMod::Core::IsValidSlot;
+namespace Log = VoltMod::Core::Log;
 
 namespace Anticheat
 {
 
-using CS2Kit::Events::PlayerSpawn;
+using VoltMod::Events::PlayerSpawn;
 
 namespace
 {
@@ -47,7 +47,7 @@ void AntiCheatManager::Initialize()
     _subs.push_back(_rt.Events.Listen<PlayerSpawn>([this](const PlayerSpawn&) { _rt.MovementHook.Install(); }));
 
     _subs.push_back(
-        _rt.MovementHook.ListenPreCmd([this](int slot, const CS2Kit::UserCmdView& cmd) { DumpCommand(slot, cmd); }));
+        _rt.MovementHook.ListenPreCmd([this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); }));
     _subs.push_back(_rt.Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); }));
 
     // sv_cheats going off starts a propagation grace before client values mean anything again.
@@ -105,7 +105,7 @@ void AntiCheatManager::LoadDetectionData()
 
 void AntiCheatManager::RegisterCommands()
 {
-    using namespace CS2Kit::Commands;
+    using namespace VoltMod::Commands;
     auto& commands = _rt.Commands;
 
     commands.Register({
@@ -114,7 +114,7 @@ void AntiCheatManager::RegisterCommands()
         .Surfaces = Surface::Console,
         .Handler =
             [this](CommandContext&) {
-                if (!_config.Load(CS2Kit::AddonFile(AddonName, "configs/settings.jsonc")))
+                if (!_config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")))
                     return CommandResult::Silent();
                 // Keeps the rules already in memory when the edit does not parse, so a typo cannot
                 // silently disarm the two table-driven modules.
@@ -171,7 +171,7 @@ void AntiCheatManager::RegisterCommands()
     });
 }
 
-void AntiCheatManager::DumpCommand(int slot, const CS2Kit::UserCmdView& cmd)
+void AntiCheatManager::DumpCommand(int slot, const VoltMod::UserCmdView& cmd)
 {
     if (!cmd.Valid || !IsValidSlot(slot))
         return;
@@ -186,7 +186,7 @@ void AntiCheatManager::DumpCommand(int slot, const CS2Kit::UserCmdView& cmd)
     std::string attack = "none";
     if (attackIndex >= 0)
     {
-        if (const CS2Kit::InputHistorySample* sample = cmd.SampleAt(attackIndex))
+        if (const VoltMod::InputHistorySample* sample = cmd.SampleAt(attackIndex))
             attack = sample->HasViewAngles
                          ? std::format("[{}] pitch={:.2f} yaw={:.2f}", attackIndex, sample->ViewPitch, sample->ViewYaw)
                          : std::format("[{}] no angles", attackIndex);
@@ -246,7 +246,7 @@ void AntiCheatManager::LogStatus() const
 
     const double now = TimeUtils::MonotonicSeconds();
     bool any = false;
-    for (const CS2Kit::Players::Player* player : _rt.Players.GetAllPlayers())
+    for (const VoltMod::Players::Player* player : _rt.Players.GetAllPlayers())
     {
         const int slot = player ? player->GetSlot() : -1;
         if (!InSlotRange(slot) || player->IsBot())
@@ -293,7 +293,7 @@ void AntiCheatManager::OnSlotChanged(int slot)
     std::apply([slot](auto&... modules) { (modules.OnSlotChanged(slot), ...); }, ResettableModules());
 }
 
-void AntiCheatManager::OnPlayerFullyConnected(CS2Kit::Players::Player* player)
+void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Players::Player* player)
 {
     if (!player)
         return;
@@ -302,12 +302,12 @@ void AntiCheatManager::OnPlayerFullyConnected(CS2Kit::Players::Player* player)
     _invalidCvarPoller.OnFullyConnected(player->GetSlot());
 }
 
-void AntiCheatManager::OnPlayerSettingsChanged(CS2Kit::Players::Player* player)
+void AntiCheatManager::OnPlayerSettingsChanged(VoltMod::Players::Player* player)
 {
     _namechangerDetector.OnSettingsChanged(player);
 }
 
-CS2Kit::RawConVar& AntiCheatManager::CheatsConVar() const
+VoltMod::RawConVar& AntiCheatManager::CheatsConVar() const
 {
     if (!_svCheats)
         _svCheats = _rt.ConVars.Raw("sv_cheats");
@@ -319,7 +319,7 @@ bool AntiCheatManager::DetectionsEnabled() const
     const auto& settings = _config.Get().anticheat;
     if (!settings.enabled)
         return false;
-    const CS2Kit::RawConVar& cheats = CheatsConVar();
+    const VoltMod::RawConVar& cheats = CheatsConVar();
     if (!cheats.Valid())
         return true;
     return !cheats.GetBool() || settings.allowSvCheatsTesting;
@@ -327,7 +327,7 @@ bool AntiCheatManager::DetectionsEnabled() const
 
 bool AntiCheatManager::EnforceCheatCvars() const
 {
-    const CS2Kit::RawConVar& cheats = CheatsConVar();
+    const VoltMod::RawConVar& cheats = CheatsConVar();
     return ShouldEnforceCheatCvars(cheats.Valid() && cheats.GetBool(), TimeUtils::MonotonicSeconds(), _cheatGraceUntil);
 }
 
@@ -341,11 +341,11 @@ bool AntiCheatManager::IsEligible(int slot)
     if (!IsValidSlot(slot))
         return false;
     // The pawn flag is unreadable before a player has a pawn, so identity decides it first.
-    const CS2Kit::Players::Player* player = _rt.Players.GetPlayerBySlot(slot);
+    const VoltMod::Players::Player* player = _rt.Players.GetPlayerBySlot(slot);
     if (!player || player->IsBot())
         return false;
-    CS2Kit::PlayerController controller(slot);
-    return controller.IsValid() && !(controller.GetFlags() & CS2Kit::Sdk::FL_FAKECLIENT);
+    VoltMod::PlayerController controller(slot);
+    return controller.IsValid() && !(controller.GetFlags() & VoltMod::Sdk::FL_FAKECLIENT);
 }
 
 void AntiCheatManager::Report(int slot, const std::optional<Finding>& finding)

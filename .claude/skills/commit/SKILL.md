@@ -1,18 +1,18 @@
-# Commit (cs2-plugins + cs2-kit)
+# Commit (cs2-plugins + voltmod)
 
-Commits and pushes changes spanning this repo and a local cs2-kit checkout. The two
+Commits and pushes changes spanning this repo and a local voltmod checkout. The two
 are separate repos joined by a Conan dependency, not a submodule, so there is no
-pointer to bump - but cs2-kit still lands **first**, because cs2-plugins resolves it
+pointer to bump - but voltmod still lands **first**, because cs2-plugins resolves it
 by git ref (`pyproject.toml`) and by package version (`conanfile.py`).
 
 ## When to use
 
 The user says "commit", "commit and push", "push the changes", or similar after
-editing `plugins/` and/or a cs2-kit checkout. If only one repo has changes, skip the
+editing `plugins/` and/or a voltmod checkout. If only one repo has changes, skip the
 other's steps.
 
-The kit checkout is wherever `conan editable list` points, commonly `vendor/cs2-kit`
-(git-ignored here) or a sibling `../cs2-kit`. If neither exists, only this repo is in
+The kit checkout is wherever `conan editable list` points, commonly `vendor/voltmod`
+(git-ignored here) or a sibling `../voltmod`. If neither exists, only this repo is in
 play.
 
 ## Step-by-step
@@ -30,9 +30,9 @@ git -C <kit> log --oneline -3
 
 - **Both clean** - nothing to do. Say so and stop.
 - **Only cs2-plugins dirty** - skip to step 3.
-- **cs2-kit dirty** - start at step 2.
+- **voltmod dirty** - start at step 2.
 
-### 2. Commit and push cs2-kit first
+### 2. Commit and push voltmod first
 
 Read enough of `git -C <kit> diff HEAD` to write an accurate message, then:
 
@@ -52,7 +52,7 @@ Stage by file name (no `git add -A`). Never stage secrets.
 If the push is rejected because the remote moved, `git -C <kit> pull --rebase origin
 main` and retry. Do not force-push.
 
-**If the change alters the kit's public surface** (headers, `cs2_add_plugin`, CMake
+**If the change alters the kit's public surface** (headers, `voltmod_add_plugin`, CMake
 helpers), cs2-plugins cannot see it until a package exists. Tell the user, and let
 them decide whether to:
 
@@ -80,10 +80,10 @@ EOF
 
 Watch for two files that must move together with a kit release, never ahead of it:
 
-- `conan.lock` - pins `cs2-kit/<version>#<recipe-revision>`. A revision that is not
+- `conan.lock` - pins `voltmod/<version>#<recipe-revision>`. A revision that is not
   on the remote turns CI red with `ERROR: Package not resolved`.
-- `pyproject.toml` / `uv.lock` - the `cs2-kit` git dependency. After pushing the kit,
-  refresh with `uv lock --upgrade-package cs2-kit`.
+- `pyproject.toml` / `uv.lock` - the `voltmod` git dependency. After pushing the kit,
+  refresh with `uv lock --upgrade-package voltmod`.
 
 ### 4. Push cs2-plugins
 
@@ -95,7 +95,7 @@ Same rebase-on-conflict rule. Never force-push.
 
 ### 5. Report
 
-End with this repo's new HEAD SHA and, if applicable, the cs2-kit HEAD SHA, so the
+End with this repo's new HEAD SHA and, if applicable, the voltmod HEAD SHA, so the
 user can verify both landed.
 
 ## Commit message style
@@ -120,7 +120,7 @@ Append `!` (e.g. `refactor!:`) when consumers must change something.
 
 ## Important
 
-- **Order matters:** cs2-kit before cs2-plugins. The reverse ships a lockfile or a
+- **Order matters:** voltmod before cs2-plugins. The reverse ships a lockfile or a
   version range pointing at something that does not exist yet.
 - **Don't amend** previous commits unless asked.
 - **Don't force-push** main in either repo.

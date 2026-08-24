@@ -96,7 +96,7 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
     for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
     {
         _rt.ClientCvars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
-                              [this](int replySlot, CS2Kit::ClientCvarStatus status, std::string_view cvar,
+                              [this](int replySlot, VoltMod::ClientCvarStatus status, std::string_view cvar,
                                      std::string_view value) { OnReply(replySlot, status, cvar, value); });
     }
     state.Cursor = rules.PollCvarIndex(state.Cursor, CvarsPerPoll);
@@ -114,7 +114,7 @@ void InvalidCvarDetector::ReadUserInfo(int slot)
     }
 }
 
-void InvalidCvarDetector::OnReply(int slot, CS2Kit::ClientCvarStatus status, std::string_view name,
+void InvalidCvarDetector::OnReply(int slot, VoltMod::ClientCvarStatus status, std::string_view name,
                                   std::string_view value)
 {
     if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::InvalidCvar) ||
@@ -124,9 +124,9 @@ void InvalidCvarDetector::OnReply(int slot, CS2Kit::ClientCvarStatus status, std
     // Both strings borrow the decoded message. The rules core copies whatever becomes evidence.
     const bool enforce = _manager.EnforceCheatCvars();
     InvalidCvarRules& rules = _manager.InvalidCvars();
-    _manager.Report(slot, status == CS2Kit::ClientCvarStatus::ValueIntact
+    _manager.Report(slot, status == VoltMod::ClientCvarStatus::ValueIntact
                               ? rules.Observe(slot, name, value, enforce)
-                              : rules.ObserveMissing(slot, name, CS2Kit::Sdk::ToString(status), enforce));
+                              : rules.ObserveMissing(slot, name, VoltMod::Sdk::ToString(status), enforce));
 }
 
 }  // namespace Anticheat

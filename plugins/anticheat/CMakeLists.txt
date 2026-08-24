@@ -1,5 +1,5 @@
-# Sources default to a CONFIGURE_DEPENDS glob of src/*.cpp in cs2_add_plugin.
-cs2_add_plugin(anticheat
+# Sources default to a CONFIGURE_DEPENDS glob of src/*.cpp in voltmod_add_plugin.
+voltmod_add_plugin(anticheat
     DESCRIPTION "Behavioural anticheat: detection cores, correlation and response"
     # Advisory: without it the detectors still run, but bans and alerts have nowhere to go.
     DEPENDS "admin-system>=1.0"
@@ -11,7 +11,7 @@ cs2_add_plugin(anticheat
 # Every detection module is an SDK-free core over plain sample structs, so the whole detection
 # layer unit-tests without linking the SDK: recompile those TUs against headers only.
 if(BUILD_TESTING)
-    cs2_add_tests(anticheat-tests
+    voltmod_add_tests(anticheat-tests
         SOURCES
             src/Core/WeaponClass.cpp
             src/Correlation/ShotCorrelatorCore.cpp

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
@@ -39,12 +39,12 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BhopSettings, mode, autoBunnyhop
 /** Root of settings.jsonc. Add a struct + a member here for each new section. */
 struct Settings
 {
-    CS2Kit::StandardPluginSettings plugin;
+    VoltMod::StandardPluginSettings plugin;
     BhopSettings bhop;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, bhop)
 
-using ConfigManager = CS2Kit::JsonConfig<Settings>;
+using ConfigManager = VoltMod::JsonConfig<Settings>;
 
 /** The addon folder name - matches the CMake target and keys every addons/ path. */
 inline constexpr std::string_view AddonName = "bhop";

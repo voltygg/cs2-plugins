@@ -137,36 +137,24 @@ wheels = [
 ]
 
 [[package]]
-name = "cs2-kit"
-version = "1.1.0"
-source = { git = "https://github.com/voltygg/cs2-kit.git?rev=main#ab43d8670d6a6209d15f9b8c70732f16b3fdcef1" }
-dependencies = [
-    { name = "clang-format" },
-    { name = "cmake" },
-    { name = "conan" },
-    { name = "ninja" },
-    { name = "pyyaml" },
-]
-
-[[package]]
 name = "cs2-plugins"
 version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "cs2-kit" },
     { name = "poethepoet" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "ruff" },
+    { name = "voltmod" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "cs2-kit", git = "https://github.com/voltygg/cs2-kit.git?rev=main" },
     { name = "poethepoet", specifier = ">=0.47.0" },
     { name = "python-dotenv", specifier = ">=1.2.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", specifier = ">=0.14.0" },
+    { name = "voltmod", git = "https://github.com/voltygg/voltmod.git?rev=main" },
 ]
 
 [[package]]
@@ -398,4 +386,16 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
+]
+
+[[package]]
+name = "voltmod"
+version = "1.2.0"
+source = { git = "https://github.com/voltygg/voltmod.git?rev=main#1a224651ffe224efaf54b4e8b873df529e55f369" }
+dependencies = [
+    { name = "clang-format" },
+    { name = "cmake" },
+    { name = "conan" },
+    { name = "ninja" },
+    { name = "pyyaml" },
 ]

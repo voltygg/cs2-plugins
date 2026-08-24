@@ -6,7 +6,7 @@
 #include "Response/DiscordReporter.hpp"
 #include "Response/ResponseManager.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 
 namespace Anticheat
 {
@@ -20,12 +20,12 @@ namespace Anticheat
  */
 struct App
 {
-    explicit App(CS2Kit::Runtime& runtime) : Runtime(runtime) {}
+    explicit App(VoltMod::Runtime& runtime) : Runtime(runtime) {}
 
     /** Load config and detection data, then arm the detection modules. */
     bool Start();
 
-    CS2Kit::Runtime& Runtime;
+    VoltMod::Runtime& Runtime;
     ConfigManager Config;
     DetectionDataManager Detections;
     DiscordReporter Reporter{Runtime, Config};

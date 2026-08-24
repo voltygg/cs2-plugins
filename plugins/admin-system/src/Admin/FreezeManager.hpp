@@ -6,12 +6,12 @@
 #include <string>
 #include <unordered_map>
 
-namespace CS2Kit
+namespace VoltMod
 {
 class Runtime;
 }
 
-namespace CS2Kit::Database
+namespace VoltMod::Database
 {
 class PostgresDatabase;
 }
@@ -38,7 +38,7 @@ class AdminManager;
 class FreezeManager
 {
 public:
-    FreezeManager(CS2Kit::Database::PostgresDatabase& db, const Core::ConfigManager& config, CS2Kit::Runtime& runtime,
+    FreezeManager(VoltMod::Database::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime,
                   Core::ChatService& chat, AdminManager& admins)
         : _db(db), _config(config), _rt(runtime), _chat(chat), _admins(admins)
     {}
@@ -75,9 +75,9 @@ public:
     void NotifyFrozen(int64_t steamId);
 
 private:
-    CS2Kit::Database::PostgresDatabase& _db;
+    VoltMod::Database::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     Core::ChatService& _chat;
     AdminManager& _admins;
 

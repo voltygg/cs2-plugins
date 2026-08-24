@@ -3,23 +3,23 @@
 #include "CheatCheckRoomApi.hpp"
 #include "CheatCheckView.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/ChatColors.hpp>
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Core/TimeUtils.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Http/HttpClient.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Http/HttpClient.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <algorithm>
 #include <format>
 
 namespace AdminSystem::Admin::CheatCheck
 {
 
-using CS2Kit::Core::TimeUtils;
-namespace Log = CS2Kit::Core::Log;
-namespace ChatColors = CS2Kit::Core::ChatColors;
+using VoltMod::Core::TimeUtils;
+namespace Log = VoltMod::Core::Log;
+namespace ChatColors = VoltMod::Core::ChatColors;
 
 namespace
 {
@@ -50,12 +50,12 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 
     pc.PollInFlight = true;
     const uint64_t seq = pc.RequestSeq;
-    CS2Kit::Http::Get(_rt.Http, std::move(*request), [this, targetSlot, seq](const CS2Kit::HttpResult& result) {
+    VoltMod::Http::Get(_rt.Http, std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
         OnPresenceResponse(targetSlot, seq, result);
     });
 }
 
-void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result)
+void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const VoltMod::HttpResult& result)
 {
     if (!ValidSlot(targetSlot))
         return;

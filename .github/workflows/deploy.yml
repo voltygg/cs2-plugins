@@ -75,11 +75,11 @@ jobs:
             ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-
             ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-
 
-      # The rest of the ccache settings come from `cs2kit build`; see ci.yml.
+      # The rest of the ccache settings come from `voltmod build`; see ci.yml.
       - name: Build Linux plugins
         env:
           CCACHE_DIR: /ccache
-        run: cs2kit build linux-steamrt-release
+        run: voltmod build linux-steamrt-release
 
       - name: Package every declared plugin
         run: python3 -m deploy.tools.cli package --all linux

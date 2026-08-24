@@ -6,8 +6,8 @@
 #include "Core/Samples.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
 
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Core/Slot.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/Slot.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -17,8 +17,8 @@
 namespace Anticheat
 {
 
-using CS2Kit::Core::IsValidSlot;
-namespace Log = CS2Kit::Core::Log;
+using VoltMod::Core::IsValidSlot;
+namespace Log = VoltMod::Core::Log;
 
 namespace
 {
@@ -113,7 +113,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     if (!_filter)
     {
         _filter = _rt.MovementHook.ListenFilterCmd(
-            [this](int filtered, CS2Kit::UserCmdView& cmd) { OnFilter(filtered, cmd); });
+            [this](int filtered, VoltMod::UserCmdView& cmd) { OnFilter(filtered, cmd); });
     }
 
     auto& state = _sim[slot];
@@ -124,9 +124,9 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     Log::Info("Simulating slot {} (param {:.1f}) for {:.0f}s.", slot, state.param, SimulationSeconds);
 }
 
-bool CheatSimulator::AimAtNearestOpponent(int slot, CS2Kit::UserCmdView& cmd)
+bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
 {
-    const CS2Kit::PlayerController self(slot);
+    const VoltMod::PlayerController self(slot);
     if (!self.IsValid() || !self.GetPawn())
         return false;
 
@@ -138,12 +138,12 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, CS2Kit::UserCmdView& cmd)
     Vec3 best;
     float bestDistance = 0.0f;
     bool found = false;
-    for (const CS2Kit::Players::Player* player : _rt.Players.GetAllPlayers())
+    for (const VoltMod::Players::Player* player : _rt.Players.GetAllPlayers())
     {
         const int other = player ? player->GetSlot() : -1;
         if (!IsValidSlot(other) || other == slot)
             continue;
-        const CS2Kit::PlayerController controller(other);
+        const VoltMod::PlayerController controller(other);
         if (!controller.IsValid() || !controller.GetPawn() || !controller.IsAlive() ||
             !ShotCorrelatorCore::AreOpponents(team, controller.GetTeam(), freeForAll))
             continue;
@@ -167,7 +167,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, CS2Kit::UserCmdView& cmd)
     return true;
 }
 
-void CheatSimulator::OnFilter(int slot, CS2Kit::UserCmdView& cmd)
+void CheatSimulator::OnFilter(int slot, VoltMod::UserCmdView& cmd)
 {
     if (!Enabled() || !cmd.Valid || !IsValidSlot(slot))
         return;
@@ -217,7 +217,7 @@ void CheatSimulator::OnFilter(int slot, CS2Kit::UserCmdView& cmd)
         cmd.InputHistoryTotalCount = 1;
         cmd.InputHistorySamples[0] = {
             .HasViewAngles = true, .ViewPitch = cmd.ViewPitch, .ViewYaw = cmd.ViewYaw + state.param};
-        cmd.Attack1StartHistoryIndex = (cmd.ButtonsHeld & CS2Kit::Sdk::IN_ATTACK) != 0 ? 0 : -1;
+        cmd.Attack1StartHistoryIndex = (cmd.ButtonsHeld & VoltMod::Sdk::IN_ATTACK) != 0 ? 0 : -1;
         break;
     case Kind::Off:
         break;

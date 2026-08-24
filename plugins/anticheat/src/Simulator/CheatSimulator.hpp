@@ -11,7 +11,7 @@
 
 #include "../Config.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <cstdint>
 #include <optional>
 
@@ -23,7 +23,7 @@ class AntiCheatManager;
 class CheatSimulator
 {
 public:
-    CheatSimulator(AntiCheatManager& manager, CS2Kit::Runtime& runtime, ConfigManager& config)
+    CheatSimulator(AntiCheatManager& manager, VoltMod::Runtime& runtime, ConfigManager& config)
         : _manager(manager), _rt(runtime), _config(config)
     {}
 
@@ -31,7 +31,7 @@ public:
 
 private:
     AntiCheatManager& _manager;
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     ConfigManager& _config;
 
     enum class Kind
@@ -55,24 +55,24 @@ private:
         double expireAt = 0.0;
     };
 
-    void OnFilter(int slot, CS2Kit::UserCmdView& cmd);
+    void OnFilter(int slot, VoltMod::UserCmdView& cmd);
     void Arm(const CCommand& args, Kind kind, float defaultParam);
     /** Point the command at the nearest opponent's chest; false with nobody to lock onto. */
-    bool AimAtNearestOpponent(int slot, CS2Kit::UserCmdView& cmd);
+    bool AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd);
 
     int ResolveSlot(const char* arg);
 
     bool Enabled() const;
 
-    CS2Kit::PerSlot<SimState> _sim;
+    VoltMod::PerSlot<SimState> _sim;
     // Movement filter, installed lazily on the first Arm; empty while the simulator is idle.
-    CS2Kit::Subscription _filter;
-    std::optional<CS2Kit::ServerCommand> _cmdSpin;
-    std::optional<CS2Kit::ServerCommand> _cmdJitter;
-    std::optional<CS2Kit::ServerCommand> _cmdBadAngles;
-    std::optional<CS2Kit::ServerCommand> _cmdAimlock;
-    std::optional<CS2Kit::ServerCommand> _cmdMismatch;
-    std::optional<CS2Kit::ServerCommand> _cmdOff;
+    VoltMod::Subscription _filter;
+    std::optional<VoltMod::ServerCommand> _cmdSpin;
+    std::optional<VoltMod::ServerCommand> _cmdJitter;
+    std::optional<VoltMod::ServerCommand> _cmdBadAngles;
+    std::optional<VoltMod::ServerCommand> _cmdAimlock;
+    std::optional<VoltMod::ServerCommand> _cmdMismatch;
+    std::optional<VoltMod::ServerCommand> _cmdOff;
 };
 
 }  // namespace Anticheat

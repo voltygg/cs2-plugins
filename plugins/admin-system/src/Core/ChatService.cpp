@@ -2,18 +2,18 @@
 
 #include "Config.hpp"
 
-#include <CS2Kit/Core/ChatColors.hpp>
-#include <CS2Kit/Core/StringUtils.hpp>
-#include <CS2Kit/Core/TimeUtils.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/UserMessage.hpp>
 #include <format>
 
 namespace AdminSystem::Core
 {
 
-using namespace CS2Kit::Core;
+using namespace VoltMod::Core;
 
 namespace
 {

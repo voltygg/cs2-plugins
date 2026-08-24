@@ -2,12 +2,12 @@
 
 #include "App.hpp"
 
-#include <CS2Kit/Core/Log.hpp>
+#include <VoltMod/Core/Log.hpp>
 #include <Contracts/IAdminActions.hpp>
 #include <algorithm>
 #include <format>
 
-namespace Log = CS2Kit::Core::Log;
+namespace Log = VoltMod::Core::Log;
 
 namespace Anticheat
 {
@@ -19,7 +19,7 @@ namespace
 constexpr size_t MaxReasonLength = 200;
 
 /** admin-system's cross-plugin surface, or nullptr when that plugin is not loaded. */
-Contracts::IAdminActions* AdminActions(CS2Kit::Runtime& rt)
+Contracts::IAdminActions* AdminActions(VoltMod::Runtime& rt)
 {
     return rt.Exchange.Get<Contracts::IAdminActions>();
 }
@@ -44,7 +44,7 @@ void ResponseManager::Reset()
 {
     _latch.Reset();
     // Keyed by SteamID, so without this the map grows for the lifetime of the server.
-    _alertThrottle.Prune(CS2Kit::TimeUtils::Now(), AlertThrottleSec);
+    _alertThrottle.Prune(VoltMod::TimeUtils::Now(), AlertThrottleSec);
 }
 
 Mode ResponseManager::CurrentMode() const
@@ -77,7 +77,7 @@ void ResponseManager::Handle(int slot, const Finding& finding)
     _reporter.Report(slot, name, steamId, finding, decision.Outcome);
 
     if (decision.SendAlert &&
-        _alertThrottle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, CS2Kit::TimeUtils::Now()))
+        _alertThrottle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, VoltMod::TimeUtils::Now()))
     {
         if (auto* admin = AdminActions(_rt))
             admin->AlertAdmins(steamId, TokenName(finding.Kind), 1);
@@ -95,7 +95,7 @@ void ResponseManager::Handle(int slot, const Finding& finding)
         // the slot in case its player left and somebody else took it.
         _rt.Scheduler.NextTick([&players = _rt.Players, slot, steamId, reason] {
             if (players.GetPlayerBySlotIfSteamId(slot, steamId))
-                CS2Kit::PlayerController(slot).Kick(reason.c_str());
+                VoltMod::PlayerController(slot).Kick(reason.c_str());
         });
         return;
     }

@@ -1,14 +1,14 @@
 #include "BhopManager.hpp"
 
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Sdk/Entity.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Sdk/Entity.hpp>
+#include <VoltMod/Sdk/PlayerController.hpp>
 #include <algorithm>
 #include <cmath>
 #include <mathlib/vector.h>
 
-using namespace CS2Kit;
-namespace Log = CS2Kit::Log;
+using namespace VoltMod;
+namespace Log = VoltMod::Log;
 
 namespace Bhop
 {
@@ -109,7 +109,7 @@ void BhopManager::ReloadSettings()
 {
     _conVars.Reset();
 
-    if (!_config.Load(CS2Kit::AddonFile(AddonName, "configs/settings.jsonc")))
+    if (!_config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")))
     {
         Log::Warn("bhop_reload: settings.jsonc failed to load; keeping previous values in memory.");
         return;

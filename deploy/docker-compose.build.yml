@@ -7,4 +7,4 @@ services:
     working_dir: /app
     volumes:
       - ..:/app
-    command: bash -lc 'CC=gcc-14 CXX=g++-14 python3 vendor/cs2-kit/scripts/build.py linux-steamrt-release'
+    command: bash -lc 'CC=gcc-14 CXX=g++-14 python3 vendor/voltmod/scripts/build.py linux-steamrt-release'

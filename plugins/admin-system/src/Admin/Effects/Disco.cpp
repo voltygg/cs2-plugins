@@ -1,9 +1,9 @@
 #include "Descriptors.hpp"
 #include "EffectRegistry.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/PlayerController.hpp>
 #include <array>
 #include <cstdint>
 
@@ -42,7 +42,7 @@ const Effect Disco{.Permission = Flag(Permission::Fun),
 
                        return {.OnTick =
                                    [slot, idx = size_t{0}]() mutable {
-                                       CS2Kit::PlayerController pc(slot);
+                                       VoltMod::PlayerController pc(slot);
                                        if (!pc.IsValid() || !pc.IsAlive())
                                            return;
                                        pc.SetRender(RenderModeTransTexture, Palette[idx]);
@@ -50,7 +50,7 @@ const Effect Disco{.Permission = Flag(Permission::Fun),
                                    },
                                .OnStop =
                                    [slot, savedMode, savedColor]() {
-                                       CS2Kit::PlayerController pc(slot);
+                                       VoltMod::PlayerController pc(slot);
                                        if (pc.IsValid())
                                            pc.SetRender(savedMode == 0 ? RenderModeNormal : savedMode,
                                                         savedColor == 0 ? ColorOpaqueWhite : savedColor);

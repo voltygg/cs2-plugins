@@ -5,12 +5,12 @@
 #include "../Punishments/PunishmentManager.hpp"
 #include "Permissions.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Core/SteamId.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/SteamId.hpp>
 #include <string>
 
-namespace Log = CS2Kit::Core::Log;
+namespace Log = VoltMod::Core::Log;
 using Contracts::BanResult;
 
 namespace AdminSystem::Core
@@ -28,7 +28,7 @@ void AdminActionsService::Unpublish()
 
 BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::string_view reason)
 {
-    if (!CS2Kit::Core::SteamId::IsValid(steamId))
+    if (!VoltMod::Core::SteamId::IsValid(steamId))
     {
         Log::Warn("IAdminActions::Ban: {} is not a SteamID64.", steamId);
         return BanResult::InvalidSteamId;

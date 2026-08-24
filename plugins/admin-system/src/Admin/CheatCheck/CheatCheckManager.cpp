@@ -6,18 +6,18 @@
 #include "CheatCheckRoomApi.hpp"
 #include "CheatCheckView.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/ChatColors.hpp>
-#include <CS2Kit/Core/Log.hpp>
-#include <CS2Kit/Core/Scheduler.hpp>
-#include <CS2Kit/Core/TimeUtils.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Http/HttpClient.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/PawnOps.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
-#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/Scheduler.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Http/HttpClient.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/PawnOps.hpp>
+#include <VoltMod/Sdk/PlayerController.hpp>
+#include <VoltMod/Sdk/UserMessage.hpp>
 #include <format>
 
 namespace AdminSystem::Admin::CheatCheck
@@ -25,14 +25,14 @@ namespace AdminSystem::Admin::CheatCheck
 
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
-using CS2Kit::Core::Scheduler;
-using CS2Kit::Core::TimeUtils;
-using CS2Kit::Players::PlayerManager;
-using CS2Kit::Sdk::MessageSystem;
-using CS2Kit::Sdk::MoveType;
-using CS2Kit::Sdk::PlayerController;
-namespace Log = CS2Kit::Core::Log;
-namespace ChatColors = CS2Kit::Core::ChatColors;
+using VoltMod::Core::Scheduler;
+using VoltMod::Core::TimeUtils;
+using VoltMod::Players::PlayerManager;
+using VoltMod::Sdk::MessageSystem;
+using VoltMod::Sdk::MoveType;
+using VoltMod::Sdk::PlayerController;
+namespace Log = VoltMod::Core::Log;
+namespace ChatColors = VoltMod::Core::ChatColors;
 
 namespace
 {
@@ -81,7 +81,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 
     targetCtrl.SetMoveType(MoveType::None);
     if (cfg.moveToSpectator)
-        targetCtrl.ChangeTeam(CS2Kit::Sdk::TeamSpectator);
+        targetCtrl.ChangeTeam(VoltMod::Sdk::TeamSpectator);
 
     int interval = cfg.panelRefreshMs > 0 ? cfg.panelRefreshMs : 100;
     pc.TickTimer = _rt.Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
@@ -134,12 +134,12 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     }
 
     const uint64_t seq = pc.RequestSeq;
-    CS2Kit::Http::Post(_rt.Http, std::move(*request), [this, targetSlot, seq](const CS2Kit::HttpResult& result) {
+    VoltMod::Http::Post(_rt.Http, std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
         OnRoomResponse(targetSlot, seq, result);
     });
 }
 
-void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result)
+void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const VoltMod::HttpResult& result)
 {
     if (!ValidSlot(targetSlot))
         return;
@@ -314,7 +314,7 @@ void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int resto
     if (!pc.IsValid())
         return;
     // restoreTeam is a real playing team (T/CT) only if we actually pulled them to spectator at start.
-    if (restoreTeam >= CS2Kit::Sdk::TeamT)
+    if (restoreTeam >= VoltMod::Sdk::TeamT)
         pc.ChangeTeam(restoreTeam);
     pc.SetMoveType(restoreMove);
 }

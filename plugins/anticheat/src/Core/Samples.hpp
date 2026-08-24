@@ -3,8 +3,8 @@
 // Plain data the cores consume, filled by the adapters. Nothing here may depend on the SDK, so the
 // cores stay doctest-able.
 
-#include <CS2Kit/Core/Slot.hpp>
-#include <CS2Kit/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Slot.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
 #include <cmath>
 #include <cstdint>
 #include <optional>
@@ -13,11 +13,11 @@
 namespace Anticheat
 {
 
-inline constexpr int MaxSlots = CS2Kit::Core::MaxPlayers;
+inline constexpr int MaxSlots = VoltMod::Core::MaxPlayers;
 
 inline constexpr bool InSlotRange(int slot)
 {
-    return CS2Kit::Core::IsValidSlot(slot);
+    return VoltMod::Core::IsValidSlot(slot);
 }
 
 /**
@@ -29,7 +29,7 @@ inline constexpr float TickRate = 64.0f;
 
 /** TimeUtils::MonotonicSeconds() drives the rolling evidence windows: real elapsed time, not game
  *  time, and not the wall clock TimeUtils::Now() reports. */
-using CS2Kit::Core::TimeUtils;
+using VoltMod::Core::TimeUtils;
 
 struct Vec3
 {

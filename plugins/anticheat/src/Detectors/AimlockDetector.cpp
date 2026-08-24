@@ -1,16 +1,16 @@
 #include "AimlockDetector.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Slot.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Slot.hpp>
 #include <charconv>
 #include <string_view>
 
 namespace Anticheat
 {
 
-LagEstimate MeasureVisualLag(CS2Kit::Runtime& rt, int slot)
+LagEstimate MeasureVisualLag(VoltMod::Runtime& rt, int slot)
 {
-    if (!CS2Kit::Core::IsValidSlot(slot) || !rt.NetChannels.GetNetInfo(slot))
+    if (!VoltMod::Core::IsValidSlot(slot) || !rt.NetChannels.GetNetInfo(slot))
         return {};
 
     const char* interp = rt.NetChannels.GetUserInfoCvar(slot, "cl_interp_ratio");

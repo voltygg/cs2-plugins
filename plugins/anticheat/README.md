@@ -9,7 +9,7 @@ usercmd per player per tick) and game events (`weapon_fire`, `bullet_impact`, `p
 
 Detection algorithms are reimplementations of [CS2AC](https://github.com/karola3vax/CS2AC)
 (karola3vax, AGPL-3.0); the approach and the tuning are theirs, the code is written against
-[CS2Kit](https://github.com/voltygg/cs2-kit).
+[VoltMod](https://github.com/voltygg/voltmod).
 
 > **Start in `observe` mode.** Nothing is done to any player until you say so - see
 > [Rollout](#rollout).

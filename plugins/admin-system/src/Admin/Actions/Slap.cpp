@@ -1,12 +1,12 @@
 #include "Descriptors.hpp"
 
-#include <CS2Kit/Sdk/PawnOps.hpp>
+#include <VoltMod/Sdk/PawnOps.hpp>
 
 namespace AdminSystem::Admin::Actions
 {
 
 const Action Slap{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                      CS2Kit::Sdk::PawnOps::Slap(ctx.TargetCtrl);
+                      VoltMod::Sdk::PawnOps::Slap(ctx.TargetCtrl);
                       return "broadcast.slapped";
                   }};
 

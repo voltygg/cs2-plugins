@@ -79,6 +79,6 @@ references/
 
 .playwright-mcp/
 
-# Scratch space for local checkouts; cs2-kit is the dev-convenience submodule.
+# Scratch space for local checkouts; voltmod is the dev-convenience submodule.
 vendor/*
-!vendor/cs2-kit
+!vendor/voltmod

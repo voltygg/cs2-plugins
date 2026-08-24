@@ -8,21 +8,21 @@
 #include "Menu/AdminMenu_Effects.hpp"
 #include "Menu/AdminMenu_Punish.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <format>
 
 namespace AdminSystem::Admin
 {
 
-using CS2Kit::Core::Translations;
-using CS2Kit::Menu::MenuBuilder;
-using CS2Kit::Players::PlayerManager;
+using VoltMod::Core::Translations;
+using VoltMod::Menu::MenuBuilder;
+using VoltMod::Players::PlayerManager;
 
-std::shared_ptr<CS2Kit::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     auto& adminMgr = app.Admins;

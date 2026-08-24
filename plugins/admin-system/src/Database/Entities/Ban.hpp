@@ -1,7 +1,7 @@
 #pragma once
 
-#include <CS2Kit/Core/TimeUtils.hpp>
-#include <CS2Kit/Database/Column.hpp>
+#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Database/Column.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -29,13 +29,13 @@ struct Ban
     std::optional<std::string> RemovedReason;
 
     bool IsPermanent() const { return ExpiresAt == 0; }
-    bool IsExpired() const { return !IsPermanent() && CS2Kit::Core::TimeUtils::IsExpired(ExpiresAt); }
+    bool IsExpired() const { return !IsPermanent() && VoltMod::Core::TimeUtils::IsExpired(ExpiresAt); }
 
     static constexpr const char* Table = "bans";
     static constexpr const char* Key = "id";
     static constexpr auto Columns()
     {
-        using CS2Kit::Database::Column;
+        using VoltMod::Database::Column;
         return std::tuple{
             Column{"id", &Ban::Id},
             Column{"target_steam_id", &Ban::TargetSteamId},

@@ -12,16 +12,16 @@ class CS2PluginsConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     package_type = "shared-library"
 
-    # cpr, nlohmann_json and libpqxx arrive transitively through cs2-kit, along with
+    # cpr, nlohmann_json and libpqxx arrive transitively through voltmod, along with
     # the HL2SDK and Metamod packages.
-    requires = ("cs2-kit/[~1.2]",)
+    requires = ("voltmod/[~1.2]",)
 
     default_options = {
         "*:shared": False,
         "openssl/*:no_apps": True,
         "openssl/*:no_fips": True,
         # admin-system and anticheat both use the Database module.
-        "cs2-kit/*:with_postgres": True,
+        "voltmod/*:with_postgres": True,
     }
 
     def set_version(self):
@@ -33,7 +33,7 @@ class CS2PluginsConan(ConanFile):
         self.test_requires("doctest/2.5.2")
 
     def layout(self):
-        # Where cs2kit-build and the CMake presets expect the toolchain. Declared here rather
+        # Where voltmod-build and the CMake presets expect the toolchain. Declared here rather
         # than passed on the command line, so the recipe is the one description of it.
         toolchain = "windows-msvc" if self.settings.os == "Windows" else "linux-steamrt"
         preset = f"{toolchain}-{str(self.settings.build_type).lower()}"

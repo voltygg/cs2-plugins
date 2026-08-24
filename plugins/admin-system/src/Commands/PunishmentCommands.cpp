@@ -5,17 +5,17 @@
 #include "../Punishments/PunishmentManager.hpp"
 #include "Commands.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Runtime.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <string>
 
 namespace AdminSystem::Commands
 {
 
-using namespace CS2Kit::Commands;
+using namespace VoltMod::Commands;
 using namespace AdminSystem::Punishments;
-using CS2Kit::Tokens;
+using VoltMod::Tokens;
 
 namespace
 {
@@ -34,7 +34,7 @@ CommandResult Punish(App& app, CommandContext& c, PunishType type, const std::st
 
 }  // namespace
 
-void RegisterPunishmentCommands(CS2Kit::CommandManager& commands, App& app)
+void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
 {
     commands.Register({
         .Name = "kick",

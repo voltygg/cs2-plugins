@@ -1,13 +1,13 @@
 #include "App.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 
 namespace Bhop
 {
 
 bool App::Start()
 {
-    if (!CS2Kit::LoadStandardConfig(Runtime, Config, {.Addon = AddonName}))
+    if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Addon = AddonName}))
         return false;
 
     Bhop.Initialize();

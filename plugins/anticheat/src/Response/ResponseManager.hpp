@@ -5,7 +5,7 @@
 #include "Response/DiscordReporter.hpp"
 #include "Response/FunnelPolicy.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 
 namespace Anticheat
 {
@@ -18,7 +18,7 @@ namespace Anticheat
 class ResponseManager
 {
 public:
-    ResponseManager(CS2Kit::Runtime& runtime, ConfigManager& config, DiscordReporter& reporter)
+    ResponseManager(VoltMod::Runtime& runtime, ConfigManager& config, DiscordReporter& reporter)
         : _rt(runtime), _config(config), _reporter(reporter)
     {}
 
@@ -45,11 +45,11 @@ private:
 
     bool IsWhitelisted(int64_t steamId) const;
 
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     ConfigManager& _config;
     DiscordReporter& _reporter;
     PunishmentLatch _latch;
-    CS2Kit::PairThrottle<int64_t, int> _alertThrottle{AlertThrottleSec};
+    VoltMod::PairThrottle<int64_t, int> _alertThrottle{AlertThrottleSec};
 };
 
 }  // namespace Anticheat

@@ -2,7 +2,7 @@
 
 #include "Config.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -23,7 +23,7 @@ namespace Bhop
 class MovementConVars
 {
 public:
-    explicit MovementConVars(CS2Kit::ConVarService& conVars) : _conVars(conVars) {}
+    explicit MovementConVars(VoltMod::ConVarService& conVars) : _conVars(conVars) {}
 
     ~MovementConVars() { RestoreGlobal(); }  // unload leaves the server's convars as we found them
 
@@ -55,13 +55,13 @@ private:
         bool IsFloat;
         float Value;              // bools use 0/1
         std::string NetValue;     // string form sent via ReplicateToClient
-        CS2Kit::RawConVar Raw;    // raw storage handle for the per-player flip
+        VoltMod::RawConVar Raw;    // raw storage handle for the per-player flip
         float SavedValue = 0.0f;  // engine value saved before ApplyGlobal / a flip
     };
 
     void RestoreGlobal();
 
-    CS2Kit::ConVarService& _conVars;
+    VoltMod::ConVarService& _conVars;
     std::vector<ConVarOverride> _overrides;
     bool _globalApplied = false;
     bool _flipped = false;

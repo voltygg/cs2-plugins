@@ -3,7 +3,7 @@
 #include "Config.hpp"
 #include "MovementConVars.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -27,7 +27,7 @@ namespace Bhop
 class BhopManager
 {
 public:
-    BhopManager(CS2Kit::Runtime& runtime, ConfigManager& config)
+    BhopManager(VoltMod::Runtime& runtime, ConfigManager& config)
         : _rt(runtime), _config(config), _conVars(runtime.ConVars)
     {}
 
@@ -41,7 +41,7 @@ public:
     /** Re-read settings.jsonc and re-apply (bhop_reload): restores prior convar values first. */
     void ReloadSettings();
 
-    void OnPlayerDisconnect(CS2Kit::Player* player);
+    void OnPlayerDisconnect(VoltMod::Player* player);
 
 private:
     enum class Mode : uint8_t
@@ -61,7 +61,7 @@ private:
 
     bool IsActiveSlot(int slot) const;
 
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     ConfigManager& _config;
     Mode _mode = Mode::Enabled;
     MovementConVars _conVars;
@@ -69,12 +69,12 @@ private:
     std::unordered_set<int64_t> _granted;
     // Per-slot mirror of _granted for the movement hot path, where a steamId lookup per tick
     // would be wasteful. Kept in lockstep with _granted by Grant/OnPlayerSpawn/OnPlayerDisconnect.
-    std::array<bool, CS2Kit::MaxPlayers> _grantedSlots{};
-    std::array<std::chrono::steady_clock::time_point, CS2Kit::MaxPlayers> _lastJump{};
+    std::array<bool, VoltMod::MaxPlayers> _grantedSlots{};
+    std::array<std::chrono::steady_clock::time_point, VoltMod::MaxPlayers> _lastJump{};
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */
-    std::vector<CS2Kit::Subscription> _subs;
+    std::vector<VoltMod::Subscription> _subs;
 };
 
 }  // namespace Bhop

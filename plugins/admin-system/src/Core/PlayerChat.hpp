@@ -1,16 +1,16 @@
 #pragma once
 
-#include <CS2Kit/Core/SlotThrottle.hpp>
+#include <VoltMod/Core/SlotThrottle.hpp>
 #include <cstdint>
 #include <optional>
 #include <string_view>
 
-namespace CS2Kit
+namespace VoltMod
 {
 class Runtime;
 }
 
-namespace CS2Kit::Players
+namespace VoltMod::Players
 {
 class Player;
 }
@@ -41,7 +41,7 @@ class ConfigManager;
 class PlayerChat
 {
 public:
-    PlayerChat(CS2Kit::Runtime& runtime, const ConfigManager& config, ChatService& chat, Admin::AdminManager& admins,
+    PlayerChat(VoltMod::Runtime& runtime, const ConfigManager& config, ChatService& chat, Admin::AdminManager& admins,
                Punishments::PunishmentManager& punishments)
         : _rt(runtime), _config(config), _chat(chat), _admins(admins), _punishments(punishments)
     {}
@@ -52,23 +52,23 @@ public:
      * admin chat with a colored prefix. Returns true when the original message should be
      * superseded (the hook caller must skip the engine's default broadcast).
      */
-    bool HandleSay(CS2Kit::Players::Player* player, std::string_view message, bool isSayTeam);
+    bool HandleSay(VoltMod::Players::Player* player, std::string_view message, bool isSayTeam);
 
     /**
      * Re-emit an admin's regular chat with their group's colored prefix attached.
      * Caller is expected to SUPERCEDE the original say/say_team in the chat hook.
      */
-    void RebroadcastAdminChat(const CS2Kit::Players::Player* admin, std::string_view message, bool teamOnly);
+    void RebroadcastAdminChat(const VoltMod::Players::Player* admin, std::string_view message, bool teamOnly);
 
     /**
      * Notify a voice-muted player that the engine is suppressing their microphone. Rate-limited
      * to avoid spam: the SetClientListening hook fires once per (receiver, sender) pair every
      * time the player keys voice, which can easily hit dozens of calls in a single press.
      */
-    void NotifyVoiceMuted(CS2Kit::Players::Player* player);
+    void NotifyVoiceMuted(VoltMod::Players::Player* player);
 
 private:
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     const ConfigManager& _config;
     ChatService& _chat;
     Admin::AdminManager& _admins;
@@ -83,8 +83,8 @@ private:
     template <class TMute>
     void ReplyMuteNotice(int slot, const char* noticeKey, const std::optional<TMute>& mute);
 
-    CS2Kit::SlotThrottle _voiceMuteNotice{MuteNoticeIntervalSec};
-    CS2Kit::SlotThrottle _textMuteNotice{MuteNoticeIntervalSec};
+    VoltMod::SlotThrottle _voiceMuteNotice{MuteNoticeIntervalSec};
+    VoltMod::SlotThrottle _textMuteNotice{MuteNoticeIntervalSec};
 };
 
 }  // namespace AdminSystem::Core

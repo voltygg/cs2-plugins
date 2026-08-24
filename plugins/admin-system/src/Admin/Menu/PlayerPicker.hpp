@@ -1,7 +1,7 @@
 #pragma once
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Menu/Menu.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Menu/Menu.hpp>
 #include <functional>
 #include <memory>
 #include <string>
@@ -20,7 +20,7 @@ namespace AdminSystem::Admin::Menu
  * to open the appropriate per-target actions submenu. @p isEnabled, when supplied,
  * decides per-row whether a target is selectable (e.g. to gray out an already-picked player).
  */
-std::shared_ptr<CS2Kit::MenuView> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, const std::string& title,
+std::shared_ptr<VoltMod::MenuView> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, const std::string& title,
                                                     std::function<void(int adminSlot, int targetSlot)> onPick,
                                                     std::function<bool(int targetSlot)> isEnabled = {});
 

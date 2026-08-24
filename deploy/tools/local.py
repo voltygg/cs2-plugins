@@ -1,4 +1,4 @@
-"""Deploy built plugin binaries, configs, and cs2-kit gamedata to a local CS2 server.
+"""Deploy built plugin binaries, configs, and voltmod gamedata to a local CS2 server.
 
 Run via poe (`uv run poe deploy`): it sets PYTHONPATH so the vendored kit's
 buildtools resolves.
@@ -57,7 +57,7 @@ def deploy_plugin(name: str, csgo: Path, *, named: bool) -> None:
         return
 
     shutil.copytree(staging / "addons", csgo / "addons", dirs_exist_ok=True)
-    print("  -> addons/ (binary, vdf, configs, cs2-kit gamedata)")
+    print("  -> addons/ (binary, vdf, configs, voltmod gamedata)")
 
     # settings.jsonc is seeded on first deploy and never clobbered.
     settings_src = ROOT / "plugins" / name / "configs" / "settings.jsonc"

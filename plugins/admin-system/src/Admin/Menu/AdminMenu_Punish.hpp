@@ -1,7 +1,7 @@
 #pragma once
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Menu/Menu.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Menu/Menu.hpp>
 #include <functional>
 #include <memory>
 #include <string>
@@ -14,7 +14,7 @@ struct App;
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<CS2Kit::MenuView> BuildPunishMenu(AdminSystem::App& app, int adminSlot);
-std::shared_ptr<CS2Kit::MenuView> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
+std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int adminSlot);
+std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
 
 }  // namespace AdminSystem::Admin::Menu

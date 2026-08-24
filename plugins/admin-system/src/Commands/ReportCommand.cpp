@@ -3,16 +3,16 @@
 #include "../Reports/ReportManager.hpp"
 #include "Commands.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <string>
 
 namespace AdminSystem::Commands
 {
 
-using namespace CS2Kit::Commands;
+using namespace VoltMod::Commands;
 using AdminSystem::Reports::ReportDenial;
 
-void RegisterReportCommand(CS2Kit::CommandManager& commands, App& app)
+void RegisterReportCommand(VoltMod::CommandManager& commands, App& app)
 {
     commands.Register({
         .Name = "report",

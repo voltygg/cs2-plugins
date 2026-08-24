@@ -2,14 +2,14 @@
 
 #include "Config.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/App/PluginInfoStamp.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/App/PluginInfoStamp.hpp>
 
-CS2KIT_PLUGIN(BhopPlugin);
+VOLTMOD_PLUGIN(BhopPlugin);
 
-CS2Kit::PluginInfo BhopPlugin::Info() const
+VoltMod::PluginInfo BhopPlugin::Info() const
 {
-    return CS2Kit::WithBuildInfo({
+    return VoltMod::WithBuildInfo({
         .Name = "Bhop",
         .Author = "m9snoi",
         .Description = "Smooth, client-predicted bunnyhop with per-player session grants.",
@@ -17,13 +17,13 @@ CS2Kit::PluginInfo BhopPlugin::Info() const
     });
 }
 
-bool BhopPlugin::OnLoad(CS2Kit::Runtime& runtime, bool late)
+bool BhopPlugin::OnLoad(VoltMod::Runtime& runtime, bool late)
 {
     _app.emplace(runtime);
     return _app->Start();
 }
 
-void BhopPlugin::OnPlayerDisconnect(CS2Kit::Player* player)
+void BhopPlugin::OnPlayerDisconnect(VoltMod::Player* player)
 {
     _app->Bhop.OnPlayerDisconnect(player);
 }

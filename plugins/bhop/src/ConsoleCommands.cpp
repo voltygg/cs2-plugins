@@ -1,12 +1,12 @@
 #include "BhopManager.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <format>
 
 namespace Bhop
 {
 
-using namespace CS2Kit::Commands;
+using namespace VoltMod::Commands;
 
 // Server console commands are the cross-plugin surface: admin-system (a separate module)
 // drives grants through `bhop_player` via ExecuteServerCommand, and operators use both

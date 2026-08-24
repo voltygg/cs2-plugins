@@ -1,11 +1,11 @@
 ﻿#include "Descriptors.hpp"
 
-#include <CS2Kit/Sdk/PawnOps.hpp>
+#include <VoltMod/Sdk/PawnOps.hpp>
 
 namespace AdminSystem::Admin::Actions
 {
 
-namespace PawnOps = CS2Kit::Sdk::PawnOps;
+namespace PawnOps = VoltMod::Sdk::PawnOps;
 
 namespace
 {

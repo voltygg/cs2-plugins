@@ -6,20 +6,20 @@
 #include "../Effects/EffectRegistry.hpp"
 #include "PlayerPicker.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/PlayerController.hpp>
 #include <format>
 
 namespace AdminSystem::Admin::Menu
 {
 
-using CS2Kit::Menu::MenuBuilder;
+using VoltMod::Menu::MenuBuilder;
 
-std::shared_ptr<CS2Kit::MenuView> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::MenuView> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     return BuildPlayerPicker(app, adminSlot, tr.Get("category.effects", adminSlot), [&app](int admin, int target) {
@@ -29,7 +29,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsMenu(AdminSystem::App& app, int ad
     });
 }
 
-std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
     auto& tr = app.Runtime.Translations;
 
@@ -37,7 +37,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app,
     if (!target || !app.Runtime.Players.GetPlayerBySlot(adminSlot))
         return nullptr;
 
-    CS2Kit::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
+    VoltMod::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
     bool hasS = ctx.Allowed(Flag(Permission::Control));
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->GetName()));
@@ -65,7 +65,7 @@ std::shared_ptr<CS2Kit::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app,
                 },
                 [first = targetSlot](int candidate) {
                     // Gray out partners Swap would reject: the already-picked player and the dead.
-                    CS2Kit::PlayerController ctrl(candidate);
+                    VoltMod::PlayerController ctrl(candidate);
                     return candidate != first && ctrl.IsValid() && ctrl.IsAlive();
                 });
             if (picker)

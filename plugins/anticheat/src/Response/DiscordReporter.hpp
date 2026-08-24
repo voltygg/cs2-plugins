@@ -4,7 +4,7 @@
 #include "Core/Finding.hpp"
 #include "Response/FunnelPolicy.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <cstdint>
 #include <string>
 
@@ -18,7 +18,7 @@ namespace Anticheat
 class DiscordReporter
 {
 public:
-    DiscordReporter(CS2Kit::Runtime& runtime, ConfigManager& config) : _rt(runtime), _config(config) {}
+    DiscordReporter(VoltMod::Runtime& runtime, ConfigManager& config) : _rt(runtime), _config(config) {}
 
     void Report(int slot, const std::string& playerName, int64_t steamId, const Finding& finding,
                 FunnelOutcome outcome);
@@ -27,9 +27,9 @@ private:
     /** One embed per (steamId, detection) per window, so no detection can flood a channel. */
     static constexpr int64_t ThrottleSec = 60;
 
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     ConfigManager& _config;
-    CS2Kit::PairThrottle<int64_t, int> _throttle{ThrottleSec};
+    VoltMod::PairThrottle<int64_t, int> _throttle{ThrottleSec};
 };
 
 }  // namespace Anticheat

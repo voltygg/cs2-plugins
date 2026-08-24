@@ -5,13 +5,13 @@
 #include "../Core/Config.hpp"
 #include "ReportManager.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Core/StringUtils.hpp>
-#include <CS2Kit/Core/Translations.hpp>
-#include <CS2Kit/Menu/Flow.hpp>
-#include <CS2Kit/Players/PlayerManager.hpp>
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Menu/Flow.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/UserMessage.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -19,12 +19,12 @@
 #include <utility>
 #include <vector>
 
-using CS2Kit::Core::StringUtils;
+using VoltMod::Core::StringUtils;
 
 namespace AdminSystem::Reports
 {
 
-using ReportFlowT = CS2Kit::Flow<PendingReport>;
+using ReportFlowT = VoltMod::Flow<PendingReport>;
 
 namespace
 {

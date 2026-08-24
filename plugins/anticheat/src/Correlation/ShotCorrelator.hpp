@@ -8,7 +8,7 @@
 
 #include "Core/Samples.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 #include <array>
 #include <cstdint>
 #include <vector>
@@ -23,18 +23,18 @@ class AntiCheatManager;
 class ShotCorrelator
 {
 public:
-    ShotCorrelator(AntiCheatManager& manager, CS2Kit::Runtime& runtime) : _manager(manager), _rt(runtime) {}
+    ShotCorrelator(AntiCheatManager& manager, VoltMod::Runtime& runtime) : _manager(manager), _rt(runtime) {}
 
     /** Install the usercmd, per-frame and game-event listeners. */
     void Initialize();
 
 private:
-    void OnCommand(int slot, const CS2Kit::UserCmdView& cmd);
+    void OnCommand(int slot, const VoltMod::UserCmdView& cmd);
     void OnFrame();
-    void OnWeaponFire(const CS2Kit::Events::WeaponFire& fire);
-    void OnBulletImpact(const CS2Kit::Events::BulletImpact& impact);
+    void OnWeaponFire(const VoltMod::Events::WeaponFire& fire);
+    void OnBulletImpact(const VoltMod::Events::BulletImpact& impact);
     void OnPlayerHurt(IGameEvent* event);
-    void OnPlayerDeath(const CS2Kit::Events::PlayerDeath& death);
+    void OnPlayerDeath(const VoltMod::Events::PlayerDeath& death);
 
     /** World state for the frame, plus the userid table bullet impacts resolve their shooter with. */
     void CollectPositions(std::array<PositionSample, MaxSlots>& players);
@@ -43,8 +43,8 @@ private:
     void FinalizeSilentAim(int slot, int32_t serverTick, double nowSec);
 
     AntiCheatManager& _manager;
-    CS2Kit::Runtime& _rt;
-    std::vector<CS2Kit::Subscription> _subscriptions;
+    VoltMod::Runtime& _rt;
+    std::vector<VoltMod::Subscription> _subscriptions;
     std::array<int32_t, MaxSlots> _userIds{};
     bool _userIdsResolved = false;  // false when the engine interface never answered
 };

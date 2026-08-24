@@ -1,7 +1,7 @@
 # Deployment Scripts
 
 Deployment scripts copy built Metamod:Source plugins to a CS2 server and also
-deploy the shared cs2-kit gamedata.
+deploy the shared voltmod gamedata.
 
 ## Usage
 
@@ -44,7 +44,7 @@ addons/
   <plugin>/
     bin/win64/<plugin>.dll
     configs/
-  cs2-kit/
+  voltmod/
     gamedata/
 ```
 
@@ -58,7 +58,7 @@ addons/<plugin>/bin/linuxsteamrt64/<plugin>.so
 
 1. Create `plugins/<new>/src/`, `plugins/<new>/CMakeLists.txt`, configs, and
    `plugins/<new>/<new>.vdf`.
-2. Call `cs2_add_plugin(<new> ...)` in that plugin CMake file.
+2. Call `voltmod_add_plugin(<new> ...)` in that plugin CMake file.
 3. Add `add_subdirectory(plugins/<new>)` to the root `CMakeLists.txt`.
 4. Add any new third-party C++ deps to `conanfile.py`, `find_package` them in
    the root `CMakeLists.txt`, and link their imported targets in the plugin

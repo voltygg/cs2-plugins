@@ -1,19 +1,19 @@
 #include "Descriptors.hpp"
 
-#include <CS2Kit/Runtime.hpp>
-#include <CS2Kit/Sdk/GlowVision.hpp>
-#include <CS2Kit/Sdk/PawnOps.hpp>
-#include <CS2Kit/Sdk/PlayerController.hpp>
-#include <CS2Kit/Sdk/TransmitFilter.hpp>
+#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/GlowVision.hpp>
+#include <VoltMod/Sdk/PawnOps.hpp>
+#include <VoltMod/Sdk/PlayerController.hpp>
+#include <VoltMod/Sdk/TransmitFilter.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
-using CS2Kit::Sdk::GlowVision;
-using CS2Kit::Sdk::PlayerController;
-using CS2Kit::Sdk::TeamSpectator;
+using VoltMod::Sdk::GlowVision;
+using VoltMod::Sdk::PlayerController;
+using VoltMod::Sdk::TeamSpectator;
 
 // Hide moves the player to the spectator team and stops transmitting their
 // controller, which removes their row from every other client's scoreboard.

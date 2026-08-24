@@ -29,7 +29,7 @@ executors:
     resource_class: large
     environment:
       # The rest of the ccache settings - the sloppiness flags the kit's PCH needs, the
-      # size cap, the base-dir rewrite - come from `cs2kit build`.
+      # size cap, the base-dir rewrite - come from `voltmod build`.
       CCACHE_DIR: /ccache
   machine-docker:
     machine:
@@ -59,7 +59,7 @@ commands:
       - restore-ccache
       - run:
           name: Build Linux plugins
-          command: mkdir -p /ccache && cs2kit build linux-steamrt-release
+          command: mkdir -p /ccache && voltmod build linux-steamrt-release
   ghcr-login:
     steps:
       - run:

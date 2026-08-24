@@ -3,17 +3,17 @@
 ## Project Overview
 
 C++23 Metamod:Source plugin monorepo for CS2 community servers. Reusable engine
-abstractions live in [cs2-kit](https://github.com/voltygg/cs2-kit), consumed as
-the `cs2-kit` Conan package (`find_package(cs2-kit CONFIG REQUIRED)` ->
-`CS2Kit::CS2Kit`). cs2-kit, hl2sdk-cs2 and metamod-source all arrive prebuilt
-from the public voltygg Cloudsmith remote; `conanfile.py` pins the version.
+abstractions live in [voltmod](https://github.com/voltygg/voltmod), consumed as
+the `voltmod` Conan package (`find_package(voltmod CONFIG REQUIRED)` ->
+`VoltMod::VoltMod`). voltmod, hl2sdk-cs2 and metamod-source all arrive prebuilt
+from the public volty Cloudsmith remote; `conanfile.py` pins the version.
 
-`vendor/cs2-kit` is a submodule of the same repo, there so one IDE covers both. It
-is inert until `conan editable add vendor/cs2-kit`, and `ignore = all` keeps its
+`vendor/voltmod` is a submodule of the same repo, there so one IDE covers both. It
+is inert until `conan editable add vendor/voltmod`, and `ignore = all` keeps its
 pointer out of this repo's status.
 
 Each plugin lives under `plugins/<name>/` with its own `src/`, `configs/`,
-and `CMakeLists.txt` (`cs2_add_plugin(<name> ...)` + a root
+and `CMakeLists.txt` (`voltmod_add_plugin(<name> ...)` + a root
 `add_subdirectory()`; the .vdf is generated at install time). Scaffold a new
 plugin with `uv run poe new-plugin <name>`.
 
@@ -26,7 +26,7 @@ plugin's `CMakeLists.txt`.
 - Language: C++23
 - Framework: Metamod:Source 2.0 + hl2sdk-cs2
 - Build: CMake 4.3.4+ presets + Conan 2.29.1+
-- Shared library: `CS2Kit::CS2Kit`
+- Shared library: `VoltMod::VoltMod`
 - Database: PostgreSQL via libpqxx
 - UI: WASD center-HTML menus
 
@@ -41,12 +41,12 @@ ctest --preset windows-msvc-release
 
 Build output lands in `build/<preset>/plugins/<name>/<platform-arch>/`.
 Conan profiles and the remote are installed once with
-`conan config install https://github.com/voltygg/cs2-kit.git -sf conan`
-(`uv run poe bootstrap` does it). Builds precompile `<CS2Kit/Api.hpp>` per plugin
-(extend with `cs2_add_plugin(... PCH_HEADERS ...)`, disable with
-`-DCS2KIT_DISABLE_PCH=ON`); `cs2kit build --no-test` skips the ctest step (CI runs
+`conan config install https://github.com/voltygg/voltmod.git -sf conan`
+(`uv run poe bootstrap` does it). Builds precompile `<VoltMod/Api.hpp>` per plugin
+(extend with `voltmod_add_plugin(... PCH_HEADERS ...)`, disable with
+`-DVOLTMOD_DISABLE_PCH=ON`); `voltmod build --no-test` skips the ctest step (CI runs
 tests separately). Unit tests use doctest (`test_requires` in conanfile.py) and
-live in `plugins/<name>/tests/`, wired by the kit's `cs2_add_tests()`. One ctest
+live in `plugins/<name>/tests/`, wired by the kit's `voltmod_add_tests()`. One ctest
 entry per case, so TEST_CASE names must not contain `[`, `]` or `;` (configure
 enforces it).
 
@@ -85,34 +85,34 @@ conan.lock
 scripts/
 ```
 
-The build plumbing lives in the kit: `cs2_add_plugin`, `cs2_add_tests` and the
+The build plumbing lives in the kit: `voltmod_add_plugin`, `voltmod_add_tests` and the
 .vdf/manifest templates reach this repo as CMakeDeps build modules, so they are
-available right after `find_package(cs2-kit CONFIG REQUIRED)`. The
-`build`/`bootstrap`/`format`/`new-plugin` poe tasks are the `cs2kit-*` console
-scripts from the `cs2-kit` Python distribution, which `pyproject.toml` depends on
+available right after `find_package(voltmod CONFIG REQUIRED)`. The
+`build`/`bootstrap`/`format`/`new-plugin` poe tasks are the `voltmod-*` console
+scripts from the `voltmod` Python distribution, which `pyproject.toml` depends on
 and which also pins CMake/Conan/Ninja/clang-format. Local `scripts/` holds server
 tooling; all deploy commands (remote and local) live in the `deploy/tools`
 package (`python -m deploy.tools.cli`).
 
-To work on the kit and a plugin together: `conan editable add <cs2-kit checkout>`
+To work on the kit and a plugin together: `conan editable add <voltmod checkout>`
 (see CONTRIBUTING.md).
 
-## CS2Kit Integration
+## VoltMod Integration
 
-The SDKs are Conan packages behind cs2-kit, which re-exports them transitively.
-Include style: `#include <CS2Kit/Commands/CommandSpec.hpp>` (or just
-`<CS2Kit/Api.hpp>` for the hoisted short names).
+The SDKs are Conan packages behind voltmod, which re-exports them transitively.
+Include style: `#include <VoltMod/Commands/CommandSpec.hpp>` (or just
+`<VoltMod/Api.hpp>` for the hoisted short names).
 
-Each plugin derives from `CS2Kit::MetamodPlugin`, which owns the ISmmPlugin
+Each plugin derives from `VoltMod::MetamodPlugin`, which owns the ISmmPlugin
 boilerplate, the standard SourceHook hooks and the PlayerManager lifecycle, and
-creates the `CS2Kit::Runtime` for one load cycle. `OnLoad(Runtime&, bool late)`
+creates the `VoltMod::Runtime` for one load cycle. `OnLoad(Runtime&, bool late)`
 receives it; each plugin builds its own `App` struct there (`src/App.hpp`, or
 `src/Core/App.hpp` in admin-system) and drops it in `OnUnload`, so nothing
-survives a `meta reload`. `CS2KIT_PLUGIN(Klass)` in Plugin.cpp expands the
-instance and PLUGIN_EXPOSE; `CS2Kit::WithBuildInfo` stamps Info(), and
-`CS2Kit::LoadStandardConfig` is the OnLoad config/translations prelude.
+survives a `meta reload`. `VOLTMOD_PLUGIN(Klass)` in Plugin.cpp expands the
+instance and PLUGIN_EXPOSE; `VoltMod::WithBuildInfo` stamps Info(), and
+`VoltMod::LoadStandardConfig` is the OnLoad config/translations prelude.
 Plugin-domain rules (permissions, immunity, replies, broadcasts) are injected
-once via `Runtime::Policy`. DB-using TUs include `<CS2Kit/Database/Api.hpp>` for
+once via `Runtime::Policy`. DB-using TUs include `<VoltMod/Database/Api.hpp>` for
 the short DB names - the main `Api.hpp` umbrella deliberately excludes pqxx.
 
 Key kit patterns in use here:
@@ -124,7 +124,7 @@ Key kit patterns in use here:
 - Fun effects are `EffectDescriptor`s in `src/Admin/Effects/`, listed in the
   explicit `MenuEffects` table and rendered by menu context rows;
   punish/unmute/unban wizards are `Flow<TState>` chains in `src/Admin/Menu/`.
-- Listener registrations return a `CS2Kit::Subscription`; hold it as a member
+- Listener registrations return a `VoltMod::Subscription`; hold it as a member
   next to whatever the callback captures rather than unregistering by hand.
 - Repositories declare entity column tables (`Table`/`Key`/`Columns()`) and use
   the kit's `FromRow`/`InsertSql`/`SelectSql` mapping; hand-written SQL remains
@@ -157,9 +157,9 @@ not edit them or add them to the build.
   `OnLoad`, and each manager takes the collaborators it uses through its
   constructor. Free functions that are leaves of the graph (menu builders,
   command bodies) may take the whole `App&`.
-- Prefer the umbrella short names (`CS2Kit::Type` via `#include <CS2Kit/Api.hpp>`)
-  over `CS2Kit::Module::Type`. In `.hpp` never use a namespace-scope
-  using-directive; `using namespace CS2Kit::X;` is allowed only in `.cpp` (TU-local).
+- Prefer the umbrella short names (`VoltMod::Type` via `#include <VoltMod/Api.hpp>`)
+  over `VoltMod::Module::Type`. In `.hpp` never use a namespace-scope
+  using-directive; `using namespace VoltMod::X;` is allowed only in `.cpp` (TU-local).
 - Keep source files around 300-350 LOC when practical.
 - Comments are rare and should explain non-obvious reasons, not restate code.
 

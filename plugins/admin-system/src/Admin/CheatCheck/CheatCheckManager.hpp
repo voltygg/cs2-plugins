@@ -2,17 +2,17 @@
 
 #include "PendingCheck.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Http/HttpResult.hpp>
-#include <CS2Kit/Sdk/Entity.hpp>
-#include <CS2Kit/Sdk/MoveType.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Http/HttpResult.hpp>
+#include <VoltMod/Sdk/Entity.hpp>
+#include <VoltMod/Sdk/MoveType.hpp>
 #include <array>
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
 
-namespace CS2Kit
+namespace VoltMod
 {
 class Runtime;
 }
@@ -26,7 +26,7 @@ class ConfigManager;
 namespace AdminSystem::Admin::CheatCheck
 {
 
-constexpr int MaxSlots = CS2Kit::Sdk::MaxPlayers;
+constexpr int MaxSlots = VoltMod::Sdk::MaxPlayers;
 
 /**
  * Owns all pending cheat checks: freezes the suspect, shows a persistent center-HTML panel +
@@ -36,7 +36,7 @@ constexpr int MaxSlots = CS2Kit::Sdk::MaxPlayers;
 class CheatCheckManager
 {
 public:
-    CheatCheckManager(CS2Kit::Runtime& runtime, const Core::ConfigManager& config, Core::ChatService& chat)
+    CheatCheckManager(VoltMod::Runtime& runtime, const Core::ConfigManager& config, Core::ChatService& chat)
         : _rt(runtime), _config(config), _chat(chat)
     {}
 
@@ -66,24 +66,24 @@ public:
     void CancelAll();
 
 private:
-    CS2Kit::Runtime& _rt;
+    VoltMod::Runtime& _rt;
     const Core::ConfigManager& _config;
     Core::ChatService& _chat;
 
     void Tick(int targetSlot);
     void Expire(int targetSlot);
     void ResetCheck(int targetSlot);  // cancel timer + clear panel + reset state, silently
-    void Unfreeze(int targetSlot, CS2Kit::MoveType restoreMove, int restoreTeam);
+    void Unfreeze(int targetSlot, VoltMod::MoveType restoreMove, int restoreTeam);
     void ResolveUrl(int targetSlot);
     void RequestRoom(int targetSlot);
-    void OnRoomResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result);
+    void OnRoomResponse(int targetSlot, uint64_t seq, const VoltMod::HttpResult& result);
     void OnRoomFailed(int targetSlot);
     void RelayCheckerUrl(int targetSlot, const std::string& checkerUrl);
 
     // Presence polling (CheatCheckPolling.cpp): pauses the countdown while the suspect
     // is in the check room and resumes it if they leave.
     void PollPresenceIfDue(int targetSlot);
-    void OnPresenceResponse(int targetSlot, uint64_t seq, const CS2Kit::HttpResult& result);
+    void OnPresenceResponse(int targetSlot, uint64_t seq, const VoltMod::HttpResult& result);
 
     void FallbackToFixed(PendingCheck& pc);  // drop awaiting state, use the configured fixed link if any
 

@@ -1,6 +1,6 @@
 #include "ServerRepository.hpp"
 
-#include <CS2Kit/Api.hpp>
+#include <VoltMod/Api.hpp>
 
 namespace AdminSystem::Database
 {

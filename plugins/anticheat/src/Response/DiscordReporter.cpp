@@ -2,10 +2,10 @@
 
 #include "App.hpp"
 
-#include <CS2Kit/Core/Log.hpp>
+#include <VoltMod/Core/Log.hpp>
 #include <nlohmann/json.hpp>
 
-namespace Log = CS2Kit::Core::Log;
+namespace Log = VoltMod::Core::Log;
 
 namespace Anticheat
 {
@@ -22,7 +22,7 @@ void DiscordReporter::Report(int slot, const std::string& playerName, int64_t st
     const auto& settings = _config.Get().anticheat;
     if (settings.webhook.url.empty())
         return;
-    if (!_throttle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, CS2Kit::TimeUtils::Now()))
+    if (!_throttle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, VoltMod::TimeUtils::Now()))
         return;
 
     nlohmann::json embed{
@@ -45,7 +45,7 @@ void DiscordReporter::Report(int slot, const std::string& playerName, int64_t st
     std::string body = payload.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
 
     _rt.Http.Post(settings.webhook.url, std::move(body), {"Content-Type: application/json"}, RequestTimeoutMs,
-                  [](const CS2Kit::HttpResult& result) {
+                  [](const VoltMod::HttpResult& result) {
                       if (!result.Ok)
                           Log::Warn("Webhook delivery failed: {}", result.Error);
                   });

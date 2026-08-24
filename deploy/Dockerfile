@@ -1,10 +1,10 @@
 # SteamRT Sniper base image provides a modern toolchain with Valve SDK ABI compatibility
 FROM registry.gitlab.steamos.cloud/steamrt/sniper/platform:latest AS build
 
-# The cs2-kit Python distribution: the `cs2kit` command plus the pinned CMake, Conan,
+# The voltmod Python distribution: the `voltmod` command plus the pinned CMake, Conan,
 # Ninja and clang-format. Move this to a v* tag when reproducibility matters more than
 # tracking the kit.
-ARG CS2KIT_REF=main
+ARG VOLTMOD_REF=main
 
 # gcc-14 from sniper_beta provides C++23 support with Valve SDK ABI compatibility.
 RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contrib non-free' \
@@ -30,17 +30,17 @@ RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contri
 # pyyaml is the deploy inventory reader's one dependency; jobs in this image call
 # `deploy.tools.cli package --all`, and installing it per run is pure latency.
 RUN pip3 install --no-cache-dir pyyaml \
-  "cs2-kit @ git+https://github.com/voltygg/cs2-kit.git@${CS2KIT_REF}"
+  "voltmod @ git+https://github.com/voltygg/voltmod.git@${VOLTMOD_REF}"
 
 # CI sets HOME=/github/home; pin CONAN_HOME to the bake's path so CI finds the deps.
 ENV CONAN_HOME=/root/.conan2
 
-# Profiles and the public remote, canonical in cs2-kit - the same one command a
+# Profiles and the public remote, canonical in voltmod - the same one command a
 # developer runs. No credentials: the Cloudsmith repo is public.
-RUN conan config install https://github.com/voltygg/cs2-kit.git -sf conan
+RUN conan config install https://github.com/voltygg/voltmod.git -sf conan
 
 # Pre-build deps so CI never compiles them; same profile/build_type/lockfile as
-# `cs2kit build`, so package IDs match (else every dep is a cache miss and rebuilds).
+# `voltmod build`, so package IDs match (else every dep is a cache miss and rebuilds).
 COPY conanfile.py conan.lock /app/
 RUN conan install /app --build=missing \
   '--build=!hl2sdk-cs2/*' '--build=!metamod-source/*' \

@@ -5,15 +5,15 @@
 #include "../Database/Repositories/ServerRepository.hpp"
 #include "Config.hpp"
 
-#include <CS2Kit/Api.hpp>
-#include <CS2Kit/Database/Api.hpp>
+#include <VoltMod/Api.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 
-using CS2Kit::Player;
-using CS2Kit::StageResult;
-using CS2Kit::StageStatus;
-namespace Log = CS2Kit::Log;
+using VoltMod::Player;
+using VoltMod::StageResult;
+using VoltMod::StageStatus;
+namespace Log = VoltMod::Log;
 
 namespace AdminSystem
 {
@@ -62,7 +62,7 @@ StageResult App::ConnectDatabase()
     if (!Db.Start(Config.GetDatabase()))
         return StageResult::Degraded("unavailable; chat commands will reject all callers");
 
-    Migration = CS2Kit::RunMigrations(Db, CS2Kit::AddonFile(Core::AddonName, "configs/migrations"),
+    Migration = VoltMod::RunMigrations(Db, VoltMod::AddonFile(Core::AddonName, "configs/migrations"),
                                       {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
     if (!Migration)
         return StageResult::Degraded("migrations failed; not loading admins against an out-of-date schema");
@@ -105,7 +105,7 @@ StageResult App::StartPunishments()
 
 void App::RegisterGameEventListeners()
 {
-    namespace Events = CS2Kit::Events;
+    namespace Events = VoltMod::Events;
     auto& events = Runtime.Events;
     _subs.push_back(events.Listen<Events::PlayerDeath>([this](const Events::PlayerDeath& e) {
         // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
@@ -164,7 +164,7 @@ bool App::Start()
     auto& report = Runtime.LoadReport;
 
     // "Configuration" + "Translations" stages, via ConfigManager::LoadSettings.
-    if (!CS2Kit::LoadStandardConfig(Runtime, Config, {.Addon = Core::AddonName}))
+    if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Addon = Core::AddonName}))
         return false;
 
     report.Run("Policy", [this] {
