@@ -4,8 +4,9 @@
 
 #include <CS2Kit/Core/Log.hpp>
 #include <CS2Kit/Core/Slot.hpp>
-#include <cstdlib>
+#include <charconv>
 #include <format>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -16,6 +17,21 @@ namespace Anticheat
 {
 
 using CS2Kit::Events::PlayerSpawn;
+
+namespace
+{
+constexpr int DefaultDumpTicks = 64;
+constexpr int MaxDumpTicks = 10000;
+
+std::optional<int> ParseInt(std::string_view text)
+{
+    int value{};
+    const auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+    if (ec != std::errc{} || ptr != text.data() + text.size())
+        return std::nullopt;
+    return value;
+}
+}  // namespace
 
 void AntiCheatManager::Initialize()
 {
@@ -89,25 +105,43 @@ void AntiCheatManager::LoadDetectionData()
 
 void AntiCheatManager::RegisterCommands()
 {
-    _cmdReload.emplace(
-        "anticheat_reload", "Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.",
-        [this](const CCommand&) {
-            if (!_config.Load(CS2Kit::AddonFile(AddonName, "configs/settings.jsonc")))
-                return;
-            // Keeps the rules already in memory when the edit does not parse, so a typo cannot
-            // silently disarm the two table-driven modules.
-            if (!_detections.Load(DetectionDataPath))
-                Log::Warn("{} could not be re-read; keeping the tables already loaded.", DetectionDataPath);
-            else
-                LoadDetectionData();
-            RefreshTeamRules();
-            ResetEvidence();
-            Log::Info("Settings reloaded (mode={}); evidence cleared.", _config.Get().anticheat.mode);
-        });
+    using namespace CS2Kit::Commands;
+    auto& commands = _rt.Commands;
 
-    _cmdStatus.emplace("anticheat_status", "Print the module state and per-player detection evidence.",
-                       [this](const CCommand&) { LogStatus(); });
+    commands.Register({
+        .Name = "anticheat_reload",
+        .Description = "Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.",
+        .Surfaces = Surface::Console,
+        .Handler =
+            [this](CommandContext&) {
+                if (!_config.Load(CS2Kit::AddonFile(AddonName, "configs/settings.jsonc")))
+                    return CommandResult::Silent();
+                // Keeps the rules already in memory when the edit does not parse, so a typo cannot
+                // silently disarm the two table-driven modules.
+                if (!_detections.Load(DetectionDataPath))
+                    Log::Warn("{} could not be re-read; keeping the tables already loaded.", DetectionDataPath);
+                else
+                    LoadDetectionData();
+                RefreshTeamRules();
+                ResetEvidence();
+                return CommandResult{
+                    std::format("Settings reloaded (mode={}); evidence cleared.", _config.Get().anticheat.mode)};
+            },
+    });
 
+    commands.Register({
+        .Name = "anticheat_status",
+        .Description = "Print the module state and per-player detection evidence.",
+        .Surfaces = Surface::Console,
+        .Handler =
+            [this](CommandContext&) {
+                LogStatus();
+                return CommandResult::Silent();
+            },
+    });
+
+    // Not a CommandSpec: it takes two integers and CommandContext carries one, so the
+    // declarative form would have to drop the tick count.
     _cmdDump.emplace("anticheat_dumpcmd", "Log raw usercmds for a slot: anticheat_dumpcmd <slot> [ticks=64]",
                      [this](const CCommand& args) {
                          if (args.ArgC() < 2)
@@ -115,14 +149,27 @@ void AntiCheatManager::RegisterCommands()
                              Log::Warn("Usage: anticheat_dumpcmd <slot> [ticks=64]");
                              return;
                          }
-                         const int slot = std::atoi(args.Arg(1));
-                         if (!IsValidSlot(slot))
+                         // atoi returned 0 for a non-numeric token, and 0 is a valid slot - so
+                         // `anticheat_dumpcmd foo` used to start dumping slot 0.
+                         const auto slot = ParseInt(args.Arg(1));
+                         if (!slot || !IsValidSlot(*slot))
                          {
                              Log::Warn("anticheat_dumpcmd: '{}' is not a valid slot.", args.Arg(1));
                              return;
                          }
-                         _dumpTicks[slot] = args.ArgC() > 2 ? std::atoi(args.Arg(2)) : 64;
-                         Log::Info("Dumping {} usercmds for slot {}.", _dumpTicks[slot], slot);
+                         int ticks = DefaultDumpTicks;
+                         if (args.ArgC() > 2)
+                         {
+                             const auto requested = ParseInt(args.Arg(2));
+                             if (!requested || *requested < 1 || *requested > MaxDumpTicks)
+                             {
+                                 Log::Warn("anticheat_dumpcmd: ticks must be 1-{}.", MaxDumpTicks);
+                                 return;
+                             }
+                             ticks = *requested;
+                         }
+                         _dumpTicks[*slot] = ticks;
+                         Log::Info("Dumping {} usercmds for slot {}.", ticks, *slot);
                      });
 }
 

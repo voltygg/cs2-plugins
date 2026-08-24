@@ -128,8 +128,7 @@ private:
     CS2Kit::RawConVar& CheatsConVar() const;
 
     CS2Kit::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
-    std::optional<CS2Kit::ServerCommand> _cmdReload;
-    std::optional<CS2Kit::ServerCommand> _cmdStatus;
+    /** anticheat_dumpcmd stays a raw ConCommand; see RegisterCommands. */
     std::optional<CS2Kit::ServerCommand> _cmdDump;
     CheatSimulator _simulator;
 };

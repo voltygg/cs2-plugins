@@ -76,9 +76,6 @@ private:
     // would be wasteful. Kept in lockstep with _granted by Grant/OnPlayerSpawn/OnPlayerDisconnect.
     std::array<bool, CS2Kit::MaxPlayers> _grantedSlots{};
     std::array<std::chrono::steady_clock::time_point, CS2Kit::MaxPlayers> _lastJump{};
-
-    std::optional<CS2Kit::ServerCommand> _cmdPlayer;
-    std::optional<CS2Kit::ServerCommand> _cmdReload;
 };
 
 }  // namespace Bhop
