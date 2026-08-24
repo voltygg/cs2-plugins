@@ -1,12 +1,10 @@
-# SteamRT Sniper base image provides a modern toolchain with Valve SDK ABI compatibility
+# SteamRT sniper: Valve SDK ABI compatibility.
 FROM registry.gitlab.steamos.cloud/steamrt/sniper/platform:latest AS build
 
-# The voltmod Python distribution: the `voltmod` command plus the pinned CMake, Conan,
-# Ninja and clang-format. Move this to a v* tag when reproducibility matters more than
-# tracking the kit.
+# Move to a v* tag when reproducibility matters more than tracking the kit.
 ARG VOLTMOD_REF=main
 
-# gcc-14 from sniper_beta provides C++23 support with Valve SDK ABI compatibility.
+# gcc-14 (C++23) lives in sniper_beta, not the base image.
 RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contrib non-free' \
   > /etc/apt/sources.list.d/steamrt-beta.list \
   && apt-get update \
@@ -24,19 +22,19 @@ RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contri
   openssh-client \
   pkg-config \
   perl \
-  python3-pip \
   && rm -rf /var/lib/apt/lists/*
 
-# pyyaml is the deploy inventory reader's one dependency; jobs in this image call
-# `deploy.tools.cli package --all`, and installing it per run is pure latency.
-RUN pip3 install --no-cache-dir pyyaml \
+# voltmod's venv is `python3` and carries the pinned CMake/Conan/Ninja/clang-format, so
+# no stage below names a tool version. uv fetches 3.14; sniper only ships 3.9. pyyaml is
+# for `deploy.tools.cli package --all`, which jobs in this image run.
+# Both install dirs stay off $HOME: CI rebinds it to /github/home.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+ENV PATH=/opt/voltmod/bin:$PATH UV_PYTHON_INSTALL_DIR=/opt/uv-python CONAN_HOME=/root/.conan2
+RUN uv venv --python 3.14 /opt/voltmod \
+  && uv pip install --python /opt/voltmod/bin/python --no-cache pyyaml \
   "voltmod @ git+https://github.com/voltygg/voltmod.git@${VOLTMOD_REF}"
 
-# CI sets HOME=/github/home; pin CONAN_HOME to the bake's path so CI finds the deps.
-ENV CONAN_HOME=/root/.conan2
-
-# Profiles and the public remote, canonical in voltmod - the same one command a
-# developer runs. No credentials: the Cloudsmith repo is public.
+# Profiles and the public remote, canonical in voltmod. No credentials: the repo is public.
 RUN conan config install https://github.com/voltygg/voltmod.git -sf conan
 
 # Pre-build deps so CI never compiles them; same profile/build_type/lockfile as
