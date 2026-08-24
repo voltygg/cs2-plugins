@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rewrite Repository Docs"
+  short_description: "Rewrite technical docs in plain English"
+  default_prompt: "Use $rewrite-repo-docs to rewrite and condense comments and documentation across cs2-plugins and vendor/voltmod in plain English and a natural human tone, including both CLAUDE.md files."
