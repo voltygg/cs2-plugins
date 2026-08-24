@@ -39,7 +39,7 @@ RUN conan config install https://github.com/voltygg/voltmod.git -sf conan
 
 # Pre-build deps so CI never compiles them; same profile/build_type/lockfile as
 # `voltmod build`, so package IDs match (else every dep is a cache miss and rebuilds).
-COPY conanfile.py conan.lock /app/
+COPY conanfile.py conan.lock version.txt /app/
 RUN conan install /app --build=missing \
   '--build=!hl2sdk-cs2/*' '--build=!metamod-source/*' \
   --lockfile /app/conan.lock \
