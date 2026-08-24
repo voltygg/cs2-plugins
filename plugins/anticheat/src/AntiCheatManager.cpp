@@ -140,37 +140,35 @@ void AntiCheatManager::RegisterCommands()
             },
     });
 
-    // Not a CommandSpec: it takes two integers and CommandContext carries one, so the
-    // declarative form would have to drop the tick count.
-    _cmdDump.emplace("anticheat_dumpcmd", "Log raw usercmds for a slot: anticheat_dumpcmd <slot> [ticks=64]",
-                     [this](const CCommand& args) {
-                         if (args.ArgC() < 2)
-                         {
-                             Log::Warn("Usage: anticheat_dumpcmd <slot> [ticks=64]");
-                             return;
-                         }
-                         // atoi returned 0 for a non-numeric token, and 0 is a valid slot - so
-                         // `anticheat_dumpcmd foo` used to start dumping slot 0.
-                         const auto slot = ParseInt(args.Arg(1));
-                         if (!slot || !IsValidSlot(*slot))
-                         {
-                             Log::Warn("anticheat_dumpcmd: '{}' is not a valid slot.", args.Arg(1));
-                             return;
-                         }
-                         int ticks = DefaultDumpTicks;
-                         if (args.ArgC() > 2)
-                         {
-                             const auto requested = ParseInt(args.Arg(2));
-                             if (!requested || *requested < 1 || *requested > MaxDumpTicks)
-                             {
-                                 Log::Warn("anticheat_dumpcmd: ticks must be 1-{}.", MaxDumpTicks);
-                                 return;
-                             }
-                             ticks = *requested;
-                         }
-                         _dumpTicks[*slot] = ticks;
-                         Log::Info("Dumping {} usercmds for slot {}.", ticks, *slot);
-                     });
+    // The tick count rides in a Word because CommandContext carries one Int; the slot still gets
+    // arity checking, cmd.badNumber and the derived console registration from the spec.
+    commands.Register({
+        .Name = "anticheat_dumpcmd",
+        .Description = "Log raw usercmds for a slot.",
+        .Usage = "anticheat_dumpcmd <slot> [ticks=64]",
+        .Args = {Int(), Word(false)},
+        .Surfaces = Surface::Console,
+        .Handler =
+            [this](CommandContext& c) {
+                const int slot = c.Int().value_or(-1);
+                if (!IsValidSlot(slot))
+                    return CommandResult{std::format("anticheat_dumpcmd: {} is not a valid slot.", slot)};
+
+                int ticks = DefaultDumpTicks;
+                if (!c.Word.empty())
+                {
+                    // atoi returned 0 for a non-numeric token, and 0 would silently mean "dump
+                    // nothing" rather than reporting the typo.
+                    const auto requested = ParseInt(c.Word);
+                    if (!requested || *requested < 1 || *requested > MaxDumpTicks)
+                        return CommandResult{std::format("anticheat_dumpcmd: ticks must be 1-{}.", MaxDumpTicks)};
+                    ticks = *requested;
+                }
+
+                _dumpTicks[slot] = ticks;
+                return CommandResult{std::format("Dumping {} usercmds for slot {}.", ticks, slot)};
+            },
+    });
 }
 
 void AntiCheatManager::DumpCommand(int slot, const CS2Kit::UserCmdView& cmd)
