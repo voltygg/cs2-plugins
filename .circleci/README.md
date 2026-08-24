@@ -1,22 +1,17 @@
 # CircleCI
 
 Mirror of the GitHub Actions workflows so either provider can run CI/CD when the
-other is out of minutes. `ci.yml` maps to the `ci` workflow, `build-toolchain.yml`
-to `toolchain`, `deploy.yml` to `deploy`.
+other is out of minutes.
 
-| Branch / trigger         | Workflow    | Jobs                                        |
-| ------------------------ | ----------- | ------------------------------------------- |
-| any branch except `prod` | `ci`        | `build-test`, `lint`                        |
-| push to `main`           | `toolchain` | `build-toolchain` (self-skips unless toolchain inputs changed) |
-| push to `prod`           | `deploy`    | `build-package` + `runtime-image` -> `deploy` |
-| Trigger Pipeline         | `toolchain` | when `force-toolchain` is `true`            |
+| Branch                    | Workflow | Jobs                                           |
+| ------------------------- | -------- | ---------------------------------------------- |
+| any branch except `prod`  | `ci`     | `build-test`, `lint`                           |
+| `prod`                    | `deploy` | `build-package` + `runtime-image` -> `deploy`  |
 
 ## Setup
 
-1. **Create a GHCR token.** CircleCI has no `GITHUB_TOKEN` equivalent, so this is
-   a classic PAT with `read:packages` + `write:packages` (fine-grained tokens do
-   not work with GHCR). Read access is what lets the `toolchain` executor pull
-   `cs2-plugin-toolchain:latest`, so CI cannot start without it.
+1. **Create a GHCR token.** CircleCI uses a classic PAT with `read:packages` and
+   `write:packages` to publish the runtime image.
 
 2. **Install the CLI and authenticate.**
 
@@ -65,26 +60,17 @@ developer-local path baked into that file.
 
 ## Manual runs
 
-- **Rebuild the toolchain image:** Trigger Pipeline with `force-toolchain` =
-  `true`. Otherwise `build-toolchain` halts itself unless `deploy/Dockerfile`,
-  `conanfile.py`, `conan.lock`, or this config changed.
-- **Deploy one server:** set the `server` parameter to an inventory id.
-- **Preview a deploy:** set `dry-run` = `true` (rsync only, no compose).
+- Set `server` to deploy one inventory server.
+- Set `dry-run` to preview rsync without changing containers.
 
 CircleCI has no dynamic matrix, so the deploy job loops over
 `deploy.tools.cli matrix --format plain` sequentially instead of fanning out one
 job per server the way `deploy.yml` does.
 
-## ccache
+## Build caches
 
-Keys mirror the GHA cache so both providers share a lineage: toolchain
-fingerprint, then branch, then revision. CircleCI caches are immutable, so the
-revision suffix plays the role of GHA's per-run key and the two shorter prefixes
-are the restore fallbacks.
-
-`CCACHE_SLOPPINESS=pch_defines` and `CCACHE_DEPEND=1` are set on the `toolchain`
-executor and are not optional - without both, every PCH-using translation unit is
-a permanent cache miss.
+Conan packages are keyed by `conan.lock`. ccache uses the same lock hash plus the
+branch and revision, with broader restore prefixes for incremental builds.
 
 ## Local checks
 
@@ -93,5 +79,5 @@ circleci config validate            # schema-check before pushing
 circleci local execute --job lint   # docker-executor jobs only
 ```
 
-`build-toolchain` and `runtime-image` cannot run locally: they need the machine
-executor and contexts.
+`runtime-image` cannot run locally because it needs the machine executor and GHCR
+context.

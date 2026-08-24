@@ -107,26 +107,13 @@ Matching these locally keeps the CI pipeline green.
 
 ## Continuous Integration
 
-CI builds the Linux plugin inside a prebuilt toolchain image
-(`ghcr.io/<owner>/<repo>/cs2-plugin-toolchain:latest`) instead of installing a
-compiler and build tools on every run. That image is the `build` stage of
-`deploy/Dockerfile`, published by the **Build toolchain image** workflow
-(`.github/workflows/build-toolchain.yml`) whenever the Dockerfile or that
-workflow changes. Run it once manually via "Run workflow" before the first CI
-run so the image exists to pull. Alongside the build, CI runs `uv run poe lint`
-and a `clang-format` dry-run.
+CI builds in Valve's SteamRT SDK using VoltMod's setup action. Conan packages and
+compiler output are cached from `conan.lock`. A separate job runs Ruff and
+clang-format checks.
 
-CircleCI (`.circleci/config.yml`) mirrors all three workflows (CI, toolchain
-image, deploy) so either provider can run when the other is out of minutes.
-CircleCI has no ambient `GITHUB_TOKEN`, so its jobs authenticate to GHCR with a
-PAT stored in the org-level `ghcr` context (`GHCR_USERNAME`, `GHCR_TOKEN`);
-deploy secrets live in the `cs2-deploy` context as base64 (`SSH_KEY_B64`,
-`SERVER_ENV_<ID>_B64`) because CircleCI env vars do not preserve newlines. The
-toolchain image must exist on GHCR before either provider's CI can run -
-bootstrap it from CircleCI by triggering a pipeline with the `force-toolchain`
-parameter set to true. Note that a `prod` push while both providers' deploys
-are enabled deploys twice; disable one side (GHA: disable the workflow in the
-Actions UI; CircleCI: comment out the `deploy` workflow trigger).
+CircleCI mirrors CI and deploy as a fallback. Its `ghcr` context publishes the
+runtime image; `cs2-deploy` carries the base64 deploy secrets. A `prod` push will
+deploy twice if both providers are enabled, so disable one deploy workflow.
 
 Contexts are created and filled by `./.circleci/bootstrap.sh`; see
 [.circleci/README.md](.circleci/README.md) for the full setup walkthrough.

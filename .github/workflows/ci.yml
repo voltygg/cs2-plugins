@@ -5,7 +5,6 @@ on:
     branches: [main]
   pull_request:
 
-# Cancel superseded CI runs on a new push.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -14,38 +13,34 @@ jobs:
   build:
     name: Build + test
     runs-on: ubuntu-latest
-    # Prebuilt toolchain image (no per-run image build / tool install). Publish it
-    # first via the "Build toolchain image" workflow. Pin by @sha256:<digest>
-    # (`docker buildx imagetools inspect <image>`) for reproducible layer reuse.
     container:
-      image: ghcr.io/${{ github.repository }}/cs2-plugin-toolchain:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
     env:
-      # The rest of the ccache settings - the sloppiness flags the kit's PCH needs, the
-      # size cap, the base-dir rewrite - are applied by `voltmod build`, which is where
-      # the PCH they compensate for is defined.
       CCACHE_DIR: /ccache
     steps:
       - uses: actions/checkout@v7
 
-      # No Conan cache: deps are baked into the toolchain image (deploy/Dockerfile).
-      # Per-run key so saves persist; branch-scoped restore; MAXSIZE bounds the blob.
-      # The hashFiles() prefix fingerprints the toolchain, so a compiler/deps change
-      # starts a fresh cache lineage instead of poisoning hit rates.
+      - name: Cache Conan packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.conan2
+          key: conan-sniper-gcc14-v1-${{ hashFiles('conan.lock') }}
+          restore-keys: conan-sniper-gcc14-v1-
+
+      - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
+        with:
+          voltmod-source: "@action"
+          conan-source: "@action"
+
       - name: Cache ccache
         uses: actions/cache@v6
         with:
-          # Absolute path: `~` differs for actions/cache vs ccache in-container.
           path: /ccache
-          key: ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-${{ github.run_id }}
+          key: ccache-sniper-gcc14-v1-${{ hashFiles('conan.lock') }}-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
-            ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-
-            ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-
+            ccache-sniper-gcc14-v1-${{ hashFiles('conan.lock') }}-${{ github.ref_name }}-
+            ccache-sniper-gcc14-v1-${{ hashFiles('conan.lock') }}-
 
-      # Prints ccache statistics either side of the build; a warm rerun of an
-      # unchanged tree should show >95% hits.
       - name: Build (configure -> build)
         run: voltmod build linux-steamrt-release --no-test
 

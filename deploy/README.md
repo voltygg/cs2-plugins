@@ -11,8 +11,8 @@ local Windows dev tools.
 
 ```text
 deploy/inventory.yml          declared plugins + Docker hosts
-deploy/Dockerfile             build + runtime stages
-deploy/docker-compose.build.yml Linux plugin build wrapper
+deploy/Dockerfile             local build + server runtime stages
+deploy/docker-compose.build.yml local Linux build wrapper
 deploy/scripts/bootstrap-host.sh one-time Ubuntu host bootstrap
 deploy/tools/                 deploy CLI package (python -m deploy.tools.cli)
 deploy/templates/             rendered config, pre-hook, and compose service templates
@@ -23,7 +23,6 @@ deploy/secrets/               per-server env template (real values in GitHub sec
 Published images use only `:latest`:
 
 ```text
-ghcr.io/<repo>/cs2-plugin-toolchain:latest
 ghcr.io/<repo>/cs2-server-runtime:latest
 ```
 

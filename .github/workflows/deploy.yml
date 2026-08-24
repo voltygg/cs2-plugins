@@ -1,5 +1,4 @@
-# Builds Linux plugin bundles + the server runtime image, then renders and deploys
-# each active server in deploy/inventory.yml over SSH.
+# Build, package, and deploy the configured CS2 servers.
 name: Deploy
 
 on:
@@ -35,12 +34,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # A bare runner, so the inventory reader's one dependency is not present.
       - name: Install inventory deps
         run: sudo apt-get update && sudo apt-get install -y python3-yaml
 
-      # Only the matrix has to come out as a value: it feeds strategy.matrix, which is
-      # the one thing the deploy job cannot resolve for itself.
       - name: Resolve inventory
         id: resolve
         run: |
@@ -57,28 +53,34 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository }}/cs2-plugin-toolchain:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
+    env:
+      CCACHE_DIR: /ccache
     steps:
       - uses: actions/checkout@v7
+
+      - name: Cache Conan packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.conan2
+          key: conan-sniper-gcc14-v1-${{ hashFiles('conan.lock') }}
+          restore-keys: conan-sniper-gcc14-v1-
+
+      - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
+        with:
+          voltmod-source: "@action"
+          conan-source: "@action"
 
       - name: Cache ccache
         uses: actions/cache@v6
         with:
-          # Absolute path: `~` differs for actions/cache vs ccache in-container.
-          # Key shape mirrors ci.yml so deploy and CI share a cache lineage.
           path: /ccache
-          key: ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-${{ github.run_id }}
+          key: ccache-sniper-gcc14-v1-${{ hashFiles('conan.lock') }}-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
-            ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-${{ github.ref_name }}-
-            ccache-linux-${{ hashFiles('deploy/Dockerfile', 'conanfile.py', 'conan.lock') }}-
+            ccache-sniper-gcc14-v1-${{ hashFiles('conan.lock') }}-${{ github.ref_name }}-
+            ccache-sniper-gcc14-v1-${{ hashFiles('conan.lock') }}-
 
-      # The rest of the ccache settings come from `voltmod build`; see ci.yml.
       - name: Build Linux plugins
-        env:
-          CCACHE_DIR: /ccache
         run: voltmod build linux-steamrt-release
 
       - name: Package every declared plugin

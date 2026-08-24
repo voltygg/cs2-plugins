@@ -112,36 +112,6 @@ def cmd_rcon(args: argparse.Namespace) -> None:
     rcon.run_commands(args.commands, server_id=args.server, instance_name=args.instance)
 
 
-# Rebuilding the toolchain image is expensive, so both providers gate it on whether its
-# inputs moved. GitHub Actions can express that as a paths: filter; CircleCI cannot, and
-# reimplemented it as fifteen lines of git-diff plus `circleci-agent step halt`.
-TOOLCHAIN_INPUTS = (
-    "deploy/Dockerfile",
-    "conanfile.py",
-    "conan.lock",
-    ".circleci/config.yml",
-    ".github/workflows/build-toolchain.yml",
-)
-
-
-def cmd_toolchain_changed(args: argparse.Namespace) -> None:
-    """Exit 0 when this commit touched a toolchain input, 1 when it did not."""
-    import subprocess
-
-    revisions = subprocess.run(["git", "rev-parse", args.base], capture_output=True)
-    if revisions.returncode:
-        print(f"no {args.base}; treating the toolchain as changed")
-        raise SystemExit(0)
-
-    changed = subprocess.run(
-        ["git", "diff", "--name-only", args.base, "HEAD"],
-        check=True, text=True, capture_output=True,
-    ).stdout.split()
-    hits = sorted(set(changed) & set(TOOLCHAIN_INPUTS))
-    print(f"toolchain inputs changed: {' '.join(hits)}" if hits else "no toolchain input changes")
-    raise SystemExit(0 if hits else 1)
-
-
 def cmd_local(args: argparse.Namespace) -> None:
     from . import local
 
@@ -202,11 +172,6 @@ def build_parser() -> argparse.ArgumentParser:
     deploy.add_argument("--runtime-image", help="default: the inventory's runtime image")
     deploy.add_argument("--dry-run", action="store_true")
     deploy.set_defaults(func=cmd_deploy)
-
-    toolchain = sub.add_parser("toolchain-changed",
-                               help="exit 0 if this commit touched a toolchain input")
-    toolchain.add_argument("--base", default="HEAD~1", help="revision to diff against")
-    toolchain.set_defaults(func=cmd_toolchain_changed)
 
     update = sub.add_parser("update", help="restart instances to pull the latest CS2 build")
     update.add_argument("--server", required=True)

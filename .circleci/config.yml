@@ -1,17 +1,7 @@
-# CircleCI mirror of the GitHub Actions workflows (ci.yml, build-toolchain.yml,
-# deploy.yml) so either provider can run CI/CD when the other is out of minutes.
-#
-# Secrets live in two contexts; run .circleci/bootstrap.sh to create and fill them:
-#   ghcr:       GHCR_USERNAME, GHCR_TOKEN (PAT with read+write packages)
-#   cs2-deploy: SSH_KEY_B64, SERVER_ENV_<ID>_B64 (base64 of the GHA secrets;
-#               CircleCI env vars do not preserve multiline values)
+# CircleCI fallback for the GitHub Actions CI and deploy workflows.
 version: 2.1
 
 parameters:
-  # "Trigger Pipeline" equivalents of the GHA workflow_dispatch inputs.
-  force-toolchain:
-    type: boolean
-    default: false
   server:
     type: string
     default: ""
@@ -22,14 +12,9 @@ parameters:
 executors:
   toolchain:
     docker:
-      - image: ghcr.io/voltygg/cs2-plugins/cs2-plugin-toolchain:latest
-        auth:
-          username: $GHCR_USERNAME
-          password: $GHCR_TOKEN
+      - image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
     resource_class: large
     environment:
-      # The rest of the ccache settings - the sloppiness flags the kit's PCH needs, the
-      # size cap, the base-dir rewrite - come from `voltmod build`.
       CCACHE_DIR: /ccache
   machine-docker:
     machine:
@@ -37,16 +22,44 @@ executors:
     resource_class: large
 
 commands:
-  restore-ccache:
+  setup-toolchain:
     steps:
-      # Key shape mirrors the GHA cache: toolchain fingerprint prefix, then
-      # branch, then revision (CircleCI caches are immutable, so the revision
-      # suffix plays the role of GHA's per-run key).
+      - run:
+          name: Set up the Voltmod toolchain
+          command: |
+            echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contrib non-free' \
+              > /etc/apt/sources.list.d/steamrt-beta.list
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+              ca-certificates ccache curl gcc-14-monolithic git ninja-build
+            rm -rf /var/lib/apt/lists/*
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            "$HOME/.local/bin/uv" venv --python 3.14 "$HOME/.voltmod"
+            "$HOME/.local/bin/uv" pip install --python "$HOME/.voltmod/bin/python" --no-cache \
+              "voltmod @ git+https://github.com/voltygg/voltmod.git@main"
+            echo 'export PATH="$HOME/.voltmod/bin:$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+            export PATH="$HOME/.voltmod/bin:$HOME/.local/bin:$PATH"
+            conan profile detect --force >/dev/null 2>&1 || true
+            conan config install https://github.com/voltygg/voltmod.git -sf conan
+  restore-conan:
+    steps:
       - restore_cache:
           keys:
-            - &ccache_key ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-{{ .Branch }}-{{ .Revision }}
-            - ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-{{ .Branch }}-
-            - ccache-linux-{{ checksum "deploy/Dockerfile" }}-{{ checksum "conanfile.py" }}-{{ checksum "conan.lock" }}-
+            - &conan_key conan-sniper-gcc14-v1-{{ checksum "conan.lock" }}
+            - conan-sniper-gcc14-v1-
+  save-conan:
+    steps:
+      - save_cache:
+          key: *conan_key
+          paths:
+            - ~/.conan2
+  restore-ccache:
+    steps:
+      - restore_cache:
+          keys:
+            - &ccache_key ccache-sniper-gcc14-v1-{{ checksum "conan.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - ccache-sniper-gcc14-v1-{{ checksum "conan.lock" }}-{{ .Branch }}-
+            - ccache-sniper-gcc14-v1-{{ checksum "conan.lock" }}-
   save-ccache:
     steps:
       - save_cache:
@@ -56,6 +69,8 @@ commands:
   build-plugins:
     steps:
       - checkout
+      - restore-conan
+      - setup-toolchain
       - restore-ccache
       - run:
           name: Build Linux plugins
@@ -74,6 +89,7 @@ jobs:
       - run:
           name: Test
           command: ctest --preset linux-steamrt-release
+      - save-conan
       - save-ccache
 
   lint:
@@ -94,35 +110,6 @@ jobs:
           name: clang-format check
           command: uv run poe format-check
 
-  build-toolchain:
-    executor: machine-docker
-    steps:
-      - checkout
-      - unless:
-          condition: << pipeline.parameters.force-toolchain >>
-          steps:
-            # GitHub Actions expresses this as a paths: filter; CircleCI cannot, so it
-            # asks the CLI, which owns the list of inputs both providers care about.
-            - run:
-                name: Skip unless toolchain inputs changed
-                command: |
-                  pip3 install --quiet pyyaml
-                  python3 -m deploy.tools.cli toolchain-changed || circleci-agent step halt
-      - ghcr-login
-      - run:
-          name: Build + push toolchain image (build stage)
-          command: |
-            IMAGE=ghcr.io/voltygg/cs2-plugins/cs2-plugin-toolchain
-            docker buildx create --driver docker-container --use
-            docker buildx build \
-              --file deploy/Dockerfile \
-              --target build \
-              --push \
-              --tag "$IMAGE:latest" \
-              --cache-from "type=registry,ref=$IMAGE:buildcache" \
-              --cache-to "type=registry,ref=$IMAGE:buildcache,mode=max" \
-              .
-
   build-package:
     executor: toolchain
     steps:
@@ -130,6 +117,7 @@ jobs:
       - run:
           name: Package every declared plugin
           command: python3 -m deploy.tools.cli package --all linux
+      - save-conan
       - save-ccache
       - persist_to_workspace:
           root: .
@@ -174,16 +162,11 @@ jobs:
             pip install --quiet pyyaml python-dotenv
       - run:
           name: Configure SSH
-          # No ssh-keyscan: remote.py already passes StrictHostKeyChecking=accept-new.
           command: |
             [ -n "$SSH_KEY_B64" ] || { echo "ERROR: SSH_KEY_B64 is empty (cs2-deploy context)" >&2; exit 1; }
             mkdir -p ~/.ssh && chmod 700 ~/.ssh
             echo "$SSH_KEY_B64" | base64 -d > "$SSH_KEY_FILE"
             chmod 600 "$SSH_KEY_FILE"
-      # `deploy --all` is the sequential stand-in for the GHA fromJSON matrix (CircleCI
-      # has no dynamic matrices without dynamic-config machinery). The per-server
-      # SERVER_ENV_<ID>_B64 lookup lives in the CLI, alongside the GHA-side SERVER_ENV
-      # it is the base64 twin of.
       - run:
           name: Deploy the active servers
           command: |
@@ -196,36 +179,21 @@ jobs:
 workflows:
   ci:
     when:
-      and:
-        - not: << pipeline.parameters.force-toolchain >>
-        - not:
-            equal: [prod, << pipeline.git.branch >>]
+      not:
+        equal: [prod, << pipeline.git.branch >>]
     jobs:
-      - build-test:
-          context: ghcr
+      - build-test
       - lint
-
-  toolchain:
-    when:
-      or:
-        - << pipeline.parameters.force-toolchain >>
-        - equal: [main, << pipeline.git.branch >>]
-    jobs:
-      - build-toolchain:
-          context: ghcr
 
   deploy:
     when:
       equal: [prod, << pipeline.git.branch >>]
     jobs:
-      - build-package:
-          context: ghcr
+      - build-package
       - runtime-image:
           context: ghcr
       - deploy:
-          context:
-            - ghcr
-            - cs2-deploy
+          context: cs2-deploy
           requires:
             - build-package
             - runtime-image
