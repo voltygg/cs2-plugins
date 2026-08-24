@@ -1,16 +1,11 @@
 {
   "$schema": "./settings.schema.json",
-  // Plugin-wide options.
   "plugin": {
     "locale": "en"
   },
 
   "bhop": {
-    // "enabled": always-on for everyone - the convars below are set server-wide and
-    //            replicate to every client, so bhop is fully client-predicted (ping-free).
-    // "grants":  off by default - only players granted via `bhop_player <steamid64> 1`
-    //            (session-only, cleared on disconnect) get bhop. Admin-system's Bunnyhop
-    //            effect drives this command.
+    // `enabled` is server-wide. `grants` uses session grants from `bhop_player`.
     "mode": "enabled",
 
     // sv_autobunnyhopping - hold jump to hop automatically.
@@ -30,8 +25,7 @@
     // sv_maxvelocity; -1 = untouched.
     "maxVelocity": -1,
 
-    // Server-side boost per chained hop, so speed builds from simply holding jump
-    // (strafing gains come from airAccelerate and are fully client-predicted).
+    // Optional server-side velocity boost for chained hops.
     "hopBoost": {
       "enabled": true,
       // Horizontal velocity multiplier per chained hop.

@@ -89,7 +89,7 @@ void AntiCheatManager::LoadDetectionData()
     const DetectionData& data = _detections.Get();
     const std::vector<std::string> rejected = _invalidCvars.LoadRules(data.cvarRules);
 
-    // Naming them: the operator editing this file is not the one who can read the source.
+    // Log rejected rule names for the operator who edited the table.
     if (!rejected.empty())
     {
         std::string names;
@@ -98,7 +98,7 @@ void AntiCheatManager::LoadDetectionData()
         Log::Warn("Ignoring duplicate cvar rule(s): {}.", names);
     }
 
-    // A count of zero here is the whole diagnostic for a module that is silently doing nothing.
+    // Zero identifies a table-driven detector with no active data.
     Log::Info("Detection data: {} cvar rule(s), {} blacklisted event(s).", _invalidCvars.Rules().Size(),
               data.dllEventBlacklist.size());
 }
@@ -157,8 +157,7 @@ void AntiCheatManager::RegisterCommands()
                 int ticks = DefaultDumpTicks;
                 if (!c.Word.empty())
                 {
-                    // atoi returned 0 for a non-numeric token, and 0 would silently mean "dump
-                    // nothing" rather than reporting the typo.
+                    // Reject non-numeric input instead of treating it as zero ticks.
                     const auto requested = ParseInt(c.Word);
                     if (!requested || *requested < 1 || *requested > MaxDumpTicks)
                         return CommandResult{std::format("anticheat_dumpcmd: ticks must be 1-{}.", MaxDumpTicks)};

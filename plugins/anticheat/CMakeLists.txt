@@ -1,16 +1,14 @@
-# Sources default to a CONFIGURE_DEPENDS glob of src/*.cpp in voltmod_add_plugin.
 voltmod_add_plugin(anticheat
     VERSION 1.0.0
     DESCRIPTION "Behavioural anticheat: detection cores, correlation and response"
-    # Advisory: without it the detectors still run, but bans and alerts have nowhere to go.
+    # Detectors still run without admin-system, but cannot issue bans or alerts.
     DEPENDS "admin-system>=1.0"
     LIBRARIES
         cs2-contracts
         nlohmann_json::nlohmann_json
 )
 
-# Every detection module is an SDK-free core over plain sample structs, so the whole detection
-# layer unit-tests without linking the SDK: recompile those TUs against headers only.
+# Recompile SDK-free detector cores into the test binary.
 if(BUILD_TESTING)
     voltmod_add_tests(anticheat-tests
         SOURCES
@@ -27,8 +25,7 @@ if(BUILD_TESTING)
         LIBRARIES nlohmann_json::nlohmann_json
     )
 
-    # The shipped detection tables are data an operator edits, so parse them at build time rather
-    # than finding out from a warning in a server log.
+    # Fail tests when the shipped operator-editable table cannot be parsed.
     target_compile_definitions(anticheat-tests PRIVATE
         ANTICHEAT_DETECTIONS_JSONC="${CMAKE_CURRENT_SOURCE_DIR}/configs/detections.jsonc")
 endif()

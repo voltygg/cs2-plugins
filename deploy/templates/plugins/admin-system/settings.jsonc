@@ -1,15 +1,11 @@
-// Template for admin-system's settings.jsonc - rendered per (server, plugin) by
-// deploy/tools/render.py. Placeholders are filled from:
-//   - inventory.yml (DB_HOST/DB_PORT/DB_USER/DB_SSLMODE + the plugin's DB_NAME)
-//   - the server's env / SERVER_ENV secret (DB_PASSWORD, CHEAT_*)
-// Non-secret, same-everywhere knobs stay literal here; edit them in git to change them.
+// Rendered per server instance. Inventory supplies topology; the server secret
+// supplies passwords and API keys. Edit shared non-secret settings here.
 {
   "plugin": {
     "locale": "ru"
   },
   "server": {
-    // Per-instance identity for per-server admin grants; rendered as <box>-<instance>
-    // (e.g. "box-a-main"). Stable - renaming a box/instance orphans its grants.
+    // Stable `<box>-<instance>` identity used by per-server grants.
     "tag": "${SERVER_TAG}",
     "name": "${SERVER_NAME}"
   },
@@ -24,9 +20,8 @@
   "punishments": {
     "defaultBanReason": "Banned by administrator",
     "warningThreshold": 3,
-    // Quick Punish presets shown in the admin menu. type: "ban" | "voiceMute" | "textMute".
-    // duration: "perm" (or "0") for permanent, otherwise <n>s / <n>m / <n>h / <n>d.
-    // Invalid entries are skipped with a warning in the server log.
+    // Quick Punish presets. Invalid entries are logged and skipped.
+    // Types: ban, voiceMute, textMute. Durations: perm, s, m, h, d.
     "templates": [
       { "name": "Читы", "type": "ban", "duration": "perm", "reason": "Читы" },
       { "name": "Гриферство", "type": "ban", "duration": "1d", "reason": "Урон по своим / гриферство" },
@@ -35,7 +30,7 @@
       { "name": "Спам в чат", "type": "textMute", "duration": "30m", "reason": "Спам в чате" },
       { "name": "Токсичный чат", "type": "textMute", "duration": "2h", "reason": "Токсичное поведение в чате" }
     ],
-    // Preset reasons offered in the manual menu punish flow (a free-text "Custom..." row is always added).
+    // The manual flow also adds `Custom...`.
     "reasonPresets": [
       "Читы",
       "Токсичное поведение",
@@ -47,8 +42,7 @@
     "menuDurations": ["5m", "30m", "1h", "1d", "7d", "perm"]
   },
   "abuseProtection": {
-    // Auto-freeze an admin's privileges when they exceed these per-window action counts
-    // (counted across all servers). 0 disables a counter; root admins are exempt.
+    // Network-wide automatic freeze thresholds. Zero disables a counter; root is exempt.
     "enabled": true,
     "windowMinutes": 10,
     "maxBans": 5,

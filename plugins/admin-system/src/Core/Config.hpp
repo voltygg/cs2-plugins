@@ -21,10 +21,8 @@ namespace AdminSystem::Core
 
 using DatabaseConfig = VoltMod::Database::PostgresConfig;
 
-/** Addon directory and CMake target name. */
 inline constexpr std::string_view AddonName = "admin-system";
 
-/** Framework `plugin` settings, including the locale. */
 using PluginSettings = VoltMod::StandardPluginSettings;
 
 /** Server identity in the shared database.
@@ -59,7 +57,6 @@ struct PunishmentTemplate
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentTemplate, name, type, duration, reason)
 
-/** "punishments" section of settings.json. */
 struct PunishmentSettings
 {
     std::string defaultBanReason = "Banned by administrator";
@@ -80,13 +77,10 @@ struct ResolvedTemplate
     std::string Reason;
 };
 
-/** "chat" section of settings.json. */
 struct ChatSettings
 {
-    /** Broadcast issued punishments to all players. */
     bool broadcastPunishments = true;
 
-    /** Re-emit admin chat with the group's colored prefix. */
     bool tagAdminChatMessages = true;
 
     /** Prefix used when an admin doesn't belong to any group with a prefix set. */
@@ -125,7 +119,6 @@ struct ReportSettings
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportSettings, enabled, cooldownSec, duplicateWindowSec,
                                                 allowCustomReason, reasons)
 
-/** "cheatCheck.fixedLink" sub-section. */
 struct CheatCheckFixedLink
 {
     std::string url;
@@ -155,7 +148,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckWebsiteAutoRoom, creat
                                                 checkerUrlField, checkerUrlTemplate, timeoutMs, presenceUrl,
                                                 presenceField, pollIntervalSec)
 
-/** "cheatCheck" section of settings.jsonc. */
 struct CheatCheckSettings
 {
     /** "fixedLink" | "websiteAutoRoom" | "playerProvided". */
@@ -177,7 +169,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckSettings, mode, timeou
                                                 panelRefreshMs, moveToSpectator, bannerImageUrl, bannerWidth,
                                                 bannerHeight, fixedLink, websiteAutoRoom)
 
-/** Root settings object. */
 struct Settings
 {
     PluginSettings plugin;
@@ -199,7 +190,7 @@ class ConfigManager : public VoltMod::JsonConfig<Settings>
 public:
     ConfigManager() = default;
 
-    /** Load and validate settings. Returns false for missing, malformed, or mistyped input. */
+    /** Return false for missing, malformed, or mistyped settings. */
     bool LoadSettings(const std::string& path);
 
     const PluginSettings& GetPlugin() const { return Get().plugin; }
@@ -218,7 +209,6 @@ public:
     const std::vector<int>& GetMenuDurations() const { return _menuDurationSecs; }
 
 private:
-    /** Parse string-based punishment settings into runtime values. */
     void ResolveRuntimeSettings();
 
     std::vector<ResolvedTemplate> _resolvedTemplates;

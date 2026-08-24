@@ -1,7 +1,6 @@
--- Seed an admin entry. Run AFTER schema.sql.
--- Edit the steam_id, name, and group(s) below for your server, then:
+-- Run after the plugin applies migrations. Edit the SteamID, name, and groups, then:
 --   psql -d admin_system -f plugins/admin-system/database/seed-admin.sql
--- Pick up the new admin without restarting the server with `!admin_reload` in chat.
+-- Run `!admin_reload` to apply the change without restarting.
 INSERT INTO
   admins (steam_id, name, groups, flags, immunity)
 VALUES
@@ -17,9 +16,7 @@ VALUES
     100 -- per-admin extra immunity (group's immunity is also considered)
   ) ON CONFLICT (steam_id) DO NOTHING;
 
--- Optional: grant a group only on ONE server. `admins.groups` above is GLOBAL (every server
--- sharing the database); rows in admin_server_groups apply only where the server's
--- settings.jsonc `server.tag` matches. Pick up changes with `!admin_reload`.
+-- Optional server-specific group. `admins.groups` above remains global.
 -- INSERT INTO
 --   admin_server_groups (admin_steam_id, server_tag, group_name)
 -- VALUES

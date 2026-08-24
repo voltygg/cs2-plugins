@@ -4,11 +4,10 @@ project(cs2-plugins LANGUAGES CXX)
 
 include(CTest)
 
-# VoltMod::VoltMod plus voltmod_add_plugin/voltmod_add_tests, and the HL2SDK/Metamod packages
-# behind them. Postgres is on via voltmod/*:with_postgres in conanfile.py.
+# Provides VoltMod targets and plugin/test helpers. Conan enables PostgreSQL.
 find_package(voltmod CONFIG REQUIRED)
 
-# Must precede the plugins that link it.
+# Plugin targets link this contract library.
 add_subdirectory(plugins/contracts)
 
 add_subdirectory(plugins/admin-system)

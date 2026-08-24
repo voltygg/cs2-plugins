@@ -1,7 +1,6 @@
 # CircleCI fallback
 
-CircleCI mirrors the GitHub Actions workflows so either provider can run CI/CD
-when the other is unavailable or out of minutes.
+CircleCI mirrors the GitHub Actions CI and deployment workflows.
 
 | Branch                    | Workflow | Jobs                                           |
 | ------------------------- | -------- | ---------------------------------------------- |
@@ -10,7 +9,7 @@ when the other is unavailable or out of minutes.
 
 ## Set up CircleCI
 
-1. **Create a GHCR token.** CircleCI uses a classic PAT with `read:packages` and
+1. **Create a GHCR token.** Use a classic PAT with `read:packages` and
    `write:packages` to publish the runtime image.
 
 2. **Install and authenticate the CLI.**
@@ -28,7 +27,7 @@ when the other is unavailable or out of minutes.
    CIRCLE_ORG_ID=<uuid> ./.circleci/bootstrap.sh   # GitHub App orgs
    ```
 
-   The script reads the deploy key from disk and walks the active servers in
+   The script reads the deploy key from disk and visits each active server in
    `deploy/inventory.yml`, uploading each one's
    `deploy/secrets/servers/<id>/.env`. Adding a box needs no edit to the script.
    Run it again after rotating a secret; uploading a value overwrites the old
@@ -51,9 +50,9 @@ when the other is unavailable or out of minutes.
 | `cs2-deploy` | `SERVER_ENV_<ID>_B64`   | base64 of that server's `.env`, one per server |
 
 `<ID>` is the inventory id upper-cased with `-` turned into `_`, so `box-a`
-becomes `SERVER_ENV_BOX_A_B64`. These are base64 because CircleCI env vars do not
-preserve newlines; the bootstrap script strips CR before encoding so a CRLF
-checkout cannot corrupt the file the server receives.
+becomes `SERVER_ENV_BOX_A_B64`. CircleCI environment variables do not preserve
+newlines, so these values are base64-encoded. The bootstrap script removes
+carriage returns before encoding.
 
 The deploy job writes each decoded `.env` back to
 `deploy/secrets/servers/<id>/.env` before invoking the CLI. `python-dotenv` loads
@@ -65,9 +64,8 @@ developer-local path baked into that file.
 - Set `server` to deploy one inventory server.
 - Set `dry-run` to preview rsync without changing containers.
 
-CircleCI has no dynamic matrix. The deploy job therefore loops over
-`deploy.tools.cli matrix --format plain` sequentially instead of fanning out one
-job per server the way `deploy.yml` does.
+CircleCI has no dynamic matrix. Its deploy job runs the servers returned by
+`deploy.tools.cli matrix --format plain` in sequence.
 
 ## Build caches
 

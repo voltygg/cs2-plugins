@@ -1,26 +1,20 @@
 {
   "$schema": "./settings.schema.json",
   "plugin": {
-    // Default panel/translation language: matches a file in configs/translations (e.g. "en", "ru").
+    // Translation file name without `.json`.
     "locale": "ru"
   },
   "server": {
-    // Stable identity of THIS game server in the shared database. Must be unique per server
-    // and must never change once per-server admin grants reference it.
+    // Stable unique identity used by per-server grants.
     "tag": "default",
-    // Human-readable name registered in the servers table (auto-upserted on boot).
+    // Display name registered in the servers table.
     "name": "CS2 Server"
   },
   "database": {
-    // PostgreSQL host.
     "host": "localhost",
-    // PostgreSQL port.
     "port": 5432,
-    // Database name.
     "database": "admin_system",
-    // Database user.
     "username": "postgres",
-    // Database password.
     "password": "Test12345#",
     // libpq SSL mode: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full".
     "sslMode": "prefer"
@@ -30,11 +24,10 @@
     "defaultBanReason": "Banned by administrator",
     // Number of warnings before escalation logic triggers.
     "warningThreshold": 3,
-    // Quick Punish presets shown in the admin menu (menu-only; no command equivalent).
+    // Quick Punish menu presets. Invalid entries are logged and skipped.
     // type: "ban" | "voiceMute" | "textMute".
     // duration: "perm" (or "0") for permanent, otherwise <n>s / <n>m / <n>h / <n>d.
-    //           A bare number means SECONDS - prefer an explicit suffix.
-    // Invalid entries are skipped with a warning in the server log.
+    // A bare duration is seconds; use a suffix to avoid ambiguity.
     "templates": [
       { "name": "Cheating", "type": "ban", "duration": "perm", "reason": "Cheating" },
       { "name": "Griefing", "type": "ban", "duration": "1d", "reason": "Team damage / griefing" },
@@ -43,7 +36,7 @@
       { "name": "Chat spam", "type": "textMute", "duration": "30m", "reason": "Chat spam" },
       { "name": "Toxic chat", "type": "textMute", "duration": "2h", "reason": "Toxic behavior in chat" }
     ],
-    // Preset reasons offered in the manual menu punish flow (a free-text "Custom..." row is always added).
+    // Manual-flow presets; the menu also adds `Custom...`.
     "reasonPresets": [
       "Cheating",
       "Toxic behavior",
@@ -55,11 +48,9 @@
     "menuDurations": ["5m", "30m", "1h", "1d", "7d", "perm"]
   },
   "abuseProtection": {
-    // Master switch for AUTOMATIC admin freezing; manual !freeze_admin always works.
-    // A frozen admin loses ALL admin permissions on every server sharing the database
-    // until a higher-immunity admin runs !unfreeze_admin.
+    // Controls automatic freezing only; manual freeze commands remain available.
     "enabled": true,
-    // Sliding window (minutes) over which an admin's actions are counted, across ALL servers.
+    // Network-wide sliding window in minutes.
     "windowMinutes": 10,
     // Per-window thresholds; reaching one freezes the admin. 0 disables that counter.
     // Root ('z') admins are exempt from automatic freezing.
@@ -70,34 +61,24 @@
     "maxWarnings": 15
   },
   "chat": {
-    // If true, every issued punishment broadcasts a colored line to all players.
     "broadcastPunishments": true,
-    // If true, an admin's chat is re-emitted with their group's colored prefix.
     "tagAdminChatMessages": true,
     // Prefix used when an admin has no group prefix set.
     "fallbackPrefix": "[ADMIN]",
-    // Color of the fallback prefix.
     "fallbackPrefixColor": "red",
-    // Color of the admin's name in tagged chat.
     "fallbackNameColor": "default",
-    // Color of the admin's message body in tagged chat.
     "fallbackMessageColor": "default"
   },
   "reports": {
-    // Master switch for the player report command (!r / !report). Available to every player.
+    // Enables `!r` and `!report` for all players.
     "enabled": true,
-    // Seconds a reporter must wait between two reports of ANY player. 0 disables the cooldown.
-    // Tracked per SteamID, so reconnecting does not clear it.
+    // Per-SteamID delay between reports of any player; 0 disables it.
     "cooldownSec": 120,
-    // Seconds during which the same reporter cannot report the SAME player again. Players still
-    // inside the window render as greyed-out rows in the picker. 0 disables.
+    // Delay before the same reporter can report the same target; 0 disables it.
     "duplicateWindowSec": 1800,
-    // Adds an "Other..." row that prompts for a typed reason (stored with reason code "other").
-    // The in-game input is capped at 64 characters by the menu system.
+    // Adds a 64-character `Other...` reason stored with code `other`.
     "allowCustomReason": true,
-    // Rows of the reason picker. `code` is the stable value the website groups on (max 32 chars).
-    // Players see the `report.reasons.<code>` translation when one exists, so `label` is only the
-    // fallback for codes you add here. Entries missing either field are skipped with a warning.
+    // `code` is the website key; `label` is the fallback for a missing translation.
     "reasons": [
       { "code": "cheating", "label": "Cheating / aimbot" },
       { "code": "wallhack", "label": "Wallhack" },
@@ -112,15 +93,13 @@
     "mode": "fixedLink",
     // Seconds the suspect has to comply before the timeout action fires.
     "timeoutSec": 120,
-    // If true, auto-kick on timeout; if false, just unfreeze and notify the admin.
+    // False unfreezes and notifies the admin instead of kicking on timeout.
     "autoKick": true,
     // Kick reason shown to the player when autoKick triggers.
     "kickReason": "Failed to comply with cheat check",
-    // How often (ms) the center-HTML panel is re-sent + countdown updated. The client drops the
-    // panel on death/team-switch/HUD updates, so it must be re-sent continuously (like WASD menus);
-    // values above ~200 make it visibly blink or vanish.
+    // Refresh fast enough to survive HUD clears; values above ~200 ms may blink.
     "panelRefreshMs": 100,
-    // Also force the suspect to spectator (not just freeze) so they can't keep playing.
+    // Move the suspect to spectator in addition to freezing them.
     "moveToSpectator": true,
     // Optional online image (https) shown atop the panel; leave empty for no banner.
     "bannerImageUrl": "",
@@ -130,8 +109,7 @@
     "fixedLink": {
       "url": "https://discord.gg/your-invite"
     },
-    // "websiteAutoRoom" mode: the plugin POSTs here to create a per-check room.
-    // Backend-agnostic - shipped pre-filled for the meat-app API; edit for your own backend.
+    // `websiteAutoRoom` endpoint, prefilled for the meat-app API.
     "websiteAutoRoom": {
       // Room-creation endpoint.
       "createRoomUrl": "http://localhost:4000/api/rooms",
@@ -141,13 +119,12 @@
       "authHeader": "X-API-Key",
       // Value prefix before the key; "" sends the key verbatim (e.g. "X-API-Key: mk_...").
       "authScheme": "",
-      // Body POSTed to your API. Any string value may contain these placeholders, substituted
-      // per check: {steamId} {playerName} {adminSteamId} {adminName}.
+      // String values may use {steamId}, {playerName}, {adminSteamId}, and {adminName}.
       "requestBody": {
         "purpose": "CHEAT_CHECK",
         "title": "Cheat check: {playerName}",
         "isLocked": false,
-        // Lets the backend attribute the room to the calling admin so they join as HOST.
+        // Lets the backend make the calling admin the host.
         "adminSteamId": "{adminSteamId}",
         "metadata": {
           "reason": "Suspect {playerName} ({steamId}) - by {adminName}"
@@ -162,14 +139,12 @@
       "checkerUrlTemplate": "http://localhost:4001/rooms/{value}",
       // HTTP request timeout in milliseconds.
       "timeoutMs": 8000,
-      // Presence poll GET; {code} = raw playerUrlField value, {steamId} = suspect's SteamID64.
-      // While the suspect is in the room the timeout countdown pauses (resumes if they leave).
-      // Leave empty to disable polling.
+      // Presence polling pauses the countdown while the suspect is in the room.
+      // Empty disables polling; placeholders are {code} and {steamId}.
       "presenceUrl": "http://localhost:4000/api/rooms/{code}/presence?steamId={steamId}",
       // Dot-path into the poll response holding the in-room flag.
       "presenceField": "present",
-      // Poll cadence in seconds; also the worst-case delay before a join is noticed, so a suspect
-      // joining seconds before the deadline can still be kicked by the timer.
+      // Poll cadence and maximum delay before a join is detected.
       "pollIntervalSec": 5
     }
   }

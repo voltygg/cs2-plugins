@@ -1,14 +1,15 @@
-# Admin System
+# Admin system
 
-A full admin suite for CS2 community servers. It provides punishments, fun
-effects, a WASD admin menu, shared multi-server admin groups, abuse protection
-with an audit trail, and cheat-check workflows.
+Admin commands, punishments, effects, WASD menus, shared groups, abuse
+protection, player reports, and cheat-check workflows for CS2 servers.
 
 ## Features
 
 - **Punish:** Kick, ban, mute, gag, warn (warnings auto-escalate to a ban at a configurable threshold)
 - **Control:** Slay, Bring, Goto, Freeze, Noclip, Health/Armor presets, Godmode (FL_GODMODE), Bury/Unbury, Change Team
-- **Effects:** Ghost (translucent render), Disco (color cycling), Launch (high-velocity yeet + 3 s fall protect), Smite (theatrical instakill), Swap (exchange two players' positions), Bunnyhop (session bhop grant via the [bhop plugin](../bhop/README.md) in `grants` mode - survives death, cleared on disconnect; inert without that plugin). Blind reserved (awaits Fade user-message infra).
+- **Effects:** Ghost, Disco, Launch, Smite, Swap, and a session Bunnyhop grant
+  through the [bhop plugin](../bhop/README.md). Bunnyhop requires `grants` mode,
+  survives death, and clears on disconnect.
 - **Admin System:** Permission flags (`a` freeze-admins, `b` hide/who, `c` kick, `d` ban, `e` unban, `o` voice-mute, `p` text-mute, `q` warn, `s` control, `h` health/cheats, `f` fun, `j` bhop, `k` cheat-check, `r` admin menu, `z` root), groups, immunity levels. Self-targeting always allowed.
 - **Multi-Server:** Several servers share one database; admins can hold different groups per server (see [Multi-Server Setup](#multi-server-setup))
 - **Abuse Protection:** Automatic + manual freezing of rogue admins, with a full action audit trail (see [Admin Abuse Protection](#admin-abuse-protection))
@@ -100,7 +101,8 @@ Run `!admin_reload` on the affected server to pick up grant changes without a re
 
 ## Admin abuse protection
 
-Protects the community from rogue admins (e.g. a purchased admin account mass-banning players). A **frozen** admin keeps their DB rows but is denied *every* admin permission - commands, the admin menu, and all actions - on every server sharing the database, until a reviewer unfreezes them.
+A frozen admin keeps their database rows but loses every admin permission on all
+servers sharing the database until a reviewer unfreezes them.
 
 **Automatic freezing.** Every kick/ban/mute/warn is written to the `admin_activity` audit table. After each action the admin's totals over a sliding window are checked against thresholds in `settings.jsonc`; counting is network-wide, so hopping servers doesn't evade it. Root (`z`) admins are exempt.
 
@@ -121,7 +123,10 @@ Protects the community from rogue admins (e.g. a purchased admin account mass-ba
 
 ## Player reports
 
-Lets ordinary players flag a cheater or griefer without leaving the server. `!report` (or `!r`) opens a WASD menu: pick the offender, pick a reason, confirm. The report is written to the `player_reports` table and **only the reporter** is told - nothing is broadcast, no admin is notified in-game, and there is no in-game triage command. An upstream website reads the table and owns the workflow.
+`!report` (or `!r`) opens a WASD flow for selecting a player, reason, and
+confirmation. The plugin writes the report to `player_reports` and replies only
+to the reporter. It does not broadcast, notify admins, or provide in-game
+triage; an external site owns that workflow.
 
 The command takes no arguments: the menu is the only entry point, so a report always carries a resolved SteamID rather than a name guess. Reporters keep moving while the menu is open (unlike the admin menu, which freezes), so `!r` mid-round is safe. Players cannot report themselves or bots - those rows render greyed out.
 

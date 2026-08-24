@@ -3,7 +3,7 @@
 Client-predicted auto-bunnyhop for CS2. Hold JUMP to hop, retain landing speed,
 and build speed across chained hops.
 
-## Why it feels smooth
+## How prediction works
 
 Server-forced jumping can rubber-band because the client does not predict it.
 This plugin keeps the client and server convars in agreement:
@@ -15,7 +15,7 @@ This plugin keeps the client and server convars in agreement:
   player's `CPlayer_MovementServices::RunCommand` call, so other players are
   unaffected.
 
-Speed comes from two layers:
+Speed comes from two settings groups:
 
 1. **Air acceleration** (`sv_airaccelerate`, `sv_air_max_wishspeed`) lets players
    gain speed while strafing in the air. This is client-predicted.
@@ -56,13 +56,13 @@ Speed comes from two layers:
 | `bhop.hopBoost.maxSpeed` | `1200.0` | Horizontal speed cap for the boost. |
 | `bhop.notifyPlayer` | `true` | Center-message the player on grant/revoke. |
 
-The server applies one velocity correction per chained hop. If this feels rough
+The server applies one velocity correction per chained hop. If it feels rough
 at high latency, lower `factor` or disable the boost. Convar-based movement
 remains client-predicted.
 
 ## Admin-system integration
 
-The admin-system plugin provides a **Bunnyhop** effect in its Effects menu
+Admin-system provides a **Bunnyhop** effect in its Effects menu
 (permission flag `j`). It toggles a session grant through `bhop_player`. Run this
 plugin in `grants` mode when admins should grant bhop to individual players. The
 effect is inert if this plugin is not loaded.

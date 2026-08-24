@@ -1,63 +1,57 @@
 # CS2 plugins
 
-C++23 Metamod:Source plugins for Counter-Strike 2 community servers. Each
-plugin has its own source, configuration, and CMake target under `plugins/`.
+C++23 Metamod:Source plugins for Counter-Strike 2 community servers. Each plugin
+has its own source, configuration, and CMake target under `plugins/`.
 
-The plugins use [VoltMod](https://github.com/voltygg/voltmod) for commands, WASD
-menus, asynchronous PostgreSQL, and Source SDK integration. Conan provides
-VoltMod, HL2SDK, and Metamod. The optional `vendor/voltmod` submodule supports
-developing the framework and plugins together.
+VoltMod provides the shared command, menu, PostgreSQL, and Source SDK layers.
+Conan supplies VoltMod, HL2SDK, and Metamod. The optional `vendor/voltmod`
+checkout supports changing the framework and plugins together.
 
 ## Plugins
 
-| Plugin | Description |
+| Plugin | Purpose |
 | --- | --- |
-| [admin-system](plugins/admin-system/README.md) | Admin commands and menu, punishments, fun effects, shared admin groups, abuse protection, and cheat-check workflows |
-| [bhop](plugins/bhop/README.md) | Client-predicted auto-bunnyhop with air acceleration and optional per-player session grants from admin-system |
+| [admin-system](plugins/admin-system/README.md) | Admin commands and menus, punishments, effects, groups, abuse protection, and player reports |
+| [anticheat](plugins/anticheat/README.md) | Server-side aim, input, client-convar, and integrity detections |
+| [bhop](plugins/bhop/README.md) | Client-predicted bunnyhop with server-wide and per-player modes |
 
 ## Requirements
 
 - CS2 Dedicated Server
 - [Metamod:Source 2.0](https://www.sourcemm.net/)
-- PostgreSQL 18+ (for plugins that use the database)
+- PostgreSQL 18+ for plugins that use a database
 
 ## Install a release
 
-Download the latest build from [Releases](https://github.com/voltygg/cs2-plugins/releases)
-and extract it into the server's `csgo/` folder. Each plugin README describes
-its configuration.
+Download a build from [Releases](https://github.com/voltygg/cs2-plugins/releases)
+and extract it into the server's `csgo/` directory. Configure each plugin as
+described in its README.
 
-## Building
+## Build
 
-### Linux with Docker
+On Linux, build in the Steam Runtime container:
 
 ```bash
 git clone https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
-
 docker compose -f deploy/docker-compose.build.yml run --rm --build build
 ```
 
-### Windows
-
-Visual Studio 2026 Build Tools is required. The `voltmod` distribution pins
-CMake 4.3.4+, Conan 2.29.1+, and Ninja, so `uv sync` installs them.
+On Windows, install Visual Studio Build Tools with the C++ workload, then run:
 
 ```bash
 git clone https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
-
 uv sync
-uv run poe bootstrap   # install Conan profiles and the remote, then build once
-uv run poe build       # subsequent builds
+uv run poe bootstrap
 ```
 
-The default Windows preset is `windows-msvc-release`. Use
-`uv run poe build windows-msvc-debug` for a debug build. Output is written to
-`build/<preset>/plugins/<name>/<platform-arch>/`.
+After the first build, use `uv run poe build`. The default Windows preset is
+`windows-msvc-release`; pass `windows-msvc-debug` for a debug build. Output is
+written to `build/<preset>/plugins/<name>/<platform-arch>/`.
 
-See [docs/local-development.md](docs/local-development.md) for the full setup
-guide and [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
+See [local development](docs/local-development.md) for setup details and
+[CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
 
 ## Add a plugin
 
@@ -65,5 +59,5 @@ guide and [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
 uv run poe new-plugin my-plugin
 ```
 
-This creates and registers `plugins/my-plugin/` with a plugin skeleton,
-`settings.jsonc`, translations, and an example `!ping` command.
+The command creates `plugins/my-plugin/`, registers its CMake subdirectory, and
+adds a working `!ping` example.

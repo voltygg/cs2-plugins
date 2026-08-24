@@ -3,8 +3,7 @@
 #include "Config.hpp"
 #include "Core/DetectionData.hpp"
 
-// Owns the detection cores, the adapters that feed them, and the console surface. The sv_cheats
-// gate, the eligibility rule and evidence reset are all global, so they live here.
+// Owns detector cores, engine adapters, global gates, and console commands.
 
 #include "Correlation/ShotCorrelator.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
@@ -42,19 +41,17 @@ public:
 
     void Initialize();
 
-    /** Map change, config reload or disconnect: nothing accumulated may survive. */
+    /** Clear evidence on map changes and configuration reloads. */
     void ResetEvidence();
     void OnSlotChanged(int slot);
 
-    /** Pawns, positions and ticks all restart, so no evidence carries over. */
     void OnMapStart();
 
     void OnPlayerFullyConnected(VoltMod::Players::Player* player);
     void OnPlayerSettingsChanged(VoltMod::Players::Player* player);
 
     /**
-     * Master gate. Off while the plugin is disabled, and while sv_cheats is on unless the operator
-     * opted into testing - cheat-protected client state legitimately changes under sv_cheats.
+     * Disabled globally or while `sv_cheats` is enabled outside test mode.
      */
     bool DetectionsEnabled() const;
 
@@ -68,7 +65,6 @@ public:
     /** Cheat-protected client values only mean something once a disabled sv_cheats has reached them. */
     bool EnforceCheatCvars() const;
 
-    /** The `anticheat` section of _rt.Status. */
     nlohmann::json StatusSnapshot() const;
 
     ShotCorrelatorCore& Correlator() { return _correlator; }
@@ -92,9 +88,8 @@ private:
     /** Push configs/detections.jsonc into the two table-driven modules. */
     void LoadDetectionData();
     void DumpCommand(int slot, const VoltMod::UserCmdView& cmd);
-    /** anticheat_status: the snapshot, then one line per human player. */
     void LogStatus() const;
-    /** Pull mp_teammates_are_enemies into the correlator: it decides which shots are hostile. */
+    /** Update hostile-shot rules from `mp_teammates_are_enemies`. */
     void RefreshTeamRules();
 
     VoltMod::Runtime& _rt;
@@ -118,8 +113,7 @@ private:
     // Stamped when sv_cheats goes off, so replicated client values get time to catch up.
     double _cheatGraceUntil = 0.0;
 
-    /** Resolved once instead of per usercmd: RawConVar holds the convar's value pointer, which
-     *  stays valid, and the by-name lookup behind Raw() is not free. */
+    /** Cached because RawConVar keeps a stable value pointer and name lookup is not free. */
     mutable std::optional<VoltMod::RawConVar> _svCheats;
     VoltMod::RawConVar& CheatsConVar() const;
 

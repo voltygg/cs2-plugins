@@ -1,10 +1,7 @@
-// Game-content facts the detections compare against, kept out of the binary so a CS2
-// update can be answered with a config edit and !anticheat_reload rather than a rebuild.
-// Replaces the compiled-in defaults wholesale when present; delete a section to keep them.
+// Game data that can be updated and reloaded without rebuilding. A present
+// section replaces its compiled defaults; omit a section to keep its defaults.
 {
-  // Events a stock CS2 client never subscribes to, and that an injected library observing
-  // the game ends up asking for. Normal client and game-instructor subscriptions are
-  // deliberately absent, so any hit is a real signal.
+  // Events absent from stock client and game-instructor subscriptions.
   "dllEventBlacklist": [
     "gameui_hidden",
     "player_chat",

@@ -1,11 +1,11 @@
 # Deployment
 
-This repository deploys the CS2 plugins in Docker. The server runtime image is
-based on `joedwards32/cs2`. The tools render Compose files, plugin bundles,
-Metamod setup hooks, and per-server plugin settings.
+The deployment tools build Docker-based CS2 servers from `joedwards32/cs2`.
+They render Compose files, plugin bundles, Metamod setup hooks, and per-server
+settings.
 
-`uv run poe deploy` and `uv run poe start-server` remain
-local Windows dev tools.
+`uv run poe deploy` and `uv run poe start-server` are local Windows development
+commands.
 
 ## Layout
 
@@ -49,7 +49,7 @@ Metamod is checked on every launch against the build recorded in
 CS2 update can retire symbols an older Metamod links against, leaving it unable
 to load. Set `MMS_URL` to pin a build, `MMS_BASE` to change the mirror.
 
-## One-time: Docker host
+## Prepare a Docker host
 
 On a fresh Ubuntu box:
 
@@ -63,11 +63,10 @@ The script installs Docker and Compose when needed, creates the deployment user,
 opens SSH and the CS2 UDP port range, and prepares `~/cs2/deploy` and
 `~/cs2/server`.
 
-## One-time: shared database
+## Prepare the shared database
 
-Create the application login role and one database per plugin. PostgreSQL is not
-publicly reachable, so `--server` is the simplest path: the inventory is parsed
-locally and the DDL runs on the host over SSH.
+Create the application role and one database per database-backed plugin. With
+`--server`, the CLI reads the local inventory and runs the DDL over SSH.
 
 ```bash
 DB_PASSWORD='<app-role-pw>' PGPASSWORD='<superuser-pw>' \
@@ -95,7 +94,7 @@ psql "host=127.0.0.1 port=5433 dbname=admin_system user=cs2_app"
 Ctrl-C stops the tunnel. Use `--local-port`, `--db-host`, `--ssh-user`, etc. to
 override defaults.
 
-## Inventory + secrets
+## Inventory and secrets
 
 Keep non-secret server topology in `inventory.yml`:
 
@@ -150,7 +149,7 @@ Local `.env` files should use `SSH_KEY_FILE=/path/to/key`, not `SSH_KEY`.
 
 ## Deploy
 
-Normal path: push to `prod` or run the Deploy workflow manually. CI builds the
+Push to `prod` or run the Deploy workflow manually. CI builds the
 Linux plugin bundle, publishes `ghcr.io/<repo>/cs2-server-runtime:latest`,
 renders each server's Compose tree, rsyncs it to `deploy_root`, pulls the
 runtime image, and starts CS2 instance services one at a time. After the
@@ -175,10 +174,10 @@ uv run poe deploy-server --server box-a
 Use `--dry-run` with `deploy-server` to render and preview rsync without changing
 containers.
 
-## Updating / staying current
+## Update game files
 
-SteamCMD runs only when a container starts. A long-running instance therefore
-does not pick up a Valve update, and clients may receive "client out of date".
+SteamCMD runs only when a container starts. A running instance does not pick up
+a Valve update, and clients may receive "client out of date".
 `deploy-server` does not fix this when the `:latest` image is unchanged because
 `up -d` is a no-op. Restart each instance one at a time; the command waits for
 SteamCMD between instances:

@@ -1,8 +1,5 @@
-// Template for anticheat's settings.jsonc, rendered by deploy/tools/render.py.
-// DB-less with no per-instance placeholders: every knob is a literal, edited in
-// git. Mode ladder: "observe" (log and report only) -> "alert" (also notify
-// admins) -> "ban" (also kick or ban). Stays in "observe" until each detection
-// has soaked against real traffic here; escalate module by module, aim last.
+// Shared anticheat settings. Keep `observe` until each detector has been tested
+// against live traffic; escalate detectors separately and aim detectors last.
 {
   "anticheat": {
     "enabled": true,
@@ -20,11 +17,11 @@
       "namechanger": true
     },
     "webhook": {
-      // Set to a private Discord channel webhook for the observe-mode soak.
+      // Use a private Discord channel during observation.
       "url": ""
     },
     "debug": {
-      // box-a is the test box, so the simulator commands stay available.
+      // Simulator commands are for the test server only.
       "simulator": true
     }
   }

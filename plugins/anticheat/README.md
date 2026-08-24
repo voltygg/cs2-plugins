@@ -9,8 +9,8 @@ hook (one decoded usercmd per player per tick) and game events (`weapon_fire`,
 `bullet_impact`, `player_hurt`, `player_death`, `player_spawn`, and settings
 changes).
 
-Detection algorithms are reimplementations of [CS2AC](https://github.com/karola3vax/CS2AC)
-(karola3vax, AGPL-3.0); the approach and the tuning are theirs, the code is written against
+Detection algorithms reimplement approaches and tuning from
+[CS2AC](https://github.com/karola3vax/CS2AC) (AGPL-3.0) against
 [VoltMod](https://github.com/voltygg/voltmod).
 
 > **Start in `observe` mode.** Nothing is done to a player until you choose a response
@@ -19,9 +19,8 @@ Detection algorithms are reimplementations of [CS2AC](https://github.com/karola3
 
 ## Detections
 
-Seven modules, each with its own kill switch under `anticheat.detections`. Thresholds are
-compiled in and deliberately not operator-tunable: if a module misfires, turn it off rather
-than loosening it.
+Each module has a kill switch under `anticheat.detections`. Thresholds are
+compiled in. Disable a detector that misfires; settings do not expose its tuning.
 
 | Module | Catches | Reports after |
 | --- | --- | --- |
@@ -87,7 +86,7 @@ decides what else happens:
 
 | Mode | Behaviour |
 | --- | --- |
-| `observe` *(default)* | Log and webhook only. The dry run. |
+| `observe` *(default)* | Log and webhook only. |
 | `alert` | Also pings admins with the Ban flag, once per (player, detection) per 30 s. |
 | `ban` | Also punishes: kick-only findings kick, the rest ban. |
 
@@ -219,10 +218,8 @@ CS2AC after **every** game update - a quiet detection looks exactly like a clean
 
 ## Architecture
 
-For contributors. Every detection is a **core**: an SDK-free class over plain sample structs
-with its tuned constants `constexpr` in its own source file. Cores unit-test directly - the
-whole detection layer compiles into `anticheat-tests` without linking the SDK. Thin adapters
-convert engine state into samples and hand verdicts to the response funnel.
+Each detector has an SDK-free core over plain sample structs and a thin engine
+adapter. The core sources compile into `anticheat-tests` without linking the SDK.
 
 ```text
 plugins/anticheat/

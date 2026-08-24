@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Creates the CircleCI contexts this project's config.yml expects and fills them
-# from local files. Safe to re-run: storing a secret overwrites the old value, so
-# this doubles as the rotation script.
+# Create or update the CircleCI contexts used by config.yml.
 #
 # Prereqs:
 #   winget install CircleCI-Public.CircleCI-CLI
@@ -11,8 +9,7 @@
 #   ./.circleci/bootstrap.sh
 #   CIRCLE_ORG_ID=<uuid> ./.circleci/bootstrap.sh   # GitHub App orgs
 #
-# Per-server env files come from deploy/secrets/servers/<id>/.env for every
-# active server in deploy/inventory.yml, so adding a box needs no edit here.
+# Reads each active server's `deploy/secrets/servers/<id>/.env`.
 set -euo pipefail
 
 ORG_NAME="${CIRCLE_ORG_NAME:-voltygg}"

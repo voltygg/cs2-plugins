@@ -1,11 +1,7 @@
 -- 0003 Player reports (in-game !r / !report; triaged by the upstream website)
--- Applied automatically on plugin load by VoltMod::Database / AdminSystem::Database::RunMigrations.
--- Forward-only: never edit an applied migration; add a new NNNN_*.sql instead.
+-- Applied by VoltMod::RunMigrations. Add a new numbered file for later changes.
 
--- ------- TABLES -----
--- One row per submitted report. The game server is WRITE-ONLY here: it inserts the columns down to
--- created_at and never reads the table back. Everything from `status` down belongs to the website's
--- triage UI and keeps its default on insert (those columns are absent from Report::Columns()).
+-- The game server inserts through created_at. The website owns later triage columns.
 CREATE TABLE IF NOT EXISTS player_reports (
   id BIGSERIAL PRIMARY KEY,
   reporter_steam_id BIGINT NOT NULL,
@@ -28,7 +24,6 @@ CREATE TABLE IF NOT EXISTS player_reports (
   resolution TEXT NOT NULL DEFAULT ''
 );
 
--- ------- INDEXES -----
 -- Website queue: newest open reports first.
 CREATE INDEX IF NOT EXISTS idx_player_reports_status_time ON player_reports(status, created_at DESC);
 -- "every report against this player" - the main triage drill-down.

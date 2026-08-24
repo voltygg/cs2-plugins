@@ -10,8 +10,7 @@ not part of the build.
 - Visual Studio 2026 Build Tools with Desktop development with C++
 - CMake 4.3.4+, Conan 2.29.1+, and Ninja installed globally or through `uv sync`
 
-The recommended option is to use the `voltmod` distribution that this project
-depends on. It carries the tool versions, so one command installs them:
+The project's `voltmod` dependency carries the supported tool versions:
 
 ```powershell
 uv sync
@@ -33,8 +32,8 @@ git clone https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
 ```
 
-There are no required submodules. VoltMod, the HL2SDK, and Metamod are Conan
-packages.
+No submodule is required to build. VoltMod, HL2SDK, and Metamod are Conan
+packages; `vendor/voltmod` is only for coordinated framework development.
 
 ## Build
 
@@ -58,7 +57,7 @@ The build task runs `conan install`, configures CMake, and builds the requested
 preset through the workflow preset. It looks for tools in the project
 environment, then through `uv run`, then on `PATH`.
 
-## CMake Presets
+## CMake presets
 
 | Preset | Purpose |
 | --- | --- |
@@ -91,7 +90,7 @@ Set `CS2_BUILD_PRESET` if you want to deploy from a non-default preset:
 CS2_BUILD_PRESET=windows-msvc-debug uv run poe deploy --plugin-name admin-system
 ```
 
-## Common Issues
+## Common issues
 
 ### Conan cannot find a compiler
 
@@ -114,7 +113,7 @@ conan config install https://github.com/voltygg/voltmod.git -sf conan
 `uv run poe bootstrap` does this for you; `poe build` also adds the remote if it
 is missing (set `VOLTMOD_SKIP_REMOTE_SETUP=1` to manage remotes yourself).
 
-### ERROR: Missing binary: hl2sdk-cs2/...
+### `ERROR: Missing binary: hl2sdk-cs2/...`
 
 The SDK packages are never built locally - the build passes
 `--build=!hl2sdk-cs2/*`. This means the remote has no binary for your profile,
@@ -123,6 +122,6 @@ which is a publish problem, not a local one. Check that your profile matches
 
 ### Missing generated protobuf headers
 
-Nothing generates protobuf locally any more: the `hl2sdk-cs2` package ships the
-`.pb.h`/`.pb.cc` pre-generated, and its build module attaches them to the framework's
-library via `hl2sdk_attach_generated_sources()`.
+The `hl2sdk-cs2` package ships generated `.pb.h` and `.pb.cc` files. Its build
+module attaches them to the framework with `hl2sdk_attach_generated_sources()`;
+consumer builds do not run `protoc`.

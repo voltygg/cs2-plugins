@@ -102,7 +102,7 @@ void ResponseManager::Handle(int slot, const Finding& finding)
     auto* admin = AdminActions(_rt);
     if (!admin)
     {
-        // Say so: the old console command vanished silently when admin-system was absent.
+        // Make the missing optional dependency visible.
         Log::Warn("[AC] cannot ban {}: admin-system is not loaded (no {}).", steamId,
                   Contracts::IAdminActions::InterfaceName);
         return;

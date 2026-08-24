@@ -31,12 +31,8 @@ void BhopManager::Initialize()
     _subs.push_back(_rt.MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); }));
     _subs.push_back(_rt.MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); }));
 
-    // Server-authoritative auto-hop for grants. The 2026 subtick jump code does not honor the
-    // flipped sv_autobunnyhopping, so the client (predicting with the replicated overrides)
-    // auto-hops while the server keeps the player grounded - the grants-mode "float".
-    // Post-simulation is the placement that works: hooking before the player's RunCommand kept
-    // missing the landing (still airborne at pre time, vertical velocity re-zeroed by the landing
-    // inside that same command).
+    // Grants need a server-side hop because subtick movement ignores the scoped
+    // sv_autobunnyhopping override. Run after simulation so landing state is available.
     _subs.push_back(_rt.Scheduler.EveryFrame([this] {
         if (_mode != Mode::Grants)
             return;

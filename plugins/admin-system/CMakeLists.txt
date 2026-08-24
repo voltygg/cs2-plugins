@@ -1,6 +1,5 @@
-# Sources default to a CONFIGURE_DEPENDS glob of src/*.cpp inside voltmod_add_plugin.
-# pqxx joins the PCH here because App.hpp (via Database/Api.hpp) pulls it
-# into most of this plugin's TUs; it is deliberately not in the framework-wide PCH.
+# `Database/Api.hpp` brings pqxx into most translation units, so precompile it
+# for this plugin without adding it to VoltMod's global PCH.
 voltmod_add_plugin(admin-system
     VERSION 1.0.0
     DESCRIPTION "Admin groups, punishments, reports and the fun-command menu"

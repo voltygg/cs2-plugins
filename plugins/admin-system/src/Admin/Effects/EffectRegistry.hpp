@@ -8,12 +8,11 @@ namespace AdminSystem::Admin::Effects
 {
 
 /**
- * @brief One row in the Effects action menu.
+ * @brief Effects-menu row with exactly one descriptor set.
  *
- * Exactly one of Toggle/Param is set, and the table below is the menu's order - listed in one
- * place rather than assembled from per-TU static initializers, so what the menu shows is
- * readable without opening every descriptor file. Hide is deliberately absent: it is a
- * self-only Control row plus the !hide command, not an auto-listed effect.
+ * MenuEffects defines display order explicitly. Hide is
+ * a self-only Control row
+ * and `!hide` command, so it is not listed here.
  */
 struct EffectEntry
 {

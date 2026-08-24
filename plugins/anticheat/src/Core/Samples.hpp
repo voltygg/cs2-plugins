@@ -1,7 +1,6 @@
 #pragma once
 
-// Plain data the cores consume, filled by the adapters. Nothing here may depend on the SDK, so the
-// cores stay doctest-able.
+// Plain adapter-to-core data. Keep this header SDK-free for unit tests.
 
 #include <VoltMod/Core/Slot.hpp>
 #include <VoltMod/Core/TimeUtils.hpp>
@@ -21,9 +20,8 @@ inline constexpr bool InSlotRange(int slot)
 }
 
 /**
- * CS2's simulation rate, which is fixed: subtick inputs replaced the variable tickrate CS:GO had,
- * so there is no `-tickrate`, no sv_tickrate, and no tick-interval field in CGlobalVars to read one
- * from. Hardcoding it is correct, not a shortcut - every tick-derived threshold below depends on it.
+ * Fixed CS2 simulation rate. CS2 exposes no variable tickrate or interval field;
+ * tick-derived thresholds depend on this value.
  */
 inline constexpr float TickRate = 64.0f;
 
@@ -52,9 +50,8 @@ struct AimAngles
 };
 
 /**
- * One decoded usercmd. Adjacency of CmdNum (the engine's own command counter) *and* ClientTick is
- * what makes Aimbot's convergence chain trustworthy. ServerTick is -1 until the command is stamped
- * as simulated.
+ * One decoded usercmd. Aimbot requires adjacent command numbers and client ticks.
+ * ServerTick remains -1 until simulation stamps the command.
  */
 struct CmdSample
 {

@@ -1,8 +1,6 @@
 #pragma once
 
-// Joins usercmds to the events they produced, so every aim module works from "this exact command
-// fired this exact bullet at this exact world state" rather than from whatever the engine last
-// reported. SDK-free: the adapter feeds it plain samples.
+// SDK-free correlation of usercmds, shots, events, and world snapshots.
 
 #include "Core/Samples.hpp"
 

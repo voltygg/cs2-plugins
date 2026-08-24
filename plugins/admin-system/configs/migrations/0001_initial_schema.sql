@@ -1,8 +1,6 @@
 -- 0001 Initial schema
--- Applied automatically on plugin load by VoltMod::Database / AdminSystem::Database::RunMigrations.
--- Forward-only: never edit an applied migration; add a new NNNN_*.sql instead.
+-- Applied by VoltMod::RunMigrations. Add a new numbered file for later changes.
 
--- ------- TABLES -----
 CREATE TABLE IF NOT EXISTS admin_groups (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(64) UNIQUE NOT NULL,
@@ -24,8 +22,7 @@ CREATE TABLE IF NOT EXISTS admins (
   groups TEXT[] DEFAULT ARRAY[]::TEXT[],
   flags VARCHAR(64) NOT NULL DEFAULT '',
   immunity INTEGER NOT NULL DEFAULT 0,
-  -- Per-admin chat overrides. Empty colors fall back to the admin's group; display_prefix lets an
-  -- admin hide their group prefix without losing their group's coloring.
+  -- Empty colors inherit from the group; display_prefix hides only the prefix.
   display_prefix BOOLEAN NOT NULL DEFAULT TRUE,
   name_color VARCHAR(32) NOT NULL DEFAULT '',
   message_color VARCHAR(32) NOT NULL DEFAULT '',
@@ -107,7 +104,6 @@ CREATE TABLE IF NOT EXISTS warnings (
   expires_at BIGINT DEFAULT 0
 );
 
--- ------- INDEXES -----
 CREATE INDEX IF NOT EXISTS idx_admins_steam_id ON admins(steam_id);
 
 CREATE INDEX IF NOT EXISTS idx_players_steam_id ON players(steam_id);
@@ -130,7 +126,6 @@ CREATE INDEX IF NOT EXISTS idx_text_mutes_active_lookup ON text_mutes(target_ste
 CREATE INDEX IF NOT EXISTS idx_warnings_target_steam_id ON warnings(target_steam_id);
 CREATE INDEX IF NOT EXISTS idx_warnings_is_active ON warnings(is_active);
 
--- ------- DEFAULT DATA -----
 INSERT INTO admin_groups (name, flags, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
 VALUES ('super_admin', 'z', 100, ARRAY[]::TEXT[], '[ROOT]', 'red', 'lightblue', 'default')
 ON CONFLICT (name) DO NOTHING;

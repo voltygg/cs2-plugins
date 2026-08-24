@@ -1,122 +1,92 @@
 # Contributing to CS2 plugins
 
-This repository contains C++23 Metamod:Source plugins for Counter-Strike 2.
-[VoltMod](https://github.com/voltygg/voltmod) supplies the shared engine layer as
-a Conan package. Plugin code lives under `plugins/<name>/`.
+Plugin code lives under `plugins/<name>/`. VoltMod supplies the shared engine
+layer through Conan.
 
-## Setup
+## Set up and build
 
-Install the pinned tools, then install VoltMod's Conan profiles and remote:
+Install the project tools and VoltMod's Conan configuration:
 
 ```bash
 uv sync
 uv run poe bootstrap
 ```
 
-On Windows, the build loads the MSVC environment through `vcvars64.bat`, so a
-regular shell is sufficient.
-
-Required tools:
-
-- CMake 4.3.4 or newer
-- Conan 2.29.1 or newer
-- Ninja
-- MSVC on Windows, GCC 14 on Linux (Steam Runtime sniper toolchain)
-
-The CMake, Conan, Ninja, and clang-format pins are supplied by the `voltmod`
-Python distribution listed in `pyproject.toml`.
-
-## Build
+`bootstrap` builds once. Later builds can use:
 
 ```bash
-uv run poe build                       # default preset for your platform
-uv run poe build windows-msvc-debug    # explicit preset
+uv run poe build
+uv run poe build windows-msvc-debug
 uv run poe build-linux
 ```
 
-Build output is written to:
+The supported presets are `windows-msvc-release`, `windows-msvc-debug`,
+`linux-steamrt-release`, and `linux-steamrt-debug`. Output is written to
+`build/<preset>/plugins/<name>/<platform-arch>/`.
 
-```text
-build/<preset>/plugins/<name>/<platform-arch>/
+Windows builds require MSVC; Linux builds use GCC 14 in Valve's Steam Runtime.
+The `voltmod` Python distribution pins CMake, Conan, Ninja, and clang-format.
+
+## Add code or a plugin
+
+`voltmod_add_plugin` discovers `.cpp` files below a plugin's `src/` directory.
+Add a source file there and rebuild.
+
+To create a plugin, run:
+
+```bash
+uv run poe new-plugin <name>
 ```
 
-Available presets:
+For a manual setup, add `plugins/<name>/CMakeLists.txt` with
+`voltmod_add_plugin(<name> VERSION <version> ...)` and register it with
+`add_subdirectory(plugins/<name>)` in the root `CMakeLists.txt`.
 
-- `linux-steamrt-release`
-- `linux-steamrt-debug`
-- `windows-msvc-release`
-- `windows-msvc-debug`
+Add a third-party C++ dependency in three places:
 
-## Add code
+1. Add its Conan requirement to `conanfile.py`.
+2. Call `find_package` in the root `CMakeLists.txt`.
+3. Link the imported target from the plugin's CMake file.
 
-The build discovers `.cpp` files under `plugins/<name>/src/`. Add a source file
-there and rebuild.
+## Code rules
 
-To add a plugin, create `plugins/<new>/src/`, its configuration, and
-`plugins/<new>/CMakeLists.txt` with
-`voltmod_add_plugin(<new> VERSION <version> ...)`. Register it with
-`add_subdirectory(plugins/<new>)` in the root `CMakeLists.txt`.
+- Use C++23 and `.hpp` headers.
+- Use `PascalCase` for types and methods, `_camelCase` for members, and
+  `camelCase` for local variables and parameters.
+- Use `std::format`, designated initializers, and `int64_t` SteamIDs.
+- Keep game code on the main thread. VoltMod owns the database and HTTP worker
+  services and returns their callbacks to the game thread.
+- Pass services through constructors; do not add singletons.
+- Keep files near 300-350 lines when practical.
+- Add comments only for non-obvious reasons, contracts, or constraints.
 
-Add third-party C++ dependencies to `conanfile.py`, call `find_package` for them
-in the root `CMakeLists.txt`, and link their imported targets (for example,
-`libpqxx::pqxx`) in the plugin's `CMakeLists.txt`.
+## Change VoltMod with a plugin
 
-## Constraints
-
-- C++23.
-- Main-thread only. Metamod hooks run on the game thread. Do not add threads or
-  mutexes in game code; synchronization belongs inside the framework's worker
-  services.
-- Use `.hpp` headers, never `.h`.
-- Use C#-style naming: `PascalCase` types and methods, `_camelCase` members,
-  `camelCase` locals and parameters, `PascalCase` constants, and `camelCase`
-  JSON keys.
-- Use `std::format`, designated initializers, and `int64_t` for SteamIDs.
-- Use services and managers, not singletons. Use the runtime for VoltMod
-  services and `App` for plugin managers.
-- Keep source files around 300-350 lines when practical.
-- Add comments only when they explain a non-obvious reason or constraint.
-
-## Change VoltMod alongside a plugin
-
-Point Conan at a local VoltMod checkout while changing both repositories:
-
-`vendor/voltmod` is a submodule for this workflow
-(`git submodule update --init` on an older clone), but any sibling checkout
-works too.
+`vendor/voltmod` is a separate Git worktree. Point Conan at it while developing
+both repositories:
 
 ```bash
 conan editable add vendor/voltmod
-uv run poe build          # pick up framework edits directly
+uv run poe build
 conan editable remove voltmod
 ```
 
-The editable entry points to a checkout, not a package version. Without it, the
-build uses the Conan package selected by `conanfile.py`.
+Any VoltMod checkout can be used in place of `vendor/voltmod`. Without an
+editable entry, Conan resolves the `voltmod/[~1.2]` requirement from the remote.
+Land and release the framework change before updating a consumer that needs it.
 
-Land the framework change first in its own repository and pull request. A `v*` tag
-publishes a new package. Update the range in `conanfile.py` only when the new
-version falls outside `[~1]`.
+## Before pushing
 
-## Before you push
+```bash
+uv run poe lint
+uv run poe format-check
+uv run poe build
+ctest --preset <preset>
+```
 
-- Run clang-format over C++ changes.
-- Run `uv run poe lint` for Python tooling.
-- Build with `uv run poe build`.
-- Run tests with `ctest --preset <preset>`.
+CI runs the same Ruff, clang-format, Linux build, and CTest checks.
 
-These checks match the CI pipeline.
-
-## Continuous integration
-
-CI builds in Valve's SteamRT SDK using VoltMod's setup action. Conan packages
-and compiler output are cached from `conan.lock`. A separate job runs Ruff and
-clang-format checks.
-
-CircleCI mirrors CI and deployment as a fallback. Its `ghcr` context publishes
-the runtime image, and `cs2-deploy` carries base64-encoded deployment secrets.
-A `prod` push deploys twice if both providers are enabled, so disable one deploy
-workflow.
-
-Contexts are created and filled by `./.circleci/bootstrap.sh`; see
-[.circleci/README.md](.circleci/README.md) for the setup walkthrough.
+GitHub Actions is the primary CI and deployment path. CircleCI mirrors it as a
+fallback. Do not leave both providers deploying the `prod` branch unless two
+deployments are intentional. See [.circleci/README.md](.circleci/README.md) for
+CircleCI setup.

@@ -1,22 +1,19 @@
 {
   "$schema": "./settings.schema.json",
   "anticheat": {
-    // Master switch. Off means no hooks feed the detection cores.
+    // Disabled means hooks do not feed detector cores.
     "enabled": true,
 
-    // Response funnel. "observe" only logs and reports, "alert" also notifies
-    // admins, "ban" also kicks or bans - both via admin-system. Soak in
-    // observe before escalating.
+    // `observe` reports, `alert` notifies admins, and `ban` punishes.
     "mode": "observe",
 
     // Ban length in seconds for "ban" mode; 0 = permanent.
     "banDurationSec": 0,
 
-    // SteamID64s that are reported but never punished (staff, testers).
+    // Reported but never punished.
     "whitelistSteamIds": [],
 
-    // Detections switch off while sv_cheats is on, because cheat-protected client
-    // cvars legitimately change. Set true only on a test box.
+    // Allow detections under `sv_cheats`; test servers only.
     "allowSvCheatsTesting": false,
 
     // Per-detection kill switches. Thresholds are compiled in, not configurable.

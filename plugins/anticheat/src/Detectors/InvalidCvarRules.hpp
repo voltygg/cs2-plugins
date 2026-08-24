@@ -1,8 +1,6 @@
 #pragma once
 
-// Client settings that are unsafe, impossible, or protected by sv_cheats. SDK-free: the adapter
-// owns the querying (userinfo reads and CSVCMsg_GetCvarValue replies) and feeds name/value pairs,
-// and the rules themselves come from configs/detections.jsonc rather than from this file.
+// SDK-free evaluation of client convars supplied by the engine adapter.
 
 #include "Core/DetectionData.hpp"
 #include "Core/Finding.hpp"
@@ -26,15 +24,14 @@ inline constexpr float PollIntervalMinSec = 1.0f;
 inline constexpr float PollIntervalMaxSec = 5.0f;
 
 /**
- * Cvars asked for per poll. The queried tier is walked in rotation rather than queried in one
- * burst: the framework refuses a slot's twelfth outstanding query.
+ * Cvars per poll. Rotation stays below the framework's per-slot pending cap.
  */
 inline constexpr size_t CvarsPerPoll = 4;
 
 /**
- * Consecutive replies refusing a cheat-protected cvar's value before the refusal is evidence. A
- * single one proves nothing: an engine update that renames or drops a client convar would otherwise
- * turn every player on the server into a detection on the very next poll.
+ * Consecutive refusals required before a cheat-protected cvar becomes evidence.
+ * This prevents a renamed or removed
+ * cvar from detecting every client at once.
  */
 inline constexpr int MissingRepliesBeforeEvidence = 3;
 
@@ -54,9 +51,7 @@ struct CvarVerdict
 };
 
 /**
- * The loaded rules, and the stateless evaluation over them. Empty until Load, and an empty table
- * judges nothing - a missing or malformed data file leaves the module inert rather than turning
- * every client value into a detection.
+ * Loaded rules and stateless evaluation. An empty table judges nothing.
  *
  * Rules are stored queried tier first, so each tier is a span rather than a second container to
  * keep in step.
@@ -85,10 +80,9 @@ public:
     CvarVerdict Evaluate(std::string_view name, std::string_view value, bool enforceCheatCvars) const;
 
     /**
-     * A reply that carried no value at all: the client called the cvar missing, not a cvar, or
-     * protected. @p statusName only labels the evidence; @p consecutiveReplies counts the refusals
-     * in a row for this cvar, including this one.
-     *
+     * Evaluate a reply that refused to return a value. @p consecutiveReplies
+     * includes the current refusal.
+ *
      * Silence is never judged - an unanswered query simply never arrives. A refusal is different,
      * since every name in the table ships with the game, but it is still only evidence for the
      * cheat-protected ones, only after @ref MissingRepliesBeforeEvidence back to back, and only as

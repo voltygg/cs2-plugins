@@ -35,9 +35,7 @@ bool AdminManager::LoadAdmins()
             _admins[admin.SteamId] = admin;
         }
 
-        // Merge this server's admin_server_groups grants into the in-memory Groups vectors so
-        // flag/immunity/chat-style resolution below sees the effective per-server set. Grants
-        // for unknown admins are skipped, like unknown group names in admins.groups.
+        // Merge server grants into each admin's effective group list.
         Db::AdminServerGroupRepository serverGroupRepo{_db};
         for (auto& [steamId, groupNames] : serverGroupRepo.FindByServerTag(_config.GetServer().tag))
         {
@@ -159,19 +157,17 @@ int AdminManager::GetImmunity(int64_t steamId)
 
 bool AdminManager::CanTarget(int64_t adminSteamId, int64_t targetSteamId)
 {
-    // Console (steamId 0) can always target
+    // The server console bypasses immunity.
     if (adminSteamId == 0)
         return true;
 
-    // Self-targeting always allowed - admins can apply fun effects to themselves,
-    // and self-punishments (voice-mute/text-mute/kick) are harmless / occasionally useful for testing.
+    // Self-targeting bypasses immunity.
     if (adminSteamId == targetSteamId)
         return true;
 
     int adminImmunity = GetImmunity(adminSteamId);
     int targetImmunity = GetImmunity(targetSteamId);
 
-    // Admin can target if their immunity is higher
     return adminImmunity > targetImmunity;
 }
 
@@ -288,13 +284,11 @@ uint32_t AdminManager::ResolveFlags(const Database::Admin& admin)
 {
     uint32_t bits = 0;
 
-    // Add admin's own flags
     for (char flag : admin.Flags)
     {
         bits |= FlagToBit(flag);
     }
 
-    // Add flags from groups
     for (const auto& groupName : admin.Groups)
     {
         auto groupIt = _groups.find(groupName);
@@ -317,7 +311,6 @@ int AdminManager::ResolveImmunity(const Database::Admin& admin)
 {
     int maxImmunity = admin.Immunity;
 
-    // Get highest immunity from groups
     for (const auto& groupName : admin.Groups)
     {
         auto groupIt = _groups.find(groupName);

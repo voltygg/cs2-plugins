@@ -1,7 +1,4 @@
-# Deploy inventory - the single source of truth for Dockerized CS2 boxes.
-#
-# Keep non-secret server topology here. Secrets stay in per-server .env files or
-# GitHub Environment secrets.
+# Non-secret Docker host topology. Keep secrets in per-server env files or CI.
 
 defaults:
   ssh_user: steam
@@ -11,7 +8,7 @@ defaults:
   runtime_image: ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:latest
 
 database:
-  # VPS-host Postgres, reached from bridge containers via host-gateway.
+  # Host PostgreSQL as reached from bridge containers.
   host: host.docker.internal
   port: 5432
   user: cs2_app
@@ -20,34 +17,24 @@ database:
 plugins:
   admin-system:
     database: admin_system
-  # DB-less plugins: no 'database' key, so rendering skips the DB_* requirements.
+  # Omitting `database` makes a plugin database-free.
   bhop: {}
-  #anticheat: {} TODO: anticheat plugin is not ready yet, but will be added in the future.
+  # anticheat: {}  # Enable after the observation rollout.
 
 servers:
   - id: box-a
     host: 207.180.234.215
     environment: prod-box-a
     deploy_root: /home/steam/cs2/deploy
-    # default plugins for every instance on this box
+    # Default plugins for this box.
     plugins:
       - admin-system
       - bhop
-      #- anticheat
+      # - anticheat
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main", insecure: true }
       # `insecure: true` launches with -insecure (VAC off) for cheat testing;
       # clients must connect with -insecure too. Leave off for live play.
       # - { name: test, port: 27016, map: de_dust2, hostname: "CS2 Test", insecure: true }
 
-# Per-instance plugins: an instance's own `plugins:` replaces the server default.
-# servers:
-#   - id: box-a
-#     host: 203.0.113.10
-#     environment: prod-box-a
-#     deploy_root: /home/steam/cs2/deploy
-#     plugins:
-#       - admin-system
-#     instances:
-#       - { name: main,   port: 27015, map: de_dust2, hostname: "CS2 Main" }
-#       - { name: retake, port: 27016, map: de_mirage, hostname: "CS2 Retake", plugins: [admin-system, retake-system] }
+# An instance-level `plugins` list replaces the server default.

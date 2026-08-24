@@ -16,12 +16,8 @@ namespace AdminSystem::Core
 class ConfigManager;
 
 /**
- * Renders admin-system chat semantics on top of `VoltMod::Runtime::Messages`: styled per-command
- * replies and admin action/punishment broadcasts.
- *
- * Output only, and deliberately so - it reads nothing but the runtime and config, which is what
- * lets the managers that broadcast (freezes, punishments, cheat checks) depend on it without a
- * cycle. Reading a player's chat back is @ref PlayerChat's job.
+ * Formats replies and admin broadcasts over `Runtime::Messages`. This service is
+ * output-only so managers can depend on it without a cycle; PlayerChat owns input.
  */
 class ChatService
 {
@@ -29,8 +25,8 @@ public:
     ChatService(VoltMod::Runtime& runtime, const ConfigManager& config) : _rt(runtime), _config(config) {}
 
     /**
-     * Send a single-line reply to one player. Color codes inside `message` are honored;
-     * `Default` color is prepended automatically when missing.
+     * Send one chat line. Preserve existing color codes and prepend the default
+     * color when none is present.
      */
     void Reply(int slot, std::string_view message);
 
@@ -51,9 +47,8 @@ public:
                              std::string_view reason, int64_t durationSec);
 
     /**
-     * Broadcast a non-punishment admin action, e.g. "[ADMIN] Bob slapped Alice".
-     * The verb is read from `translationKey`; both `adminName` and `targetName` are interpolated.
-     * Pass an empty `targetName` for self-targeted or server-wide actions.
+     * Broadcast a translated admin action. An empty target name represents a
+     * self-targeted or server-wide action.
      */
     void BroadcastAction(const std::string& translationKey, std::string_view adminName, std::string_view targetName);
 

@@ -56,16 +56,16 @@ addons/<plugin>/bin/linuxsteamrt64/<plugin>.so
 
 ## Add a plugin
 
-1. Create `plugins/<new>/src/`, `plugins/<new>/CMakeLists.txt`, configuration
-   files, and
-   `plugins/<new>/<new>.vdf`.
-2. Call `voltmod_add_plugin(<new> VERSION <version> ...)` in that plugin CMake file.
+1. Create `plugins/<new>/src/`, `plugins/<new>/CMakeLists.txt`, and any
+   configuration files.
+2. Call `voltmod_add_plugin(<new> VERSION <version> ...)` in the plugin CMake
+   file. VoltMod generates the VDF during installation.
 3. Add `add_subdirectory(plugins/<new>)` to the root `CMakeLists.txt`.
-4. Add any new third-party C++ deps to `conanfile.py`, `find_package` them in
+4. Add any new third-party C++ dependencies to `conanfile.py`, find them in
    the root `CMakeLists.txt`, and link their imported targets in the plugin
    CMake file.
 
-## Notes
+## Copy behavior
 
 - Existing `settings.jsonc` files are preserved to avoid overwriting DB
   credentials or per-server config.

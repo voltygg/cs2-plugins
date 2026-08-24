@@ -22,19 +22,10 @@ namespace AdminSystem
 {
 
 /**
- * Everything this plugin owns for one Load/Unload cycle. The plugin creates it in OnLoad and
- * drops it in OnUnload, so no state survives a `meta reload`.
- *
- * Every member takes the collaborators it actually uses, so this list is the whole object graph
- * and reading a constructor tells you what a manager can reach. Declaration order is dependency
- * order; destruction is the reverse, which is what makes the subscriptions and the database stop
- * before the things their callbacks touch.
- *
- * Two splits exist to keep that order possible at all. @ref Admin::Access composes the flag
- * store and the freeze set instead of letting them call each other, and @ref Core::PlayerChat
- * holds the inbound chat rules that read admin/punishment state while @ref Core::ChatService
- * stays pure output. Free functions (menus, commands, actions) still take this container - they
- * are leaves, and enumerating five managers per builder would cost more than it explains.
+ * Load-cycle object graph. Members are declared in dependency order and destroyed
+ * in reverse, so callbacks stop before captured state and database services.
+ * Access composes admin flags with freeze state; PlayerChat owns inbound rules
+ * while ChatService remains output-only.
  */
 struct App
 {
@@ -50,7 +41,6 @@ struct App
     void FlushPlayerSession(VoltMod::Player* player);
 
     VoltMod::Runtime& Runtime;
-    /** Plugin version, for the menu title. */
     const std::string Version;
 
     Core::ConfigManager Config;
@@ -68,7 +58,7 @@ struct App
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Config, Chat};
     /** Published to other plugins in Start; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
-    /** Load-time migration outcome, surfaced in the `admin_status` db section. */
+    /** Load-time migration outcome shown by `admin_status`. */
     VoltMod::MigrationResult Migration;
 
 private:

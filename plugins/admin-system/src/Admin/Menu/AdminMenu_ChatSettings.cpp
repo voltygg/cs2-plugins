@@ -30,9 +30,7 @@ namespace
 
 namespace ChatColors = VoltMod::Core::ChatColors;
 
-// Translation-key suffix per canonical VoltMod color name. Compound names ("lightblue")
-// don't survive a generic "uppercase first letter" rule, so the small lookup keeps the
-// JSON keys stable and lets us reuse the framework's @ref ChatColors::Palette for everything else.
+// Explicit keys keep compound color names stable across palette changes.
 const std::unordered_map<std::string_view, std::string_view>& ColorLabelKeys()
 {
     static const std::unordered_map<std::string_view, std::string_view> kKeys = {
@@ -45,9 +43,7 @@ const std::unordered_map<std::string_view, std::string_view>& ColorLabelKeys()
     return kKeys;
 }
 
-// The DB stores empty string when the admin wants their group default; index 0 in the
-// rendered choice list maps to that empty value. We then append every VoltMod canonical
-// color, so the list automatically grows when new colors are added upstream.
+// Empty means inherit from the group and maps to choice index zero.
 int IndexForColor(std::string_view color)
 {
     if (color.empty())
@@ -69,8 +65,7 @@ std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(App& app, int v
     std::vector<ChoiceOption<std::string>::Choice> choices;
     choices.reserve(ChatColors::Palette.size() + 1);
 
-    // First entry is always "(group default)" - empty DB value, distinct from
-    // ChatColors::Default which is itself a real overrideable color.
+    // Group inheritance is distinct from the `default` color override.
     choices.push_back({tr.Get("color.groupDefault", viewerSlot), std::string{}});
 
     // The framework renders the palette; colors without a translation key fall back to their name.
@@ -89,8 +84,7 @@ enum class ColorSlot
     Message,
 };
 
-// Pull the current persisted color out of the admin row (NOT the resolved style - we
-// want the override slot itself, so "default" stays selected after a rebroadcast).
+// Read the stored override, not the resolved inherited color.
 std::string CurrentSlotColor(App& app, int64_t steamId, ColorSlot slot)
 {
     const auto* admin = app.Admins.GetAdmin(steamId);
@@ -135,8 +129,7 @@ void AddColorChoice(App& app, MenuBuilder& builder, const std::string& title, in
         true, initialIndex);
 }
 
-// Friendly name for a language code, keyed as `lang.<code>` so a new translations/<code>.json
-// only needs a matching `lang.<code>` entry - no code change. Falls back to the raw code.
+// `lang.<code>` translations fall back to the raw code.
 std::string LanguageLabel(App& app, const std::string& code, int viewerSlot)
 {
     std::string key = "lang." + code;
@@ -144,7 +137,6 @@ std::string LanguageLabel(App& app, const std::string& code, int viewerSlot)
     return label == key ? code : label;
 }
 
-// Sorted so the choice order is stable across the rebuild we trigger on commit.
 std::vector<std::string> AvailableLanguagesSorted(App& app)
 {
     auto langs = app.Runtime.Translations.GetAvailableLanguages();
@@ -152,7 +144,7 @@ std::vector<std::string> AvailableLanguagesSorted(App& app)
     return langs;
 }
 
-// Find the index of `code` in `langs`, or 0 if it's not found. Index 0 maps to the empty string
+// Index zero represents no stored language override.
 int IndexForLanguage(const std::vector<std::string>& langs, const std::string& code)
 {
     auto it = std::find(langs.begin(), langs.end(), code);
@@ -201,8 +193,7 @@ std::shared_ptr<VoltMod::MenuView> BuildChatSettingsMenu(AdminSystem::App& app, 
 
     MenuBuilder builder(tr.Get("category.chatSettings", adminSlot));
 
-    // Display Prefix toggle - flips the bool and persists immediately so the next chat line
-    // reflects the change without needing an explicit "Save" row.
+    // Persist each row immediately; the menu has no Save action.
     builder.AddToggle(
         tr.Get("chat.displayPrefix", adminSlot), tr.Get("effectState.on", adminSlot),
         tr.Get("effectState.off", adminSlot),
@@ -218,12 +209,9 @@ std::shared_ptr<VoltMod::MenuView> BuildChatSettingsMenu(AdminSystem::App& app, 
             mgr.UpdateChatStyle(steamId, !a->DisplayPrefix, a->NameColor, a->MessageColor);
         });
 
-    // Each choice row owns its cycle index (seeded from the persisted value); commit on E
-    // persists that single slot.
     AddColorChoice(app, builder, tr.Get("chat.nameColor", adminSlot), steamId, ColorSlot::Name, adminSlot);
     AddColorChoice(app, builder, tr.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message, adminSlot);
 
-    // Panel language - commit on E persists and rebuilds the menu in the chosen language.
     AddLanguageChoice(app, builder, steamId, adminSlot);
 
     return builder.Build();

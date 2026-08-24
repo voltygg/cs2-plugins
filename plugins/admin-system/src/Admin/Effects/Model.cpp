@@ -17,12 +17,11 @@ using VoltMod::Sdk::PlayerController;
 namespace
 {
 
-// Base CS2 agent skins, used to restore a player whose model effect clears while alive (there is no
-// cheap way to read back the original; respawn resets it anyway).
+// Restore live players to a base team model; respawn restores their selected agent.
 constexpr const char* DefaultModelT = "characters/models/tm_phoenix/tm_phoenix.vmdl";
 constexpr const char* DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
 
-// The team-default restore model, or nullptr for spectator/unassigned (nothing to restore).
+// Spectators and unassigned players have no restore model.
 const char* DefaultModelForTeam(int team)
 {
     if (team == VoltMod::Sdk::TeamT)
@@ -36,9 +35,7 @@ const char* DefaultModelForTeam(int team)
 
 const std::vector<FunModel>& FunModels()
 {
-    // Addon-free, so only always-mounted gameplay entities render on every map. Map-specific props
-    // and unbought weapon/grenade world models box out where the map hasn't loaded them; these three
-    // are verified to render on vanilla maps (a workshop addon would be needed for anything else).
+    // Use always-mounted assets so every vanilla map can render these models.
     static const std::vector<FunModel> models = {
         {"Chicken", "models/chicken/chicken.vmdl"},
         {"Fire Hydrant", "models/props_street/firehydrant.vmdl"},

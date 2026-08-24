@@ -39,8 +39,7 @@ void App::FlushPlayerSession(Player* player)
         PlayerRepo.RecordDisconnect(player->GetSteamID(), player->GetName(), player->GetPlaytime());
 }
 
-// The one policy the framework consults everywhere: command permissions, action targeting, result
-// replies, and action broadcasts.
+// Install the shared command, action, reply, and broadcast policy.
 void App::InstallPolicy()
 {
     Runtime.Policy = {
@@ -117,9 +116,7 @@ void App::RegisterGameEventListeners()
         events.Listen<Events::RoundPrestart>([this](const Events::RoundPrestart&) { Effects.CancelRoundScoped(); }));
 }
 
-// Domain sections on top of the framework's (build/load/gamedata/uptime), plus the command that
-// reports them. Health adds the database to the framework's baseline: an admin plugin that cannot
-// reach its database is not healthy even though the load itself succeeded.
+// Add plugin status sections and require a live database for overall health.
 void App::InstallStatusReporting()
 {
     auto& status = Runtime.Status;
@@ -163,7 +160,6 @@ bool App::Start()
 {
     auto& report = Runtime.LoadReport;
 
-    // "Configuration" + "Translations" stages, via ConfigManager::LoadSettings.
     if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Addon = Core::AddonName}))
         return false;
 

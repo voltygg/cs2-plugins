@@ -1,15 +1,11 @@
-// Template for bhop's settings.jsonc - rendered per (server, plugin) by
-// deploy/tools/render.py. Bhop is DB-less and takes no per-instance placeholders;
-// everything here is a literal knob - edit it in git to change it.
+// Shared bhop settings; this plugin has no per-instance placeholders.
 {
   "plugin": {
     "locale": "ru"
   },
 
   "bhop": {
-    // "enabled": always-on for everyone (convars replicate to every client - ping-free).
-    // "grants":  off by default; admins grant per player via the admin menu (Bunnyhop
-    //            effect drives the `bhop_player` server command), session-only.
+    // `enabled` is server-wide. `grants` uses session grants from admin-system.
     "mode": "grants",
 
     // sv_autobunnyhopping - hold jump to hop automatically.
@@ -29,7 +25,7 @@
     // sv_maxvelocity; -1 = untouched.
     "maxVelocity": -1,
 
-    // Server-side boost per chained hop, so speed builds from simply holding jump.
+    // Optional server-side velocity boost for chained hops.
     "hopBoost": {
       "enabled": true,
       "factor": 1.08,

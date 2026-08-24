@@ -1,7 +1,6 @@
 #pragma once
 
-// The violation funnel as pure decision logic: who was detected, what the config says, and what has
-// already been done to them. SDK-free so every branch is testable.
+// SDK-free response decisions based on identity, configuration, and prior action.
 
 #include "Core/Samples.hpp"
 
@@ -12,12 +11,11 @@
 namespace Anticheat
 {
 
-/** Response ladder, from config "anticheat.mode". */
 enum class Mode
 {
-    Observe,  // report only - this is the dry run
-    Alert,    // observe + notify admins through admin-system
-    Ban       // alert + kick or ban
+    Observe,  // Report only.
+    Alert,    // Report and notify admins.
+    Ban       // Alert, then kick or ban.
 };
 
 constexpr Mode ParseMode(std::string_view mode)
@@ -65,7 +63,7 @@ constexpr const char* PunishmentName(PunishmentLevel level)
     return "none";
 }
 
-/** What actually happened, for the log line and the webhook embed. */
+/** Outcome recorded in logs and webhook reports. */
 enum class FunnelOutcome
 {
     NoIdentity,       // SteamID not resolved yet - reported, never punished

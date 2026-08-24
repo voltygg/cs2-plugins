@@ -11,14 +11,9 @@ namespace AdminSystem::Admin
 {
 
 /**
- * What an admin may actually do right now: their granted flags, gated by abuse-protection
- * freezes and immunity.
- *
- * This is the one gate. AdminManager answers "does this admin hold flag x" and FreezeManager
- * answers "is this admin suspended"; every command, menu and action check goes through the
- * composition here, so a frozen admin is denied everything with no surface able to bypass it.
- * Composing the two rather than having them call each other is also what keeps the object
- * graph acyclic.
+ * Combines granted flags, freeze state, and immunity. Commands, menus, and
+ * actions use this gate so frozen admins
+ * cannot bypass the restriction.
  */
 class Access
 {
@@ -35,7 +30,7 @@ public:
         return !_freeze.IsFrozen(steamId) && _admins.HasAnyPermission(steamId, flags);
     }
 
-    /** Immunity only - freezing denies the action through the flag check, not the ranking. */
+    /** Check immunity only; permission checks apply freeze state. */
     bool CanTarget(int64_t adminSteamId, int64_t targetSteamId)
     {
         return _admins.CanTarget(adminSteamId, targetSteamId);

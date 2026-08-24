@@ -2,16 +2,9 @@
 
 #include <VoltMod/App/JsonConfig.hpp>
 
-// Game-content facts the detections compare against - Valve's event names and client convars, not
-// this plugin's logic. They live in configs/detections.jsonc so a CS2 update that renames a convar
-// or adds a HUD event is answered with a config edit and anticheat_reload, not a rebuild.
-//
-// Parsing is deliberately strict. The generous nlohmann macros map an unrecognized enum token to
-// the *first* enumerator and default a missing key silently, which would turn a misspelled
-// "minorzero" into "must equal 64" and detect every player on the server. Everything below throws
-// instead, so a bad edit fails the load and leaves the last good table in force.
-//
-// SDK-free (nlohmann only, as Config.hpp is) so the rule engine stays unit-testable.
+// Reloadable Valve event and convar data. Parsing rejects unknown tokens and
+// missing keys so a typo cannot silently change a detector rule. Kept SDK-free
+// for unit tests.
 
 #include <nlohmann/json.hpp>
 #include <string>
@@ -78,7 +71,7 @@ inline constexpr std::pair<std::string_view, CvarConstraint> ConstraintNames[] =
     {"minOrZero", CvarConstraint::MinOrZero}, {"off", CvarConstraint::Off}, {"on", CvarConstraint::On},
 };
 
-/** Nothing here is optional-with-a-default: a key we do not recognize is a typo, not a preference. */
+/** Reject keys not in @p allowed. */
 inline void RequireOnly(const nlohmann::json& object, std::initializer_list<std::string_view> allowed)
 {
     for (const auto& [key, unused] : object.items())
@@ -121,8 +114,7 @@ inline void from_json(const nlohmann::json& j, CvarRule& rule)
     rule.tier = j.contains("tier") ? Detail::ParseToken(j.at("tier"), "tier", Detail::TierNames) : CvarTier::Queried;
     rule.constraint = Detail::ParseToken(j.at("constraint"), "constraint", Detail::ConstraintNames);
 
-    // A numeric constraint with no bound would silently become "must equal 0" - the likeliest typo
-    // in a hand-edited table, and the one that detects everybody.
+    // Require numeric bounds so a missing value cannot become an implicit zero.
     if (ConstraintIsNumeric(rule.constraint))
         j.at("value").get_to(rule.value);
     if (rule.constraint == CvarConstraint::Range)
@@ -148,8 +140,7 @@ inline void from_json(const nlohmann::json& j, DetectionData& data)
         throw nlohmann::json::type_error::create(302, "detections must be a JSON object", &j);
     Detail::RequireOnly(j, {"dllEventBlacklist", "cvarRules"});
 
-    // Required rather than defaulted: a renamed section would otherwise load as an empty table and
-    // disarm its module while reporting success.
+    // A renamed section must fail instead of silently disabling its detector.
     j.at("dllEventBlacklist").get_to(data.dllEventBlacklist);
     j.at("cvarRules").get_to(data.cvarRules);
 }

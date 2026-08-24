@@ -7,8 +7,8 @@ requires-python = ">=3.14"
 license = { text = "MIT" }
 
 dependencies = [
-    # Brings the build tasks below plus the pinned CMake/Conan/Ninja/clang-format.
-    # Move to a v* tag when reproducibility matters more than tracking the framework.
+    # Provides the tasks and tool pins below. Replace `main` with a release tag
+    # when builds must stop tracking framework changes.
     "voltmod @ git+https://github.com/voltygg/voltmod.git@main",
     "ruff>=0.14.0",
     "poethepoet>=0.47.0",
