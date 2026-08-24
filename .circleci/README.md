@@ -72,7 +72,6 @@ Run the same repository checks before pushing:
 ```bash
 uv sync
 uv run poe bootstrap
-uv run poe build
 uv run poe lint
 ```
 

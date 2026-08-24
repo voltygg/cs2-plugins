@@ -16,9 +16,10 @@ uv run poe doctor
 Windows builds use MSVC. Linux builds use the Steam Runtime profiles.
 AMBuild and vcpkg are not part of this build.
 
-No Git submodule is required for normal builds. Conan resolves VoltMod,
-HL2SDK, and Metamod:Source. The `vendor/voltmod` checkout is only for
-coordinated framework work.
+Normal builds use the published VoltMod, HL2SDK, and Metamod:Source Conan
+packages. Do not initialize or add a VoltMod submodule to build plugins. The
+optional `vendor/voltmod` checkout is only for coordinated framework work with
+`conan editable`.
 
 ## Build presets
 

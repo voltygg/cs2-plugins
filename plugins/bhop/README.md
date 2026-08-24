@@ -41,7 +41,7 @@ scoped to that player.
 
 ## Configuration
 
-The configuration is loaded from the plugin's VoltMod configuration directory.
+Edit `game/csgo/addons/bhop/configs/settings.jsonc` in the server installation.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |

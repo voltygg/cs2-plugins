@@ -80,6 +80,6 @@ deploy/.render/
 
 .playwright-mcp/
 
-# Scratch space for local checkouts; voltmod is the dev-convenience submodule.
+# Scratch space for local checkouts; VoltMod is optional editable-package source.
 vendor/*
 !vendor/voltmod

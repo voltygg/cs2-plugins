@@ -1,7 +1,7 @@
 # CS2 plugins
 
 Native C++23 plugins for Counter-Strike 2, built on the
-[VoltMod framework](vendor/voltmod/README.md).
+[VoltMod framework](https://github.com/voltygg/voltmod).
 
 ## Choose your path
 
@@ -9,7 +9,7 @@ Native C++23 plugins for Counter-Strike 2, built on the
 | --- | --- |
 | Install an existing plugin | [Install a release](#install-a-release) |
 | Build or change a plugin in this repository | [Create your first plugin](docs/getting-started-plugin.md) |
-| Build a standalone VoltMod project | [VoltMod getting started](vendor/voltmod/docs/getting-started.md) |
+| Build a standalone VoltMod project | [VoltMod getting started](https://github.com/voltygg/voltmod/blob/main/docs/getting-started.md) |
 | Deploy production servers | [Deployment guide](deploy/README.md) |
 | Contribute a change | [Contributing guide](CONTRIBUTING.md) |
 
@@ -41,6 +41,9 @@ and should begin in `observe` mode.
 The supported Windows path needs Git, [uv](https://docs.astral.sh/uv/),
 Python 3.14+, Visual Studio 2022 or newer with C++ tools, a local CS2 dedicated
 server, and Metamod:Source.
+
+The build resolves VoltMod and its SDK dependencies from Conan. A VoltMod
+source checkout or Git submodule is not required.
 
 ```powershell
 git clone https://github.com/voltygg/cs2-plugins.git
@@ -107,4 +110,4 @@ are changing the framework and a plugin together.
 
 For a feature-level comparison with SwiftlyS2, Plugify, and
 CounterStrikeSharp, see
-[Choosing a CS2 plugin framework](vendor/voltmod/docs/framework-comparison.md).
+[Choosing a CS2 plugin framework](https://github.com/voltygg/voltmod/blob/main/docs/framework-comparison.md).

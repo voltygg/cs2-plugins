@@ -1,6 +1,6 @@
 # Admin system
 
-A PostgreSQL-backed administration framework for CS2 servers. It provides
+A PostgreSQL-backed administration plugin for CS2 servers. It provides
 moderation commands, WASD menus, permissions, effects, player reports,
 multi-server grants, abuse protection, and cheat-check workflows.
 
@@ -26,7 +26,7 @@ multi-server grants, abuse protection, and cheat-check workflows.
 
 ## Install
 
-1. Extract the release into the server's `csgo/` directory.
+1. Extract the release into the server's `game/csgo/` directory.
 2. Configure `addons/admin-system/configs/settings.jsonc`.
 3. Give every server sharing the database a unique, stable `server.tag`.
 4. Start the server and let the plugin apply its migrations.

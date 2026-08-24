@@ -6,7 +6,7 @@ detours, and its runtime analysis stays on the game thread.
 
 The detectors adapt techniques from
 [CS2AC](https://github.com/karola3vax/CS2AC) to the
-[VoltMod framework](../../vendor/voltmod/README.md).
+[VoltMod framework](https://github.com/voltygg/voltmod).
 
 > Start in `observe` mode. Validate real server traffic before enabling alerts
 > or punishments.
