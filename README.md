@@ -1,14 +1,12 @@
 # CS2 plugins
 
 C++23 Metamod:Source plugins for Counter-Strike 2 community servers. Each
-plugin lives under `plugins/<name>/` with its own source, configuration, and
-CMake target.
+plugin has its own source, configuration, and CMake target under `plugins/`.
 
-The plugins use [VoltMod](https://github.com/voltygg/voltmod), a reusable C++23
-framework that provides declarative commands, WASD menus, asynchronous
-PostgreSQL, and Source SDK wrappers. VoltMod, the HL2SDK, and Metamod are Conan
-packages from a public remote. The `vendor/voltmod` submodule is for developing
-the framework and these plugins together; it is not required for a normal build.
+The plugins use [VoltMod](https://github.com/voltygg/voltmod) for commands, WASD
+menus, asynchronous PostgreSQL, and Source SDK integration. Conan provides
+VoltMod, HL2SDK, and Metamod. The optional `vendor/voltmod` submodule supports
+developing the framework and plugins together.
 
 ## Plugins
 
@@ -67,7 +65,5 @@ guide and [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
 uv run poe new-plugin my-plugin
 ```
 
-This stamps `plugins/my-plugin/` from VoltMod's template tree with a
-`MetamodPlugin` skeleton, `settings.jsonc`, translations, and an example
-`!ping` command. It also registers the plugin in the root `CMakeLists.txt`, so
-the generated plugin builds and loads without further wiring.
+This creates and registers `plugins/my-plugin/` with a plugin skeleton,
+`settings.jsonc`, translations, and an example `!ping` command.

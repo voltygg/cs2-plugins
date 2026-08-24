@@ -11,8 +11,8 @@
 
 namespace VoltMod::Database
 {
-// PostgresConfig's mapper must share its namespace so ADL finds it. Defined here rather than
-// in the framework so the framework header stays nlohmann-free.
+// ADL requires this mapper in PostgresConfig's namespace. Keeping it here also
+// keeps nlohmann out of the framework header.
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PostgresConfig, host, port, database, username, password, sslMode)
 }  // namespace VoltMod::Database
 
@@ -21,15 +21,14 @@ namespace AdminSystem::Core
 
 using DatabaseConfig = VoltMod::Database::PostgresConfig;
 
-/** The addon folder name - matches the CMake target and keys every addons/ path. */
+/** Addon directory and CMake target name. */
 inline constexpr std::string_view AddonName = "admin-system";
 
-/** Framework-standard "plugin" section of settings.json (locale). */
+/** Framework `plugin` settings, including the locale. */
 using PluginSettings = VoltMod::StandardPluginSettings;
 
-/** "server" section of settings.jsonc: this server's identity in the shared database.
- *  The tag keys per-server admin grants (admin_server_groups) and audit attribution, so it
- *  must be unique per server and stable once referenced. */
+/** Server identity in the shared database.
+ *  The tag keys grants and audit records, so it must remain unique and stable. */
 struct ServerSettings
 {
     std::string tag = "default";
@@ -37,8 +36,7 @@ struct ServerSettings
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ServerSettings, tag, name)
 
-/** "abuseProtection" section of settings.jsonc: automatic admin-freeze rate thresholds.
- *  A threshold of 0 disables that counter; root ('z') admins are always exempt. */
+/** Automatic admin-freeze thresholds. Zero disables a counter; root admins are exempt. */
 struct AbuseProtectionSettings
 {
     bool enabled = true;
@@ -51,7 +49,7 @@ struct AbuseProtectionSettings
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AbuseProtectionSettings, enabled, windowMinutes, maxBans, maxKicks,
                                                 maxMutes, maxWarnings)
 
-/** One "punishments.templates[]" entry, verbatim from JSON. Validated into a ResolvedTemplate on load. */
+/** Raw punishment template, validated into ResolvedTemplate during load. */
 struct PunishmentTemplate
 {
     std::string name;
@@ -73,7 +71,7 @@ struct PunishmentSettings
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentSettings, defaultBanReason, warningThreshold, templates,
                                                 reasonPresets, menuDurations)
 
-/** A punishment template that survived load-time validation; what the Quick Punish menu consumes. */
+/** Validated template used by the Quick Punish menu. */
 struct ResolvedTemplate
 {
     std::string Name;
@@ -85,10 +83,10 @@ struct ResolvedTemplate
 /** "chat" section of settings.json. */
 struct ChatSettings
 {
-    /** If true, every issued punishment broadcasts a colored line to all players. */
+    /** Broadcast issued punishments to all players. */
     bool broadcastPunishments = true;
 
-    /** If true, an admin's chat is intercepted and re-emitted with their group's colored prefix. */
+    /** Re-emit admin chat with the group's colored prefix. */
     bool tagAdminChatMessages = true;
 
     /** Prefix used when an admin doesn't belong to any group with a prefix set. */
@@ -101,8 +99,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ChatSettings, broadcastPunishmen
                                                 fallbackPrefix, fallbackPrefixColor, fallbackNameColor,
                                                 fallbackMessageColor)
 
-/** One "reports.reasons[]" entry. The menu prefers the `report.reasons.<code>` translation, so
- *  `label` only surfaces for codes the translation files don't cover. */
+/** Report reason. `label` is the fallback for a missing `report.reasons.<code>` translation. */
 struct ReportReason
 {
     std::string code;
@@ -110,14 +107,13 @@ struct ReportReason
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportReason, code, label)
 
-/** "reports" section of settings.jsonc: player-to-player reporting (!r / !report). Rows go to
- *  `player_reports` for an upstream website; nothing is surfaced in-game. */
+/** Player reports stored for the website; the plugin has no in-game report list. */
 struct ReportSettings
 {
     bool enabled = true;
-    /** Seconds between two reports of ANY player. 0 disables. */
+    /** Seconds between reports by one player. Zero disables the limit. */
     int cooldownSec = 120;
-    /** Seconds before the same reporter may re-report the SAME player. 0 disables. */
+    /** Seconds before one player may report the same target again. Zero disables the limit. */
     int duplicateWindowSec = 1800;
     /** Adds an "Other..." row storing typed text under the "other" code (capped at 64 chars). */
     bool allowCustomReason = true;
@@ -136,8 +132,7 @@ struct CheatCheckFixedLink
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckFixedLink, url)
 
-/** "cheatCheck.websiteAutoRoom" sub-section: a backend-agnostic create-room API. See the field
- *  comments and CheatCheckRoomApi for the request/response templating contract. */
+/** Create-room API settings. CheatCheckRoomApi defines the templating contract. */
 struct CheatCheckWebsiteAutoRoom
 {
     std::string createRoomUrl;
@@ -150,8 +145,7 @@ struct CheatCheckWebsiteAutoRoom
     std::string checkerUrlField = "checkerUrl";
     std::string checkerUrlTemplate;  // optional; relayed to the calling admin
     int timeoutMs = 8000;
-    /** Presence poll GET; {code} receives the raw playerUrlField value, {steamId} the suspect's
-     *  SteamID64. "" disables polling (the countdown then never pauses). */
+    /** Presence URL. `{code}` and `{steamId}` are substituted; empty disables polling. */
     std::string presenceUrl;
     std::string presenceField = "present";  // dot-path to the response's in-room flag
     int pollIntervalSec = 5;                // also the worst-case delay before a join is noticed
@@ -169,8 +163,8 @@ struct CheatCheckSettings
     int timeoutSec = 120;
     bool autoKick = true;
     std::string kickReason = "Failed to comply with cheat check";
-    // The client drops center-HTML almost immediately (death, team switch, HUD updates), so the
-    // panel must be re-sent continuously like the WASD menus - not at the nominal 5s duration.
+    // Death, team changes, and HUD updates dismiss center HTML, so refresh it
+    // more often than its nominal five-second lifetime.
     int panelRefreshMs = 100;
     bool moveToSpectator = true;  // force the suspect to spectator so they can't keep playing
     std::string bannerImageUrl;   // optional online image shown atop the panel ("" => none)
@@ -183,7 +177,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckSettings, mode, timeou
                                                 panelRefreshMs, moveToSpectator, bannerImageUrl, bannerWidth,
                                                 bannerHeight, fixedLink, websiteAutoRoom)
 
-/** Root of settings.jsonc. Mirrors the JSON object so the whole file deserializes in one call. */
+/** Root settings object. */
 struct Settings
 {
     PluginSettings plugin;
@@ -198,18 +192,14 @@ struct Settings
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, database, punishments, abuseProtection, chat,
                                                 reports, cheatCheck)
 
-/**
- * Loads and owns settings.json (via the framework's JsonConfig). All admin/group data is owned by the
- * database (`admins` and `admin_groups` tables) - this manager only exposes plugin/DB/punishment/
- * chat config plus the validated runtime forms of the string-typed punishment settings.
- */
+/** Loads settings and resolves string-based punishment values. Admin and group
+ *  records remain owned by the database. */
 class ConfigManager : public VoltMod::JsonConfig<Settings>
 {
 public:
     ConfigManager() = default;
 
-    /** Load settings.json, then validate/resolve the runtime forms. Returns false if the file
-     *  is missing, unparseable, or has a wrong-typed value. */
+    /** Load and validate settings. Returns false for missing, malformed, or mistyped input. */
     bool LoadSettings(const std::string& path);
 
     const PluginSettings& GetPlugin() const { return Get().plugin; }
@@ -221,14 +211,14 @@ public:
     const ReportSettings& GetReports() const { return Get().reports; }
     const CheatCheckSettings& GetCheatCheck() const { return Get().cheatCheck; }
 
-    /** Punishment templates that passed load-time validation (invalid entries are skipped with a warning). */
+    /** Valid templates. Invalid entries are logged and skipped. */
     const std::vector<ResolvedTemplate>& GetPunishmentTemplates() const { return _resolvedTemplates; }
 
     /** Menu duration-picker rows in seconds (0 = permanent), parsed from `punishments.menuDurations`. */
     const std::vector<int>& GetMenuDurations() const { return _menuDurationSecs; }
 
 private:
-    /** Parse/validate the string-typed punishment settings into their runtime forms. */
+    /** Parse string-based punishment settings into runtime values. */
     void ResolveRuntimeSettings();
 
     std::vector<ResolvedTemplate> _resolvedTemplates;

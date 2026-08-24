@@ -1,14 +1,12 @@
 # Contributing to CS2 plugins
 
-This repository contains C++23 Metamod:Source plugins for Counter-Strike 2
-community servers. Shared engine abstractions live in
-[VoltMod](https://github.com/voltygg/voltmod), which this repository consumes as
-a Conan package. Each plugin lives under `plugins/<name>/`.
+This repository contains C++23 Metamod:Source plugins for Counter-Strike 2.
+[VoltMod](https://github.com/voltygg/voltmod) supplies the shared engine layer as
+a Conan package. Plugin code lives under `plugins/<name>/`.
 
 ## Setup
 
-Run `uv sync` to install the pinned toolchain, then `bootstrap` to install the
-framework's Conan profiles and public remote and run the first build.
+Install the pinned tools, then install VoltMod's Conan profiles and remote:
 
 ```bash
 uv sync
@@ -81,8 +79,7 @@ in the root `CMakeLists.txt`, and link their imported targets (for example,
 
 ## Change VoltMod alongside a plugin
 
-VoltMod is a Conan package rather than a subdirectory. Point Conan at a local
-checkout while changing both repositories:
+Point Conan at a local VoltMod checkout while changing both repositories:
 
 `vendor/voltmod` is a submodule for this workflow
 (`git submodule update --init` on an older clone), but any sibling checkout

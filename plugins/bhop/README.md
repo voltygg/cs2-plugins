@@ -1,8 +1,7 @@
 # Bhop
 
-Client-predicted auto-bunnyhop for CS2 servers. Hold JUMP to hop, keep your
-landing speed, and gain speed while chaining hops. The plugin uses
-[VoltMod](https://github.com/voltygg/voltmod).
+Client-predicted auto-bunnyhop for CS2. Hold JUMP to hop, retain landing speed,
+and build speed across chained hops.
 
 ## Why it feels smooth
 
@@ -57,9 +56,9 @@ Speed comes from two layers:
 | `bhop.hopBoost.maxSpeed` | `1200.0` | Horizontal speed cap for the boost. |
 | `bhop.notifyPlayer` | `true` | Center-message the player on grant/revoke. |
 
-The hop boost is server-authoritative: it applies one small velocity correction per
-hop, similar to a boost pad. If it feels rough at high ping, lower `factor` or
-disable the boost. The convar layer remains fully client-predicted.
+The server applies one velocity correction per chained hop. If this feels rough
+at high latency, lower `factor` or disable the boost. Convar-based movement
+remains client-predicted.
 
 ## Admin-system integration
 

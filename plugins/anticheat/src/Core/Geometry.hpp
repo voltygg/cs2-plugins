@@ -1,8 +1,7 @@
 #pragma once
 
-// Shared angle math for aim cores. It differs from the framework's AngleMath:
-// that helper uses Euclidean pitch/yaw error, while this file uses great-circle
-// distance to match bullet travel.
+// Aim detectors need great-circle distance, not the framework's Euclidean
+// pitch/yaw error.
 
 #include "Samples.hpp"
 
@@ -17,7 +16,7 @@ namespace Anticheat::Geometry
 inline constexpr double DegreesPerRadian = 180.0 / std::numbers::pi;
 inline constexpr double RadiansPerDegree = std::numbers::pi / 180.0;
 
-/** Feet, chest and head sample points an aimbot may lock onto. */
+/** Feet, chest, and head heights used when measuring aim error. */
 inline constexpr float BodyHeights[] = {8.0f, 46.0f, 64.0f};
 inline constexpr int BodyPointCount = static_cast<int>(std::size(BodyHeights));
 
@@ -60,7 +59,7 @@ inline float AngularSizeDeg(float halfWidth, float distance)
     return static_cast<float>(std::atan2(halfWidth, distance) * DegreesPerRadian);
 }
 
-/** As @ref AimErrorDeg, for callers that already hold the unit forward vector for their angles. */
+/** Aim error when the caller has already computed the unit forward vector. */
 inline float AimErrorDeg(const Vec3& eye, const Vec3& forward, const Vec3& target)
 {
     Vec3 direction = target - eye;
@@ -81,7 +80,7 @@ inline float AimErrorDeg(const Vec3& eye, const AimAngles& angles, const Vec3& t
 /** Smallest aim error against the three body points above @p feet. */
 inline float NearestBodyAimError(const Vec3& eye, const AimAngles& angles, const Vec3& feet)
 {
-    // One forward vector for all three points: it does not depend on the target.
+    // The forward vector is the same for every target point.
     const Vec3 forward = AimForward(angles);
     float best = 180.0f;
     for (float height : BodyHeights)
