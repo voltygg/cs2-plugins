@@ -7,9 +7,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
-from .common import DEPLOY, die, load_server_env, materialize_server_env, repo_path
+from .common import (
+    DEPLOY,
+    die,
+    load_local_env,
+    load_server_env,
+    materialize_server_env,
+    repo_path,
+)
 
 
 def cmd_matrix(args: argparse.Namespace) -> None:
@@ -133,6 +141,24 @@ def cmd_start(args: argparse.Namespace) -> None:
     )
 
 
+def cmd_dev(args: argparse.Namespace) -> None:
+    from . import local
+
+    local.develop_plugin(
+        args.plugin,
+        args.server_path,
+        run_tests=not args.no_test,
+        launch=args.start,
+        steamcmd_path=args.steamcmd_path,
+        map_name=args.map,
+        gslt_token=args.gslt_token,
+        max_players=args.max_players,
+        port=args.port,
+        rcon_password=args.rcon_password,
+        check_update=args.check_update,
+    )
+
+
 def cmd_tunnel_db(args: argparse.Namespace) -> None:
     from . import remote
 
@@ -150,6 +176,25 @@ def cmd_tunnel_db(args: argparse.Namespace) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the top-level deploy CLI parser."""
+    load_local_env()
+
+    def env_int(name: str, default: int) -> int:
+        value = os.environ.get(name, str(default))
+        try:
+            return int(value)
+        except ValueError:
+            die(f"{name} must be an integer, found {value!r}")
+
+    server_path = os.environ.get("CS2_SERVER_PATH", "C:/cs2-server")
+    steamcmd_path = os.environ.get(
+        "STEAMCMD_PATH", "C:/Program Files/steamcmd/steamcmd.exe"
+    )
+    map_name = os.environ.get("CS2_MAP", "de_dust2")
+    max_players = env_int("CS2_MAX_PLAYERS", 16)
+    port = env_int("CS2_PORT", 27015)
+    gslt_token = os.environ.get("GSLT_TOKEN", "")
+    rcon_password = os.environ.get("RCON_PASSWORD", "")
+
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -202,18 +247,31 @@ def build_parser() -> argparse.ArgumentParser:
     dbs.add_argument("--dry-run", action="store_true")
 
     local = command("local", "deploy built plugins into a local CS2 server tree", cmd_local)
-    local.add_argument("--server-path", default="C:/cs2-server")
+    local.add_argument("--server-path", default=server_path)
     local.add_argument("--plugin-name", default="")
 
     start = command("start", "start a local CS2 dedicated server", cmd_start)
-    start.add_argument("--server-path", default="C:/cs2-server")
-    start.add_argument("--steamcmd-path", default="C:/Program Files/steamcmd/steamcmd.exe")
-    start.add_argument("--map", default="de_dust2")
-    start.add_argument("--gslt-token", default="")
-    start.add_argument("--max-players", type=int, default=64)
-    start.add_argument("--port", type=int, default=27015)
-    start.add_argument("--rcon-password", default="")
+    start.add_argument("--server-path", default=server_path)
+    start.add_argument("--steamcmd-path", default=steamcmd_path)
+    start.add_argument("--map", default=map_name)
+    start.add_argument("--gslt-token", default=gslt_token)
+    start.add_argument("--max-players", type=int, default=max_players)
+    start.add_argument("--port", type=int, default=port)
+    start.add_argument("--rcon-password", default=rcon_password)
     start.add_argument("--check-update", action="store_true")
+
+    dev = command("dev", "build, test, and install one plugin locally", cmd_dev)
+    dev.add_argument("plugin")
+    dev.add_argument("--server-path", default=server_path)
+    dev.add_argument("--no-test", action="store_true", help="skip CTest for a faster iteration")
+    dev.add_argument("--start", action="store_true", help="launch the server after installation")
+    dev.add_argument("--steamcmd-path", default=steamcmd_path)
+    dev.add_argument("--map", default=map_name)
+    dev.add_argument("--gslt-token", default=gslt_token)
+    dev.add_argument("--max-players", type=int, default=max_players)
+    dev.add_argument("--port", type=int, default=port)
+    dev.add_argument("--rcon-password", default=rcon_password)
+    dev.add_argument("--check-update", action="store_true")
 
     rcon = command("rcon", "run console commands on a live instance over RCON", cmd_rcon)
     rcon.add_argument("commands", nargs="+", help="one or more console commands (quote each)")

@@ -1,45 +1,57 @@
-# Deployment scripts
+# Local deployment commands
 
-The deployment tools copy built Metamod:Source plugins to a CS2 server and copy
-VoltMod's shared gamedata with them.
+These commands install built plugins into a local Windows CS2 server. For
+remote Docker hosts, use the [production deployment guide](../deploy/README.md).
 
-## Usage
+## Configure defaults
 
-```bash
-uv run poe deploy
-uv run poe deploy --server-path "D:/CS2-Server"
+```powershell
+Copy-Item .env.example .env
+```
+
+Set `CS2_SERVER_PATH` in `.env`. You can also set the build preset, SteamCMD
+path, map, port, player limit, GSLT, and RCON password.
+
+## Build, install, and launch
+
+```powershell
+uv run poe dev admin-system
+uv run poe dev admin-system --start
+uv run poe dev admin-system --no-test
+```
+
+`dev` builds the repository and installs only the named plugin. Tests run by
+default. `--start` launches the server after installation, and `--no-test`
+uses the faster configure-and-build path.
+
+To keep the steps separate:
+
+```powershell
+uv run poe build
 uv run poe deploy --plugin-name admin-system
-uv run poe deploy --server-path "D:/CS2-Server" --plugin-name admin-system
+uv run poe start-server
 ```
 
-The default Windows build preset is `windows-msvc-release`; override it with
-`CS2_BUILD_PRESET`.
+Command-line values override `.env`:
 
-```bash
-CS2_BUILD_PRESET=windows-msvc-debug uv run poe deploy --plugin-name admin-system
+```powershell
+uv run poe deploy --server-path D:/CS2-Server --plugin-name admin-system
+uv run poe start-server --server-path D:/CS2-Server --map de_mirage
 ```
 
-## Build output
+Set `CS2_BUILD_PRESET` to install another build:
 
-The scripts expect binaries under:
+```powershell
+$env:CS2_BUILD_PRESET = "windows-msvc-debug"
+uv run poe deploy --plugin-name admin-system
+```
+
+## Installed layout
+
+The installer stages the plugin's CMake component and merges:
 
 ```text
-build/<preset>/plugins/<plugin>/<platform-arch>/
-```
-
-Examples:
-
-```text
-build/windows-msvc-release/plugins/admin-system/windows-x86_64/admin-system.dll
-build/linux-steamrt-release/plugins/admin-system/linux-x86_64/admin-system.so
-```
-
-## Server layout
-
-Files are deployed under the CS2 server `csgo/` directory:
-
-```text
-addons/
+game/csgo/addons/
   metamod/<plugin>.vdf
   <plugin>/
     bin/win64/<plugin>.dll
@@ -48,28 +60,10 @@ addons/
     gamedata/
 ```
 
-Linux package bundles use:
+Linux packages use `bin/linuxsteamrt64/<plugin>.so`.
 
-```text
-addons/<plugin>/bin/linuxsteamrt64/<plugin>.so
-```
+Existing `settings.jsonc` files are preserved. Debug symbols are included when
+available, empty config directories are skipped, and production packaging
+generates platform-correct Metamod VDF files.
 
-## Add a plugin
-
-1. Create `plugins/<new>/src/`, `plugins/<new>/CMakeLists.txt`, and any
-   configuration files.
-2. Call `voltmod_add_plugin(<new> VERSION <version> ...)` in the plugin CMake
-   file. VoltMod generates the VDF during installation.
-3. Add `add_subdirectory(plugins/<new>)` to the root `CMakeLists.txt`.
-4. Add any new third-party C++ dependencies to `conanfile.py`, find them in
-   the root `CMakeLists.txt`, and link their imported targets in the plugin
-   CMake file.
-
-## Copy behavior
-
-- Existing `settings.jsonc` files are preserved to avoid overwriting DB
-  credentials or per-server config.
-- Debug symbols are copied if they exist.
-- Empty config directories are skipped.
-- `python -m deploy.tools.cli package` generates platform-correct Metamod VDF
-  files for Docker deployment bundles.
+After starting the server, run `meta list` to verify the plugin.

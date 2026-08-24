@@ -96,6 +96,17 @@ def plugin_names(requested: str) -> list[str]:
     return names
 
 
+def server_csgo(server_path: str) -> Path:
+    """Resolve and validate a local server's csgo directory."""
+    csgo = Path(server_path) / "game" / "csgo"
+    if not csgo.is_dir():
+        die(
+            f"CS2 server not found at {csgo}\n"
+            "Please specify the correct server path with --server-path"
+        )
+    return csgo
+
+
 def deploy_plugin(name: str, csgo: Path, *, named: bool) -> None:
     """Stage one plugin via cmake --install and merge it into the server tree."""
     print(f"--- {name} ---")
@@ -141,12 +152,7 @@ def deploy_plugin(name: str, csgo: Path, *, named: bool) -> None:
 
 def deploy_local(server_path: str, plugin_name: str) -> None:
     """Deploy the selected plugins into a local CS2 server tree."""
-    csgo = Path(server_path) / "game" / "csgo"
-    if not csgo.is_dir():
-        die(
-            f"CS2 server not found at {csgo}\n"
-            "Please specify the correct server path with --server-path"
-        )
+    csgo = server_csgo(server_path)
 
     plugins = plugin_names(plugin_name)
     print("=== Metamod:Source Plugin Deployment ===\n")
@@ -160,3 +166,42 @@ def deploy_local(server_path: str, plugin_name: str) -> None:
 
     print(f"\n=== Deployment Complete ===\nDeployed plugins: {' '.join(plugins)}")
     print("\nTo verify installation, run on server console: meta list")
+
+
+def develop_plugin(
+    plugin_name: str,
+    server_path: str,
+    *,
+    run_tests: bool,
+    launch: bool,
+    steamcmd_path: str,
+    map_name: str,
+    gslt_token: str,
+    max_players: int,
+    port: int,
+    rcon_password: str,
+    check_update: bool,
+) -> None:
+    """Build, install, and optionally launch one plugin for local development."""
+    if not plugin_name:
+        die("dev needs a plugin name")
+    plugin_names(plugin_name)
+    server_csgo(server_path)
+
+    print(f"=== Developing {plugin_name} with {BUILD_PRESET} ===")
+    buildtools.build(ROOT, BUILD_PRESET, run_tests=run_tests)
+    deploy_local(server_path, plugin_name)
+
+    if launch:
+        start_server(
+            server_path,
+            steamcmd_path,
+            map_name,
+            gslt_token,
+            max_players,
+            port,
+            rcon_password,
+            check_update=check_update,
+        )
+    else:
+        print("\nNext: start the server with `uv run poe start-server`.")

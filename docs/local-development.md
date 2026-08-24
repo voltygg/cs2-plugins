@@ -1,127 +1,94 @@
-# Local development on Windows
+# Local development
 
-This project uses Conan 2.29.1+ and CMake 4.3.4+ presets. AMBuild and vcpkg are
-not part of the build.
+For the complete first-plugin walkthrough, start with
+[Create your first plugin](getting-started-plugin.md).
 
-## Prerequisites
+## Toolchain
 
-- Windows 10/11 x64
-- Git for Windows
-- Visual Studio 2026 Build Tools with Desktop development with C++
-- CMake 4.3.4+, Conan 2.29.1+, and Ninja installed globally or through `uv sync`
-
-The project's `voltmod` dependency carries the supported tool versions:
+VoltMod pins CMake 4.3.4+, Conan 2.29.1+, Ninja, and clang-format through its
+Python package. Install Python 3.14+ and uv, then run:
 
 ```powershell
 uv sync
+uv run poe doctor
 ```
 
-If the tools are not available through the project environment, install them
-globally with pipx:
+Windows builds use MSVC. Linux builds use the Steam Runtime profiles.
+AMBuild and vcpkg are not part of this build.
 
-```powershell
-pipx install "conan>=2.29.1"
-pipx install "cmake>=4.3.4"
-pipx install ninja
-```
+No Git submodule is required for normal builds. Conan resolves VoltMod,
+HL2SDK, and Metamod:Source. The `vendor/voltmod` checkout is only for
+coordinated framework work.
 
-## Clone
+## Build presets
 
-```powershell
-git clone https://github.com/voltygg/cs2-plugins.git
-cd cs2-plugins
-```
-
-No submodule is required to build. VoltMod, HL2SDK, and Metamod are Conan
-packages; `vendor/voltmod` is only for coordinated framework development.
-
-## Build
-
-The build loads the MSVC environment through `vcvars64.bat`, so it works from a
-regular shell.
-
-```bash
-uv sync
-uv run poe bootstrap
-```
-
-`bootstrap` installs the framework's Conan profiles and the public remote, then builds.
-After the first build:
-
-```bash
-uv run poe build windows-msvc-release
-uv run poe build windows-msvc-debug
-```
-
-The build task runs `conan install`, configures CMake, and builds the requested
-preset through the workflow preset. It looks for tools in the project
-environment, then through `uv run`, then on `PATH`.
-
-## CMake presets
-
-| Preset | Purpose |
+| Preset | Output |
 | --- | --- |
-| `windows-msvc-release` | Windows release plugin DLL |
-| `windows-msvc-debug` | Windows debug plugin DLL |
-| `linux-steamrt-release` | Linux Steam Runtime release plugin SO |
-| `linux-steamrt-debug` | Linux Steam Runtime debug plugin SO |
+| `windows-msvc-release` | Windows release DLL |
+| `windows-msvc-debug` | Windows debug DLL |
+| `linux-steamrt-release` | Linux Steam Runtime SO |
+| `linux-steamrt-debug` | Linux Steam Runtime debug SO |
 
-Output files land under:
+```powershell
+uv run poe bootstrap
+uv run poe build windows-msvc-debug
+uv run poe build-linux
+```
+
+Bootstrap performs the first release build and runs tests. Later build commands
+run Conan install, CMake configure, compilation, and CTest for the selected
+preset.
+
+Output is written under:
 
 ```text
 build/<preset>/plugins/<plugin>/<platform-arch>/
 ```
 
-For example:
+## Local plugin loop
 
-```text
-build/windows-msvc-release/plugins/admin-system/windows-x86_64/admin-system.dll
+Copy [`.env.example`](../.env.example) to `.env` and set
+`CS2_SERVER_PATH`. Then run:
+
+```powershell
+uv run poe dev admin-system
+uv run poe start-server
 ```
 
-## Deploy to a local server
+Add `--start` to `dev` to launch immediately. Add `--no-test` for a fast local
+iteration after the full suite has passed.
 
-```bash
-uv run poe deploy --server-path "C:/cs2-server" --plugin-name admin-system
-```
+The installer uses the CMake component for the selected plugin and merges its
+server-ready `addons/` tree into `game/csgo`. It seeds
+`configs/settings.jsonc` once and preserves later operator edits.
 
-Set `CS2_BUILD_PRESET` if you want to deploy from a non-default preset:
+## Common failures
 
-```bash
-CS2_BUILD_PRESET=windows-msvc-debug uv run poe deploy --plugin-name admin-system
-```
+### Compiler not found
 
-## Common issues
-
-### Conan cannot find a compiler
-
-On Windows, run from an x64 Native Tools shell if the automatic environment setup
-does not work. On Linux, set `CC` and `CXX`:
+Install the Visual Studio C++ workload on Windows. On Linux, select GCC 14 for
+the Steam Runtime profile:
 
 ```bash
 CC=gcc-14 CXX=g++-14 uv run poe build-linux
 ```
 
-### Cannot find HL2SDK or Metamod
+### Conan profiles or remote missing
 
-The SDK packages come from the public Cloudsmith remote. Register it and the
-profiles in one command:
-
-```bash
-conan config install https://github.com/voltygg/voltmod.git -sf conan
+```powershell
+uv run poe bootstrap
 ```
 
-`uv run poe bootstrap` does this for you; `poe build` also adds the remote if it
-is missing (set `VOLTMOD_SKIP_REMOTE_SETUP=1` to manage remotes yourself).
+This installs the canonical profiles and `volty` remote. Set
+`VOLTMOD_SKIP_REMOTE_SETUP=1` only when another process manages Conan remotes.
 
-### `ERROR: Missing binary: hl2sdk-cs2/...`
+### Missing HL2SDK or Metamod package
 
-The SDK packages are never built locally - the build passes
-`--build=!hl2sdk-cs2/*`. This means the remote has no binary for your profile,
-which is a publish problem, not a local one. Check that your profile matches
+Linux builds do not build SDK packages locally. A missing binary for a
+canonical profile is a package-publication problem. Check that the build uses
 `linux-steamrt.txt` or `windows-msvc.txt`.
 
 ### Missing generated protobuf headers
 
-The `hl2sdk-cs2` package ships generated `.pb.h` and `.pb.cc` files. Its build
-module attaches them to the framework with `hl2sdk_attach_generated_sources()`;
-consumer builds do not run `protoc`.
+The `hl2sdk-cs2` package supplies generated protobuf sources. Consumer builds
+do not run `protoc`.

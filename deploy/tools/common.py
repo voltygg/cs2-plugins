@@ -92,3 +92,17 @@ def load_server_env(server_id: str, *, required: bool) -> None:
         ) from exc
 
     load_dotenv(env_file, override=False)
+
+
+def load_local_env() -> None:
+    """Load optional local-development defaults from the repository .env."""
+    env_file = ROOT / ".env"
+    if not env_file.is_file():
+        return
+    try:
+        from dotenv import load_dotenv
+    except ImportError as exc:
+        raise SystemExit(
+            "ERROR: python-dotenv is required to load .env; run through `uv run`."
+        ) from exc
+    load_dotenv(env_file, override=False)

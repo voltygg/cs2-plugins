@@ -9,6 +9,7 @@ framework work; it affects builds only after `conan editable add vendor/voltmod`
 
 ```bash
 uv sync
+uv run poe doctor
 uv run poe bootstrap
 uv run poe build
 uv run poe build windows-msvc-debug
@@ -16,9 +17,12 @@ uv run poe build-linux
 ctest --preset windows-msvc-release
 uv run poe lint
 uv run poe format-check
+uv run poe dev <plugin>
 ```
 
-`bootstrap` installs VoltMod's Conan profiles and public remote, then builds.
+`doctor` checks the local toolchain, project, Conan configuration, and an
+optional CS2 server without changing them. `bootstrap` installs VoltMod's Conan
+profiles and public remote, then builds.
 Build output is under
 `build/<preset>/plugins/<name>/<platform-arch>/`. The build tasks run
 `voltmod`, installed by this repository's `pyproject.toml`.
