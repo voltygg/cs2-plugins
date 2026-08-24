@@ -2,8 +2,8 @@
 
 #include "App.hpp"
 
-#include <VoltMod/Core/Log.hpp>
 #include <Contracts/IAdminActions.hpp>
+#include <VoltMod/Core/Log.hpp>
 #include <algorithm>
 #include <format>
 

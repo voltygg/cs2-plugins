@@ -12,7 +12,7 @@ const Action Kill{Flag(Permission::Control), /*requireAlive*/ true, [](const Act
 
 const Action Godmode{Flag(Permission::Health), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                          return VoltMod::Sdk::PawnOps::ToggleGodmode(ctx.TargetCtrl) ? "broadcast.godmodeOn"
-                                                                                    : "broadcast.godmodeOff";
+                                                                                     : "broadcast.godmodeOff";
                      }};
 
 const ParamAction SetHealth{Flag(Permission::Health), /*requireAlive*/ true,

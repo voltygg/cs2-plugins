@@ -55,7 +55,7 @@ private:
         bool IsFloat;
         float Value;              // bools use 0/1
         std::string NetValue;     // string form sent via ReplicateToClient
-        VoltMod::RawConVar Raw;    // raw storage handle for the per-player flip
+        VoltMod::RawConVar Raw;   // raw storage handle for the per-player flip
         float SavedValue = 0.0f;  // engine value saved before ApplyGlobal / a flip
     };
 

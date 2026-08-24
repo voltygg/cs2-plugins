@@ -46,8 +46,9 @@ bool ReportManager::CanReport(int64_t reporterSteamId, int64_t targetSteamId) co
     return static_cast<bool>(EvaluateGate(reporterSteamId, targetSteamId, TimeUtils::Now()));
 }
 
-void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Player& target, const std::string& reasonCode,
-                           const std::string& reasonText, std::function<void(bool)> onDone)
+void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Player& target,
+                           const std::string& reasonCode, const std::string& reasonText,
+                           std::function<void(bool)> onDone)
 {
     const int64_t reporterSteamId = reporter.GetSteamID();
     const int64_t targetSteamId = target.GetSteamID();

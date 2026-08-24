@@ -39,7 +39,7 @@ bool AdminSystemPlugin::OnLoad(VoltMod::Runtime& runtime, bool /*late*/)
 void AdminSystemPlugin::OnRegisterHooks(VoltMod::Runtime& runtime)
 {
     _clientListening = VOLTMOD_SCOPED_HOOK(IVEngineServer2, SetClientListening, runtime.Interfaces.Engine,
-                                          SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
+                                           SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
 }
 
 void AdminSystemPlugin::OnPlayerConnect(Player* player)

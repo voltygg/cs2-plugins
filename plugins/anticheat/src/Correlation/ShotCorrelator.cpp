@@ -111,8 +111,8 @@ void ShotCorrelator::Initialize()
         [this](const VoltMod::Events::BulletImpact& e) { OnBulletImpact(e); }));
     // player_hurt carries the hitgroup SilentAim scores headshots from, which the typed view omits.
     _subscriptions.push_back(events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); }));
-    _subscriptions.push_back(
-        events.Listen<VoltMod::Events::PlayerDeath>([this](const VoltMod::Events::PlayerDeath& e) { OnPlayerDeath(e); }));
+    _subscriptions.push_back(events.Listen<VoltMod::Events::PlayerDeath>(
+        [this](const VoltMod::Events::PlayerDeath& e) { OnPlayerDeath(e); }));
 }
 
 void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)

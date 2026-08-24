@@ -63,7 +63,7 @@ StageResult App::ConnectDatabase()
         return StageResult::Degraded("unavailable; chat commands will reject all callers");
 
     Migration = VoltMod::RunMigrations(Db, VoltMod::AddonFile(Core::AddonName, "configs/migrations"),
-                                      {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
+                                       {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
     if (!Migration)
         return StageResult::Degraded("migrations failed; not loading admins against an out-of-date schema");
 

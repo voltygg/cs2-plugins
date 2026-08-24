@@ -68,9 +68,9 @@ std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAut
         .TimeoutMs = cfg.timeoutMs,
     };
     return VoltMod::Http::BuildJsonGet(spec, {
-                                                {"code", roomCode},
-                                                {"steamId", std::to_string(targetSteamId)},
-                                            });
+                                                 {"code", roomCode},
+                                                 {"steamId", std::to_string(targetSteamId)},
+                                             });
 }
 
 std::optional<bool> ParsePresence(const Core::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result)
