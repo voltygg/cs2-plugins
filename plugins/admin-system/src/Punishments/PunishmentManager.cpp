@@ -170,7 +170,7 @@ bool PunishmentManager::IssueBan(Ban& ban)
 
     // Kick the player if currently connected.
     if (auto* player = _rt.Players.GetPlayerBySteamId(ban.TargetSteamId))
-        player->Controller().Kick(ban.Reason.c_str());
+        CS2Kit::PlayerController(player->GetSlot()).Kick(ban.Reason.c_str());
 
     _chat.BroadcastPunishment("banned", ban.AdminName, ban.TargetName, ban.Reason, ban.Duration);
     return true;

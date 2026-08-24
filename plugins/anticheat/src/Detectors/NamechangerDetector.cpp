@@ -9,7 +9,7 @@ namespace Anticheat
 
 std::string NamechangerDetector::CurrentName(CS2Kit::Players::Player* player)
 {
-    std::string name = player->Controller().GetPlayerName();
+    std::string name = CS2Kit::PlayerController(player->GetSlot()).GetPlayerName();
     return name.empty() ? player->GetName() : name;
 }
 
