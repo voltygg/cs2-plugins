@@ -1,6 +1,7 @@
-# The image build only needs the Conan manifest and lock - profiles come from
-# `conan config install`, the runtime stage COPYs nothing, and local builds
-# volume-mount the source. This whitelist keeps ~1.4GB out of the context.
+# The image build only needs the Conan manifest, its lock and the version the recipe
+# reads - profiles come from `conan config install`, the runtime stage COPYs nothing,
+# and local builds volume-mount the source. This whitelist keeps ~1.4GB out of context.
 *
 !conanfile.py
 !conan.lock
+!version.txt
