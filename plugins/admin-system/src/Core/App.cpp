@@ -1,9 +1,9 @@
 #include "App.hpp"
 
 #include "../Admin/Effects/Model.hpp"
+#include "../Commands/Commands.hpp"
 #include "../Database/Repositories/ServerRepository.hpp"
 #include "Config.hpp"
-#include "../Commands/Commands.hpp"
 
 #include <CS2Kit/Api.hpp>
 #include <CS2Kit/Database/Api.hpp>
