@@ -92,7 +92,6 @@
   "common": {
     "selectSwapTarget": "Select swap partner",
     "noPlayers": "No players available",
-    "noPermission": "You do not have permission to use this command.",
     "notImplemented": "(coming soon)",
     "menuOpened": "Admin menu opened."
   },

@@ -70,7 +70,7 @@ void ChatService::ReplyLink(int slot, std::string_view label, std::string_view u
 
 void ChatService::NoPermission(int slot)
 {
-    auto msg = std::format("{}{}", ChatColors::Red, _rt.Translations.Get("common.noPermission", slot));
+    auto msg = std::format("{}{}", ChatColors::Red, _rt.Translations.Get("cmd.noPermission", slot));
     _rt.Messages.Reply(slot, msg);
 }
 

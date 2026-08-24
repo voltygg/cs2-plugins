@@ -43,7 +43,7 @@ void RegisterCheatCheckCommands(CS2Kit::CommandManager& commands, App& app)
         .Handler =
             [&app](CommandContext& c) {
                 if (!AdminSystem::Admin::Actions::CallCheck(app, c.CallerSlot(), c.Target().GetSlot()))
-                    return c.Fail("common.noPermission");
+                    return c.Fail("cmd.noPermission");
                 return c.Ok("cheatCheck.started", {{"name", c.Target().GetName()}});
             },
     });
