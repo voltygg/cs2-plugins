@@ -122,7 +122,7 @@ Current patterns:
 - Keep docs task-first, accurate, and runnable. Preserve commands, paths,
   identifiers, defaults, links, and configuration keys.
 - Use plain English and sentence-case headings. Call VoltMod the framework;
-  reserve “library” for actual libraries or CMake targets. Update affected docs
+  reserve "library" for actual libraries or CMake targets. Update affected docs
   and templates with behavior or API changes.
 
 ## Tests and configuration

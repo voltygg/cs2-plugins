@@ -61,9 +61,9 @@ Use a dry run before changing deployment inventory or server selection.
 
 ## Caches
 
-The pipeline caches Conan data using the dependency lock state. Ccache entries
-are restored from revision-, branch-, and lock-based keys so exact results are
-preferred while older compatible entries remain available.
+The pipeline keys the Conan cache on the dependency lock state. Ccache restore
+keys run from most to least specific: revision, then branch, then lock. An exact
+hit wins, and an older compatible entry is used when there is no exact hit.
 
 ## Local checks
 

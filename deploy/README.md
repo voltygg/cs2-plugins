@@ -37,8 +37,8 @@ the same host share the SteamCMD-managed game installation:
 
 The shared host installation is mounted at
 `/home/steam/cs2-dedicated` inside each container. An instance-specific addons
-tree is then mounted over its `csgo/addons` directory, allowing different
-plugin sets on one host.
+tree is then mounted over its `csgo/addons` directory, so one host can run
+different plugin sets.
 
 Before launch, `pre.sh` copies the instance bundle, installs or refreshes
 Metamod, and patches `gameinfo.gi`. Synchronization does not use `--delete`,

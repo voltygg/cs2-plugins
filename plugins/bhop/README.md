@@ -27,14 +27,14 @@ flag controls access, and the admin menu can toggle Bhop for a player.
 
 The plugin updates replicated movement convars so clients predict the same
 movement rules as the server. In grants mode it temporarily applies movement
-settings around each granted player's command processing, keeping the effect
+settings around each granted player's command processing, so the effect stays
 scoped to that player.
 
 ## Server commands
 
 | Command | Purpose |
 | --- | --- |
-| `bhop_player <steamid64> <0|1>` | Disable or enable bhop for one player |
+| `bhop_player <steamid64> <0\|1>` | Disable or enable bhop for one player |
 | `bhop_reload` | Reload the plugin configuration |
 
 `bhop_player` is intended for server-side use and automation.

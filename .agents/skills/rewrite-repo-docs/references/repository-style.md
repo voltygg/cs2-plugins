@@ -49,20 +49,21 @@ When in doubt, make the passage clearer before making it shorter.
 
 - Write every document and comment in plain English. Use familiar words unless an exact technical term is necessary.
 - Write like a careful developer helping another person. Keep the tone calm, direct, and natural.
-- Use specific nouns and verbs. Prefer “Conan resolves the locked revision” to “This robust process ensures consistency.”
-- State the point without “In this section,” “It is important to note,” “Let’s explore,” or a generic recap.
-- Avoid inflated words such as “pivotal,” “seamless,” “powerful,” “comprehensive,” and “cutting-edge” unless the claim is precise and supported.
-- Name the source of a claim. Do not write “experts recommend” or “best practices suggest” without an actual source.
+- Use specific nouns and verbs. Prefer "Conan resolves the locked revision" to "This robust process ensures consistency."
+- State the point without "In this section," "It is important to note," "Let's explore," or a generic recap.
+- Avoid inflated words such as "pivotal," "seamless," "powerful," "comprehensive," and "cutting-edge" unless the claim is precise and supported.
+- Name the source of a claim. Do not write "experts recommend" or "best practices suggest" without an actual source.
 - Use one name for one concept. Do not rotate synonyms to avoid repetition.
 - Explain uncommon abbreviations and project terms on first use when the audience might not know them.
 - Use headings and lists when they help navigation, not to give every sentence a label.
 - Use sentence-case headings and restrained emphasis.
 - Keep paragraphs focused, but do not force every sentence to be short.
-- Do not ban em dashes, passive voice, contractions, or groups of three mechanically. Rewrite them only when the result is clearer.
+- Do not use an em dash or en dash in prose, and do not substitute a spaced hyphen for one. Use a period, comma, colon, semicolon, or parentheses. The character is fine where it is content rather than punctuation: code samples, CLI flags, math, and diagrams. A spaced hyphen is also fine as the separator in a definition list, such as the `@subpage <anchor> - <gloss>` index lines.
+- Do not ban passive voice, contractions, or groups of three mechanically. Rewrite them only when the result is clearer.
 - Use contractions when they sound natural in user-facing prose. Do not force them into API contracts or formal requirements.
 - Leave neutral technical prose neutral. A human tone does not mean adding jokes, opinions, fake enthusiasm, or personal stories.
 
-These voice checks adapt the useful parts of [Humanizer](https://github.com/blader/humanizer) for software documentation. They deliberately omit its blanket punctuation rules and general-purpose personality guidance.
+These voice checks adapt the useful parts of [Humanizer](https://github.com/blader/humanizer) for software documentation. The dash rule above is Humanizer's and applies as written. Its remaining blanket punctuation rules and its general-purpose personality guidance do not apply here.
 
 ## Make procedures unambiguous
 

@@ -2,7 +2,7 @@
 
 Commits and pushes changes spanning this repo and a local voltmod checkout. The two
 are separate repos joined by a Conan dependency, not a submodule, so there is no
-pointer to bump - but voltmod still lands **first**, because cs2-plugins resolves it
+pointer to bump. voltmod still lands **first**, because cs2-plugins resolves it
 by git ref (`pyproject.toml`) and by package version (`conanfile.py`).
 
 ## When to use
@@ -28,9 +28,9 @@ git -C <kit> diff HEAD --stat
 git -C <kit> log --oneline -3
 ```
 
-- **Both clean** - nothing to do. Say so and stop.
-- **Only cs2-plugins dirty** - skip to step 3.
-- **voltmod dirty** - start at step 2.
+- If both are clean, there is nothing to do. Say so and stop.
+- If only cs2-plugins is dirty, skip to step 3.
+- If voltmod is dirty, start at step 2.
 
 ### 2. Commit and push voltmod first
 
@@ -41,7 +41,7 @@ git -C <kit> add <specific files>
 git -C <kit> commit -m "$(cat <<'EOF'
 <type>: <summary>
 
-<optional body - why, not how>
+<optional body: why, not how>
 EOF
 )"
 git -C <kit> push origin main
@@ -61,7 +61,7 @@ them decide whether to:
 - keep working locally against `conan editable add <kit>`, in which case cs2-plugins
   must not be pushed with a `conan.lock` that names an unpublished recipe revision.
 
-Do not tag on your own - a tag is a release.
+Do not tag on your own. A tag is a release.
 
 ### 3. Stage and commit cs2-plugins
 
@@ -80,10 +80,10 @@ EOF
 
 Watch for two files that must move together with a kit release, never ahead of it:
 
-- `conan.lock` - pins `voltmod/<version>#<recipe-revision>`. A revision that is not
+- `conan.lock` pins `voltmod/<version>#<recipe-revision>`. A revision that is not
   on the remote turns CI red with `ERROR: Package not resolved`.
-- `pyproject.toml` / `uv.lock` - the `voltmod` git dependency. After pushing the kit,
-  refresh with `uv lock --upgrade-package voltmod`.
+- `pyproject.toml` and `uv.lock` hold the `voltmod` git dependency. After pushing
+  the kit, refresh with `uv lock --upgrade-package voltmod`.
 
 ### 4. Push cs2-plugins
 
@@ -102,12 +102,12 @@ user can verify both landed.
 
 Match the existing history (`git log --oneline -10` to confirm). Prefixes in use:
 
-- `feat:` - new functionality
-- `fix:` - bug fix
-- `refactor:` - restructuring without behavior change
-- `chore:` - dependency bumps, config tweaks, version bumps
-- `docs:` - documentation only
-- `ci:` - workflow and pipeline changes
+- `feat:` new functionality
+- `fix:` bug fix
+- `refactor:` restructuring without behavior change
+- `chore:` dependency bumps, config tweaks, version bumps
+- `docs:` documentation only
+- `ci:` workflow and pipeline changes
 
 Append `!` (e.g. `refactor!:`) when consumers must change something.
 
@@ -115,7 +115,7 @@ Append `!` (e.g. `refactor!:`) when consumers must change something.
 
 - Summary: imperative mood, lowercase, no trailing period, under 72 chars
 - Body wrapped at 72, blank line after the summary
-- Focus on **why** - the diff already shows what
+- Focus on **why**; the diff already shows what
 - Do NOT append `Co-Authored-By` or any other trailer unless explicitly asked
 
 ## Important

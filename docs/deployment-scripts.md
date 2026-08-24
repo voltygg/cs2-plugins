@@ -62,8 +62,8 @@ game/csgo/addons/
 
 Linux packages use `bin/linuxsteamrt64/<plugin>.so`.
 
-Existing `settings.jsonc` files are preserved. Debug symbols are included when
-available, empty config directories are skipped, and production packaging
-generates platform-correct Metamod VDF files.
+The installer keeps existing `settings.jsonc` files. It copies debug symbols
+when they are available, skips empty config directories, and writes
+platform-correct Metamod VDF files for production packages.
 
 After starting the server, run `meta list` to verify the plugin.

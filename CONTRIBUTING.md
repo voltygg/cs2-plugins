@@ -47,7 +47,7 @@ Third-party C++ dependencies require:
 - Keep game code on the main thread. VoltMod returns database and HTTP
   completions to that thread.
 - Pass services through constructors; do not add singletons.
-- Keep files near 300–350 lines when that improves readability.
+- Keep files near 300 to 350 lines when that improves readability.
 - Comment non-obvious contracts, reasons, and constraints instead of syntax.
 
 ## Change VoltMod with a plugin

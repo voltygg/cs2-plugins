@@ -88,8 +88,8 @@ Individual menu categories and actions remain permission-gated.
 
 | Command | Flag | Purpose |
 | --- | --- | --- |
-| `!freeze_admin <target|steamId> [reason]` | `a` | Suspend a lower-immunity admin |
-| `!unfreeze_admin <steamId|name>` | `a` | Restore a frozen admin |
+| `!freeze_admin <target\|steamId> [reason]` | `a` | Suspend a lower-immunity admin |
+| `!unfreeze_admin <steamId\|name>` | `a` | Restore a frozen admin |
 | `!frozen_admins` | `a` | List active freezes |
 
 ### Cheat checks and reports
@@ -102,7 +102,7 @@ Individual menu categories and actions remain permission-gated.
 | `!report` | none | Open the report menu; alias: `!r` |
 
 `!report` takes no arguments. The menu resolves the selected player to a
-SteamID, preventing ambiguous name-based reports.
+SteamID, so a report cannot land on the wrong player with a similar name.
 
 ### Targets and durations
 

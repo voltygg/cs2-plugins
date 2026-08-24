@@ -72,8 +72,8 @@ Antiaim uses a decaying score:
 - A one-command attack return adds 5.
 
 Spin reports only after sustained angular speed with at least 0.85 directional
-consistency. Jitter requires an exactly repeating yaw pattern, avoiding a
-report from a legitimate 180-degree bind.
+consistency. Jitter requires an exactly repeating yaw pattern, so a legitimate
+180-degree bind does not report.
 
 ### Silent aim
 
@@ -100,7 +100,7 @@ counts only after three consecutive refusals and is always kick-only. Every
 player/convar pair reports once and re-arms only after a valid result.
 
 `namechanger` tracks distinct visible names. Its baseline stays current while
-detection is gated off, preventing a stale-name report later.
+detection is gated off, so a name recorded during that gap cannot report later.
 
 ## Responses
 
@@ -153,9 +153,9 @@ events and convar rules. It is shared by all servers and can be reloaded without
 rebuilding.
 
 Parsing is strict. Unknown keys, constraints, tiers, or numeric rules without a
-bound reject the complete load, leaving the active tables unchanged. Duplicate
-convar names are discarded and logged. The test suite also parses the shipped
-file.
+bound reject the complete load, and the active tables stay unchanged. The plugin
+discards duplicate convar names and logs each one. The test suite also parses the
+shipped file.
 
 This file is replaced on every deployment. Copy live-server hotfixes back into
 the repository or the next deploy will revert them.
@@ -228,9 +228,9 @@ crash, create false evidence, or silently disable detection.
 | `RunCommand` | Crash on the first movement tick |
 | `UserCmdPB` | Missing values silence aim modules; stale values can resemble valid angles |
 | `UserCmdNumber` | Command chains collapse, silently disabling aimbot and part of antiaim |
-| `Teleport` | Teleport grace stops suppressing discontinuities, causing false positives |
+| `Teleport` | Teleport grace stops suppressing discontinuities, so false positives appear |
 | `ProcessRespondCvarValue` | Initialization bounds checks force degraded operation |
-| `ServerSideClientSlot` | Initialization bounds checks prevent responses being assigned to the wrong player |
+| `ServerSideClientSlot` | Initialization bounds checks stop responses reaching the wrong player |
 
 `anticheat_status` exposes `teleportTracker` and reports client convars as
 `degraded` when the two ClientCvars offsets fail. In that state, network polling
@@ -255,7 +255,7 @@ plugins/anticheat/
 ```
 
 The shot correlator joins a command to the shot and events it produced. A
-`weapon_fire` event binds only when exactly one candidate is in the window;
-ambiguous candidates are discarded. It retains 128 ticks of position history,
-and missing input-history indices remain absent instead of being clamped to
-another command's angles.
+`weapon_fire` event binds only when exactly one candidate is in the window; it
+discards ambiguous candidates. It retains 128 ticks of position history, and
+leaves missing input-history indices absent rather than clamping them to another
+command's angles.
