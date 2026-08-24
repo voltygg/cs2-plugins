@@ -1,63 +1,85 @@
 # CS2 plugins
 
-C++23 Metamod:Source plugins for Counter-Strike 2 community servers. Each plugin
-has its own source, configuration, and CMake target under `plugins/`.
-
-VoltMod provides the shared command, menu, PostgreSQL, and Source SDK layers.
-Conan supplies VoltMod, HL2SDK, and Metamod. The optional `vendor/voltmod`
-checkout supports changing the framework and plugins together.
+Native C++23 plugins for Counter-Strike 2, built on the
+[VoltMod framework](vendor/voltmod/README.md).
 
 ## Plugins
 
-| Plugin | Purpose |
-| --- | --- |
-| [admin-system](plugins/admin-system/README.md) | Admin commands and menus, punishments, effects, groups, abuse protection, and player reports |
-| [anticheat](plugins/anticheat/README.md) | Server-side aim, input, client-convar, and integrity detections |
-| [bhop](plugins/bhop/README.md) | Client-predicted bunnyhop with server-wide and per-player modes |
-
-## Requirements
-
-- CS2 Dedicated Server
-- [Metamod:Source 2.0](https://www.sourcemm.net/)
-- PostgreSQL 18+ for plugins that use a database
+| Plugin | What it provides | Runtime dependency |
+| --- | --- | --- |
+| [Admin system](plugins/admin-system/README.md) | Permissions, moderation, reports, player effects, and cheat checks | PostgreSQL |
+| [Anticheat](plugins/anticheat/README.md) | Server-side movement and aim detection with observe, kick, and ban modes | PostgreSQL |
+| [Bhop](plugins/bhop/README.md) | Client-predicted autobhop, movement tuning, and per-player grants | Admin system for grants mode |
 
 ## Install a release
 
-Download a build from [Releases](https://github.com/voltygg/cs2-plugins/releases)
-and extract it into the server's `csgo/` directory. Configure each plugin as
-described in its README.
+You need a CS2 dedicated server and
+[Metamod:Source 2](https://www.sourcemm.net/downloads.php/?branch=master).
+The admin system and anticheat also need PostgreSQL.
 
-## Build
+1. Download the required plugin archive from the repository releases.
+2. Extract it into the server's `game/csgo` directory.
+3. Edit the plugin configuration under `game/csgo/addons/voltmod/configs`.
+4. Restart the server.
 
-On Linux, build in the Steam Runtime container:
+Read the plugin guide before enabling it. Each guide documents its dependencies,
+configuration, commands, and rollout notes.
+
+## Build from source
+
+Clone the repository with submodules:
 
 ```bash
-git clone https://github.com/voltygg/cs2-plugins.git
+git clone --recurse-submodules <repository-url>
 cd cs2-plugins
-docker compose -f deploy/docker-compose.build.yml run --rm --build build
 ```
 
-On Windows, install Visual Studio Build Tools with the C++ workload, then run:
+### Windows
 
-```bash
-git clone https://github.com/voltygg/cs2-plugins.git
-cd cs2-plugins
+Install Python 3.12+, [uv](https://docs.astral.sh/uv/), CMake, Ninja, Conan,
+and a C++23 compiler. Then run:
+
+```powershell
 uv sync
 uv run poe bootstrap
+uv run poe build
 ```
 
-After the first build, use `uv run poe build`. The default Windows preset is
-`windows-msvc-release`; pass `windows-msvc-debug` for a debug build. Output is
-written to `build/<preset>/plugins/<name>/<platform-arch>/`.
+`bootstrap` installs the Conan profiles and dependencies required by the
+configured build. Run it after cloning and whenever dependency definitions or
+profiles change.
 
-See [local development](docs/local-development.md) for setup details and
-[CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
+### Linux
 
-## Add a plugin
+The repository includes a Steam Runtime container build:
 
 ```bash
-uv run poe new-plugin my-plugin
+docker build -f build/linux/Dockerfile -t cs2-plugins-builder .
+docker run --rm -v "${PWD}:/src" cs2-plugins-builder
 ```
 
-The command creates `plugins/my-plugin/`, registers its CMake subdirectory, and
-adds a working `!ping` example.
+Build artifacts are written under `build/`.
+
+## Common development commands
+
+| Command | Purpose |
+| --- | --- |
+| `uv run poe bootstrap` | Prepare Conan profiles and dependencies |
+| `uv run poe build` | Build for the current platform |
+| `uv run poe build-linux` | Build the Linux Steam Runtime target |
+| `uv run poe lint` | Run repository checks |
+| `uv run poe format` | Format supported source files |
+| `uv run poe new-plugin <name>` | Scaffold a plugin |
+
+## Repository layout
+
+- `plugins/` contains the plugin source, configuration, and documentation.
+- `deploy/` contains production deployment tooling and inventory.
+- `build/` contains container and toolchain files.
+- `vendor/voltmod/` contains the VoltMod framework submodule.
+
+To add a plugin, run `uv run poe new-plugin <name>` and add its directory to the
+root `CMakeLists.txt`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development conventions and
+[deploy/README.md](deploy/README.md) for server deployment.

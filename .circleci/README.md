@@ -1,83 +1,80 @@
-# CircleCI fallback
+# CircleCI
 
-CircleCI mirrors the GitHub Actions CI and deployment workflows.
+CircleCI builds, checks, packages, and deploys the plugin collection. The
+pipeline selects one of two workflows:
 
-| Branch                    | Workflow | Jobs                                           |
-| ------------------------- | -------- | ---------------------------------------------- |
-| any branch except `prod`  | `ci`     | `build-test`, `lint`                           |
-| `prod`                    | `deploy` | `build-package` + `runtime-image` -> `deploy`  |
+| Workflow | Runs when | Jobs |
+| --- | --- | --- |
+| `ci` | `prod` is false | Build and test, then lint |
+| `deploy` | `prod` is true | Build the package and runtime image, then deploy |
 
-## Set up CircleCI
+## Set up the project
 
-1. **Create a GHCR token.** Use a classic PAT with `read:packages` and
-   `write:packages` to publish the runtime image.
-
-2. **Install and authenticate the CLI.**
-
-   ```bash
-   winget install CircleCI-Public.CircleCI-CLI
-   circleci setup                  # paste a personal API token
-   ```
-
-3. **Populate the contexts.** From the repository root, run this in Git Bash,
-   not PowerShell:
+1. Create the project in CircleCI and connect this repository.
+2. Create contexts named `ghcr` and `cs2-deploy`.
+3. Add the required environment variables described below.
+4. Disable CircleCI's automatic cancellation of redundant workflows. A canceled
+   deployment can leave only part of a server fleet updated.
+5. Validate the configuration:
 
    ```bash
-   ./.circleci/bootstrap.sh
-   CIRCLE_ORG_ID=<uuid> ./.circleci/bootstrap.sh   # GitHub App orgs
+   circleci config validate .circleci/config.yml
+   bash -n .circleci/bootstrap.sh
    ```
 
-   The script reads the deploy key from disk and visits each active server in
-   `deploy/inventory.yml`, uploading each one's
-   `deploy/secrets/servers/<id>/.env`. Adding a box needs no edit to the script.
-   Run it again after rotating a secret; uploading a value overwrites the old
-   one.
+The setup script is [`bootstrap.sh`](bootstrap.sh). On Windows, run it from Git
+Bash. Set `CIRCLE_ORG_ID` when the CircleCI CLI cannot infer the organization.
 
-4. **Connect the project** in the CircleCI dashboard to
-   `.circleci/config.yml`, if it is not connected already.
+## Contexts and secrets
 
-5. **Turn off Project Settings -> Advanced -> Auto-cancel redundant workflows.**
-   This is a project setting, not configuration. If it stays on, a second push
-   to `prod` can cancel an in-flight deploy during rsync.
+### `ghcr`
 
-## Contexts
+Provide credentials that can publish the runtime image to GitHub Container
+Registry:
 
-| Context      | Variable                | What it is                                    |
-| ------------ | ----------------------- | --------------------------------------------- |
-| `ghcr`       | `GHCR_USERNAME`         | GitHub username used as the GHCR identity      |
-| `ghcr`       | `GHCR_TOKEN`            | PAT with `read:packages` + `write:packages`    |
-| `cs2-deploy` | `SSH_KEY_B64`           | base64 of the deploy private key               |
-| `cs2-deploy` | `SERVER_ENV_<ID>_B64`   | base64 of that server's `.env`, one per server |
+- `GHCR_USERNAME`
+- `GHCR_TOKEN`
 
-`<ID>` is the inventory id upper-cased with `-` turned into `_`, so `box-a`
-becomes `SERVER_ENV_BOX_A_B64`. CircleCI environment variables do not preserve
-newlines, so these values are base64-encoded. The bootstrap script removes
-carriage returns before encoding.
+### `cs2-deploy`
 
-The deploy job writes each decoded `.env` back to
-`deploy/secrets/servers/<id>/.env` before invoking the CLI. `python-dotenv` loads
-it with `override=False`, so the job's own `SSH_KEY_FILE` wins over the
-developer-local path baked into that file.
+Provide SSH access and server environment data:
 
-## Run jobs manually
+- `DEPLOY_SSH_KEY` contains the private SSH key.
+- `SERVER_ENV_<ID>_B64` contains a base64-encoded environment file for one
+  inventory server.
+- `SERVER_ENV` is the shared fallback when no server-specific value exists.
 
-- Set `server` to deploy one inventory server.
-- Set `dry-run` to preview rsync without changing containers.
+The deployment resolves environment data in this order:
+`SERVER_ENV_<ID>_B64`, `SERVER_ENV`, then the inventory server's configured
+environment file. Keep the stable inventory server IDs aligned with the secret
+names.
 
-CircleCI has no dynamic matrix. Its deploy job runs the servers returned by
-`deploy.tools.cli matrix --format plain` in sequence.
+## Pipeline parameters
 
-## Build caches
+| Parameter | Default | Purpose |
+| --- | --- | --- |
+| `prod` | `false` | Select the production deployment workflow |
+| `server` | empty | Limit deployment to one inventory server ID |
+| `dry-run` | `false` | Show deployment actions without applying them |
 
-Conan packages are keyed by `conan.lock`. ccache uses the same lock hash plus the
-branch and revision, with broader restore prefixes for incremental builds.
+Use a dry run before changing deployment inventory or server selection.
 
-## Validate locally
+## Caches
+
+The pipeline caches Conan data using the dependency lock state. Ccache entries
+are restored from revision-, branch-, and lock-based keys so exact results are
+preferred while older compatible entries remain available.
+
+## Local checks
+
+Run the same repository checks before pushing:
 
 ```bash
-circleci config validate            # schema-check before pushing
-circleci local execute --job lint   # docker-executor jobs only
+uv sync
+uv run poe bootstrap
+uv run poe build
+uv run poe lint
 ```
 
-`runtime-image` cannot run locally because it needs the machine executor and the
-GHCR context.
+For deployment behavior, inventory, and recovery procedures, see
+[`deploy/README.md`](../deploy/README.md).

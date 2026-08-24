@@ -1,102 +1,68 @@
 # Deployment
 
-The deployment tools build Docker-based CS2 servers from `joedwards32/cs2`.
-They render Compose files, plugin bundles, Metamod setup hooks, and per-server
-settings.
+The deployment tools build and operate Docker-based CS2 servers derived from
+`joedwards32/cs2`. They package plugins, render per-instance Compose services,
+install Metamod, synchronize remote files, and manage server updates.
 
-`uv run poe deploy` and `uv run poe start-server` are local Windows development
-commands.
+`uv run poe deploy` and `uv run poe start-server` are local Windows
+development commands. The commands in this guide manage remote Linux hosts.
 
-## Layout
+## How deployment is organized
 
 ```text
-deploy/inventory.yml          declared plugins + Docker hosts
-deploy/Dockerfile             local build + server runtime stages
-deploy/docker-compose.build.yml local Linux build wrapper
-deploy/scripts/bootstrap-host.sh one-time Ubuntu host bootstrap
-deploy/tools/                 deploy CLI package (python -m deploy.tools.cli)
-deploy/templates/             rendered config, pre-hook, and compose service templates
-deploy/templates/compose.service.yml one CS2 service block, filled per instance
-deploy/secrets/               per-server env template (real values in GitHub secrets)
+deploy/
+  inventory.yml                   Hosts, instances, plugins, and databases
+  Dockerfile                      Build and runtime image stages
+  docker-compose.build.yml        Linux build container
+  scripts/bootstrap-host.sh       One-time Ubuntu host setup
+  secrets/servers/<id>/           Gitignored local environment files
+  templates/                      Compose, pre-hook, and plugin templates
+  tools/                          Python deployment CLI
 ```
 
-Published images use only the `:latest` tag:
+CI publishes one moving runtime tag:
 
 ```text
 ghcr.io/<repo>/cs2-server-runtime:latest
 ```
 
-Each CS2 instance runs in one container. Containers on the same VPS share a
-persistent CS2 install mounted at `/home/steam/cs2-dedicated`; generated
-deployment files remain separate under `/home/steam/cs2/deploy`.
+Every CS2 instance has its own container and `csgo/addons` tree. Instances on
+the same host share the SteamCMD-managed game installation:
 
 ```text
-/home/steam/cs2/deploy                       generated Compose/env/bundles/pre-hook files
-/home/steam/cs2/deploy/instances/<name>/addons  per-instance live csgo/addons tree
-/home/steam/cs2/server                       shared SteamCMD-managed CS2 install
+/home/steam/cs2/server                         shared host game installation
+/home/steam/cs2/deploy                         generated deployment files
+/home/steam/cs2/deploy/instances/<name>/addons per-instance addons
 ```
 
-Game files are shared, but each instance gets its own `csgo/addons` tree bind-
-mounted over the shared install. Instances on one host can therefore run
-different plugin sets. Before launch, the rendered `pre.sh` hook copies the
-instance bundle into its addons tree, installs or refreshes Metamod, and patches
-the shared `gameinfo.gi`. The addons directory is runtime state under
-`deploy_root`; rsync does not use `--delete`, so Metamod remains in place on a
-redeploy.
+The shared host installation is mounted at
+`/home/steam/cs2-dedicated` inside each container. An instance-specific addons
+tree is then mounted over its `csgo/addons` directory, allowing different
+plugin sets on one host.
 
-Metamod is checked on every launch against the build recorded in
-`addons/metamod/.mms-build` and reinstalled when the latest snapshot differs - a
-CS2 update can retire symbols an older Metamod links against, leaving it unable
-to load. Set `MMS_URL` to pin a build, `MMS_BASE` to change the mirror.
+Before launch, `pre.sh` copies the instance bundle, installs or refreshes
+Metamod, and patches `gameinfo.gi`. Synchronization does not use `--delete`,
+so deployed Metamod files remain intact. The hook checks
+`addons/metamod/.mms-build` on every launch and upgrades when the current
+snapshot differs. Set `MMS_URL` to pin a build or `MMS_BASE` to use another
+mirror.
 
-## Prepare a Docker host
+## Prepare a host
 
-On a fresh Ubuntu box:
+Run the bootstrap script on a fresh Ubuntu server:
 
 ```bash
 sudo bash deploy/scripts/bootstrap-host.sh
-# already have Docker? skip reinstalling it:
 sudo bash deploy/scripts/bootstrap-host.sh --skip-docker
 ```
 
-The script installs Docker and Compose when needed, creates the deployment user,
-opens SSH and the CS2 UDP port range, and prepares `~/cs2/deploy` and
-`~/cs2/server`.
+Use `--skip-docker` when Docker is already installed. The script prepares the
+deployment user and directories, installs Docker and Compose when requested,
+and opens SSH and the CS2 UDP port range.
 
-## Prepare the shared database
+## Configure inventory
 
-Create the application role and one database per database-backed plugin. With
-`--server`, the CLI reads the local inventory and runs the DDL over SSH.
-
-```bash
-DB_PASSWORD='<app-role-pw>' PGPASSWORD='<superuser-pw>' \
-  uv run poe deploy-dbs --server box-a --admin-user postgres
-```
-
-Plugins apply their own schema migrations on load.
-
-## Connect to the remote database
-
-The database is reached through an SSH tunnel:
-
-```bash
-uv run poe deploy-tunnel --server box-a
-# or without an inventory entry:
-uv run poe deploy-tunnel --host 203.0.113.10 --identity ~/.ssh/id_deploy
-```
-
-In another shell, connect through the tunnel:
-
-```bash
-psql "host=127.0.0.1 port=5433 dbname=admin_system user=cs2_app"
-```
-
-Ctrl-C stops the tunnel. Use `--local-port`, `--db-host`, `--ssh-user`, etc. to
-override defaults.
-
-## Inventory and secrets
-
-Keep non-secret server topology in `inventory.yml`:
+Keep non-secret topology in [`inventory.yml`](inventory.yml):
 
 ```yaml
 servers:
@@ -105,63 +71,101 @@ servers:
     environment: prod-box-a
     cs2_root: /home/steam/cs2
     deploy_root: /home/steam/cs2/deploy
-    plugins: [admin-system]          # default plugin set for this box
+    plugins: [admin-system]
     instances:
-      - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main" }
-      # Override per instance; its own `plugins` replaces the server default:
-      - { name: retake, port: 27016, map: de_mirage, hostname: "CS2 Retake", plugins: [admin-system, retake-system] }
+      - name: main
+        port: 27015
+        map: de_dust2
+        hostname: "CS2 Main"
+      - name: retake
+        port: 27016
+        map: de_mirage
+        hostname: "CS2 Retake"
+        plugins: [admin-system, retake-system]
 ```
 
-An instance's own `plugins:` replaces the server default (it does not extend it).
-Every plugin referenced must still be declared under the top-level `plugins:` map
-so CI packages it. Plugins without a `database:` key (e.g. `bhop: {}`) are DB-less:
-rendering skips the `DB_*` requirements for them and `deploy-dbs` skips creating a
-database.
+An instance-level `plugins` list replaces the server default; it does not
+extend it. Every referenced plugin must also exist in the inventory's top-level
+`plugins` map so CI packages it. A plugin without a `database` key, such as
+`bhop: {}`, does not require database variables and is skipped by
+`deploy-dbs`.
 
-Each instance's rendered admin-system settings automatically get a server
-identity: `server.tag = <box>-<instance>` (e.g. `box-a-main`) and `server.name`
-from the instance `hostname`. That tag keys per-server admin grants
-(`admin_server_groups`) in the shared database, so treat box ids and instance
-names as **stable** - renaming one orphans the grants that reference its tag.
+The renderer sets the admin system's `server.tag` to
+`<server-id>-<instance-name>` and `server.name` to the instance hostname.
+Because per-server admin grants reference this tag, server IDs and instance
+names must remain stable.
 
-`inventory.yml` owns non-secret topology: hosts, ports, deployment roots, image refs,
-plugins, instances, and database names. Local server `.env` files own secrets
-and local file paths such as `SSH_KEY_FILE`, `DB_PASSWORD`, `PGPASSWORD`, `GSLT_*`,
-`RCON_*`, and `CHEAT_API_KEY`.
+## Configure secrets
 
-Copy the template and paste its full contents into a GitHub Environment secret
-named `SERVER_ENV` on the environment matching the server's `environment:`:
+Inventory owns hosts, ports, paths, image names, plugins, instances, and
+database names. Environment files own values such as:
+
+- `SSH_KEY_FILE`
+- `DB_PASSWORD` and `PGPASSWORD`
+- `GSLT_*` and `RCON_*`
+- `CHEAT_API_KEY`
+
+For local deployment, copy the server template and keep the resulting file
+gitignored:
 
 ```bash
-cp deploy/secrets/servers/box-a/.env.example /tmp/box-a.env
+cp deploy/secrets/servers/box-a/.env.example deploy/secrets/servers/box-a/.env
 ```
 
-`cli deploy` writes that content to `deploy/secrets/servers/<id>/.env` before it
-runs, so neither provider's YAML has to know the path. It reads
-`SERVER_ENV_<ID>_B64` first - CircleCI env vars cannot hold newlines, so its
-context carries the base64 twin of the same secret - then `SERVER_ENV`, and
-finally an existing file, which is the local case. Keep a gitignored `.env` in
-that directory for local/manual deploys.
+For GitHub Actions, store the complete environment-file content in a GitHub
+Environment secret named `SERVER_ENV`. For CircleCI, use its base64 form in
+`SERVER_ENV_<ID>_B64`. The CLI resolves environment data in this order:
 
-The deploy private key is separate: `SSH_KEY` (GitHub Environment secret) or
-`SSH_KEY_B64` (CircleCI context). `SERVER_ENV` is only the env-file content.
-Local `.env` files should use `SSH_KEY_FILE=/path/to/key`, not `SSH_KEY`.
+1. `SERVER_ENV_<ID>_B64`
+2. `SERVER_ENV`
+3. `deploy/secrets/servers/<id>/.env`
+
+The private deployment key is separate: use `SSH_KEY` in GitHub or
+`SSH_KEY_B64` in CircleCI. Local files should point to a key with
+`SSH_KEY_FILE` and must not embed `SSH_KEY`.
+
+## Prepare plugin databases
+
+Create the application role and one database for each database-backed plugin:
+
+```bash
+DB_PASSWORD='<app-role-password>' PGPASSWORD='<postgres-password>' \
+  uv run poe deploy-dbs --server box-a --admin-user postgres
+```
+
+The command reads local inventory and executes the DDL over SSH. Plugins apply
+their own schema migrations when loaded.
+
+To reach PostgreSQL through SSH:
+
+```bash
+uv run poe deploy-tunnel --server box-a
+uv run poe deploy-tunnel --host 203.0.113.10 --identity ~/.ssh/id_deploy
+```
+
+Connect from another shell:
+
+```bash
+psql "host=127.0.0.1 port=5433 dbname=admin_system user=cs2_app"
+```
+
+Press Ctrl-C to close the tunnel. Use `--local-port`, `--db-host`,
+`--ssh-user`, and related options to override defaults.
 
 ## Deploy
 
-Push to `prod` or run the Deploy workflow manually. CI builds the
-Linux plugin bundle, publishes `ghcr.io/<repo>/cs2-server-runtime:latest`,
-renders each server's Compose tree, rsyncs it to `deploy_root`, pulls the
-runtime image, and starts CS2 instance services one at a time. After the
-services come up healthy it runs `docker image prune -f` on the box, removing
-the dangling `<none>` image left behind each time the `:latest` tag moves:
+Push to `prod` or start the Deploy workflow manually. CI:
 
-```bash
-docker compose pull
-docker compose up -d cs2-main
-```
+1. Builds the Linux plugin bundle.
+2. Publishes `cs2-server-runtime:latest`.
+3. Renders each host's Compose tree.
+4. Synchronizes it to `deploy_root`.
+5. Pulls the runtime image.
+6. Starts instances one at a time and waits for health.
+7. Runs `docker image prune -f` to remove the dangling image left when
+   `:latest` moves.
 
-For a manual deployment, run:
+Manual equivalent:
 
 ```bash
 docker build -f deploy/Dockerfile --target runtime \
@@ -171,36 +175,37 @@ uv run poe deploy-package admin-system linux
 uv run poe deploy-server --server box-a
 ```
 
-Use `--dry-run` with `deploy-server` to render and preview rsync without changing
-containers.
+Use `uv run poe deploy-server --server box-a --dry-run` to render and preview
+the synchronization without changing containers.
 
-## Update game files
+## Update CS2
 
-SteamCMD runs only when a container starts. A running instance does not pick up
-a Valve update, and clients may receive "client out of date".
-`deploy-server` does not fix this when the `:latest` image is unchanged because
-`up -d` is a no-op. Restart each instance one at a time; the command waits for
-SteamCMD between instances:
+SteamCMD runs when a container starts. A running server therefore does not
+receive Valve updates, and a normal deployment may leave it untouched when the
+`:latest` image has not changed. Restart instances one at a time:
 
 ```bash
 uv run poe deploy-update --server box-a
-uv run poe deploy-update --server box-a --dry-run   # print the SSH commands only
+uv run poe deploy-update --server box-a --dry-run
 ```
 
-## Cleanup
+The update command waits for SteamCMD between instances. The dry run only
+prints the SSH commands.
 
-Remove this repository's CS2 Docker stack, generated deployment files, shared CS2 install,
-and runtime images:
+## Remove a deployment
 
-```bash
-uv run poe deploy-cleanup --server box-a --yes
-```
-
-Preview first:
+Preview cleanup:
 
 ```bash
 uv run poe deploy-cleanup --server box-a --dry-run
 ```
 
-Cleanup does not remove Docker, Postgres, firewall rules, the `steam` user,
+Then remove this repository's Compose stack, generated deployment files,
+shared CS2 installation, and runtime images:
+
+```bash
+uv run poe deploy-cleanup --server box-a --yes
+```
+
+Cleanup does not remove Docker, PostgreSQL, firewall rules, the `steam` user,
 GitHub packages, or plugin databases.

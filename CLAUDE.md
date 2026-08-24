@@ -109,21 +109,17 @@ Current patterns:
 
 ## Commenting and documentation
 
-- Write comments only when they explain intent, an invariant, ownership,
-  lifetime, threading, security, compatibility, or another non-obvious
-  constraint. Do not narrate syntax or repeat a declaration.
-- Keep comments beside the code they describe and update them when behavior
-  changes. Do not preserve stale implementation history.
-- Use Doxygen for public headers and API contracts. Document purpose,
-  preconditions, inputs, ownership, lifetime, errors, return behavior, and
-  concurrency when they matter. Preserve exact symbol names and Doxygen tags.
-- Lead READMEs and guides with the task, prerequisites, and exact command or
-  path the reader needs. Keep examples runnable and preserve technical
+- Comment only to explain intent, constraints, ownership, lifetime, threading,
+  security, or compatibility. Keep comments near the code and remove stale or
+  obvious narration.
+- Use Doxygen for non-obvious public contracts. Cover preconditions, ownership,
+  errors, return behavior, and concurrency only when relevant; preserve exact
+  symbols and tags.
+- Keep docs task-first, accurate, and runnable. Preserve commands, paths,
   identifiers, defaults, links, and configuration keys.
-- Use sentence-case headings and plain, direct English. Refer to VoltMod as
-  the framework; use “library” only for an actual library or CMake target.
-- Keep this file operational. Update it and the relevant docs when commands,
-  configuration, public APIs, or copied templates change.
+- Use plain English and sentence-case headings. Call VoltMod the framework;
+  reserve “library” for actual libraries or CMake targets. Update affected docs
+  and templates with behavior or API changes.
 
 ## Tests and configuration
 

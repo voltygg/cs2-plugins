@@ -1,95 +1,162 @@
 # Admin system
 
-Admin commands, punishments, effects, WASD menus, shared groups, abuse
-protection, player reports, and cheat-check workflows for CS2 servers.
+A PostgreSQL-backed administration framework for CS2 servers. It provides
+moderation commands, WASD menus, permissions, effects, player reports,
+multi-server grants, abuse protection, and cheat-check workflows.
 
 ## Features
 
-- **Punish:** Kick, ban, mute, gag, warn (warnings auto-escalate to a ban at a configurable threshold)
-- **Control:** Slay, Bring, Goto, Freeze, Noclip, Health/Armor presets, Godmode (FL_GODMODE), Bury/Unbury, Change Team
-- **Effects:** Ghost, Disco, Launch, Smite, Swap, and a session Bunnyhop grant
-  through the [bhop plugin](../bhop/README.md). Bunnyhop requires `grants` mode,
-  survives death, and clears on disconnect.
-- **Admin System:** Permission flags (`a` freeze-admins, `b` hide/who, `c` kick, `d` ban, `e` unban, `o` voice-mute, `p` text-mute, `q` warn, `s` control, `h` health/cheats, `f` fun, `j` bhop, `k` cheat-check, `r` admin menu, `z` root), groups, immunity levels. Self-targeting always allowed.
-- **Multi-Server:** Several servers share one database; admins can hold different groups per server (see [Multi-Server Setup](#multi-server-setup))
-- **Abuse Protection:** Automatic + manual freezing of rogue admins, with a full action audit trail (see [Admin Abuse Protection](#admin-abuse-protection))
-- **Player Reports:** Any player can report another from a WASD menu (`!r`); reports land in the database for an upstream website to triage (see [Player Reports](#player-reports))
-- **WASD Menus:** Top-level category dispatcher → player picker → actions. Toggle entries (Ghost, Disco, Godmode) show live `: ON / : OFF` state.
-- **Database:** PostgreSQL, async-first (a worker thread owns the connection; gameplay reads hit in-memory caches, writes ride the worker) with forward-only auto-applied migrations
-- **Chat Commands:** `!kick`, `!ban`, `!voice_mute`, `!text_mute`, `!warn` and more
+- Kick, ban, unban, voice mute, text mute, and warning commands.
+- Player controls including slay, teleport, freeze, noclip, team changes,
+  health, armor, speed, size, and bury.
+- Visual and gameplay effects such as ghost, disco, wallhack, smite, model
+  selection, and optional [bhop grants](../bhop/README.md).
+- Groups, flags, immunity, per-server grants, and admin stealth.
+- Network-wide punishments and automatic punishment enforcement.
+- Automatic or manual freezing of abusive admins with an audit trail.
+- Player reports for an external website or moderation service to process.
+- Fixed-link, website-room, and player-provided cheat-check workflows.
+- Async database work with in-memory gameplay caches and automatic migrations.
 
 ## Requirements
 
-- CS2 Dedicated Server
+- CS2 dedicated server
 - [Metamod:Source 2.0](https://www.sourcemm.net/)
-- PostgreSQL 18+
+- PostgreSQL 18 or newer
 
 ## Install
 
-1. Download the latest release from [Releases](https://github.com/voltygg/cs2-plugins/releases).
-2. Extract it into the server's `csgo/` folder.
-3. Configure the database and plugin settings in
-   `addons/admin-system/configs/settings.jsonc`. Give each server a unique
-   `server.tag` (see [Multi-Server Setup](#multi-server-setup)).
-4. Let the plugin apply migrations on load, or run the files in
-   [configs/migrations/](configs/migrations/) in order. For example:
-   `psql -d admin_system -f configs/migrations/0001_initial_schema.sql`.
-5. Set your SteamID64 in [database/seed-admin.sql](database/seed-admin.sql) and
-   run `psql -d admin_system -f database/seed-admin.sql`.
-6. Restart the server. If it is already running, use `!admin_reload`.
+1. Extract the release into the server's `csgo/` directory.
+2. Configure `addons/admin-system/configs/settings.jsonc`.
+3. Give every server sharing the database a unique, stable `server.tag`.
+4. Start the server and let the plugin apply its migrations.
+5. Put your SteamID64 in [`database/seed-admin.sql`](database/seed-admin.sql),
+   then run:
+
+   ```bash
+   psql -d admin_system -f database/seed-admin.sql
+   ```
+
+6. Restart the server or run `!admin_reload`.
+
+To apply migrations manually, run the SQL files in
+[`configs/migrations/`](configs/migrations/) in filename order.
+
+## Permission flags
+
+Root (`z`) grants every permission. Self-targeting remains available where the
+action supports it.
+
+| Flag | Access |
+| --- | --- |
+| `a` | Freeze and unfreeze admins |
+| `b` | Hide and player-list commands |
+| `c` | Kick |
+| `d` | Ban |
+| `e` | Unban |
+| `o` | Voice mute, text mute, and warnings |
+| `s` | Player controls and cheat checks |
+| `f` | Fun effects: ghost, disco, smite, and size |
+| `h` | Health, armor, and godmode |
+| `w` | Wallhack |
+| `j` | Bhop grants |
+| `z` | Root access |
+
+`!admin` has no dedicated flag, but the caller must be a registered admin.
+Individual menu categories and actions remain permission-gated.
 
 ## Commands
 
-| Command | Permission | Description |
+### Moderation and administration
+
+| Command | Flag | Purpose |
 | --- | --- | --- |
-| `!kick <target> [reason]` | Kick (`c`) | Kick a player |
-| `!ban <target> <duration> [reason]` | Ban (`d`) | Ban a player |
-| `!unban <steamid> [reason]` | Unban (`e`) | Remove a ban |
-| `!voice_mute <target> <duration> [reason]` (aliases `!vmute`, `!mute`) | VoiceMute (`o`) | Mute voice |
-| `!voice_unmute <target>` (aliases `!vunmute`, `!unmute`) | VoiceMute (`o`) | Unmute voice |
-| `!text_mute <target> <duration> [reason]` (aliases `!tmute`, `!gag`) | TextMute (`p`) | Block text chat |
-| `!text_unmute <target>` (aliases `!tunmute`, `!ungag`) | TextMute (`p`) | Unblock text chat |
-| `!warn <target> [reason]` | Warn (`q`) | Issue a warning (auto-ban at threshold) |
-| `!admin` (aliases `!a`, `!menu`) | AdminMenu (`r`) | Open admin menu |
-| `!who` (alias `!players`) | Hide (`b`) | List players, prefixes, immunity |
-| `!hide` | Hide (`b`) | Toggle admin stealth |
-| `!cc <target>` / `!cccancel <target>` | CheatCheck (`k`) | Call / cancel a cheat check |
-| `!freeze_admin <target\|steamId> [reason]` | FreezeAdmins (`a`) | Freeze another admin's privileges |
-| `!unfreeze_admin <steamId\|name>` | FreezeAdmins (`a`) | Restore a frozen admin's privileges |
-| `!frozen_admins` | FreezeAdmins (`a`) | List currently frozen admins |
-| `!admin_reload` (alias `!reload_admins`) | Root (`z`) | Reload admins/groups/grants/freezes from DB |
-| `!report` (alias `!r`) | *none - every player* | Open the report menu (see [Player Reports](#player-reports)) |
+| `!kick <target> [reason]` | `c` | Kick a player |
+| `!ban <target> <duration> [reason]` | `d` | Ban a player |
+| `!unban <steamid> [reason]` | `e` | Remove a ban |
+| `!voice_mute <target> <duration> [reason]` | `o` | Mute voice; aliases: `!vmute`, `!mute` |
+| `!voice_unmute <target>` | `o` | Restore voice; aliases: `!vunmute`, `!unmute` |
+| `!text_mute <target> <duration> [reason]` | `o` | Block chat; aliases: `!tmute`, `!gag` |
+| `!text_unmute <target>` | `o` | Restore chat; aliases: `!tunmute`, `!ungag` |
+| `!warn <target> [reason]` | `o` | Warn a player and apply configured escalation |
+| `!admin` | registered admin | Open the menu; aliases: `!a`, `!menu` |
+| `!who` | `b` | List players, prefixes, and immunity; alias: `!players` |
+| `!hide` | `b` | Toggle admin stealth |
+| `!admin_reload` | `z` | Reload admins, groups, grants, and freezes; alias: `!reload_admins` |
 
-**Target Selectors:** `@all`, `@me`, `@!me`, `@t`, `@ct`, `@spec`, `@dead`, `@alive`, `@bot`, `@human`, `@random`, `@randomt`, `@randomct`, `#slot`, a SteamID (64 / `STEAM_` / `[U:1:...]`), or a name (exact, then prefix, then substring)
+### Admin freezes
 
-**Duration Format:** `30s`, `5m`, `2h`, `7d`, `1w`; a bare number means minutes; `0` or `perm` = permanent
+| Command | Flag | Purpose |
+| --- | --- | --- |
+| `!freeze_admin <target|steamId> [reason]` | `a` | Suspend a lower-immunity admin |
+| `!unfreeze_admin <steamId|name>` | `a` | Restore a frozen admin |
+| `!frozen_admins` | `a` | List active freezes |
+
+### Cheat checks and reports
+
+| Command | Flag | Purpose |
+| --- | --- | --- |
+| `!check <target>` | `s` | Start a cheat check |
+| `!cccancel <target>` | `s` | Cancel a check; alias: `!uncheck` |
+| `!cc <link>` | none | Let the suspect submit a verification link |
+| `!report` | none | Open the report menu; alias: `!r` |
+
+`!report` takes no arguments. The menu resolves the selected player to a
+SteamID, preventing ambiguous name-based reports.
+
+### Targets and durations
+
+Targets may be `@all`, `@me`, `@!me`, `@t`, `@ct`, `@spec`, `@dead`,
+`@alive`, `@bot`, `@human`, `@random`, `@randomt`, `@randomct`, `#slot`,
+a SteamID, or a player name. Names resolve by exact match, then prefix, then
+substring.
+
+Durations accept values such as `30s`, `5m`, `2h`, `7d`, and `1w`. A bare
+number means minutes; `0` and `perm` mean permanent.
 
 ## Configuration
 
-Runtime configuration lives in [configs/settings.jsonc](configs/settings.jsonc) (server identity, database, punishments, abuse protection, chat, reports, cheat-check). Player-facing text comes from [configs/translations/](configs/translations/) - one JSON file per language, all of which must stay key-parallel. Admin groups (with their chat prefix and colors) and individual admins live in the `admin_groups` and `admins` PostgreSQL tables; per-server group grants live in `admin_server_groups`, every admin action is audited in `admin_activity`, and player reports land in `player_reports` -- see [configs/migrations/](configs/migrations/). Run `!admin_reload` after editing those tables to refresh in-memory state without restarting.
+Runtime settings live in
+[`configs/settings.jsonc`](configs/settings.jsonc). The file controls server
+identity, database access, punishment templates, abuse thresholds, reports,
+chat, and cheat checks. The shipped defaults include:
+
+- Russian (`ru`) as the default locale.
+- A 10-minute abuse window with limits of 5 bans, 10 kicks, 15 mutes, and
+  15 warnings.
+- A 120-second report cooldown and 1,800-second duplicate-report window.
+- Custom report reasons enabled.
+- A 120-second cheat-check timeout with automatic kicking enabled.
+
+Cheat checks support `fixedLink`, `websiteAutoRoom`, and `playerProvided`
+modes. Website presence polling is optional.
+
+Player-facing messages live under
+[`configs/translations/`](configs/translations/). Keep every language file
+key-parallel. Reload database-backed admin state with `!admin_reload` after
+changing groups, grants, or admins.
 
 ## Multi-server setup
 
-Several game servers can share one PostgreSQL database. Each server declares a stable identity in `settings.jsonc`:
+Several servers can share one database:
 
 ```jsonc
 "server": {
-  "tag": "server-1",        // unique per server; never change once grants reference it
-  "name": "My Community #1" // human-readable, shown in the servers registry table
+  "tag": "server-1",
+  "name": "My Community #1"
 }
 ```
 
-On boot the server registers itself in the `servers` table and heartbeats `last_seen` every minute, so you can see which servers are alive with a simple query.
+Treat `server.tag` as permanent once grants reference it. On startup, the
+plugin registers the server and updates `last_seen` every minute.
 
-Admin rights resolve per server:
+- `admins.groups` applies network-wide.
+- `admin_server_groups` adds groups for one `server.tag`.
+- Admin flags and immunity are global.
+- Group flags and immunity apply wherever that group is granted.
+- Bans, mutes, and warnings apply across all servers sharing the database.
 
-- `admins.groups` (the array on the admin row) is **global** - it applies on every server. Use it for network-wide admins.
-- `admin_server_groups(admin_steam_id, server_tag, group_name)` grants **additional groups on one server only**. The same person can be `super_admin` on `server-1` and only `moderator` on `server-2`.
-- `admins.flags` and `admins.immunity` remain global; group flags/immunity apply wherever the group applies.
-
-Punishments (bans, mutes, warnings) are always **network-wide** - a ban issued on one server applies everywhere.
-
-Example per-server grant (also shown commented in `seed-admin.sql`):
+Example per-server grant:
 
 ```sql
 INSERT INTO admin_server_groups (admin_steam_id, server_tag, group_name)
@@ -97,59 +164,42 @@ VALUES (76561198000000000, 'server-1', 'super_admin')
 ON CONFLICT (admin_steam_id, server_tag, group_name) DO NOTHING;
 ```
 
-Run `!admin_reload` on the affected server to pick up grant changes without a restart.
+Run `!admin_reload` on affected servers after changing grants.
 
-## Admin abuse protection
+## Abuse protection
 
-A frozen admin keeps their database rows but loses every admin permission on all
-servers sharing the database until a reviewer unfreezes them.
+Every kick, ban, mute, and warning is written to `admin_activity`. After each
+action, the plugin checks the issuing admin's network-wide totals over the
+configured sliding window. Root admins are exempt.
 
-**Automatic freezing.** Every kick/ban/mute/warn is written to the `admin_activity` audit table. After each action the admin's totals over a sliding window are checked against thresholds in `settings.jsonc`; counting is network-wide, so hopping servers doesn't evade it. Root (`z`) admins are exempt.
-
-```jsonc
-"abuseProtection": {
-  "enabled": true,      // master switch for automatic freezing
-  "windowMinutes": 10,  // sliding window, counted across all servers
-  "maxBans": 5,         // 0 disables a counter
-  "maxKicks": 10,
-  "maxMutes": 15,       // voice + text combined
-  "maxWarnings": 15
-}
-```
-
-**Manual freezing.** An admin holding the `a` flag can run `!freeze_admin <target> [reason]` against any admin with strictly lower immunity (self-freezing is rejected). `!frozen_admins` lists open cases; `!unfreeze_admin <steamId|name>` restores privileges after review.
-
-**What happens on freeze:** the freeze is broadcast in chat, the frozen admin is notified (immediately if online, on connect otherwise, and within ~60 seconds on other servers), and their recent punishments stay active so the reviewer can inspect `admin_activity` / the punishment tables and revert selectively. Freezes and unfreezes are themselves recorded in `admin_activity`.
+An admin with `a` can manually freeze another admin with strictly lower
+immunity. Frozen admins keep their database records but lose all permissions
+on every connected server until unfrozen. The plugin broadcasts the freeze,
+notifies the admin immediately or on connection, and propagates the state to
+other servers within about one minute. Existing punishments remain active for
+review, and freeze changes are audited.
 
 ## Player reports
 
-`!report` (or `!r`) opens a WASD flow for selecting a player, reason, and
-confirmation. The plugin writes the report to `player_reports` and replies only
-to the reporter. It does not broadcast, notify admins, or provide in-game
-triage; an external site owns that workflow.
+`!report` opens a WASD menu for player, reason, and confirmation. Players can
+keep moving while it is open. Bots, the reporter, and recently reported players
+are unavailable.
 
-The command takes no arguments: the menu is the only entry point, so a report always carries a resolved SteamID rather than a name guess. Reporters keep moving while the menu is open (unlike the admin menu, which freezes), so `!r` mid-round is safe. Players cannot report themselves or bots - those rows render greyed out.
+Cooldown and duplicate checks are enforced throughout the menu flow and again
+at confirmation. A failed database write refunds the cooldown. Custom reasons
+are limited to 64 characters and stored with the code `other`.
 
-**Anti-spam.** Two windows, both tracked per SteamID so reconnecting or a map change does not reset them:
+The plugin only inserts reports. An external service owns triage fields such as
+`status`, `handled_by`, `handled_at`, and `resolution`.
 
-```jsonc
-"reports": {
-  "enabled": true,             // master switch for !report / !r
-  "cooldownSec": 120,          // wait between two reports of ANY player; 0 disables
-  "duplicateWindowSec": 1800,  // same reporter cannot re-report the SAME player; 0 disables
-  "allowCustomReason": true,   // adds an "Other..." row that prompts for typed text (max 64 chars)
-  "reasons": [
-    { "code": "cheating", "label": "Cheating / aimbot" }
-  ]
-}
-```
+## Database tables
 
-Players still inside the duplicate window appear greyed out in the picker, and the gate is re-checked at every menu step and again at confirm, so holding the menu open cannot bypass it. A report that fails to reach the database refunds the cooldown, so an outage costs the reporter nothing.
+The main tables are:
 
-**Reasons.** Each entry has a stable `code` (what the website groups on, stored in `player_reports.reason_code`) and a `label`. Players see the `report.reasons.<code>` translation when the language files define one, so the config `label` is only a fallback for codes you add yourself. Typed reasons are stored with code `other`.
+- `admins`, `admin_groups`, and `admin_server_groups` for access.
+- `servers` for server identity and heartbeats.
+- `admin_activity` for the audit trail.
+- Punishment tables for network-wide enforcement.
+- `player_reports` for external report triage.
 
-**Schema.** The server only ever inserts into `player_reports`: both parties' SteamID/name/IP, the reason, `server_tag`, `map_name`, and `created_at`. The triage columns - `status` (defaults to `open`), `handled_by`, `handled_at`, `resolution` - are never written or read by the plugin and belong entirely to the website.
-
-## Building
-
-The plugin builds as part of the monorepo - see the [repository README](../../README.md) for Docker and Windows build instructions.
+For shared build commands, see the [repository README](../../README.md).

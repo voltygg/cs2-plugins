@@ -1,75 +1,70 @@
 # Bhop
 
-Client-predicted auto-bunnyhop for CS2. Hold JUMP to hop, retain landing speed,
-and build speed across chained hops.
+Bhop provides server-authoritative bunny-hop assistance while preserving
+client-side movement prediction. It can enable autobhop for everyone or grant
+it per player through the admin system.
 
-## How prediction works
+## Features
 
-Server-forced jumping can rubber-band because the client does not predict it.
-This plugin keeps the client and server convars in agreement:
+- Client-predicted autobhop without repeated correction from the server.
+- Optional stamina removal and movement-convar tuning.
+- Configurable velocity boost with a speed cap.
+- Global and per-player operating modes.
+- Runtime configuration reloads.
 
-- In `enabled` mode, movement convars are set server-wide and replicated to every
-  client, so all hops are client-predicted.
-- In `grants` mode, a granted player's client receives the convar values through
-  `CNETMsg_SetConVar`. The server applies the same values only around that
-  player's `CPlayer_MovementServices::RunCommand` call, so other players are
-  unaffected.
-
-Speed comes from two settings groups:
-
-1. **Air acceleration** (`sv_airaccelerate`, `sv_air_max_wishspeed`) lets players
-   gain speed while strafing in the air. This is client-predicted.
-2. **Hop-chain boost** (optional) scales horizontal velocity by `factor` for each
-   jump within `chainWindowMs` of the previous jump, up to `maxSpeed`.
-
-## Modes
+## Operating modes
 
 | Mode | Behavior |
 | --- | --- |
-| `enabled` | Bhop is always on for everyone. Convar changes are restored on unload and re-applied at each round start. |
-| `grants` | Bhop is off by default. `bhop_player` grants it for the current session; the grant is cleared on disconnect. |
+| `enabled` | Applies bhop behavior to every eligible player |
+| `grants` | Applies behavior only to players granted bhop access |
+| `disabled` | Leaves player movement unchanged |
 
-## Server console commands
+In `grants` mode, the plugin integrates with the admin system. The `j` admin
+flag controls access, and the admin menu can toggle Bhop for a player.
 
-| Command | Description |
+## Prediction behavior
+
+The plugin updates replicated movement convars so clients predict the same
+movement rules as the server. In grants mode it temporarily applies movement
+settings around each granted player's command processing, keeping the effect
+scoped to that player.
+
+## Server commands
+
+| Command | Purpose |
 | --- | --- |
-| `bhop_player <steamid64> <0\|1>` | Grant/revoke session bhop for a player (used by admin-system's Bunnyhop effect). |
-| `bhop_reload` | Re-read `settings.jsonc` and re-apply the configuration without a restart. |
+| `bhop_player <steamid64> <0|1>` | Disable or enable bhop for one player |
+| `bhop_reload` | Reload the plugin configuration |
+
+`bhop_player` is intended for server-side use and automation.
 
 ## Configuration
 
-`configs/settings.jsonc` (seeded on first deploy, never clobbered):
+The configuration is loaded from the plugin's VoltMod configuration directory.
 
-| Key | Default | Meaning |
+| Setting | Default | Purpose |
 | --- | --- | --- |
-| `bhop.mode` | `"enabled"` | `"enabled"` or `"grants"` (see above). |
-| `bhop.autoBunnyhopping` | `true` | `sv_autobunnyhopping` - hold JUMP to hop. |
-| `bhop.enableBunnyhopping` | `true` | `sv_enablebunnyhopping` - remove the landing speed clamp. |
-| `bhop.staminaJumpCost` | `0.0` | `sv_staminajumpcost`; `-1` = leave untouched. |
-| `bhop.staminaLandCost` | `0.0` | `sv_staminalandcost`; `-1` = leave untouched. |
-| `bhop.airAccelerate` | `150.0` | `sv_airaccelerate` (game default 12); `-1` = untouched. |
-| `bhop.airMaxWishSpeed` | `60.0` | `sv_air_max_wishspeed` (game default 30); `-1` = untouched. |
-| `bhop.maxVelocity` | `-1` | `sv_maxvelocity`; `-1` = untouched. |
-| `bhop.hopBoost.enabled` | `true` | Server-side chained-hop velocity boost. |
-| `bhop.hopBoost.factor` | `1.08` | Horizontal velocity multiplier per chained hop. |
-| `bhop.hopBoost.chainWindowMs` | `1000` | Jumps this close together count as chained. |
-| `bhop.hopBoost.maxSpeed` | `1200.0` | Horizontal speed cap for the boost. |
-| `bhop.notifyPlayer` | `true` | Center-message the player on grant/revoke. |
+| `mode` | `enabled` | Select `enabled`, `grants`, or `disabled` |
+| `autobhop` | `true` | Hold jump to jump again on landing |
+| `enableBhop` | `true` | Enable bunny-hop movement behavior |
+| `stamina` | `0` | Configure landing stamina |
+| `airAccelerate` | `150` | Set airborne acceleration |
+| `airMaxWishSpeed` | `60` | Set maximum airborne wish speed |
+| `maxVelocity` | `-1` | Set the engine velocity limit; `-1` leaves it unchanged |
+| `boost.enabled` | `true` | Enable landing-window velocity boosts |
+| `boost.factor` | `1.08` | Multiply horizontal velocity by this value |
+| `boost.windowMs` | `1000` | Limit boosts to this landing window |
+| `boost.maxSpeed` | `1200` | Cap boosted horizontal speed |
+| `notify` | `true` | Notify players when their bhop state changes |
 
-The server applies one velocity correction per chained hop. If it feels rough
-at high latency, lower `factor` or disable the boost. Convar-based movement
-remains client-predicted.
-
-## Admin-system integration
-
-Admin-system provides a **Bunnyhop** effect in its Effects menu
-(permission flag `j`). It toggles a session grant through `bhop_player`. Run this
-plugin in `grants` mode when admins should grant bhop to individual players. The
-effect is inert if this plugin is not loaded.
+Reload the configuration with `bhop_reload` after editing it.
 
 ## Maintenance
 
-`grants` mode hooks `CPlayer_MovementServices::RunCommand` by vtable index
-(`"RunCommand"` gamedata, currently Windows 22 / Linux 23). Re-check the index
-against SwiftlyS2 or CS2Fixes gamedata after every CS2 update. `enabled` mode
-uses no hook.
+The movement hook depends on platform-specific game data. The current command
+indices are Windows `22` and Linux `23`. Revalidate them after CS2 updates if
+the hook stops running or players receive prediction errors.
+
+For shared build and development commands, see the
+[repository README](../../README.md).
