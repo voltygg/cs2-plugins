@@ -15,6 +15,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/EffectManager.hpp>
 #include <VoltMod/Database/Api.hpp>
+#include <VoltMod/Players/ActionDispatcher.hpp>
 #include <VoltMod/Players/EffectDispatcher.hpp>
 #include <string>
 #include <vector>
@@ -45,6 +46,8 @@ struct App
     const std::string Version;
 
     Core::ConfigManager Config;
+    /** Runs the action descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
+    VoltMod::ActionDispatcher Actions{Runtime};
     VoltMod::PostgresDatabase Db{Runtime.Scheduler};
     Database::PlayerRepository PlayerRepo{Db};
     Core::ChatService Chat{Runtime, Config};

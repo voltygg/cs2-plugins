@@ -12,7 +12,7 @@
 #include <format>
 #include <string>
 
-namespace AdminSystem::Admin::CheatCheck::View
+namespace AdminSystem::Admin::CheatCheck
 {
 
 using AdminSystem::Core::ChatService;
@@ -50,14 +50,14 @@ PanelState PanelStateFor(const PendingCheck& pc)
 
 }  // namespace
 
-void RenderPanel(VoltMod::Runtime& rt, const Core::ConfigManager& config, int slot, const PendingCheck& pc)
+void CheatCheckView::RenderPanel(int slot, const PendingCheck& pc) const
 {
-    if (!rt.Players.GetPlayerBySlot(slot))
+    if (!_rt.Players.GetPlayerBySlot(slot))
     {
         return;
     }
 
-    auto& tr = rt.Translations;
+    auto& tr = _rt.Translations;
 
     int64_t remain = pc.DeadlineSec - TimeUtils::Now();
     int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
@@ -84,7 +84,7 @@ void RenderPanel(VoltMod::Runtime& rt, const Core::ConfigManager& config, int sl
         break;
     }
 
-    const auto& cfg = config.GetCheatCheck();
+    const auto& cfg = _config.GetCheatCheck();
 
     // Operator-configured (trusted) banner image rendered atop the panel; CS2 fetches it client-side.
     std::string html;
@@ -108,36 +108,35 @@ void RenderPanel(VoltMod::Runtime& rt, const Core::ConfigManager& config, int sl
         html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick", slot));
     }
 
-    rt.Messages.SendCenterHtml(slot, html);
+    _rt.Messages.SendCenterHtml(slot, html);
 }
 
-void Render(VoltMod::Runtime& rt, const Core::ConfigManager& config, Core::ChatService& chat, int slot,
-            const PendingCheck& pc)
+void CheatCheckView::Render(int slot, const PendingCheck& pc) const
 {
-    auto& tr = rt.Translations;
+    auto& tr = _rt.Translations;
 
-    chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle", slot)));
+    _chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle", slot)));
 
     switch (PanelStateFor(pc))
     {
     case PanelState::Joined:
-        chat.Reply(slot, std::format("{}{}", ChatColors::Green, tr.Get("cheatCheck.joinedPanel", slot)));
+        _chat.Reply(slot, std::format("{}{}", ChatColors::Green, tr.Get("cheatCheck.joinedPanel", slot)));
         break;
     case PanelState::CreatingRoom:
-        chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.creatingRoom", slot)));
+        _chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.creatingRoom", slot)));
         break;
     case PanelState::ProvideLink:
-        chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.provideLink", slot)));
+        _chat.Reply(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.provideLink", slot)));
         break;
     case PanelState::HasUrl:
-        chat.ReplyLink(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.joinHere", slot)),
-                       pc.ResolvedUrl);
+        _chat.ReplyLink(slot, std::format("{}{}", ChatColors::Default, tr.Get("cheatCheck.joinHere", slot)),
+                        pc.ResolvedUrl);
         break;
     case PanelState::Generic:
         break;
     }
 
-    RenderPanel(rt, config, slot, pc);
+    RenderPanel(slot, pc);
 }
 
-}  // namespace AdminSystem::Admin::CheatCheck::View
+}  // namespace AdminSystem::Admin::CheatCheck

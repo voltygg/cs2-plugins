@@ -102,7 +102,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
         });
     }
 
-    View::RenderPanel(_rt, _config, targetSlot, pc);
+    _view.RenderPanel(targetSlot, pc);
 }
 
 }  // namespace AdminSystem::Admin::CheatCheck

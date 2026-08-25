@@ -87,7 +87,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     pc.TickTimer = _rt.Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
 
     ResolveUrl(targetSlot);
-    View::Render(_rt, _config, _chat, targetSlot, pc);
+    _view.Render(targetSlot, pc);
 
     _chat.BroadcastAction("broadcast.cheatCheckCalled", admin->GetName(), target->GetName());
     return true;
@@ -163,7 +163,7 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const VoltM
 
         if (!urls->CheckerUrl.empty())
             RelayCheckerUrl(targetSlot, urls->CheckerUrl);
-        View::Render(_rt, _config, _chat, targetSlot, pc);
+        _view.Render(targetSlot, pc);
         return;
     }
 
@@ -184,7 +184,7 @@ void CheatCheckManager::OnRoomFailed(int targetSlot)
         return std::format("{}{}", ChatColors::Red, _rt.Translations.Get("cheatCheck.apiFailed", adminSlot));
     });
 
-    View::Render(_rt, _config, _chat, targetSlot, pc);
+    _view.Render(targetSlot, pc);
 }
 
 void CheatCheckManager::RelayCheckerUrl(int targetSlot, const std::string& checkerUrl)
@@ -212,7 +212,7 @@ void CheatCheckManager::Tick(int targetSlot)
     }
 
     PollPresenceIfDue(targetSlot);
-    View::RenderPanel(_rt, _config, targetSlot, pc);
+    _view.RenderPanel(targetSlot, pc);
 }
 
 CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSlot, const std::string& link)
@@ -240,7 +240,7 @@ CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSl
                         link);
     }
 
-    View::RenderPanel(_rt, _config, callerSlot, pc);
+    _view.RenderPanel(callerSlot, pc);
     return SubmitResult::Relayed;
 }
 

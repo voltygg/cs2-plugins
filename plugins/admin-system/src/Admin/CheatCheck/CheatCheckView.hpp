@@ -13,14 +13,27 @@ class ChatService;
 class ConfigManager;
 }  // namespace AdminSystem::Core
 
-namespace AdminSystem::Admin::CheatCheck::View
+namespace AdminSystem::Admin::CheatCheck
 {
 
-/** Send only the persistent center-HTML panel to the suspect. */
-void RenderPanel(VoltMod::Runtime& rt, const Core::ConfigManager& config, int slot, const PendingCheck& pc);
+/** Renders a pending check to its suspect. The referenced services must outlive the view. */
+class CheatCheckView
+{
+public:
+    CheatCheckView(VoltMod::Runtime& runtime, const Core::ConfigManager& config, Core::ChatService& chat)
+        : _rt(runtime), _config(config), _chat(chat)
+    {}
 
-/** Send the chat instructions followed by the center-HTML panel. */
-void Render(VoltMod::Runtime& rt, const Core::ConfigManager& config, Core::ChatService& chat, int slot,
-            const PendingCheck& pc);
+    /** Send only the persistent center-HTML panel to the suspect. */
+    void RenderPanel(int slot, const PendingCheck& pc) const;
 
-}  // namespace AdminSystem::Admin::CheatCheck::View
+    /** Send the chat instructions followed by the center-HTML panel. */
+    void Render(int slot, const PendingCheck& pc) const;
+
+private:
+    VoltMod::Runtime& _rt;
+    const Core::ConfigManager& _config;
+    Core::ChatService& _chat;
+};
+
+}  // namespace AdminSystem::Admin::CheatCheck

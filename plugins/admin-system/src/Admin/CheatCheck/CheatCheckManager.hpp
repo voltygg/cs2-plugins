@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CheatCheckView.hpp"
 #include "PendingCheck.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -69,6 +70,7 @@ private:
     VoltMod::Runtime& _rt;
     const Core::ConfigManager& _config;
     Core::ChatService& _chat;
+    CheatCheckView _view{_rt, _config, _chat};
 
     void Tick(int targetSlot);
     void Expire(int targetSlot);

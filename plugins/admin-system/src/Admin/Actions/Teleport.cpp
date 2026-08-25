@@ -31,8 +31,8 @@ void Swap(App& app, int adminSlot, int firstSlot, int secondSlot)
 {
     if (firstSlot == secondSlot)
         return;
-    auto ctxA = Resolve(app.Runtime, adminSlot, firstSlot, Flag(Permission::Control));
-    auto ctxB = Resolve(app.Runtime, adminSlot, secondSlot, Flag(Permission::Control));
+    auto ctxA = app.Actions.Resolve(adminSlot, firstSlot, Flag(Permission::Control));
+    auto ctxB = app.Actions.Resolve(adminSlot, secondSlot, Flag(Permission::Control));
     if (!ctxA.Valid() || !ctxB.Valid())
         return;
     if (!ctxA.TargetCtrl.IsAlive() || !ctxB.TargetCtrl.IsAlive())
