@@ -16,8 +16,6 @@ namespace Log = VoltMod::Core::Log;
 namespace Anticheat
 {
 
-using VoltMod::Events::PlayerSpawn;
-
 namespace
 {
 constexpr int DefaultDumpTicks = 64;
@@ -42,10 +40,7 @@ void AntiCheatManager::Initialize()
     // registering a listener while the event service dispatches would mutate the map it walks.
     _rt.Teleports.Enable();
 
-    // The movement hook needs a live movement-services instance, so retry from every spawn until it
-    // takes. Install() touches no listener registry.
-    _subs.push_back(_rt.Events.Listen<PlayerSpawn>([this](const PlayerSpawn&) { _rt.MovementHook.Install(); }));
-
+    _rt.MovementHook.Install();
     _subs.push_back(
         _rt.MovementHook.ListenPreCmd([this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); }));
     _subs.push_back(_rt.Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); }));

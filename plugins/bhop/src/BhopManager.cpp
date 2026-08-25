@@ -28,6 +28,7 @@ void BhopManager::Initialize()
             _conVars.ApplyGlobal();
     }));
 
+    _rt.MovementHook.Install();
     _subs.push_back(_rt.MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); }));
     _subs.push_back(_rt.MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); }));
 
@@ -84,14 +85,9 @@ void BhopManager::Grant(int64_t steamId, bool enabled)
     if (_mode == Mode::Grants)
     {
         if (enabled)
-        {
-            _rt.MovementHook.Install();
             _conVars.ReplicateOverrides(slot);
-        }
         else
-        {
             _conVars.ReplicateServerValues(slot);
-        }
     }
 
     if (_config.Get().bhop.notifyPlayer)
@@ -223,12 +219,9 @@ void BhopManager::OnPlayerSpawn(int slot)
     bool granted = player && _granted.contains(player->GetSteamID());
     _grantedSlots[slot] = granted;
 
+    // The connect/map-change convar snapshot clobbered the client's override; re-send.
     if (granted)
-    {
-        // The connect/map-change convar snapshot clobbered the client's override; re-send.
-        _rt.MovementHook.Install();
         _conVars.ReplicateOverrides(slot);
-    }
 }
 
 }  // namespace Bhop
