@@ -126,7 +126,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
 
 bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
 {
-    const VoltMod::PlayerController self(slot);
+    const VoltMod::PlayerController self = _rt.Entities.Controller(slot);
     if (!self.IsValid() || !self.GetPawn())
         return false;
 
@@ -143,7 +143,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
         const int other = player ? player->GetSlot() : -1;
         if (!IsValidSlot(other) || other == slot)
             continue;
-        const VoltMod::PlayerController controller(other);
+        const VoltMod::PlayerController controller = _rt.Entities.Controller(other);
         if (!controller.IsValid() || !controller.GetPawn() || !controller.IsAlive() ||
             !ShotCorrelatorCore::AreOpponents(team, controller.GetTeam(), freeForAll))
             continue;

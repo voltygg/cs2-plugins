@@ -56,7 +56,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     if (!admin || !target)
         return false;
 
-    PlayerController targetCtrl(targetSlot);
+    PlayerController targetCtrl = _rt.Entities.Controller(targetSlot);
     const auto& cfg = _config.GetCheatCheck();
 
     // Re-call: keep the original movetype/team (target is already frozen/spectated, so reading now is stale).
@@ -301,7 +301,7 @@ void CheatCheckManager::Expire(int targetSlot)
     ResetCheck(targetSlot);  // deactivate before the kick triggers disconnect cleanup
 
     if (kick)
-        PlayerController(targetSlot).Kick(cfg.kickReason.c_str());
+        _rt.Entities.Controller(targetSlot).Kick(cfg.kickReason.c_str());
     else
         Unfreeze(targetSlot, restore, restoreTeam);
 
@@ -310,7 +310,7 @@ void CheatCheckManager::Expire(int targetSlot)
 
 void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int restoreTeam)
 {
-    PlayerController pc(targetSlot);
+    PlayerController pc = _rt.Entities.Controller(targetSlot);
     if (!pc.IsValid())
         return;
     // restoreTeam is a real playing team (T/CT) only if we actually pulled them to spectator at start.

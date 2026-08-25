@@ -78,8 +78,8 @@ const ParamEffect Model{.Permission = Flag(Permission::Fun),
                             // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
                             // team default when cleared while alive (a no-op on death, where IsAlive is false).
                             int targetSlot = ctx.Target->GetSlot();
-                            return {.OnStop = [&ops = ctx.Rt.EntityOps, targetSlot]() {
-                                PlayerController pc(targetSlot);
+                            return {.OnStop = [&ops = ctx.Rt.EntityOps, &entities = ctx.Rt.Entities, targetSlot]() {
+                                PlayerController pc = entities.Controller(targetSlot);
                                 if (!pc.IsValid() || !pc.IsAlive())
                                     return;
                                 if (const char* def = DefaultModelForTeam(pc.GetTeam()))

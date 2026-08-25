@@ -2,6 +2,7 @@
 #include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Sdk/Visibility/GlowVision.hpp>
 #include <memory>
 
@@ -19,7 +20,8 @@ const Effect Wallhack{.Permission = Flag(Permission::Wallhack),
                       .Scope = EffectScope::Round,
                       .TickIntervalMs = GlowVision::ReconcileIntervalMs,
                       .Setup = [](const ActionContext& ctx) -> EffectInstance {
-                          auto glow = std::make_shared<GlowVision>(ctx.Target->GetSlot());
+                          auto glow = std::make_shared<GlowVision>(ctx.Rt.Entities, ctx.Rt.EntityOps, ctx.Rt.Transmit,
+                                                                   ctx.Target->GetSlot());
 
                           // Build the glow clones immediately; the repeating tick then tracks spawns/deaths/team
                           // changes. OnStop clears the transmit-filter entries and removes any surviving clones

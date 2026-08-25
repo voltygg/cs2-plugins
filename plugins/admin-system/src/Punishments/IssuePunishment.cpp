@@ -42,7 +42,7 @@ bool Issue(App& app, const Player& admin, const Player& target, PunishType type,
     {
     case PunishType::Kick:
     {
-        VoltMod::PlayerController(target.GetSlot()).Kick(reason.c_str());
+        app.Runtime.Entities.Controller(target.GetSlot()).Kick(reason.c_str());
         app.Chat.BroadcastPunishment("kicked", admin.GetName(), target.GetName(), reason, 0);
         return true;
     }

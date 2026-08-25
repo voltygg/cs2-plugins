@@ -41,16 +41,16 @@ const Effect Disco{.Permission = Flag(Permission::Fun),
                        int slot = ctx.Target->GetSlot();
 
                        return {.OnTick =
-                                   [slot, idx = size_t{0}]() mutable {
-                                       VoltMod::PlayerController pc(slot);
+                                   [&entities = ctx.Rt.Entities, slot, idx = size_t{0}]() mutable {
+                                       VoltMod::PlayerController pc = entities.Controller(slot);
                                        if (!pc.IsValid() || !pc.IsAlive())
                                            return;
                                        pc.SetRender(RenderModeTransTexture, Palette[idx]);
                                        idx = (idx + 1) % Palette.size();
                                    },
                                .OnStop =
-                                   [slot, savedMode, savedColor]() {
-                                       VoltMod::PlayerController pc(slot);
+                                   [&entities = ctx.Rt.Entities, slot, savedMode, savedColor]() {
+                                       VoltMod::PlayerController pc = entities.Controller(slot);
                                        if (pc.IsValid())
                                            pc.SetRender(savedMode == 0 ? RenderModeNormal : savedMode,
                                                         savedColor == 0 ? ColorOpaqueWhite : savedColor);

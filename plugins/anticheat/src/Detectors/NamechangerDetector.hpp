@@ -14,7 +14,7 @@ class AntiCheatManager;
 class NamechangerDetector
 {
 public:
-    explicit NamechangerDetector(AntiCheatManager& manager) : _manager(manager) {}
+    NamechangerDetector(AntiCheatManager& manager, VoltMod::Runtime& runtime) : _manager(manager), _rt(runtime) {}
 
     /** Full connect: the first point the controller's name is meaningful. */
     void OnFullyConnected(VoltMod::Players::Player* player);
@@ -24,9 +24,10 @@ public:
 
 private:
     /** The visible name for @p player, preferring the controller over the connect-time copy. */
-    static std::string CurrentName(VoltMod::Players::Player* player);
+    std::string CurrentName(VoltMod::Players::Player* player) const;
 
     AntiCheatManager& _manager;
+    VoltMod::Runtime& _rt;
 };
 
 }  // namespace Anticheat

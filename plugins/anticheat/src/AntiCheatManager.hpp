@@ -106,7 +106,7 @@ private:
     InvalidCvarRules _invalidCvars;
 
     ShotCorrelator _feed{*this, _rt};
-    NamechangerDetector _namechangerDetector{*this};
+    NamechangerDetector _namechangerDetector{*this, _rt};
     DllInjectionDetector _dllInjection{*this, _rt, _detections};
     InvalidCvarDetector _invalidCvarPoller{*this, _rt};
 

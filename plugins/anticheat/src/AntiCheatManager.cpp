@@ -338,7 +338,7 @@ bool AntiCheatManager::IsEligible(int slot)
     const VoltMod::Players::Player* player = _rt.Players.GetPlayerBySlot(slot);
     if (!player || player->IsBot())
         return false;
-    VoltMod::PlayerController controller(slot);
+    VoltMod::PlayerController controller = _rt.Entities.Controller(slot);
     return controller.IsValid() && !(controller.GetFlags() & VoltMod::Sdk::FL_FAKECLIENT);
 }
 

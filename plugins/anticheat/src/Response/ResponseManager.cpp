@@ -93,9 +93,9 @@ void ResponseManager::Handle(int slot, const Finding& finding)
         // A finding can surface from inside an engine hook on the client itself (the convar query
         // reply), where kicking would disconnect it mid-virtual-call. Defer a tick, then re-resolve
         // the slot in case its player left and somebody else took it.
-        _rt.Scheduler.NextTick([&players = _rt.Players, slot, steamId, reason] {
+        _rt.Scheduler.NextTick([&players = _rt.Players, &entities = _rt.Entities, slot, steamId, reason] {
             if (players.GetPlayerBySlotIfSteamId(slot, steamId))
-                VoltMod::PlayerController(slot).Kick(reason.c_str());
+                entities.Controller(slot).Kick(reason.c_str());
         });
         return;
     }

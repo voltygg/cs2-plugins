@@ -170,7 +170,7 @@ bool PunishmentManager::IssueBan(Ban& ban)
 
     // Kick the player if currently connected.
     if (auto* player = _rt.Players.GetPlayerBySteamId(ban.TargetSteamId))
-        VoltMod::PlayerController(player->GetSlot()).Kick(ban.Reason.c_str());
+        _rt.Entities.Controller(player->GetSlot()).Kick(ban.Reason.c_str());
 
     _chat.BroadcastPunishment("banned", ban.AdminName, ban.TargetName, ban.Reason, ban.Duration);
     return true;

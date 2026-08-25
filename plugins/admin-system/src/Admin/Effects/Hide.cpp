@@ -46,15 +46,15 @@ const Effect Hide{.Permission = Flag(Permission::Hide),
 
                       // Hide is persistent, so the reconcile tick rebuilds the glow clones after
                       // round restarts and tracks spawns/deaths/team changes across rounds.
-                      auto glow = std::make_shared<GlowVision>(slot);
+                      auto glow = std::make_shared<GlowVision>(ctx.Rt.Entities, ctx.Rt.EntityOps, transmit, slot);
                       glow->Reconcile();
 
                       return {.OnTick = [glow]() { glow->Reconcile(); },
                               .OnStop =
-                                  [&transmit, slot, savedTeam, savedName, glow]() {
+                                  [&transmit, &entities = ctx.Rt.Entities, slot, savedTeam, savedName, glow]() {
                                       glow->Destroy();
                                       transmit.SetControllerHidden(slot, false);
-                                      PlayerController pc(slot);
+                                      PlayerController pc = entities.Controller(slot);
                                       if (!pc.IsValid())
                                           return;
                                       pc.SetPlayerName(savedName);

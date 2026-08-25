@@ -63,9 +63,9 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app
                     Actions::Swap(app, a, first, second);
                     app.Runtime.Menus.CloseAllMenus(a);
                 },
-                [first = targetSlot](int candidate) {
+                [&entities = app.Runtime.Entities, first = targetSlot](int candidate) {
                     // Gray out partners Swap would reject: the already-picked player and the dead.
-                    VoltMod::PlayerController ctrl(candidate);
+                    VoltMod::PlayerController ctrl = entities.Controller(candidate);
                     return candidate != first && ctrl.IsValid() && ctrl.IsAlive();
                 });
             if (picker)

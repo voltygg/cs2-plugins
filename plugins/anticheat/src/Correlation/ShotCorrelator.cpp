@@ -120,7 +120,7 @@ void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)
     if (!cmd.Valid || !_manager.DetectionsEnabled() || !_manager.IsEligible(slot))
         return;
 
-    VoltMod::PlayerController controller(slot);
+    VoltMod::PlayerController controller = _rt.Entities.Controller(slot);
     if (!controller.IsValid() || !controller.GetPawn())
         return;
 
@@ -143,7 +143,7 @@ void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)
         _manager.AntiAim().OnCommand(slot, sample);
 
     // This is the command the server is about to simulate, so ingest and stamp in the same pass.
-    const auto serverTick = static_cast<int32_t>(VoltMod::ServerTick());
+    const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
     const double now = TimeUtils::MonotonicSeconds();
     _manager.Correlator().OnSimulated(slot, sample.CmdNum, serverTick, eye, sample.Airborne);
     if (aimbot)
@@ -170,7 +170,7 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
         if (engine)
             _userIds[slot] = engine->GetPlayerUserId(CPlayerSlot(slot)).Get();
 
-        const VoltMod::PlayerController controller(slot);
+        const VoltMod::PlayerController controller = _rt.Entities.Controller(slot);
         if (!controller.IsValid() || !controller.GetPawn())
             continue;
 
@@ -188,7 +188,7 @@ void ShotCorrelator::OnFrame()
     if (!_manager.DetectionsEnabled())
         return;
 
-    const auto serverTick = static_cast<int32_t>(VoltMod::ServerTick());
+    const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
     const double now = TimeUtils::MonotonicSeconds();
 
     std::array<PositionSample, MaxSlots> players{};
@@ -242,14 +242,14 @@ void ShotCorrelator::OnWeaponFire(const VoltMod::Events::WeaponFire& fire)
     if (!_manager.DetectionsEnabled() || !_manager.IsEligible(fire.Slot))
         return;
 
-    const VoltMod::PlayerController controller(fire.Slot);
+    const VoltMod::PlayerController controller = _rt.Entities.Controller(fire.Slot);
     const QAngle eyeAngles = controller.GetEyeAngles();
     const AimAngles visible{eyeAngles.x, eyeAngles.y};
     // Without a pawn the field read fabricates a perfectly finite-looking (0,0).
     const bool hasVisible = controller.IsValid() && controller.GetPawn() != nullptr && Geometry::IsFinite(visible);
 
-    ShotView* shot = _manager.Correlator().OnWeaponFire(
-        fire.Slot, fire.Weapon, static_cast<int32_t>(VoltMod::ServerTick()), visible, hasVisible);
+    ShotView* shot = _manager.Correlator().OnWeaponFire(fire.Slot, fire.Weapon, static_cast<int32_t>(_rt.Clock.Tick()),
+                                                        visible, hasVisible);
     if (shot && _manager.ModuleEnabled(DetectionKind::AntiAim))
         _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, TimeUtils::MonotonicSeconds()));
 }
@@ -259,7 +259,7 @@ void ShotCorrelator::OnBulletImpact(const VoltMod::Events::BulletImpact& impact)
     if (!_manager.DetectionsEnabled())
         return;
 
-    const auto serverTick = static_cast<int32_t>(VoltMod::ServerTick());
+    const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
     // The event's userid is truncated to a byte, so only a slot whose in-window shot is unique
     // counts. Without a userid table the engine's own best-effort decode is all there is.
     int slot = _manager.Correlator().ResolveImpactShooter(impact.TruncatedUserId, serverTick, _userIds);
@@ -285,7 +285,7 @@ void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
 
     const bool headshot = event->GetInt("hitgroup", HitGroupGeneric) == HitGroupHead;
     ShotView* shot =
-        _manager.Correlator().OnPlayerHurt(attacker, victim, headshot, static_cast<int32_t>(VoltMod::ServerTick()));
+        _manager.Correlator().OnPlayerHurt(attacker, victim, headshot, static_cast<int32_t>(_rt.Clock.Tick()));
     if (!shot)
         return;
 
@@ -304,7 +304,7 @@ void ShotCorrelator::OnPlayerDeath(const VoltMod::Events::PlayerDeath& death)
     // Nothing consumes the death directly: it only lands the wallbang flag SilentAim reads when it
     // finalizes two ticks later.
     _manager.Correlator().OnPlayerDeath(death.AttackerSlot, death.VictimSlot, death.Weapon, death.Penetrated > 0,
-                                        static_cast<int32_t>(VoltMod::ServerTick()));
+                                        static_cast<int32_t>(_rt.Clock.Tick()));
 }
 
 }  // namespace Anticheat

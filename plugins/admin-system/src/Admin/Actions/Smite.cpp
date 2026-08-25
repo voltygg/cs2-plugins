@@ -29,8 +29,8 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
                        }
 
                        int slot = ctx.Target->GetSlot();
-                       ctx.Rt.Scheduler.Delay(SmiteSlayDelayMs, [slot]() {
-                           VoltMod::PlayerController pc(slot);
+                       ctx.Rt.Scheduler.Delay(SmiteSlayDelayMs, [&entities = ctx.Rt.Entities, slot]() {
+                           VoltMod::PlayerController pc = entities.Controller(slot);
                            if (pc.IsValid() && pc.IsAlive())
                                pc.Slay();
                        });

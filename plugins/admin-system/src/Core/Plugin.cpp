@@ -70,7 +70,8 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
     {
         int slot = player->GetSlot();
         std::string reason = ban->Reason;
-        app.Runtime.Scheduler.NextTick([slot, reason] { PlayerController(slot).Kick(reason.c_str()); });
+        app.Runtime.Scheduler.NextTick(
+            [&entities = app.Runtime.Entities, slot, reason] { entities.Controller(slot).Kick(reason.c_str()); });
     }
 }
 

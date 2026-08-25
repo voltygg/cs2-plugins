@@ -166,7 +166,7 @@ void BhopManager::OnPlayerJump(int slot)
     if (!chained)
         return;
 
-    PlayerController controller(slot);
+    PlayerController controller = _rt.Entities.Controller(slot);
     if (!controller.IsValid())
         return;
 
@@ -186,7 +186,7 @@ void BhopManager::ForceAutoHop(int slot)
     if (!(_rt.Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
         return;
 
-    PlayerController controller(slot);
+    PlayerController controller = _rt.Entities.Controller(slot);
     if (!controller.IsValid())
         return;
 

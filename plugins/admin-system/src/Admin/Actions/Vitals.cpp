@@ -1,5 +1,6 @@
 ﻿#include "Descriptors.hpp"
 
+#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Sdk/Entity/PawnOps.hpp>
 
 namespace AdminSystem::Admin::Actions
@@ -29,7 +30,7 @@ const ParamAction SetArmor{Flag(Permission::Health), /*requireAlive*/ true,
 
 const ParamAction SetSize{Flag(Permission::Fun), /*requireAlive*/ true,
                           [](const ActionContext& ctx, int percent) -> OptKey {
-                              ctx.TargetCtrl.SetModelScale(percent / 100.0f);
+                              ctx.Rt.EntityOps.SetModelScale(ctx.TargetCtrl.GetPawn(), percent / 100.0f);
                               return "broadcast.sizeSet";
                           }};
 

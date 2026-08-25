@@ -3,13 +3,14 @@
 #include "AntiCheatManager.hpp"
 
 #include <VoltMod/Core/Slot.hpp>
+#include <VoltMod/Runtime.hpp>
 
 namespace Anticheat
 {
 
-std::string NamechangerDetector::CurrentName(VoltMod::Players::Player* player)
+std::string NamechangerDetector::CurrentName(VoltMod::Players::Player* player) const
 {
-    std::string name = VoltMod::PlayerController(player->GetSlot()).GetPlayerName();
+    std::string name = _rt.Entities.Controller(player->GetSlot()).GetPlayerName();
     return name.empty() ? player->GetName() : name;
 }
 
