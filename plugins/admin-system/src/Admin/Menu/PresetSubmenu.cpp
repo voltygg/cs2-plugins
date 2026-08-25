@@ -9,7 +9,7 @@
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/PawnOps.hpp>
+#include <VoltMod/Sdk/Entity/PawnOps.hpp>
 
 namespace AdminSystem::Admin::Menu
 {

@@ -1,6 +1,6 @@
 #include "Descriptors.hpp"
 
-#include <VoltMod/Sdk/PawnOps.hpp>
+#include <VoltMod/Sdk/Entity/PawnOps.hpp>
 
 namespace AdminSystem::Admin::Actions
 {

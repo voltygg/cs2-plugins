@@ -11,7 +11,7 @@
 #include <VoltMod/Menu/Flow.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/UserMessage.hpp>
+#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
 #include <memory>
 #include <optional>
 #include <string>

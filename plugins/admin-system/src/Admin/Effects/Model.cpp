@@ -5,8 +5,8 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/PawnOps.hpp>
-#include <VoltMod/Sdk/PlayerController.hpp>
+#include <VoltMod/Sdk/Entity/PawnOps.hpp>
+#include <VoltMod/Sdk/Entity/PlayerController.hpp>
 
 namespace AdminSystem::Admin::Effects
 {

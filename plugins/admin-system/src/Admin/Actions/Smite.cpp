@@ -3,7 +3,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Scheduler.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/EntityKeyValues.hpp>
+#include <VoltMod/Sdk/Entity/EntityKeyValues.hpp>
 #include <mathlib/vector.h>
 
 namespace AdminSystem::Admin::Actions

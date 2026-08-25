@@ -13,7 +13,7 @@
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Entity.hpp>
+#include <VoltMod/Sdk/Entity/Entity.hpp>
 #include <format>
 #include <memory>
 

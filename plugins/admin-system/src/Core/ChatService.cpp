@@ -7,7 +7,7 @@
 #include <VoltMod/Core/TimeUtils.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/UserMessage.hpp>
+#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
 #include <format>
 
 namespace AdminSystem::Core

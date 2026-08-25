@@ -3,7 +3,7 @@
 #include "CheatCheckMode.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Sdk/MoveType.hpp>
+#include <VoltMod/Sdk/Entity/MoveType.hpp>
 #include <cstdint>
 #include <string>
 

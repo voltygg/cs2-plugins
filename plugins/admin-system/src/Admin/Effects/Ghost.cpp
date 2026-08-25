@@ -3,7 +3,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/TransmitFilter.hpp>
+#include <VoltMod/Sdk/Visibility/TransmitFilter.hpp>
 
 namespace AdminSystem::Admin::Effects
 {

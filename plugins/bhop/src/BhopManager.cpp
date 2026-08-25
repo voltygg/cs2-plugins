@@ -1,8 +1,8 @@
 #include "BhopManager.hpp"
 
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Sdk/Entity.hpp>
-#include <VoltMod/Sdk/PlayerController.hpp>
+#include <VoltMod/Sdk/Entity/Entity.hpp>
+#include <VoltMod/Sdk/Entity/PlayerController.hpp>
 #include <algorithm>
 #include <cmath>
 #include <mathlib/vector.h>

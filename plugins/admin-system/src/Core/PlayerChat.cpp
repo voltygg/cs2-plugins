@@ -11,8 +11,8 @@
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/ChatInputCapture.hpp>
-#include <VoltMod/Sdk/UserMessage.hpp>
+#include <VoltMod/Sdk/Messaging/ChatInputCapture.hpp>
+#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
 #include <format>
 #include <string>
 

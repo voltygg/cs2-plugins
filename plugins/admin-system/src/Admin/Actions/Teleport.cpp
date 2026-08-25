@@ -1,6 +1,6 @@
 ﻿#include "Descriptors.hpp"
 
-#include <VoltMod/Sdk/PawnOps.hpp>
+#include <VoltMod/Sdk/Entity/PawnOps.hpp>
 #include <mathlib/vector.h>
 
 namespace AdminSystem::Admin::Actions

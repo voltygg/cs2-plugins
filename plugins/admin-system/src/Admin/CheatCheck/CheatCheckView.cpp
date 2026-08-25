@@ -8,7 +8,7 @@
 #include <VoltMod/Core/TimeUtils.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/UserMessage.hpp>
+#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
 #include <format>
 #include <string>
 

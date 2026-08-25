@@ -2,7 +2,7 @@
 #include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Sdk/GlowVision.hpp>
+#include <VoltMod/Sdk/Visibility/GlowVision.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Effects

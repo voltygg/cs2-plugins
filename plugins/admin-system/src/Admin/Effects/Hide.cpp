@@ -1,10 +1,10 @@
 #include "Descriptors.hpp"
 
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/GlowVision.hpp>
-#include <VoltMod/Sdk/PawnOps.hpp>
-#include <VoltMod/Sdk/PlayerController.hpp>
-#include <VoltMod/Sdk/TransmitFilter.hpp>
+#include <VoltMod/Sdk/Entity/PawnOps.hpp>
+#include <VoltMod/Sdk/Entity/PlayerController.hpp>
+#include <VoltMod/Sdk/Visibility/GlowVision.hpp>
+#include <VoltMod/Sdk/Visibility/TransmitFilter.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Effects

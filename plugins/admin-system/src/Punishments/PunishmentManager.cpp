@@ -10,8 +10,8 @@
 #include <VoltMod/Core/TimeUtils.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/GameInterfaces.hpp>
-#include <VoltMod/Sdk/PlayerController.hpp>
+#include <VoltMod/Sdk/Engine/GameInterfaces.hpp>
+#include <VoltMod/Sdk/Entity/PlayerController.hpp>
 #include <algorithm>
 #include <utility>
 

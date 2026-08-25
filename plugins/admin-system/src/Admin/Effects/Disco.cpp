@@ -3,7 +3,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/PlayerController.hpp>
+#include <VoltMod/Sdk/Entity/PlayerController.hpp>
 #include <array>
 #include <cstdint>
 

@@ -4,8 +4,8 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Http/HttpResult.hpp>
-#include <VoltMod/Sdk/Entity.hpp>
-#include <VoltMod/Sdk/MoveType.hpp>
+#include <VoltMod/Sdk/Entity/Entity.hpp>
+#include <VoltMod/Sdk/Entity/MoveType.hpp>
 #include <array>
 #include <cstdint>
 #include <functional>

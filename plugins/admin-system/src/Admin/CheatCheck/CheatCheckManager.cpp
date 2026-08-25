@@ -15,9 +15,9 @@
 #include <VoltMod/Http/HttpClient.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/PawnOps.hpp>
-#include <VoltMod/Sdk/PlayerController.hpp>
-#include <VoltMod/Sdk/UserMessage.hpp>
+#include <VoltMod/Sdk/Entity/PawnOps.hpp>
+#include <VoltMod/Sdk/Entity/PlayerController.hpp>
+#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
 #include <format>
 
 namespace AdminSystem::Admin::CheatCheck
