@@ -18,6 +18,7 @@ if(BUILD_TESTING)
         SOURCES
             src/Maps/MapQuery.cpp
             src/Punishments/KickNoticeCore.cpp
+            src/Weapons/WeaponCatalog.cpp
         INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
     )
 endif()

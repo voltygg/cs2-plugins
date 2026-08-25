@@ -166,6 +166,7 @@ void App::RegisterCommands()
     Commands::RegisterMapCommands(commands, *this);
     Commands::RegisterPunishmentCommands(commands, *this);
     Commands::RegisterReportCommand(commands, *this);
+    Commands::RegisterWeaponCommands(commands, *this);
 }
 
 bool App::Start()

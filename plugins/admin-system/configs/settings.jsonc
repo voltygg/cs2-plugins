@@ -167,5 +167,23 @@
       { "name": "de_ancient", "displayName": "Ancient" },
       { "name": "de_anubis", "displayName": "Anubis" }
     ]
+  },
+  "weapons": {
+    // Weapons offered by !give and the Control > Give weapon menu.
+    // `item` is the entity classname; entries not starting with `weapon_` are skipped.
+    "menu": [
+      { "name": "AK-47", "item": "weapon_ak47" },
+      { "name": "M4A4", "item": "weapon_m4a1" },
+      { "name": "AWP", "item": "weapon_awp" },
+      { "name": "Desert Eagle", "item": "weapon_deagle" },
+      { "name": "MP9", "item": "weapon_mp9" },
+      { "name": "Nova", "item": "weapon_nova" },
+      { "name": "Negev", "item": "weapon_negev" },
+      { "name": "Knife", "item": "weapon_knife" },
+      { "name": "HE Grenade", "item": "weapon_hegrenade" },
+      { "name": "Flashbang", "item": "weapon_flashbang" },
+      { "name": "Smoke", "item": "weapon_smokegrenade" },
+      { "name": "Molotov", "item": "weapon_molotov" }
+    ]
   }
 }

@@ -22,6 +22,7 @@ void RegisterFreezeCommands(VoltMod::Commands::CommandManager& commands, App& ap
 void RegisterInfoCommands(VoltMod::Commands::CommandManager& commands, App& app);
 void RegisterMapCommands(VoltMod::Commands::CommandManager& commands, App& app);
 void RegisterPunishmentCommands(VoltMod::Commands::CommandManager& commands, App& app);
+void RegisterWeaponCommands(VoltMod::Commands::CommandManager& commands, App& app);
 void RegisterReportCommand(VoltMod::Commands::CommandManager& commands, App& app);
 }  // namespace Commands
 

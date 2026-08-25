@@ -1,6 +1,7 @@
 #include "AdminMenu_Control.hpp"
 
 #include "../../Core/App.hpp"
+#include "../../Weapons/WeaponCatalog.hpp"
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/Descriptors.hpp"
@@ -13,9 +14,11 @@
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <VoltMod/Sdk/Engine/ServerClock.hpp>
 #include <VoltMod/Sdk/Entity/Entity.hpp>
 #include <format>
 #include <memory>
+#include <string>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -33,6 +36,16 @@ constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
 // Speed/Size cycle both up and down from normal, so they open anchored on 100% (no change).
 constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
 constexpr int SizeDefault = 4;   // index of 100 in SizePresets
+
+/** Re-resolves permission and immunity per click: the menu may have been open a while. */
+void GiveWeapon(AdminSystem::App& app, int adminSlot, int targetSlot, const std::string& item)
+{
+    auto ctx = app.Actions.Resolve(adminSlot, targetSlot, Flag(Permission::Weapon));
+    if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
+        return;
+    if (app.Runtime.Items.Give(ctx.TargetCtrl, item.c_str()))
+        app.Chat.BroadcastAction("broadcast.gaveWeapon", ctx.Caller->GetName(), ctx.Target->GetName());
+}
 }  // namespace
 
 std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int adminSlot)
@@ -107,6 +120,58 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
     builder.AddSubmenu(
         ctx.Tr("action.changeTeam"),
         [&app, adminSlot, targetSlot](int) { return BuildTeamPickerMenu(app, adminSlot, targetSlot); }, hasS);
+
+    builder.AddSubmenu(
+        ctx.Tr("action.giveWeapon"),
+        [&app, adminSlot, targetSlot](int) { return BuildWeaponMenu(app, adminSlot, targetSlot); },
+        ctx.Allowed(Flag(Permission::Weapon)));
+
+    return builder.Build();
+}
+
+std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+{
+    auto& tr = app.Runtime.Translations;
+
+    auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
+    if (!target)
+        return nullptr;
+
+    MenuBuilder builder(std::format("{}: {}", tr.Get("action.giveWeapon", adminSlot), target->GetName()));
+
+    const auto& menu = app.Config.GetWeaponMenu();
+    for (const auto& weapon : menu)
+    {
+        builder.AddButton(weapon.Label(), [&app, adminSlot, targetSlot, item = weapon.Item](int) {
+            GiveWeapon(app, adminSlot, targetSlot, item);
+        });
+    }
+
+    if (!menu.empty())
+    {
+        builder.AddButton(tr.Get("action.giveRandomWeapon", adminSlot), [&app, adminSlot, targetSlot](int) {
+            const auto& weapons = app.Config.GetWeaponMenu();
+            if (weapons.empty())
+                return;
+            // Slot and tick vary per click, which is randomness enough for a fun action and
+            // avoids a plugin-owned RNG.
+            auto pick = static_cast<std::size_t>(app.Runtime.Clock.Tick() + targetSlot) % weapons.size();
+            GiveWeapon(app, adminSlot, targetSlot, weapons[pick].Item);
+        });
+    }
+    else
+    {
+        // Never show a dead-end empty page.
+        builder.AddButton(tr.Get("action.noWeapons", adminSlot), [](int) {}, false);
+    }
+
+    builder.AddButton(tr.Get("action.strip", adminSlot), [&app, adminSlot, targetSlot](int) {
+        auto ctx = app.Actions.Resolve(adminSlot, targetSlot, Flag(Permission::Weapon));
+        if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
+            return;
+        if (app.Runtime.Items.StripWeapons(ctx.TargetCtrl))
+            app.Chat.BroadcastAction("broadcast.stripped", ctx.Caller->GetName(), ctx.Target->GetName());
+    });
 
     return builder.Build();
 }

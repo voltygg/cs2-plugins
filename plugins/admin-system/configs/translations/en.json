@@ -48,7 +48,11 @@
     "cancelCheck": "Cancel Cheat Check",
     "unban": "Unban",
     "unmute": "Unmute",
-    "changeMap": "Change map"
+    "changeMap": "Change map",
+    "giveWeapon": "Give weapon",
+    "giveRandomWeapon": "Random weapon",
+    "strip": "Strip weapons",
+    "noWeapons": "No weapons configured"
   },
   "effectState": {
     "on": "ON",
@@ -91,7 +95,9 @@
     "unfrozeAdmin": "restored the admin privileges of",
     "autoFrozeAdmin": "had their admin privileges automatically frozen (rate limit) pending review",
     "mapChanging": "Map changing to {map}...",
-    "nextMapSet": "Next map set to {map}"
+    "nextMapSet": "Next map set to {map}",
+    "gaveWeapon": "gave a weapon to",
+    "stripped": "stripped the weapons of"
   },
   "common": {
     "selectSwapTarget": "Select swap partner",
@@ -178,7 +184,13 @@
     "mapCycleEmpty": "No maps are configured.",
     "mapListHeader": "Configured maps ({count}):",
     "nextMap": "Next map: {map}",
-    "nextMapUnset": "No next map is set."
+    "nextMapUnset": "No next map is set.",
+    "weaponNoMatch": "No configured weapon matches ‘{weapon}’.",
+    "weaponAmbiguous": "‘{weapon}’ matches {count} weapons. Be more specific.",
+    "weaponGiven": "Gave {weapon} to {name}.",
+    "weaponGiveFailed": "The server refused to give {weapon}.",
+    "weaponStripFailed": "Could not strip that player.",
+    "weaponTargetDead": "{name} is not alive."
   },
   "freeze": {
     "notice": "Your admin privileges are frozen pending review. Reason: {reason}"

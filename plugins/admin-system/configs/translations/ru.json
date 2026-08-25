@@ -48,7 +48,11 @@
     "cancelCheck": "Отменить проверку",
     "unban": "Разбанить",
     "unmute": "Размутить",
-    "changeMap": "Сменить карту"
+    "changeMap": "Сменить карту",
+    "giveWeapon": "Выдать оружие",
+    "giveRandomWeapon": "Случайное оружие",
+    "strip": "Забрать оружие",
+    "noWeapons": "Оружие не настроено"
   },
   "effectState": {
     "on": "ВКЛ",
@@ -91,7 +95,9 @@
     "unfrozeAdmin": "восстановил админ-права игрока",
     "autoFrozeAdmin": "получил автоматическую заморозку админ-прав (превышен лимит действий) до ручной проверки",
     "mapChanging": "Смена карты на {map}...",
-    "nextMapSet": "Следующая карта: {map}"
+    "nextMapSet": "Следующая карта: {map}",
+    "gaveWeapon": "выдал оружие игроку",
+    "stripped": "забрал оружие у игрока"
   },
   "common": {
     "selectSwapTarget": "Выберите второго игрока",
@@ -178,7 +184,13 @@
     "mapCycleEmpty": "Карты не настроены.",
     "mapListHeader": "Настроенные карты ({count}):",
     "nextMap": "Следующая карта: {map}",
-    "nextMapUnset": "Следующая карта не задана."
+    "nextMapUnset": "Следующая карта не задана.",
+    "weaponNoMatch": "Оружие «{weapon}» не найдено.",
+    "weaponAmbiguous": "«{weapon}» соответствует {count} видам оружия. Уточните запрос.",
+    "weaponGiven": "Игроку {name} выдано: {weapon}.",
+    "weaponGiveFailed": "Сервер отказал в выдаче: {weapon}.",
+    "weaponStripFailed": "Не удалось забрать оружие.",
+    "weaponTargetDead": "{name} не жив."
   },
   "freeze": {
     "notice": "Ваши админ-права заморожены до ручной проверки. Причина: {reason}"

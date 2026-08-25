@@ -48,7 +48,7 @@ std::shared_ptr<VoltMod::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int
         .AddSubmenu(
             tr.Get("category.control", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildControlMenu(app, adminSlot); },
-            access.HasAnyPermission(adminSid, "bsz"))
+            access.HasAnyPermission(adminSid, "bskz"))
         .AddSubmenu(
             tr.Get("category.effects", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildEffectsMenu(app, adminSlot); },

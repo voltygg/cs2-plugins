@@ -479,6 +479,35 @@
           }
         }
       }
+    },
+    "weapons": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Weapons offered by !give and the weapon menu.",
+      "properties": {
+        "menu": {
+          "type": "array",
+          "description": "Giveable weapons. Invalid entries are skipped with a warning in the server log.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "item"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Menu label; falls back to item when empty."
+              },
+              "item": {
+                "type": "string",
+                "pattern": "^weapon_[a-z0-9_]+$",
+                "description": "Entity classname handed to GiveNamedItem, e.g. \"weapon_ak47\"."
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

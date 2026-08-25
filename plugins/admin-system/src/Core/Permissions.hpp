@@ -24,6 +24,7 @@ enum class Permission : char
     Wallhack = 'w',  // grant a target see-through-walls glow vision
     Bhop = 'j',      // grant a target session bunnyhop (requires the bhop plugin, "grants" mode)
     Map = 'm',       // change level, queue the next map
+    Weapon = 'k',    // give and strip weapons
     Root = 'z',
 };
 

@@ -2,6 +2,7 @@
 
 #include "../Maps/MapQuery.hpp"
 #include "../Punishments/PunishType.hpp"
+#include "../Weapons/WeaponCatalog.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Database/PostgresDatabase.hpp>
@@ -107,6 +108,21 @@ struct MapSettings
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapSettings, cycle)
 
+/** Raw weapon entry, validated into Weapons::WeaponEntry during load. */
+struct WeaponConfigEntry
+{
+    std::string name;
+    std::string item;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WeaponConfigEntry, name, item)
+
+/** Weapons offered by `!give` and the weapon menu. */
+struct WeaponSettings
+{
+    std::vector<WeaponConfigEntry> menu;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WeaponSettings, menu)
+
 struct ChatSettings
 {
     bool broadcastPunishments = true;
@@ -210,9 +226,10 @@ struct Settings
     ReportSettings reports;
     CheatCheckSettings cheatCheck;
     MapSettings maps;
+    WeaponSettings weapons;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, database, punishments, abuseProtection, chat,
-                                                reports, cheatCheck, maps)
+                                                reports, cheatCheck, maps, weapons)
 
 /** Loads settings and resolves string-based punishment values. Admin and group
  *  records remain owned by the database. */
@@ -243,13 +260,18 @@ public:
     /** Offerable maps. Invalid entries are logged and skipped. */
     const std::vector<Maps::MapEntry>& GetMapCycle() const { return _resolvedMaps; }
 
+    /** Giveable weapons. Invalid entries are logged and skipped. */
+    const std::vector<Weapons::WeaponEntry>& GetWeaponMenu() const { return _resolvedWeapons; }
+
 private:
     void ResolveRuntimeSettings();
     void ResolveMapCycle(const MapSettings& maps);
+    void ResolveWeaponMenu(const WeaponSettings& weapons);
 
     std::vector<ResolvedTemplate> _resolvedTemplates;
     std::vector<int> _menuDurationSecs;
     std::vector<Maps::MapEntry> _resolvedMaps;
+    std::vector<Weapons::WeaponEntry> _resolvedWeapons;
 };
 
 }  // namespace AdminSystem::Core

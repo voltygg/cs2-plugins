@@ -74,6 +74,7 @@ void ConfigManager::ResolveRuntimeSettings()
     reports.duplicateWindowSec = std::max(reports.duplicateWindowSec, 0);
 
     ResolveMapCycle(settings.maps);
+    ResolveWeaponMenu(settings.weapons);
 }
 
 // Whether a map file actually exists is the engine's call, not ours; MapCycleState re-checks the
@@ -98,6 +99,25 @@ void ConfigManager::ResolveMapCycle(const MapSettings& maps)
             continue;
         }
         _resolvedMaps.push_back(std::move(entry));
+    }
+}
+
+void ConfigManager::ResolveWeaponMenu(const WeaponSettings& weapons)
+{
+    _resolvedWeapons.clear();
+    _resolvedWeapons.reserve(weapons.menu.size());
+
+    for (std::size_t i = 0; i < weapons.menu.size(); ++i)
+    {
+        const auto& raw = weapons.menu[i];
+        Weapons::WeaponEntry entry{.Name = raw.name, .Item = raw.item};
+
+        if (auto problem = Weapons::ValidateWeaponEntry(entry); !problem.empty())
+        {
+            Log::Warn("weapons.menu[{}] skipped: {}", i, problem);
+            continue;
+        }
+        _resolvedWeapons.push_back(std::move(entry));
     }
 }
 

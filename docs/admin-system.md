@@ -25,6 +25,7 @@ unrecognized key fails the load rather than being ignored.
 | `reports` | Player report reasons, cooldowns, and duplicate suppression |
 | `cheatCheck` | Cheat-check mode and the link or room API behind it |
 | `maps` | Maps admins may switch to |
+| `weapons` | Weapons `!give` and the weapon menu offer |
 
 A mistyped value fails the whole load; a malformed entry inside a list
 (a punishment template, a report reason) is logged and skipped so one typo
@@ -71,6 +72,24 @@ Plain map names are checked against the engine at load, and one it cannot load
 is logged there rather than failing on the first `!map`. Workshop maps are not
 checked, because they are addressed by id and are not mounted yet.
 
+### Weapon list
+
+`weapons.menu` is what `!give` and the Control > Give weapon menu offer. `item`
+is the entity classname; an entry not starting with `weapon_` is skipped,
+since it would otherwise reach the engine as an arbitrary entity.
+
+```jsonc
+"menu": [
+  { "name": "AK-47", "item": "weapon_ak47" }
+]
+```
+
+Typing the `weapon_` prefix is optional, and the display name is matched too,
+so `!give ak47`, `!give weapon_ak47` and `!give AK-47` all work.
+
+Giving a weapon the target's team cannot buy works: the server retries once with
+the pawn briefly flipped to the other team, then puts it back.
+
 ## Permission flags
 
 Flags are single characters stored in `admins.flags` and `admin_groups.flags`.
@@ -91,6 +110,7 @@ them. Root (`z`) grants everything.
 | `w` | Wallhack |
 | `j` | Bhop grants |
 | `m` | Change map and queue the next map |
+| `k` | Give and strip weapons |
 | `z` | Root access |
 
 Immunity is separate from flags: an admin cannot act on a target whose immunity
