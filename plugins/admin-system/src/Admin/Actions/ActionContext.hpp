@@ -3,12 +3,6 @@
 #include "../../Core/Permissions.hpp"
 
 #include <VoltMod/Players/ActionDispatcher.hpp>
-#include <string>
-
-namespace AdminSystem
-{
-struct App;
-}
 
 namespace AdminSystem::Admin::Actions
 {
@@ -20,8 +14,5 @@ using ActionContext = VoltMod::Players::ActionContext;
 using Action = VoltMod::Players::Action;
 using ParamAction = VoltMod::Players::ParamAction;
 using OptKey = VoltMod::Players::OptKey;
-
-/** Two-target broadcast: the phrase at `translationKey` receives the target names as {a} and {b}. */
-void Broadcast(App& app, const ActionContext& first, const ActionContext& second, const std::string& translationKey);
 
 }  // namespace AdminSystem::Admin::Actions

@@ -28,7 +28,6 @@ void BhopManager::Initialize()
             _conVars.ApplyGlobal();
     }));
 
-    _rt.MovementHook.Install();
     _subs.push_back(_rt.MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); }));
     _subs.push_back(_rt.MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); }));
 
@@ -61,6 +60,12 @@ void BhopManager::ApplySettings()
 
     if (_mode == Mode::Enabled)
         _conVars.ApplyGlobal();  // sets and replicates the overrides server-wide
+    else
+        // Only grants need the per-usercmd hook: subtick movement ignores the scoped
+        // sv_autobunnyhopping override, so those slots get a server-side hop instead. In
+        // "enabled" mode the convars do the whole job, so leave RunCommand unhooked. Install()
+        // is a no-op once installed, so a mode flip through ReloadSettings hooks exactly once.
+        _rt.MovementHook.Install();
 
     Log::Info("Bhop mode: {} ({} convar overrides).", _mode == Mode::Enabled ? "enabled" : "grants", _conVars.Count());
 }
