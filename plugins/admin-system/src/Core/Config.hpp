@@ -57,16 +57,27 @@ struct PunishmentTemplate
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentTemplate, name, type, duration, reason)
 
+/** Appeal route shown to a banned player on the disconnect screen. */
+struct AppealSettings
+{
+    /** Appeal page. `{steamId}` is substituted; empty omits the appeal from the notice. */
+    std::string url;
+    /** Append how long the ban still has to run. */
+    bool showExpiry = true;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AppealSettings, url, showExpiry)
+
 struct PunishmentSettings
 {
     std::string defaultBanReason = "Banned by administrator";
     int warningThreshold = 3;
+    AppealSettings appeal;
     std::vector<PunishmentTemplate> templates;
     std::vector<std::string> reasonPresets;
     std::vector<std::string> menuDurations = {"5m", "30m", "1h", "1d", "7d", "perm"};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentSettings, defaultBanReason, warningThreshold, templates,
-                                                reasonPresets, menuDurations)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PunishmentSettings, defaultBanReason, warningThreshold, appeal,
+                                                templates, reasonPresets, menuDurations)
 
 /** Validated template used by the Quick Punish menu. */
 struct ResolvedTemplate
@@ -197,6 +208,7 @@ public:
     const ServerSettings& GetServer() const { return Get().server; }
     const DatabaseConfig& GetDatabase() const { return Get().database; }
     const PunishmentSettings& GetPunishments() const { return Get().punishments; }
+    const AppealSettings& GetAppeal() const { return Get().punishments.appeal; }
     const AbuseProtectionSettings& GetAbuseProtection() const { return Get().abuseProtection; }
     const ChatSettings& GetChat() const { return Get().chat; }
     const ReportSettings& GetReports() const { return Get().reports; }

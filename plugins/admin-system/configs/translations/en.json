@@ -240,6 +240,11 @@
     "done": "Unmuted {name}.",
     "gone": "That mute is no longer active."
   },
+  "kickNotice": {
+    "permanent": "Permanent ban",
+    "expiresIn": "expires in",
+    "appeal": "Appeal:"
+  },
   "muteNotice": {
     "text": "You are text-muted.",
     "voice": "You are voice-muted.",

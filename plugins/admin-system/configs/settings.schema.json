@@ -65,6 +65,24 @@
           "default": 3,
           "description": "Number of warnings before escalation logic triggers."
         },
+        "appeal": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Shown to a banned player on the disconnect screen, alongside the reason.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "default": "",
+              "description": "Appeal page. `{steamId}` is substituted; empty omits the appeal from the notice.",
+              "examples": ["https://example.com/appeal?steam={steamId}"]
+            },
+            "showExpiry": {
+              "type": "boolean",
+              "default": true,
+              "description": "Append how long the ban still has to run."
+            }
+          }
+        },
         "templates": {
           "type": "array",
           "description": "Quick Punish presets shown in the admin menu. Invalid entries are skipped with a warning in the server log.",

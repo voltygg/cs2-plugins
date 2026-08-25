@@ -1,5 +1,6 @@
 #include "Plugin.hpp"
 
+#include "../Punishments/KickNotice.hpp"
 #include "App.hpp"
 #include "Config.hpp"
 
@@ -70,7 +71,10 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
     {
         int slot = player->GetSlot();
         int64_t steamId = player->GetSteamID();
-        std::string reason = ban->Reason;
+        // Built now, while the ban row is in hand, so the disconnect screen carries the expiry
+        // and appeal link rather than the bare reason.
+        std::string reason = AdminSystem::Punishments::BuildBanNotice(app.Runtime.Translations, app.Config.GetAppeal(),
+                                                                      ban->Reason, ban->ExpiresAt, steamId, slot);
         app.Runtime.Scheduler.NextTick([&rt = app.Runtime, slot, steamId, reason] {
             // The seat can change hands before the deferred kick lands; kicking whoever took it
             // is not what the ban says.

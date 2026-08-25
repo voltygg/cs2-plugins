@@ -4,6 +4,7 @@
 #include "../Core/Config.hpp"
 #include "../Database/Repositories/PunishmentRepository.hpp"
 #include "../Database/Repositories/WarningRepository.hpp"
+#include "KickNotice.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
@@ -171,10 +172,16 @@ bool PunishmentManager::IssueBan(Ban& ban)
     // Kick if connected, deferred a tick: anticheat reaches this through IAdminActions from
     // inside an engine hook on the target, where kicking disconnects it mid-virtual-call.
     if (auto* player = _rt.Players.GetPlayerBySteamId(ban.TargetSteamId))
-        _rt.Scheduler.NextTick([&rt = _rt, slot = player->GetSlot(), steamId = ban.TargetSteamId, reason = ban.Reason] {
+    {
+        // Same notice the connect-time reject builds, so a player banned mid-game and one
+        // bounced on reconnect read the same thing.
+        auto notice = BuildBanNotice(_rt.Translations, _config.GetAppeal(), ban.Reason, ban.ExpiresAt,
+                                     ban.TargetSteamId, player->GetSlot());
+        _rt.Scheduler.NextTick([&rt = _rt, slot = player->GetSlot(), steamId = ban.TargetSteamId, notice] {
             if (rt.Players.GetPlayerBySlotIfSteamId(slot, steamId))
-                rt.Entities.Controller(slot).Kick(reason.c_str());
+                rt.Entities.Controller(slot).Kick(notice.c_str());
         });
+    }
 
     _chat.BroadcastPunishment("banned", ban.AdminName, ban.TargetName, ban.Reason, ban.Duration);
     return true;

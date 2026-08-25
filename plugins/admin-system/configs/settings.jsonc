@@ -24,6 +24,13 @@
     "defaultBanReason": "Banned by administrator",
     // Number of warnings before escalation logic triggers.
     "warningThreshold": 3,
+    // Shown to a banned player on the disconnect screen, alongside the reason.
+    "appeal": {
+      // Appeal page. `{steamId}` is substituted; empty omits the appeal from the notice.
+      "url": "",
+      // Append how long the ban still has to run.
+      "showExpiry": true
+    },
     // Quick Punish menu presets. Invalid entries are logged and skipped.
     // type: "ban" | "voiceMute" | "textMute".
     // duration: "perm" (or "0") for permanent, otherwise <n>s / <n>m / <n>h / <n>d.
