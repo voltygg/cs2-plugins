@@ -5,10 +5,12 @@ Run as a module from the repo root: python -m deploy.tools.cli <subcommand>
 
 from __future__ import annotations
 
-import argparse
 import json
-import os
+from enum import StrEnum
 from pathlib import Path
+from typing import Annotated
+
+import typer
 
 from .common import (
     DEPLOY,
@@ -19,282 +21,317 @@ from .common import (
     repo_path,
 )
 
+app = typer.Typer(help=__doc__, no_args_is_help=True)
 
-def cmd_matrix(args: argparse.Namespace) -> None:
-    """Print the deploy matrix: full JSON for the GHA matrix, ids only for shell loops."""
+ServerPath = Annotated[str, typer.Option("--server-path", envvar="CS2_SERVER_PATH")]
+SteamcmdPath = Annotated[str, typer.Option("--steamcmd-path", envvar="STEAMCMD_PATH")]
+MapName = Annotated[str, typer.Option("--map", envvar="CS2_MAP")]
+GsltToken = Annotated[str, typer.Option("--gslt-token", envvar="GSLT_TOKEN")]
+MaxPlayers = Annotated[int, typer.Option("--max-players", envvar="CS2_MAX_PLAYERS")]
+ServerPort = Annotated[int, typer.Option("--port", envvar="CS2_PORT")]
+RconPassword = Annotated[str, typer.Option("--rcon-password", envvar="RCON_PASSWORD")]
+
+
+class OutputFormat(StrEnum):
+    JSON = "json"
+    PLAIN = "plain"
+
+
+class Platform(StrEnum):
+    LINUX = "linux"
+    WINDOWS = "windows"
+
+
+@app.callback()
+def configure() -> None:
+    """Load local defaults before Typer parses the selected command."""
+    load_local_env()
+
+
+@app.command()
+def matrix(
+    server: Annotated[
+        str | None,
+        typer.Option("--server", help="Filter to one server id and fail if missing"),
+    ] = None,
+    format_: Annotated[
+        OutputFormat,
+        typer.Option("--format", help="Output format"),
+    ] = OutputFormat.JSON,
+) -> None:
+    """Emit the active deploy server matrix."""
     from . import inventory
 
     servers = inventory.active_servers(inventory.load())
-    if args.server:
-        servers = [server for server in servers if server.get("id") == args.server]
+    if server:
+        servers = [item for item in servers if item.get("id") == server]
         if not servers:
-            raise SystemExit(f"ERROR: server '{args.server}' not found in active inventory servers")
-    if args.format == "plain":
-        print("\n".join(server["id"] for server in servers))
+            raise SystemExit(f"ERROR: server '{server}' not found in active inventory servers")
+    if format_ is OutputFormat.PLAIN:
+        print("\n".join(item["id"] for item in servers))
     else:
         print(json.dumps(servers))
 
 
-def cmd_plugins(args: argparse.Namespace) -> None:
-    """Print declared plugin names."""
+@app.command()
+def plugins(
+    format_: Annotated[
+        OutputFormat,
+        typer.Option("--format", help="Output format"),
+    ] = OutputFormat.JSON,
+) -> None:
+    """Emit declared deploy plugins."""
     from . import inventory
 
-    plugins = inventory.used_plugins(inventory.load())
-    print("\n".join(plugins) if args.format == "plain" else json.dumps(plugins))
+    names = inventory.used_plugins(inventory.load())
+    print("\n".join(names) if format_ is OutputFormat.PLAIN else json.dumps(names))
 
 
-def cmd_runtime_image(_args: argparse.Namespace) -> None:
-    """Print the configured runtime image ref."""
+@app.command("runtime-image")
+def runtime_image() -> None:
+    """Emit the configured server runtime image."""
     from . import inventory
 
     print(inventory.runtime_image(inventory.load()))
 
 
-def cmd_package(args: argparse.Namespace) -> None:
+@app.command()
+def package(
+    plugin: Annotated[str | None, typer.Argument()] = None,
+    platform: Annotated[Platform, typer.Argument()] = Platform.LINUX,
+    all_: Annotated[
+        bool,
+        typer.Option("--all", help="Every plugin the inventory declares"),
+    ] = False,
+    out: Annotated[str | None, typer.Option("--out")] = None,
+) -> None:
+    """Package built plugins for Docker deployment."""
     from . import bundle, inventory
 
-    if args.all:
-        plugins = inventory.used_plugins(inventory.load())
-    elif args.plugin:
-        plugins = [args.plugin]
+    if all_:
+        selected = inventory.used_plugins(inventory.load())
+    elif plugin:
+        selected = [plugin]
     else:
         die("package needs a plugin name or --all")
 
-    for plugin in plugins:
-        bundle.package_plugin(plugin, args.platform, args.out)
+    for name in selected:
+        bundle.package_plugin(name, platform.value, out)
 
 
-def cmd_render(args: argparse.Namespace) -> None:
+@app.command()
+def render(
+    server: Annotated[str, typer.Option("--server")],
+    package_dir: Annotated[str, typer.Option("--package-dir")] = "package",
+    out_dir: Annotated[str | None, typer.Option("--out-dir")] = None,
+    runtime_image: Annotated[str | None, typer.Option("--runtime-image")] = None,
+    no_env: Annotated[
+        bool,
+        typer.Option("--no-env", help="Do not load server .env first"),
+    ] = False,
+) -> None:
+    """Render compose artifacts for one server."""
     from . import render as renderer
 
-    if not args.no_env:
-        load_server_env(args.server, required=False)
-    out_dir = Path(args.out_dir) if args.out_dir else DEPLOY / ".render" / args.server
-    renderer.render(args.server, repo_path(args.package_dir), out_dir, args.runtime_image)
+    if not no_env:
+        load_server_env(server, required=False)
+    output = Path(out_dir) if out_dir else DEPLOY / ".render" / server
+    renderer.render(server, repo_path(package_dir), output, runtime_image)
 
 
-def cmd_deploy(args: argparse.Namespace) -> None:
+@app.command()
+def deploy(
+    server: Annotated[str | None, typer.Option("--server")] = None,
+    all_: Annotated[
+        bool,
+        typer.Option("--all", help="Every active inventory server"),
+    ] = False,
+    package_dir: Annotated[str, typer.Option("--package-dir")] = "package",
+    runtime_image: Annotated[
+        str | None,
+        typer.Option("--runtime-image", help="Default: the inventory's runtime image"),
+    ] = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
+) -> None:
+    """Render and deploy servers over SSH."""
     from . import inventory, remote
 
     data = inventory.load()
-    if args.all:
-        servers = [server["id"] for server in inventory.active_servers(data)]
-    elif args.server:
-        servers = [args.server]
+    if all_:
+        servers = [item["id"] for item in inventory.active_servers(data)]
+    elif server:
+        servers = [server]
     else:
         die("deploy needs --server or --all")
 
-    runtime_image = args.runtime_image or inventory.runtime_image(data)
-
+    image = runtime_image or inventory.runtime_image(data)
     for server_id in servers:
         materialize_server_env(server_id)
-        remote.deploy_server(
-            server_id,
-            args.package_dir,
-            runtime_image,
-            dry_run=args.dry_run,
-        )
+        remote.deploy_server(server_id, package_dir, image, dry_run=dry_run)
 
 
-def cmd_update(args: argparse.Namespace) -> None:
+@app.command()
+def update(
+    server: Annotated[str, typer.Option("--server")],
+    dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
+) -> None:
+    """Restart instances to pull the latest CS2 build."""
     from . import remote
 
-    remote.update_server(args.server, dry_run=args.dry_run)
+    remote.update_server(server, dry_run=dry_run)
 
 
-def cmd_cleanup(args: argparse.Namespace) -> None:
+@app.command()
+def cleanup(
+    server: Annotated[str, typer.Option("--server")],
+    yes: Annotated[bool, typer.Option("--yes", help="Confirm destructive cleanup")] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Print cleanup actions only"),
+    ] = False,
+) -> None:
+    """Remove one deployed CS2 server stack."""
     from . import remote
 
-    remote.cleanup_server(args.server, yes=args.yes, dry_run=args.dry_run)
+    remote.cleanup_server(server, yes=yes, dry_run=dry_run)
 
 
-def cmd_ensure_dbs(args: argparse.Namespace) -> None:
+@app.command("ensure-dbs")
+def ensure_dbs(
+    admin_user: Annotated[str, typer.Option("--admin-user")] = "postgres",
+    server: Annotated[str | None, typer.Option("--server")] = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
+) -> None:
+    """Ensure the shared Postgres role and databases."""
     from . import database
 
-    database.ensure_databases(args.server, args.admin_user, dry_run=args.dry_run)
+    database.ensure_databases(server, admin_user, dry_run=dry_run)
 
 
-def cmd_rcon(args: argparse.Namespace) -> None:
-    from . import rcon
-
-    rcon.run_commands(args.commands, server_id=args.server, instance_name=args.instance)
-
-
-def cmd_local(args: argparse.Namespace) -> None:
+@app.command("local")
+def deploy_local(
+    server_path: ServerPath = "C:/cs2-server",
+    plugin_name: Annotated[str, typer.Option("--plugin-name")] = "",
+) -> None:
+    """Deploy built plugins into a local CS2 server tree."""
     from . import local
 
-    local.deploy_local(args.server_path, args.plugin_name)
+    local.deploy_local(server_path, plugin_name)
 
 
-def cmd_start(args: argparse.Namespace) -> None:
+@app.command()
+def start(
+    server_path: ServerPath = "C:/cs2-server",
+    steamcmd_path: SteamcmdPath = "C:/Program Files/steamcmd/steamcmd.exe",
+    map_: MapName = "de_dust2",
+    gslt_token: GsltToken = "",
+    max_players: MaxPlayers = 16,
+    port: ServerPort = 27015,
+    rcon_password: RconPassword = "",
+    check_update: Annotated[bool, typer.Option("--check-update")] = False,
+) -> None:
+    """Start a local CS2 dedicated server."""
     from . import local
 
     local.start_server(
-        args.server_path,
-        args.steamcmd_path,
-        args.map,
-        args.gslt_token,
-        args.max_players,
-        args.port,
-        args.rcon_password,
-        check_update=args.check_update,
+        server_path,
+        steamcmd_path,
+        map_,
+        gslt_token,
+        max_players,
+        port,
+        rcon_password,
+        check_update=check_update,
     )
 
 
-def cmd_dev(args: argparse.Namespace) -> None:
+@app.command()
+def dev(
+    plugin: Annotated[str, typer.Argument()],
+    server_path: ServerPath = "C:/cs2-server",
+    no_test: Annotated[
+        bool,
+        typer.Option("--no-test", help="Skip CTest for a faster iteration"),
+    ] = False,
+    start_server: Annotated[
+        bool,
+        typer.Option("--start", help="Launch the server after installation"),
+    ] = False,
+    steamcmd_path: SteamcmdPath = "C:/Program Files/steamcmd/steamcmd.exe",
+    map_: MapName = "de_dust2",
+    gslt_token: GsltToken = "",
+    max_players: MaxPlayers = 16,
+    port: ServerPort = 27015,
+    rcon_password: RconPassword = "",
+    check_update: Annotated[bool, typer.Option("--check-update")] = False,
+) -> None:
+    """Build, test, and install one plugin locally."""
     from . import local
 
     local.develop_plugin(
-        args.plugin,
-        args.server_path,
-        run_tests=not args.no_test,
-        launch=args.start,
-        steamcmd_path=args.steamcmd_path,
-        map_name=args.map,
-        gslt_token=args.gslt_token,
-        max_players=args.max_players,
-        port=args.port,
-        rcon_password=args.rcon_password,
-        check_update=args.check_update,
+        plugin,
+        server_path,
+        run_tests=not no_test,
+        launch=start_server,
+        steamcmd_path=steamcmd_path,
+        map_name=map_,
+        gslt_token=gslt_token,
+        max_players=max_players,
+        port=port,
+        rcon_password=rcon_password,
+        check_update=check_update,
     )
 
 
-def cmd_tunnel_db(args: argparse.Namespace) -> None:
+@app.command()
+def rcon(
+    commands: Annotated[
+        list[str],
+        typer.Argument(help="One or more console commands (quote each)"),
+    ],
+    server: Annotated[
+        str | None,
+        typer.Option("--server", help="Server id (optional when inventory has one)"),
+    ] = None,
+    instance: Annotated[
+        str | None,
+        typer.Option("--instance", help="Instance name (optional when server has one)"),
+    ] = None,
+) -> None:
+    """Run console commands on a live instance over RCON."""
+    from . import rcon as rcon_client
+
+    rcon_client.run_commands(commands, server_id=server, instance_name=instance)
+
+
+@app.command("tunnel-db")
+def tunnel_db(
+    server: Annotated[str | None, typer.Option("--server")] = None,
+    host: Annotated[str | None, typer.Option("--host")] = None,
+    ssh_user: Annotated[str | None, typer.Option("--ssh-user")] = None,
+    ssh_port: Annotated[str | None, typer.Option("--ssh-port")] = None,
+    db_host: Annotated[str | None, typer.Option("--db-host")] = None,
+    db_port: Annotated[str | None, typer.Option("--db-port")] = None,
+    local_port: Annotated[str | None, typer.Option("--local-port")] = None,
+    identity: Annotated[str | None, typer.Option("--identity", "-i")] = None,
+) -> None:
+    """Open an SSH tunnel to a server Postgres database."""
     from . import remote
 
     remote.tunnel_db(
-        server_id=args.server,
-        host_arg=args.host,
-        ssh_user_arg=args.ssh_user,
-        ssh_port_arg=args.ssh_port,
-        db_host_arg=args.db_host,
-        db_port_arg=args.db_port,
-        local_port_arg=args.local_port,
-        identity_arg=args.identity,
+        server_id=server,
+        host_arg=host,
+        ssh_user_arg=ssh_user,
+        ssh_port_arg=ssh_port,
+        db_host_arg=db_host,
+        db_port_arg=db_port,
+        local_port_arg=local_port,
+        identity_arg=identity,
     )
-
-
-def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level deploy CLI parser."""
-    load_local_env()
-
-    def env_int(name: str, default: int) -> int:
-        value = os.environ.get(name, str(default))
-        try:
-            return int(value)
-        except ValueError:
-            die(f"{name} must be an integer, found {value!r}")
-
-    server_path = os.environ.get("CS2_SERVER_PATH", "C:/cs2-server")
-    steamcmd_path = os.environ.get(
-        "STEAMCMD_PATH", "C:/Program Files/steamcmd/steamcmd.exe"
-    )
-    map_name = os.environ.get("CS2_MAP", "de_dust2")
-    max_players = env_int("CS2_MAX_PLAYERS", 16)
-    port = env_int("CS2_PORT", 27015)
-    gslt_token = os.environ.get("GSLT_TOKEN", "")
-    rcon_password = os.environ.get("RCON_PASSWORD", "")
-
-    parser = argparse.ArgumentParser(description=__doc__)
-    sub = parser.add_subparsers(dest="command", required=True)
-
-    def command(name: str, help_text: str, handler) -> argparse.ArgumentParser:
-        child = sub.add_parser(name, help=help_text)
-        child.set_defaults(func=handler)
-        return child
-
-    matrix = command("matrix", "emit the active deploy server matrix", cmd_matrix)
-    matrix.add_argument("--server", help="filter to one server id and fail if missing")
-    matrix.add_argument("--format", choices=("json", "plain"), default="json")
-
-    plugins = command("plugins", "emit declared deploy plugins", cmd_plugins)
-    plugins.add_argument("--format", choices=("json", "plain"), default="json")
-
-    command("runtime-image", "emit the configured server runtime image", cmd_runtime_image)
-
-    package = command("package", "package built plugins for Docker deploy", cmd_package)
-    package.add_argument("plugin", nargs="?")
-    package.add_argument("platform", choices=("linux", "windows"), nargs="?", default="linux")
-    package.add_argument("--all", action="store_true", help="every plugin the inventory declares")
-    package.add_argument("--out")
-
-    render = command("render", "render compose artifacts for one server", cmd_render)
-    render.add_argument("--server", required=True)
-    render.add_argument("--package-dir", default="package")
-    render.add_argument("--out-dir")
-    render.add_argument("--runtime-image")
-    render.add_argument("--no-env", action="store_true", help="do not load server .env first")
-
-    deploy = command("deploy", "render and deploy servers over SSH", cmd_deploy)
-    deploy.add_argument("--server")
-    deploy.add_argument("--all", action="store_true", help="every active inventory server")
-    deploy.add_argument("--package-dir", default="package")
-    deploy.add_argument("--runtime-image", help="default: the inventory's runtime image")
-    deploy.add_argument("--dry-run", action="store_true")
-
-    update = command("update", "restart instances to pull the latest CS2 build", cmd_update)
-    update.add_argument("--server", required=True)
-    update.add_argument("--dry-run", action="store_true")
-
-    cleanup = command("cleanup", "remove one deployed CS2 server stack", cmd_cleanup)
-    cleanup.add_argument("--server", required=True)
-    cleanup.add_argument("--yes", action="store_true", help="confirm destructive cleanup")
-    cleanup.add_argument("--dry-run", action="store_true", help="print cleanup actions only")
-
-    dbs = command("ensure-dbs", "ensure the shared Postgres role/databases", cmd_ensure_dbs)
-    dbs.add_argument("--admin-user", default="postgres")
-    dbs.add_argument("--server")
-    dbs.add_argument("--dry-run", action="store_true")
-
-    local = command("local", "deploy built plugins into a local CS2 server tree", cmd_local)
-    local.add_argument("--server-path", default=server_path)
-    local.add_argument("--plugin-name", default="")
-
-    start = command("start", "start a local CS2 dedicated server", cmd_start)
-    start.add_argument("--server-path", default=server_path)
-    start.add_argument("--steamcmd-path", default=steamcmd_path)
-    start.add_argument("--map", default=map_name)
-    start.add_argument("--gslt-token", default=gslt_token)
-    start.add_argument("--max-players", type=int, default=max_players)
-    start.add_argument("--port", type=int, default=port)
-    start.add_argument("--rcon-password", default=rcon_password)
-    start.add_argument("--check-update", action="store_true")
-
-    dev = command("dev", "build, test, and install one plugin locally", cmd_dev)
-    dev.add_argument("plugin")
-    dev.add_argument("--server-path", default=server_path)
-    dev.add_argument("--no-test", action="store_true", help="skip CTest for a faster iteration")
-    dev.add_argument("--start", action="store_true", help="launch the server after installation")
-    dev.add_argument("--steamcmd-path", default=steamcmd_path)
-    dev.add_argument("--map", default=map_name)
-    dev.add_argument("--gslt-token", default=gslt_token)
-    dev.add_argument("--max-players", type=int, default=max_players)
-    dev.add_argument("--port", type=int, default=port)
-    dev.add_argument("--rcon-password", default=rcon_password)
-    dev.add_argument("--check-update", action="store_true")
-
-    rcon = command("rcon", "run console commands on a live instance over RCON", cmd_rcon)
-    rcon.add_argument("commands", nargs="+", help="one or more console commands (quote each)")
-    rcon.add_argument("--server", help="server id (optional when the inventory has one)")
-    rcon.add_argument("--instance", help="instance name (optional when the server has one)")
-
-    tunnel = command("tunnel-db", "open an SSH tunnel to a server Postgres", cmd_tunnel_db)
-    tunnel.add_argument("--server")
-    tunnel.add_argument("--host")
-    tunnel.add_argument("--ssh-user")
-    tunnel.add_argument("--ssh-port")
-    tunnel.add_argument("--db-host")
-    tunnel.add_argument("--db-port")
-    tunnel.add_argument("--local-port")
-    tunnel.add_argument("-i", "--identity")
-
-    return parser
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Parse arguments and dispatch to the selected subcommand."""
-    args = build_parser().parse_args(argv)
-    args.func(args)
+    app(args=argv)
 
 
 if __name__ == "__main__":
