@@ -24,7 +24,6 @@
     "**/.mypy_cache": true
   },
   "search.exclude": {
-    "vendor": true,
     "**/references": true
   },
   "[json]": {
