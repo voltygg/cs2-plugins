@@ -168,9 +168,13 @@ bool PunishmentManager::IssueBan(Ban& ban)
             it->second.Id = id;
     });
 
-    // Kick the player if currently connected.
+    // Kick if connected, deferred a tick: anticheat reaches this through IAdminActions from
+    // inside an engine hook on the target, where kicking disconnects it mid-virtual-call.
     if (auto* player = _rt.Players.GetPlayerBySteamId(ban.TargetSteamId))
-        _rt.Entities.Controller(player->GetSlot()).Kick(ban.Reason.c_str());
+        _rt.Scheduler.NextTick([&rt = _rt, slot = player->GetSlot(), steamId = ban.TargetSteamId, reason = ban.Reason] {
+            if (rt.Players.GetPlayerBySlotIfSteamId(slot, steamId))
+                rt.Entities.Controller(slot).Kick(reason.c_str());
+        });
 
     _chat.BroadcastPunishment("banned", ban.AdminName, ban.TargetName, ban.Reason, ban.Duration);
     return true;

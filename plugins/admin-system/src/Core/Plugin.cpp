@@ -69,9 +69,14 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
     if (auto ban = app.Punishments.GetActiveBan(player->GetSteamID()))
     {
         int slot = player->GetSlot();
+        int64_t steamId = player->GetSteamID();
         std::string reason = ban->Reason;
-        app.Runtime.Scheduler.NextTick(
-            [&entities = app.Runtime.Entities, slot, reason] { entities.Controller(slot).Kick(reason.c_str()); });
+        app.Runtime.Scheduler.NextTick([&rt = app.Runtime, slot, steamId, reason] {
+            // The seat can change hands before the deferred kick lands; kicking whoever took it
+            // is not what the ban says.
+            if (rt.Players.GetPlayerBySlotIfSteamId(slot, steamId))
+                rt.Entities.Controller(slot).Kick(reason.c_str());
+        });
     }
 }
 
