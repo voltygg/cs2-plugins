@@ -44,7 +44,7 @@ struct App
     const std::string Version;
 
     Core::ConfigManager Config;
-    VoltMod::PostgresDatabase Db;
+    VoltMod::PostgresDatabase Db{Runtime.Scheduler};
     Database::PlayerRepository PlayerRepo{Db};
     Core::ChatService Chat{Runtime, Config};
     Admin::AdminManager Admins{Db, Config};
