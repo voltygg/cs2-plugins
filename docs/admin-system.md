@@ -90,6 +90,34 @@ so `!give ak47`, `!give weapon_ak47` and `!give AK-47` all work.
 Giving a weapon the target's team cannot buy works: the server retries once with
 the pawn briefly flipped to the other team, then puts it back.
 
+### Fun Mode
+
+Fun Mode is a set of server-wide round modifiers, toggled from the Fun Mode menu
+or with `!fun <toggle>`. `!fun` with no argument lists them and their state;
+`!fun off` turns everything off.
+
+| Toggle | Effect |
+| --- | --- |
+| `lowgravity` | Drops `sv_gravity` for everyone |
+| `headshotonly` | Only head hits deal damage |
+| `kniferound` | Strips weapons and gives a knife on spawn |
+| `noscopeonly` | Scoped shots deal no damage |
+| `onehitkill` | Any surviving hit kills outright |
+| `infinitemoney` | Tops every player back up to $16000 |
+| `chickenbots` | Puts the chicken model on every bot |
+
+Damage from the world - falling, fire, the bomb - is never suppressed by the
+aim rules, so a headshot-only round does not leave players immortal to all but
+bullets. A suppressing rule beats one-hit kill: a shot that cannot land is not
+amplified either.
+
+The three damage toggles need the `OnTakeDamage_Alive` hook. If it fails to
+resolve after a CS2 update, the plugin logs that at load and those three go
+inert; the rest still work. `admin_status` shows whether it installed.
+
+Chicken bots puts the chicken model on the bot pawn rather than spawning a real
+chicken: no server-side chicken spawn is reliable enough to build on.
+
 ## Permission flags
 
 Flags are single characters stored in `admins.flags` and `admin_groups.flags`.
@@ -111,6 +139,7 @@ them. Root (`z`) grants everything.
 | `j` | Bhop grants |
 | `m` | Change map and queue the next map |
 | `k` | Give and strip weapons |
+| `g` | Fun Mode round modifiers |
 | `z` | Root access |
 
 Immunity is separate from flags: an admin cannot act on a target whose immunity

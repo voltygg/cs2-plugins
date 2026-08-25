@@ -23,7 +23,7 @@ struct EffectEntry
 /** Every auto-listed effect, in the order the menu renders them. */
 inline constexpr std::array MenuEffects{
     EffectEntry{.Toggle = &Ghost}, EffectEntry{.Toggle = &Disco}, EffectEntry{.Toggle = &Wallhack},
-    EffectEntry{.Param = &Model},  EffectEntry{.Toggle = &Bhop},
+    EffectEntry{.Param = &Model},  EffectEntry{.Toggle = &Bhop},  EffectEntry{.Toggle = &Drunk},
 };
 
 }  // namespace AdminSystem::Admin::Effects

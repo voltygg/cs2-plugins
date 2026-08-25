@@ -11,7 +11,8 @@
     "control": "Управление",
     "effects": "Эффекты",
     "chatSettings": "Настройки чата",
-    "map": "Карта"
+    "map": "Карта",
+    "fun": "Фан-режим"
   },
   "action": {
     "kick": "Кик",
@@ -52,7 +53,8 @@
     "giveWeapon": "Выдать оружие",
     "giveRandomWeapon": "Случайное оружие",
     "strip": "Забрать оружие",
-    "noWeapons": "Оружие не настроено"
+    "noWeapons": "Оружие не настроено",
+    "drunk": "Пьяный"
   },
   "effectState": {
     "on": "ВКЛ",
@@ -97,7 +99,24 @@
     "mapChanging": "Смена карты на {map}...",
     "nextMapSet": "Следующая карта: {map}",
     "gaveWeapon": "выдал оружие игроку",
-    "stripped": "забрал оружие у игрока"
+    "stripped": "забрал оружие у игрока",
+    "drunkOn": "закружил голову игроку",
+    "drunkOff": "отрезвил игрока",
+    "lowGravityOn": "Низкая гравитация ВКЛ",
+    "lowGravityOff": "Низкая гравитация ВЫКЛ",
+    "headshotOnlyOn": "Только в голову ВКЛ",
+    "headshotOnlyOff": "Только в голову ВЫКЛ",
+    "knifeRoundOn": "Ножевой раунд ВКЛ",
+    "knifeRoundOff": "Ножевой раунд ВЫКЛ",
+    "noScopeOnlyOn": "Только без прицела ВКЛ",
+    "noScopeOnlyOff": "Только без прицела ВЫКЛ",
+    "oneHitKillOn": "Убийство с одного удара ВКЛ",
+    "oneHitKillOff": "Убийство с одного удара ВЫКЛ",
+    "infiniteMoneyOn": "Бесконечные деньги ВКЛ",
+    "infiniteMoneyOff": "Бесконечные деньги ВЫКЛ",
+    "chickenBotsOn": "Боты-курицы ВКЛ",
+    "chickenBotsOff": "Боты-курицы ВЫКЛ",
+    "funCleared": "Фан-режим выключен"
   },
   "common": {
     "selectSwapTarget": "Выберите второго игрока",
@@ -318,5 +337,17 @@
   "map": {
     "name": "Карта",
     "noMaps": "Карты не настроены"
+  },
+  "fun": {
+    "lowGravity": "Низкая гравитация",
+    "headshotOnly": "Только в голову",
+    "knifeRound": "Ножевой раунд",
+    "noScopeOnly": "Только без прицела",
+    "oneHitKill": "Убийство с одного удара",
+    "infiniteMoney": "Бесконечные деньги",
+    "chickenBots": "Боты-курицы",
+    "clearAll": "Выключить всё",
+    "listHeader": "Переключатели фан-режима:",
+    "unknownToggle": "Неизвестный переключатель: «{name}»."
   }
 }

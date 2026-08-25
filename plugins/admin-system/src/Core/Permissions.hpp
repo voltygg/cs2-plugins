@@ -25,6 +25,7 @@ enum class Permission : char
     Bhop = 'j',      // grant a target session bunnyhop (requires the bhop plugin, "grants" mode)
     Map = 'm',       // change level, queue the next map
     Weapon = 'k',    // give and strip weapons
+    FunMode = 'g',   // server-wide round modifiers
     Root = 'z',
 };
 

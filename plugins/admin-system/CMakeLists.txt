@@ -16,6 +16,7 @@ voltmod_add_plugin(admin-system
 if(BUILD_TESTING)
     voltmod_add_tests(admin-system-tests
         SOURCES
+            src/Fun/FunToggles.cpp
             src/Maps/MapQuery.cpp
             src/Punishments/KickNoticeCore.cpp
             src/Weapons/WeaponCatalog.cpp

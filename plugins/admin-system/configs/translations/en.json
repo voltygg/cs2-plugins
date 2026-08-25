@@ -11,7 +11,8 @@
     "control": "Control",
     "effects": "Effects",
     "chatSettings": "Chat Settings",
-    "map": "Map"
+    "map": "Map",
+    "fun": "Fun Mode"
   },
   "action": {
     "kick": "Kick",
@@ -52,7 +53,8 @@
     "giveWeapon": "Give weapon",
     "giveRandomWeapon": "Random weapon",
     "strip": "Strip weapons",
-    "noWeapons": "No weapons configured"
+    "noWeapons": "No weapons configured",
+    "drunk": "Drunk"
   },
   "effectState": {
     "on": "ON",
@@ -97,7 +99,24 @@
     "mapChanging": "Map changing to {map}...",
     "nextMapSet": "Next map set to {map}",
     "gaveWeapon": "gave a weapon to",
-    "stripped": "stripped the weapons of"
+    "stripped": "stripped the weapons of",
+    "drunkOn": "made the world spin for",
+    "drunkOff": "sobered up",
+    "lowGravityOn": "Low gravity is ON",
+    "lowGravityOff": "Low gravity is OFF",
+    "headshotOnlyOn": "Headshot only is ON",
+    "headshotOnlyOff": "Headshot only is OFF",
+    "knifeRoundOn": "Knife round is ON",
+    "knifeRoundOff": "Knife round is OFF",
+    "noScopeOnlyOn": "No-scope only is ON",
+    "noScopeOnlyOff": "No-scope only is OFF",
+    "oneHitKillOn": "One-hit kill is ON",
+    "oneHitKillOff": "One-hit kill is OFF",
+    "infiniteMoneyOn": "Infinite money is ON",
+    "infiniteMoneyOff": "Infinite money is OFF",
+    "chickenBotsOn": "Chicken bots are ON",
+    "chickenBotsOff": "Chicken bots are OFF",
+    "funCleared": "Fun Mode is off"
   },
   "common": {
     "selectSwapTarget": "Select swap partner",
@@ -318,5 +337,17 @@
   "map": {
     "name": "Map",
     "noMaps": "No maps configured"
+  },
+  "fun": {
+    "lowGravity": "Low gravity",
+    "headshotOnly": "Headshot only",
+    "knifeRound": "Knife round",
+    "noScopeOnly": "No-scope only",
+    "oneHitKill": "One-hit kill",
+    "infiniteMoney": "Infinite money",
+    "chickenBots": "Chicken bots",
+    "clearAll": "Turn everything off",
+    "listHeader": "Fun Mode toggles:",
+    "unknownToggle": "No such toggle: ‘{name}’."
   }
 }

@@ -14,7 +14,8 @@ enum class EffectId : uint8_t
     Hide,
     Wallhack,
     Model,
-    Bhop
+    Bhop,
+    Drunk
 };
 
 }  // namespace AdminSystem::Admin::Effects

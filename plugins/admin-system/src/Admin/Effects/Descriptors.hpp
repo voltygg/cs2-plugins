@@ -39,5 +39,6 @@ extern const ParamEffect Model;
  * survives death, and ends on disconnect.
  */
 extern const Effect Bhop;
+extern const Effect Drunk;
 
 }  // namespace AdminSystem::Admin::Effects

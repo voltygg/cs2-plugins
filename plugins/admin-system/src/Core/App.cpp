@@ -162,6 +162,7 @@ void App::RegisterCommands()
     Commands::RegisterAdminSelfCommands(commands, *this);
     Commands::RegisterCheatCheckCommands(commands, *this);
     Commands::RegisterFreezeCommands(commands, *this);
+    Commands::RegisterFunCommands(commands, *this);
     Commands::RegisterInfoCommands(commands, *this);
     Commands::RegisterMapCommands(commands, *this);
     Commands::RegisterPunishmentCommands(commands, *this);
@@ -209,6 +210,7 @@ bool App::Start()
         Admin::Effects::PrecacheModels(Runtime);
         // Surface an unloadable configured map here rather than on the first !map.
         MapCycle.VerifyAgainstEngine();
+        FunMode.Start();
         return StageResult::Ok();
     });
 

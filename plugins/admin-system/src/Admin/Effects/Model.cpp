@@ -37,7 +37,7 @@ const std::vector<FunModel>& FunModels()
 {
     // Use always-mounted assets so every vanilla map can render these models.
     static const std::vector<FunModel> models = {
-        {"Chicken", "models/chicken/chicken.vmdl"},
+        {"Chicken", ChickenModelPath},
         {"Fire Hydrant", "models/props_street/firehydrant.vmdl"},
         {"C4 Bomb", "weapons/models/c4/weapon_c4.vmdl"},
     };

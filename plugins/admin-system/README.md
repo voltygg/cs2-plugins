@@ -13,6 +13,8 @@ multi-server grants, abuse protection, and cheat-check workflows.
   selection, and optional [bhop grants](../bhop/README.md).
 - Map control: change level, list maps, and queue the next map.
 - Weapon control: give a configured weapon, a random one, or strip a player.
+- Fun Mode round modifiers: low gravity, headshot only, knife round, no-scope
+  only, one-hit kill, infinite money, and chicken bots.
 - Groups, flags, immunity, per-server grants, and admin stealth.
 - Network-wide punishments and automatic punishment enforcement.
 - Automatic or manual freezing of abusive admins with an audit trail.
@@ -64,6 +66,7 @@ action supports it.
 | `j` | Bhop grants |
 | `m` | Change map and queue the next map |
 | `k` | Give and strip weapons |
+| `g` | Fun Mode round modifiers |
 | `z` | Root access |
 
 `!admin` has no dedicated flag, but the caller must be a registered admin.
@@ -84,6 +87,7 @@ Individual menu categories and actions remain permission-gated.
 | `!nextmap` | - | Show the queued map |
 | `!give <target> <weapon>` | `k` | Give a configured weapon |
 | `!strip <target>` | `k` | Remove every weapon a player carries |
+| `!fun [toggle]` | `g` | List or toggle a round modifier; `!fun off` clears |
 | `!voice_mute <target> <duration> [reason]` | `o` | Mute voice; aliases: `!vmute`, `!mute` |
 | `!voice_unmute <target>` | `o` | Restore voice; aliases: `!vunmute`, `!unmute` |
 | `!text_mute <target> <duration> [reason]` | `o` | Block chat; aliases: `!tmute`, `!gag` |
