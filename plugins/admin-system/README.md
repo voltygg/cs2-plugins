@@ -11,6 +11,7 @@ multi-server grants, abuse protection, and cheat-check workflows.
   health, armor, speed, size, and bury.
 - Visual and gameplay effects such as ghost, disco, wallhack, smite, model
   selection, and optional [bhop grants](../bhop/README.md).
+- Map control: change level, list maps, and queue the next map.
 - Groups, flags, immunity, per-server grants, and admin stealth.
 - Network-wide punishments and automatic punishment enforcement.
 - Automatic or manual freezing of abusive admins with an audit trail.
@@ -60,6 +61,7 @@ action supports it.
 | `h` | Health, armor, and godmode |
 | `w` | Wallhack |
 | `j` | Bhop grants |
+| `m` | Change map and queue the next map |
 | `z` | Root access |
 
 `!admin` has no dedicated flag, but the caller must be a registered admin.
@@ -74,6 +76,10 @@ Individual menu categories and actions remain permission-gated.
 | `!kick <target> [reason]` | `c` | Kick a player |
 | `!ban <target> <duration> [reason]` | `d` | Ban a player |
 | `!unban <steamid> [reason]` | `e` | Remove a ban |
+| `!map <name>` | `m` | Change map after a short announcement |
+| `!maps` | `m` | List configured maps; alias: `!maplist` |
+| `!setnextmap <name>` | `m` | Queue a map for the end of the round |
+| `!nextmap` | - | Show the queued map |
 | `!voice_mute <target> <duration> [reason]` | `o` | Mute voice; aliases: `!vmute`, `!mute` |
 | `!voice_unmute <target>` | `o` | Restore voice; aliases: `!vunmute`, `!unmute` |
 | `!text_mute <target> <duration> [reason]` | `o` | Block chat; aliases: `!tmute`, `!gag` |

@@ -24,6 +24,7 @@ unrecognized key fails the load rather than being ignored.
 | `chat` | Punishment broadcasts and admin chat tagging |
 | `reports` | Player report reasons, cooldowns, and duplicate suppression |
 | `cheatCheck` | Cheat-check mode and the link or room API behind it |
+| `maps` | Maps admins may switch to |
 
 A mistyped value fails the whole load; a malformed entry inside a list
 (a punishment template, a report reason) is logged and skipped so one typo
@@ -49,6 +50,27 @@ is not configured. With neither option set it is just the reason. The wording
 around the link comes from the `kickNotice` group in
 `configs/translations/<locale>.json`.
 
+### Map list
+
+`maps.cycle` is the list of maps admins may switch to. The engine exposes no
+usable list of its own, so this is the only source.
+
+```jsonc
+"cycle": [
+  { "name": "de_dust2", "displayName": "Dust II" },
+  // A non-zero workshopId addresses a workshop map by published-file id.
+  { "name": "surf_utopia", "workshopId": 3070563536 }
+]
+```
+
+`displayName` is the menu label and is also typeable, so `!map dust` finds a map
+labelled "Dust II". Queries match exact names first, then prefixes, then
+substrings; one matching several maps is reported, not guessed at.
+
+Plain map names are checked against the engine at load, and one it cannot load
+is logged there rather than failing on the first `!map`. Workshop maps are not
+checked, because they are addressed by id and are not mounted yet.
+
 ## Permission flags
 
 Flags are single characters stored in `admins.flags` and `admin_groups.flags`.
@@ -68,6 +90,7 @@ them. Root (`z`) grants everything.
 | `h` | Health, armor, and godmode |
 | `w` | Wallhack |
 | `j` | Bhop grants |
+| `m` | Change map and queue the next map |
 | `z` | Root access |
 
 Immunity is separate from flags: an admin cannot act on a target whose immunity
