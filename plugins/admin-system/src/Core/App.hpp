@@ -5,6 +5,7 @@
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/FreezeManager.hpp"
 #include "../Database/Repositories/PlayerRepository.hpp"
+#include "../Maps/MapCycleState.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "../Reports/ReportManager.hpp"
 #include "AdminActionsService.hpp"
@@ -51,6 +52,8 @@ struct App
     VoltMod::PostgresDatabase Db{Runtime.Scheduler};
     Database::PlayerRepository PlayerRepo{Db};
     Core::ChatService Chat{Runtime, Config};
+    /** Configured map list, the queued next map, and the level change itself. */
+    Maps::MapCycleState MapCycle{Runtime, Config};
     Admin::AdminManager Admins{Db, Config};
     Admin::FreezeManager Freeze{Db, Config, Runtime, Chat, Admins};
     /** The permission gate: granted flags minus abuse-protection freezes. Ask this, not Admins. */

@@ -10,7 +10,8 @@
     "punish": "Punish",
     "control": "Control",
     "effects": "Effects",
-    "chatSettings": "Chat Settings"
+    "chatSettings": "Chat Settings",
+    "map": "Map"
   },
   "action": {
     "kick": "Kick",
@@ -46,7 +47,8 @@
     "callCheck": "Call for Cheat Check",
     "cancelCheck": "Cancel Cheat Check",
     "unban": "Unban",
-    "unmute": "Unmute"
+    "unmute": "Unmute",
+    "changeMap": "Change map"
   },
   "effectState": {
     "on": "ON",
@@ -87,7 +89,9 @@
     "cheatCheckTimedOut": "cheat check timed out for",
     "frozeAdmin": "froze the admin privileges of",
     "unfrozeAdmin": "restored the admin privileges of",
-    "autoFrozeAdmin": "had their admin privileges automatically frozen (rate limit) pending review"
+    "autoFrozeAdmin": "had their admin privileges automatically frozen (rate limit) pending review",
+    "mapChanging": "Map changing to {map}...",
+    "nextMapSet": "Next map set to {map}"
   },
   "common": {
     "selectSwapTarget": "Select swap partner",
@@ -168,7 +172,13 @@
     "unfreezeSuccess": "Restored the admin privileges of {name}.",
     "unfreezeNone": "No frozen admin matches '{token}'.",
     "frozenNone": "No admins are currently frozen.",
-    "frozenHeader": "Frozen admins ({count}):"
+    "frozenHeader": "Frozen admins ({count}):",
+    "mapNoMatch": "No configured map matches ‘{map}’.",
+    "mapAmbiguous": "‘{map}’ matches {count} maps. Be more specific.",
+    "mapCycleEmpty": "No maps are configured.",
+    "mapListHeader": "Configured maps ({count}):",
+    "nextMap": "Next map: {map}",
+    "nextMapUnset": "No next map is set."
   },
   "freeze": {
     "notice": "Your admin privileges are frozen pending review. Reason: {reason}"
@@ -292,5 +302,9 @@
     "page": "Page",
     "back": "Back",
     "close": "Close"
+  },
+  "map": {
+    "name": "Map",
+    "noMaps": "No maps configured"
   }
 }

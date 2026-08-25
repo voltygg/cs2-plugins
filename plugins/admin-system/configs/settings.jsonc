@@ -154,5 +154,18 @@
       // Poll cadence and maximum delay before a join is detected.
       "pollIntervalSec": 5
     }
+  },
+  "maps": {
+    // Maps admins may switch to. The engine has no usable list of its own, so this is it.
+    // workshopId != 0 addresses a workshop map by published-file id instead of by name.
+    // maxPlayers 0 means no upper limit.
+    "cycle": [
+      { "name": "de_dust2", "displayName": "Dust II" },
+      { "name": "de_mirage", "displayName": "Mirage" },
+      { "name": "de_inferno", "displayName": "Inferno" },
+      { "name": "de_nuke", "displayName": "Nuke" },
+      { "name": "de_ancient", "displayName": "Ancient" },
+      { "name": "de_anubis", "displayName": "Anubis" }
+    ]
   }
 }

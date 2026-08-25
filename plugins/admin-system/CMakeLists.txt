@@ -12,10 +12,12 @@ voltmod_add_plugin(admin-system
         "<pqxx/pqxx>"
 )
 
-# Recompile the SDK-free notice assembly into the test binary.
+# Recompile the SDK-free cores into the test binary.
 if(BUILD_TESTING)
     voltmod_add_tests(admin-system-tests
-        SOURCES src/Punishments/KickNoticeCore.cpp
+        SOURCES
+            src/Maps/MapQuery.cpp
+            src/Punishments/KickNoticeCore.cpp
         INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
     )
 endif()

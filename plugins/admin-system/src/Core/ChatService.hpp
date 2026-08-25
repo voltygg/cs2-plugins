@@ -47,6 +47,13 @@ public:
                              std::string_view reason, int64_t durationSec);
 
     /**
+     * Broadcast a translated server-wide notice with no admin or target name attached, e.g.
+     * "Map changing to Dust II". Rendered in the server language, since one line goes to
+     * everyone.
+     */
+    void BroadcastKey(const std::string& translationKey, const std::map<std::string, std::string>& tokens = {});
+
+    /**
      * Broadcast a translated admin action. An empty target name represents a
      * self-targeted or server-wide action.
      */

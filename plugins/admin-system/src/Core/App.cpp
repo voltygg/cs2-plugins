@@ -102,6 +102,12 @@ StageResult App::StartPunishments()
     return loaded ? StageResult::Ok() : StageResult::Degraded("failed to load active punishments");
 }
 
+namespace
+{
+/** Seconds of scoreboard before a queued map change takes the server away. */
+constexpr int64_t MapChangeDelayMs = 5000;
+}  // namespace
+
 void App::RegisterGameEventListeners()
 {
     namespace Events = VoltMod::Events;
@@ -111,7 +117,12 @@ void App::RegisterGameEventListeners()
         if (e.VictimSlot >= 0)
             Effects.CancelPerLife(e.VictimSlot);
     }));
-    _subs.push_back(events.Listen<Events::RoundEnd>([this](const Events::RoundEnd&) { Effects.CancelRoundScoped(); }));
+    _subs.push_back(events.Listen<Events::RoundEnd>([this](const Events::RoundEnd&) {
+        Effects.CancelRoundScoped();
+        // A queued !setnextmap lands here rather than mid-round, after a pause long enough to
+        // read the scoreboard. No-op when nothing is queued.
+        MapCycle.ChangeToNext(MapChangeDelayMs);
+    }));
     _subs.push_back(
         events.Listen<Events::RoundPrestart>([this](const Events::RoundPrestart&) { Effects.CancelRoundScoped(); }));
 }
@@ -152,6 +163,7 @@ void App::RegisterCommands()
     Commands::RegisterCheatCheckCommands(commands, *this);
     Commands::RegisterFreezeCommands(commands, *this);
     Commands::RegisterInfoCommands(commands, *this);
+    Commands::RegisterMapCommands(commands, *this);
     Commands::RegisterPunishmentCommands(commands, *this);
     Commands::RegisterReportCommand(commands, *this);
 }
@@ -194,6 +206,8 @@ bool App::Start()
         RegisterGameEventListeners();
         // Queue fun-model assets; they replicate to clients from the next map load.
         Admin::Effects::PrecacheModels(Runtime);
+        // Surface an unloadable configured map here rather than on the first !map.
+        MapCycle.VerifyAgainstEngine();
         return StageResult::Ok();
     });
 

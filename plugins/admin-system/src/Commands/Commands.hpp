@@ -20,6 +20,7 @@ void RegisterAdminSelfCommands(VoltMod::Commands::CommandManager& commands, App&
 void RegisterCheatCheckCommands(VoltMod::Commands::CommandManager& commands, App& app);
 void RegisterFreezeCommands(VoltMod::Commands::CommandManager& commands, App& app);
 void RegisterInfoCommands(VoltMod::Commands::CommandManager& commands, App& app);
+void RegisterMapCommands(VoltMod::Commands::CommandManager& commands, App& app);
 void RegisterPunishmentCommands(VoltMod::Commands::CommandManager& commands, App& app);
 void RegisterReportCommand(VoltMod::Commands::CommandManager& commands, App& app);
 }  // namespace Commands

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Maps/MapQuery.hpp"
 #include "../Punishments/PunishType.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -87,6 +88,24 @@ struct ResolvedTemplate
     int DurationSec = 0;  // 0 = permanent
     std::string Reason;
 };
+
+/** Raw map entry, validated into Maps::MapEntry during load. */
+struct MapConfigEntry
+{
+    std::string name;
+    std::string displayName;
+    uint64_t workshopId = 0;
+    int minPlayers = 0;
+    int maxPlayers = 0;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapConfigEntry, name, displayName, workshopId, minPlayers, maxPlayers)
+
+/** Maps an admin may switch to. The engine offers no usable list of its own, so this is it. */
+struct MapSettings
+{
+    std::vector<MapConfigEntry> cycle;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapSettings, cycle)
 
 struct ChatSettings
 {
@@ -190,9 +209,10 @@ struct Settings
     ChatSettings chat;
     ReportSettings reports;
     CheatCheckSettings cheatCheck;
+    MapSettings maps;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, database, punishments, abuseProtection, chat,
-                                                reports, cheatCheck)
+                                                reports, cheatCheck, maps)
 
 /** Loads settings and resolves string-based punishment values. Admin and group
  *  records remain owned by the database. */
@@ -220,11 +240,16 @@ public:
     /** Menu duration-picker rows in seconds (0 = permanent), parsed from `punishments.menuDurations`. */
     const std::vector<int>& GetMenuDurations() const { return _menuDurationSecs; }
 
+    /** Offerable maps. Invalid entries are logged and skipped. */
+    const std::vector<Maps::MapEntry>& GetMapCycle() const { return _resolvedMaps; }
+
 private:
     void ResolveRuntimeSettings();
+    void ResolveMapCycle(const MapSettings& maps);
 
     std::vector<ResolvedTemplate> _resolvedTemplates;
     std::vector<int> _menuDurationSecs;
+    std::vector<Maps::MapEntry> _resolvedMaps;
 };
 
 }  // namespace AdminSystem::Core

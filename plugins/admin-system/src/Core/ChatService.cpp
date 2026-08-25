@@ -98,6 +98,16 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
     _rt.Messages.Broadcast(line);
 }
 
+void ChatService::BroadcastKey(const std::string& translationKey, const std::map<std::string, std::string>& tokens)
+{
+    // Not gated on chat.broadcastPunishments: that setting is about naming admins and their
+    // targets, and these lines carry neither - they announce something happening to the server.
+    const auto& cfg = _config.GetChat();
+    auto line = _rt.Translations.Get(translationKey, tokens);
+    _rt.Messages.Broadcast(std::format("{}{} {}{}", ChatColors::ParseNamed(cfg.fallbackPrefixColor), cfg.fallbackPrefix,
+                                       ChatColors::Default, line));
+}
+
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
                                   std::string_view targetName)
 {

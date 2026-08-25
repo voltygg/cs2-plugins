@@ -1,5 +1,6 @@
 #include "Config.hpp"
 
+#include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Validation.hpp>
 #include <algorithm>
 #include <format>
@@ -71,6 +72,33 @@ void ConfigManager::ResolveRuntimeSettings()
     // Negative windows would make every elapsed check pass; treat them as "disabled".
     reports.cooldownSec = std::max(reports.cooldownSec, 0);
     reports.duplicateWindowSec = std::max(reports.duplicateWindowSec, 0);
+
+    ResolveMapCycle(settings.maps);
+}
+
+// Whether a map file actually exists is the engine's call, not ours; MapCycleState re-checks the
+// resolved names against MapService at load so a stale entry surfaces in the load report.
+void ConfigManager::ResolveMapCycle(const MapSettings& maps)
+{
+    _resolvedMaps.clear();
+    _resolvedMaps.reserve(maps.cycle.size());
+
+    for (std::size_t i = 0; i < maps.cycle.size(); ++i)
+    {
+        const auto& raw = maps.cycle[i];
+        Maps::MapEntry entry{.Name = raw.name,
+                             .DisplayName = raw.displayName,
+                             .WorkshopId = raw.workshopId,
+                             .MinPlayers = raw.minPlayers,
+                             .MaxPlayers = raw.maxPlayers};
+
+        if (auto problem = Maps::ValidateMapEntry(entry); !problem.empty())
+        {
+            Log::Warn("maps.cycle[{}] skipped: {}", i, problem);
+            continue;
+        }
+        _resolvedMaps.push_back(std::move(entry));
+    }
 }
 
 }  // namespace AdminSystem::Core

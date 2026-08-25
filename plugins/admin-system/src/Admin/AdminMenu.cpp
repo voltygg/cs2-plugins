@@ -6,6 +6,7 @@
 #include "Menu/AdminMenu_ChatSettings.hpp"
 #include "Menu/AdminMenu_Control.hpp"
 #include "Menu/AdminMenu_Effects.hpp"
+#include "Menu/AdminMenu_Map.hpp"
 #include "Menu/AdminMenu_Punish.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -52,6 +53,9 @@ std::shared_ptr<VoltMod::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int
             tr.Get("category.effects", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildEffectsMenu(app, adminSlot); },
             access.HasAnyPermission(adminSid, "fjz"))
+        .AddSubmenu(
+            tr.Get("category.map", adminSlot), [&app, adminSlot](int) { return Menu::BuildMapMenu(app, adminSlot); },
+            access.HasAnyPermission(adminSid, "mz"))
         .AddSubmenu(
             tr.Get("category.chatSettings", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildChatSettingsMenu(app, adminSlot); }, adminMgr.IsAdmin(adminSid))
