@@ -6,12 +6,13 @@
 namespace AdminSystem::Admin::Actions
 {
 
-// The dispatcher is stateless - policy comes from app.Runtime.Policy, set once in OnLoad.
+// The dispatcher holds only the runtime reference - policy comes from Runtime.Policy, set once
+// in OnLoad - so building one per call costs nothing.
 using VoltMod::Players::ActionDispatcher;
 
-ActionContext Resolve(int adminSlot, int targetSlot, const std::string& requiredFlag)
+ActionContext Resolve(VoltMod::Runtime& runtime, int adminSlot, int targetSlot, const std::string& requiredFlag)
 {
-    return ActionDispatcher{}.Resolve(adminSlot, targetSlot, requiredFlag);
+    return ActionDispatcher{runtime}.Resolve(adminSlot, targetSlot, requiredFlag);
 }
 
 void Broadcast(App& app, const ActionContext& first, const ActionContext& second, const std::string& translationKey)
@@ -22,9 +23,9 @@ void Broadcast(App& app, const ActionContext& first, const ActionContext& second
                              {{"a", first.Target->GetName()}, {"b", second.Target->GetName()}});
 }
 
-void Run(int adminSlot, int targetSlot, int param, const ParamAction& action)
+void Run(VoltMod::Runtime& runtime, int adminSlot, int targetSlot, int param, const ParamAction& action)
 {
-    ActionDispatcher{}.Run(adminSlot, targetSlot, param, action);
+    ActionDispatcher{runtime}.Run(adminSlot, targetSlot, param, action);
 }
 
 }  // namespace AdminSystem::Admin::Actions

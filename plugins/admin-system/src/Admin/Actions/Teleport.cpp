@@ -1,4 +1,5 @@
-﻿#include "Descriptors.hpp"
+﻿#include "../../Core/App.hpp"
+#include "Descriptors.hpp"
 
 #include <VoltMod/Sdk/Entity/PawnOps.hpp>
 #include <mathlib/vector.h>
@@ -30,8 +31,8 @@ void Swap(App& app, int adminSlot, int firstSlot, int secondSlot)
 {
     if (firstSlot == secondSlot)
         return;
-    auto ctxA = Resolve(adminSlot, firstSlot, Flag(Permission::Control));
-    auto ctxB = Resolve(adminSlot, secondSlot, Flag(Permission::Control));
+    auto ctxA = Resolve(app.Runtime, adminSlot, firstSlot, Flag(Permission::Control));
+    auto ctxB = Resolve(app.Runtime, adminSlot, secondSlot, Flag(Permission::Control));
     if (!ctxA.Valid() || !ctxB.Valid())
         return;
     if (!ctxA.TargetCtrl.IsAlive() || !ctxB.TargetCtrl.IsAlive())

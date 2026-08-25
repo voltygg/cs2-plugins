@@ -40,7 +40,7 @@ struct MuteRow
 
 void StartUnmuteConfirm(App& app, int adminSlot, MuteRow row)
 {
-    VoltMod::Flow<MuteRow>::Create(std::move(row))
+    VoltMod::Flow<MuteRow>::Create(app.Runtime.Menus, std::move(row))
         // The Mute flag may have been revoked (e.g. !admin_reload) while the menu was open.
         ->OnValidate([&app](int slot, const MuteRow&) -> std::optional<std::string> {
             auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);

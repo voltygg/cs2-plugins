@@ -52,10 +52,13 @@ std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int a
     builder.AddToggle(
         tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
         [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, Effects::Hide.Id); },
-        [&app, adminSlot](int) { VoltMod::ToggleEffect(app.Effects, adminSlot, adminSlot, Effects::Hide); }, hasB);
+        [&app, adminSlot](int) {
+            VoltMod::ToggleEffect(app.Runtime, app.Effects, adminSlot, adminSlot, Effects::Hide);
+        },
+        hasB);
 
     VoltMod::Menu::AppendPlayerRows(
-        builder, adminSlot,
+        builder, app.Runtime.Players, adminSlot,
         [&app](int admin, int target) {
             auto actions = BuildControlActionsMenu(app, admin, target);
             if (actions)
@@ -74,7 +77,7 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
     if (!target || !app.Runtime.Players.GetPlayerBySlot(adminSlot))
         return nullptr;
 
-    VoltMod::MenuContext ctx{.Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
+    VoltMod::MenuContext ctx{.Rt = &app.Runtime, .Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
     bool hasS = ctx.Allowed(Flag(Permission::Control));
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));

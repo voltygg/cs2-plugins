@@ -5,6 +5,11 @@
 #include <VoltMod/Players/ActionDispatcher.hpp>
 #include <string>
 
+namespace VoltMod
+{
+class Runtime;
+}
+
 namespace AdminSystem
 {
 struct App;
@@ -26,11 +31,11 @@ using OptKey = VoltMod::Players::OptKey;
  * permission and immunity policies. Pass an empty flag string to skip the permission check
  * (used internally after the menu/command layer has already enforced it).
  */
-ActionContext Resolve(int adminSlot, int targetSlot, const std::string& requiredFlag);
+ActionContext Resolve(VoltMod::Runtime& runtime, int adminSlot, int targetSlot, const std::string& requiredFlag);
 
 /** Two-target broadcast: the phrase at `translationKey` receives the target names as {a} and {b}. */
 void Broadcast(App& app, const ActionContext& first, const ActionContext& second, const std::string& translationKey);
 
-void Run(int adminSlot, int targetSlot, int param, const ParamAction& action);
+void Run(VoltMod::Runtime& runtime, int adminSlot, int targetSlot, int param, const ParamAction& action);
 
 }  // namespace AdminSystem::Admin::Actions

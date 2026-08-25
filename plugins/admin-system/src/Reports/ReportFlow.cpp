@@ -86,6 +86,7 @@ void StartReportFlow(App& app, int reporterSlot, int targetSlot)
         return;
 
     ReportFlowT::Create(
+        app.Runtime.Menus,
         PendingReport{.TargetSlot = targetSlot, .TargetSteamId = target->GetSteamID(), .TargetName = target->GetName()})
         ->OnValidate([&app](int slot, const PendingReport& p) { return ValidatePending(app, slot, p); })
         ->AddOptionsStep([&app](int slot) { return app.Runtime.Translations.Get("report.selectReason", slot); },

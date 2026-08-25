@@ -42,7 +42,7 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int ad
         app.Access.HasPermission(admin->GetSteamID(), Permission::Mute));
 
     VoltMod::Menu::AppendPlayerRows(
-        builder, adminSlot,
+        builder, app.Runtime.Players, adminSlot,
         [&app](int admin, int target) {
             auto actions = BuildPunishActionsMenu(app, admin, target);
             if (actions)

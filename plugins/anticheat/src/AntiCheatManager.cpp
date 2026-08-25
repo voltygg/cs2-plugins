@@ -33,7 +33,7 @@ std::optional<int> ParseInt(std::string_view text)
 
 void AntiCheatManager::Initialize()
 {
-    _dumpTicks.BindReset();
+    _dumpTicks.BindReset(_rt.Slots);
     _simulator.Initialize();
 
     // The teleport tracker binds itself from its own spawn listener, so it must be enabled here:

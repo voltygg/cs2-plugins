@@ -33,7 +33,7 @@ constexpr float LockHeight = 46.0f;
 
 void CheatSimulator::Initialize()
 {
-    _sim.BindReset();
+    _sim.BindReset(_rt.Slots);
 
     if (!Enabled())
     {
