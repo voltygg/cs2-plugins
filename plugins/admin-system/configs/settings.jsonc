@@ -166,7 +166,15 @@
       { "name": "de_nuke", "displayName": "Nuke" },
       { "name": "de_ancient", "displayName": "Ancient" },
       { "name": "de_anubis", "displayName": "Anubis" }
-    ]
+    ],
+    // Player-driven map changes: !rtv and !votemap.
+    "rtv": {
+      "enabled": true,
+      // Share of connected humans that must agree; a strict majority of it is required.
+      "successRatio": 0.6,
+      // Seconds after a map starts before !rtv is accepted.
+      "voteDelaySec": 120
+    }
   },
   "weapons": {
     // Weapons offered by !give and the Control > Give weapon menu.

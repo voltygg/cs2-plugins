@@ -116,7 +116,8 @@
     "infiniteMoneyOff": "Infinite money is OFF",
     "chickenBotsOn": "Chicken bots are ON",
     "chickenBotsOff": "Chicken bots are OFF",
-    "funCleared": "Fun Mode is off"
+    "funCleared": "Fun Mode is off",
+    "rtvCounted": "{name} wants to change the map ({votes}/{needed})"
   },
   "common": {
     "selectSwapTarget": "Select swap partner",
@@ -209,7 +210,13 @@
     "weaponGiven": "Gave {weapon} to {name}.",
     "weaponGiveFailed": "The server refused to give {weapon}.",
     "weaponStripFailed": "Could not strip that player.",
-    "weaponTargetDead": "{name} is not alive."
+    "weaponTargetDead": "{name} is not alive.",
+    "rtvDisabled": "Rock the vote is disabled.",
+    "rtvTooEarly": "Rock the vote is not open yet.",
+    "rtvAlreadyVoted": "You have already voted to change the map.",
+    "voteInProgress": "A vote is already running.",
+    "voteCancelled": "Vote cancelled.",
+    "noVoteRunning": "No vote is running."
   },
   "freeze": {
     "notice": "Your admin privileges are frozen pending review. Reason: {reason}"

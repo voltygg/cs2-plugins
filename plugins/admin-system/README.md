@@ -12,6 +12,7 @@ multi-server grants, abuse protection, and cheat-check workflows.
 - Visual and gameplay effects such as ghost, disco, wallhack, smite, model
   selection, and optional [bhop grants](../bhop/README.md).
 - Map control: change level, list maps, and queue the next map.
+- Player map voting: `!rtv` and a native yes/no `!votemap` panel.
 - Weapon control: give a configured weapon, a random one, or strip a player.
 - Fun Mode round modifiers: low gravity, headshot only, knife round, no-scope
   only, one-hit kill, infinite money, and chicken bots.
@@ -67,6 +68,7 @@ action supports it.
 | `m` | Change map and queue the next map |
 | `k` | Give and strip weapons |
 | `g` | Fun Mode round modifiers |
+| `v` | Start and cancel map votes |
 | `z` | Root access |
 
 `!admin` has no dedicated flag, but the caller must be a registered admin.
@@ -88,6 +90,9 @@ Individual menu categories and actions remain permission-gated.
 | `!give <target> <weapon>` | `k` | Give a configured weapon |
 | `!strip <target>` | `k` | Remove every weapon a player carries |
 | `!fun [toggle]` | `g` | List or toggle a round modifier; `!fun off` clears |
+| `!rtv` | - | Vote to change the map at the end of the round |
+| `!votemap <name>` | `v` | Put a map to a yes/no vote |
+| `!cancelvote` | `v` | Cancel the running vote |
 | `!voice_mute <target> <duration> [reason]` | `o` | Mute voice; aliases: `!vmute`, `!mute` |
 | `!voice_unmute <target>` | `o` | Restore voice; aliases: `!vunmute`, `!unmute` |
 | `!text_mute <target> <duration> [reason]` | `o` | Block chat; aliases: `!tmute`, `!gag` |

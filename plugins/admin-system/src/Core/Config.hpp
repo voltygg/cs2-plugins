@@ -101,12 +101,24 @@ struct MapConfigEntry
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapConfigEntry, name, displayName, workshopId, minPlayers, maxPlayers)
 
+/** Player-driven map changes: `!rtv` and `!votemap`. */
+struct RtvSettings
+{
+    bool enabled = true;
+    /** Share of connected humans that must agree; a strict majority of it is required. */
+    double successRatio = 0.6;
+    /** Seconds after a map starts before `!rtv` is accepted. */
+    int voteDelaySec = 120;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RtvSettings, enabled, successRatio, voteDelaySec)
+
 /** Maps an admin may switch to. The engine offers no usable list of its own, so this is it. */
 struct MapSettings
 {
     std::vector<MapConfigEntry> cycle;
+    RtvSettings rtv;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapSettings, cycle)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapSettings, cycle, rtv)
 
 /** Raw weapon entry, validated into Weapons::WeaponEntry during load. */
 struct WeaponConfigEntry
@@ -246,6 +258,7 @@ public:
     const DatabaseConfig& GetDatabase() const { return Get().database; }
     const PunishmentSettings& GetPunishments() const { return Get().punishments; }
     const AppealSettings& GetAppeal() const { return Get().punishments.appeal; }
+    const MapSettings& GetMaps() const { return Get().maps; }
     const AbuseProtectionSettings& GetAbuseProtection() const { return Get().abuseProtection; }
     const ChatSettings& GetChat() const { return Get().chat; }
     const ReportSettings& GetReports() const { return Get().reports; }

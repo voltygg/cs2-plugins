@@ -26,6 +26,7 @@ enum class Permission : char
     Map = 'm',       // change level, queue the next map
     Weapon = 'k',    // give and strip weapons
     FunMode = 'g',   // server-wide round modifiers
+    Vote = 'v',      // start and cancel map votes
     Root = 'z',
 };
 

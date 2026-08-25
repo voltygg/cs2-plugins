@@ -7,6 +7,7 @@
 #include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Fun/FunMode.hpp"
 #include "../Maps/MapCycleState.hpp"
+#include "../Maps/VoteState.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "../Reports/ReportManager.hpp"
 #include "AdminActionsService.hpp"
@@ -57,6 +58,8 @@ struct App
     Maps::MapCycleState MapCycle{Runtime, Config};
     /** Server-wide round modifiers (Fun Mode). */
     Fun::FunMode FunMode{*this};
+    /** Player-driven map changes: !rtv and !votemap. */
+    Maps::VoteState Votes{*this};
     Admin::AdminManager Admins{Db, Config};
     Admin::FreezeManager Freeze{Db, Config, Runtime, Chat, Admins};
     /** The permission gate: granted flags minus abuse-protection freezes. Ask this, not Admins. */

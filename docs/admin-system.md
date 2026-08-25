@@ -118,6 +118,30 @@ inert; the rest still work. `admin_status` shows whether it installed.
 Chicken bots puts the chicken model on the bot pawn rather than spawning a real
 chicken: no server-side chicken spawn is reliable enough to build on.
 
+### Rock the vote
+
+`maps.rtv` controls the player-driven map change. `!rtv` takes one vote per
+SteamID; once enough players agree, the next map in `maps.cycle` is queued for
+the end of the round rather than changing level at once.
+
+```jsonc
+"rtv": {
+  "enabled": true,
+  // Share of connected humans who must agree; a majority of it is required.
+  "successRatio": 0.6,
+  // Seconds after a map starts before !rtv is accepted.
+  "voteDelaySec": 120
+}
+```
+
+Bots are excluded, so they cannot raise the bar out of reach on a mostly-empty
+server, and a player who disconnects gives their vote back. The tally resets on
+a map change.
+
+`!votemap <name>` puts one map to the game's own yes/no panel and `!cancelvote`
+calls it off; both need the `v` flag. The panel judges on ballots actually
+cast, so abstaining is not a no.
+
 ## Permission flags
 
 Flags are single characters stored in `admins.flags` and `admin_groups.flags`.
@@ -140,6 +164,7 @@ them. Root (`z`) grants everything.
 | `m` | Change map and queue the next map |
 | `k` | Give and strip weapons |
 | `g` | Fun Mode round modifiers |
+| `v` | Start and cancel map votes |
 | `z` | Root access |
 
 Immunity is separate from flags: an admin cannot act on a target whose immunity

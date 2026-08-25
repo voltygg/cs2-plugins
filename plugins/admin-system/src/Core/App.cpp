@@ -211,6 +211,7 @@ bool App::Start()
         // Surface an unloadable configured map here rather than on the first !map.
         MapCycle.VerifyAgainstEngine();
         FunMode.Start();
+        Votes.Start();
         return StageResult::Ok();
     });
 

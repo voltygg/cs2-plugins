@@ -2,6 +2,7 @@
 #include "../Core/ChatService.hpp"
 #include "../Core/Permissions.hpp"
 #include "../Maps/MapCycleState.hpp"
+#include "../Maps/VoteState.hpp"
 #include "Commands.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -108,6 +109,58 @@ void RegisterMapCommands(VoltMod::CommandManager& commands, App& app)
                 app.MapCycle.SetNext(*map);
                 app.Chat.BroadcastKey("broadcast.nextMapSet", {{"map", map->Label()}});
                 return CommandResult::Silent();
+            },
+    });
+
+    commands.Register({
+        .Name = "rtv",
+        .Description = "Vote to change the map at the end of this round.",
+        .Handler =
+            [&app](CommandContext& c) {
+                using RtvResult = Maps::VoteState::RtvResult;
+                switch (app.Votes.CastRtv(c.CallerSlot(), c.Caller->GetSteamID()))
+                {
+                case RtvResult::Disabled:
+                    return c.Fail("cmd.rtvDisabled");
+                case RtvResult::TooEarly:
+                    return c.Fail("cmd.rtvTooEarly");
+                case RtvResult::AlreadyVoted:
+                    return c.Fail("cmd.rtvAlreadyVoted");
+                case RtvResult::Counted:
+                    app.Chat.BroadcastKey("broadcast.rtvCounted", {{"name", c.Caller->GetName()},
+                                                                   {"votes", std::to_string(app.Votes.RtvVotes())},
+                                                                   {"needed", std::to_string(app.Votes.RtvNeeded())}});
+                    return CommandResult::Silent();
+                case RtvResult::Passed:
+                    return CommandResult::Silent();
+                }
+                return CommandResult::Silent();
+            },
+    });
+
+    commands.Register({
+        .Name = "votemap",
+        .Description = "Put a map to a yes/no vote.",
+        .Permission = Flag(Permission::Vote),
+        .Args = {Word()},
+        .Handler =
+            [&app](CommandContext& c) {
+                const auto* map = Resolve(app, c, c.Word);
+                if (!map)
+                    return CommandResult::Silent();
+                if (!app.Votes.StartMapVote(*map, c.CallerSlot()))
+                    return c.Fail("cmd.voteInProgress");
+                return CommandResult::Silent();
+            },
+    });
+
+    commands.Register({
+        .Name = "cancelvote",
+        .Description = "Cancel the running vote.",
+        .Permission = Flag(Permission::Vote),
+        .Handler =
+            [&app](CommandContext& c) {
+                return app.Votes.CancelVote() ? c.Ok("cmd.voteCancelled") : c.Fail("cmd.noVoteRunning");
             },
     });
 }

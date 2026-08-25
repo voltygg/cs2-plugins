@@ -116,7 +116,8 @@
     "infiniteMoneyOff": "Бесконечные деньги ВЫКЛ",
     "chickenBotsOn": "Боты-курицы ВКЛ",
     "chickenBotsOff": "Боты-курицы ВЫКЛ",
-    "funCleared": "Фан-режим выключен"
+    "funCleared": "Фан-режим выключен",
+    "rtvCounted": "{name} хочет сменить карту ({votes}/{needed})"
   },
   "common": {
     "selectSwapTarget": "Выберите второго игрока",
@@ -209,7 +210,13 @@
     "weaponGiven": "Игроку {name} выдано: {weapon}.",
     "weaponGiveFailed": "Сервер отказал в выдаче: {weapon}.",
     "weaponStripFailed": "Не удалось забрать оружие.",
-    "weaponTargetDead": "{name} не жив."
+    "weaponTargetDead": "{name} не жив.",
+    "rtvDisabled": "Голосование за смену карты отключено.",
+    "rtvTooEarly": "Голосование за смену карты ещё не открыто.",
+    "rtvAlreadyVoted": "Вы уже проголосовали за смену карты.",
+    "voteInProgress": "Голосование уже идёт.",
+    "voteCancelled": "Голосование отменено.",
+    "noVoteRunning": "Голосование не идёт."
   },
   "freeze": {
     "notice": "Ваши админ-права заморожены до ручной проверки. Причина: {reason}"
