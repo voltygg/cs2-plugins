@@ -1,7 +1,9 @@
 # Local development
 
 For the complete first-plugin walkthrough, start with
-[Create your first plugin](getting-started-plugin.md).
+[Create your first plugin](getting-started-plugin.md). For the admin-system
+plugin's flags, database, and multi-server setup, see
+[Admin system](admin-system.md).
 
 ## Toolchain
 
