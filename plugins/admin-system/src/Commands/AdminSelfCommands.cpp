@@ -19,7 +19,7 @@ void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app)
         .Handler =
             [&app](CommandContext& c) {
                 int slot = c.CallerSlot();
-                VoltMod::ToggleEffect(app.Runtime, app.Effects, slot, slot, AdminSystem::Admin::Effects::Hide);
+                app.PlayerEffects.Toggle(slot, slot, AdminSystem::Admin::Effects::Hide);
                 return CommandResult::Silent();
             },
     });

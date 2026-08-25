@@ -5,7 +5,6 @@
 #include <VoltMod/Sdk/Entity/PlayerController.hpp>
 #include <VoltMod/Sdk/Visibility/GlowVision.hpp>
 #include <VoltMod/Sdk/Visibility/TransmitFilter.hpp>
-#include <memory>
 
 namespace AdminSystem::Admin::Effects
 {
@@ -46,7 +45,7 @@ const Effect Hide{.Permission = Flag(Permission::Hide),
 
                       // Hide is persistent, so the reconcile tick rebuilds the glow clones after
                       // round restarts and tracks spawns/deaths/team changes across rounds.
-                      auto glow = std::make_shared<GlowVision>(ctx.Rt.Entities, ctx.Rt.EntityOps, transmit, slot);
+                      auto glow = ctx.Rt.Visibility.CreateGlow(slot);
                       glow->Reconcile();
 
                       return {.OnTick = [glow]() { glow->Reconcile(); },

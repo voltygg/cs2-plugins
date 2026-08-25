@@ -15,6 +15,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/EffectManager.hpp>
 #include <VoltMod/Database/Api.hpp>
+#include <VoltMod/Players/EffectDispatcher.hpp>
 #include <string>
 #include <vector>
 
@@ -55,6 +56,8 @@ struct App
     Core::PlayerChat PlayerChat{Runtime, Config, Chat, Admins, Punishments};
     Reports::ReportManager Reports{Db, Config, Runtime};
     VoltMod::EffectManager Effects{Runtime.Scheduler};
+    /** Runs the effect descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
+    VoltMod::EffectDispatcher PlayerEffects{Runtime, Effects};
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Config, Chat};
     /** Published to other plugins in Start; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};

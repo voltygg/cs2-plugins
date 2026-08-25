@@ -52,10 +52,7 @@ std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int a
     builder.AddToggle(
         tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
         [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, Effects::Hide.Id); },
-        [&app, adminSlot](int) {
-            VoltMod::ToggleEffect(app.Runtime, app.Effects, adminSlot, adminSlot, Effects::Hide);
-        },
-        hasB);
+        [&app, adminSlot](int) { app.PlayerEffects.Toggle(adminSlot, adminSlot, Effects::Hide); }, hasB);
 
     VoltMod::Menu::AppendPlayerRows(
         builder, app.Runtime.Players, adminSlot,
