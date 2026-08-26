@@ -58,31 +58,18 @@ void MovementConVars::Reset()
 
 void MovementConVars::ApplyGlobal()
 {
-    auto& conVars = _conVars;
-    for (auto& entry : _overrides)
-    {
-        if (!_globalApplied)
-            entry.SavedValue = entry.IsFloat ? conVars.GetFloat(entry.Name).value_or(entry.Value)
-                                             : (conVars.GetBool(entry.Name).value_or(false) ? 1.0f : 0.0f);
-
-        // Set through the server-console path (as a cfg line would). The direct setters change
-        // only the server's stored value, so FCVAR_REPLICATED movement convars never network to
-        // clients and their predicted movement keeps the defaults - no auto-hop, no speed retention.
-        // The command path both sets and replicates.
-        conVars.ExecuteServerCommand(std::format("{} {}", entry.Name, entry.NetValue).c_str());
-    }
-    _globalApplied = true;
+    // Take() snapshots on the first take and re-asserts afterwards, which is what lets this be
+    // called again after a map change without saving the override as the operator's own value.
+    // It writes through the server-console path: the direct setters change only the server's
+    // stored value, so FCVAR_REPLICATED movement convars never network to clients and their
+    // predicted movement keeps the defaults - no auto-hop, no speed retention.
+    for (const auto& entry : _overrides)
+        _global.Take(entry.Name, entry.NetValue);
 }
 
 void MovementConVars::RestoreGlobal()
 {
-    if (!_globalApplied)
-        return;
-
-    for (const auto& entry : _overrides)
-        _conVars.ExecuteServerCommand(
-            std::format("{} {}", entry.Name, FormatConVarValue(entry.IsFloat, entry.SavedValue)).c_str());
-    _globalApplied = false;
+    _global.ReleaseAll();
 }
 
 void MovementConVars::ReplicateOverrides(int slot) const
