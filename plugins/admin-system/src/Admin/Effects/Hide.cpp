@@ -1,7 +1,6 @@
 #include "Descriptors.hpp"
 
 #include <VoltMod/Entities/PawnOps.hpp>
-#include <VoltMod/Entities/PlayerController.hpp>
 #include <VoltMod/Hooks/GlowVision.hpp>
 #include <VoltMod/Hooks/Transmit.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -10,8 +9,8 @@ namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
+using VoltMod::Controller;
 using VoltMod::GlowVision;
-using VoltMod::PlayerController;
 using VoltMod::TeamSpectator;
 
 // Hide moves the player to the spectator team and stops transmitting their
@@ -33,11 +32,11 @@ const Effect Hide{.Permission = Flag(Permission::Hide),
                   .OffKey = "",
                   .TickIntervalMs = GlowVision::ReconcileIntervalMs,
                   .Setup = [](const ActionContext& ctx) -> EffectInstance {
-                      int savedTeam = ctx.TargetCtrl.GetTeam();
-                      std::string savedName = ctx.TargetCtrl.GetPlayerName();
+                      int savedTeam = ctx.TargetPawn().Team;
+                      std::string savedName = ctx.TargetCtrl.Name.Get().Str();
 
-                      ctx.TargetCtrl.SetPlayerName("");
-                      ctx.TargetCtrl.ChangeTeam(TeamSpectator);
+                      ctx.TargetCtrl.Name = "";
+                      (void)ctx.TargetCtrl.ChangeTeam(TeamSpectator);
 
                       int slot = ctx.Target->GetSlot();
                       auto& transmit = ctx.Rt.Transmit;
@@ -53,12 +52,12 @@ const Effect Hide{.Permission = Flag(Permission::Hide),
                                   [&transmit, &entities = ctx.Rt.Entities, slot, savedTeam, savedName, glow]() {
                                       glow->Destroy();
                                       transmit.SetControllerHidden(slot, false);
-                                      PlayerController pc = entities.Controller(slot);
-                                      if (!pc.IsValid())
+                                      Controller controller = entities.Controller(slot);
+                                      if (!controller)
                                           return;
-                                      pc.SetPlayerName(savedName);
-                                      if (pc.GetTeam() != savedTeam)
-                                          pc.ChangeTeam(savedTeam);
+                                      controller.Name = savedName.c_str();
+                                      if (controller.GetPawn().Team != savedTeam)
+                                          (void)controller.ChangeTeam(savedTeam);
                                   }};
                   }};
 

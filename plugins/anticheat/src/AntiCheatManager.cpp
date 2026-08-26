@@ -1,4 +1,4 @@
-#include "AntiCheatManager.hpp"
+﻿#include "AntiCheatManager.hpp"
 
 #include "App.hpp"
 
@@ -344,8 +344,8 @@ bool AntiCheatManager::IsEligible(int slot)
     const VoltMod::Player* player = _rt.Players.GetPlayerBySlot(slot);
     if (!player || player->IsBot())
         return false;
-    VoltMod::PlayerController controller = _rt.Entities.Controller(slot);
-    return controller.IsValid() && !(controller.GetFlags() & VoltMod::FL_FAKECLIENT);
+    VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot);
+    return static_cast<bool>(pawn) && !(pawn.Flags.Get() & VoltMod::FL_FAKECLIENT);
 }
 
 void AntiCheatManager::Report(int slot, const std::optional<Finding>& finding)

@@ -7,30 +7,30 @@ namespace AdminSystem::Admin::Actions
 {
 
 const Action Kill{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                      ctx.TargetCtrl.Slay();
+                      (void)ctx.TargetPawn().Slay();
                       return "broadcast.killed";
                   }};
 
 const Action Godmode{Flag(Permission::Health), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                         return VoltMod::PawnOps::ToggleGodmode(ctx.TargetCtrl) ? "broadcast.godmodeOn"
-                                                                                : "broadcast.godmodeOff";
+                         return VoltMod::PawnOps::ToggleGodmode(ctx.TargetPawn()) ? "broadcast.godmodeOn"
+                                                                                  : "broadcast.godmodeOff";
                      }};
 
 const ParamAction SetHealth{Flag(Permission::Health), /*requireAlive*/ true,
                             [](const ActionContext& ctx, int health) -> OptKey {
-                                ctx.TargetCtrl.SetHealth(health);
+                                ctx.TargetPawn().Health = health;
                                 return "broadcast.healed";
                             }};
 
 const ParamAction SetArmor{Flag(Permission::Health), /*requireAlive*/ true,
                            [](const ActionContext& ctx, int armor) -> OptKey {
-                               ctx.TargetCtrl.SetArmor(armor);
+                               ctx.TargetPawn().Armor = armor;
                                return "broadcast.armored";
                            }};
 
 const ParamAction SetSize{Flag(Permission::Fun), /*requireAlive*/ true,
                           [](const ActionContext& ctx, int percent) -> OptKey {
-                              ctx.Rt.EntityOps.SetModelScale(ctx.TargetCtrl.GetPawn(), percent / 100.0f);
+                              ctx.Rt.EntityOps.SetModelScale(ctx.TargetPawn().Raw(), percent / 100.0f);
                               return "broadcast.sizeSet";
                           }};
 

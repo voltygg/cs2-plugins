@@ -1,4 +1,4 @@
-#include "IssuePunishment.hpp"
+﻿#include "IssuePunishment.hpp"
 
 #include "../Admin/FreezeManager.hpp"
 #include "../Core/App.hpp"
@@ -6,7 +6,6 @@
 #include "PunishmentManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Entities/PlayerController.hpp>
 #include <format>
 
 using AdminSystem::Database::Ban;
@@ -43,7 +42,7 @@ static bool Issue(App& app, const Player& admin, const Player& target, PunishTyp
     {
     case PunishType::Kick:
     {
-        app.Runtime.Entities.Controller(target.GetSlot()).Kick(reason.c_str());
+        (void)app.Runtime.Entities.Controller(target.GetSlot()).Kick(reason);
         app.Chat.BroadcastPunishment("kicked", admin.GetName(), target.GetName(), reason, 0);
         return true;
     }

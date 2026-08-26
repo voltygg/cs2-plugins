@@ -2,7 +2,6 @@
 #include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Entities/PlayerController.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <array>
 #include <cstdint>
@@ -12,8 +11,7 @@ namespace AdminSystem::Admin::Effects
 
 using Actions::ActionContext;
 
-static constexpr uint8_t RenderModeNormal = 0;
-static constexpr uint8_t RenderModeTransTexture = 3;
+static constexpr auto RenderModeTransTexture = VoltMod::RenderMode_t::TransTexture;
 static constexpr uint32_t ColorOpaqueWhite = 0xFFFFFFFFu;
 
 // Bright RGBA values cycled at 200 ms - red / orange / yellow / green / blue / magenta.
@@ -33,24 +31,23 @@ const Effect Disco{.Permission = Flag(Permission::Fun),
                    .TickIntervalMs = DiscoIntervalMs,
                    .DurationMs = DiscoDurationSec * 1000,
                    .Setup = [](const ActionContext& ctx) -> EffectInstance {
-                       uint8_t savedMode = ctx.TargetCtrl.GetRenderMode();
-                       uint32_t savedColor = ctx.TargetCtrl.GetRenderColor();
+                       auto savedMode = static_cast<VoltMod::RenderMode_t>(ctx.TargetPawn().RenderMode.Get());
+                       uint32_t savedColor = ctx.TargetPawn().RenderColor;
                        int slot = ctx.Target->GetSlot();
 
                        return {.OnTick =
                                    [&entities = ctx.Rt.Entities, slot, idx = size_t{0}]() mutable {
-                                       VoltMod::PlayerController pc = entities.Controller(slot);
-                                       if (!pc.IsValid() || !pc.IsAlive())
+                                       VoltMod::Pawn pawn = entities.PawnOf(slot);
+                                       if (!pawn || !pawn.IsAlive())
                                            return;
-                                       pc.SetRender(RenderModeTransTexture, Palette[idx]);
+                                       pawn.SetRender(RenderModeTransTexture, Palette[idx]);
                                        idx = (idx + 1) % Palette.size();
                                    },
                                .OnStop =
                                    [&entities = ctx.Rt.Entities, slot, savedMode, savedColor]() {
-                                       VoltMod::PlayerController pc = entities.Controller(slot);
-                                       if (pc.IsValid())
-                                           pc.SetRender(savedMode == 0 ? RenderModeNormal : savedMode,
-                                                        savedColor == 0 ? ColorOpaqueWhite : savedColor);
+                                       VoltMod::Pawn pawn = entities.PawnOf(slot);
+                                       if (pawn)
+                                           pawn.SetRender(savedMode, savedColor == 0 ? ColorOpaqueWhite : savedColor);
                                    }};
                    }};
 

@@ -1,4 +1,4 @@
-#include "AdminMenu_Effects.hpp"
+﻿#include "AdminMenu_Effects.hpp"
 
 #include "../../Core/App.hpp"
 #include "../Actions/Descriptors.hpp"
@@ -7,7 +7,6 @@
 #include "PlayerPicker.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Entities/PlayerController.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
@@ -65,8 +64,8 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app
                 },
                 [&entities = app.Runtime.Entities, first = targetSlot](int candidate) {
                     // Gray out partners Swap would reject: the already-picked player and the dead.
-                    VoltMod::PlayerController ctrl = entities.Controller(candidate);
-                    return candidate != first && ctrl.IsValid() && ctrl.IsAlive();
+                    VoltMod::Pawn pawn = entities.PawnOf(candidate);
+                    return candidate != first && pawn && pawn.IsAlive();
                 });
             if (picker)
                 app.Runtime.Menus.OpenMenu(slot, picker);

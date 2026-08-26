@@ -5,14 +5,13 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
-#include <VoltMod/Entities/PlayerController.hpp>
 #include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
-using VoltMod::PlayerController;
+using VoltMod::Pawn;
 
 // Restore live players to a base team model; respawn restores their selected agent.
 static constexpr const char* DefaultModelT = "characters/models/tm_phoenix/tm_phoenix.vmdl";
@@ -68,17 +67,17 @@ const ParamEffect Model{.Permission = Flag(Permission::Fun),
                             },
                         .Setup = [](const ActionContext& ctx, int param) -> EffectInstance {
                             // Dispatch already bounds-checked param and required the target alive.
-                            ctx.Rt.EntityOps.SetModel(ctx.TargetCtrl.GetPawn(), FunModels()[param].Path.c_str());
+                            ctx.Rt.EntityOps.SetModel(ctx.TargetPawn().Raw(), FunModels()[param].Path.c_str());
 
                             // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
                             // team default when cleared while alive (a no-op on death, where IsAlive is false).
                             int targetSlot = ctx.Target->GetSlot();
                             return {.OnStop = [&ops = ctx.Rt.EntityOps, &entities = ctx.Rt.Entities, targetSlot]() {
-                                PlayerController pc = entities.Controller(targetSlot);
-                                if (!pc.IsValid() || !pc.IsAlive())
+                                Pawn pawn = entities.PawnOf(targetSlot);
+                                if (!pawn || !pawn.IsAlive())
                                     return;
-                                if (const char* def = DefaultModelForTeam(pc.GetTeam()))
-                                    ops.SetModel(pc.GetPawn(), def);
+                                if (const char* def = DefaultModelForTeam(pawn.Team))
+                                    ops.SetModel(pawn.Raw(), def);
                             }};
                         }};
 

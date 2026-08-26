@@ -1,4 +1,4 @@
-#include "CheatSimulator.hpp"
+﻿#include "CheatSimulator.hpp"
 
 #include "AntiCheatManager.hpp"
 #include "App.hpp"
@@ -121,13 +121,13 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
 
 bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
 {
-    const VoltMod::PlayerController self = _rt.Entities.Controller(slot);
-    if (!self.IsValid() || !self.GetPawn())
+    const VoltMod::Pawn self = _rt.Entities.PawnOf(slot);
+    if (!self)
         return false;
 
-    const Vector eye = self.GetEyePosition();
+    const Vector eye = self.EyePosition();
     const Vec3 from{eye.x, eye.y, eye.z};
-    const int team = self.GetTeam();
+    const int team = self.Team;
     auto teammatesAreEnemies = VoltMod::ConVar<bool>::Find(_rt.ConVars, "mp_teammates_are_enemies");
     const bool freeForAll = teammatesAreEnemies && teammatesAreEnemies->Get();
 
@@ -139,12 +139,11 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
         const int other = player ? player->GetSlot() : -1;
         if (!IsValidSlot(other) || other == slot)
             continue;
-        const VoltMod::PlayerController controller = _rt.Entities.Controller(other);
-        if (!controller.IsValid() || !controller.GetPawn() || !controller.IsAlive() ||
-            !ShotCorrelatorCore::AreOpponents(team, controller.GetTeam(), freeForAll))
+        const VoltMod::Pawn pawn = _rt.Entities.PawnOf(other);
+        if (!pawn || !pawn.IsAlive() || !ShotCorrelatorCore::AreOpponents(team, pawn.Team, freeForAll))
             continue;
 
-        const Vector origin = controller.GetAbsOrigin();
+        const Vector origin = pawn.Origin();
         const Vec3 target{origin.x, origin.y, origin.z + LockHeight};
         const float distance = (target - from).Length();
         if (!found || distance < bestDistance)

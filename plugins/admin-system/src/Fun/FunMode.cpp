@@ -1,4 +1,4 @@
-#include "FunMode.hpp"
+﻿#include "FunMode.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
@@ -119,12 +119,12 @@ void FunMode::ApplyOverrides()
 
 void FunMode::GiveKnifeOnly(int slot)
 {
-    auto controller = _rt.Entities.Controller(slot);
-    if (!controller.IsValid() || !controller.IsAlive())
+    auto pawn = _rt.Entities.PawnOf(slot);
+    if (!pawn || !pawn.IsAlive())
         return;
 
-    _rt.Items.StripWeapons(controller, false);
-    _rt.Items.Give(controller, controller.GetTeam() == VoltMod::TeamT ? KnifeT : KnifeCT);
+    _rt.Items.StripWeapons(pawn, false);
+    _rt.Items.Give(pawn, pawn.Team == VoltMod::TeamT ? KnifeT : KnifeCT);
 }
 
 }  // namespace AdminSystem::Fun

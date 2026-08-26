@@ -469,7 +469,7 @@ wheels = [
 [[package]]
 name = "voltmod"
 version = "1.2.0"
-source = { git = "https://github.com/voltygg/voltmod.git?rev=refactor%2Fapi-v2#f2d747e0a6256db2f9b99c73c7d0bd4ae7aa2190" }
+source = { git = "https://github.com/voltygg/voltmod.git?rev=refactor%2Fapi-v2#e77a0c4717064c68a444aeda94ce954ef92de000" }
 dependencies = [
     { name = "clang-format" },
     { name = "cmake" },

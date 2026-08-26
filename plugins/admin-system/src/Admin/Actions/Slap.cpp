@@ -6,7 +6,7 @@ namespace AdminSystem::Admin::Actions
 {
 
 const Action Slap{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                      ctx.Rt.Pawns.Slap(ctx.TargetCtrl);
+                      ctx.Rt.Pawns.Slap(ctx.TargetPawn());
                       return "broadcast.slapped";
                   }};
 

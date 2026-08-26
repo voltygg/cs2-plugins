@@ -1,8 +1,7 @@
-#include "BhopManager.hpp"
+﻿#include "BhopManager.hpp"
 
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Entities/Entity.hpp>
-#include <VoltMod/Entities/PlayerController.hpp>
+#include <VoltMod/Entities/EntitySystem.hpp>
 #include <algorithm>
 #include <cmath>
 #include <mathlib/vector.h>
@@ -10,8 +9,8 @@
 
 using VoltMod::MaxPlayers;
 using VoltMod::MessageKind;
+using VoltMod::Pawn;
 using VoltMod::Player;
-using VoltMod::PlayerController;
 
 namespace Log = VoltMod::Log;
 
@@ -179,11 +178,11 @@ void BhopManager::OnPlayerJump(int slot)
     if (!chained)
         return;
 
-    PlayerController controller = _rt.Entities.Controller(slot);
-    if (!controller.IsValid())
+    Pawn pawn = _rt.Entities.PawnOf(slot);
+    if (!pawn)
         return;
 
-    Vector velocity = controller.GetVelocity();
+    Vector velocity = pawn.Velocity;
     float speed = std::hypot(velocity.x, velocity.y);
     if (speed < 1.0f)
         return;
@@ -191,32 +190,32 @@ void BhopManager::OnPlayerJump(int slot)
     float scaled = std::min(speed * boost.factor, std::max(boost.maxSpeed, speed));
     velocity.x *= scaled / speed;
     velocity.y *= scaled / speed;
-    controller.SetVelocity(velocity);
+    pawn.Velocity = velocity;
 }
 
 void BhopManager::ForceAutoHop(int slot)
 {
-    if (!(_rt.Entities.GetPlayerButtons(slot) & VoltMod::IN_JUMP))
+    if (!(_rt.Entities.Buttons(slot) & VoltMod::IN_JUMP))
         return;
 
-    PlayerController controller = _rt.Entities.Controller(slot);
-    if (!controller.IsValid())
+    Pawn pawn = _rt.Entities.PawnOf(slot);
+    if (!pawn)
         return;
 
-    uint32_t flags = controller.GetFlags();
+    uint32_t flags = pawn.Flags;
     if (!(flags & VoltMod::FL_ONGROUND))
         return;
 
-    Vector velocity = controller.GetVelocity();
+    Vector velocity = pawn.Velocity;
     if (velocity.z > 0.0f)
         return;  // already ascending: the engine (or last frame's hop) took this jump
 
     constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0); engine default
     velocity.z = _jumpImpulse.IsValid() ? _jumpImpulse.Get() : DefaultJumpImpulse;
-    controller.SetVelocity(velocity);
+    pawn.Velocity = velocity;
     // Leave the ground in the same frame: if the next movement command still sees FL_ONGROUND
     // it can re-ground and zero the vertical velocity for a tick - the "laggy jump" hitch.
-    controller.SetFlags(flags & ~VoltMod::FL_ONGROUND);
+    pawn.Flags = flags & ~VoltMod::FL_ONGROUND;
 
     // A forced hop never emits player_jump, so feed the boost chain by hand.
     OnPlayerJump(slot);

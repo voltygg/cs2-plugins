@@ -4,6 +4,7 @@
 
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <mathlib/vector.h>
+#include <optional>
 
 namespace AdminSystem::Admin::Actions
 {
@@ -21,20 +22,18 @@ static void BroadcastPair(App& app, const ActionContext& first, const ActionCont
 }
 
 const Action Bring{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                       if (!ctx.CallerCtrl.IsValid())
+                       if (!ctx.CallerPawn())
                            return std::nullopt;
-                       Vector dest = PawnOps::ClearedDestination(ctx.CallerCtrl);
-                       Vector zero{0.0f, 0.0f, 0.0f};
-                       ctx.TargetCtrl.Teleport(&dest, nullptr, &zero);
+                       Vector dest = PawnOps::ClearedDestination(ctx.CallerPawn());
+                       (void)ctx.TargetPawn().Teleport(dest, std::nullopt, Vector{0.0f, 0.0f, 0.0f});
                        return "broadcast.brought";
                    }};
 
 const Action Goto{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                      if (!ctx.CallerCtrl.IsValid())
+                      if (!ctx.CallerPawn())
                           return std::nullopt;
-                      Vector dest = PawnOps::ClearedDestination(ctx.TargetCtrl);
-                      Vector zero{0.0f, 0.0f, 0.0f};
-                      ctx.CallerCtrl.Teleport(&dest, nullptr, &zero);
+                      Vector dest = PawnOps::ClearedDestination(ctx.TargetPawn());
+                      (void)ctx.CallerPawn().Teleport(dest, std::nullopt, Vector{0.0f, 0.0f, 0.0f});
                       return "broadcast.goto";
                   }};
 
@@ -46,10 +45,10 @@ void Swap(App& app, int adminSlot, int firstSlot, int secondSlot)
     auto ctxB = app.Actions.Resolve(adminSlot, secondSlot, Flag(Permission::Control));
     if (!ctxA.Valid() || !ctxB.Valid())
         return;
-    if (!ctxA.TargetCtrl.IsAlive() || !ctxB.TargetCtrl.IsAlive())
+    if (!ctxA.TargetPawn().IsAlive() || !ctxB.TargetPawn().IsAlive())
         return;
 
-    PawnOps::SwapOrigins(ctxA.TargetCtrl, ctxB.TargetCtrl);
+    PawnOps::SwapOrigins(ctxA.TargetPawn(), ctxB.TargetPawn());
     BroadcastPair(app, ctxA, ctxB, "broadcast.swapped");
 }
 

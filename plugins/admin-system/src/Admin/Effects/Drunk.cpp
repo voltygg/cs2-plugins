@@ -37,8 +37,8 @@ const Effect Drunk{.Permission = Flag(Permission::Fun),
                        auto& entities = ctx.Rt.Entities;
                        return {.OnTick = [&messages, &entities, slot]() {
                            // Shaking a dead or departed player would be wasted traffic.
-                           auto controller = entities.Controller(slot);
-                           if (controller.IsValid() && controller.IsAlive())
+                           auto pawn = entities.PawnOf(slot);
+                           if (pawn && pawn.IsAlive())
                                messages.Shake(slot, ShakeDurationSec, ShakeFrequency, ShakeAmplitude);
                        }};
                    }};

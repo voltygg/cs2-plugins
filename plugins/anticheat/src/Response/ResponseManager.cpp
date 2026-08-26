@@ -1,4 +1,4 @@
-#include "ResponseManager.hpp"
+﻿#include "ResponseManager.hpp"
 
 #include "App.hpp"
 
@@ -93,7 +93,7 @@ void ResponseManager::Handle(int slot, const Finding& finding)
         _pendingKick[slot] =
             _rt.Scheduler.NextTick([&players = _rt.Players, &entities = _rt.Entities, slot, steamId, reason] {
                 if (players.GetPlayerBySlotIfSteamId(slot, steamId))
-                    entities.Controller(slot).Kick(reason.c_str());
+                    (void)entities.Controller(slot).Kick(reason);
             });
         return;
     }

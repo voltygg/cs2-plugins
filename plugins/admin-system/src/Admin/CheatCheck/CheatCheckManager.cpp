@@ -12,7 +12,6 @@
 #include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
-#include <VoltMod/Entities/PlayerController.hpp>
 #include <VoltMod/Http/HttpClient.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
@@ -25,9 +24,10 @@ namespace AdminSystem::Admin::CheatCheck
 
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
+using VoltMod::Controller;
 using VoltMod::Messages;
 using VoltMod::MoveType;
-using VoltMod::PlayerController;
+using VoltMod::Pawn;
 using VoltMod::PlayerManager;
 using VoltMod::Scheduler;
 using VoltMod::Time;
@@ -61,14 +61,15 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     if (!admin || !target)
         return false;
 
-    PlayerController targetCtrl = _rt.Entities.Controller(targetSlot);
+    Controller targetCtrl = _rt.Entities.Controller(targetSlot);
+    Pawn targetPawn = targetCtrl.GetPawn();
     const auto& cfg = _config.GetCheatCheck();
 
     // Re-call: keep the original movetype/team (target is already frozen/spectated, so reading now is stale).
     // PriorTeam is 0 (sentinel) unless we actually move them, so the restore decision survives a config reload.
     const bool wasActive = _checks[targetSlot].Active;
-    const MoveType priorMove = wasActive ? _checks[targetSlot].PriorMoveType : targetCtrl.GetMoveType();
-    const int priorTeam = wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? targetCtrl.GetTeam() : 0);
+    const MoveType priorMove = wasActive ? _checks[targetSlot].PriorMoveType : targetPawn.Move();
+    const int priorTeam = wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? int{targetPawn.Team} : 0);
     if (wasActive)
         ResetCheck(targetSlot);
 
@@ -84,9 +85,9 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     pc.PriorMoveType = priorMove;
     pc.PriorTeam = priorTeam;
 
-    targetCtrl.SetMoveType(MoveType::None);
+    targetPawn.SetMove(MoveType::None);
     if (cfg.moveToSpectator)
-        targetCtrl.ChangeTeam(VoltMod::TeamSpectator);
+        (void)targetCtrl.ChangeTeam(VoltMod::TeamSpectator);
 
     pc.DeadlineTimer = _rt.Scheduler.Repeat(DeadlineTickMs, [this, targetSlot] { Tick(targetSlot); });
 
@@ -311,7 +312,7 @@ void CheatCheckManager::Expire(int targetSlot)
     ResetCheck(targetSlot);  // deactivate before the kick triggers disconnect cleanup
 
     if (kick)
-        _rt.Entities.Controller(targetSlot).Kick(cfg.kickReason.c_str());
+        (void)_rt.Entities.Controller(targetSlot).Kick(cfg.kickReason);
     else
         Unfreeze(targetSlot, restore, restoreTeam);
 
@@ -320,13 +321,13 @@ void CheatCheckManager::Expire(int targetSlot)
 
 void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int restoreTeam)
 {
-    PlayerController pc = _rt.Entities.Controller(targetSlot);
-    if (!pc.IsValid())
+    Controller controller = _rt.Entities.Controller(targetSlot);
+    if (!controller)
         return;
     // restoreTeam is a real playing team (T/CT) only if we actually pulled them to spectator at start.
     if (restoreTeam >= VoltMod::TeamT)
-        pc.ChangeTeam(restoreTeam);
-    pc.SetMoveType(restoreMove);
+        (void)controller.ChangeTeam(restoreTeam);
+    controller.GetPawn().SetMove(restoreMove);
 }
 
 void CheatCheckManager::CancelAllForSlot(int slot)

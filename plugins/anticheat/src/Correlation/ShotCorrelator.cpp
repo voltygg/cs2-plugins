@@ -1,4 +1,4 @@
-#include "ShotCorrelator.hpp"
+﻿#include "ShotCorrelator.hpp"
 
 #include "AntiCheatManager.hpp"
 #include "Core/Geometry.hpp"
@@ -26,14 +26,12 @@ static Vec3 ToVec3(const Vector& v)
     return {v.x, v.y, v.z};
 }
 
-static bool IsAirborne(const VoltMod::PlayerController& controller)
+static bool IsAirborne(const VoltMod::Pawn& pawn)
 {
-    const uint32_t ground = controller.GetPawnField<uint32_t>("CBaseEntity", "m_hGroundEntity");
-    const bool grounded = controller.GetPawnField<bool>("CCSPlayerPawn", "m_bOnGroundLastTick") ||
-                          ((controller.GetFlags() & VoltMod::FL_ONGROUND) && ground != VoltMod::InvalidEntityHandle);
-    const auto walk = static_cast<uint8_t>(VoltMod::MoveType::Walk);
-    return !grounded && controller.GetPawnField<uint8_t>("CBaseEntity", "m_MoveType") == walk &&
-           controller.GetPawnField<uint8_t>("CBaseEntity", "m_nActualMoveType") == walk;
+    const bool grounded = pawn.OnGroundLastTick || ((pawn.Flags.Get() & VoltMod::FL_ONGROUND) &&
+                                                    pawn.GroundEntity.Get() != VoltMod::InvalidEntityHandle);
+    return !grounded && pawn.Move() == VoltMod::MoveType::Walk &&
+           pawn.ActualMoveTypeRaw.Get() == static_cast<uint8_t>(VoltMod::MoveType::Walk);
 }
 
 static CmdSample BuildSample(const VoltMod::UserCmdView& cmd)
@@ -119,17 +117,17 @@ void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)
     if (!cmd.Valid || !_manager.DetectionsEnabled() || !_manager.IsEligible(slot))
         return;
 
-    VoltMod::PlayerController controller = _rt.Entities.Controller(slot);
-    if (!controller.IsValid() || !controller.GetPawn())
+    VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot);
+    if (!pawn)
         return;
 
-    const Vec3 eye = ToVec3(controller.GetEyePosition());
+    const Vec3 eye = ToVec3(pawn.EyePosition());
     if (!Geometry::IsFinite(eye))
         return;
 
     CmdSample sample = BuildSample(cmd);
     sample.EyePos = eye;
-    sample.Airborne = IsAirborne(controller);
+    sample.Airborne = IsAirborne(pawn);
 
     const bool aimbot = _manager.ModuleEnabled(DetectionKind::Aimbot);
     const bool aimlock = _manager.ModuleEnabled(DetectionKind::Aimlock);
@@ -179,15 +177,15 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
         if (engine)
             _userIds[slot] = engine->GetPlayerUserId(CPlayerSlot(slot)).Get();
 
-        const VoltMod::PlayerController controller = _rt.Entities.Controller(slot);
-        if (!controller.IsValid() || !controller.GetPawn())
+        const VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot);
+        if (!pawn)
             continue;
 
-        players[slot] = {.Origin = ToVec3(controller.GetAbsOrigin()),
-                         .EyePos = ToVec3(controller.GetEyePosition()),
-                         .Team = controller.GetTeam(),
+        players[slot] = {.Origin = ToVec3(pawn.Origin()),
+                         .EyePos = ToVec3(pawn.EyePosition()),
+                         .Team = pawn.Team,
                          .Valid = true,
-                         .Alive = controller.IsAlive(),
+                         .Alive = pawn.IsAlive(),
                          .Teleported = JustTeleported(slot)};
     }
 }
@@ -251,11 +249,11 @@ void ShotCorrelator::OnWeaponFire(const VoltMod::WeaponFire& fire)
     if (!_manager.DetectionsEnabled() || !_manager.IsEligible(fire.Slot))
         return;
 
-    const VoltMod::PlayerController controller = _rt.Entities.Controller(fire.Slot);
-    const QAngle eyeAngles = controller.GetEyeAngles();
+    const VoltMod::Pawn pawn = _rt.Entities.PawnOf(fire.Slot);
+    const QAngle eyeAngles = pawn.EyeAngles;
     const AimAngles visible{eyeAngles.x, eyeAngles.y};
     // Without a pawn the field read fabricates a perfectly finite-looking (0,0).
-    const bool hasVisible = controller.IsValid() && controller.GetPawn() != nullptr && Geometry::IsFinite(visible);
+    const bool hasVisible = static_cast<bool>(pawn) && Geometry::IsFinite(visible);
 
     ShotView* shot = _manager.Correlator().OnWeaponFire(fire.Slot, fire.Weapon, static_cast<int32_t>(_rt.Clock.Tick()),
                                                         visible, hasVisible);

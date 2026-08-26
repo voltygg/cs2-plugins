@@ -1,4 +1,4 @@
-#include "NamechangerDetector.hpp"
+﻿#include "NamechangerDetector.hpp"
 
 #include "AntiCheatManager.hpp"
 
@@ -10,7 +10,7 @@ namespace Anticheat
 
 std::string NamechangerDetector::CurrentName(VoltMod::Player* player) const
 {
-    std::string name = _rt.Entities.Controller(player->GetSlot()).GetPlayerName();
+    std::string name = _rt.Entities.Controller(player->GetSlot()).Name.Get().Str();
     return name.empty() ? player->GetName() : name;
 }
 

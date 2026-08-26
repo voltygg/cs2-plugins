@@ -11,7 +11,6 @@
 #include <string>
 
 using VoltMod::Player;
-using VoltMod::PlayerController;
 using VoltMod::PluginInfo;
 namespace Log = VoltMod::Log;
 

@@ -20,7 +20,7 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
                        if (ops.CanSpawn())
                        {
                            VoltMod::KeyValues kv;
-                           kv.Set("origin", ctx.TargetCtrl.GetAbsOrigin()).Set("spawnflags", EnvExplosionNoDamage);
+                           kv.Set("origin", ctx.TargetPawn().Origin()).Set("spawnflags", EnvExplosionNoDamage);
                            if (auto* boom = ops.Spawn("env_explosion", kv))
                            {
                                ops.AcceptInput(boom, "Explode");

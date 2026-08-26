@@ -1,4 +1,4 @@
-#include "WeaponActions.hpp"
+﻿#include "WeaponActions.hpp"
 
 #include "../Admin/Actions/ActionContext.hpp"
 #include "../Core/App.hpp"
@@ -32,7 +32,7 @@ static WeaponActionResult RunWeaponAction(App& app, int adminSlot, int targetSlo
                     Action{.Permission = Flag(Permission::Weapon),
                            .RequireAlive = false,
                            .Body = [&](const ActionContext& ctx) -> OptKey {
-                               if (!ctx.TargetCtrl.IsAlive())
+                               if (!ctx.TargetPawn().IsAlive())
                                {
                                    outcome = WeaponActionResult::TargetDead;
                                    return std::nullopt;
@@ -54,15 +54,15 @@ WeaponActionResult GiveWeapon(App& app, int adminSlot, int targetSlot, std::stri
     const std::string classname(item);
     return RunWeaponAction(
         app, adminSlot, targetSlot,
-        [&classname](const ActionContext& ctx) { return ctx.Rt.Items.Give(ctx.TargetCtrl, classname.c_str()); },
+        [&classname](const ActionContext& ctx) { return ctx.Rt.Items.Give(ctx.TargetPawn(), classname.c_str()); },
         "broadcast.gaveWeapon");
 }
 
 WeaponActionResult StripWeapons(App& app, int adminSlot, int targetSlot)
 {
     return RunWeaponAction(
-        app, adminSlot, targetSlot, [](const ActionContext& ctx) { return ctx.Rt.Items.StripWeapons(ctx.TargetCtrl); },
-        "broadcast.stripped");
+        app, adminSlot, targetSlot,
+        [](const ActionContext& ctx) { return ctx.Rt.Items.StripWeapons(ctx.TargetPawn()); }, "broadcast.stripped");
 }
 
 }  // namespace AdminSystem::Weapons

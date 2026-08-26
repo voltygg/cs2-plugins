@@ -1,4 +1,4 @@
-#include "PunishmentManager.hpp"
+﻿#include "PunishmentManager.hpp"
 
 #include "../Core/ChatService.hpp"
 #include "../Core/Config.hpp"
@@ -10,7 +10,6 @@
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Engine/Interfaces.hpp>
-#include <VoltMod/Entities/PlayerController.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <algorithm>
@@ -22,7 +21,6 @@ using AdminSystem::Database::TextMute;
 using AdminSystem::Database::VoiceMute;
 using AdminSystem::Database::WarningRepository;
 using VoltMod::Interfaces;
-using VoltMod::PlayerController;
 using VoltMod::PlayerManager;
 using VoltMod::Runtime;
 using VoltMod::Time;
@@ -323,7 +321,7 @@ void PunishmentManager::KickDeferred(int slot, int64_t steamId, std::string reas
         // The seat can change hands before the deferred kick lands; kicking whoever took it is
         // not what the ban says.
         if (rt.Players.GetPlayerBySlotIfSteamId(slot, steamId))
-            rt.Entities.Controller(slot).Kick(reason.c_str());
+            (void)rt.Entities.Controller(slot).Kick(reason);
     });
 }
 
