@@ -1,6 +1,6 @@
 #pragma once
 
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Database/Column.hpp>
 #include <cstdint>
 #include <optional>
@@ -28,7 +28,7 @@ struct TextMute
     std::optional<std::string> RemovedReason;
 
     bool IsPermanent() const { return ExpiresAt == 0; }
-    bool IsExpired() const { return !IsPermanent() && VoltMod::Core::TimeUtils::IsExpired(ExpiresAt); }
+    bool IsExpired() const { return !IsPermanent() && VoltMod::Core::Time::IsExpired(ExpiresAt); }
 
     static constexpr const char* Table = "text_mutes";
     static constexpr const char* Key = "id";

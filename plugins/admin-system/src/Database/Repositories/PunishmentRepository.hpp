@@ -1,7 +1,7 @@
 #pragma once
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <cstdint>
 #include <format>
@@ -29,7 +29,7 @@ public:
     std::vector<TEntity> FindAllActive()
     {
         auto result = _db.QueryBlocking(Stmt("find_all_active"), VoltMod::SelectSql<TEntity>(ActiveWhere),
-                                        pqxx::params{VoltMod::TimeUtils::Now()});
+                                        pqxx::params{VoltMod::Time::Now()});
         return result ? VoltMod::FromResult<TEntity>(*result) : std::vector<TEntity>{};
     }
 
@@ -37,7 +37,7 @@ public:
     void FindAllActiveAsync(std::function<void(std::vector<TEntity>)> onDone)
     {
         _db.Query(Stmt("find_all_active"), VoltMod::SelectSql<TEntity>(ActiveWhere),
-                  pqxx::params{VoltMod::TimeUtils::Now()},
+                  pqxx::params{VoltMod::Time::Now()},
                   [onDone = std::move(onDone)](VoltMod::DbResult<pqxx::result> result) {
                       if (result && onDone)
                           onDone(VoltMod::FromResult<TEntity>(*result));
@@ -60,7 +60,7 @@ public:
                  std::format("UPDATE {} SET is_active = false, removed_at = $2, removed_by = $3, "
                              "removed_reason = $4 WHERE id = $1",
                              TEntity::Table),
-                 pqxx::params{recordId, VoltMod::TimeUtils::Now(), removedBy, reason});
+                 pqxx::params{recordId, VoltMod::Time::Now(), removedBy, reason});
     }
 
     void ExpireOldAsync()
@@ -69,7 +69,7 @@ public:
                  std::format("UPDATE {} SET is_active = false WHERE is_active = true AND expires_at > 0 AND "
                              "expires_at <= $1",
                              TEntity::Table),
-                 pqxx::params{VoltMod::TimeUtils::Now()});
+                 pqxx::params{VoltMod::Time::Now()});
     }
 
 private:

@@ -1,8 +1,8 @@
 #include "BhopManager.hpp"
 
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Sdk/Entity/Entity.hpp>
-#include <VoltMod/Sdk/Entity/PlayerController.hpp>
+#include <VoltMod/Entities/Entity.hpp>
+#include <VoltMod/Entities/PlayerController.hpp>
 #include <algorithm>
 #include <cmath>
 #include <mathlib/vector.h>
@@ -187,7 +187,7 @@ void BhopManager::OnPlayerJump(int slot)
 
 void BhopManager::ForceAutoHop(int slot)
 {
-    if (!(_rt.Entities.GetPlayerButtons(slot) & Sdk::IN_JUMP))
+    if (!(_rt.Entities.GetPlayerButtons(slot) & Entities::IN_JUMP))
         return;
 
     PlayerController controller = _rt.Entities.Controller(slot);
@@ -195,7 +195,7 @@ void BhopManager::ForceAutoHop(int slot)
         return;
 
     uint32_t flags = controller.GetFlags();
-    if (!(flags & Sdk::FL_ONGROUND))
+    if (!(flags & Entities::FL_ONGROUND))
         return;
 
     Vector velocity = controller.GetVelocity();
@@ -207,7 +207,7 @@ void BhopManager::ForceAutoHop(int slot)
     controller.SetVelocity(velocity);
     // Leave the ground in the same frame: if the next movement command still sees FL_ONGROUND
     // it can re-ground and zero the vertical velocity for a tick - the "laggy jump" hitch.
-    controller.SetFlags(flags & ~Sdk::FL_ONGROUND);
+    controller.SetFlags(flags & ~Entities::FL_ONGROUND);
 
     // A forced hop never emits player_jump, so feed the boost chain by hand.
     OnPlayerJump(slot);

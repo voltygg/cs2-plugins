@@ -4,9 +4,9 @@
 #include "CheatCheckView.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Http/HttpClient.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
@@ -17,9 +17,9 @@
 namespace AdminSystem::Admin::CheatCheck
 {
 
-using VoltMod::Core::TimeUtils;
+using VoltMod::Core::Time;
 namespace Log = VoltMod::Core::Log;
-namespace ChatColors = VoltMod::Core::ChatColors;
+namespace ChatColors = VoltMod::Messaging::ChatColors;
 
 namespace
 {
@@ -31,7 +31,7 @@ constexpr int64_t MinResumeSec = 15;
 void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
-    if (pc.RoomCode.empty() || pc.PollInFlight || TimeUtils::Now() < pc.NextPollAtSec)
+    if (pc.RoomCode.empty() || pc.PollInFlight || Time::Now() < pc.NextPollAtSec)
         return;
 
     auto* target = _rt.Players.GetPlayerBySlot(targetSlot);
@@ -44,7 +44,7 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
     {
         // presenceUrl was removed by a config reload mid-check; back off a full interval
         // instead of re-attempting every tick.
-        pc.NextPollAtSec = TimeUtils::Now() + cfg.pollIntervalSec;
+        pc.NextPollAtSec = Time::Now() + cfg.pollIntervalSec;
         return;
     }
 
@@ -65,7 +65,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
 
     const auto& cfg = _config.GetCheatCheck().websiteAutoRoom;
     pc.PollInFlight = false;
-    pc.NextPollAtSec = TimeUtils::Now() + cfg.pollIntervalSec;
+    pc.NextPollAtSec = Time::Now() + cfg.pollIntervalSec;
 
     const auto present = ParsePresence(cfg, result);
     if (!present)
@@ -86,7 +86,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
     if (*present)
     {
         pc.SuspectJoined = true;
-        pc.PausedRemainingSec = std::max<int64_t>(pc.DeadlineSec - TimeUtils::Now(), 0);
+        pc.PausedRemainingSec = std::max<int64_t>(pc.DeadlineSec - Time::Now(), 0);
         ReplyToAdmin(pc, [this, &targetName, adminSlot = pc.AdminSlot] {
             return std::format("{}{}", ChatColors::Green,
                                _rt.Translations.Get("cheatCheck.suspectJoined", adminSlot, {{"name", targetName}}));
@@ -95,7 +95,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
     else
     {
         pc.SuspectJoined = false;
-        pc.DeadlineSec = TimeUtils::Now() + std::max(pc.PausedRemainingSec, MinResumeSec);
+        pc.DeadlineSec = Time::Now() + std::max(pc.PausedRemainingSec, MinResumeSec);
         ReplyToAdmin(pc, [this, &targetName, adminSlot = pc.AdminSlot] {
             return std::format("{}{}", ChatColors::Red,
                                _rt.Translations.Get("cheatCheck.suspectLeft", adminSlot, {{"name", targetName}}));

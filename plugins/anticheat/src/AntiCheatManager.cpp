@@ -58,10 +58,10 @@ void AntiCheatManager::Initialize()
             return;
         const bool enabled = newValue && std::string_view(newValue) != "0" && std::string_view(newValue) != "false";
         if (!enabled)
-            _cheatGraceUntil = TimeUtils::MonotonicSeconds() + SvCheatsPropagationGraceSec;
+            _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
         ResetEvidence();
     }));
-    _cheatGraceUntil = TimeUtils::MonotonicSeconds() + SvCheatsPropagationGraceSec;
+    _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
     RefreshTeamRules();
     LoadDetectionData();
@@ -238,7 +238,7 @@ void AntiCheatManager::LogStatus() const
 {
     Log::Info("[AC] {}", StatusSnapshot().dump());
 
-    const double now = TimeUtils::MonotonicSeconds();
+    const double now = Time::MonotonicSeconds();
     bool any = false;
     for (const VoltMod::Players::Player* player : _rt.Players.GetAllPlayers())
     {
@@ -322,7 +322,7 @@ bool AntiCheatManager::DetectionsEnabled() const
 bool AntiCheatManager::EnforceCheatCvars() const
 {
     const VoltMod::ConVarStorage& cheats = CheatsConVar();
-    return ShouldEnforceCheatCvars(cheats.IsValid() && cheats.GetBool(), TimeUtils::MonotonicSeconds(),
+    return ShouldEnforceCheatCvars(cheats.IsValid() && cheats.GetBool(), Time::MonotonicSeconds(),
                                    _cheatGraceUntil);
 }
 
@@ -340,7 +340,7 @@ bool AntiCheatManager::IsEligible(int slot)
     if (!player || player->IsBot())
         return false;
     VoltMod::PlayerController controller = _rt.Entities.Controller(slot);
-    return controller.IsValid() && !(controller.GetFlags() & VoltMod::Sdk::FL_FAKECLIENT);
+    return controller.IsValid() && !(controller.GetFlags() & VoltMod::Entities::FL_FAKECLIENT);
 }
 
 void AntiCheatManager::Report(int slot, const std::optional<Finding>& finding)

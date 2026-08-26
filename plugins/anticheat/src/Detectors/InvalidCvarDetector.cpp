@@ -31,7 +31,7 @@ void InvalidCvarDetector::Initialize()
     _pollTimer = _rt.Scheduler.Repeat(PollIntervalMs, [this] {
         if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::InvalidCvar))
             return;
-        const double now = TimeUtils::MonotonicSeconds();
+        const double now = Time::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
             SlotState& state = _slots[slot];
@@ -54,7 +54,7 @@ void InvalidCvarDetector::Initialize()
 void InvalidCvarDetector::OnFullyConnected(int slot)
 {
     if (InSlotRange(slot))
-        _slots[slot] = {.NextPoll = TimeUtils::MonotonicSeconds() + NextDelaySec()};
+        _slots[slot] = {.NextPoll = Time::MonotonicSeconds() + NextDelaySec()};
 }
 
 void InvalidCvarDetector::OnSlotChanged(int slot)
@@ -126,7 +126,7 @@ void InvalidCvarDetector::OnReply(int slot, VoltMod::ClientCvarStatus status, st
     InvalidCvarRules& rules = _manager.InvalidCvars();
     _manager.Report(slot, status == VoltMod::ClientCvarStatus::ValueIntact
                               ? rules.Observe(slot, name, value, enforce)
-                              : rules.ObserveMissing(slot, name, VoltMod::Sdk::ToString(status), enforce));
+                              : rules.ObserveMissing(slot, name, VoltMod::Hooks::ToString(status), enforce));
 }
 
 }  // namespace Anticheat

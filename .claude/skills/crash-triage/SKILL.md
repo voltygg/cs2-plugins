@@ -63,7 +63,7 @@ already corrupted memory.
 **If it appeared after changing a header under `include/VoltMod/`:**
 `VoltMod::Runtime` holds services **by value**, so a new member shifts
 everything after it. This codebase has a latent out-of-bounds write that only
-turns fatal at some `sizeof(Runtime)` values - +8 bytes on `Sdk::DamageHook`
+turns fatal at some `sizeof(Runtime)` values - +8 bytes on `Hooks::Damage`
 crashed admin-system on every load, in an unrelated hash lookup.
 
 1. `git stash push -- <header> <impl>`, rebuild, run. Crash gone → size is the

@@ -20,7 +20,7 @@ struct MapEntry
  * Why @p entry cannot be offered, or an empty string when it is fine.
  *
  * Validation only - it cannot tell whether a map file exists, which is the engine's job
- * (VoltMod::Sdk::MapService::IsValid).
+ * (VoltMod::Engine::Map::IsValid).
  *
  * Kept free of the framework and the SDK so it is unit-testable.
  */

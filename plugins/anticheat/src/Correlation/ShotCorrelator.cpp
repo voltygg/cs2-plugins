@@ -36,8 +36,8 @@ bool IsAirborne(const VoltMod::PlayerController& controller)
 {
     const uint32_t ground = controller.GetPawnField<uint32_t>("CBaseEntity", "m_hGroundEntity");
     const bool grounded = controller.GetPawnField<bool>("CCSPlayerPawn", "m_bOnGroundLastTick") ||
-                          ((controller.GetFlags() & VoltMod::Sdk::FL_ONGROUND) &&
-                           ground != VoltMod::Sdk::InvalidEntityHandle);
+                          ((controller.GetFlags() & VoltMod::Entities::FL_ONGROUND) &&
+                           ground != VoltMod::Entities::InvalidEntityHandle);
     const auto walk = static_cast<uint8_t>(VoltMod::MoveType::Walk);
     return !grounded && controller.GetPawnField<uint8_t>("CBaseEntity", "m_MoveType") == walk &&
            controller.GetPawnField<uint8_t>("CBaseEntity", "m_nActualMoveType") == walk;
@@ -144,7 +144,7 @@ void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)
 
     // This is the command the server is about to simulate, so ingest and stamp in the same pass.
     const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
-    const double now = TimeUtils::MonotonicSeconds();
+    const double now = Time::MonotonicSeconds();
     _manager.Correlator().OnSimulated(slot, sample.CmdNum, serverTick, eye, sample.Airborne);
     if (aimbot)
         _manager.Report(slot, _manager.Aimbot().OnSimulated(slot, sample.CmdNum, serverTick, eye, now));
@@ -189,7 +189,7 @@ void ShotCorrelator::OnFrame()
         return;
 
     const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
-    const double now = TimeUtils::MonotonicSeconds();
+    const double now = Time::MonotonicSeconds();
 
     std::array<PositionSample, MaxSlots> players{};
     CollectPositions(players);
@@ -251,7 +251,7 @@ void ShotCorrelator::OnWeaponFire(const VoltMod::Events::WeaponFire& fire)
     ShotView* shot = _manager.Correlator().OnWeaponFire(fire.Slot, fire.Weapon, static_cast<int32_t>(_rt.Clock.Tick()),
                                                         visible, hasVisible);
     if (shot && _manager.ModuleEnabled(DetectionKind::AntiAim))
-        _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, TimeUtils::MonotonicSeconds()));
+        _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, Time::MonotonicSeconds()));
 }
 
 void ShotCorrelator::OnBulletImpact(const VoltMod::Events::BulletImpact& impact)
@@ -293,7 +293,7 @@ void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
         _manager.SilentAim().OnShotUpdated(attacker, *shot);
     if (_manager.ModuleEnabled(DetectionKind::Aimbot))
         _manager.Report(attacker,
-                        _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, TimeUtils::MonotonicSeconds()));
+                        _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, Time::MonotonicSeconds()));
 }
 
 void ShotCorrelator::OnPlayerDeath(const VoltMod::Events::PlayerDeath& death)

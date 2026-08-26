@@ -7,7 +7,7 @@
 #include "Labels.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
@@ -22,7 +22,7 @@
 namespace AdminSystem::Admin::Menu
 {
 
-using VoltMod::Core::StringUtils;
+using VoltMod::Core::Strings;
 using VoltMod::Menu::MenuBuilder;
 
 namespace
@@ -59,7 +59,7 @@ void StartUnmuteConfirm(App& app, int adminSlot, MuteRow row)
                 rows.emplace_back(tr.Get("punish.target", slot), r.Name);
                 rows.emplace_back(tr.Get(r.IsVoice ? "action.voiceMute" : "action.textMute", slot), "");
                 rows.emplace_back(tr.Get("punish.duration", slot), ExpiryLabel(tr, r.ExpiresAt, slot));
-                rows.emplace_back(tr.Get("punish.reason", slot), StringUtils::TruncateUtf8(r.Reason, 40));
+                rows.emplace_back(tr.Get("punish.reason", slot), Strings::TruncateUtf8(r.Reason, 40));
                 return rows;
             },
             [&app](int slot) { return app.Runtime.Translations.Get("punish.confirm", slot); },
@@ -92,7 +92,7 @@ void AppendMuteRows(App& app, MenuBuilder& builder, const std::vector<TMute>& mu
     {
         MuteRow row{.Id = mute.Id,
                     .IsVoice = isVoice,
-                    .Name = StringUtils::DisplayNameOr(mute.TargetSteamId, mute.TargetName),
+                    .Name = Strings::DisplayNameOr(mute.TargetSteamId, mute.TargetName),
                     .ExpiresAt = mute.ExpiresAt,
                     .Reason = mute.Reason};
 

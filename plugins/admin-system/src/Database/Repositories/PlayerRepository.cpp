@@ -1,12 +1,12 @@
 #include "PlayerRepository.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 
 namespace AdminSystem::Database
 {
 
-using VoltMod::Core::TimeUtils;
+using VoltMod::Core::Time;
 
 void PlayerRepository::RecordConnect(int64_t steamId, const std::string& name, const std::string& ipAddress)
 {
@@ -20,7 +20,7 @@ void PlayerRepository::RecordConnect(int64_t steamId, const std::string& name, c
              "ON CONFLICT (steam_id) DO UPDATE SET "
              "name = EXCLUDED.name, ip_address = EXCLUDED.ip_address, last_seen = EXCLUDED.last_seen, "
              "total_connections = players.total_connections + 1",
-             pqxx::params{steamId, name, ipAddress, TimeUtils::Now()});
+             pqxx::params{steamId, name, ipAddress, Time::Now()});
 }
 
 void PlayerRepository::RecordDisconnect(int64_t steamId, const std::string& name, int64_t sessionSeconds)
@@ -31,7 +31,7 @@ void PlayerRepository::RecordDisconnect(int64_t steamId, const std::string& name
     _db.Exec("player_record_disconnect",
              "UPDATE players SET name = $2, last_seen = $3, total_playtime = total_playtime + $4 "
              "WHERE steam_id = $1",
-             pqxx::params{steamId, name, TimeUtils::Now(), sessionSeconds > 0 ? sessionSeconds : int64_t{0}});
+             pqxx::params{steamId, name, Time::Now(), sessionSeconds > 0 ? sessionSeconds : int64_t{0}});
 }
 
 }  // namespace AdminSystem::Database

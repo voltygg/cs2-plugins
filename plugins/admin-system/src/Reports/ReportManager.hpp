@@ -1,7 +1,7 @@
 #pragma once
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/SlotThrottle.hpp>
+#include <VoltMod/Core/Throttle.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <cstdint>
 #include <functional>

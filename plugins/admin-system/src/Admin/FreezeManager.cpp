@@ -6,13 +6,13 @@
 #include "../Database/Repositories/AdminActivityRepository.hpp"
 #include "AdminManager.hpp"
 
-#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 #include <format>
 
 namespace AdminSystem::Admin
@@ -20,8 +20,8 @@ namespace AdminSystem::Admin
 
 namespace Db = AdminSystem::Database;
 namespace Log = VoltMod::Core::Log;
-namespace ChatColors = VoltMod::Core::ChatColors;
-using VoltMod::Core::TimeUtils;
+namespace ChatColors = VoltMod::Messaging::ChatColors;
+using VoltMod::Core::Time;
 
 void FreezeManager::RefreshFromDatabase()
 {
@@ -110,7 +110,7 @@ bool FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_
         return false;
 
     _frozen[steamId] = {
-        .SteamId = steamId, .Name = name, .FrozenAt = TimeUtils::Now(), .FrozenBy = bySteamId, .Reason = reason};
+        .SteamId = steamId, .Name = name, .FrozenAt = Time::Now(), .FrozenBy = bySteamId, .Reason = reason};
 
     RecordAudit(bySteamId, byName, "freeze_admin", steamId, name, reason);
     NotifyFrozen(steamId);
@@ -120,7 +120,7 @@ bool FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_
 void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, const std::string& adminName)
 {
     const auto& cfg = _config.GetAbuseProtection();
-    int64_t windowStart = TimeUtils::Now() - static_cast<int64_t>(cfg.windowMinutes) * 60;
+    int64_t windowStart = Time::Now() - static_cast<int64_t>(cfg.windowMinutes) * 60;
 
     // FIFO on the worker: this count sees the audit insert that triggered the check.
     Db::AdminActivityRepository{_db}.CountSinceAsync(

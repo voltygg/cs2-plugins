@@ -32,7 +32,7 @@ extern const Action Goto;
  *  by the menu layer; this entry point assumes both are already resolved. */
 void Swap(App& app, int adminSlot, int firstSlot, int secondSlot);
 
-/** Param is the destination team (VoltMod::Sdk::TeamSpectator/TeamT/TeamCT); out-of-range values are ignored. */
+/** Param is the destination team (VoltMod::Entities::TeamSpectator/TeamT/TeamCT); out-of-range values are ignored. */
 extern const ParamAction ChangeTeam;
 
 /** Apply upward velocity and three seconds of fall protection. */

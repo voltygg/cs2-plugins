@@ -21,7 +21,7 @@ class MapCycleState;
  * The map vote an admin opens from the Map menu.
  *
  * App-owned. Players answer through the game's own yes/no panel, so there is no plugin-side
- * tally to keep: the engine collects the ballots and @ref VoltMod::Sdk::PanoramaVote reports
+ * tally to keep: the engine collects the ballots and @ref VoltMod::Messaging::Vote reports
  * them. A passing vote queues the map for the end of the round rather than changing level
  * mid-round.
  */

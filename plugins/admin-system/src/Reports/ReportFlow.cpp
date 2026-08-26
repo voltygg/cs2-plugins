@@ -6,12 +6,12 @@
 #include "ReportManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-using VoltMod::Core::StringUtils;
+using VoltMod::Core::Strings;
 
 namespace AdminSystem::Reports
 {
@@ -113,7 +113,7 @@ void StartReportFlow(App& app, int reporterSlot, int targetSlot)
                           std::vector<std::pair<std::string, std::string>> rows;
                           rows.emplace_back(tr.Get("report.target", slot), pending.TargetName);
                           rows.emplace_back(tr.Get("report.reason", slot),
-                                            StringUtils::TruncateUtf8(pending.ReasonText, 40));
+                                            Strings::TruncateUtf8(pending.ReasonText, 40));
                           return rows;
                       },
                       [&app](int slot) { return app.Runtime.Translations.Get("report.confirm", slot); },

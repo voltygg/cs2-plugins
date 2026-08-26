@@ -6,13 +6,13 @@
 #include "Config.hpp"
 
 #include <VoltMod/Commands/CommandManager.hpp>
-#include <VoltMod/Core/ChatColors.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Messaging/ChatInputCapture.hpp>
-#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
+#include <VoltMod/Hooks/ChatInput.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 #include <format>
 #include <string>
 
@@ -21,6 +21,7 @@ namespace AdminSystem::Core
 
 using namespace VoltMod::Players;
 using namespace VoltMod::Core;
+namespace ChatColors = VoltMod::Messaging::ChatColors;
 
 namespace
 {
@@ -28,7 +29,7 @@ namespace
 /** Localized expiry suffix for mute notices addressed to @p slot. */
 std::string MuteExpiryText(VoltMod::Translations& tr, int64_t expiresAt, int slot)
 {
-    return TimeUtils::FormatExpiry(expiresAt, TimeUtils::Now(), tr.Get("muteNotice.permanent", slot),
+    return Time::FormatExpiry(expiresAt, Time::Now(), tr.Get("muteNotice.permanent", slot),
                                    tr.Get("muteNotice.expiresIn", slot));
 }
 
@@ -98,7 +99,7 @@ bool PlayerChat::HandleSay(Player* player, std::string_view message, bool isSayT
     if (_punishments.IsTextMuted(steamId))
     {
         int slot = player->GetSlot();
-        if (_textMuteNotice.TryAcquire(slot, TimeUtils::Now()))
+        if (_textMuteNotice.TryAcquire(slot, Time::Now()))
             ReplyMuteNotice(slot, "muteNotice.text", _punishments.GetActiveTextMute(steamId));
         return true;
     }
@@ -119,7 +120,7 @@ void PlayerChat::NotifyVoiceMuted(Player* player)
         return;
 
     int slot = player->GetSlot();
-    if (!_voiceMuteNotice.TryAcquire(slot, TimeUtils::Now()))
+    if (!_voiceMuteNotice.TryAcquire(slot, Time::Now()))
         return;
 
     ReplyMuteNotice(slot, "muteNotice.voice", _punishments.GetActiveVoiceMute(player->GetSteamID()));

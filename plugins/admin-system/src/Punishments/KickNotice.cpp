@@ -2,16 +2,16 @@
 
 #include "../Core/Config.hpp"
 
-#include <VoltMod/Core/StringUtils.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Strings.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <format>
 
 namespace AdminSystem::Punishments
 {
 
-using VoltMod::Core::StringUtils;
-using VoltMod::Core::TimeUtils;
+using VoltMod::Core::Strings;
+using VoltMod::Core::Time;
 
 namespace
 {
@@ -24,7 +24,7 @@ std::string BuildBanNotice(VoltMod::Core::Translations& translations, const Core
 {
     std::string expiry;
     if (appeal.showExpiry)
-        expiry = TimeUtils::FormatExpiry(expiresAt, TimeUtils::Now(), translations.Get("kickNotice.permanent", slot),
+        expiry = Time::FormatExpiry(expiresAt, Time::Now(), translations.Get("kickNotice.permanent", slot),
                                          translations.Get("kickNotice.expiresIn", slot));
 
     std::string appealLine;
@@ -32,13 +32,13 @@ std::string BuildBanNotice(VoltMod::Core::Translations& translations, const Core
     {
         // The SteamID lets an appeal form identify the case without the player copying anything
         // down; the row id is not substituted because the insert is async and is still 0 here.
-        auto url = StringUtils::SubstituteTokens(appeal.url, {{"steamId", std::to_string(targetSteamId)}});
+        auto url = Strings::SubstituteTokens(appeal.url, {{"steamId", std::to_string(targetSteamId)}});
         appealLine = std::format("{} {}", translations.Get("kickNotice.appeal", slot), url);
     }
 
     // Empty pieces are dropped rather than joined: an unconfigured appeal URL or a suppressed
     // expiry must not leave a dangling separator behind it.
-    return StringUtils::JoinNonEmpty({reason, expiry, appealLine}, PieceSeparator);
+    return Strings::JoinNonEmpty({reason, expiry, appealLine}, PieceSeparator);
 }
 
 }  // namespace AdminSystem::Punishments

@@ -8,11 +8,11 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Engine/GameInterfaces.hpp>
-#include <VoltMod/Sdk/Entity/PlayerController.hpp>
+#include <VoltMod/Engine/Interfaces.hpp>
+#include <VoltMod/Entities/PlayerController.hpp>
 #include <algorithm>
 #include <utility>
 
@@ -56,9 +56,9 @@ void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, bool muted
 void StampTimes(auto& entity)
 {
     if (entity.CreatedAt == 0)
-        entity.CreatedAt = TimeUtils::Now();
+        entity.CreatedAt = Time::Now();
     if (entity.Duration > 0 && entity.ExpiresAt == 0)
-        entity.ExpiresAt = TimeUtils::GetExpirationTime(entity.Duration);
+        entity.ExpiresAt = Time::GetExpirationTime(entity.Duration);
 }
 
 }  // namespace
@@ -221,7 +221,7 @@ bool PunishmentManager::IssueTextMute(TextMute& mute)
 bool PunishmentManager::IssueWarning(Warning& warning)
 {
     if (warning.CreatedAt == 0)
-        warning.CreatedAt = TimeUtils::Now();
+        warning.CreatedAt = Time::Now();
 
     WarningRepository repo{_db};
     repo.CreateAsync(warning);

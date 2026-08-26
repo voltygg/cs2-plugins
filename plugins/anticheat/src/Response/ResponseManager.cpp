@@ -44,7 +44,7 @@ void ResponseManager::Reset()
 {
     _latch.Reset();
     // Keyed by SteamID, so without this the map grows for the lifetime of the server.
-    _alertThrottle.Prune(VoltMod::TimeUtils::Now(), AlertThrottleSec);
+    _alertThrottle.Prune(VoltMod::Time::Now(), AlertThrottleSec);
 }
 
 Mode ResponseManager::CurrentMode() const
@@ -77,7 +77,7 @@ void ResponseManager::Handle(int slot, const Finding& finding)
     _reporter.Report(slot, name, steamId, finding, decision.Outcome);
 
     if (decision.SendAlert &&
-        _alertThrottle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, VoltMod::TimeUtils::Now()))
+        _alertThrottle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, VoltMod::Time::Now()))
     {
         if (auto* admin = AdminActions(_rt))
             admin->AlertAdmins(steamId, TokenName(finding.Kind), 1);

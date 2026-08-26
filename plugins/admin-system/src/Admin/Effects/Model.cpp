@@ -5,14 +5,14 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Entity/PawnOps.hpp>
-#include <VoltMod/Sdk/Entity/PlayerController.hpp>
+#include <VoltMod/Entities/PawnOps.hpp>
+#include <VoltMod/Entities/PlayerController.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
-using VoltMod::Sdk::PlayerController;
+using VoltMod::Entities::PlayerController;
 
 namespace
 {
@@ -24,9 +24,9 @@ constexpr const char* DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
 // Spectators and unassigned players have no restore model.
 const char* DefaultModelForTeam(int team)
 {
-    if (team == VoltMod::Sdk::TeamT)
+    if (team == VoltMod::Entities::TeamT)
         return DefaultModelT;
-    if (team == VoltMod::Sdk::TeamCT)
+    if (team == VoltMod::Entities::TeamCT)
         return DefaultModelCt;
     return nullptr;
 }

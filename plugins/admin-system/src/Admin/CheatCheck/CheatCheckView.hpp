@@ -27,7 +27,7 @@ public:
     {}
 
     /** Build the center-HTML panel for @p slot. Pure: the caller decides when to send it, which
-     *  is what lets Runtime::PersistentCenterHtml own the re-send loop. */
+     *  is what lets Runtime::CenterHtml own the re-send loop. */
     std::string PanelHtml(int slot, const PendingCheck& pc) const;
 
     /** Send the one-off chat instructions. The panel is on its own refresh loop. */

@@ -2,18 +2,19 @@
 
 #include "Config.hpp"
 
-#include <VoltMod/Core/ChatColors.hpp>
-#include <VoltMod/Core/StringUtils.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
+#include <VoltMod/Core/Strings.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 #include <format>
 
 namespace AdminSystem::Core
 {
 
 using namespace VoltMod::Core;
+namespace ChatColors = VoltMod::Messaging::ChatColors;
 
 namespace
 {
@@ -52,7 +53,7 @@ std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorN
     for (const auto& [token, name] : nameTokens)
         colored.emplace(token, std::format("{}{}{}", style.NameColor, name, style.PhraseColor));
 
-    return FormatAdminLine(style, actorName, StringUtils::SubstituteTokens(std::string(phraseTemplate), colored));
+    return FormatAdminLine(style, actorName, Strings::SubstituteTokens(std::string(phraseTemplate), colored));
 }
 
 }  // namespace
@@ -86,7 +87,7 @@ void ChatService::BroadcastPunishment(std::string_view action, std::string_view 
     std::string durationSuffix;
     if (isTimedAction)
     {
-        std::string duration = (durationSec > 0) ? TimeUtils::FormatDuration(durationSec) : "permanent";
+        std::string duration = (durationSec > 0) ? Time::FormatDuration(durationSec) : "permanent";
         durationSuffix = std::format(" ({})", duration);
     }
 

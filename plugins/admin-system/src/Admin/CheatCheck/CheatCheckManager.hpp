@@ -5,8 +5,8 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Http/HttpResult.hpp>
-#include <VoltMod/Sdk/Entity/Entity.hpp>
-#include <VoltMod/Sdk/Entity/MoveType.hpp>
+#include <VoltMod/Entities/Entity.hpp>
+#include <VoltMod/Entities/MoveType.hpp>
 #include <array>
 #include <cstdint>
 #include <functional>
@@ -73,7 +73,7 @@ private:
     CheatCheckView _view{_rt, _config, _chat};
     /** Owns the panel re-send loop; CS2 drops center-HTML within a second or two. Declared after
      *  _view because its render callback reads through it. */
-    VoltMod::PersistentCenterHtml _panel{_rt.Messages, _rt.Scheduler};
+    VoltMod::CenterHtml _panel{_rt.Messages, _rt.Scheduler};
 
     void Tick(int targetSlot);
     void Expire(int targetSlot);

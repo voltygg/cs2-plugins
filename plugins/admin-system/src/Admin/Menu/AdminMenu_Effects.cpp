@@ -11,7 +11,7 @@
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Entity/PlayerController.hpp>
+#include <VoltMod/Entities/PlayerController.hpp>
 #include <format>
 
 namespace AdminSystem::Admin::Menu

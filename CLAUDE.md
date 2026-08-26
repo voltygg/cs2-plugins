@@ -117,7 +117,8 @@ Current patterns:
 - Bind stable services in constructors and App-owned objects named by behaviour
   (Actions, PlayerEffects, Runtime.Pawns); pass request data such as slots and
   descriptors to methods. Do not add generic Services/Env bags. `Runtime&` may
-  reach plugin action handlers through `ActionContext::Rt` but never Sdk code.
+  reach plugin action handlers through `ActionContext::Rt` but never the
+  engine-facing modules (Engine, Entities, Events, Messaging, Hooks).
 - Keep files near 300-350 lines when that improves readability.
 
 ## Commenting and documentation

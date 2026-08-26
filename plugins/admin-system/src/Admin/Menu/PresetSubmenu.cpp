@@ -9,7 +9,7 @@
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Entity/PawnOps.hpp>
+#include <VoltMod/Entities/PawnOps.hpp>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -30,9 +30,9 @@ std::shared_ptr<VoltMod::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, in
         });
     };
 
-    addTeam(tr.Get("team.ct", adminSlot), VoltMod::Sdk::TeamCT);
-    addTeam(tr.Get("team.t", adminSlot), VoltMod::Sdk::TeamT);
-    addTeam(tr.Get("team.spec", adminSlot), VoltMod::Sdk::TeamSpectator);
+    addTeam(tr.Get("team.ct", adminSlot), VoltMod::Entities::TeamCT);
+    addTeam(tr.Get("team.t", adminSlot), VoltMod::Entities::TeamT);
+    addTeam(tr.Get("team.spec", adminSlot), VoltMod::Entities::TeamSpectator);
 
     return builder.Build();
 }

@@ -6,7 +6,7 @@
 #include "PunishmentManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Sdk/Entity/PlayerController.hpp>
+#include <VoltMod/Entities/PlayerController.hpp>
 #include <format>
 
 namespace AdminSystem::Punishments

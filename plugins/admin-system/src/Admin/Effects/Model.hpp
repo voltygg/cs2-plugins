@@ -22,7 +22,7 @@ inline constexpr const char* ChickenModelPath = "models/chicken/chicken.vmdl";
 const std::vector<FunModel>& FunModels();
 
 /** Queue every fun model plus the team-default restore models for precache. Call once in OnLoad;
- *  the paths only reach clients from the NEXT map load (see PrecacheService). */
+ *  the paths only reach clients from the NEXT map load (see Precache). */
 void PrecacheModels(VoltMod::Runtime& runtime);
 
 }  // namespace AdminSystem::Admin::Effects

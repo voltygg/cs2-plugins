@@ -22,7 +22,7 @@ namespace Bhop
  * to every client and the whole feature is client-predicted (ping-free). "grants" mode leaves the
  * server untouched and enables bhop per player: the client gets the convar values via
  * ReplicateToClient (its prediction auto-jumps) while the server flips the same convars only
- * around that player's RunCommand via the framework MovementHook.
+ * around that player's RunCommand via the framework's Movement hook.
  */
 class BhopManager
 {

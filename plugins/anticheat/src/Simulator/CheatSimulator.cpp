@@ -120,7 +120,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     state = {};
     state.kind = kind;
     state.param = args.ArgC() > 2 ? std::strtof(args.Arg(2), nullptr) : defaultParam;
-    state.expireAt = TimeUtils::MonotonicSeconds() + SimulationSeconds;
+    state.expireAt = Time::MonotonicSeconds() + SimulationSeconds;
     Log::Info("Simulating slot {} (param {:.1f}) for {:.0f}s.", slot, state.param, SimulationSeconds);
 }
 
@@ -175,7 +175,7 @@ void CheatSimulator::OnFilter(int slot, VoltMod::UserCmdView& cmd)
     auto& state = _sim[slot];
     if (state.kind == Kind::Off)
         return;
-    if (TimeUtils::MonotonicSeconds() > state.expireAt)
+    if (Time::MonotonicSeconds() > state.expireAt)
     {
         state.kind = Kind::Off;
         return;
@@ -217,7 +217,7 @@ void CheatSimulator::OnFilter(int slot, VoltMod::UserCmdView& cmd)
         cmd.InputHistoryTotalCount = 1;
         cmd.InputHistorySamples[0] = {
             .HasViewAngles = true, .ViewPitch = cmd.ViewPitch, .ViewYaw = cmd.ViewYaw + state.param};
-        cmd.Attack1StartHistoryIndex = (cmd.ButtonsHeld & VoltMod::Sdk::IN_ATTACK) != 0 ? 0 : -1;
+        cmd.Attack1StartHistoryIndex = (cmd.ButtonsHeld & VoltMod::Entities::IN_ATTACK) != 0 ? 0 : -1;
         break;
     case Kind::Off:
         break;

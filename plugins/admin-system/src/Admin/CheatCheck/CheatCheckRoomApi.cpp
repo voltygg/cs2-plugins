@@ -3,7 +3,7 @@
 #include "../../Core/Config.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Strings.hpp>
 #include <map>
 #include <utility>
 
@@ -44,11 +44,11 @@ std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom&
     if (code.empty())
         return std::nullopt;
 
-    using VoltMod::Core::StringUtils;
+    using VoltMod::Core::Strings;
     return RoomUrls{
         .PlayerUrl = cfg.playerUrlTemplate.empty()
                          ? code
-                         : StringUtils::SubstituteTokens(cfg.playerUrlTemplate, {{"value", code}}),
+                         : Strings::SubstituteTokens(cfg.playerUrlTemplate, {{"value", code}}),
         .CheckerUrl = ExtractField(result, cfg.checkerUrlField, cfg.checkerUrlTemplate),
         .RoomCode = std::move(code),
     };

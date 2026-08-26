@@ -31,7 +31,7 @@ void NamechangerDetector::OnSettingsChanged(VoltMod::Players::Player* player)
 
     const int slot = player->GetSlot();
     _manager.Report(slot,
-                    _manager.Namechanger().OnNameChanged(slot, CurrentName(player), TimeUtils::MonotonicSeconds()));
+                    _manager.Namechanger().OnNameChanged(slot, CurrentName(player), Time::MonotonicSeconds()));
 }
 
 }  // namespace Anticheat

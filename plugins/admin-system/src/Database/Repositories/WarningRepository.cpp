@@ -1,7 +1,7 @@
 #include "WarningRepository.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <utility>
 
@@ -9,7 +9,7 @@ namespace AdminSystem::Database
 {
 
 using namespace VoltMod::Database;
-using VoltMod::Core::TimeUtils;
+using VoltMod::Core::Time;
 
 void WarningRepository::CreateAsync(const Warning& warning)
 {
@@ -21,7 +21,7 @@ void WarningRepository::CountActiveAsync(int64_t steamId, std::function<void(int
     _db.Query("count_active_warnings",
               "SELECT COUNT(*) AS total FROM warnings WHERE target_steam_id = $1 AND is_active = true "
               "AND (expires_at = 0 OR expires_at > $2)",
-              pqxx::params{steamId, TimeUtils::Now()},
+              pqxx::params{steamId, Time::Now()},
               [onDone = std::move(onDone)](VoltMod::DbResult<pqxx::result> result) {
                   if (result && !result->empty() && onDone)
                       onDone((*result)[0]["total"].as<int>());

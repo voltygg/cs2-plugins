@@ -87,7 +87,7 @@ void FunMode::GiveKnifeOnly(int slot)
         return;
 
     _rt.Items.StripWeapons(controller, false);
-    _rt.Items.Give(controller, controller.GetTeam() == VoltMod::Sdk::TeamT ? KnifeT : KnifeCT);
+    _rt.Items.Give(controller, controller.GetTeam() == VoltMod::Entities::TeamT ? KnifeT : KnifeCT);
 }
 
 }  // namespace AdminSystem::Fun

@@ -3,7 +3,7 @@
 // Plain adapter-to-core data. Keep this header SDK-free for unit tests.
 
 #include <VoltMod/Core/Slot.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <cmath>
 #include <cstdint>
 #include <optional>
@@ -25,9 +25,9 @@ inline constexpr bool InSlotRange(int slot)
  */
 inline constexpr float TickRate = 64.0f;
 
-/** TimeUtils::MonotonicSeconds() drives the rolling evidence windows: real elapsed time, not game
- *  time, and not the wall clock TimeUtils::Now() reports. */
-using VoltMod::Core::TimeUtils;
+/** Time::MonotonicSeconds() drives the rolling evidence windows: real elapsed time, not game
+ *  time, and not the wall clock Time::Now() reports. */
+using VoltMod::Core::Time;
 
 struct Vec3
 {

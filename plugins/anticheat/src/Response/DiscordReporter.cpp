@@ -22,7 +22,7 @@ void DiscordReporter::Report(int slot, const std::string& playerName, int64_t st
     const auto& settings = _config.Get().anticheat;
     if (settings.webhook.url.empty())
         return;
-    if (!_throttle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, VoltMod::TimeUtils::Now()))
+    if (!_throttle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, VoltMod::Time::Now()))
         return;
 
     nlohmann::json embed{

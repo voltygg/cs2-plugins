@@ -3,7 +3,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 
 namespace AdminSystem::Admin::Effects
 {

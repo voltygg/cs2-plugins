@@ -3,12 +3,12 @@
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Config.hpp"
 
-#include <VoltMod/Core/ChatColors.hpp>
-#include <VoltMod/Core/StringUtils.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
+#include <VoltMod/Core/Strings.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 #include <format>
 #include <string>
 
@@ -17,11 +17,11 @@ namespace AdminSystem::Admin::CheatCheck
 
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
-using VoltMod::Core::StringUtils;
-using VoltMod::Core::TimeUtils;
+using VoltMod::Core::Strings;
+using VoltMod::Core::Time;
 using VoltMod::Players::PlayerManager;
-using VoltMod::Sdk::MessageSystem;
-namespace ChatColors = VoltMod::Core::ChatColors;
+using VoltMod::Messaging::Messages;
+namespace ChatColors = VoltMod::Messaging::ChatColors;
 
 namespace
 {
@@ -57,7 +57,7 @@ std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
 
     auto& tr = _rt.Translations;
 
-    int64_t remain = pc.DeadlineSec - TimeUtils::Now();
+    int64_t remain = pc.DeadlineSec - Time::Now();
     int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
 
     const PanelState state = PanelStateFor(pc);
@@ -75,7 +75,7 @@ std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
         body = tr.Get("cheatCheck.provideLink", slot);
         break;
     case PanelState::HasUrl:
-        body = std::format("{}<br>{}", tr.Get("cheatCheck.joinHere", slot), StringUtils::EscapeHtml(pc.ResolvedUrl));
+        body = std::format("{}<br>{}", tr.Get("cheatCheck.joinHere", slot), Strings::EscapeHtml(pc.ResolvedUrl));
         break;
     case PanelState::Generic:
         body = tr.Get("cheatCheck.instructions", slot);

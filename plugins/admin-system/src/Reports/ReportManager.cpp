@@ -5,12 +5,12 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <algorithm>
 #include <utility>
 
-using VoltMod::Core::TimeUtils;
+using VoltMod::Core::Time;
 
 namespace AdminSystem::Reports
 {
@@ -38,12 +38,12 @@ ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<in
 
 ReportGate ReportManager::CanReport(int64_t reporterSteamId) const
 {
-    return EvaluateGate(reporterSteamId, std::nullopt, TimeUtils::Now());
+    return EvaluateGate(reporterSteamId, std::nullopt, Time::Now());
 }
 
 bool ReportManager::CanReport(int64_t reporterSteamId, int64_t targetSteamId) const
 {
-    return static_cast<bool>(EvaluateGate(reporterSteamId, targetSteamId, TimeUtils::Now()));
+    return static_cast<bool>(EvaluateGate(reporterSteamId, targetSteamId, Time::Now()));
 }
 
 void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Player& target,
@@ -52,7 +52,7 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
 {
     const int64_t reporterSteamId = reporter.GetSteamID();
     const int64_t targetSteamId = target.GetSteamID();
-    const int64_t now = TimeUtils::Now();
+    const int64_t now = Time::Now();
 
     if (!EvaluateGate(reporterSteamId, targetSteamId, now))
     {

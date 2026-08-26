@@ -26,7 +26,7 @@ inline constexpr int64_t MapChangeAnnounceMs = 5000;
 /**
  * The configured map list, the pending next map, and the level change itself.
  *
- * App-owned. Holds the list rather than VoltMod::Sdk::MapService, which is deliberately
+ * App-owned. Holds the list rather than VoltMod::Engine::Map, which is deliberately
  * listless: which maps an operator offers is configuration, not engine state.
  */
 class MapCycleState

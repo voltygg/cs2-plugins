@@ -16,7 +16,7 @@
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Entity/Entity.hpp>
+#include <VoltMod/Entities/Entity.hpp>
 #include <format>
 #include <memory>
 #include <string>
@@ -25,7 +25,7 @@ namespace AdminSystem::Admin::Menu
 {
 
 using VoltMod::Menu::MenuBuilder;
-using namespace VoltMod::Sdk;
+using namespace VoltMod::Entities;
 
 namespace
 {
@@ -123,7 +123,7 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
         .AddPresetChoiceRow("action.armor", "AP", ArmorPresets, Actions::SetArmor)
         .AddPresetChoiceRow("action.speed", "%", SpeedPresets, Actions::SetSpeed, SpeedDefault)
         .AddPresetChoiceRow("action.size", "%", SizePresets, Actions::SetSize, SizeDefault)
-        .AddStateToggleRow("action.godmode", VoltMod::HasPawnFlag(VoltMod::Sdk::FL_GODMODE), Actions::Godmode)
+        .AddStateToggleRow("action.godmode", VoltMod::HasPawnFlag(VoltMod::Entities::FL_GODMODE), Actions::Godmode)
         .AddActionRow("action.bury", Actions::Bury)
         .AddActionRow("action.unbury", Actions::Unbury);
 

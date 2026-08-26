@@ -1,6 +1,6 @@
 #pragma once
 
-#include <VoltMod/Core/SlotThrottle.hpp>
+#include <VoltMod/Core/Throttle.hpp>
 #include <cstdint>
 #include <optional>
 #include <string_view>
@@ -83,8 +83,8 @@ private:
     template <class TMute>
     void ReplyMuteNotice(int slot, const char* noticeKey, const std::optional<TMute>& mute);
 
-    VoltMod::SlotThrottle _voiceMuteNotice{MuteNoticeIntervalSec};
-    VoltMod::SlotThrottle _textMuteNotice{MuteNoticeIntervalSec};
+    VoltMod::Throttle<int> _voiceMuteNotice{MuteNoticeIntervalSec};
+    VoltMod::Throttle<int> _textMuteNotice{MuteNoticeIntervalSec};
 };
 
 }  // namespace AdminSystem::Core

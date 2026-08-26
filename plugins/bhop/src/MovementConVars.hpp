@@ -23,7 +23,7 @@ namespace Bhop
 class MovementConVars
 {
 public:
-    explicit MovementConVars(VoltMod::ConVarService& conVars) : _conVars(conVars) {}
+    explicit MovementConVars(VoltMod::ConVars& conVars) : _conVars(conVars) {}
 
     // _globalLease's destructor restores whatever ApplyGlobal took, so unload leaves the
     // server's convars as we found them.
@@ -63,7 +63,7 @@ private:
 
     void RestoreGlobal();
 
-    VoltMod::ConVarService& _conVars;
+    VoltMod::ConVars& _conVars;
     /** The server-wide take-over for "enabled" mode; the saved values and their restore live here.
      *  The raw flips and per-client replication below are bhop-specific and stay put. */
     VoltMod::ConVarLease _globalLease{_conVars};

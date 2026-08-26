@@ -3,13 +3,13 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Visibility/GlowVision.hpp>
+#include <VoltMod/Hooks/GlowVision.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
-using VoltMod::Sdk::GlowVision;
+using VoltMod::Hooks::GlowVision;
 
 const Effect Wallhack{.Permission = Flag(Permission::Wallhack),
                       .Id = static_cast<int>(EffectId::Wallhack),

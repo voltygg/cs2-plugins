@@ -2,13 +2,13 @@
 #include "../../Core/ChatService.hpp"
 #include "Descriptors.hpp"
 
-#include <VoltMod/Sdk/Entity/PawnOps.hpp>
+#include <VoltMod/Entities/PawnOps.hpp>
 #include <mathlib/vector.h>
 
 namespace AdminSystem::Admin::Actions
 {
 
-namespace PawnOps = VoltMod::Sdk::PawnOps;
+namespace PawnOps = VoltMod::Entities::PawnOps;
 
 namespace
 {

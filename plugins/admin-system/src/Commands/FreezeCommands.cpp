@@ -6,7 +6,7 @@
 #include "Commands.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <format>
@@ -63,7 +63,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
         .Handler =
             [&app](CommandContext& c) {
                 int64_t targetSteamId = 0;
-                if (StringUtils::IsNumeric(c.Word))
+                if (Strings::IsNumeric(c.Word))
                 {
                     targetSteamId = std::stoll(c.Word);
                 }
@@ -72,7 +72,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
                     int matches = 0;
                     for (const auto& [steamId, frozen] : app.Freeze.Frozen())
                     {
-                        if (StringUtils::ContainsIgnoreCase(frozen.Name, c.Word))
+                        if (Strings::ContainsIgnoreCase(frozen.Name, c.Word))
                         {
                             targetSteamId = steamId;
                             ++matches;

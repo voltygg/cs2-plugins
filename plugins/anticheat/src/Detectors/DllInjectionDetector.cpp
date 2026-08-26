@@ -32,7 +32,7 @@ void DllInjectionDetector::Initialize()
         if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::DllInjection))
             return;
 
-        const double now = TimeUtils::MonotonicSeconds();
+        const double now = Time::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
             SlotState& state = _slots[slot];
@@ -56,7 +56,7 @@ void DllInjectionDetector::OnFullyConnected(int slot)
     if (!InSlotRange(slot))
         return;
     // The client's listener does not exist the instant it joins, so the first scan waits for it.
-    _slots[slot] = {.NextScan = TimeUtils::MonotonicSeconds() + DllInitialScanDelaySec};
+    _slots[slot] = {.NextScan = Time::MonotonicSeconds() + DllInitialScanDelaySec};
 }
 
 void DllInjectionDetector::OnSlotChanged(int slot)

@@ -8,7 +8,7 @@
 #include "Labels.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
@@ -25,7 +25,7 @@ namespace AdminSystem::Admin::Menu
 
 using namespace AdminSystem::Punishments;
 
-using VoltMod::Core::StringUtils;
+using VoltMod::Core::Strings;
 using VoltMod::Menu::MenuBuilder;
 using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 
@@ -94,7 +94,7 @@ PunishFlowT::Ptr MakeBaseFlow(App& app, PendingPunishment pending)
                 rows.emplace_back(tr.Get("punish.target", slot), p.TargetName);
                 if (IsTimed(p.Type))
                     rows.emplace_back(tr.Get("punish.duration", slot), DurationLabel(tr, p.DurationSec, slot));
-                rows.emplace_back(tr.Get("punish.reason", slot), StringUtils::TruncateUtf8(p.Reason, 40));
+                rows.emplace_back(tr.Get("punish.reason", slot), Strings::TruncateUtf8(p.Reason, 40));
                 return rows;
             },
             [&app](int slot) { return app.Runtime.Translations.Get("punish.confirm", slot); },

@@ -4,7 +4,7 @@
 #include "../AdminManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Menu/MenuManager.hpp>
@@ -28,7 +28,7 @@ using VoltMod::Players::PlayerManager;
 namespace
 {
 
-namespace ChatColors = VoltMod::Core::ChatColors;
+namespace ChatColors = VoltMod::Messaging::ChatColors;
 
 // Explicit keys keep compound color names stable across palette changes.
 const std::unordered_map<std::string_view, std::string_view>& ColorLabelKeys()

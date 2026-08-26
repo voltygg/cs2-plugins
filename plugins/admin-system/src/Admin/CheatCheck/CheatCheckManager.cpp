@@ -7,17 +7,17 @@
 #include "CheatCheckView.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/ChatColors.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Scheduler.hpp>
-#include <VoltMod/Core/TimeUtils.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Http/HttpClient.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Entity/PawnOps.hpp>
-#include <VoltMod/Sdk/Entity/PlayerController.hpp>
-#include <VoltMod/Sdk/Messaging/UserMessage.hpp>
+#include <VoltMod/Entities/PawnOps.hpp>
+#include <VoltMod/Entities/PlayerController.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 #include <format>
 
 namespace AdminSystem::Admin::CheatCheck
@@ -26,13 +26,13 @@ namespace AdminSystem::Admin::CheatCheck
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
 using VoltMod::Core::Scheduler;
-using VoltMod::Core::TimeUtils;
+using VoltMod::Core::Time;
 using VoltMod::Players::PlayerManager;
-using VoltMod::Sdk::MessageSystem;
-using VoltMod::Sdk::MoveType;
-using VoltMod::Sdk::PlayerController;
+using VoltMod::Messaging::Messages;
+using VoltMod::Entities::MoveType;
+using VoltMod::Entities::PlayerController;
 namespace Log = VoltMod::Core::Log;
-namespace ChatColors = VoltMod::Core::ChatColors;
+namespace ChatColors = VoltMod::Messaging::ChatColors;
 
 namespace
 {
@@ -80,7 +80,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     pc.AdminSlot = adminSlot;
     pc.AdminSteamId = admin->GetSteamID();
     pc.Mode = ParseMode(cfg.mode);
-    pc.DeadlineSec = TimeUtils::Now() + cfg.timeoutSec;
+    pc.DeadlineSec = Time::Now() + cfg.timeoutSec;
     pc.ResolvedUrl.clear();
     pc.AwaitingUrl = false;
     pc.RequestSeq = _seq++;
@@ -89,7 +89,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 
     targetCtrl.SetMoveType(MoveType::None);
     if (cfg.moveToSpectator)
-        targetCtrl.ChangeTeam(VoltMod::Sdk::TeamSpectator);
+        targetCtrl.ChangeTeam(VoltMod::Entities::TeamSpectator);
 
     pc.DeadlineTimer = _rt.Scheduler.Repeat(DeadlineTickMs, [this, targetSlot] { Tick(targetSlot); });
 
@@ -166,7 +166,7 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const VoltM
         {
             pc.RoomCode = std::move(urls->RoomCode);
             // First poll one interval out: the suspect can't have opened the link yet.
-            pc.NextPollAtSec = TimeUtils::Now() + roomCfg.pollIntervalSec;
+            pc.NextPollAtSec = Time::Now() + roomCfg.pollIntervalSec;
         }
 
         if (!urls->CheckerUrl.empty())
@@ -213,7 +213,7 @@ void CheatCheckManager::Tick(int targetSlot)
 
     // While the suspect is in the check room the deadline is suspended; polling still runs so
     // leaving the room resumes the countdown.
-    if (!pc.SuspectJoined && TimeUtils::Now() >= pc.DeadlineSec)
+    if (!pc.SuspectJoined && Time::Now() >= pc.DeadlineSec)
     {
         Expire(targetSlot);
         return;
@@ -327,7 +327,7 @@ void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int resto
     if (!pc.IsValid())
         return;
     // restoreTeam is a real playing team (T/CT) only if we actually pulled them to spectator at start.
-    if (restoreTeam >= VoltMod::Sdk::TeamT)
+    if (restoreTeam >= VoltMod::Entities::TeamT)
         pc.ChangeTeam(restoreTeam);
     pc.SetMoveType(restoreMove);
 }

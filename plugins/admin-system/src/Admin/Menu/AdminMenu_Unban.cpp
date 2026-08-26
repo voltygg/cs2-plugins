@@ -7,7 +7,7 @@
 #include "Labels.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/StringUtils.hpp>
+#include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
@@ -22,7 +22,7 @@
 namespace AdminSystem::Admin::Menu
 {
 
-using VoltMod::Core::StringUtils;
+using VoltMod::Core::Strings;
 using VoltMod::Menu::MenuBuilder;
 
 namespace
@@ -57,7 +57,7 @@ void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
                 std::vector<std::pair<std::string, std::string>> rows;
                 rows.emplace_back(tr.Get("punish.target", slot), r.Name);
                 rows.emplace_back(tr.Get("punish.duration", slot), ExpiryLabel(tr, r.ExpiresAt, slot));
-                rows.emplace_back(tr.Get("punish.reason", slot), StringUtils::TruncateUtf8(r.Reason, 40));
+                rows.emplace_back(tr.Get("punish.reason", slot), Strings::TruncateUtf8(r.Reason, 40));
                 return rows;
             },
             [&app](int slot) { return app.Runtime.Translations.Get("punish.confirm", slot); },
@@ -90,7 +90,7 @@ std::shared_ptr<VoltMod::MenuView> BuildUnbanMenu(AdminSystem::App& app, int adm
     for (const auto& ban : bans)
     {
         BanRow row{.Id = ban.Id,
-                   .Name = StringUtils::DisplayNameOr(ban.TargetSteamId, ban.TargetName),
+                   .Name = Strings::DisplayNameOr(ban.TargetSteamId, ban.TargetName),
                    .ExpiresAt = ban.ExpiresAt,
                    .Reason = ban.Reason};
         auto label = std::format("{} - {}", row.Name, ExpiryLabel(tr, row.ExpiresAt, adminSlot));

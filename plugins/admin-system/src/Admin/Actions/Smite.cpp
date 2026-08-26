@@ -3,7 +3,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Scheduler.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Entity/EntityKeyValues.hpp>
+#include <VoltMod/Entities/KeyValues.hpp>
 #include <mathlib/vector.h>
 
 namespace AdminSystem::Admin::Actions
@@ -19,7 +19,7 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
                        auto& ops = ctx.Rt.EntityOps;
                        if (ops.CanSpawn())
                        {
-                           VoltMod::EntityKeyValues kv;
+                           VoltMod::KeyValues kv;
                            kv.Set("origin", ctx.TargetCtrl.GetAbsOrigin()).Set("spawnflags", EnvExplosionNoDamage);
                            if (auto* boom = ops.Spawn("env_explosion", kv))
                            {
