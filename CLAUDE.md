@@ -93,8 +93,18 @@ Current patterns:
   targets, durations, and reasons before handlers run.
 - Inject permissions, immunity, replies, and broadcasts once through
   `Runtime::Policy`.
+- Subscribe with `+=` on the framework's `Event` members (`runtime.Slots.Changed`,
+  `runtime.ConVars.Changed`, `runtime.MovementHook.Pre`, ...) and with
+  `runtime.Events.On<T>()` for game events. There is no other subscribe verb, and
+  no string-keyed game event: model it in `Events/EventTypes.hpp` first.
 - Keep each returned `VoltMod::Subscription` beside the state captured by its
-  callback.
+  handler. Dropping one unsubscribes - and for a `Scheduler` timer, cancels it -
+  so a fire-and-forget deferral still needs an owner.
+- A hook service arms itself on its first subscription (`Movement`, `Damage`,
+  `Teleport`); do not look for an `Install()` or `Enable()` to call.
+- Return `VoltMod::Result<T>`/`VoltMod::Status` where a caller has to know why
+  something failed; `Error::Detail` is the log text and `Error::Key` the
+  translation key for a player-facing reply.
 - Define admin effects as `EffectDescriptor` values and keep menu order in the
   explicit `MenuEffects` table.
 - Use `Flow<TState>` for multi-step menu actions.
