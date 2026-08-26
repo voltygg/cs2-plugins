@@ -58,7 +58,7 @@ void PlayerChat::RebroadcastAdminChat(const Player* admin, std::string_view mess
     if (!admin)
         return;
 
-    auto style = _admins.GetChatStyle(admin->GetSteamID());
+    auto style = _admins.GetChatStyle(admin->SteamId());
 
     auto prefixColor = ChatColors::ParseNamed(style.PrefixColor);
 
@@ -71,10 +71,10 @@ void PlayerChat::RebroadcastAdminChat(const Player* admin, std::string_view mess
     // {prefixColor}{prefix} {nameColor}{name}{Default}: {messageColor}{message}
     std::string line;
     if (style.HasPrefix())
-        line = std::format("{}{} {}{}{}: {}{}", prefixColor, style.Prefix, nameColor, admin->GetName(),
+        line = std::format("{}{} {}{}{}: {}{}", prefixColor, style.Prefix, nameColor, admin->Name(),
                            ChatColors::Default, messageColor, message);
     else
-        line = std::format("{}{}{}: {}{}", nameColor, admin->GetName(), ChatColors::Default, messageColor, message);
+        line = std::format("{}{}{}: {}{}", nameColor, admin->Name(), ChatColors::Default, messageColor, message);
 
     // Team-only filtering isn't implemented yet (no stable team accessor on Player), so admin chat
     // currently broadcasts to everyone regardless of say vs say_team.
@@ -88,7 +88,7 @@ bool PlayerChat::HandleSay(Player* player, std::string_view message, bool isSayT
 
     // Menu free-text input: if a chat capture is pending for this player, the line is
     // their menu answer, not a chat message. Always supersede so it isn't broadcast.
-    if (_rt.ChatInput.TryConsume(player->GetSlot(), message))
+    if (_rt.ChatInput.TryConsume(player->Slot(), message))
         return true;
 
     // Returns false for an unprefixed line and for unknown commands (e.g. "!ads"), so both
@@ -96,10 +96,10 @@ bool PlayerChat::HandleSay(Player* player, std::string_view message, bool isSayT
     if (_rt.Commands.HandleChatMessage(player, message))
         return true;
 
-    int64_t steamId = player->GetSteamID();
+    int64_t steamId = player->SteamId();
     if (_punishments.IsTextMuted(steamId))
     {
-        int slot = player->GetSlot();
+        int slot = player->Slot();
         if (_textMuteNotice.TryAcquire(slot, Time::Now()))
             ReplyMuteNotice(slot, "muteNotice.text", _punishments.GetActiveTextMute(steamId));
         return true;
@@ -120,11 +120,11 @@ void PlayerChat::NotifyVoiceMuted(Player* player)
     if (!player)
         return;
 
-    int slot = player->GetSlot();
+    int slot = player->Slot();
     if (!_voiceMuteNotice.TryAcquire(slot, Time::Now()))
         return;
 
-    ReplyMuteNotice(slot, "muteNotice.voice", _punishments.GetActiveVoiceMute(player->GetSteamID()));
+    ReplyMuteNotice(slot, "muteNotice.voice", _punishments.GetActiveVoiceMute(player->SteamId()));
 }
 
 }  // namespace AdminSystem::Core

@@ -31,11 +31,11 @@ std::shared_ptr<VoltMod::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int
     auto& access = app.Access;
     auto& plrMgr = app.Runtime.Players;
 
-    auto* adminPlayer = plrMgr.GetPlayerBySlot(adminSlot);
+    auto* adminPlayer = plrMgr.Get(adminSlot);
     if (!adminPlayer)
         return nullptr;
 
-    int64_t adminSid = adminPlayer->GetSteamID();
+    int64_t adminSid = adminPlayer->SteamId();
 
     // Version rendered small and gray next to the gold panel title, matching the pager style.
     auto title = std::format("{} <font class='fontSize-s' color='#887755'>v{}</font>", tr.Get("panel.admin", adminSlot),

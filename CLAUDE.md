@@ -92,7 +92,14 @@ Current patterns:
 - Register declarative `CommandSpec` values from `App::Start()`. Resolve typed
   targets, durations, and reasons before handlers run.
 - Inject permissions, immunity, replies, and broadcasts once through
-  `Runtime::Policy`.
+  `Runtime::Policy`, then ask `Policy::Authorize(caller, target, permission)`
+  wherever the answer is needed. Do not re-implement the check: a plugin's
+  `CanTarget` is an immunity comparison and nothing else, because the console and
+  self-targeting are settled before it is consulted.
+- Track players by `PlayerRef` (slot + SteamID) and resolve through
+  `Runtime.Players.Get(ref)`. Handle connect/disconnect by subscribing to
+  `Runtime.Players.Connected`/`.FullyConnected`/`.SettingsChanged`/`.Disconnected`,
+  not by overriding a `MetamodPlugin` virtual.
 - Subscribe with `+=` on the framework's `Event` members (`runtime.Slots.Changed`,
   `runtime.ConVars.Changed`, `runtime.MovementHook.Pre`, ...) and with
   `runtime.Events.On<T>()` for game events. There is no other subscribe verb, and

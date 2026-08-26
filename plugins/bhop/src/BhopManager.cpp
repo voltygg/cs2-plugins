@@ -44,6 +44,8 @@ void BhopManager::Initialize()
     _subs.push_back(_rt.MovementHook.Pre += [this](int slot) { OnRunCommandPre(slot); });
     _subs.push_back(_rt.MovementHook.Post += [this](int slot) { OnRunCommandPost(slot); });
 
+    _subs.push_back(_rt.Players.Disconnected += [this](VoltMod::Player& player) { OnPlayerDisconnect(player); });
+
     // Grants need a server-side hop because subtick movement ignores the scoped
     // sv_autobunnyhopping override. Run after simulation so landing state is available.
     _subs.push_back(_rt.Scheduler.EveryFrame([this] {
@@ -84,11 +86,11 @@ void BhopManager::Grant(int64_t steamId, bool enabled)
     else
         _granted.erase(steamId);
 
-    Player* player = _rt.Players.GetPlayerBySteamId(steamId);
+    Player* player = _rt.Players.BySteamId(steamId);
     if (!player)
         return;
 
-    int slot = player->GetSlot();
+    int slot = player->Slot();
     if (!VoltMod::IsValidSlot(slot))
         return;
 
@@ -130,15 +132,12 @@ void BhopManager::ReloadSettings()
     Log::Info("bhop_reload: settings re-applied.");
 }
 
-void BhopManager::OnPlayerDisconnect(Player* player)
+void BhopManager::OnPlayerDisconnect(Player& player)
 {
-    if (!player)
-        return;
-
     // Grants are session-only: a reconnect starts clean.
-    _granted.erase(player->GetSteamID());
+    _granted.erase(player.SteamId());
 
-    int slot = player->GetSlot();
+    int slot = player.Slot();
     if (VoltMod::IsValidSlot(slot))
     {
         _grantedSlots[slot] = false;
@@ -227,8 +226,8 @@ void BhopManager::OnPlayerSpawn(int slot)
     if (_mode != Mode::Grants || !VoltMod::IsValidSlot(slot))
         return;
 
-    Player* player = _rt.Players.GetPlayerBySlot(slot);
-    bool granted = player && _granted.contains(player->GetSteamID());
+    Player* player = _rt.Players.Get(slot);
+    bool granted = player && _granted.contains(player->SteamId());
     _grantedSlots[slot] = granted;
 
     // The connect/map-change convar snapshot clobbered the client's override; re-send.

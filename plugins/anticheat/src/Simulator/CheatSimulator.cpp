@@ -79,8 +79,8 @@ int CheatSimulator::ResolveSlot(const char* arg)
     if (std::strlen(arg) > 10)  // too long to be a slot index; treat as a steamid64
     {
         const int64_t steamId = std::strtoll(arg, nullptr, 10);
-        auto* player = _rt.Players.GetPlayerBySteamId(steamId);
-        return player ? player->GetSlot() : -1;
+        auto* player = _rt.Players.BySteamId(steamId);
+        return player ? player->Slot() : -1;
     }
     return std::atoi(arg);
 }
@@ -134,9 +134,9 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
     Vec3 best;
     float bestDistance = 0.0f;
     bool found = false;
-    for (const VoltMod::Player* player : _rt.Players.GetAllPlayers())
+    for (const VoltMod::Player* player : _rt.Players.All())
     {
-        const int other = player ? player->GetSlot() : -1;
+        const int other = player ? player->Slot() : -1;
         if (!IsValidSlot(other) || other == slot)
             continue;
         const VoltMod::Pawn pawn = _rt.Entities.PawnOf(other);

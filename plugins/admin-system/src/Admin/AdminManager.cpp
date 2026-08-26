@@ -157,18 +157,9 @@ int AdminManager::GetImmunity(int64_t steamId)
 
 bool AdminManager::CanTarget(int64_t adminSteamId, int64_t targetSteamId)
 {
-    // The server console bypasses immunity.
-    if (adminSteamId == 0)
-        return true;
-
-    // Self-targeting bypasses immunity.
-    if (adminSteamId == targetSteamId)
-        return true;
-
-    int adminImmunity = GetImmunity(adminSteamId);
-    int targetImmunity = GetImmunity(targetSteamId);
-
-    return adminImmunity > targetImmunity;
+    // Immunity, and nothing else. The console has no caller and a caller targeting themselves is
+    // allowed, both decided by VoltMod::Policy::Authorize before this is ever consulted.
+    return GetImmunity(adminSteamId) > GetImmunity(targetSteamId);
 }
 
 void AdminManager::AddAdmin(const Database::Admin& admin)

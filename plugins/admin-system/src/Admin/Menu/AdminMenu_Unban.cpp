@@ -5,6 +5,7 @@
 #include "../../Core/Permissions.hpp"
 #include "../AdminManager.hpp"
 #include "Labels.hpp"
+#include "MenuAccess.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Strings.hpp>
@@ -39,8 +40,7 @@ static void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
     VoltMod::Flow<BanRow>::Create(app.Runtime.Menus, std::move(row))
         // The Unban flag may have been revoked (e.g. !admin_reload) while the menu was open.
         ->OnValidate([&app](int slot, const BanRow&) -> std::optional<std::string> {
-            auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
-            if (!admin || !app.Access.HasPermission(admin->GetSteamID(), Permission::Unban))
+            if (!MayUse(app, slot, Permission::Unban))
                 return "punish.notAllowed";
             return std::nullopt;
         })
@@ -61,13 +61,13 @@ static void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
             [&app](int slot) { return app.Runtime.Translations.Get("punish.cancel", slot); })
         ->OnFinish([&app](int slot, BanRow& r) {
             auto& tr = app.Runtime.Translations;
-            auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
+            auto* admin = app.Runtime.Players.Get(slot);
             if (!admin)
                 return;
 
             // RemoveBan broadcasts "unbanned"; the extra reply covers broadcasts being disabled and
             // returns false when another server already lifted the ban.
-            if (app.Punishments.RemoveBan(r.Id, admin->GetSteamID(), tr.Get("reason.unbannedByAdmin")))
+            if (app.Punishments.RemoveBan(r.Id, admin->SteamId(), tr.Get("reason.unbannedByAdmin")))
                 app.Chat.Reply(slot, tr.Get("unban.done", slot, {{"name", r.Name}}));
             else
                 app.Chat.Reply(slot, tr.Get("unban.gone", slot));

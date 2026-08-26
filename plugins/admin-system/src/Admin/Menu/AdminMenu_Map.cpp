@@ -5,6 +5,7 @@
 #include "../../Core/Permissions.hpp"
 #include "../../Maps/MapCycleState.hpp"
 #include "../../Maps/VoteState.hpp"
+#include "MenuAccess.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>
@@ -23,14 +24,8 @@ namespace AdminSystem::Admin::Menu
 using AdminSystem::Maps::MapEntry;
 using VoltMod::MenuBuilder;
 
-/** Whether @p slot still holds @p permission. Re-checked per click: the flag may have been
- *  revoked (e.g. !admin_reload) while the menu was open. Changing and queuing a map need the
- *  map flag, starting and cancelling a vote the vote flag - the same split the commands had. */
-static bool MayUse(App& app, int slot, Permission permission)
-{
-    auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
-    return admin && app.Access.HasPermission(admin->GetSteamID(), permission);
-}
+// Rows are re-checked per click through MayUse: changing and queuing a map need the map flag,
+// starting and cancelling a vote the vote flag - the same split the commands had.
 
 /** Taking the server away from everyone confirms rather than firing on a single click. */
 static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)

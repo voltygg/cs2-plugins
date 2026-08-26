@@ -27,13 +27,3 @@ void AnticheatPlugin::OnServerStartup(const char* /*mapName*/)
 {
     _app->AntiCheat.OnMapStart();
 }
-
-void AnticheatPlugin::OnPlayerFullyConnected(VoltMod::Player* player)
-{
-    _app->AntiCheat.OnPlayerFullyConnected(player);
-}
-
-void AnticheatPlugin::OnPlayerSettingsChanged(VoltMod::Player* player)
-{
-    _app->AntiCheat.OnPlayerSettingsChanged(player);
-}

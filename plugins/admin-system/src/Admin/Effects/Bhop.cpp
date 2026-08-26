@@ -21,7 +21,7 @@ const Effect Bhop{.Permission = Flag(Permission::Bhop),
                   .OffKey = "broadcast.bhopOff",
                   .Scope = EffectScope::Session,  // session grant: survives the death sweep
                   .Setup = [](const ActionContext& ctx) -> EffectInstance {
-                      int64_t steamId = ctx.Target->GetSteamID();
+                      int64_t steamId = ctx.Target().SteamId();
                       auto& conVars = ctx.Rt.ConVars;
                       conVars.ExecuteServerCommand(std::format("bhop_player {} 1", steamId));
                       // The effect manager is a plugin member, so it is torn down before the

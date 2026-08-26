@@ -5,6 +5,7 @@
 #include "../../Core/Permissions.hpp"
 #include "../AdminManager.hpp"
 #include "Labels.hpp"
+#include "MenuAccess.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Strings.hpp>
@@ -40,8 +41,7 @@ static void StartUnmuteConfirm(App& app, int adminSlot, MuteRow row)
     VoltMod::Flow<MuteRow>::Create(app.Runtime.Menus, std::move(row))
         // The Mute flag may have been revoked (e.g. !admin_reload) while the menu was open.
         ->OnValidate([&app](int slot, const MuteRow&) -> std::optional<std::string> {
-            auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
-            if (!admin || !app.Access.HasPermission(admin->GetSteamID(), Permission::Mute))
+            if (!MayUse(app, slot, Permission::Mute))
                 return "punish.notAllowed";
             return std::nullopt;
         })
@@ -63,7 +63,7 @@ static void StartUnmuteConfirm(App& app, int adminSlot, MuteRow row)
             [&app](int slot) { return app.Runtime.Translations.Get("punish.cancel", slot); })
         ->OnFinish([&app](int slot, MuteRow& r) {
             auto& tr = app.Runtime.Translations;
-            auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
+            auto* admin = app.Runtime.Players.Get(slot);
             if (!admin)
                 return;
 
@@ -71,8 +71,8 @@ static void StartUnmuteConfirm(App& app, int adminSlot, MuteRow row)
             // returns false when another server already lifted the mute.
             const bool removed =
                 r.IsVoice
-                    ? app.Punishments.RemoveVoiceMute(r.Id, admin->GetSteamID(), tr.Get("reason.voiceUnmutedByAdmin"))
-                    : app.Punishments.RemoveTextMute(r.Id, admin->GetSteamID(), tr.Get("reason.textUnmutedByAdmin"));
+                    ? app.Punishments.RemoveVoiceMute(r.Id, admin->SteamId(), tr.Get("reason.voiceUnmutedByAdmin"))
+                    : app.Punishments.RemoveTextMute(r.Id, admin->SteamId(), tr.Get("reason.textUnmutedByAdmin"));
 
             app.Chat.Reply(slot,
                            removed ? tr.Get("unmute.done", slot, {{"name", r.Name}}) : tr.Get("unmute.gone", slot));

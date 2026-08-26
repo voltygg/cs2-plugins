@@ -42,16 +42,16 @@ static void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, boo
     if (!engine)
         return;
 
-    auto* sender = rt.Players.GetPlayerBySteamId(senderSteamId);
+    auto* sender = rt.Players.BySteamId(senderSteamId);
     if (!sender)
         return;
 
-    int senderSlot = sender->GetSlot();
+    int senderSlot = sender->Slot();
     for (int i = 0; i < 64; ++i)
     {
         if (i == senderSlot)
             continue;
-        if (!rt.Players.GetPlayerBySlot(i))
+        if (!rt.Players.Get(i))
             continue;
         engine->SetClientListening(CPlayerSlot(i), CPlayerSlot(senderSlot), !muted);
     }
@@ -171,13 +171,13 @@ bool PunishmentManager::IssueBan(Ban& ban)
             it->second.Id = id;
     });
 
-    if (auto* player = _rt.Players.GetPlayerBySteamId(ban.TargetSteamId))
+    if (auto* player = _rt.Players.BySteamId(ban.TargetSteamId))
     {
         // Same notice the connect-time reject builds, so a player banned mid-game and one
         // bounced on reconnect read the same thing.
-        KickDeferred(player->GetSlot(), ban.TargetSteamId,
+        KickDeferred(player->Slot(), ban.TargetSteamId,
                      BuildBanNotice(_rt.Translations, _config.GetAppeal(), ban.Reason, ban.ExpiresAt, ban.TargetSteamId,
-                                    player->GetSlot()));
+                                    player->Slot()));
     }
 
     _chat.BroadcastPunishment("banned", ban.AdminName, ban.TargetName, ban.Reason, ban.Duration);
@@ -320,7 +320,7 @@ void PunishmentManager::KickDeferred(int slot, int64_t steamId, std::string reas
     _pendingKick[slot] = _rt.Scheduler.NextTick([&rt = _rt, slot, steamId, reason = std::move(reason)] {
         // The seat can change hands before the deferred kick lands; kicking whoever took it is
         // not what the ban says.
-        if (rt.Players.GetPlayerBySlotIfSteamId(slot, steamId))
+        if (rt.Players.Get(VoltMod::PlayerRef{slot, steamId}))
             (void)rt.Entities.Controller(slot).Kick(reason);
     });
 }

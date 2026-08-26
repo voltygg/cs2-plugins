@@ -1,4 +1,4 @@
-﻿#include "NamechangerDetector.hpp"
+#include "NamechangerDetector.hpp"
 
 #include "AntiCheatManager.hpp"
 
@@ -8,29 +8,25 @@
 namespace Anticheat
 {
 
-std::string NamechangerDetector::CurrentName(VoltMod::Player* player) const
-{
-    std::string name = _rt.Entities.Controller(player->GetSlot()).Name.Get().Str();
-    return name.empty() ? player->GetName() : name;
-}
-
 // Baselining is bookkeeping, not judgement, so it runs even while detections are gated off:
 // a change measured against a stale name would be a false positive later.
-void NamechangerDetector::OnFullyConnected(VoltMod::Player* player)
+void NamechangerDetector::OnFullyConnected(VoltMod::Player& player)
 {
-    if (!player || !_manager.ModuleEnabled(DetectionKind::Namechanger) || !_manager.IsEligible(player->GetSlot()))
+    if (!_manager.ModuleEnabled(DetectionKind::Namechanger) || !_manager.IsEligible(player.Slot()))
         return;
-    _manager.Namechanger().OnBaseline(player->GetSlot(), CurrentName(player));
+    _manager.Namechanger().OnBaseline(player.Slot(), player.Name());
 }
 
-void NamechangerDetector::OnSettingsChanged(VoltMod::Player* player)
+void NamechangerDetector::OnSettingsChanged(VoltMod::Player& player)
 {
-    if (!player || !_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::Namechanger) ||
-        !_manager.IsEligible(player->GetSlot()))
+    if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::Namechanger) ||
+        !_manager.IsEligible(player.Slot()))
         return;
 
-    const int slot = player->GetSlot();
-    _manager.Report(slot, _manager.Namechanger().OnNameChanged(slot, CurrentName(player), Time::MonotonicSeconds()));
+    // Player::Name reads the controller, so this is the name the scoreboard shows right now;
+    // NamechangerCore compares it against the baseline it holds.
+    const int slot = player.Slot();
+    _manager.Report(slot, _manager.Namechanger().OnNameChanged(slot, player.Name(), Time::MonotonicSeconds()));
 }
 
 }  // namespace Anticheat

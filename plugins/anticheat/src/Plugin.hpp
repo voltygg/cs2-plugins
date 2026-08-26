@@ -17,8 +17,6 @@ protected:
     bool OnLoad(VoltMod::Runtime& runtime, bool late) override;
     void OnUnload() override { _app.reset(); }
     void OnServerStartup(const char* mapName) override;
-    void OnPlayerFullyConnected(VoltMod::Player* player) override;
-    void OnPlayerSettingsChanged(VoltMod::Player* player) override;
 
 private:
     std::optional<Anticheat::App> _app;

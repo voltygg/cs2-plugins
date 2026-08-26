@@ -33,7 +33,7 @@ const Effect Disco{.Permission = Flag(Permission::Fun),
                    .Setup = [](const ActionContext& ctx) -> EffectInstance {
                        auto savedMode = static_cast<VoltMod::RenderMode_t>(ctx.TargetPawn().RenderMode.Get());
                        uint32_t savedColor = ctx.TargetPawn().RenderColor;
-                       int slot = ctx.Target->GetSlot();
+                       int slot = ctx.Target().Slot();
 
                        return {.OnTick =
                                    [&entities = ctx.Rt.Entities, slot, idx = size_t{0}]() mutable {

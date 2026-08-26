@@ -47,7 +47,7 @@ static PanelState PanelStateFor(const PendingCheck& pc)
 
 std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
 {
-    if (!_rt.Players.GetPlayerBySlot(slot))
+    if (!_rt.Players.Get(slot))
         return {};
 
     auto& tr = _rt.Translations;

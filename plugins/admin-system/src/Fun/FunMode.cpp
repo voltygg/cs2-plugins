@@ -63,10 +63,10 @@ void FunMode::ApplyRoundStart()
     if (!_state.IsOn(Toggle::KnifeRound))
         return;
 
-    for (auto* player : _rt.Players.GetAllPlayers())
+    for (auto* player : _rt.Players.All())
     {
         if (player)
-            GiveKnifeOnly(player->GetSlot());
+            GiveKnifeOnly(player->Slot());
     }
 }
 

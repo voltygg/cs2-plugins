@@ -1,6 +1,5 @@
 #include "Plugin.hpp"
 
-#include "../Punishments/KickNotice.hpp"
 #include "App.hpp"
 #include "Config.hpp"
 
@@ -42,49 +41,6 @@ void AdminSystemPlugin::OnRegisterHooks(VoltMod::Runtime& runtime)
                                            SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
 }
 
-void AdminSystemPlugin::OnPlayerConnect(Player* player)
-{
-    if (!player)
-        return;
-
-    auto& app = *_app;
-    app.PlayerRepo.RecordConnect(player->GetSteamID(), player->GetName(), player->GetIpAddress());
-
-    // Register the admin's panel language up front so every slot-aware Translations::Get (menus,
-    // cheat-check, mute notices) renders in their language without per-command setup.
-    if (const auto* row = app.Admins.GetAdmin(player->GetSteamID()))
-        app.Runtime.Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
-
-    // A frozen admin gets told up front instead of discovering it on their first denied command.
-    if (app.Freeze.IsFrozen(player->GetSteamID()))
-        app.Freeze.NotifyFrozenSoon(player->GetSlot(), player->GetSteamID());
-
-    // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so
-    // KickDeferred waits a frame -- the player is fully connected by then. Bots have no real
-    // SteamID and never match an active ban.
-    if (auto ban = app.Punishments.GetActiveBan(player->GetSteamID()))
-    {
-        int slot = player->GetSlot();
-        int64_t steamId = player->GetSteamID();
-        // Built now, while the ban row is in hand, so the disconnect screen carries the expiry
-        // and appeal link rather than the bare reason.
-        app.Punishments.KickDeferred(
-            slot, steamId,
-            AdminSystem::Punishments::BuildBanNotice(app.Runtime.Translations, app.Config.GetAppeal(), ban->Reason,
-                                                     ban->ExpiresAt, steamId, slot));
-    }
-}
-
-void AdminSystemPlugin::OnPlayerDisconnect(Player* player)
-{
-    if (!player)
-        return;
-
-    _app->FlushPlayerSession(player);
-    _app->Effects.CancelAllForSlot(player->GetSlot());
-    _app->CheatCheck.CancelAllForSlot(player->GetSlot());
-}
-
 bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)
 {
     return _app->PlayerChat.HandleSay(player, message, teamChat);
@@ -94,9 +50,9 @@ bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSl
 {
     if (bListen)
     {
-        if (auto* sender = _app->Runtime.Players.GetPlayerBySlot(iSender.Get()))
+        if (auto* sender = _app->Runtime.Players.Get(iSender.Get()))
         {
-            if (_app->Punishments.IsVoiceMuted(sender->GetSteamID()))
+            if (_app->Punishments.IsVoiceMuted(sender->SteamId()))
             {
                 // Tell the muted player they're being suppressed; ChatService rate-limits this
                 // so the per-receiver explosion of hook calls collapses to one chat line.

@@ -29,7 +29,7 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int ad
 {
     auto& tr = app.Runtime.Translations;
 
-    auto* admin = app.Runtime.Players.GetPlayerBySlot(adminSlot);
+    auto* admin = app.Runtime.Players.Get(adminSlot);
     if (!admin)
         return nullptr;
 
@@ -37,11 +37,11 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int ad
 
     builder.AddSubmenu(
         tr.Get("action.unban", adminSlot), [&app](int slot) { return BuildUnbanMenu(app, slot); },
-        app.Access.HasPermission(admin->GetSteamID(), Permission::Unban));
+        app.Access.HasPermission(admin->SteamId(), Permission::Unban));
 
     builder.AddSubmenu(
         tr.Get("action.unmute", adminSlot), [&app](int slot) { return BuildUnmuteMenu(app, slot); },
-        app.Access.HasPermission(admin->GetSteamID(), Permission::Mute));
+        app.Access.HasPermission(admin->SteamId(), Permission::Mute));
 
     VoltMod::AppendPlayerRows(
         builder, app.Runtime.Players, adminSlot,
@@ -61,18 +61,18 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app,
     auto& access = app.Access;
     auto& plrMgr = app.Runtime.Players;
 
-    auto* target = plrMgr.GetPlayerBySlot(targetSlot);
+    auto* target = plrMgr.Get(targetSlot);
     if (!target)
         return nullptr;
 
-    auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
+    auto* admin = plrMgr.Get(adminSlot);
     if (!admin)
         return nullptr;
 
-    int64_t adminSid = admin->GetSteamID();
-    int64_t targetSid = target->GetSteamID();
+    int64_t adminSid = admin->SteamId();
+    int64_t targetSid = target->SteamId();
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("category.punish", adminSlot), target->GetName()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("category.punish", adminSlot), target->Name()));
 
     if (AnyTemplateUsable(app, adminSlot, targetSlot))
     {
@@ -87,7 +87,7 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app,
             .Type = type,
             .TargetSlot = targetSlot,
             .TargetSteamId = targetSid,
-            .TargetName = target->GetName(),
+            .TargetName = target->Name(),
         };
         builder.AddButton(
             tr.Get(ActionTranslationKey(type), adminSlot),

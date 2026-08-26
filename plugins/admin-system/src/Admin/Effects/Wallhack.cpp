@@ -19,7 +19,7 @@ const Effect Wallhack{.Permission = Flag(Permission::Wallhack),
                       .Scope = EffectScope::Round,
                       .TickIntervalMs = GlowVision::ReconcileIntervalMs,
                       .Setup = [](const ActionContext& ctx) -> EffectInstance {
-                          auto glow = ctx.Rt.Visibility.CreateGlow(ctx.Target->GetSlot());
+                          auto glow = ctx.Rt.Visibility.CreateGlow(ctx.Target().Slot());
 
                           // Build the glow clones immediately; the repeating tick then tracks spawns/deaths/team
                           // changes. OnStop clears the transmit-filter entries and removes any surviving clones

@@ -16,7 +16,6 @@ protected:
     VoltMod::PluginInfo Info() const override;
     bool OnLoad(VoltMod::Runtime& runtime, bool late) override;
     void OnUnload() override { _app.reset(); }
-    void OnPlayerDisconnect(VoltMod::Player* player) override;
 
 private:
     std::optional<Bhop::App> _app;

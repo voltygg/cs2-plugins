@@ -40,10 +40,10 @@ BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::st
     ban.AdminName = "AntiCheat";
     ban.Reason = std::string(reason);
     ban.Duration = durationSec;
-    if (auto* target = _rt.Players.GetPlayerBySteamId(steamId))
+    if (auto* target = _rt.Players.BySteamId(steamId))
     {
-        ban.TargetName = target->GetName();
-        ban.TargetIp = target->GetIpAddress();
+        ban.TargetName = target->Name();
+        ban.TargetIp = target->Ip();
     }
 
     if (!_punishments.IssueBan(ban))
@@ -58,16 +58,16 @@ BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::st
 
 void AdminActionsService::AlertAdmins(int64_t steamId, std::string_view detector, int score)
 {
-    auto* suspect = _rt.Players.GetPlayerBySteamId(steamId);
-    const std::string suspectName = suspect ? suspect->GetName() : std::to_string(steamId);
+    auto* suspect = _rt.Players.BySteamId(steamId);
+    const std::string suspectName = suspect ? suspect->Name() : std::to_string(steamId);
     const std::string detectorName(detector);
     const std::string scoreText = std::to_string(score);
 
-    for (auto* admin : _rt.Players.GetAllPlayers())
+    for (auto* admin : _rt.Players.All())
     {
-        if (!_access.HasPermission(admin->GetSteamID(), Permission::Ban))
+        if (!_access.HasPermission(admin->SteamId(), Permission::Ban))
             continue;
-        _rt.Messages.ReplyKey(admin->GetSlot(), "anticheat.alert",
+        _rt.Messages.ReplyKey(admin->Slot(), "anticheat.alert",
                               {{"name", suspectName}, {"detector", detectorName}, {"score", scoreText}});
     }
 }

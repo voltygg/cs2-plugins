@@ -181,10 +181,10 @@ static void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, i
 std::shared_ptr<VoltMod::MenuView> BuildChatSettingsMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
-    auto* admin = app.Runtime.Players.GetPlayerBySlot(adminSlot);
+    auto* admin = app.Runtime.Players.Get(adminSlot);
     if (!admin)
         return nullptr;
-    int64_t steamId = admin->GetSteamID();
+    int64_t steamId = admin->SteamId();
 
     MenuBuilder builder(tr.Get("category.chatSettings", adminSlot));
 

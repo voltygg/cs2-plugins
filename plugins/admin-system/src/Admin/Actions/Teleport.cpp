@@ -15,10 +15,7 @@ namespace PawnOps = VoltMod::PawnOps;
  *  action that resolves a pair, so this stays local to it. */
 static void BroadcastPair(App& app, const ActionContext& first, const ActionContext& second, const std::string& key)
 {
-    if (!first.Caller || !first.Target || !second.Target)
-        return;
-    app.Chat.BroadcastAction(key, first.Caller->GetName(),
-                             {{"a", first.Target->GetName()}, {"b", second.Target->GetName()}});
+    app.Chat.BroadcastAction(key, first.Caller().Name(), {{"a", first.Target().Name()}, {"b", second.Target().Name()}});
 }
 
 const Action Bring{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
@@ -43,13 +40,13 @@ void Swap(App& app, int adminSlot, int firstSlot, int secondSlot)
         return;
     auto ctxA = app.Actions.Resolve(adminSlot, firstSlot, Flag(Permission::Control));
     auto ctxB = app.Actions.Resolve(adminSlot, secondSlot, Flag(Permission::Control));
-    if (!ctxA.Valid() || !ctxB.Valid())
+    if (!ctxA || !ctxB)
         return;
-    if (!ctxA.TargetPawn().IsAlive() || !ctxB.TargetPawn().IsAlive())
+    if (!ctxA->TargetPawn().IsAlive() || !ctxB->TargetPawn().IsAlive())
         return;
 
-    PawnOps::SwapOrigins(ctxA.TargetPawn(), ctxB.TargetPawn());
-    BroadcastPair(app, ctxA, ctxB, "broadcast.swapped");
+    PawnOps::SwapOrigins(ctxA->TargetPawn(), ctxB->TargetPawn());
+    BroadcastPair(app, *ctxA, *ctxB, "broadcast.swapped");
 }
 
 }  // namespace AdminSystem::Admin::Actions

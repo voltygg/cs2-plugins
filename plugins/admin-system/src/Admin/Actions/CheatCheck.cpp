@@ -7,8 +7,7 @@ namespace AdminSystem::Admin::Actions
 
 bool CallCheck(App& app, int adminSlot, int targetSlot)
 {
-    auto ctx = app.Actions.Resolve(adminSlot, targetSlot, Flag(Permission::Control));
-    if (!ctx.Valid())
+    if (!app.Actions.Resolve(adminSlot, targetSlot, Flag(Permission::Control)))
         return false;
 
     return app.CheatCheck.StartCheck(adminSlot, targetSlot);
@@ -16,8 +15,7 @@ bool CallCheck(App& app, int adminSlot, int targetSlot)
 
 bool CancelCheck(App& app, int adminSlot, int targetSlot)
 {
-    auto ctx = app.Actions.Resolve(adminSlot, targetSlot, Flag(Permission::Control));
-    if (!ctx.Valid())
+    if (!app.Actions.Resolve(adminSlot, targetSlot, Flag(Permission::Control)))
         return false;
 
     return app.CheatCheck.Cancel(targetSlot);

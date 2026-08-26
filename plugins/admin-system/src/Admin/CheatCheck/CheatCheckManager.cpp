@@ -56,8 +56,8 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
         return false;
 
     auto& plrMgr = _rt.Players;
-    auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
-    auto* target = plrMgr.GetPlayerBySlot(targetSlot);
+    auto* admin = plrMgr.Get(adminSlot);
+    auto* target = plrMgr.Get(targetSlot);
     if (!admin || !target)
         return false;
 
@@ -76,7 +76,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     auto& pc = _checks[targetSlot];
     pc.Active = true;
     pc.AdminSlot = adminSlot;
-    pc.AdminSteamId = admin->GetSteamID();
+    pc.AdminSteamId = admin->SteamId();
     pc.Mode = ParseMode(cfg.mode);
     pc.DeadlineSec = Time::Now() + cfg.timeoutSec;
     pc.ResolvedUrl.clear();
@@ -95,7 +95,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     ShowPanel(targetSlot);
     _view.SendInstructions(targetSlot, pc);
 
-    _chat.BroadcastAction("broadcast.cheatCheckCalled", admin->GetName(), target->GetName());
+    _chat.BroadcastAction("broadcast.cheatCheckCalled", admin->Name(), target->Name());
     return true;
 }
 
@@ -121,14 +121,14 @@ void CheatCheckManager::ResolveUrl(int targetSlot)
 void CheatCheckManager::RequestRoom(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
-    auto* target = _rt.Players.GetPlayerBySlot(targetSlot);
+    auto* target = _rt.Players.Get(targetSlot);
 
     std::optional<RoomRequest> request;
     if (target)
     {
-        auto* admin = _rt.Players.GetPlayerBySlot(pc.AdminSlot);
-        request = BuildRoomRequest(_config.GetCheatCheck().websiteAutoRoom, target->GetSteamID(), target->GetName(),
-                                   pc.AdminSteamId, admin ? admin->GetName() : std::string_view{});
+        auto* admin = _rt.Players.Get(pc.AdminSlot);
+        request = BuildRoomRequest(_config.GetCheatCheck().websiteAutoRoom, target->SteamId(), target->Name(),
+                                   pc.AdminSteamId, admin ? admin->Name() : std::string_view{});
     }
 
     if (!request)
@@ -234,8 +234,8 @@ CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSl
 
     pc.ResolvedUrl = link;
 
-    auto* caller = _rt.Players.GetPlayerBySlot(callerSlot);
-    std::string name = caller ? caller->GetName() : std::string();
+    auto* caller = _rt.Players.Get(callerSlot);
+    std::string name = caller ? caller->Name() : std::string();
 
     if (auto slot = ResolveAdminSlot(pc))
     {
@@ -258,7 +258,7 @@ void CheatCheckManager::FallbackToFixed(PendingCheck& pc)
 
 std::optional<int> CheatCheckManager::ResolveAdminSlot(const PendingCheck& pc) const
 {
-    if (!_rt.Players.GetPlayerBySlotIfSteamId(pc.AdminSlot, pc.AdminSteamId))
+    if (!_rt.Players.Get(VoltMod::PlayerRef{pc.AdminSlot, pc.AdminSteamId}))
         return std::nullopt;
     return pc.AdminSlot;
 }
@@ -287,8 +287,8 @@ bool CheatCheckManager::Cancel(int targetSlot)
     if (!ValidSlot(targetSlot) || !_checks[targetSlot].Active)
         return false;
 
-    auto* target = _rt.Players.GetPlayerBySlot(targetSlot);
-    std::string targetName = target ? target->GetName() : std::string();
+    auto* target = _rt.Players.Get(targetSlot);
+    std::string targetName = target ? target->Name() : std::string();
 
     const MoveType restore = _checks[targetSlot].PriorMoveType;
     const int restoreTeam = _checks[targetSlot].PriorTeam;
@@ -304,8 +304,8 @@ void CheatCheckManager::Expire(int targetSlot)
     const auto& cfg = _config.GetCheatCheck();
     const bool kick = cfg.autoKick;
 
-    auto* target = _rt.Players.GetPlayerBySlot(targetSlot);
-    std::string targetName = target ? target->GetName() : std::string();
+    auto* target = _rt.Players.Get(targetSlot);
+    std::string targetName = target ? target->Name() : std::string();
 
     const MoveType restore = _checks[targetSlot].PriorMoveType;
     const int restoreTeam = _checks[targetSlot].PriorTeam;

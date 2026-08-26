@@ -33,7 +33,7 @@ static CommandResult Punish(App& app, CommandContext& c, PunishType type, const 
                             const char* successKey, const char* failedKey)
 {
     // Captured before issuing: bans and kicks can drop the target immediately.
-    std::string targetName = c.Target().GetName();
+    std::string targetName = c.Target().Name();
     if (!IssuePunishment(app, *c.Caller, c.Target(), type, reason, c.Duration().value_or(0)))
         return c.Fail(failedKey);
     return c.Ok(successKey, {{"name", targetName}});
@@ -73,7 +73,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Args = {SteamId64("cmd.unbanUsage"), ReasonTail("reason.unbannedByAdmin")},
         .Handler =
             [&app](CommandContext& c) {
-                bool removed = app.Punishments.RemoveBanBySteamId(c.SteamId, c.Caller->GetSteamID(), c.Reason);
+                bool removed = app.Punishments.RemoveBanBySteamId(c.SteamId, c.Caller->SteamId(), c.Reason);
                 Tokens tokens{{"id", std::to_string(c.SteamId)}};
                 return removed ? c.Ok("cmd.unbanSuccess", tokens) : c.Fail("cmd.unbanNoBan", tokens);
             },
@@ -100,9 +100,9 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Handler =
             [&app](CommandContext& c) {
                 bool removed = app.Punishments.RemoveVoiceMuteBySteamId(
-                    c.Target().GetSteamID(), c.Caller->GetSteamID(),
+                    c.Target().SteamId(), c.Caller->SteamId(),
                     app.Runtime.Translations.Get("reason.voiceUnmutedByAdmin"));
-                Tokens tokens{{"name", c.Target().GetName()}};
+                Tokens tokens{{"name", c.Target().Name()}};
                 return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
             },
     });
@@ -128,9 +128,9 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Handler =
             [&app](CommandContext& c) {
                 bool removed =
-                    app.Punishments.RemoveTextMuteBySteamId(c.Target().GetSteamID(), c.Caller->GetSteamID(),
+                    app.Punishments.RemoveTextMuteBySteamId(c.Target().SteamId(), c.Caller->SteamId(),
                                                             app.Runtime.Translations.Get("reason.textUnmutedByAdmin"));
-                Tokens tokens{{"name", c.Target().GetName()}};
+                Tokens tokens{{"name", c.Target().Name()}};
                 return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
             },
     });

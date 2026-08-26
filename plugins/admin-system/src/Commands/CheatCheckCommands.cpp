@@ -46,9 +46,9 @@ void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app)
         .Args = {Target()},
         .Handler =
             [&app](CommandContext& c) {
-                if (!AdminSystem::Admin::Actions::CallCheck(app, c.CallerSlot(), c.Target().GetSlot()))
+                if (!AdminSystem::Admin::Actions::CallCheck(app, c.CallerSlot(), c.Target().Slot()))
                     return c.Fail("cmd.noPermission");
-                return c.Ok("cheatCheck.started", {{"name", c.Target().GetName()}});
+                return c.Ok("cheatCheck.started", {{"name", c.Target().Name()}});
             },
     });
 
@@ -60,9 +60,9 @@ void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app)
         .Args = {Target()},
         .Handler =
             [&app](CommandContext& c) {
-                if (!AdminSystem::Admin::Actions::CancelCheck(app, c.CallerSlot(), c.Target().GetSlot()))
+                if (!AdminSystem::Admin::Actions::CancelCheck(app, c.CallerSlot(), c.Target().Slot()))
                     return c.Fail("cheatCheck.noActiveCheck");
-                return c.Ok("cheatCheck.cancelled", {{"name", c.Target().GetName()}});
+                return c.Ok("cheatCheck.cancelled", {{"name", c.Target().Name()}});
             },
     });
 }

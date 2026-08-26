@@ -4,6 +4,7 @@
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Permissions.hpp"
 #include "../../Fun/FunMode.hpp"
+#include "MenuAccess.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>
@@ -22,11 +23,11 @@ std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int admin
 {
     auto& tr = app.Runtime.Translations;
 
-    auto* admin = app.Runtime.Players.GetPlayerBySlot(adminSlot);
+    auto* admin = app.Runtime.Players.Get(adminSlot);
     if (!admin)
         return nullptr;
 
-    bool allowed = app.Access.HasPermission(admin->GetSteamID(), Permission::FunMode);
+    bool allowed = app.Access.HasPermission(admin->SteamId(), Permission::FunMode);
 
     MenuBuilder builder(tr.Get("category.fun", adminSlot));
 
@@ -37,8 +38,7 @@ std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int admin
             tr.Get("effectState.off", adminSlot), [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
             [&app, id = info.Id, onKey = std::string(info.OnKey), offKey = std::string(info.OffKey)](int slot) {
                 // Re-check per click: the menu may have been open across an !admin_reload.
-                auto* caller = app.Runtime.Players.GetPlayerBySlot(slot);
-                if (!caller || !app.Access.HasPermission(caller->GetSteamID(), Permission::FunMode))
+                if (!MayUse(app, slot, Permission::FunMode))
                     return;
                 bool on = app.FunMode.Flip(id);
                 app.Chat.BroadcastKey(on ? onKey : offKey);
@@ -49,8 +49,7 @@ std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int admin
     builder.AddButton(
         tr.Get("fun.clearAll", adminSlot),
         [&app](int slot) {
-            auto* caller = app.Runtime.Players.GetPlayerBySlot(slot);
-            if (!caller || !app.Access.HasPermission(caller->GetSteamID(), Permission::FunMode))
+            if (!MayUse(app, slot, Permission::FunMode))
                 return;
             app.FunMode.ClearAll();
             app.Chat.BroadcastKey("broadcast.funCleared");

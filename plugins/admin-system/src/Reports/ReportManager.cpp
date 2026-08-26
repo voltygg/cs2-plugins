@@ -50,8 +50,8 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
                            const std::string& reasonCode, const std::string& reasonText,
                            std::function<void(bool)> onDone)
 {
-    const int64_t reporterSteamId = reporter.GetSteamID();
-    const int64_t targetSteamId = target.GetSteamID();
+    const int64_t reporterSteamId = reporter.SteamId();
+    const int64_t targetSteamId = target.SteamId();
     const int64_t now = Time::Now();
 
     if (!EvaluateGate(reporterSteamId, targetSteamId, now))
@@ -63,11 +63,11 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
 
     Database::Report report{
         .ReporterSteamId = reporterSteamId,
-        .ReporterName = reporter.GetName(),
-        .ReporterIp = reporter.GetIpAddress(),
+        .ReporterName = reporter.Name(),
+        .ReporterIp = std::string(reporter.Ip()),
         .TargetSteamId = targetSteamId,
-        .TargetName = target.GetName(),
-        .TargetIp = target.GetIpAddress(),
+        .TargetName = target.Name(),
+        .TargetIp = std::string(target.Ip()),
         .ReasonCode = reasonCode,
         .Reason = reasonText,
         .ServerTag = _config.GetServer().tag,

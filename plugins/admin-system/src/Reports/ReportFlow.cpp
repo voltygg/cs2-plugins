@@ -43,14 +43,14 @@ static std::string ReasonLabel(App& app, const Core::ReportReason& reason, int s
  *  token-free. */
 static std::optional<std::string> ValidatePending(App& app, int slot, const PendingReport& pending)
 {
-    auto* reporter = app.Runtime.Players.GetPlayerBySlot(slot);
+    auto* reporter = app.Runtime.Players.Get(slot);
     if (!reporter)
         return "report.failed";
 
-    if (!app.Runtime.Players.GetPlayerBySlotIfSteamId(pending.TargetSlot, pending.TargetSteamId))
+    if (!app.Runtime.Players.Get(VoltMod::PlayerRef{pending.TargetSlot, pending.TargetSteamId}))
         return "report.targetLost";
 
-    if (!app.Reports.CanReport(reporter->GetSteamID(), pending.TargetSteamId))
+    if (!app.Reports.CanReport(reporter->SteamId(), pending.TargetSteamId))
         return "report.blocked";
 
     return std::nullopt;
@@ -58,33 +58,33 @@ static std::optional<std::string> ValidatePending(App& app, int slot, const Pend
 
 static void Submit(App& app, int reporterSlot, PendingReport& pending)
 {
-    auto* reporter = app.Runtime.Players.GetPlayerBySlot(reporterSlot);
-    auto* target = app.Runtime.Players.GetPlayerBySlot(pending.TargetSlot);
+    auto* reporter = app.Runtime.Players.Get(reporterSlot);
+    auto* target = app.Runtime.Players.Get(pending.TargetSlot);
     if (!reporter || !target)
         return;
 
-    const int64_t reporterSteamId = reporter->GetSteamID();
+    const int64_t reporterSteamId = reporter->SteamId();
     app.Reports.Submit(*reporter, *target, pending.ReasonCode, pending.ReasonText,
                        // The reporter may be gone by the time the write lands, and their old slot
                        // may host somebody else - re-find them by SteamID.
                        [&app, reporterSteamId, name = pending.TargetName](bool ok) {
-                           auto* player = app.Runtime.Players.GetPlayerBySteamId(reporterSteamId);
+                           auto* player = app.Runtime.Players.BySteamId(reporterSteamId);
                            if (!player)
                                return;
-                           app.Runtime.Messages.ReplyKey(player->GetSlot(), ok ? "report.submitted" : "report.failed",
+                           app.Runtime.Messages.ReplyKey(player->Slot(), ok ? "report.submitted" : "report.failed",
                                                          {{"name", name}});
                        });
 }
 
 static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
 {
-    auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
+    auto* target = app.Runtime.Players.Get(targetSlot);
     if (!target)
         return;
 
     ReportFlowT::Create(
         app.Runtime.Menus,
-        PendingReport{.TargetSlot = targetSlot, .TargetSteamId = target->GetSteamID(), .TargetName = target->GetName()})
+        PendingReport{.TargetSlot = targetSlot, .TargetSteamId = target->SteamId(), .TargetName = target->Name()})
         ->OnValidate([&app](int slot, const PendingReport& p) { return ValidatePending(app, slot, p); })
         ->AddOptionsStep([&app](int slot) { return app.Runtime.Translations.Get("report.selectReason", slot); },
                          [&app](int slot) {
@@ -121,11 +121,11 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
 
 void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
 {
-    auto* reporter = app.Runtime.Players.GetPlayerBySlot(reporterSlot);
+    auto* reporter = app.Runtime.Players.Get(reporterSlot);
     if (!reporter)
         return;
 
-    const int64_t reporterSteamId = reporter->GetSteamID();
+    const int64_t reporterSteamId = reporter->SteamId();
     auto menu = Admin::Menu::BuildPlayerPicker(
         app, reporterSlot, app.Runtime.Translations.Get("report.selectTarget", reporterSlot),
         [&app](int slot, int targetSlot) { StartReportFlow(app, slot, targetSlot); },
@@ -134,10 +134,10 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
         [&app, reporterSlot, reporterSteamId](int targetSlot) {
             if (targetSlot == reporterSlot)
                 return false;
-            auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
+            auto* target = app.Runtime.Players.Get(targetSlot);
             if (!target || target->IsBot())
                 return false;
-            return app.Reports.CanReport(reporterSteamId, target->GetSteamID());
+            return app.Reports.CanReport(reporterSteamId, target->SteamId());
         });
 
     if (!menu)

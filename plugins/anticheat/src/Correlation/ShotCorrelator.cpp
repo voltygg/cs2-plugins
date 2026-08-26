@@ -169,9 +169,9 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
     IVEngineServer2* engine = _rt.Interfaces.Engine;
     _userIdsResolved = engine != nullptr;
 
-    for (const VoltMod::Player* player : _rt.Players.GetAllPlayers())
+    for (const VoltMod::Player* player : _rt.Players.All())
     {
-        const int slot = player ? player->GetSlot() : -1;
+        const int slot = player ? player->Slot() : -1;
         if (!IsValidSlot(slot))
             continue;
         if (engine)

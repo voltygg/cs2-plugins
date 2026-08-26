@@ -35,25 +35,25 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
         .Handler =
             [&app](CommandContext& c) {
                 int64_t targetSteamId = c.SteamId;
-                std::string targetName = c.HasTarget() ? c.Target().GetName() : std::to_string(targetSteamId);
+                std::string targetName = c.HasTarget() ? c.Target().Name() : std::to_string(targetSteamId);
 
                 const auto* row = app.Admins.GetAdmin(targetSteamId);
                 if (!row)
                     return c.Fail("cmd.freezeNotAdmin", {{"name", targetName}});
                 targetName = row->Name;
 
-                // CanTarget would allow self-targeting, so freezing yourself needs an explicit rejection.
-                if (targetSteamId == c.Caller->GetSteamID())
+                // Targeting yourself is allowed in general, so freezing yourself needs an
+                // explicit rejection here.
+                if (targetSteamId == c.Caller->SteamId())
                     return c.Fail("cmd.freezeSelf");
 
-                if (!app.Access.CanTarget(c.Caller->GetSteamID(), targetSteamId))
+                if (!app.Access.CanTarget(c.Caller->SteamId(), targetSteamId))
                     return c.Fail("cmd.freezeNoOutrank", {{"name", targetName}});
 
                 if (app.Freeze.IsFrozen(targetSteamId))
                     return c.Fail("cmd.freezeAlready", {{"name", targetName}});
 
-                bool ok =
-                    app.Freeze.Freeze(targetSteamId, targetName, c.Caller->GetSteamID(), c.Caller->GetName(), c.Reason);
+                bool ok = app.Freeze.Freeze(targetSteamId, targetName, c.Caller->SteamId(), c.Caller->Name(), c.Reason);
                 return ok ? c.Ok("cmd.freezeSuccess", {{"name", targetName}})
                           : c.Fail("cmd.freezeFailed", {{"name", targetName}});
             },
@@ -93,7 +93,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
                     return c.Fail("cmd.unfreezeNone", {{"token", c.Word}});
 
                 // Unfreeze erases the row; the name is ours because GetFrozen handed back a copy.
-                bool ok = app.Freeze.Unfreeze(targetSteamId, c.Caller->GetSteamID(), c.Caller->GetName());
+                bool ok = app.Freeze.Unfreeze(targetSteamId, c.Caller->SteamId(), c.Caller->Name());
                 return ok ? c.Ok("cmd.unfreezeSuccess", {{"name", row->Name}})
                           : c.Fail("cmd.freezeFailed", {{"name", row->Name}});
             },

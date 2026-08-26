@@ -17,8 +17,6 @@ protected:
     VoltMod::PluginInfo Info() const override;
     bool OnLoad(VoltMod::Runtime& runtime, bool late) override;
     void OnUnload() override { _app.reset(); }
-    void OnPlayerConnect(VoltMod::Player* player) override;
-    void OnPlayerDisconnect(VoltMod::Player* player) override;
     bool OnPlayerChat(VoltMod::Player* player, std::string_view message, bool teamChat) override;
     void OnRegisterHooks(VoltMod::Runtime& runtime) override;
 

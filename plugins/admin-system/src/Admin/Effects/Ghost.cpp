@@ -20,7 +20,7 @@ const Effect Ghost{.Permission = Flag(Permission::Fun),
                    .OnKey = "broadcast.ghostOn",
                    .OffKey = "broadcast.ghostOff",
                    .Setup = [](const ActionContext& ctx) -> EffectInstance {
-                       int slot = ctx.Target->GetSlot();
+                       int slot = ctx.Target().Slot();
                        auto& transmit = ctx.Rt.Transmit;
                        transmit.SetPawnHidden(slot, true);
                        return {.OnStop = [&transmit, slot]() { transmit.SetPawnHidden(slot, false); }};

@@ -22,8 +22,3 @@ bool BhopPlugin::OnLoad(VoltMod::Runtime& runtime, bool late)
     _app.emplace(runtime);
     return _app->Start();
 }
-
-void BhopPlugin::OnPlayerDisconnect(VoltMod::Player* player)
-{
-    _app->Bhop.OnPlayerDisconnect(player);
-}

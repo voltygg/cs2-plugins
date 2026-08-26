@@ -22,10 +22,10 @@ template <typename T>
 static void Fill(T& punishment, const Player& target, const Player& admin, const std::string& reason,
                  int64_t durationSec)
 {
-    punishment.TargetSteamId = target.GetSteamID();
-    punishment.TargetName = target.GetName();
-    punishment.AdminSteamId = admin.GetSteamID();
-    punishment.AdminName = admin.GetName();
+    punishment.TargetSteamId = target.SteamId();
+    punishment.TargetName = target.Name();
+    punishment.AdminSteamId = admin.SteamId();
+    punishment.AdminName = admin.Name();
     punishment.Reason = reason;
 
     if constexpr (requires { punishment.Duration = durationSec; })
@@ -42,15 +42,15 @@ static bool Issue(App& app, const Player& admin, const Player& target, PunishTyp
     {
     case PunishType::Kick:
     {
-        (void)app.Runtime.Entities.Controller(target.GetSlot()).Kick(reason);
-        app.Chat.BroadcastPunishment("kicked", admin.GetName(), target.GetName(), reason, 0);
+        (void)app.Runtime.Entities.Controller(target.Slot()).Kick(reason);
+        app.Chat.BroadcastPunishment("kicked", admin.Name(), target.Name(), reason, 0);
         return true;
     }
     case PunishType::Ban:
     {
         Ban ban;
         Fill(ban, target, admin, reason, durationSec);
-        ban.TargetIp = target.GetIpAddress();
+        ban.TargetIp = target.Ip();
         return pm.IssueBan(ban);
     }
     case PunishType::VoiceMute:
@@ -79,8 +79,8 @@ bool IssuePunishment(App& app, const Player& admin, const Player& target, Punish
                      int64_t durationSec)
 {
     // Capture identity up front: a kick invalidates `target` before the audit write below.
-    int64_t targetSteamId = target.GetSteamID();
-    std::string targetName = target.GetName();
+    int64_t targetSteamId = target.SteamId();
+    std::string targetName = target.Name();
 
     if (!Issue(app, admin, target, type, reason, durationSec))
         return false;
@@ -89,7 +89,7 @@ bool IssuePunishment(App& app, const Player& admin, const Player& target, Punish
     // warning->ban auto-escalation calls PunishmentManager directly and is deliberately
     // not counted against the admin.
     auto detail = durationSec > 0 ? std::format("{}; {}s", reason, durationSec) : reason;
-    app.Freeze.RecordPunishment(admin.GetSteamID(), admin.GetName(), AuditActionName(type), targetSteamId, targetName,
+    app.Freeze.RecordPunishment(admin.SteamId(), admin.Name(), AuditActionName(type), targetSteamId, targetName,
                                 detail);
     return true;
 }

@@ -45,6 +45,9 @@ void AntiCheatManager::Initialize()
     _subs.push_back(_rt.MovementHook.PreCmd +=
                     [this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); });
     _subs.push_back(_rt.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
+    _subs.push_back(_rt.Players.FullyConnected += [this](VoltMod::Player& player) { OnPlayerFullyConnected(player); });
+    _subs.push_back(_rt.Players.SettingsChanged +=
+                    [this](VoltMod::Player& player) { OnPlayerSettingsChanged(player); });
 
     // sv_cheats going off starts a propagation grace before client values mean anything again.
     _subs.push_back(_rt.ConVars.Changed += [this](const VoltMod::ConVarChange& change) {
@@ -240,9 +243,9 @@ void AntiCheatManager::LogStatus() const
 
     const double now = Time::MonotonicSeconds();
     bool any = false;
-    for (const VoltMod::Player* player : _rt.Players.GetAllPlayers())
+    for (const VoltMod::Player* player : _rt.Players.All())
     {
-        const int slot = player ? player->GetSlot() : -1;
+        const int slot = player ? player->Slot() : -1;
         if (!InSlotRange(slot) || player->IsBot())
             continue;
         any = true;
@@ -261,7 +264,7 @@ void AntiCheatManager::LogStatus() const
         Log::Info(
             "[AC] s{} {} ({}) punished={} aimbot={} aimlock={}{} antiaim={:.1f} silentaim={} names={} "
             "cvars=[{}] pending={} poll={:.1f}s shots={} cmds={} gen={}",
-            slot, player->GetName(), player->GetSteamID(), PunishmentName(_response.Issued(slot)),
+            slot, player->Name(), player->SteamId(), PunishmentName(_response.Issued(slot)),
             _aimbot.IncidentCount(slot), _aimlock.IncidentCount(slot), _aimlock.IsTracking(slot) ? "/tracking" : "",
             _antiAim.Score(slot), _silentAim.Score(slot, now), _namechanger.ChangeCount(slot),
             latched.empty() ? "-" : latched, _rt.ClientCvars.PendingCount(slot), _invalidCvarPoller.PollsIn(slot, now),
@@ -287,16 +290,14 @@ void AntiCheatManager::OnSlotChanged(int slot)
     std::apply([slot](auto&... modules) { (modules.OnSlotChanged(slot), ...); }, ResettableModules());
 }
 
-void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Player* player)
+void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Player& player)
 {
-    if (!player)
-        return;
     _namechangerDetector.OnFullyConnected(player);
-    _dllInjection.OnFullyConnected(player->GetSlot());
-    _invalidCvarPoller.OnFullyConnected(player->GetSlot());
+    _dllInjection.OnFullyConnected(player.Slot());
+    _invalidCvarPoller.OnFullyConnected(player.Slot());
 }
 
-void AntiCheatManager::OnPlayerSettingsChanged(VoltMod::Player* player)
+void AntiCheatManager::OnPlayerSettingsChanged(VoltMod::Player& player)
 {
     _namechangerDetector.OnSettingsChanged(player);
 }
@@ -341,7 +342,7 @@ bool AntiCheatManager::IsEligible(int slot)
     if (!IsValidSlot(slot))
         return false;
     // The pawn flag is unreadable before a player has a pawn, so identity decides it first.
-    const VoltMod::Player* player = _rt.Players.GetPlayerBySlot(slot);
+    const VoltMod::Player* player = _rt.Players.Get(slot);
     if (!player || player->IsBot())
         return false;
     VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot);

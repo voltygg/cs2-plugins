@@ -148,12 +148,12 @@ void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, const std::string& adm
 
 void FreezeManager::NotifyFrozen(int64_t steamId)
 {
-    auto* player = _rt.Players.GetPlayerBySteamId(steamId);
+    auto* player = _rt.Players.BySteamId(steamId);
     if (!player)
         return;
 
     auto row = GetFrozen(steamId);
-    int slot = player->GetSlot();
+    int slot = player->Slot();
     auto notice = _rt.Translations.Get("freeze.notice", slot, {{"reason", row ? row->Reason : ""}});
     _rt.Messages.Reply(slot, std::format("{}{}", ChatColors::Red, notice));
 }

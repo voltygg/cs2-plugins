@@ -30,7 +30,7 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
 
                        // Delayed so the blast plays before the target drops; Pawns owns the timer,
                        // which is what keeps it off the next occupant of the slot.
-                       ctx.Rt.Pawns.SlayDelayed(ctx.Target->GetSlot(), SmiteSlayDelayMs);
+                       ctx.Rt.Pawns.SlayDelayed(ctx.Target().Slot(), SmiteSlayDelayMs);
                        return "broadcast.smote";
                    }};
 

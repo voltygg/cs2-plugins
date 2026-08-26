@@ -35,19 +35,17 @@ using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 /** True if @p adminSlot may still punish @p targetSlot with @p type's permission. */
 static bool CanStillPunish(App& app, int adminSlot, int targetSlot, PunishType type)
 {
-    auto& plrMgr = app.Runtime.Players;
-    auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
-    auto* target = plrMgr.GetPlayerBySlot(targetSlot);
-    if (!admin || !target)
-        return false;
-    return app.Access.CanActOn(admin->GetSteamID(), target->GetSteamID(), PermissionFor(type));
+    auto& players = app.Runtime.Players;
+    return app.Runtime.Policy
+        .Authorize(players.RefFor(adminSlot), players.RefFor(targetSlot), Flag(PermissionFor(type)))
+        .has_value();
 }
 
 /** Flow validation: the target may have left (or the slot rehosts another player) and the
  *  admin's flags/immunity may have changed (e.g. !admin_reload) while the menu was open. */
 static std::optional<std::string> ValidatePending(App& app, int slot, const PendingPunishment& pending)
 {
-    if (!app.Runtime.Players.GetPlayerBySlotIfSteamId(pending.TargetSlot, pending.TargetSteamId))
+    if (!app.Runtime.Players.Get(VoltMod::PlayerRef{pending.TargetSlot, pending.TargetSteamId}))
         return "punish.targetLost";
     if (!CanStillPunish(app, slot, pending.TargetSlot, pending.Type))
         return "punish.notAllowed";
@@ -57,8 +55,8 @@ static std::optional<std::string> ValidatePending(App& app, int slot, const Pend
 static void Issue(App& app, int adminSlot, PendingPunishment& pending)
 {
     auto& tr = app.Runtime.Translations;
-    auto* admin = app.Runtime.Players.GetPlayerBySlot(adminSlot);
-    auto* target = app.Runtime.Players.GetPlayerBySlot(pending.TargetSlot);
+    auto* admin = app.Runtime.Players.Get(adminSlot);
+    auto* target = app.Runtime.Players.Get(pending.TargetSlot);
     if (!admin || !target)
         return;
 
@@ -149,11 +147,11 @@ bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, int targetSlot)
 std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
     auto& tr = app.Runtime.Translations;
-    auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
+    auto* target = app.Runtime.Players.Get(targetSlot);
     if (!target)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("punish.quickPunish", adminSlot), target->GetName()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("punish.quickPunish", adminSlot), target->Name()));
 
     int rows = 0;
     for (const auto& tmpl : app.Config.GetPunishmentTemplates())
@@ -164,8 +162,8 @@ std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, i
         PendingPunishment pending{
             .Type = tmpl.Type,
             .TargetSlot = targetSlot,
-            .TargetSteamId = target->GetSteamID(),
-            .TargetName = target->GetName(),
+            .TargetSteamId = target->SteamId(),
+            .TargetName = target->Name(),
             .DurationSec = tmpl.DurationSec,
             .Reason = tmpl.Reason,
         };

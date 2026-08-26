@@ -38,7 +38,7 @@ const Effect Hide{.Permission = Flag(Permission::Hide),
                       ctx.TargetCtrl.Name = "";
                       (void)ctx.TargetCtrl.ChangeTeam(TeamSpectator);
 
-                      int slot = ctx.Target->GetSlot();
+                      int slot = ctx.Target().Slot();
                       auto& transmit = ctx.Rt.Transmit;
                       transmit.SetControllerHidden(slot, true);
 

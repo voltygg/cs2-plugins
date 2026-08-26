@@ -31,12 +31,12 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
     if (pc.RoomCode.empty() || pc.PollInFlight || Time::Now() < pc.NextPollAtSec)
         return;
 
-    auto* target = _rt.Players.GetPlayerBySlot(targetSlot);
+    auto* target = _rt.Players.Get(targetSlot);
     if (!target)
         return;  // disconnect cleanup tears the check down
 
     const auto& cfg = _config.GetCheatCheck().websiteAutoRoom;
-    auto request = BuildPresenceRequest(cfg, pc.RoomCode, target->GetSteamID());
+    auto request = BuildPresenceRequest(cfg, pc.RoomCode, target->SteamId());
     if (!request)
     {
         // presenceUrl was removed by a config reload mid-check; back off a full interval
@@ -77,8 +77,8 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
     if (*present == pc.SuspectJoined)
         return;
 
-    auto* target = _rt.Players.GetPlayerBySlot(targetSlot);
-    const std::string targetName = target ? target->GetName() : std::string();
+    auto* target = _rt.Players.Get(targetSlot);
+    const std::string targetName = target ? target->Name() : std::string();
 
     if (*present)
     {

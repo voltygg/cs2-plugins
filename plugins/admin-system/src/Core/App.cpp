@@ -3,6 +3,7 @@
 #include "../Admin/Effects/Model.hpp"
 #include "../Commands/Commands.hpp"
 #include "../Database/Repositories/ServerRepository.hpp"
+#include "../Punishments/KickNotice.hpp"
 #include "Config.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -24,36 +25,75 @@ App::~App()
     AdminActions.Unpublish();
     CheatCheck.CancelAll();
     Effects.CancelAll();
-    // Unload fires no disconnect hooks, so fold open sessions here or lose their playtime.
-    for (auto* player : Runtime.Players.GetAllPlayers())
-        FlushPlayerSession(player);
+    // Unload fires no disconnect hooks. Clear() raises Players.Disconnected for everyone still
+    // connected, and OnPlayerDisconnect is still subscribed here in the destructor body, so open
+    // sessions are folded through the one path rather than by a second sweep.
     Runtime.Players.Clear();
     // Drains queued writes (a ban issued just before unload must land) and drops undispatched
     // completions before the managers they would touch are destroyed.
     Db.Stop();
 }
 
-void App::FlushPlayerSession(Player* player)
-{
-    if (player)
-        PlayerRepo.RecordDisconnect(player->GetSteamID(), player->GetName(), player->GetPlaytime());
-}
-
 // Install the shared command, action, reply, and broadcast policy.
 void App::InstallPolicy()
 {
-    Runtime.Policy = {
-        .HasPermission = [this](int64_t steamId,
-                                const std::string& permission) { return Access.HasAnyPermission(steamId, permission); },
-        .CanTarget = [this](Player& caller,
-                            Player& target) { return Access.CanTarget(caller.GetSteamID(), target.GetSteamID()); },
-        .Reply = [this](int slot, std::string_view message) { Chat.Reply(slot, message); },
-        .Broadcast =
-            [this](Player& caller, Player* target, const std::string& key) {
-                if (target)
-                    Chat.BroadcastAction(key, caller.GetName(), target->GetName());
-            },
+    auto& policy = Runtime.Policy;
+    policy.HasPermission = [this](int64_t steamId, std::string_view permission) {
+        return Access.HasAnyPermission(steamId, std::string(permission));
     };
+    // Immunity only: Policy::Authorize has already dealt with the console (no caller) and with a
+    // caller targeting themselves before this is consulted.
+    policy.CanTarget = [this](const Player& caller, const Player& target) {
+        return Access.CanTarget(caller.SteamId(), target.SteamId());
+    };
+    policy.Reply = [this](int slot, std::string_view message) { Chat.Reply(slot, message); };
+    policy.Broadcast = [this](const VoltMod::Authorized& who, std::string_view key) {
+        if (who.Target)
+            Chat.BroadcastAction(std::string(key), who.Caller.Name(), who.Target->Name());
+    };
+}
+
+// The connection lifecycle: one subscription per edge, kept in _subs so the handlers stop before
+// the managers they touch are destroyed.
+void App::RegisterPlayerLifecycle()
+{
+    _subs.push_back(Runtime.Players.Connected += [this](Player& player) { OnPlayerConnect(player); });
+    _subs.push_back(Runtime.Players.Disconnected += [this](Player& player) { OnPlayerDisconnect(player); });
+}
+
+void App::OnPlayerConnect(Player& player)
+{
+    const int64_t steamId = player.SteamId();
+    const int slot = player.Slot();
+    PlayerRepo.RecordConnect(steamId, player.Name(), std::string(player.Ip()));
+
+    // Register the admin's panel language up front so every slot-aware Translations::Get (menus,
+    // cheat-check, mute notices) renders in their language without per-command setup.
+    if (const auto* row = Admins.GetAdmin(steamId))
+        Runtime.Translations.SetPlayerLanguage(slot, row->Language);
+
+    // A frozen admin gets told up front instead of discovering it on their first denied command.
+    if (Freeze.IsFrozen(steamId))
+        Freeze.NotifyFrozenSoon(slot, steamId);
+
+    // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so
+    // KickDeferred waits a frame -- the player is fully connected by then. Bots have no real
+    // SteamID and never match an active ban.
+    if (auto ban = Punishments.GetActiveBan(steamId))
+    {
+        // Built now, while the ban row is in hand, so the disconnect screen carries the expiry
+        // and appeal link rather than the bare reason.
+        Punishments.KickDeferred(slot, steamId,
+                                 AdminSystem::Punishments::BuildBanNotice(Runtime.Translations, Config.GetAppeal(),
+                                                                          ban->Reason, ban->ExpiresAt, steamId, slot));
+    }
+}
+
+void App::OnPlayerDisconnect(Player& player)
+{
+    PlayerRepo.RecordDisconnect(player.SteamId(), player.Name(), player.Playtime().count());
+    Effects.CancelAllForSlot(player.Slot());
+    CheatCheck.CancelAllForSlot(player.Slot());
 }
 
 StageResult App::ConnectDatabase()
@@ -169,6 +209,7 @@ bool App::Start()
 
     report.Run("Policy", [this] {
         InstallPolicy();
+        RegisterPlayerLifecycle();
         // Freeze the player while an admin menu is open so WASD navigation doesn't also walk
         // them around.
         Runtime.Menus.SetFreezePlayer(true);

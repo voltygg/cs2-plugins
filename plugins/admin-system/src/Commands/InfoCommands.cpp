@@ -27,7 +27,7 @@ void RegisterInfoCommands(VoltMod::CommandManager& commands, App& app)
         .Permission = Flag(Permission::Hide),
         .Handler =
             [&app](CommandContext& c) {
-                auto players = app.Runtime.Players.GetAllPlayers();
+                auto players = app.Runtime.Players.All();
                 if (players.empty())
                     return c.Ok("cmd.noPlayersOnline");
 
@@ -39,10 +39,10 @@ void RegisterInfoCommands(VoltMod::CommandManager& commands, App& app)
                 {
                     if (!p)
                         continue;
-                    auto style = adminMgr.GetChatStyle(p->GetSteamID());
+                    auto style = adminMgr.GetChatStyle(p->SteamId());
                     std::string tag = style.HasPrefix() ? style.Prefix : "-";
-                    chat.Reply(slot, std::format("  #{} {} [{}] (immunity {})", p->GetSlot(), p->GetName(), tag,
-                                                 adminMgr.GetImmunity(p->GetSteamID())));
+                    chat.Reply(slot, std::format("  #{} {} [{}] (immunity {})", p->Slot(), p->Name(), tag,
+                                                 adminMgr.GetImmunity(p->SteamId())));
                 }
                 return CommandResult::Silent();
             },

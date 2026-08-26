@@ -24,7 +24,7 @@ void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app)
         .Handler =
             [&app](CommandContext& c) {
                 // Any registered admin may open the menu; each category inside is gated by its own flags.
-                if (!app.Admins.IsAdmin(c.Caller->GetSteamID()))
+                if (!app.Admins.IsAdmin(c.Caller->SteamId()))
                     return c.Fail("cmd.noPermission");
 
                 int slot = c.CallerSlot();

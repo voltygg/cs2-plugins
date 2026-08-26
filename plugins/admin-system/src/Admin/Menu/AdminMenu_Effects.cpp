@@ -32,14 +32,14 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app
 {
     auto& tr = app.Runtime.Translations;
 
-    auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
-    if (!target || !app.Runtime.Players.GetPlayerBySlot(adminSlot))
+    auto* target = app.Runtime.Players.Get(targetSlot);
+    if (!target || !app.Runtime.Players.Get(adminSlot))
         return nullptr;
 
     VoltMod::MenuContext ctx{.Rt = &app.Runtime, .Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
     bool hasS = ctx.Allowed(Flag(Permission::Control));
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->GetName()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->Name()));
     builder.WithContext(ctx);
 
     for (const auto& entry : Effects::MenuEffects)

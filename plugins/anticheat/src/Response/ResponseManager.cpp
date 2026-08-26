@@ -57,9 +57,9 @@ bool ResponseManager::IsWhitelisted(int64_t steamId) const
 
 void ResponseManager::Handle(int slot, const Finding& finding)
 {
-    auto* player = _rt.Players.GetPlayerBySlot(slot);
-    const std::string name = player ? player->GetName() : std::string("<unknown>");
-    const int64_t steamId = player ? player->GetSteamID() : 0;
+    auto* player = _rt.Players.Get(slot);
+    const std::string name = player ? player->Name() : std::string("<unknown>");
+    const int64_t steamId = player ? player->SteamId() : 0;
 
     const FunnelDecision decision = Decide({
         .SteamId = steamId,
@@ -92,7 +92,7 @@ void ResponseManager::Handle(int slot, const Finding& finding)
         // the slot in case its player left and somebody else took it.
         _pendingKick[slot] =
             _rt.Scheduler.NextTick([&players = _rt.Players, &entities = _rt.Entities, slot, steamId, reason] {
-                if (players.GetPlayerBySlotIfSteamId(slot, steamId))
+                if (players.Get(VoltMod::PlayerRef{slot, steamId}))
                     (void)entities.Controller(slot).Kick(reason);
             });
         return;

@@ -42,9 +42,6 @@ struct App
     /** Connect the database, run migrations, load admins and register commands. */
     bool Start();
 
-    /** Persist a finished session; shared by the disconnect hook and the unload sweep. */
-    void FlushPlayerSession(VoltMod::Player* player);
-
     VoltMod::Runtime& Runtime;
     const std::string Version;
 
@@ -78,6 +75,10 @@ struct App
 
 private:
     void InstallPolicy();
+    /** Subscribe to the roster's connect/disconnect signals. */
+    void RegisterPlayerLifecycle();
+    void OnPlayerConnect(VoltMod::Player& player);
+    void OnPlayerDisconnect(VoltMod::Player& player);
     VoltMod::StageResult ConnectDatabase();
     VoltMod::StageResult LoadAdminData();
     VoltMod::StageResult StartPunishments();

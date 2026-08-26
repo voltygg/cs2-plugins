@@ -41,7 +41,7 @@ public:
     /** Re-read settings.jsonc and re-apply (bhop_reload): restores prior convar values first. */
     void ReloadSettings();
 
-    void OnPlayerDisconnect(VoltMod::Player* player);
+    void OnPlayerDisconnect(VoltMod::Player& player);
 
 private:
     enum class Mode : uint8_t

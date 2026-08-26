@@ -65,11 +65,11 @@ std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int a
     auto& tr = app.Runtime.Translations;
     auto& access = app.Access;
 
-    auto* admin = app.Runtime.Players.GetPlayerBySlot(adminSlot);
+    auto* admin = app.Runtime.Players.Get(adminSlot);
     if (!admin)
         return nullptr;
 
-    bool hasB = access.HasPermission(admin->GetSteamID(), Permission::Hide);
+    bool hasB = access.HasPermission(admin->SteamId(), Permission::Hide);
 
     MenuBuilder builder(tr.Get("category.control", adminSlot));
 
@@ -95,14 +95,14 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
 {
     auto& tr = app.Runtime.Translations;
 
-    auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
-    if (!target || !app.Runtime.Players.GetPlayerBySlot(adminSlot))
+    auto* target = app.Runtime.Players.Get(targetSlot);
+    if (!target || !app.Runtime.Players.Get(adminSlot))
         return nullptr;
 
     VoltMod::MenuContext ctx{.Rt = &app.Runtime, .Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
     bool hasS = ctx.Allowed(Flag(Permission::Control));
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->GetName()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->Name()));
     builder.WithContext(ctx);
 
     // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
@@ -145,11 +145,11 @@ std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, int ad
 {
     auto& tr = app.Runtime.Translations;
 
-    auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
+    auto* target = app.Runtime.Players.Get(targetSlot);
     if (!target)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("action.giveWeapon", adminSlot), target->GetName()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("action.giveWeapon", adminSlot), target->Name()));
 
     const auto& menu = app.Config.GetWeaponMenu();
     for (const auto& weapon : menu)

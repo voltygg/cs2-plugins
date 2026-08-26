@@ -47,8 +47,8 @@ public:
 
     void OnMapStart();
 
-    void OnPlayerFullyConnected(VoltMod::Player* player);
-    void OnPlayerSettingsChanged(VoltMod::Player* player);
+    void OnPlayerFullyConnected(VoltMod::Player& player);
+    void OnPlayerSettingsChanged(VoltMod::Player& player);
 
     /**
      * Disabled globally or while `sv_cheats` is enabled outside test mode.
