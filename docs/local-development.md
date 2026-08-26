@@ -23,6 +23,13 @@ packages. Do not initialize or add a VoltMod submodule to build plugins. The
 optional `vendor/voltmod` checkout is only for coordinated framework work with
 `conan editable`.
 
+While `voltmod` is editable, `uv run poe build` here refuses to link against a
+stale framework build: if anything under `vendor/voltmod/include` or
+`vendor/voltmod/src` is newer than
+`vendor/voltmod/build/<preset>/voltmod-runtime.lib` (the `.a` on Linux), or
+that archive is missing, the build fails with the command to build the
+framework first. Pass `--allow-stale-editable` to bypass it for one build.
+
 ## Build presets
 
 | Preset | Output |
