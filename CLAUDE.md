@@ -102,6 +102,12 @@ Current patterns:
   so a fire-and-forget deferral still needs an owner.
 - A hook service arms itself on its first subscription (`Movement`, `Damage`,
   `Teleport`); do not look for an `Install()` or `Enable()` to call.
+- Reach a player through the frame-local `Pawn` (the body: health, armor,
+  movement, aim) or `Controller` (the identity: name, money, team), from
+  `runtime.Entities.PawnOf(slot)` / `.Controller(slot)`. Schema fields are
+  members - `pawn.Health = 100` writes and replicates. `explicit operator bool()`
+  is the only validity check. Never store a wrapper past the frame: store an
+  `EntityRef` or a `PlayerRef` and resolve it again where it is used.
 - Return `VoltMod::Result<T>`/`VoltMod::Status` where a caller has to know why
   something failed; `Error::Detail` is the log text and `Error::Key` the
   translation key for a player-facing reply.
