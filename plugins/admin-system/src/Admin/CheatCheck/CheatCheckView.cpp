@@ -50,12 +50,10 @@ PanelState PanelStateFor(const PendingCheck& pc)
 
 }  // namespace
 
-void CheatCheckView::RenderPanel(int slot, const PendingCheck& pc) const
+std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
 {
     if (!_rt.Players.GetPlayerBySlot(slot))
-    {
-        return;
-    }
+        return {};
 
     auto& tr = _rt.Translations;
 
@@ -108,10 +106,10 @@ void CheatCheckView::RenderPanel(int slot, const PendingCheck& pc) const
         html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick", slot));
     }
 
-    _rt.Messages.SendCenterHtml(slot, html);
+    return html;
 }
 
-void CheatCheckView::Render(int slot, const PendingCheck& pc) const
+void CheatCheckView::SendInstructions(int slot, const PendingCheck& pc) const
 {
     auto& tr = _rt.Translations;
 
@@ -135,8 +133,6 @@ void CheatCheckView::Render(int slot, const PendingCheck& pc) const
     case PanelState::Generic:
         break;
     }
-
-    RenderPanel(slot, pc);
 }
 
 }  // namespace AdminSystem::Admin::CheatCheck

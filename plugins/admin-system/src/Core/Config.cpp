@@ -1,6 +1,5 @@
 #include "Config.hpp"
 
-#include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Validation.hpp>
 #include <algorithm>
 #include <format>
@@ -67,7 +66,7 @@ void ConfigManager::ResolveRuntimeSettings()
         "reports.reasons");
 
     // A reason picker with only the free-text row (or nothing at all) is a dead end.
-    Validation::FallbackIfEmpty(reports.reasons, ReportSettings{}.reasons, "reports.reasons");
+    Validation::FallbackIfEmpty(reports.reasons, [] { return ReportSettings{}.reasons; }, "reports.reasons");
 
     // Negative windows would make every elapsed check pass; treat them as "disabled".
     reports.cooldownSec = std::max(reports.cooldownSec, 0);
@@ -77,44 +76,65 @@ void ConfigManager::ResolveRuntimeSettings()
     ResolveWeaponMenu(settings.weapons);
 }
 
-// Whether a map file actually exists is the engine's call, not ours; MapCycleState re-checks the
-// resolved names against MapService at load so a stale entry surfaces in the load report.
+namespace
+{
+
+// Whether a map file exists is the engine's call; MapCycleState re-checks the resolved names at
+// load so a stale entry surfaces in the load report.
+std::vector<Maps::MapEntry> BuildMapEntries(const std::vector<MapConfigEntry>& raw)
+{
+    std::vector<Maps::MapEntry> entries;
+    entries.reserve(raw.size());
+    for (const auto& e : raw)
+        entries.push_back({.Name = e.name, .DisplayName = e.displayName, .WorkshopId = e.workshopId});
+
+    Validation::FilterValid(
+        entries,
+        [](const Maps::MapEntry& entry, std::size_t) -> std::optional<std::string> {
+            auto problem = Maps::ValidateMapEntry(entry);
+            if (problem.empty())
+                return std::nullopt;
+            return problem;
+        },
+        "maps.cycle");
+    return entries;
+}
+
+std::vector<Weapons::WeaponEntry> BuildWeaponEntries(const std::vector<WeaponConfigEntry>& raw)
+{
+    std::vector<Weapons::WeaponEntry> entries;
+    entries.reserve(raw.size());
+    for (const auto& e : raw)
+        entries.push_back({.Name = e.name, .Item = e.item});
+
+    Validation::FilterValid(
+        entries,
+        [](const Weapons::WeaponEntry& entry, std::size_t) -> std::optional<std::string> {
+            auto problem = Weapons::ValidateWeaponEntry(entry);
+            if (problem.empty())
+                return std::nullopt;
+            return problem;
+        },
+        "weapons.menu");
+    return entries;
+}
+
+}  // namespace
+
+// Both lists fall back to their struct defaults when nothing valid is left, since an empty Map or
+// Give weapon page reads as a broken plugin rather than as a configuration gap - most often on a
+// server whose settings.jsonc predates them.
 void ConfigManager::ResolveMapCycle(const MapSettings& maps)
 {
-    _resolvedMaps.clear();
-    _resolvedMaps.reserve(maps.cycle.size());
-
-    for (std::size_t i = 0; i < maps.cycle.size(); ++i)
-    {
-        const auto& raw = maps.cycle[i];
-        Maps::MapEntry entry{.Name = raw.name, .DisplayName = raw.displayName, .WorkshopId = raw.workshopId};
-
-        if (auto problem = Maps::ValidateMapEntry(entry); !problem.empty())
-        {
-            Log::Warn("maps.cycle[{}] skipped: {}", i, problem);
-            continue;
-        }
-        _resolvedMaps.push_back(std::move(entry));
-    }
+    _resolvedMaps = BuildMapEntries(maps.cycle);
+    Validation::FallbackIfEmpty(_resolvedMaps, [] { return BuildMapEntries(MapSettings{}.cycle); }, "maps.cycle");
 }
 
 void ConfigManager::ResolveWeaponMenu(const WeaponSettings& weapons)
 {
-    _resolvedWeapons.clear();
-    _resolvedWeapons.reserve(weapons.menu.size());
-
-    for (std::size_t i = 0; i < weapons.menu.size(); ++i)
-    {
-        const auto& raw = weapons.menu[i];
-        Weapons::WeaponEntry entry{.Name = raw.name, .Item = raw.item};
-
-        if (auto problem = Weapons::ValidateWeaponEntry(entry); !problem.empty())
-        {
-            Log::Warn("weapons.menu[{}] skipped: {}", i, problem);
-            continue;
-        }
-        _resolvedWeapons.push_back(std::move(entry));
-    }
+    _resolvedWeapons = BuildWeaponEntries(weapons.menu);
+    Validation::FallbackIfEmpty(
+        _resolvedWeapons, [] { return BuildWeaponEntries(WeaponSettings{}.menu); }, "weapons.menu");
 }
 
 }  // namespace AdminSystem::Core

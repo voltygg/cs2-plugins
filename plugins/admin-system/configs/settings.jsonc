@@ -20,21 +20,19 @@
     "sslMode": "prefer"
   },
   "punishments": {
-    // Reason recorded when an admin bans without specifying one.
+    // Recorded when an admin bans without giving a reason.
     "defaultBanReason": "Banned by administrator",
-    // Number of warnings before escalation logic triggers.
+    // Warnings before escalation triggers.
     "warningThreshold": 3,
-    // Shown to a banned player on the disconnect screen, alongside the reason.
+    // Shown to a banned player on the disconnect screen.
     "appeal": {
-      // Appeal page. `{steamId}` is substituted; empty omits the appeal from the notice.
+      // `{steamId}` is substituted; empty omits the appeal from the notice.
       "url": "",
       // Append how long the ban still has to run.
       "showExpiry": true
     },
-    // Quick Punish menu presets. Invalid entries are logged and skipped.
-    // type: "ban" | "voiceMute" | "textMute".
-    // duration: "perm" (or "0") for permanent, otherwise <n>s / <n>m / <n>h / <n>d.
-    // A bare duration is seconds; use a suffix to avoid ambiguity.
+    // Quick Punish presets; invalid entries are logged and skipped.
+    // duration: "perm"/"0" for permanent, else <n>s / <n>m / <n>h / <n>d (bare = seconds).
     "templates": [
       { "name": "Cheating", "type": "ban", "duration": "perm", "reason": "Cheating" },
       { "name": "Griefing", "type": "ban", "duration": "1d", "reason": "Team damage / griefing" },
@@ -55,12 +53,12 @@
     "menuDurations": ["5m", "30m", "1h", "1d", "7d", "perm"]
   },
   "abuseProtection": {
-    // Controls automatic freezing only; manual freeze commands remain available.
+    // Automatic freezing only; manual freeze commands remain available.
     "enabled": true,
     // Network-wide sliding window in minutes.
     "windowMinutes": 10,
-    // Per-window thresholds; reaching one freezes the admin. 0 disables that counter.
-    // Root ('z') admins are exempt from automatic freezing.
+    // Per-window thresholds; reaching one freezes the admin, 0 disables that counter. Root ('z')
+    // admins are exempt.
     "maxBans": 5,
     "maxKicks": 10,
     // Voice + text mutes combined.
@@ -70,18 +68,17 @@
   "chat": {
     "broadcastPunishments": true,
     "tagAdminChatMessages": true,
-    // Prefix used when an admin has no group prefix set.
+    // Used when an admin has no group prefix. "fallbackNameColor" and "fallbackMessageColor" also
+    // exist, both defaulting to "default".
     "fallbackPrefix": "[ADMIN]",
-    "fallbackPrefixColor": "red",
-    "fallbackNameColor": "default",
-    "fallbackMessageColor": "default"
+    "fallbackPrefixColor": "red"
   },
   "reports": {
     // Enables `!r` and `!report` for all players.
     "enabled": true,
-    // Per-SteamID delay between reports of any player; 0 disables it.
+    // Both in seconds, 0 disables: delay between a player's reports, then before the same
+    // reporter can report the same target again.
     "cooldownSec": 120,
-    // Delay before the same reporter can report the same target; 0 disables it.
     "duplicateWindowSec": 1800,
     // Adds a 64-character `Other...` reason stored with code `other`.
     "allowCustomReason": true,
@@ -96,37 +93,29 @@
     ]
   },
   "cheatCheck": {
-    // Active delivery mode: "fixedLink" | "websiteAutoRoom" | "playerProvided".
+    // Delivery mode: "fixedLink" | "websiteAutoRoom" | "playerProvided".
     "mode": "fixedLink",
-    // Seconds the suspect has to comply before the timeout action fires.
+    // Seconds to comply before the timeout action fires.
     "timeoutSec": 120,
-    // False unfreezes and notifies the admin instead of kicking on timeout.
+    // False unfreezes and notifies the admin instead of kicking.
     "autoKick": true,
-    // Kick reason shown to the player when autoKick triggers.
     "kickReason": "Failed to comply with cheat check",
-    // Refresh fast enough to survive HUD clears; values above ~200 ms may blink.
-    "panelRefreshMs": 100,
-    // Move the suspect to spectator in addition to freezing them.
+    // Move the suspect to spectator as well as freezing them.
     "moveToSpectator": true,
-    // Optional online image (https) shown atop the panel; leave empty for no banner.
+    // Optional https image atop the panel; empty for none. Sized by "bannerWidth"/"bannerHeight"
+    // (320x180 by default).
     "bannerImageUrl": "",
-    "bannerWidth": 320,
-    "bannerHeight": 180,
-    // "fixedLink" mode: the single URL shown to the suspect. Also the fallback for websiteAutoRoom.
+    // "fixedLink" mode: the URL shown to the suspect. Also the websiteAutoRoom fallback.
     "fixedLink": {
       "url": "https://discord.gg/your-invite"
     },
-    // `websiteAutoRoom` endpoint, prefilled for the meat-app API.
+    // Prefilled for the meat-app API. Another API also needs "authHeader", "authScheme",
+    // "playerUrlField", "checkerUrlField" and "presenceField" - see the schema.
     "websiteAutoRoom": {
-      // Room-creation endpoint.
       "createRoomUrl": "http://localhost:4000/api/rooms",
-      // Your API key. meat-app keys are mk_... and need the JOIN_ROOM_AS_ADMIN permission.
+      // meat-app keys are mk_... and need the JOIN_ROOM_AS_ADMIN permission.
       "apiKey": "",
-      // Auth header NAME. For Bearer APIs use "Authorization" + authScheme "Bearer".
-      "authHeader": "X-API-Key",
-      // Value prefix before the key; "" sends the key verbatim (e.g. "X-API-Key: mk_...").
-      "authScheme": "",
-      // String values may use {steamId}, {playerName}, {adminSteamId}, and {adminName}.
+      // String values may use {steamId}, {playerName}, {adminSteamId} and {adminName}.
       "requestBody": {
         "purpose": "CHEAT_CHECK",
         "title": "Cheat check: {playerName}",
@@ -137,27 +126,20 @@
           "reason": "Suspect {playerName} ({steamId}) - by {adminName}"
         }
       },
-      // Dot-path into the JSON response holding the suspect's room id/URL (meat-app returns "code").
-      "playerUrlField": "code",
-      // {value} is replaced by playerUrlField; leave empty to use the field value as the URL directly.
+      // Shown to the suspect, then relayed to the admin; {value} is the room code.
       "playerUrlTemplate": "http://localhost:4001/rooms/{value}",
-      // Optional checker URL relayed to the calling admin.
-      "checkerUrlField": "code",
       "checkerUrlTemplate": "http://localhost:4001/rooms/{value}",
-      // HTTP request timeout in milliseconds.
-      "timeoutMs": 8000,
-      // Presence polling pauses the countdown while the suspect is in the room.
-      // Empty disables polling; placeholders are {code} and {steamId}.
+      // Polling pauses the countdown while the suspect is in the room. Empty disables it;
+      // placeholders are {code} and {steamId}.
       "presenceUrl": "http://localhost:4000/api/rooms/{code}/presence?steamId={steamId}",
-      // Dot-path into the poll response holding the in-room flag.
-      "presenceField": "present",
-      // Poll cadence and maximum delay before a join is detected.
+      // Poll cadence, and so the worst-case delay before a join is noticed.
       "pollIntervalSec": 5
     }
   },
   "maps": {
-    // Maps admins may switch to. The engine has no usable list of its own, so this is it.
-    // workshopId != 0 addresses a workshop map by published-file id instead of by name.
+    // Maps admins may switch to; the engine has no usable list of its own. A non-zero workshopId
+    // addresses a workshop map by published-file id instead of by name. Omit the list and these
+    // same six apply, so the Map menu is never empty.
     "cycle": [
       { "name": "de_dust2", "displayName": "Dust II" },
       { "name": "de_mirage", "displayName": "Mirage" },
@@ -168,15 +150,15 @@
     ],
     // The yes/no vote an admin opens from Map > Put to vote.
     "vote": {
-      // Share of the ballots cast that must be yes; a strict majority of it is required.
+      // Share of the ballots cast that must be yes.
       "successRatio": 0.6,
       // How long the panel stays open.
       "durationSec": 20
     }
   },
   "weapons": {
-    // Weapons offered by !give and the Control > Give weapon menu.
-    // `item` is the entity classname; entries not starting with `weapon_` are skipped.
+    // Offered by !give and Control > Give weapon. `item` is the entity classname; anything not
+    // starting with `weapon_` is skipped. Omit the list and these same twelve apply.
     "menu": [
       { "name": "AK-47", "item": "weapon_ak47" },
       { "name": "M4A4", "item": "weapon_m4a1" },

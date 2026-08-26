@@ -2,6 +2,8 @@
 
 #include "PendingCheck.hpp"
 
+#include <string>
+
 namespace VoltMod
 {
 class Runtime;
@@ -24,11 +26,12 @@ public:
         : _rt(runtime), _config(config), _chat(chat)
     {}
 
-    /** Send only the persistent center-HTML panel to the suspect. */
-    void RenderPanel(int slot, const PendingCheck& pc) const;
+    /** Build the center-HTML panel for @p slot. Pure: the caller decides when to send it, which
+     *  is what lets Runtime::PersistentCenterHtml own the re-send loop. */
+    std::string PanelHtml(int slot, const PendingCheck& pc) const;
 
-    /** Send the chat instructions followed by the center-HTML panel. */
-    void Render(int slot, const PendingCheck& pc) const;
+    /** Send the one-off chat instructions. The panel is on its own refresh loop. */
+    void SendInstructions(int slot, const PendingCheck& pc) const;
 
 private:
     VoltMod::Runtime& _rt;

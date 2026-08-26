@@ -71,9 +71,13 @@ private:
     const Core::ConfigManager& _config;
     Core::ChatService& _chat;
     CheatCheckView _view{_rt, _config, _chat};
+    /** Owns the panel re-send loop; CS2 drops center-HTML within a second or two. Declared after
+     *  _view because its render callback reads through it. */
+    VoltMod::PersistentCenterHtml _panel{_rt.Messages, _rt.Scheduler};
 
     void Tick(int targetSlot);
     void Expire(int targetSlot);
+    void ShowPanel(int targetSlot);   // start (or restart) the panel's own refresh loop
     void ResetCheck(int targetSlot);  // cancel timer + clear panel + reset state, silently
     void Unfreeze(int targetSlot, VoltMod::MoveType restoreMove, int restoreTeam);
     void ResolveUrl(int targetSlot);

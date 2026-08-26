@@ -101,8 +101,6 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
                                _rt.Translations.Get("cheatCheck.suspectLeft", adminSlot, {{"name", targetName}}));
         });
     }
-
-    _view.RenderPanel(targetSlot, pc);
 }
 
 }  // namespace AdminSystem::Admin::CheatCheck

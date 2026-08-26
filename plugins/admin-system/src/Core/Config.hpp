@@ -109,10 +109,15 @@ struct MapVoteSettings
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapVoteSettings, successRatio, durationSec)
 
-/** Maps an admin may switch to. The engine offers no usable list of its own, so this is it. */
+/** Maps an admin may switch to. The engine offers no usable list of its own, so this is it. The
+ *  defaults are the active duty group, so a settings file predating this section still opens a
+ *  usable Map menu. */
 struct MapSettings
 {
-    std::vector<MapConfigEntry> cycle;
+    std::vector<MapConfigEntry> cycle = {
+        {"de_dust2", "Dust II"}, {"de_mirage", "Mirage"},   {"de_inferno", "Inferno"},
+        {"de_nuke", "Nuke"},     {"de_ancient", "Ancient"}, {"de_anubis", "Anubis"},
+    };
     MapVoteSettings vote;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapSettings, cycle, vote)
@@ -125,10 +130,24 @@ struct WeaponConfigEntry
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WeaponConfigEntry, name, item)
 
-/** Weapons offered by `!give` and the weapon menu. */
+/** Weapons offered by `!give` and the weapon menu. Defaulted for the same reason as
+ *  @ref MapSettings::cycle. */
 struct WeaponSettings
 {
-    std::vector<WeaponConfigEntry> menu;
+    std::vector<WeaponConfigEntry> menu = {
+        {"AK-47", "weapon_ak47"},
+        {"M4A4", "weapon_m4a1"},
+        {"AWP", "weapon_awp"},
+        {"Desert Eagle", "weapon_deagle"},
+        {"MP9", "weapon_mp9"},
+        {"Nova", "weapon_nova"},
+        {"Negev", "weapon_negev"},
+        {"Knife", "weapon_knife"},
+        {"HE Grenade", "weapon_hegrenade"},
+        {"Flashbang", "weapon_flashbang"},
+        {"Smoke", "weapon_smokegrenade"},
+        {"Molotov", "weapon_molotov"},
+    };
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WeaponSettings, menu)
 
@@ -180,17 +199,19 @@ struct CheatCheckFixedLink
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckFixedLink, url)
 
-/** Create-room API settings. CheatCheckRoomApi defines the templating contract. */
+/** Create-room API settings; CheatCheckRoomApi defines the templating contract. The defaults
+ *  describe the meat-app API, so pointing this at another one also means overriding the header,
+ *  field and body keys. */
 struct CheatCheckWebsiteAutoRoom
 {
     std::string createRoomUrl;
     std::string apiKey;
-    std::string authHeader = "Authorization";  // header name; e.g. "X-API-Key"
-    std::string authScheme = "Bearer";         // value prefix; "" sends the key verbatim
-    nlohmann::json requestBody;                // body template, placeholders substituted per check
-    std::string playerUrlField = "playerUrl";  // dot-path into the JSON response
-    std::string playerUrlTemplate;             // {value} -> playerUrlField; empty uses the field as-is
-    std::string checkerUrlField = "checkerUrl";
+    std::string authHeader = "X-API-Key";  // header name; Bearer APIs use "Authorization"
+    std::string authScheme;                // value prefix; "" sends the key verbatim
+    nlohmann::json requestBody;            // body template, placeholders substituted per check
+    std::string playerUrlField = "code";   // dot-path into the JSON response
+    std::string playerUrlTemplate;         // {value} -> playerUrlField; empty uses the field as-is
+    std::string checkerUrlField = "code";
     std::string checkerUrlTemplate;  // optional; relayed to the calling admin
     int timeoutMs = 8000;
     /** Presence URL. `{code}` and `{steamId}` are substituted; empty disables polling. */
@@ -210,9 +231,6 @@ struct CheatCheckSettings
     int timeoutSec = 120;
     bool autoKick = true;
     std::string kickReason = "Failed to comply with cheat check";
-    // Death, team changes, and HUD updates dismiss center HTML, so refresh it
-    // more often than its nominal five-second lifetime.
-    int panelRefreshMs = 100;
     bool moveToSpectator = true;  // force the suspect to spectator so they can't keep playing
     std::string bannerImageUrl;   // optional online image shown atop the panel ("" => none)
     int bannerWidth = 320;
@@ -221,8 +239,8 @@ struct CheatCheckSettings
     CheatCheckWebsiteAutoRoom websiteAutoRoom;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckSettings, mode, timeoutSec, autoKick, kickReason,
-                                                panelRefreshMs, moveToSpectator, bannerImageUrl, bannerWidth,
-                                                bannerHeight, fixedLink, websiteAutoRoom)
+                                                moveToSpectator, bannerImageUrl, bannerWidth, bannerHeight, fixedLink,
+                                                websiteAutoRoom)
 
 struct Settings
 {

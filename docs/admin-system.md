@@ -10,9 +10,11 @@ mechanics, see [Local development](local-development.md) and
 ## Configuration
 
 Runtime settings live in `addons/admin-system/configs/settings.jsonc`. The file
-is JSONC, so comments are allowed. It is validated against
-`settings.schema.json`, which sets `additionalProperties: false` throughout: an
-unrecognized key fails the load rather than being ignored.
+is JSONC, so comments are allowed. `settings.schema.json` sets
+`additionalProperties: false` throughout, so an editor squiggles an unrecognized
+key; the loader itself ignores both unknown and missing keys, which is why a
+retired setting needs no config migration and a missing list falls back to the
+built-in defaults.
 
 | Section | Purpose |
 | --- | --- |
@@ -54,7 +56,9 @@ around the link comes from the `kickNotice` group in
 ### Map list
 
 `maps.cycle` is the list of maps admins may switch to. The engine exposes no
-usable list of its own, so this is the only source.
+usable list of its own, so this is the only source. Leaving it out (or having
+every entry skipped) falls back to the built-in active duty group rather than
+opening an empty Map menu.
 
 ```jsonc
 "cycle": [
@@ -80,7 +84,8 @@ not checked, because they are addressed by id and are not mounted yet.
 `weapons.menu` is what Control > Give weapon offers. `item` is the entity
 classname; an entry not starting with `weapon_` is skipped, since it would
 otherwise reach the engine as an arbitrary entity. `name` is the menu label and
-falls back to `item`.
+falls back to `item`. Like `maps.cycle`, an absent or fully-skipped list falls
+back to the built-in defaults.
 
 ```jsonc
 "menu": [
@@ -106,23 +111,20 @@ The category needs the `g` flag.
 | Low gravity | Drops `sv_gravity` for everyone |
 | Headshot only | Only head hits deal damage |
 | Knife round | Strips weapons and gives a knife on spawn |
-| No-scope only | Scoped shots deal no damage |
-| One-hit kill | Any surviving hit kills outright |
+| One-hit kill | Any hit kills outright |
 
-Damage from the world - falling, fire, the bomb - is never suppressed by the
-aim rules, so a headshot-only round does not leave players immortal to all but
-bullets. A suppressing rule beats one-hit kill: a shot that cannot land is not
-amplified either.
+The damage toggles drive the engine's own rules - `mp_damage_headshot_only` and
+the four `mp_damage_scale_*` multipliers - rather than the damage hook, which
+can read a hit but cannot block or resize one. With both on, only head shots
+land and the first one kills.
 
-The three damage toggles need the `OnTakeDamage_Alive` hook. If it fails to
-resolve after a CS2 update, the plugin logs that at load and those three go
-inert; the rest still work. `admin_status` shows whether it installed.
-
-Low gravity restores the server's own value rather than a stock one. Turning it
-on snapshots the live `sv_gravity`, and turning it off - or Clear all, or
-unloading the plugin - puts that value back, so a server running
-`sv_gravity 600` keeps it. A server that never enables low gravity is never
-written to at all.
+Every convar a toggle takes over is snapshotted on the way up and put back on
+the way down, so the server keeps its own values. Turning low gravity on
+snapshots the live `sv_gravity`; turning it off - or Clear all, or unloading the
+plugin - restores it, so a server running `sv_gravity 600` keeps it. A server
+that never enables a toggle is never written to at all. The toggles are also
+re-applied at each round start, because the engine resets convars around a map
+change.
 
 ### Map vote
 

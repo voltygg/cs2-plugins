@@ -17,8 +17,8 @@ struct PendingCheck
     int AdminSlot = -1;
     int64_t AdminSteamId = 0;
     CheatCheckMode Mode = CheatCheckMode::FixedLink;
-    int64_t DeadlineSec = 0;  // Unix timestamp (TimeUtils::Now) at which the check times out
-    VoltMod::Subscription TickTimer;
+    int64_t DeadlineSec = 0;              // Unix timestamp (TimeUtils::Now) at which the check times out
+    VoltMod::Subscription DeadlineTimer;  // deadline + presence polling; the panel refreshes itself
     std::string ResolvedUrl;  // URL shown to the suspect (empty while awaiting / before playerProvided submit)
     bool AwaitingUrl = false;
     uint64_t RequestSeq = 0;                                    // staleness guard for async HTTP completions

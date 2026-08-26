@@ -36,6 +36,14 @@ namespace ChatColors = VoltMod::Core::ChatColors;
 
 namespace
 {
+/** Death, team changes and HUD updates dismiss center HTML, so the panel is redrawn far more often
+ *  than its nominal five-second lifetime. Not configurable: slower blinks, faster only burns user
+ *  messages. */
+constexpr int PanelRefreshMs = 100;
+
+/** The deadline and the presence poll are both second-granularity, so they need nothing faster. */
+constexpr int DeadlineTickMs = 1000;
+
 bool IsValidLink(const std::string& link)
 {
     if (link.rfind("https://", 0) != 0 && link.rfind("http://", 0) != 0)
@@ -83,11 +91,11 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     if (cfg.moveToSpectator)
         targetCtrl.ChangeTeam(VoltMod::Sdk::TeamSpectator);
 
-    int interval = cfg.panelRefreshMs > 0 ? cfg.panelRefreshMs : 100;
-    pc.TickTimer = _rt.Scheduler.Repeat(interval, [this, targetSlot] { Tick(targetSlot); });
+    pc.DeadlineTimer = _rt.Scheduler.Repeat(DeadlineTickMs, [this, targetSlot] { Tick(targetSlot); });
 
     ResolveUrl(targetSlot);
-    _view.Render(targetSlot, pc);
+    ShowPanel(targetSlot);
+    _view.SendInstructions(targetSlot, pc);
 
     _chat.BroadcastAction("broadcast.cheatCheckCalled", admin->GetName(), target->GetName());
     return true;
@@ -163,7 +171,7 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const VoltM
 
         if (!urls->CheckerUrl.empty())
             RelayCheckerUrl(targetSlot, urls->CheckerUrl);
-        _view.Render(targetSlot, pc);
+        _view.SendInstructions(targetSlot, pc);
         return;
     }
 
@@ -184,7 +192,7 @@ void CheatCheckManager::OnRoomFailed(int targetSlot)
         return std::format("{}{}", ChatColors::Red, _rt.Translations.Get("cheatCheck.apiFailed", adminSlot));
     });
 
-    _view.Render(targetSlot, pc);
+    _view.SendInstructions(targetSlot, pc);
 }
 
 void CheatCheckManager::RelayCheckerUrl(int targetSlot, const std::string& checkerUrl)
@@ -212,7 +220,6 @@ void CheatCheckManager::Tick(int targetSlot)
     }
 
     PollPresenceIfDue(targetSlot);
-    _view.RenderPanel(targetSlot, pc);
 }
 
 CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSlot, const std::string& link)
@@ -240,7 +247,6 @@ CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSl
                         link);
     }
 
-    _view.RenderPanel(callerSlot, pc);
     return SubmitResult::Relayed;
 }
 
@@ -265,10 +271,17 @@ void CheatCheckManager::ReplyToAdmin(const PendingCheck& pc, const std::function
         _chat.Reply(*slot, buildMessage());
 }
 
+void CheatCheckManager::ShowPanel(int targetSlot)
+{
+    // Reads _checks live on every refresh, so the countdown and every state change (room created,
+    // link submitted, suspect joined) reach the panel without anyone redrawing it.
+    _panel.Show(targetSlot, PanelRefreshMs, [this](int slot) { return _view.PanelHtml(slot, _checks[slot]); });
+}
+
 void CheatCheckManager::ResetCheck(int targetSlot)
 {
-    _rt.Messages.ClearCenterHtml(targetSlot);
-    _checks[targetSlot] = PendingCheck{};  // move-assign drops the tick timer
+    _panel.Stop(targetSlot);
+    _checks[targetSlot] = PendingCheck{};  // move-assign drops the deadline timer
 }
 
 bool CheatCheckManager::Cancel(int targetSlot)

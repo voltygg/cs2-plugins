@@ -229,12 +229,6 @@
           "description": "If true, auto-kick on timeout; if false, just unfreeze and notify the admin."
         },
         "kickReason": { "type": "string", "default": "Failed to comply with cheat check" },
-        "panelRefreshMs": {
-          "type": "integer",
-          "minimum": 50,
-          "default": 100,
-          "description": "How often (ms) the center-HTML panel is re-sent. Values above ~200 make it visibly blink or vanish."
-        },
         "moveToSpectator": {
           "type": "boolean",
           "default": true,
@@ -264,12 +258,12 @@
             "apiKey": { "type": "string" },
             "authHeader": {
               "type": "string",
-              "default": "Authorization",
-              "description": "Auth header NAME, e.g. \"Authorization\" or \"X-API-Key\"."
+              "default": "X-API-Key",
+              "description": "Auth header NAME. Bearer APIs use \"Authorization\" with authScheme \"Bearer\"."
             },
             "authScheme": {
               "type": "string",
-              "default": "Bearer",
+              "default": "",
               "description": "Value prefix before the key; \"\" sends the key verbatim."
             },
             "requestBody": {
@@ -278,14 +272,14 @@
             },
             "playerUrlField": {
               "type": "string",
-              "default": "playerUrl",
+              "default": "code",
               "description": "Dot-path into the JSON response holding the suspect's room id/URL."
             },
             "playerUrlTemplate": {
               "type": "string",
               "description": "{value} is replaced by playerUrlField; leave empty to use the field value as the URL directly."
             },
-            "checkerUrlField": { "type": "string", "default": "checkerUrl" },
+            "checkerUrlField": { "type": "string", "default": "code" },
             "checkerUrlTemplate": {
               "type": "string",
               "description": "Optional checker URL relayed to the calling admin."
@@ -317,7 +311,7 @@
       "properties": {
         "cycle": {
           "type": "array",
-          "description": "Offerable maps. Invalid entries are skipped with a warning in the server log.",
+          "description": "Offerable maps. Invalid entries are skipped with a warning in the server log; an absent or all-invalid list falls back to the active duty group.",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -363,7 +357,7 @@
       "properties": {
         "menu": {
           "type": "array",
-          "description": "Giveable weapons. Invalid entries are skipped with a warning in the server log.",
+          "description": "Giveable weapons. Invalid entries are skipped with a warning in the server log; an absent or all-invalid list falls back to a built-in starter set.",
           "items": {
             "type": "object",
             "additionalProperties": false,
