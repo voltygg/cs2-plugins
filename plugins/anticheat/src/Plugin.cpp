@@ -11,7 +11,7 @@ VoltMod::PluginInfo AnticheatPlugin::Info() const
 {
     return VoltMod::WithBuildInfo({
         .Name = "Anticheat",
-        .Author = "m9snoi",
+        .Author = "Sukhrob Ilyosbekov",
         .Description = "Server-side cheat detection: aim analysis over correlated shots plus client-integrity checks.",
         .LogTag = "ANTICHEAT",
     });

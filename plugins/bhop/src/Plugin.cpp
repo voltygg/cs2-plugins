@@ -11,7 +11,7 @@ VoltMod::PluginInfo BhopPlugin::Info() const
 {
     return VoltMod::WithBuildInfo({
         .Name = "Bhop",
-        .Author = "m9snoi",
+        .Author = "Sukhrob Ilyosbekov",
         .Description = "Smooth, client-predicted bunnyhop with per-player session grants.",
         .LogTag = "BHOP",
     });
