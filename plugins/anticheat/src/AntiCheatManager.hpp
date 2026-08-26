@@ -113,9 +113,11 @@ private:
     // Stamped when sv_cheats goes off, so replicated client values get time to catch up.
     double _cheatGraceUntil = 0.0;
 
-    /** Cached because ConVarStorage keeps a stable value pointer and name lookup is not free. */
-    mutable std::optional<VoltMod::ConVarStorage> _svCheats;
-    VoltMod::ConVarStorage& CheatsConVar() const;
+    /** Resolved on first use: a registered convar's handle is stable for the load cycle, and
+     *  every detection path reads it. */
+    mutable VoltMod::ConVar<bool> _svCheats;
+    mutable bool _svCheatsResolved = false;
+    const VoltMod::ConVar<bool>& CheatsConVar() const;
 
     VoltMod::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
     CheatSimulator _simulator;

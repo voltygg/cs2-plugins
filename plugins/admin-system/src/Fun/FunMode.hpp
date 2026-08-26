@@ -21,6 +21,21 @@ struct ToggleConVar
 };
 
 /**
+ * A resolved @ref ToggleConVar.
+ *
+ * The rows do not share one engine type - the damage scales and gravity are floats while
+ * headshot-only is a bool - so each resolves as whichever it is and the other handle stays empty.
+ * A row the server does not have leaves both empty and is skipped.
+ */
+struct ToggleHandle
+{
+    Toggle Owner;
+    float OnValue = 0.0f;
+    VoltMod::ConVar<float> Number;
+    VoltMod::ConVar<bool> Flag;
+};
+
+/**
  * Every convar the toggles drive, in no particular order.
  *
  * One-hit kill takes all four `mp_damage_scale_*` so it is symmetric across teams and still lands
@@ -70,12 +85,16 @@ public:
 
 private:
     void ApplyRoundStart();
+    /** Resolve every @ref ToggleConVars row into a typed handle. Runs once, from Start. */
+    void ResolveConVars();
     /** Take over or hand back every @ref ToggleConVars row to match the current toggle state. */
     void ApplyOverrides();
     void GiveKnifeOnly(int slot);
 
     VoltMod::Runtime& _rt;
     ToggleState _state;
+    /** @ref ToggleConVars resolved once in Start; empty until then. */
+    std::vector<ToggleHandle> _handles;
     /** Restores whatever the toggles took over, including on unload. */
     VoltMod::ConVarLease _lease;
     /** Listener registrations, released together and declared last so they stop before the

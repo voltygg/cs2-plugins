@@ -128,7 +128,8 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
     const Vector eye = self.GetEyePosition();
     const Vec3 from{eye.x, eye.y, eye.z};
     const int team = self.GetTeam();
-    const bool freeForAll = _rt.ConVars.GetBool("mp_teammates_are_enemies").value_or(false);
+    auto teammatesAreEnemies = VoltMod::ConVar<bool>::Find(_rt.ConVars, "mp_teammates_are_enemies");
+    const bool freeForAll = teammatesAreEnemies && teammatesAreEnemies->Get();
 
     Vec3 best;
     float bestDistance = 0.0f;

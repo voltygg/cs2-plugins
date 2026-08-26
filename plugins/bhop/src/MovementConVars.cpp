@@ -1,66 +1,66 @@
 #include "MovementConVars.hpp"
 
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Runtime.hpp>
-#include <format>
-
-using VoltMod::Runtime;
+#include <string>
+#include <utility>
 
 namespace Log = VoltMod::Log;
 
 namespace Bhop
 {
 
-static std::string FormatConVarValue(bool isFloat, float value)
+template <class T>
+void MovementConVars::Add(const char* name, T value, std::vector<Override<T>>& into)
 {
-    return isFloat ? std::format("{}", value) : (value != 0.0f ? "1" : "0");
+    auto cvar = VoltMod::ConVar<T>::Find(_conVars, name);
+    if (!cvar)
+    {
+        Log::Warn("ConVar '{}' unusable ({}); bhop override skipped.", name, cvar.error().Detail);
+        return;
+    }
+
+    into.push_back({.Cvar = std::move(*cvar), .Value = value});
 }
 
 void MovementConVars::Build(const BhopSettings& settings)
 {
-    _overrides.clear();
-
-    auto add = [this](const char* name, bool isFloat, float value) {
-        _overrides.push_back({.Name = name,
-                              .IsFloat = isFloat,
-                              .Value = value,
-                              .NetValue = FormatConVarValue(isFloat, value),
-                              .Storage = _conVars.Storage(name)});
-        if (!_overrides.back().Storage.IsValid())
-            Log::Warn("ConVar '{}' not found; bhop override skipped in grants mode.", name);
-    };
+    _flags.clear();
+    _numbers.clear();
 
     if (settings.autoBunnyhopping)
-        add("sv_autobunnyhopping", false, 1.0f);
+        Add("sv_autobunnyhopping", true, _flags);
     if (settings.enableBunnyhopping)
-        add("sv_enablebunnyhopping", false, 1.0f);
+        Add("sv_enablebunnyhopping", true, _flags);
     if (settings.staminaJumpCost >= 0.0f)
-        add("sv_staminajumpcost", true, settings.staminaJumpCost);
+        Add("sv_staminajumpcost", settings.staminaJumpCost, _numbers);
     if (settings.staminaLandCost >= 0.0f)
-        add("sv_staminalandcost", true, settings.staminaLandCost);
+        Add("sv_staminalandcost", settings.staminaLandCost, _numbers);
     if (settings.airAccelerate >= 0.0f)
-        add("sv_airaccelerate", true, settings.airAccelerate);
+        Add("sv_airaccelerate", settings.airAccelerate, _numbers);
     if (settings.airMaxWishSpeed >= 0.0f)
-        add("sv_air_max_wishspeed", true, settings.airMaxWishSpeed);
+        Add("sv_air_max_wishspeed", settings.airMaxWishSpeed, _numbers);
     if (settings.maxVelocity >= 0.0f)
-        add("sv_maxvelocity", true, settings.maxVelocity);
+        Add("sv_maxvelocity", settings.maxVelocity, _numbers);
 }
 
 void MovementConVars::Reset()
 {
+    ReleaseRaw();
     RestoreGlobal();
-    _overrides.clear();
+    _flags.clear();
+    _numbers.clear();
 }
 
 void MovementConVars::ApplyGlobal()
 {
     // Override() saves on the first take and re-asserts afterwards, which is what lets this be
     // called again after a map change without saving the override as the operator's own value.
-    // It writes through the server-console path: the direct setters change only the server's
-    // stored value, so FCVAR_REPLICATED movement convars never network to clients and their
-    // predicted movement keeps the defaults - no auto-hop, no speed retention.
-    for (const auto& entry : _overrides)
-        _globalLease.Override(entry.Name, entry.NetValue);
+    // It writes through the console: a server-only set leaves FCVAR_REPLICATED movement convars
+    // unnetworked, and clients keep predicting the defaults - no auto-hop, no speed retention.
+    for (auto& entry : _flags)
+        _globalLease.Override(entry.Cvar, entry.Value);
+    for (auto& entry : _numbers)
+        _globalLease.Override(entry.Cvar, entry.Value);
 }
 
 void MovementConVars::RestoreGlobal()
@@ -68,59 +68,37 @@ void MovementConVars::RestoreGlobal()
     _globalLease.RestoreAll();
 }
 
-void MovementConVars::ReplicateOverrides(int slot) const
+void MovementConVars::ReplicateOverrides(int slot)
 {
-    for (const auto& entry : _overrides)
-        _conVars.ReplicateToClient(slot, entry.Name, entry.NetValue.c_str());
+    for (auto& entry : _flags)
+        (void)entry.Cvar.SetFor(slot, entry.Value);
+    for (auto& entry : _numbers)
+        (void)entry.Cvar.SetFor(slot, entry.Value);
 }
 
-void MovementConVars::ReplicateServerValues(int slot) const
+void MovementConVars::ReplicateServerValues(int slot)
 {
-    for (const auto& entry : _overrides)
-    {
-        auto value = _conVars.GetString(entry.Name);
-        if (value)
-            _conVars.ReplicateToClient(slot, entry.Name, value->c_str());
-    }
+    for (auto& entry : _flags)
+        (void)entry.Cvar.SetFor(slot, entry.Cvar.Get());
+    for (auto& entry : _numbers)
+        (void)entry.Cvar.SetFor(slot, entry.Cvar.Get());
 }
 
-void MovementConVars::FlipRaw()
+void MovementConVars::HoldRaw()
 {
     // Raw flips: server-side movement for this player's command sees bhop values; no callbacks
-    // fire and nothing is networked. RestoreRaw undoes it before anyone else runs.
-    for (auto& entry : _overrides)
-    {
-        if (!entry.Storage.IsValid())
-            continue;
-        if (entry.IsFloat)
-        {
-            entry.SavedValue = entry.Storage.GetFloat();
-            entry.Storage.SetFloat(entry.Value);
-        }
-        else
-        {
-            entry.SavedValue = entry.Storage.GetBool() ? 1.0f : 0.0f;
-            entry.Storage.SetBool(entry.Value != 0.0f);
-        }
-    }
-    _flipped = true;
+    // fire and nothing is networked. The scopes put the real values back in ReleaseRaw, before
+    // anyone else runs.
+    for (auto& entry : _flags)
+        _flagFlips.push_back(entry.Cvar.RawScope(entry.Value));
+    for (auto& entry : _numbers)
+        _numberFlips.push_back(entry.Cvar.RawScope(entry.Value));
 }
 
-void MovementConVars::RestoreRaw()
+void MovementConVars::ReleaseRaw()
 {
-    if (!_flipped)
-        return;
-
-    for (auto& entry : _overrides)
-    {
-        if (!entry.Storage.IsValid())
-            continue;
-        if (entry.IsFloat)
-            entry.Storage.SetFloat(entry.SavedValue);
-        else
-            entry.Storage.SetBool(entry.SavedValue != 0.0f);
-    }
-    _flipped = false;
+    _numberFlips.clear();
+    _flagFlips.clear();
 }
 
 }  // namespace Bhop

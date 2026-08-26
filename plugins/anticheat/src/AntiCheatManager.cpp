@@ -76,7 +76,8 @@ void AntiCheatManager::Initialize()
 
 void AntiCheatManager::RefreshTeamRules()
 {
-    _correlator.SetTeammatesAreEnemies(_rt.ConVars.GetBool("mp_teammates_are_enemies").value_or(false));
+    auto freeForAll = VoltMod::ConVar<bool>::Find(_rt.ConVars, "mp_teammates_are_enemies");
+    _correlator.SetTeammatesAreEnemies(freeForAll && freeForAll->Get());
 }
 
 void AntiCheatManager::LoadDetectionData()
@@ -218,8 +219,8 @@ nlohmann::json AntiCheatManager::StatusSnapshot() const
         {"detecting", DetectionsEnabled()},
         {"enforcingCheatCvars", EnforceCheatCvars()},
         {"modules", std::move(modules)},
-        {"clientCvars", _rt.ClientCvars.Available() ? "available" : "degraded"},
-        {"teleportTracker", _rt.Teleports.Enabled()},
+        {"clientCvars", _rt.Capabilities.Has(VoltMod::Capability::ClientCvars) ? "available" : "degraded"},
+        {"teleportTracker", _rt.Capabilities.Has(VoltMod::Capability::Teleport)},
         {"correlatorFrames", _correlator.FrameCount()},
         // A module with an empty table is inert however its toggle reads, so report the tables the
         // way clientCvars availability is reported: a health check must be able to see it.
@@ -300,11 +301,17 @@ void AntiCheatManager::OnPlayerSettingsChanged(VoltMod::Player* player)
     _namechangerDetector.OnSettingsChanged(player);
 }
 
-VoltMod::ConVarStorage& AntiCheatManager::CheatsConVar() const
+const VoltMod::ConVar<bool>& AntiCheatManager::CheatsConVar() const
 {
-    if (!_svCheats)
-        _svCheats = _rt.ConVars.Storage("sv_cheats");
-    return *_svCheats;
+    if (!_svCheatsResolved)
+    {
+        _svCheatsResolved = true;
+        if (auto cheats = VoltMod::ConVar<bool>::Find(_rt.ConVars, "sv_cheats"))
+            _svCheats = std::move(*cheats);
+        else
+            Log::Warn("sv_cheats unusable ({}); detections run as if it were off.", cheats.error().Detail);
+    }
+    return _svCheats;
 }
 
 bool AntiCheatManager::DetectionsEnabled() const
@@ -312,16 +319,16 @@ bool AntiCheatManager::DetectionsEnabled() const
     const auto& settings = _config.Get().anticheat;
     if (!settings.enabled)
         return false;
-    const VoltMod::ConVarStorage& cheats = CheatsConVar();
+    const VoltMod::ConVar<bool>& cheats = CheatsConVar();
     if (!cheats.IsValid())
         return true;
-    return !cheats.GetBool() || settings.allowSvCheatsTesting;
+    return !cheats.Get() || settings.allowSvCheatsTesting;
 }
 
 bool AntiCheatManager::EnforceCheatCvars() const
 {
-    const VoltMod::ConVarStorage& cheats = CheatsConVar();
-    return ShouldEnforceCheatCvars(cheats.IsValid() && cheats.GetBool(), Time::MonotonicSeconds(), _cheatGraceUntil);
+    const VoltMod::ConVar<bool>& cheats = CheatsConVar();
+    return ShouldEnforceCheatCvars(cheats.IsValid() && cheats.Get(), Time::MonotonicSeconds(), _cheatGraceUntil);
 }
 
 bool AntiCheatManager::ModuleEnabled(DetectionKind kind) const

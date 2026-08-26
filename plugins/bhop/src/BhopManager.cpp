@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <mathlib/vector.h>
+#include <utility>
 
 using VoltMod::MaxPlayers;
 using VoltMod::MessageKind;
@@ -19,6 +20,13 @@ namespace Bhop
 
 void BhopManager::Initialize()
 {
+    // Resolved once: the forced hop reads it every frame per granted player, and a registered
+    // convar's handle stays valid across map changes.
+    if (auto impulse = VoltMod::ConVar<float>::Find(_rt.ConVars, "sv_jump_impulse"))
+        _jumpImpulse = std::move(*impulse);
+    else
+        Log::Warn("sv_jump_impulse unusable ({}); forced hops use the engine default.", impulse.error().Detail);
+
     ApplySettings();
     RegisterConsoleCommands();
 
@@ -142,12 +150,12 @@ void BhopManager::OnPlayerDisconnect(Player* player)
 void BhopManager::OnRunCommandPre(int slot)
 {
     if (_mode == Mode::Grants && VoltMod::IsValidSlot(slot) && _grantedSlots[slot])
-        _conVars.FlipRaw();
+        _conVars.HoldRaw();
 }
 
 void BhopManager::OnRunCommandPost(int /*slot*/)
 {
-    _conVars.RestoreRaw();
+    _conVars.ReleaseRaw();
 }
 
 bool BhopManager::IsActiveSlot(int slot) const
@@ -204,7 +212,7 @@ void BhopManager::ForceAutoHop(int slot)
         return;  // already ascending: the engine (or last frame's hop) took this jump
 
     constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0); engine default
-    velocity.z = _rt.ConVars.GetFloat("sv_jump_impulse").value_or(DefaultJumpImpulse);
+    velocity.z = _jumpImpulse.IsValid() ? _jumpImpulse.Get() : DefaultJumpImpulse;
     controller.SetVelocity(velocity);
     // Leave the ground in the same frame: if the next movement command still sees FL_ONGROUND
     // it can re-ground and zero the vertical velocity for a tick - the "laggy jump" hitch.

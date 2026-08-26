@@ -80,7 +80,7 @@ double InvalidCvarDetector::NextDelaySec()
 void InvalidCvarDetector::Poll(int slot, SlotState& state)
 {
     ReadUserInfo(slot);
-    if (!_rt.ClientCvars.Available())
+    if (!_rt.Capabilities.Has(VoltMod::Capability::ClientCvars))
         return;
 
     const CvarRuleTable& rules = _manager.InvalidCvars().Rules();
@@ -123,7 +123,7 @@ void InvalidCvarDetector::OnReply(int slot, VoltMod::ClientCvarStatus status, st
     InvalidCvarRules& rules = _manager.InvalidCvars();
     _manager.Report(slot, status == VoltMod::ClientCvarStatus::ValueIntact
                               ? rules.Observe(slot, name, value, enforce)
-                              : rules.ObserveMissing(slot, name, VoltMod::ToString(status), enforce));
+                              : rules.ObserveMissing(slot, name, VoltMod::Name(status), enforce));
 }
 
 }  // namespace Anticheat

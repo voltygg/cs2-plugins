@@ -111,6 +111,10 @@ Current patterns:
 - Define repository column tables with `Table`, `Key`, and `Columns()`. Keep
   handwritten SQL for queries whose UPDATE or WHERE clauses are specific.
 - Send player-facing text through `Runtime::Messages` and translation keys.
+- Ask `runtime.Capabilities.Has(...)` before using a feature that depends on gamedata or an
+  engine interface; services no longer expose `Available()`/`Enabled()` flags of their own.
+- Read and write convars through `VoltMod::ConVar<T>` handles resolved once at start, not by
+  name at each call.
 
 ## Conventions
 

@@ -3,6 +3,8 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <string>
+#include <utility>
 
 using VoltMod::PlayerManager;
 using VoltMod::Runtime;
@@ -21,6 +23,8 @@ FunMode::~FunMode() = default;
 
 void FunMode::Start()
 {
+    ResolveConVars();
+
     auto& events = _rt.Events;
 
     _subs.push_back(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) { ApplyRoundStart(); }));
@@ -66,14 +70,50 @@ void FunMode::ApplyRoundStart()
     }
 }
 
-void FunMode::ApplyOverrides()
+void FunMode::ResolveConVars()
 {
     for (const auto& row : ToggleConVars)
     {
-        if (_state.IsOn(row.Owner))
-            _lease.Override(row.Name, row.OnValue);
+        const std::string name(row.Name);
+        ToggleHandle handle{.Owner = row.Owner, .OnValue = row.OnValue};
+
+        // Try the numeric form first: only headshot-only is a switch, and asking for the wrong
+        // type is refused rather than silently writing nothing.
+        if (auto number = VoltMod::ConVar<float>::Find(_rt.ConVars, name))
+            handle.Number = std::move(*number);
+        else if (auto flag = VoltMod::ConVar<bool>::Find(_rt.ConVars, name))
+            handle.Flag = std::move(*flag);
         else
-            _lease.Restore(row.Name);
+        {
+            VoltMod::Log::Warn("Fun mode: convar '{}' unusable ({}); the toggle that drives it is inert.", name,
+                               flag.error().Detail);
+            continue;
+        }
+
+        _handles.push_back(std::move(handle));
+    }
+}
+
+void FunMode::ApplyOverrides()
+{
+    for (auto& handle : _handles)
+    {
+        const bool on = _state.IsOn(handle.Owner);
+        if (handle.Number.IsValid())
+        {
+            if (on)
+                _lease.Override(handle.Number, handle.OnValue);
+            else
+                _lease.Restore(handle.Number);
+        }
+        else if (on)
+        {
+            _lease.Override(handle.Flag, handle.OnValue != 0.0f);
+        }
+        else
+        {
+            _lease.Restore(handle.Flag);
+        }
     }
 }
 

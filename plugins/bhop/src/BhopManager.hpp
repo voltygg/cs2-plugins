@@ -21,7 +21,7 @@ namespace Bhop
  * "enabled" mode sets the configured movement convars through the engine path, so they replicate
  * to every client and the whole feature is client-predicted (ping-free). "grants" mode leaves the
  * server untouched and enables bhop per player: the client gets the convar values via
- * ReplicateToClient (its prediction auto-jumps) while the server flips the same convars only
+ * ConVar::SetFor (its prediction auto-jumps) while the server flips the same convars only
  * around that player's RunCommand via the framework's Movement hook.
  */
 class BhopManager
@@ -65,6 +65,9 @@ private:
     ConfigManager& _config;
     Mode _mode = Mode::Enabled;
     MovementConVars _conVars;
+    /** Read every frame per granted player by ForceAutoHop; empty when the server has no such
+     *  convar, in which case the engine default stands in. */
+    VoltMod::ConVar<float> _jumpImpulse;
 
     std::unordered_set<int64_t> _granted;
     // Per-slot mirror of _granted for the movement hot path, where a steamId lookup per tick

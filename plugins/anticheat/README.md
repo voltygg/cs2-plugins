@@ -225,16 +225,18 @@ crash, create false evidence, or silently disable detection.
 
 | Entry | Failure mode |
 | --- | --- |
-| `RunCommand` | Crash on the first movement tick |
+| `RunCommand` | Crash on the first movement tick, unless the vtable slot check catches it |
 | `UserCmdPB` | Missing values silence aim modules; stale values can resemble valid angles |
 | `UserCmdNumber` | Command chains collapse, silently disabling aimbot and part of antiaim |
 | `Teleport` | Teleport grace stops suppressing discontinuities, so false positives appear |
-| `ProcessRespondCvarValue` | Initialization bounds checks force degraded operation |
-| `ServerSideClientSlot` | Initialization bounds checks stop responses reaching the wrong player |
+| `ProcessRespondCvarValue` | Load-time bounds checks turn `Capability::ClientCvars` off |
+| `ServerSideClientSlot` | Same, which is what stops responses reaching the wrong player |
 
-`anticheat_status` exposes `teleportTracker` and reports client convars as
-`degraded` when the two ClientCvars offsets fail. In that state, network polling
-stops and `invalid_cvar` uses userinfo only.
+The entries live in the framework's `gamedata/gamedata.jsonc`; its guide has the
+re-verification procedure. `anticheat_status` reads `Runtime::Capabilities`: it exposes
+`teleportTracker` from `Capability::Teleport` and reports client convars as `degraded` when
+`Capability::ClientCvars` is off. In that state, network polling stops and `invalid_cvar` uses
+userinfo only.
 
 ## Architecture
 
