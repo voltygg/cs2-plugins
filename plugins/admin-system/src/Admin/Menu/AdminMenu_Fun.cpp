@@ -33,7 +33,7 @@ std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int admin
 
     for (const auto& info : Fun::Toggles)
     {
-        builder.AddToggle(
+        builder.Toggle(
             tr.Get(std::string(info.NameKey), adminSlot), tr.Get("effectState.on", adminSlot),
             tr.Get("effectState.off", adminSlot), [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
             [&app, id = info.Id, onKey = std::string(info.OnKey), offKey = std::string(info.OffKey)](int slot) {
@@ -46,7 +46,7 @@ std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int admin
             allowed);
     }
 
-    builder.AddButton(
+    builder.Button(
         tr.Get("fun.clearAll", adminSlot),
         [&app](int slot) {
             if (!MayUse(app, slot, Permission::FunMode))

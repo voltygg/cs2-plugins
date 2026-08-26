@@ -1,4 +1,4 @@
-﻿#include "Descriptors.hpp"
+#include "Descriptors.hpp"
 
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -28,10 +28,13 @@ const ParamAction SetArmor{Flag(Permission::Health), /*requireAlive*/ true,
                                return "broadcast.armored";
                            }};
 
-const ParamAction SetSize{Flag(Permission::Fun), /*requireAlive*/ true,
-                          [](const ActionContext& ctx, int percent) -> OptKey {
-                              ctx.Rt.EntityOps.SetModelScale(ctx.TargetPawn().Raw(), percent / 100.0f);
-                              return "broadcast.sizeSet";
-                          }};
+ParamAction MakeSetSize(VoltMod::Runtime& runtime)
+{
+    return ParamAction{Flag(Permission::Fun), /*requireAlive*/ true,
+                       [&runtime](const ActionContext& ctx, int percent) -> OptKey {
+                           runtime.EntityOps.SetModelScale(ctx.TargetPawn().Raw(), percent / 100.0f);
+                           return "broadcast.sizeSet";
+                       }};
+}
 
 }  // namespace AdminSystem::Admin::Actions

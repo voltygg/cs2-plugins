@@ -164,9 +164,13 @@ Current patterns:
   service lookups in plugin code.
 - Bind stable services in constructors and App-owned objects named by behaviour
   (Actions, PlayerEffects, Runtime.Pawns); pass request data such as slots and
-  descriptors to methods. Do not add generic Services/Env bags. `Runtime&` may
-  reach plugin action handlers through `ActionContext::Rt` but never the
-  engine-facing modules (Engine, Entities, Events, Messaging, Hooks).
+  descriptors to methods. Do not add generic Services/Env bags. `ActionContext`
+  carries only the resolved pair and its controllers - never a `Runtime&`. An
+  action or effect body that needs an engine service reaches it through the
+  plugin's own captured `App&` (a menu row or command handler already has one)
+  or, for a body built as static data before any `App` exists (an
+  `EffectDescriptor`'s `Setup`), through a `Runtime&` captured by a small
+  per-descriptor factory function - see `Admin/Effects/*.cpp`.
 - Keep files near 300-350 lines when that improves readability.
 
 ## Commenting and documentation

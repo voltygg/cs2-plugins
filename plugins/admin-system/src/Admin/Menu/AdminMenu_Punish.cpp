@@ -35,11 +35,11 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int ad
 
     MenuBuilder builder(tr.Get("category.punish", adminSlot));
 
-    builder.AddSubmenu(
+    builder.Submenu(
         tr.Get("action.unban", adminSlot), [&app](int slot) { return BuildUnbanMenu(app, slot); },
         app.Access.HasPermission(admin->SteamId(), Permission::Unban));
 
-    builder.AddSubmenu(
+    builder.Submenu(
         tr.Get("action.unmute", adminSlot), [&app](int slot) { return BuildUnmuteMenu(app, slot); },
         app.Access.HasPermission(admin->SteamId(), Permission::Mute));
 
@@ -76,20 +76,15 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app,
 
     if (AnyTemplateUsable(app, adminSlot, targetSlot))
     {
-        builder.AddSubmenu(tr.Get("punish.quickPunish", adminSlot),
-                           [&app, targetSlot](int slot) { return BuildQuickPunishMenu(app, slot, targetSlot); });
+        builder.Submenu(tr.Get("punish.quickPunish", adminSlot),
+                        [&app, targetSlot](int slot) { return BuildQuickPunishMenu(app, slot, targetSlot); });
     }
 
     for (PunishType type :
          {PunishType::Kick, PunishType::Ban, PunishType::VoiceMute, PunishType::TextMute, PunishType::Warn})
     {
-        PendingPunishment pending{
-            .Type = type,
-            .TargetSlot = targetSlot,
-            .TargetSteamId = targetSid,
-            .TargetName = target->Name(),
-        };
-        builder.AddButton(
+        PendingPunishment pending{.Type = type, .Target = target->Ref()};
+        builder.Button(
             tr.Get(ActionTranslationKey(type), adminSlot),
             [&app, pending = std::move(pending)](int slot) { StartPunishFlow(app, slot, pending); },
             access.CanActOn(adminSid, targetSid, PermissionFor(type)));

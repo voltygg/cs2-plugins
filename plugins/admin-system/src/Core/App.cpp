@@ -92,7 +92,7 @@ void App::OnPlayerConnect(Player& player)
 void App::OnPlayerDisconnect(Player& player)
 {
     PlayerRepo.RecordDisconnect(player.SteamId(), player.Name(), player.Playtime().count());
-    Effects.CancelAllForSlot(player.Slot());
+    Effects.CancelAll(player.Slot());
     CheatCheck.CancelAllForSlot(player.Slot());
 }
 
@@ -148,16 +148,16 @@ void App::RegisterGameEventListeners()
     _subs.push_back(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) {
         // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
         if (e.VictimSlot >= 0)
-            Effects.CancelPerLife(e.VictimSlot);
+            Effects.CancelOnDeath(e.VictimSlot);
     }));
     _subs.push_back(events.On<VoltMod::RoundEnd>([this](const VoltMod::RoundEnd&) {
-        Effects.CancelRoundScoped();
+        Effects.CancelRound();
         // A map queued from the menu or by a passing vote lands here rather than mid-round,
         // after a pause long enough to read the scoreboard. No-op when nothing is queued.
         MapCycle.ChangeToNext();
     }));
     _subs.push_back(
-        events.On<VoltMod::RoundPrestart>([this](const VoltMod::RoundPrestart&) { Effects.CancelRoundScoped(); }));
+        events.On<VoltMod::RoundPrestart>([this](const VoltMod::RoundPrestart&) { Effects.CancelRound(); }));
 }
 
 // Add plugin status sections and require a live database for overall health.

@@ -15,23 +15,26 @@ constexpr float ExplosionCleanupSeconds = 1.0f;
 // below stays deterministic, and bystanders are untouched. Flag 64 would mute it.
 constexpr int EnvExplosionNoDamage = 1;
 
-const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                       auto& ops = ctx.Rt.EntityOps;
-                       if (ops.CanSpawn())
-                       {
-                           VoltMod::KeyValues kv;
-                           kv.Set("origin", ctx.TargetPawn().Origin()).Set("spawnflags", EnvExplosionNoDamage);
-                           if (auto* boom = ops.Spawn("env_explosion", kv))
-                           {
-                               ops.AcceptInput(boom, "Explode");
-                               ops.RemoveDelayed(boom, ExplosionCleanupSeconds);
-                           }
-                       }
+Action MakeSmite(VoltMod::Runtime& runtime)
+{
+    return Action{Flag(Permission::Fun), /*requireAlive*/ true, [&runtime](const ActionContext& ctx) -> OptKey {
+                      auto& ops = runtime.EntityOps;
+                      if (ops.CanSpawn())
+                      {
+                          VoltMod::KeyValues kv;
+                          kv.Set("origin", ctx.TargetPawn().Origin()).Set("spawnflags", EnvExplosionNoDamage);
+                          if (auto* boom = ops.Spawn("env_explosion", kv))
+                          {
+                              ops.AcceptInput(boom, "Explode");
+                              ops.RemoveDelayed(boom, ExplosionCleanupSeconds);
+                          }
+                      }
 
-                       // Delayed so the blast plays before the target drops; Pawns owns the timer,
-                       // which is what keeps it off the next occupant of the slot.
-                       ctx.Rt.Pawns.SlayDelayed(ctx.Target().Slot(), SmiteSlayDelayMs);
-                       return "broadcast.smote";
-                   }};
+                      // Delayed so the blast plays before the target drops; Pawns owns the timer,
+                      // which is what keeps it off the next occupant of the slot.
+                      runtime.Pawns.SlayDelayed(ctx.Target().Slot(), SmiteSlayDelayMs);
+                      return "broadcast.smote";
+                  }};
+}
 
 }  // namespace AdminSystem::Admin::Actions

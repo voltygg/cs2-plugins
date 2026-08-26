@@ -45,9 +45,9 @@ static bool CanStillPunish(App& app, int adminSlot, int targetSlot, PunishType t
  *  admin's flags/immunity may have changed (e.g. !admin_reload) while the menu was open. */
 static std::optional<std::string> ValidatePending(App& app, int slot, const PendingPunishment& pending)
 {
-    if (!app.Runtime.Players.Get(VoltMod::PlayerRef{pending.TargetSlot, pending.TargetSteamId}))
+    if (!app.Runtime.Players.Get(pending.Target))
         return "punish.targetLost";
-    if (!CanStillPunish(app, slot, pending.TargetSlot, pending.Type))
+    if (!CanStillPunish(app, slot, pending.Target.Slot, pending.Type))
         return "punish.notAllowed";
     return std::nullopt;
 }
@@ -56,7 +56,7 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
 {
     auto& tr = app.Runtime.Translations;
     auto* admin = app.Runtime.Players.Get(adminSlot);
-    auto* target = app.Runtime.Players.Get(pending.TargetSlot);
+    auto* target = app.Runtime.Players.Get(pending.Target);
     if (!admin || !target)
         return;
 
@@ -70,7 +70,7 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
         // With broadcasts on, the admin already sees the server-wide line; avoid double messaging.
         app.Chat.Reply(adminSlot, tr.Get("punish.issued", adminSlot,
                                          {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)},
-                                          {"name", pending.TargetName}}));
+                                          {"name", target->Name()}}));
     }
 }
 
@@ -88,8 +88,9 @@ static PunishFlowT::Ptr MakeBaseFlow(App& app, PendingPunishment pending)
             },
             [&app](int slot, const PendingPunishment& p) {
                 auto& tr = app.Runtime.Translations;
+                auto* target = app.Runtime.Players.Get(p.Target);
                 std::vector<std::pair<std::string, std::string>> rows;
-                rows.emplace_back(tr.Get("punish.target", slot), p.TargetName);
+                rows.emplace_back(tr.Get("punish.target", slot), target ? target->Name() : std::string());
                 if (IsTimed(p.Type))
                     rows.emplace_back(tr.Get("punish.duration", slot), DurationLabel(tr, p.DurationSec, slot));
                 rows.emplace_back(tr.Get("punish.reason", slot), Strings::TruncateUtf8(p.Reason, 40));
@@ -161,21 +162,19 @@ std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, i
 
         PendingPunishment pending{
             .Type = tmpl.Type,
-            .TargetSlot = targetSlot,
-            .TargetSteamId = target->SteamId(),
-            .TargetName = target->Name(),
+            .Target = target->Ref(),
             .DurationSec = tmpl.DurationSec,
             .Reason = tmpl.Reason,
         };
         // Duration and reason are preset by the template, so the flow jumps straight to confirm.
-        builder.AddButton(std::format("{} - {}", tmpl.Name, DurationLabel(tr, tmpl.DurationSec, adminSlot)),
+        builder.Button(std::format("{} - {}", tmpl.Name, DurationLabel(tr, tmpl.DurationSec, adminSlot)),
                           [&app, pending](int slot) { MakeBaseFlow(app, pending)->Start(slot); });
         ++rows;
     }
 
     // Permissions can change between the actions menu and here; never show a dead-end empty page.
     if (rows == 0)
-        builder.AddButton(tr.Get("punish.noTemplates", adminSlot), [](int) {}, false);
+        builder.Button(tr.Get("punish.noTemplates", adminSlot), [](int) {}, false);
 
     return builder.Build();
 }

@@ -1,5 +1,4 @@
 #include "Descriptors.hpp"
-#include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
@@ -22,25 +21,28 @@ constexpr float ShakeAmplitude = 8.0f;
  * angles: nothing in CS2 reliably drives m_aimPunchAngle server-side, and the shake message is
  * both supported and client-predicted.
  */
-const Effect Drunk{.Permission = Flag(Permission::Fun),
-                   .Id = static_cast<int>(EffectId::Drunk),
-                   .NameKey = "action.drunk",
-                   .OnKey = "broadcast.drunkOn",
-                   .OffKey = "broadcast.drunkOff",
-                   .Scope = EffectScope::Round,
-                   .TickIntervalMs = DrunkIntervalMs,
-                   .DurationMs = DrunkDurationSec * 1000,
-                   .RequireAlive = true,
-                   .Setup = [](const ActionContext& ctx) -> EffectInstance {
-                       int slot = ctx.Target().Slot();
-                       auto& messages = ctx.Rt.Messages;
-                       auto& entities = ctx.Rt.Entities;
-                       return {.OnTick = [&messages, &entities, slot]() {
-                           // Shaking a dead or departed player would be wasted traffic.
-                           auto pawn = entities.PawnOf(slot);
-                           if (pawn && pawn.IsAlive())
-                               messages.Shake(slot, ShakeDurationSec, ShakeFrequency, ShakeAmplitude);
-                       }};
-                   }};
+Effect MakeDrunk(VoltMod::Runtime& runtime)
+{
+    return Effect{.Permission = Flag(Permission::Fun),
+                  .Id = static_cast<int>(EffectId::Drunk),
+                  .NameKey = "action.drunk",
+                  .OnKey = "broadcast.drunkOn",
+                  .OffKey = "broadcast.drunkOff",
+                  .Scope = EffectScope::Round,
+                  .TickIntervalMs = DrunkIntervalMs,
+                  .DurationMs = DrunkDurationSec * 1000,
+                  .RequireAlive = true,
+                  .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
+                      int slot = ctx.Target().Slot();
+                      auto& messages = runtime.Messages;
+                      auto& entities = runtime.Entities;
+                      return {.OnTick = [&messages, &entities, slot]() {
+                          // Shaking a dead or departed player would be wasted traffic.
+                          auto pawn = entities.PawnOf(slot);
+                          if (pawn && pawn.IsAlive())
+                              messages.Shake(slot, ShakeDurationSec, ShakeFrequency, ShakeAmplitude);
+                      }};
+                  }};
+}
 
 }  // namespace AdminSystem::Admin::Effects

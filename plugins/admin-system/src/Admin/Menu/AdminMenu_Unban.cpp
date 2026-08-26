@@ -90,12 +90,12 @@ std::shared_ptr<VoltMod::MenuView> BuildUnbanMenu(AdminSystem::App& app, int adm
                    .Reason = ban.Reason};
         auto label = std::format("{} - {}", row.Name, ExpiryLabel(tr, row.ExpiresAt, adminSlot));
 
-        builder.AddButton(label, [&app, row = std::move(row)](int slot) { StartUnbanConfirm(app, slot, row); });
+        builder.Button(label, [&app, row = std::move(row)](int slot) { StartUnbanConfirm(app, slot, row); });
     }
 
     // Never show a dead-end empty page.
     if (bans.empty())
-        builder.AddButton(tr.Get("unban.noBans", adminSlot), [](int) {}, false);
+        builder.Button(tr.Get("unban.noBans", adminSlot), [](int) {}, false);
 
     return builder.Build();
 }

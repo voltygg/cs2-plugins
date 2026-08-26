@@ -1,5 +1,4 @@
 #include "Descriptors.hpp"
-#include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -22,33 +21,36 @@ static constexpr std::array<uint32_t, 6> Palette = {
 static constexpr int DiscoIntervalMs = 200;
 static constexpr int DiscoDurationSec = 15;
 
-const Effect Disco{.Permission = Flag(Permission::Fun),
-                   .Id = static_cast<int>(EffectId::Disco),
-                   .NameKey = "action.disco",
-                   .OnKey = "broadcast.discoOn",
-                   .OffKey = "broadcast.discoOff",
-                   .Scope = EffectScope::Round,
-                   .TickIntervalMs = DiscoIntervalMs,
-                   .DurationMs = DiscoDurationSec * 1000,
-                   .Setup = [](const ActionContext& ctx) -> EffectInstance {
-                       auto savedMode = static_cast<VoltMod::RenderMode_t>(ctx.TargetPawn().RenderMode.Get());
-                       uint32_t savedColor = ctx.TargetPawn().RenderColor;
-                       int slot = ctx.Target().Slot();
+Effect MakeDisco(VoltMod::Runtime& runtime)
+{
+    return Effect{.Permission = Flag(Permission::Fun),
+                  .Id = static_cast<int>(EffectId::Disco),
+                  .NameKey = "action.disco",
+                  .OnKey = "broadcast.discoOn",
+                  .OffKey = "broadcast.discoOff",
+                  .Scope = EffectScope::Round,
+                  .TickIntervalMs = DiscoIntervalMs,
+                  .DurationMs = DiscoDurationSec * 1000,
+                  .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
+                      auto savedMode = static_cast<VoltMod::RenderMode_t>(ctx.TargetPawn().RenderMode.Get());
+                      uint32_t savedColor = ctx.TargetPawn().RenderColor;
+                      int slot = ctx.Target().Slot();
 
-                       return {.OnTick =
-                                   [&entities = ctx.Rt.Entities, slot, idx = size_t{0}]() mutable {
-                                       VoltMod::Pawn pawn = entities.PawnOf(slot);
-                                       if (!pawn || !pawn.IsAlive())
-                                           return;
-                                       pawn.SetRender(RenderModeTransTexture, Palette[idx]);
-                                       idx = (idx + 1) % Palette.size();
-                                   },
-                               .OnStop =
-                                   [&entities = ctx.Rt.Entities, slot, savedMode, savedColor]() {
-                                       VoltMod::Pawn pawn = entities.PawnOf(slot);
-                                       if (pawn)
-                                           pawn.SetRender(savedMode, savedColor == 0 ? ColorOpaqueWhite : savedColor);
-                                   }};
-                   }};
+                      return {.OnTick =
+                                  [&entities = runtime.Entities, slot, idx = size_t{0}]() mutable {
+                                      VoltMod::Pawn pawn = entities.PawnOf(slot);
+                                      if (!pawn || !pawn.IsAlive())
+                                          return;
+                                      pawn.SetRender(RenderModeTransTexture, Palette[idx]);
+                                      idx = (idx + 1) % Palette.size();
+                                  },
+                              .OnStop =
+                                  [&entities = runtime.Entities, slot, savedMode, savedColor]() {
+                                      VoltMod::Pawn pawn = entities.PawnOf(slot);
+                                      if (pawn)
+                                          pawn.SetRender(savedMode, savedColor == 0 ? ColorOpaqueWhite : savedColor);
+                                  }};
+                  }};
+}
 
 }  // namespace AdminSystem::Admin::Effects

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "../Admin/Access.hpp"
+#include "../Admin/Actions/Descriptors.hpp"
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
+#include "../Admin/Effects/Descriptors.hpp"
 #include "../Admin/FreezeManager.hpp"
 #include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Fun/FunMode.hpp"
@@ -47,7 +49,10 @@ struct App
 
     Core::ConfigManager Config;
     /** Runs the action descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
-    VoltMod::ActionDispatcher Actions{Runtime};
+    VoltMod::ActionDispatcher Actions{Runtime.Policy, Runtime.Players, Runtime.Entities};
+    /** Action descriptors whose body needs an engine service beyond ActionContext (Slap, Smite,
+     *  SetSize), built from Runtime once here. */
+    Admin::Actions::ActionDescriptors ActionDescriptors{Runtime};
     VoltMod::PostgresDatabase Db{Runtime.Scheduler};
     Database::PlayerRepository PlayerRepo{Db};
     Core::ChatService Chat{Runtime, Config};
@@ -66,7 +71,9 @@ struct App
     Reports::ReportManager Reports{Db, Config, Runtime};
     VoltMod::EffectManager Effects{Runtime.Scheduler};
     /** Runs the effect descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
-    VoltMod::EffectDispatcher PlayerEffects{Runtime, Effects};
+    VoltMod::EffectDispatcher PlayerEffects{Actions, Effects};
+    /** Every effect descriptor for this load cycle, built from Runtime. */
+    Admin::Effects::EffectDescriptors EffectDescriptors{Runtime};
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Config, Chat};
     /** Published to other plugins in Start; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};

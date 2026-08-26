@@ -103,7 +103,7 @@ static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& ti
     auto choices = BuildColorChoices(app, viewerSlot);
     int initialIndex = IndexForColor(CurrentSlotColor(app, steamId, slot));
 
-    builder.AddChoice<std::string>(
+    builder.Choice<std::string>(
         title, std::move(choices),
         [&app, steamId, slot](int /*menuSlot*/, const std::string& value) {
             auto& mgr = app.Admins;
@@ -163,7 +163,7 @@ static void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, i
     const auto* admin = app.Admins.GetAdmin(steamId);
     int initialIndex = IndexForLanguage(langs, admin ? admin->Language : std::string("en"));
 
-    builder.AddChoice<std::string>(
+    builder.Choice<std::string>(
         app.Runtime.Translations.Get("chat.panelLanguage", viewerSlot), std::move(choices),
         [&app, steamId](int menuSlot, const std::string& lang) {
             app.Admins.UpdateLanguage(steamId, lang);
@@ -189,7 +189,7 @@ std::shared_ptr<VoltMod::MenuView> BuildChatSettingsMenu(AdminSystem::App& app, 
     MenuBuilder builder(tr.Get("category.chatSettings", adminSlot));
 
     // Persist each row immediately; the menu has no Save action.
-    builder.AddToggle(
+    builder.Toggle(
         tr.Get("chat.displayPrefix", adminSlot), tr.Get("effectState.on", adminSlot),
         tr.Get("effectState.off", adminSlot),
         [&app, steamId](int) {

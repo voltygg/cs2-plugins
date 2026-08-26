@@ -25,13 +25,15 @@ using VoltMod::TeamSpectator;
 // unloads bots until a human rejoins. Toggle off restores team, name and
 // scoreboard visibility.
 
-const Effect Hide{.Permission = Flag(Permission::Hide),
+Effect MakeHide(VoltMod::Runtime& runtime)
+{
+    return Effect{.Permission = Flag(Permission::Hide),
                   .Id = static_cast<int>(EffectId::Hide),
                   .NameKey = "action.hide",
                   .OnKey = "",
                   .OffKey = "",
                   .TickIntervalMs = GlowVision::ReconcileIntervalMs,
-                  .Setup = [](const ActionContext& ctx) -> EffectInstance {
+                  .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
                       int savedTeam = ctx.TargetPawn().Team;
                       std::string savedName = ctx.TargetCtrl.Name.Get().Str();
 
@@ -39,17 +41,17 @@ const Effect Hide{.Permission = Flag(Permission::Hide),
                       (void)ctx.TargetCtrl.ChangeTeam(TeamSpectator);
 
                       int slot = ctx.Target().Slot();
-                      auto& transmit = ctx.Rt.Transmit;
+                      auto& transmit = runtime.Transmit;
                       transmit.SetControllerHidden(slot, true);
 
                       // Hide is persistent, so the reconcile tick rebuilds the glow clones after
                       // round restarts and tracks spawns/deaths/team changes across rounds.
-                      auto glow = ctx.Rt.Visibility.CreateGlow(slot);
+                      auto glow = runtime.Visibility.CreateGlow(slot);
                       glow->Reconcile();
 
                       return {.OnTick = [glow]() { glow->Reconcile(); },
                               .OnStop =
-                                  [&transmit, &entities = ctx.Rt.Entities, slot, savedTeam, savedName, glow]() {
+                                  [&transmit, &entities = runtime.Entities, slot, savedTeam, savedName, glow]() {
                                       glow->Destroy();
                                       transmit.SetControllerHidden(slot, false);
                                       Controller controller = entities.Controller(slot);
@@ -60,5 +62,6 @@ const Effect Hide{.Permission = Flag(Permission::Hide),
                                           (void)controller.ChangeTeam(savedTeam);
                                   }};
                   }};
+}
 
 }  // namespace AdminSystem::Admin::Effects

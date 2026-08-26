@@ -1,9 +1,9 @@
-﻿#include "AdminMenu_Effects.hpp"
+#include "AdminMenu_Effects.hpp"
 
 #include "../../Core/App.hpp"
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
-#include "../Effects/EffectRegistry.hpp"
+#include "../Effects/Descriptors.hpp"
 #include "PlayerPicker.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -32,29 +32,32 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app
 {
     auto& tr = app.Runtime.Translations;
 
+    auto* admin = app.Runtime.Players.Get(adminSlot);
     auto* target = app.Runtime.Players.Get(targetSlot);
-    if (!target || !app.Runtime.Players.Get(adminSlot))
+    if (!target || !admin)
         return nullptr;
 
-    VoltMod::MenuContext ctx{.Rt = &app.Runtime, .Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
-    bool hasS = ctx.Allowed(Flag(Permission::Control));
+    MenuBuilder builder(app.Runtime.Menus,
+                        std::format("{}: {}", tr.Get("category.effects", adminSlot), target->Name()));
+    builder.For(admin->Ref(), target->Ref(), &app.Effects);
+    bool hasS = builder.Allowed(Flag(Permission::Control));
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", adminSlot), target->Name()));
-    builder.WithContext(ctx);
-
-    for (const auto& entry : Effects::MenuEffects)
+    for (const auto& entry : app.EffectDescriptors.MenuEffects)
     {
         if (entry.Toggle)
-            builder.AddEffectToggleRow(*entry.Toggle);
-        else if (entry.Param)
-            builder.AddEffectPickerRow(*entry.Param);
+        {
+            if (entry.Toggle->Choices)
+                builder.EffectPicker(*entry.Toggle);
+            else
+                builder.Effect(*entry.Toggle);
+        }
     }
 
-    builder.AddActionRow("action.slap", Actions::Slap).AddActionRow("action.smite", Actions::Smite);
+    builder.Row("action.slap", app.ActionDescriptors.Slap).Row("action.smite", app.ActionDescriptors.Smite);
 
     // Swap opens a second player picker, then runs the dual-target Swap.
-    builder.AddButton(
-        ctx.Tr("action.swap"),
+    builder.Button(
+        builder.Tr("action.swap"),
         [&app, adminSlot, targetSlot](int slot) {
             auto picker = BuildPlayerPicker(
                 app, adminSlot, app.Runtime.Translations.Get("common.selectSwapTarget", adminSlot),

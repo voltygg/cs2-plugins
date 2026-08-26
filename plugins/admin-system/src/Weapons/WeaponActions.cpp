@@ -52,17 +52,19 @@ static WeaponActionResult RunWeaponAction(App& app, int adminSlot, int targetSlo
 WeaponActionResult GiveWeapon(App& app, int adminSlot, int targetSlot, std::string_view item)
 {
     const std::string classname(item);
+    auto& items = app.Runtime.Items;
     return RunWeaponAction(
         app, adminSlot, targetSlot,
-        [&classname](const ActionContext& ctx) { return ctx.Rt.Items.Give(ctx.TargetPawn(), classname.c_str()); },
+        [&items, &classname](const ActionContext& ctx) { return items.Give(ctx.TargetPawn(), classname.c_str()); },
         "broadcast.gaveWeapon");
 }
 
 WeaponActionResult StripWeapons(App& app, int adminSlot, int targetSlot)
 {
+    auto& items = app.Runtime.Items;
     return RunWeaponAction(
-        app, adminSlot, targetSlot,
-        [](const ActionContext& ctx) { return ctx.Rt.Items.StripWeapons(ctx.TargetPawn()); }, "broadcast.stripped");
+        app, adminSlot, targetSlot, [&items](const ActionContext& ctx) { return items.StripWeapons(ctx.TargetPawn()); },
+        "broadcast.stripped");
 }
 
 }  // namespace AdminSystem::Weapons

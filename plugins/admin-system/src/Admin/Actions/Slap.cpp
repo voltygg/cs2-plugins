@@ -5,9 +5,12 @@
 namespace AdminSystem::Admin::Actions
 {
 
-const Action Slap{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                      ctx.Rt.Pawns.Slap(ctx.TargetPawn());
+Action MakeSlap(VoltMod::Runtime& runtime)
+{
+    return Action{Flag(Permission::Control), /*requireAlive*/ true, [&runtime](const ActionContext& ctx) -> OptKey {
+                      runtime.Pawns.Slap(ctx.TargetPawn());
                       return "broadcast.slapped";
                   }};
+}
 
 }  // namespace AdminSystem::Admin::Actions

@@ -74,10 +74,10 @@ std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int a
     MenuBuilder builder(tr.Get("category.control", adminSlot));
 
     // Self-only Hide toggle sits at the top of the Control list before player picks.
-    builder.AddToggle(
+    builder.Toggle(
         tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
-        [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, Effects::Hide.Id); },
-        [&app, adminSlot](int) { app.PlayerEffects.Toggle(adminSlot, adminSlot, Effects::Hide); }, hasB);
+        [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, app.EffectDescriptors.Hide.Id); },
+        [&app, adminSlot](int) { app.PlayerEffects.Toggle(adminSlot, adminSlot, app.EffectDescriptors.Hide); }, hasB);
 
     VoltMod::AppendPlayerRows(
         builder, app.Runtime.Players, adminSlot,
@@ -95,48 +95,47 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
 {
     auto& tr = app.Runtime.Translations;
 
+    auto* admin = app.Runtime.Players.Get(adminSlot);
     auto* target = app.Runtime.Players.Get(targetSlot);
-    if (!target || !app.Runtime.Players.Get(adminSlot))
+    if (!target || !admin)
         return nullptr;
 
-    VoltMod::MenuContext ctx{.Rt = &app.Runtime, .Admin = adminSlot, .Target = targetSlot, .Effects = &app.Effects};
-    bool hasS = ctx.Allowed(Flag(Permission::Control));
-
-    MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", adminSlot), target->Name()));
-    builder.WithContext(ctx);
+    MenuBuilder builder(app.Runtime.Menus, std::format("{}: {}", tr.Get("category.control", adminSlot), target->Name()));
+    builder.For(admin->Ref(), target->Ref(), &app.Effects);
+    bool hasS = builder.Allowed(Flag(Permission::Control));
 
     // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
     // (no broadcast / bool result), so they stay plain buttons rather than Actions descriptors.
     const bool checkActive = app.CheatCheck.IsActive(targetSlot);
-    builder.AddButton(
-        ctx.Tr("action.callCheck"),
+    builder.Button(
+        builder.Tr("action.callCheck"),
         [&app, adminSlot, targetSlot](int) { Actions::CallCheck(app, adminSlot, targetSlot); }, hasS);
-    builder.AddButton(
-        ctx.Tr("action.cancelCheck"),
+    builder.Button(
+        builder.Tr("action.cancelCheck"),
         [&app, adminSlot, targetSlot](int) { Actions::CancelCheck(app, adminSlot, targetSlot); }, hasS && checkActive);
 
-    builder.AddActionRow("action.kill", Actions::Kill)
-        .AddActionRow("action.bring", Actions::Bring)
-        .AddActionRow("action.goto", Actions::Goto)
-        .AddStateToggleRow("action.freeze", VoltMod::InMoveType(VoltMod::MoveType::None), Actions::Freeze)
-        .AddStateToggleRow("action.noclip", VoltMod::InMoveType(VoltMod::MoveType::NoClip), Actions::Noclip)
+    builder.Row("action.kill", Actions::Kill)
+        .Row("action.bring", Actions::Bring)
+        .Row("action.goto", Actions::Goto)
+        .StateToggle("action.freeze", VoltMod::InMoveType(VoltMod::MoveType::None), Actions::Freeze)
+        .StateToggle("action.noclip", VoltMod::InMoveType(VoltMod::MoveType::NoClip), Actions::Noclip)
         // HP/Armor/Speed/Size are inline Choice rows: A/D cycles preset values, E applies and closes.
-        .AddPresetChoiceRow("action.health", "HP", HealthPresets, Actions::SetHealth)
-        .AddPresetChoiceRow("action.armor", "AP", ArmorPresets, Actions::SetArmor)
-        .AddPresetChoiceRow("action.speed", "%", SpeedPresets, Actions::SetSpeed, SpeedDefault)
-        .AddPresetChoiceRow("action.size", "%", SizePresets, Actions::SetSize, SizeDefault)
-        .AddStateToggleRow("action.godmode", VoltMod::HasPawnFlag(VoltMod::FL_GODMODE), Actions::Godmode)
-        .AddActionRow("action.bury", Actions::Bury)
-        .AddActionRow("action.unbury", Actions::Unbury);
+        .Presets("action.health", "HP", HealthPresets, Actions::SetHealth)
+        .Presets("action.armor", "AP", ArmorPresets, Actions::SetArmor)
+        .Presets("action.speed", "%", SpeedPresets, Actions::SetSpeed, SpeedDefault)
+        .Presets("action.size", "%", SizePresets, app.ActionDescriptors.SetSize, SizeDefault)
+        .StateToggle("action.godmode", VoltMod::HasPawnFlag(VoltMod::FL_GODMODE), Actions::Godmode)
+        .Row("action.bury", Actions::Bury)
+        .Row("action.unbury", Actions::Unbury);
 
-    builder.AddSubmenu(
-        ctx.Tr("action.changeTeam"),
+    builder.Submenu(
+        builder.Tr("action.changeTeam"),
         [&app, adminSlot, targetSlot](int) { return BuildTeamPickerMenu(app, adminSlot, targetSlot); }, hasS);
 
-    builder.AddSubmenu(
-        ctx.Tr("action.giveWeapon"),
+    builder.Submenu(
+        builder.Tr("action.giveWeapon"),
         [&app, adminSlot, targetSlot](int) { return BuildWeaponMenu(app, adminSlot, targetSlot); },
-        ctx.Allowed(Flag(Permission::Weapon)));
+        builder.Allowed(Flag(Permission::Weapon)));
 
     return builder.Build();
 }
@@ -154,7 +153,7 @@ std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, int ad
     const auto& menu = app.Config.GetWeaponMenu();
     for (const auto& weapon : menu)
     {
-        builder.AddButton(weapon.Label(), [&app, adminSlot, targetSlot, item = weapon.Item](int slot) {
+        builder.Button(weapon.Label(), [&app, adminSlot, targetSlot, item = weapon.Item](int slot) {
             ReportWeaponOutcome(app, slot, Weapons::GiveWeapon(app, adminSlot, targetSlot, item),
                                 "cmd.weaponGiveFailed");
         });
@@ -162,7 +161,7 @@ std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, int ad
 
     if (!menu.empty())
     {
-        builder.AddButton(tr.Get("action.giveRandomWeapon", adminSlot), [&app, adminSlot, targetSlot](int slot) {
+        builder.Button(tr.Get("action.giveRandomWeapon", adminSlot), [&app, adminSlot, targetSlot](int slot) {
             const auto& weapons = app.Config.GetWeaponMenu();
             if (weapons.empty())
                 return;
@@ -175,10 +174,10 @@ std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, int ad
     else
     {
         // Never show a dead-end empty page.
-        builder.AddButton(tr.Get("action.noWeapons", adminSlot), [](int) {}, false);
+        builder.Button(tr.Get("action.noWeapons", adminSlot), [](int) {}, false);
     }
 
-    builder.AddButton(tr.Get("action.strip", adminSlot), [&app, adminSlot, targetSlot](int slot) {
+    builder.Button(tr.Get("action.strip", adminSlot), [&app, adminSlot, targetSlot](int slot) {
         ReportWeaponOutcome(app, slot, Weapons::StripWeapons(app, adminSlot, targetSlot), "cmd.weaponStripFailed");
     });
 

@@ -95,7 +95,7 @@ static void AppendMuteRows(App& app, MenuBuilder& builder, const std::vector<TMu
 
         auto tag = tr.Get(isVoice ? "action.voiceMute" : "action.textMute", adminSlot);
         auto label = std::format("[{}] {} - {}", tag, row.Name, ExpiryLabel(tr, row.ExpiresAt, adminSlot));
-        builder.AddButton(label, [&app, row = std::move(row)](int slot) { StartUnmuteConfirm(app, slot, row); });
+        builder.Button(label, [&app, row = std::move(row)](int slot) { StartUnmuteConfirm(app, slot, row); });
     }
 }
 
@@ -112,7 +112,7 @@ std::shared_ptr<VoltMod::MenuView> BuildUnmuteMenu(AdminSystem::App& app, int ad
 
     // Never show a dead-end empty page.
     if (voiceMutes.empty() && textMutes.empty())
-        builder.AddButton(tr.Get("unmute.noMutes", adminSlot), [](int) {}, false);
+        builder.Button(tr.Get("unmute.noMutes", adminSlot), [](int) {}, false);
 
     return builder.Build();
 }

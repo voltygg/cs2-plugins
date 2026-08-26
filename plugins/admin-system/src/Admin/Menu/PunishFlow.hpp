@@ -19,10 +19,9 @@ namespace AdminSystem::Admin::Menu
 struct PendingPunishment
 {
     Punishments::PunishType Type = Punishments::PunishType::Kick;
-    int TargetSlot = -1;
-    /** Captured at selection and re-verified at confirm, so slot reuse can't hit the wrong player. */
-    int64_t TargetSteamId = 0;
-    std::string TargetName;
+    /** Captured at selection and re-verified at every step, so slot reuse can't hit the wrong
+     *  player; the name is resolved fresh at display time rather than carried here stale. */
+    VoltMod::PlayerRef Target;
     int DurationSec = 0;  // 0 = permanent; ignored for Kick/Warn
     std::string Reason;
 };

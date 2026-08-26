@@ -1,7 +1,6 @@
 #include "Model.hpp"
 
 #include "Descriptors.hpp"
-#include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
@@ -49,36 +48,39 @@ void PrecacheModels(VoltMod::Runtime& runtime)
     runtime.Precache.Add(DefaultModelCt);
 }
 
-const ParamEffect Model{.Permission = Flag(Permission::Fun),
-                        .Id = static_cast<int>(EffectId::Model),
-                        .NameKey = "action.model",
-                        .OnKey = "broadcast.modelOn",
-                        .OffKey = "broadcast.modelOff",
-                        .ResetLabelKey = "action.modelReset",
-                        .RequireAlive = true,
-                        .Choices =
-                            []() {
-                                std::vector<EffectChoice> choices;
-                                const auto& models = FunModels();
-                                choices.reserve(models.size());
-                                for (int i = 0; i < static_cast<int>(models.size()); ++i)
-                                    choices.push_back({models[i].Name, i});
-                                return choices;
-                            },
-                        .Setup = [](const ActionContext& ctx, int param) -> EffectInstance {
-                            // Dispatch already bounds-checked param and required the target alive.
-                            ctx.Rt.EntityOps.SetModel(ctx.TargetPawn().Raw(), FunModels()[param].Path.c_str());
+Effect MakeModel(VoltMod::Runtime& runtime)
+{
+    return Effect{.Permission = Flag(Permission::Fun),
+                  .Id = static_cast<int>(EffectId::Model),
+                  .NameKey = "action.model",
+                  .OnKey = "broadcast.modelOn",
+                  .OffKey = "broadcast.modelOff",
+                  .ResetLabelKey = "action.modelReset",
+                  .RequireAlive = true,
+                  .Choices =
+                      []() {
+                          std::vector<EffectChoice> choices;
+                          const auto& models = FunModels();
+                          choices.reserve(models.size());
+                          for (int i = 0; i < static_cast<int>(models.size()); ++i)
+                              choices.push_back({models[i].Name, i});
+                          return choices;
+                      },
+                  .Setup = [&runtime](const ActionContext& ctx, int param) -> EffectInstance {
+                      // Dispatch already bounds-checked param and required the target alive.
+                      runtime.EntityOps.SetModel(ctx.TargetPawn().Raw(), FunModels()[param].Path.c_str());
 
-                            // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
-                            // team default when cleared while alive (a no-op on death, where IsAlive is false).
-                            int targetSlot = ctx.Target().Slot();
-                            return {.OnStop = [&ops = ctx.Rt.EntityOps, &entities = ctx.Rt.Entities, targetSlot]() {
-                                Pawn pawn = entities.PawnOf(targetSlot);
-                                if (!pawn || !pawn.IsAlive())
-                                    return;
-                                if (const char* def = DefaultModelForTeam(pawn.Team))
-                                    ops.SetModel(pawn.Raw(), def);
-                            }};
-                        }};
+                      // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
+                      // team default when cleared while alive (a no-op on death, where IsAlive is false).
+                      int targetSlot = ctx.Target().Slot();
+                      return {.OnStop = [&ops = runtime.EntityOps, &entities = runtime.Entities, targetSlot]() {
+                          Pawn pawn = entities.PawnOf(targetSlot);
+                          if (!pawn || !pawn.IsAlive())
+                              return;
+                          if (const char* def = DefaultModelForTeam(pawn.Team))
+                              ops.SetModel(pawn.Raw(), def);
+                      }};
+                  }};
+}
 
 }  // namespace AdminSystem::Admin::Effects

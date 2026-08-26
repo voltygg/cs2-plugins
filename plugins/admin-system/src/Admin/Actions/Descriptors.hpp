@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../../Core/App.hpp"
+#include "../../Core/Types.hpp"
 #include "ActionContext.hpp"
+
+#include <VoltMod/Api.hpp>
 
 namespace AdminSystem::Admin::Actions
 {
@@ -18,9 +20,6 @@ extern const Action Unbury;
 /** Param is the movement-speed percent (100 = normal); the body divides by 100. */
 extern const ParamAction SetSpeed;
 
-/** Param is the model-size percent (100 = normal); the body divides by 100 and the framework clamps it. */
-extern const ParamAction SetSize;
-
 extern const Action Bring;
 extern const Action Goto;
 
@@ -31,14 +30,34 @@ void Swap(App& app, int adminSlot, int firstSlot, int secondSlot);
 /** Param is the destination team (VoltMod::TeamSpectator/TeamT/TeamCT); out-of-range values are ignored. */
 extern const ParamAction ChangeTeam;
 
+// Slap, Smite and SetSize reach an engine service (Pawns, EntityOps) an ActionContext does not
+// carry, so - like the effect descriptors - they are built from a Runtime& by a factory function
+// rather than declared as file-scope constants. AdminSystem::App owns the built instances next to
+// Actions, its ActionDispatcher.
+
 /** Apply upward velocity and three seconds of fall protection. */
-extern const Action Slap;
+Action MakeSlap(VoltMod::Runtime& runtime);
 
 /**
  * Spawn a no-damage explosion, then slay after 300 ms. Fall back to delayed slay
  * when entity operations are unavailable.
  */
-extern const Action Smite;
+Action MakeSmite(VoltMod::Runtime& runtime);
+
+/** Param is the model-size percent (100 = normal); the body divides by 100 and the framework clamps it. */
+ParamAction MakeSetSize(VoltMod::Runtime& runtime);
+
+/** Every Runtime&-bound action descriptor for one load cycle. Owned by `App` next to `Actions`. */
+struct ActionDescriptors
+{
+    explicit ActionDescriptors(VoltMod::Runtime& runtime)
+        : Slap(MakeSlap(runtime)), Smite(MakeSmite(runtime)), SetSize(MakeSetSize(runtime))
+    {}
+
+    Action Slap;
+    Action Smite;
+    ParamAction SetSize;
+};
 
 /** Returns false if the action was rejected (immunity/permission) or the check could not start. */
 bool CallCheck(App& app, int adminSlot, int targetSlot);

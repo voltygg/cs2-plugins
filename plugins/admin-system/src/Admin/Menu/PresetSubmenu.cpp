@@ -24,7 +24,7 @@ std::shared_ptr<VoltMod::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, in
     MenuBuilder builder(tr.Get("action.changeTeam", adminSlot));
 
     auto addTeam = [&](const std::string& label, int team) {
-        builder.AddButton(label, [&app, adminSlot, targetSlot, team](int slot) {
+        builder.Button(label, [&app, adminSlot, targetSlot, team](int slot) {
             app.Actions.Run(adminSlot, targetSlot, team, Actions::ChangeTeam);
             app.Runtime.Menus.CloseAllMenus(slot);
         });

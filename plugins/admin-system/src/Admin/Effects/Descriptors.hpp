@@ -4,41 +4,88 @@
 #include "EffectId.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <array>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Effect = VoltMod::EffectDescriptor;
-using ParamEffect = VoltMod::ParamEffectDescriptor;
 using EffectInstance = VoltMod::EffectInstance;
 using EffectChoice = VoltMod::EffectChoice;
 using EffectScope = VoltMod::EffectScope;
 
+// Each factory below builds one Effect. A body needs an engine service (Transmit, Entities,
+// ConVars, ...) it cannot reach through ActionContext - an EffectDescriptor is data built once at
+// load, before any per-request context exists - so it captures the Runtime& its factory is given.
+
 /** Cycle render colors until the effect expires. */
-extern const Effect Disco;
+Effect MakeDisco(VoltMod::Runtime& runtime);
 
 /** Hides the pawn, weapons, and wearables through transmit filtering. */
-extern const Effect Ghost;
+Effect MakeGhost(VoltMod::Runtime& runtime);
 
 /**
  * Move an admin to free-roam spectator with a hidden scoreboard name and private
  * glow vision. Restore the team and name on stop. This self-only effect is silent.
  */
-extern const Effect Hide;
+Effect MakeHide(VoltMod::Runtime& runtime);
 
-/**
- * Show live players as team-colored glows visible only to the target.
- */
-extern const Effect Wallhack;
+/** Show live players as team-colored glows visible only to the target. */
+Effect MakeWallhack(VoltMod::Runtime& runtime);
 
-/** Model swap whose parameter indexes FunModels(). */
-extern const ParamEffect Model;
+/** Model swap picker whose choices index FunModels(). */
+Effect MakeModel(VoltMod::Runtime& runtime);
 
 /**
  * Grant session bunnyhop through `bhop_player`. Requires bhop `grants` mode,
  * survives death, and ends on disconnect.
  */
-extern const Effect Bhop;
-extern const Effect Drunk;
+Effect MakeBhop(VoltMod::Runtime& runtime);
+
+Effect MakeDrunk(VoltMod::Runtime& runtime);
+
+/**
+ * @brief Effects-menu row with exactly one descriptor.
+ *
+ * MenuEffects defines display order explicitly. Hide is a self-only Control row and `!hide`
+ * command, so it is not listed here.
+ */
+struct EffectEntry
+{
+    const Effect* Toggle = nullptr;
+};
+
+/**
+ * @brief Every effect descriptor for one load cycle, built from the @ref VoltMod::Runtime the
+ * bodies act through. Owned by `App`, next to the `EffectManager`/`EffectDispatcher` that drive
+ * them - see `Core/App.hpp`.
+ */
+struct EffectDescriptors
+{
+    explicit EffectDescriptors(VoltMod::Runtime& runtime)
+        : Disco(MakeDisco(runtime)),
+          Ghost(MakeGhost(runtime)),
+          Hide(MakeHide(runtime)),
+          Wallhack(MakeWallhack(runtime)),
+          Model(MakeModel(runtime)),
+          Bhop(MakeBhop(runtime)),
+          Drunk(MakeDrunk(runtime))
+    {}
+
+    Effect Disco;
+    Effect Ghost;
+    Effect Hide;
+    Effect Wallhack;
+    Effect Model;
+    Effect Bhop;
+    Effect Drunk;
+
+    /** Every auto-listed effect, in the order the menu renders them. Pointers into the members
+     *  above, stable for this object's lifetime (one load cycle). */
+    const std::array<EffectEntry, 6> MenuEffects{
+        EffectEntry{&Ghost}, EffectEntry{&Disco}, EffectEntry{&Wallhack},
+        EffectEntry{&Model}, EffectEntry{&Bhop},  EffectEntry{&Drunk},
+    };
+};
 
 }  // namespace AdminSystem::Admin::Effects

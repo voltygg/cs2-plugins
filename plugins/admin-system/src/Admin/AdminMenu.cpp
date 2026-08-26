@@ -42,25 +42,25 @@ std::shared_ptr<VoltMod::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int
                              app.Version);
 
     return MenuBuilder(title)
-        .AddSubmenu(
+        .Submenu(
             tr.Get("category.punish", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildPunishMenu(app, adminSlot); },
             access.HasAnyPermission(adminSid, "cdoe"))
-        .AddSubmenu(
+        .Submenu(
             tr.Get("category.control", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildControlMenu(app, adminSlot); },
             access.HasAnyPermission(adminSid, "bskz"))
-        .AddSubmenu(
+        .Submenu(
             tr.Get("category.effects", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildEffectsMenu(app, adminSlot); },
             access.HasAnyPermission(adminSid, "fjz"))
-        .AddSubmenu(
+        .Submenu(
             tr.Get("category.fun", adminSlot), [&app, adminSlot](int) { return Menu::BuildFunMenu(app, adminSlot); },
             access.HasAnyPermission(adminSid, "gz"))
-        .AddSubmenu(
+        .Submenu(
             tr.Get("category.map", adminSlot), [&app, adminSlot](int) { return Menu::BuildMapMenu(app, adminSlot); },
             access.HasAnyPermission(adminSid, "mvz"))
-        .AddSubmenu(
+        .Submenu(
             tr.Get("category.chatSettings", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildChatSettingsMenu(app, adminSlot); }, adminMgr.IsAdmin(adminSid))
         .Build();

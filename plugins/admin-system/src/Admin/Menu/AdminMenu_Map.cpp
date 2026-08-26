@@ -64,10 +64,10 @@ static std::shared_ptr<VoltMod::MenuView> BuildMapActionsMenu(App& app, int admi
     const bool mayVote = MayUse(app, adminSlot, Permission::Vote);
 
     return MenuBuilder(map.Label())
-        .AddButton(
+        .Button(
             tr.Get("action.changeMap", adminSlot), [&app, map](int slot) { ConfirmMapChange(app, slot, map); }, mayMap)
         // Queuing and voting only take effect later, so neither needs a confirmation step.
-        .AddButton(
+        .Button(
             tr.Get("action.setNextMap", adminSlot),
             [&app, map](int slot) {
                 if (!MayUse(app, slot, Permission::Map))
@@ -76,7 +76,7 @@ static std::shared_ptr<VoltMod::MenuView> BuildMapActionsMenu(App& app, int admi
                 app.Chat.BroadcastKey("broadcast.nextMapSet", {{"map", map.Label()}});
             },
             mayMap)
-        .AddButton(
+        .Button(
             tr.Get("action.voteMap", adminSlot),
             [&app, map](int slot) {
                 if (!MayUse(app, slot, Permission::Vote))
@@ -96,13 +96,13 @@ std::shared_ptr<VoltMod::MenuView> BuildMapMenu(AdminSystem::App& app, int admin
 
     const auto& cycle = app.MapCycle.Cycle();
     for (const auto& map : cycle)
-        builder.AddSubmenu(map.Label(), [&app, map](int slot) { return BuildMapActionsMenu(app, slot, map); });
+        builder.Submenu(map.Label(), [&app, map](int slot) { return BuildMapActionsMenu(app, slot, map); });
 
     // Never show a dead-end empty page.
     if (cycle.empty())
-        builder.AddButton(tr.Get("map.noMaps", adminSlot), [](int) {}, false);
+        builder.Button(tr.Get("map.noMaps", adminSlot), [](int) {}, false);
 
-    builder.AddButton(
+    builder.Button(
         tr.Get("action.cancelVote", adminSlot),
         [&app](int slot) {
             if (!MayUse(app, slot, Permission::Vote))
