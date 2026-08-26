@@ -61,7 +61,7 @@ conan editable remove voltmod
 ```
 
 Inspect, validate, and commit the two repositories independently. Without an
-editable package, Conan resolves `voltmod/[~1.2]` from the public remote.
+editable package, Conan resolves `voltmod/[~1.3]` from the public remote.
 
 ## Before pushing
 

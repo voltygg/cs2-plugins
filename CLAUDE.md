@@ -1,7 +1,7 @@
 # CS2 plugins repository
 
 This repository builds C++23 Metamod:Source plugins for Counter-Strike 2. Shared
-engine integration comes from the `voltmod/[~1.2]` Conan package. The local
+engine integration comes from the `voltmod/[~1.3]` Conan package. The local
 `vendor/voltmod` checkout is a separate Git repository used for coordinated
 framework work; it affects builds only after `conan editable add vendor/voltmod`.
 
