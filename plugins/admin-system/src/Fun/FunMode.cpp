@@ -15,9 +15,9 @@ constexpr const char* KnifeCT = "weapon_knife";
 
 }  // namespace
 
-FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _conVars(runtime.ConVars) {}
+FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _lease(runtime.ConVars) {}
 
-// ~ConVarOverrides restores everything the toggles took over, so an unload cannot leave the server
+// ~ConVarLease restores everything the toggles took over, so an unload cannot leave the server
 // at low gravity or on lethal damage scales with nothing left to turn them off.
 FunMode::~FunMode() = default;
 
@@ -74,9 +74,9 @@ void FunMode::ApplyOverrides()
     for (const auto& row : ToggleConVars)
     {
         if (_state.IsOn(row.Owner))
-            _conVars.Take(row.Name, row.OnValue, row.StockValue);
+            _lease.Override(row.Name, row.OnValue);
         else
-            _conVars.Release(row.Name);
+            _lease.Restore(row.Name);
     }
 }
 

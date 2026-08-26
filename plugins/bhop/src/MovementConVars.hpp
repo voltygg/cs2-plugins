@@ -25,8 +25,8 @@ class MovementConVars
 public:
     explicit MovementConVars(VoltMod::ConVarService& conVars) : _conVars(conVars) {}
 
-    // _global's destructor restores whatever ApplyGlobal took, so unload leaves the server's
-    // convars as we found them.
+    // _globalLease's destructor restores whatever ApplyGlobal took, so unload leaves the
+    // server's convars as we found them.
     ~MovementConVars() = default;
 
     /** (Re)resolve the override set from @p settings; clears any previous set first. */
@@ -55,18 +55,18 @@ private:
     {
         const char* Name;
         bool IsFloat;
-        float Value;              // bools use 0/1
-        std::string NetValue;     // string form sent via ReplicateToClient
-        VoltMod::RawConVar Raw;   // raw storage handle for the per-player flip
-        float SavedValue = 0.0f;  // engine value saved before a raw flip
+        float Value;                     // bools use 0/1
+        std::string NetValue;            // string form sent via ReplicateToClient
+        VoltMod::ConVarStorage Storage;  // value-storage handle for the per-player flip
+        float SavedValue = 0.0f;         // engine value saved before a raw flip
     };
 
     void RestoreGlobal();
 
     VoltMod::ConVarService& _conVars;
-    /** The server-wide take-over ledger for "enabled" mode; snapshot and restore live here. The
-     *  raw flips and per-client replication below are bhop-specific and stay put. */
-    VoltMod::ConVarOverrides _global{_conVars};
+    /** The server-wide take-over for "enabled" mode; the saved values and their restore live here.
+     *  The raw flips and per-client replication below are bhop-specific and stay put. */
+    VoltMod::ConVarLease _globalLease{_conVars};
     std::vector<ConVarOverride> _overrides;
     bool _flipped = false;
 };

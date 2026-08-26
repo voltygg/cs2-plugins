@@ -23,11 +23,11 @@ const Effect Bhop{.Permission = Flag(Permission::Bhop),
                   .Setup = [](const ActionContext& ctx) -> EffectInstance {
                       int64_t steamId = ctx.Target->GetSteamID();
                       auto& conVars = ctx.Rt.ConVars;
-                      conVars.ExecuteServerCommand(std::format("bhop_player {} 1", steamId).c_str());
+                      conVars.ExecuteServerCommand(std::format("bhop_player {} 1", steamId));
                       // The effect manager is a plugin member, so it is torn down before the
                       // runtime - this reference outlives every OnStop it can reach.
                       return {.OnStop = [&conVars, steamId]() {
-                          conVars.ExecuteServerCommand(std::format("bhop_player {} 0", steamId).c_str());
+                          conVars.ExecuteServerCommand(std::format("bhop_player {} 0", steamId));
                       }};
                   }};
 

@@ -301,10 +301,10 @@ void AntiCheatManager::OnPlayerSettingsChanged(VoltMod::Players::Player* player)
     _namechangerDetector.OnSettingsChanged(player);
 }
 
-VoltMod::RawConVar& AntiCheatManager::CheatsConVar() const
+VoltMod::ConVarStorage& AntiCheatManager::CheatsConVar() const
 {
     if (!_svCheats)
-        _svCheats = _rt.ConVars.Raw("sv_cheats");
+        _svCheats = _rt.ConVars.Storage("sv_cheats");
     return *_svCheats;
 }
 
@@ -313,16 +313,17 @@ bool AntiCheatManager::DetectionsEnabled() const
     const auto& settings = _config.Get().anticheat;
     if (!settings.enabled)
         return false;
-    const VoltMod::RawConVar& cheats = CheatsConVar();
-    if (!cheats.Valid())
+    const VoltMod::ConVarStorage& cheats = CheatsConVar();
+    if (!cheats.IsValid())
         return true;
     return !cheats.GetBool() || settings.allowSvCheatsTesting;
 }
 
 bool AntiCheatManager::EnforceCheatCvars() const
 {
-    const VoltMod::RawConVar& cheats = CheatsConVar();
-    return ShouldEnforceCheatCvars(cheats.Valid() && cheats.GetBool(), TimeUtils::MonotonicSeconds(), _cheatGraceUntil);
+    const VoltMod::ConVarStorage& cheats = CheatsConVar();
+    return ShouldEnforceCheatCvars(cheats.IsValid() && cheats.GetBool(), TimeUtils::MonotonicSeconds(),
+                                   _cheatGraceUntil);
 }
 
 bool AntiCheatManager::ModuleEnabled(DetectionKind kind) const

@@ -29,8 +29,8 @@ void MovementConVars::Build(const BhopSettings& settings)
                               .IsFloat = isFloat,
                               .Value = value,
                               .NetValue = FormatConVarValue(isFloat, value),
-                              .Raw = _conVars.Raw(name)});
-        if (!_overrides.back().Raw.Valid())
+                              .Storage = _conVars.Storage(name)});
+        if (!_overrides.back().Storage.IsValid())
             Log::Warn("ConVar '{}' not found; bhop override skipped in grants mode.", name);
     };
 
@@ -58,18 +58,18 @@ void MovementConVars::Reset()
 
 void MovementConVars::ApplyGlobal()
 {
-    // Take() snapshots on the first take and re-asserts afterwards, which is what lets this be
+    // Override() saves on the first take and re-asserts afterwards, which is what lets this be
     // called again after a map change without saving the override as the operator's own value.
     // It writes through the server-console path: the direct setters change only the server's
     // stored value, so FCVAR_REPLICATED movement convars never network to clients and their
     // predicted movement keeps the defaults - no auto-hop, no speed retention.
     for (const auto& entry : _overrides)
-        _global.Take(entry.Name, entry.NetValue);
+        _globalLease.Override(entry.Name, entry.NetValue);
 }
 
 void MovementConVars::RestoreGlobal()
 {
-    _global.ReleaseAll();
+    _globalLease.RestoreAll();
 }
 
 void MovementConVars::ReplicateOverrides(int slot) const
@@ -94,17 +94,17 @@ void MovementConVars::FlipRaw()
     // fire and nothing is networked. RestoreRaw undoes it before anyone else runs.
     for (auto& entry : _overrides)
     {
-        if (!entry.Raw.Valid())
+        if (!entry.Storage.IsValid())
             continue;
         if (entry.IsFloat)
         {
-            entry.SavedValue = entry.Raw.GetFloat();
-            entry.Raw.SetFloat(entry.Value);
+            entry.SavedValue = entry.Storage.GetFloat();
+            entry.Storage.SetFloat(entry.Value);
         }
         else
         {
-            entry.SavedValue = entry.Raw.GetBool() ? 1.0f : 0.0f;
-            entry.Raw.SetBool(entry.Value != 0.0f);
+            entry.SavedValue = entry.Storage.GetBool() ? 1.0f : 0.0f;
+            entry.Storage.SetBool(entry.Value != 0.0f);
         }
     }
     _flipped = true;
@@ -117,12 +117,12 @@ void MovementConVars::RestoreRaw()
 
     for (auto& entry : _overrides)
     {
-        if (!entry.Raw.Valid())
+        if (!entry.Storage.IsValid())
             continue;
         if (entry.IsFloat)
-            entry.Raw.SetFloat(entry.SavedValue);
+            entry.Storage.SetFloat(entry.SavedValue);
         else
-            entry.Raw.SetBool(entry.SavedValue != 0.0f);
+            entry.Storage.SetBool(entry.SavedValue != 0.0f);
     }
     _flipped = false;
 }

@@ -16,14 +16,13 @@ class Runtime;
 namespace AdminSystem::Fun
 {
 
-/** One convar a toggle takes over: the value it holds while the toggle is on, and the engine
- *  stock value, used only as a last resort when the live value cannot be read at all. */
+/** One convar a toggle takes over, and the value it holds while the toggle is on. What it goes
+ *  back to is the operator's own value, saved by ConVarLease before the first write. */
 struct ToggleConVar
 {
     Toggle Owner;
     std::string_view Name;
     float OnValue;
-    float StockValue;
 };
 
 /**
@@ -35,12 +34,12 @@ struct ToggleConVar
  * 23-damage leg hit lands as ~490.
  */
 inline constexpr std::array<ToggleConVar, 6> ToggleConVars{{
-    {Toggle::LowGravity, "sv_gravity", 250.0f, 800.0f},
-    {Toggle::HeadshotOnly, "mp_damage_headshot_only", 1.0f, 0.0f},
-    {Toggle::OneHitKill, "mp_damage_scale_ct_body", 20.0f, 1.0f},
-    {Toggle::OneHitKill, "mp_damage_scale_t_body", 20.0f, 1.0f},
-    {Toggle::OneHitKill, "mp_damage_scale_ct_head", 20.0f, 1.0f},
-    {Toggle::OneHitKill, "mp_damage_scale_t_head", 20.0f, 1.0f},
+    {Toggle::LowGravity, "sv_gravity", 250.0f},
+    {Toggle::HeadshotOnly, "mp_damage_headshot_only", 1.0f},
+    {Toggle::OneHitKill, "mp_damage_scale_ct_body", 20.0f},
+    {Toggle::OneHitKill, "mp_damage_scale_t_body", 20.0f},
+    {Toggle::OneHitKill, "mp_damage_scale_ct_head", 20.0f},
+    {Toggle::OneHitKill, "mp_damage_scale_t_head", 20.0f},
 }};
 
 /**
@@ -51,8 +50,8 @@ inline constexpr std::array<ToggleConVar, 6> ToggleConVars{{
  * weapons) are re-applied at each round start and undone when the toggle goes off.
  *
  * The damage-affecting toggles drive the engine's own convars rather than the damage hook, which
- * only observes damage (see Sdk::DamageHook). ConVarOverrides holds the snapshot-and-restore
- * ledger, so a server that never turned a toggle on keeps its own cfg.
+ * only observes damage (see Sdk::DamageHook). ConVarLease holds the saved values, so a
+ * server that never turned a toggle on keeps its own cfg.
  */
 class FunMode
 {
@@ -83,7 +82,7 @@ private:
     VoltMod::Runtime& _rt;
     ToggleState _state;
     /** Restores whatever the toggles took over, including on unload. */
-    VoltMod::ConVarOverrides _conVars;
+    VoltMod::ConVarLease _lease;
     /** Listener registrations, released together and declared last so they stop before the
      *  state their callbacks read. */
     std::vector<VoltMod::Subscription> _subs;
