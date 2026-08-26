@@ -1,12 +1,9 @@
 #pragma once
 
+#include "../Core/App.hpp"
+
 #include <cstdint>
 #include <string>
-
-namespace AdminSystem
-{
-struct App;
-}
 
 namespace AdminSystem::Reports
 {

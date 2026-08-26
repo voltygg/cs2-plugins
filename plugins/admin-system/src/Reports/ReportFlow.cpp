@@ -9,9 +9,9 @@
 #include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Messaging/Messages.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -19,22 +19,19 @@
 #include <utility>
 #include <vector>
 
-using VoltMod::Core::Strings;
+using VoltMod::Strings;
 
 namespace AdminSystem::Reports
 {
 
 using ReportFlowT = VoltMod::Flow<PendingReport>;
 
-namespace
-{
-
 /** Reason code recorded when the reporter types their own text. */
-constexpr const char* CustomReasonCode = "other";
+static constexpr const char* CustomReasonCode = "other";
 
 /** `report.reasons.<code>` when the translation files define it, else the config label - so
  *  operator-added codes need no translation entry. Get() echoes a missing key back verbatim. */
-std::string ReasonLabel(App& app, const Core::ReportReason& reason, int slot)
+static std::string ReasonLabel(App& app, const Core::ReportReason& reason, int slot)
 {
     const std::string key = "report.reasons." + reason.code;
     std::string text = app.Runtime.Translations.Get(key, slot);
@@ -44,7 +41,7 @@ std::string ReasonLabel(App& app, const Core::ReportReason& reason, int slot)
 /** Re-runs before every step and at confirm: the target may have left and the gate may have closed
  *  while the menu sat open. Flow renders these keys without token substitution, so keep them
  *  token-free. */
-std::optional<std::string> ValidatePending(App& app, int slot, const PendingReport& pending)
+static std::optional<std::string> ValidatePending(App& app, int slot, const PendingReport& pending)
 {
     auto* reporter = app.Runtime.Players.GetPlayerBySlot(slot);
     if (!reporter)
@@ -59,7 +56,7 @@ std::optional<std::string> ValidatePending(App& app, int slot, const PendingRepo
     return std::nullopt;
 }
 
-void Submit(App& app, int reporterSlot, PendingReport& pending)
+static void Submit(App& app, int reporterSlot, PendingReport& pending)
 {
     auto* reporter = app.Runtime.Players.GetPlayerBySlot(reporterSlot);
     auto* target = app.Runtime.Players.GetPlayerBySlot(pending.TargetSlot);
@@ -79,7 +76,7 @@ void Submit(App& app, int reporterSlot, PendingReport& pending)
                        });
 }
 
-void StartReportFlow(App& app, int reporterSlot, int targetSlot)
+static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
 {
     auto* target = app.Runtime.Players.GetPlayerBySlot(targetSlot);
     if (!target)
@@ -121,8 +118,6 @@ void StartReportFlow(App& app, int reporterSlot, int targetSlot)
         ->OnFinish([&app](int slot, PendingReport& p) { Submit(app, slot, p); })
         ->Start(reporterSlot);
 }
-
-}  // namespace
 
 void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
 {

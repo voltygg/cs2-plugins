@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../Core/App.hpp"
 #include "../../Punishments/PunishType.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -7,11 +8,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-
-namespace AdminSystem
-{
-struct App;
-}
 
 namespace AdminSystem::Admin::Menu
 {

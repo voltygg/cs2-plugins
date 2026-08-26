@@ -12,9 +12,6 @@
 namespace AdminSystem::Weapons
 {
 
-namespace
-{
-
 using Admin::Actions::Action;
 using Admin::Actions::ActionContext;
 using Admin::Actions::OptKey;
@@ -25,8 +22,9 @@ using Admin::Actions::OptKey;
  * `RequireAlive` is left off and the aliveness check done here instead, because the dispatcher
  * skips a dead target silently and the chat commands need to say why nothing happened.
  */
-WeaponActionResult RunWeaponAction(App& app, int adminSlot, int targetSlot,
-                                   const std::function<bool(const ActionContext&)>& body, const char* broadcastKey)
+static WeaponActionResult RunWeaponAction(App& app, int adminSlot, int targetSlot,
+                                          const std::function<bool(const ActionContext&)>& body,
+                                          const char* broadcastKey)
 {
     auto outcome = WeaponActionResult::NotAllowed;
 
@@ -50,8 +48,6 @@ WeaponActionResult RunWeaponAction(App& app, int adminSlot, int targetSlot,
 
     return outcome;
 }
-
-}  // namespace
 
 WeaponActionResult GiveWeapon(App& app, int adminSlot, int targetSlot, std::string_view item)
 {

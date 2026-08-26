@@ -2,22 +2,24 @@
 
 #include "Config.hpp"
 
-#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
-#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <format>
+
+using VoltMod::Messages;
+using VoltMod::Runtime;
+using VoltMod::Strings;
+using VoltMod::Time;
+using VoltMod::Translations;
 
 namespace AdminSystem::Core
 {
 
-using namespace VoltMod::Core;
-namespace ChatColors = VoltMod::Messaging::ChatColors;
-
-namespace
-{
+namespace ChatColors = VoltMod::ChatColors;
 
 /** Layout for "{prefix} {actor} {phrase}" action lines. */
 struct AdminLineStyle
@@ -29,7 +31,7 @@ struct AdminLineStyle
 };
 
 /** "{prefix} {actor} {phrase}", e.g. "[ADMIN] Bob went stealth". */
-std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase)
+static std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase)
 {
     // {PrefixColor}{prefix} {NameColor}{actor}{Default} {PhraseColor}{phrase}
     return std::format("{}{} {}{}{} {}{}", style.PrefixColor, style.Prefix, style.NameColor, actorName,
@@ -37,16 +39,17 @@ std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorN
 }
 
 /** Single-target variant: "{prefix} {actor} {phrase} {target}", e.g. "[ADMIN] Bob slapped Alice". */
-std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase,
-                            std::string_view targetName)
+static std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase,
+                                   std::string_view targetName)
 {
     return std::format("{}{} {}", FormatAdminLine(style, actorName, phrase), ChatColors::Default, targetName);
 }
 
 /** Token variant for multi-target phrases, e.g. "swapped {a} and {b}": each mapped name is
  *  substituted into `phraseTemplate` wrapped in the name color. */
-std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phraseTemplate,
-                            const std::map<std::string, std::string>& nameTokens)
+static std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName,
+                                   std::string_view phraseTemplate,
+                                   const std::map<std::string, std::string>& nameTokens)
 {
     // Names sit inside the colored phrase, so wrap each in the name color before substituting.
     std::map<std::string, std::string> colored;
@@ -55,8 +58,6 @@ std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorN
 
     return FormatAdminLine(style, actorName, Strings::SubstituteTokens(std::string(phraseTemplate), colored));
 }
-
-}  // namespace
 
 void ChatService::Reply(int slot, std::string_view message)
 {

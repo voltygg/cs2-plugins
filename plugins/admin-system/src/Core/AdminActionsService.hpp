@@ -1,21 +1,10 @@
 #pragma once
 
+#include "../Admin/Access.hpp"
+#include "../Punishments/PunishmentManager.hpp"
+
 #include <Contracts/IAdminActions.hpp>
-
-namespace VoltMod
-{
-class Runtime;
-}
-
-namespace AdminSystem::Admin
-{
-class Access;
-}
-
-namespace AdminSystem::Punishments
-{
-class PunishmentManager;
-}
+#include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Core
 {

@@ -8,7 +8,7 @@
 namespace Anticheat
 {
 
-std::string NamechangerDetector::CurrentName(VoltMod::Players::Player* player) const
+std::string NamechangerDetector::CurrentName(VoltMod::Player* player) const
 {
     std::string name = _rt.Entities.Controller(player->GetSlot()).GetPlayerName();
     return name.empty() ? player->GetName() : name;
@@ -16,22 +16,21 @@ std::string NamechangerDetector::CurrentName(VoltMod::Players::Player* player) c
 
 // Baselining is bookkeeping, not judgement, so it runs even while detections are gated off:
 // a change measured against a stale name would be a false positive later.
-void NamechangerDetector::OnFullyConnected(VoltMod::Players::Player* player)
+void NamechangerDetector::OnFullyConnected(VoltMod::Player* player)
 {
     if (!player || !_manager.ModuleEnabled(DetectionKind::Namechanger) || !_manager.IsEligible(player->GetSlot()))
         return;
     _manager.Namechanger().OnBaseline(player->GetSlot(), CurrentName(player));
 }
 
-void NamechangerDetector::OnSettingsChanged(VoltMod::Players::Player* player)
+void NamechangerDetector::OnSettingsChanged(VoltMod::Player* player)
 {
     if (!player || !_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::Namechanger) ||
         !_manager.IsEligible(player->GetSlot()))
         return;
 
     const int slot = player->GetSlot();
-    _manager.Report(slot,
-                    _manager.Namechanger().OnNameChanged(slot, CurrentName(player), Time::MonotonicSeconds()));
+    _manager.Report(slot, _manager.Namechanger().OnNameChanged(slot, CurrentName(player), Time::MonotonicSeconds()));
 }
 
 }  // namespace Anticheat

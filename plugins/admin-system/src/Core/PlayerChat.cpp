@@ -6,34 +6,35 @@
 #include "Config.hpp"
 
 #include <VoltMod/Commands/CommandManager.hpp>
-#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Hooks/ChatInput.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Hooks/ChatInput.hpp>
-#include <VoltMod/Messaging/Messages.hpp>
 #include <format>
 #include <string>
+
+using VoltMod::ChatInput;
+using VoltMod::CommandManager;
+using VoltMod::Messages;
+using VoltMod::Player;
+using VoltMod::Runtime;
+using VoltMod::Time;
+using VoltMod::Translations;
 
 namespace AdminSystem::Core
 {
 
-using namespace VoltMod::Players;
-using namespace VoltMod::Core;
-namespace ChatColors = VoltMod::Messaging::ChatColors;
-
-namespace
-{
+namespace ChatColors = VoltMod::ChatColors;
 
 /** Localized expiry suffix for mute notices addressed to @p slot. */
-std::string MuteExpiryText(VoltMod::Translations& tr, int64_t expiresAt, int slot)
+static std::string MuteExpiryText(VoltMod::Translations& tr, int64_t expiresAt, int slot)
 {
     return Time::FormatExpiry(expiresAt, Time::Now(), tr.Get("muteNotice.permanent", slot),
-                                   tr.Get("muteNotice.expiresIn", slot));
+                              tr.Get("muteNotice.expiresIn", slot));
 }
-
-}  // namespace
 
 template <class TMute>
 void PlayerChat::ReplyMuteNotice(int slot, const char* noticeKey, const std::optional<TMute>& mute)

@@ -1,21 +1,13 @@
 #pragma once
 
+#include "../Core/Config.hpp"
 #include "MapQuery.hpp"
 
+#include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
-
-namespace VoltMod
-{
-class Runtime;
-}
-
-namespace AdminSystem::Core
-{
-class ConfigManager;
-}
 
 namespace AdminSystem::Maps
 {
@@ -26,7 +18,7 @@ inline constexpr int64_t MapChangeAnnounceMs = 5000;
 /**
  * The configured map list, the pending next map, and the level change itself.
  *
- * App-owned. Holds the list rather than VoltMod::Engine::Map, which is deliberately
+ * App-owned. Holds the list rather than VoltMod::Map, which is deliberately
  * listless: which maps an operator offers is configuration, not engine state.
  */
 class MapCycleState

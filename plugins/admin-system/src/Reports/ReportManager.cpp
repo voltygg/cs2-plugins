@@ -10,12 +10,12 @@
 #include <algorithm>
 #include <utility>
 
-using VoltMod::Core::Time;
+using VoltMod::Time;
 
 namespace AdminSystem::Reports
 {
 
-namespace Log = VoltMod::Core::Log;
+namespace Log = VoltMod::Log;
 
 ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<int64_t> targetSteamId, int64_t now) const
 {

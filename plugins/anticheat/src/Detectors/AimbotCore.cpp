@@ -10,25 +10,22 @@
 namespace Anticheat
 {
 
-namespace
-{
-constexpr size_t CommandHistorySize = 128;
-constexpr int SnapWindowTicks = static_cast<int>(TickRate * 0.5f);  // 32
+static constexpr size_t CommandHistorySize = 128;
+static constexpr int SnapWindowTicks = static_cast<int>(TickRate * 0.5f);  // 32
 constexpr float MinimumDistance = 100.0f;
-constexpr int DetectionThreshold = 4;
+static constexpr int DetectionThreshold = 4;
 
 // Convergence: a large jump landing far closer to the target than it started. The two branches
 // trade snap size against how completely the error collapsed.
-constexpr float WideSnapDeg = 10.0f;
-constexpr float WideSnapErrorRatio = 0.2f;
-constexpr float TightSnapDeg = 5.0f;
-constexpr float TightSnapErrorRatio = 0.1f;
+static constexpr float WideSnapDeg = 10.0f;
+static constexpr float WideSnapErrorRatio = 0.2f;
+static constexpr float TightSnapDeg = 5.0f;
+static constexpr float TightSnapErrorRatio = 0.1f;
 
 // Snap-return: one command steps far off the line its neighbours share, then steps back.
-constexpr float SnapReturnSurroundingDeg = 10.0f;
-constexpr float SnapReturnMinSnapDeg = 0.5f;
-constexpr float SnapReturnRatio = 5.0f;
-}  // namespace
+static constexpr float SnapReturnSurroundingDeg = 10.0f;
+static constexpr float SnapReturnMinSnapDeg = 0.5f;
+static constexpr float SnapReturnRatio = 5.0f;
 
 void AimbotCore::Reset()
 {

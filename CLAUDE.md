@@ -26,8 +26,11 @@ optional CS2 server without changing them. `bootstrap` installs VoltMod's Conan
 profiles and public remote, then builds. `build` compiles only; `test` brings
 the build up to date and runs CTest. On `build`, `--install <plugin>` copies the
 result into the local CS2 server at `CS2_SERVER_PATH` and `--start` launches
-that server afterwards. All of these come from the framework CLI (`voltmod
-build|test|install|serve`); `deploy/tools` only handles the remote fleet.
+that server afterwards. `lint` runs ruff over the build tooling and then
+`voltmod modgraph --plugins .`, which fails a plugin source that forward-declares
+a type, opens an anonymous namespace, or uses a using-directive. All of these
+come from the framework CLI (`voltmod build|test|install|serve|modgraph`);
+`deploy/tools` only handles the remote fleet.
 Build output is under
 `build/<preset>/plugins/<name>/<platform-arch>/`. The build tasks run
 `voltmod`, installed by this repository's `pyproject.toml`.
@@ -105,8 +108,16 @@ Current patterns:
 - Use `PascalCase` for types and methods, `_camelCase` for members, and
   `camelCase` for local variables and parameters.
 - Prefer `std::format`, designated initializers, and `int64_t` SteamIDs.
-- Prefer the short names exported by `<VoltMod/Api.hpp>`. Do not put a
-  namespace-scope using-directive in a header.
+- Every framework name is `VoltMod::Thing`; there are no module sub-namespaces.
+  Write the qualified name, or name what a .cpp uses with targeted
+  using-declarations (`using VoltMod::Player;`). Never a using-directive, and
+  never a using-declaration in a header.
+- Do not forward-declare a type. Include the header that defines it. A pair of
+  classes that owns one another is the only exception, and its declaration goes
+  in the plugin's one `*Types.hpp` header with a comment saying why.
+- Do not use anonymous namespaces. A file-local helper is a `static` function or
+  constant at the top of the .cpp, or a private static member when it needs
+  class state.
 - Game code runs on the main thread. Do not add plugin-owned worker threads or
   mutexes. VoltMod's database and HTTP workers replay completions on the game
   thread.

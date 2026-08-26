@@ -2,8 +2,8 @@
 #include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Hooks/Transmit.hpp>
+#include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Admin::Effects
 {

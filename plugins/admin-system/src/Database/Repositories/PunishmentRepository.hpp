@@ -36,8 +36,7 @@ public:
     /** Async snapshot for the periodic cache refresh; @p onDone runs on the game thread. */
     void FindAllActiveAsync(std::function<void(std::vector<TEntity>)> onDone)
     {
-        _db.Query(Stmt("find_all_active"), VoltMod::SelectSql<TEntity>(ActiveWhere),
-                  pqxx::params{VoltMod::Time::Now()},
+        _db.Query(Stmt("find_all_active"), VoltMod::SelectSql<TEntity>(ActiveWhere), pqxx::params{VoltMod::Time::Now()},
                   [onDone = std::move(onDone)](VoltMod::DbResult<pqxx::result> result) {
                       if (result && onDone)
                           onDone(VoltMod::FromResult<TEntity>(*result));

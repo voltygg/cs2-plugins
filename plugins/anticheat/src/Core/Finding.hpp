@@ -39,7 +39,7 @@ inline constexpr DetectionInfo DetectionCatalog[] = {
     {DetectionKind::Namechanger, "NAMECHANGER", "namechanger"},
 };
 
-namespace Detail
+namespace Internal
 {
 constexpr bool CatalogMatchesEnum()
 {
@@ -50,8 +50,8 @@ constexpr bool CatalogMatchesEnum()
             return false;
     return true;
 }
-}  // namespace Detail
-static_assert(Detail::CatalogMatchesEnum(), "DetectionCatalog must list every DetectionKind in order");
+}  // namespace Internal
+static_assert(Internal::CatalogMatchesEnum(), "DetectionCatalog must list every DetectionKind in order");
 
 constexpr const DetectionInfo& Info(DetectionKind kind)
 {

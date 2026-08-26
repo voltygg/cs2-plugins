@@ -9,6 +9,7 @@
 // divergence rule. SilentAim is deliberately absent - only the real usercmd can move where the
 // bullet actually landed.
 
+#include "../AnticheatTypes.hpp"
 #include "../Config.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -17,8 +18,6 @@
 
 namespace Anticheat
 {
-
-class AntiCheatManager;
 
 class CheatSimulator
 {

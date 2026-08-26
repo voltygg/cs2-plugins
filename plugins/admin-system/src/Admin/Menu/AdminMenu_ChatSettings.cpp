@@ -4,11 +4,11 @@
 #include "../AdminManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Menu/MenuPresets.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <algorithm>
@@ -19,19 +19,16 @@
 namespace AdminSystem::Admin::Menu
 {
 
-using VoltMod::Core::Translations;
-using VoltMod::Menu::ChoiceOption;
-using VoltMod::Menu::MenuBuilder;
-using VoltMod::Menu::MenuManager;
-using VoltMod::Players::PlayerManager;
+using VoltMod::ChoiceOption;
+using VoltMod::MenuBuilder;
+using VoltMod::MenuManager;
+using VoltMod::PlayerManager;
+using VoltMod::Translations;
 
-namespace
-{
-
-namespace ChatColors = VoltMod::Messaging::ChatColors;
+namespace ChatColors = VoltMod::ChatColors;
 
 // Explicit keys keep compound color names stable across palette changes.
-const std::unordered_map<std::string_view, std::string_view>& ColorLabelKeys()
+static const std::unordered_map<std::string_view, std::string_view>& ColorLabelKeys()
 {
     static const std::unordered_map<std::string_view, std::string_view> kKeys = {
         {"default", "color.default"}, {"darkred", "color.darkRed"},     {"lightpurple", "color.lightPurple"},
@@ -44,7 +41,7 @@ const std::unordered_map<std::string_view, std::string_view>& ColorLabelKeys()
 }
 
 // Empty means inherit from the group and maps to choice index zero.
-int IndexForColor(std::string_view color)
+static int IndexForColor(std::string_view color)
 {
     if (color.empty())
         return 0;
@@ -57,7 +54,7 @@ int IndexForColor(std::string_view color)
     return 0;
 }
 
-std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(App& app, int viewerSlot)
+static std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(App& app, int viewerSlot)
 {
     auto& tr = app.Runtime.Translations;
     const auto& keys = ColorLabelKeys();
@@ -69,7 +66,7 @@ std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(App& app, int v
     choices.push_back({tr.Get("color.groupDefault", viewerSlot), std::string{}});
 
     // The framework renders the palette; colors without a translation key fall back to their name.
-    auto palette = ::VoltMod::Menu::BuildPaletteChoices([&](std::string_view name) -> std::string {
+    auto palette = ::VoltMod::BuildPaletteChoices([&](std::string_view name) -> std::string {
         if (auto it = keys.find(name); it != keys.end())
             return tr.Get(std::string(it->second), viewerSlot);
         return {};
@@ -85,7 +82,7 @@ enum class ColorSlot
 };
 
 // Read the stored override, not the resolved inherited color.
-std::string CurrentSlotColor(App& app, int64_t steamId, ColorSlot slot)
+static std::string CurrentSlotColor(App& app, int64_t steamId, ColorSlot slot)
 {
     const auto* admin = app.Admins.GetAdmin(steamId);
     if (!admin)
@@ -100,8 +97,8 @@ std::string CurrentSlotColor(App& app, int64_t steamId, ColorSlot slot)
     return "";
 }
 
-void AddColorChoice(App& app, MenuBuilder& builder, const std::string& title, int64_t steamId, ColorSlot slot,
-                    int viewerSlot)
+static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& title, int64_t steamId, ColorSlot slot,
+                           int viewerSlot)
 {
     auto choices = BuildColorChoices(app, viewerSlot);
     int initialIndex = IndexForColor(CurrentSlotColor(app, steamId, slot));
@@ -130,14 +127,14 @@ void AddColorChoice(App& app, MenuBuilder& builder, const std::string& title, in
 }
 
 // `lang.<code>` translations fall back to the raw code.
-std::string LanguageLabel(App& app, const std::string& code, int viewerSlot)
+static std::string LanguageLabel(App& app, const std::string& code, int viewerSlot)
 {
     std::string key = "lang." + code;
     std::string label = app.Runtime.Translations.Get(key, viewerSlot);
     return label == key ? code : label;
 }
 
-std::vector<std::string> AvailableLanguagesSorted(App& app)
+static std::vector<std::string> AvailableLanguagesSorted(App& app)
 {
     auto langs = app.Runtime.Translations.GetAvailableLanguages();
     std::sort(langs.begin(), langs.end());
@@ -145,13 +142,13 @@ std::vector<std::string> AvailableLanguagesSorted(App& app)
 }
 
 // Index zero represents no stored language override.
-int IndexForLanguage(const std::vector<std::string>& langs, const std::string& code)
+static int IndexForLanguage(const std::vector<std::string>& langs, const std::string& code)
 {
     auto it = std::find(langs.begin(), langs.end(), code);
     return it != langs.end() ? static_cast<int>(it - langs.begin()) : 0;
 }
 
-void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, int viewerSlot)
+static void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, int viewerSlot)
 {
     auto langs = AvailableLanguagesSorted(app);
 
@@ -180,8 +177,6 @@ void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, int view
         },
         true, initialIndex);
 }
-
-}  // namespace
 
 std::shared_ptr<VoltMod::MenuView> BuildChatSettingsMenu(AdminSystem::App& app, int adminSlot)
 {

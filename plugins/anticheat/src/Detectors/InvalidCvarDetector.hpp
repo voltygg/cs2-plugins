@@ -7,6 +7,7 @@
 // An unanswered query produces no callback at all, so nothing here waits on a reply or reads
 // silence as evidence.
 
+#include "../AnticheatTypes.hpp"
 #include "Detectors/InvalidCvarRules.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -17,8 +18,6 @@
 
 namespace Anticheat
 {
-
-class AntiCheatManager;
 
 class InvalidCvarDetector
 {

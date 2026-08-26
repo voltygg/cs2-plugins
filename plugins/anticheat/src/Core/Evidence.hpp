@@ -9,7 +9,7 @@ namespace Anticheat
 {
 
 template <int WindowSec>
-struct EvidenceWindow : VoltMod::Core::SlidingWindowScore
+struct EvidenceWindow : VoltMod::SlidingWindowScore
 {
     EvidenceWindow() : SlidingWindowScore(WindowSec) {}
 };

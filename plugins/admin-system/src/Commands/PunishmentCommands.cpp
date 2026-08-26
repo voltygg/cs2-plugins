@@ -10,20 +10,27 @@
 #include <VoltMod/Runtime.hpp>
 #include <string>
 
+using AdminSystem::Punishments::IssuePunishment;
+using AdminSystem::Punishments::PunishType;
+using VoltMod::CommandContext;
+using VoltMod::CommandResult;
+using VoltMod::Duration;
+using VoltMod::ReasonTail;
+using VoltMod::Runtime;
+using VoltMod::SteamId64;
+using VoltMod::Target;
+using VoltMod::Tokens;
+using VoltMod::Translations;
+
 namespace AdminSystem::Commands
 {
 
-using namespace VoltMod::Commands;
-using namespace AdminSystem::Punishments;
 using VoltMod::Tokens;
-
-namespace
-{
 
 /** Shared body of the kick/ban/mute/warn handlers: issue via the common entry point and
  *  reply in the caller's language. */
-CommandResult Punish(App& app, CommandContext& c, PunishType type, const std::string& reason, const char* successKey,
-                     const char* failedKey)
+static CommandResult Punish(App& app, CommandContext& c, PunishType type, const std::string& reason,
+                            const char* successKey, const char* failedKey)
 {
     // Captured before issuing: bans and kicks can drop the target immediately.
     std::string targetName = c.Target().GetName();
@@ -31,8 +38,6 @@ CommandResult Punish(App& app, CommandContext& c, PunishType type, const std::st
         return c.Fail(failedKey);
     return c.Ok(successKey, {{"name", targetName}});
 }
-
-}  // namespace
 
 void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
 {

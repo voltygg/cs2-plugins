@@ -104,21 +104,20 @@ StageResult App::StartPunishments()
 
 void App::RegisterGameEventListeners()
 {
-    namespace Events = VoltMod::Events;
     auto& events = Runtime.Events;
-    _subs.push_back(events.Listen<Events::PlayerDeath>([this](const Events::PlayerDeath& e) {
+    _subs.push_back(events.Listen<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) {
         // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
         if (e.VictimSlot >= 0)
             Effects.CancelPerLife(e.VictimSlot);
     }));
-    _subs.push_back(events.Listen<Events::RoundEnd>([this](const Events::RoundEnd&) {
+    _subs.push_back(events.Listen<VoltMod::RoundEnd>([this](const VoltMod::RoundEnd&) {
         Effects.CancelRoundScoped();
         // A map queued from the menu or by a passing vote lands here rather than mid-round,
         // after a pause long enough to read the scoreboard. No-op when nothing is queued.
         MapCycle.ChangeToNext();
     }));
     _subs.push_back(
-        events.Listen<Events::RoundPrestart>([this](const Events::RoundPrestart&) { Effects.CancelRoundScoped(); }));
+        events.Listen<VoltMod::RoundPrestart>([this](const VoltMod::RoundPrestart&) { Effects.CancelRoundScoped(); }));
 }
 
 // Add plugin status sections and require a live database for overall health.

@@ -16,8 +16,8 @@ std::shared_ptr<VoltMod::MenuView> BuildPlayerPicker(AdminSystem::App& app, int 
                                                      std::function<bool(int targetSlot)> isEnabled)
 {
     auto& tr = app.Runtime.Translations;
-    return ::VoltMod::Menu::BuildPlayerPicker(app.Runtime.Players, adminSlot, title, std::move(onPick),
-                                              tr.Get("common.noPlayers", adminSlot), std::move(isEnabled));
+    return ::VoltMod::BuildPlayerPicker(app.Runtime.Players, adminSlot, title, std::move(onPick),
+                                        tr.Get("common.noPlayers", adminSlot), std::move(isEnabled));
 }
 
 }  // namespace AdminSystem::Admin::Menu

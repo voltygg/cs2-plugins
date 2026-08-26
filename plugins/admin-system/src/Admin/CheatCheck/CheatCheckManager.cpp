@@ -7,17 +7,17 @@
 #include "CheatCheckView.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Scheduler.hpp>
 #include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
-#include <VoltMod/Http/HttpClient.hpp>
-#include <VoltMod/Players/PlayerManager.hpp>
-#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Entities/PlayerController.hpp>
+#include <VoltMod/Http/HttpClient.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <format>
 
 namespace AdminSystem::Admin::CheatCheck
@@ -25,33 +25,30 @@ namespace AdminSystem::Admin::CheatCheck
 
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
-using VoltMod::Core::Scheduler;
-using VoltMod::Core::Time;
-using VoltMod::Players::PlayerManager;
-using VoltMod::Messaging::Messages;
-using VoltMod::Entities::MoveType;
-using VoltMod::Entities::PlayerController;
-namespace Log = VoltMod::Core::Log;
-namespace ChatColors = VoltMod::Messaging::ChatColors;
+using VoltMod::Messages;
+using VoltMod::MoveType;
+using VoltMod::PlayerController;
+using VoltMod::PlayerManager;
+using VoltMod::Scheduler;
+using VoltMod::Time;
+namespace Log = VoltMod::Log;
+namespace ChatColors = VoltMod::ChatColors;
 
-namespace
-{
 /** Death, team changes and HUD updates dismiss center HTML, so the panel is redrawn far more often
  *  than its nominal five-second lifetime. Not configurable: slower blinks, faster only burns user
  *  messages. */
-constexpr int PanelRefreshMs = 100;
+static constexpr int PanelRefreshMs = 100;
 
 /** The deadline and the presence poll are both second-granularity, so they need nothing faster. */
-constexpr int DeadlineTickMs = 1000;
+static constexpr int DeadlineTickMs = 1000;
 
-bool IsValidLink(const std::string& link)
+static bool IsValidLink(const std::string& link)
 {
     if (link.rfind("https://", 0) != 0 && link.rfind("http://", 0) != 0)
         return false;
     // A real URL has no whitespace or HTML-significant characters; reject panel-injection attempts.
     return link.find_first_of(" \t\r\n<>\"'") == std::string::npos;
 }
-}  // namespace
 
 bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 {
@@ -89,7 +86,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 
     targetCtrl.SetMoveType(MoveType::None);
     if (cfg.moveToSpectator)
-        targetCtrl.ChangeTeam(VoltMod::Entities::TeamSpectator);
+        targetCtrl.ChangeTeam(VoltMod::TeamSpectator);
 
     pc.DeadlineTimer = _rt.Scheduler.Repeat(DeadlineTickMs, [this, targetSlot] { Tick(targetSlot); });
 
@@ -142,7 +139,7 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     }
 
     const uint64_t seq = pc.RequestSeq;
-    VoltMod::Http::Post(_rt.Http, std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
+    VoltMod::Post(_rt.Http, std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
         OnRoomResponse(targetSlot, seq, result);
     });
 }
@@ -327,7 +324,7 @@ void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int resto
     if (!pc.IsValid())
         return;
     // restoreTeam is a real playing team (T/CT) only if we actually pulled them to spectator at start.
-    if (restoreTeam >= VoltMod::Entities::TeamT)
+    if (restoreTeam >= VoltMod::TeamT)
         pc.ChangeTeam(restoreTeam);
     pc.SetMoveType(restoreMove);
 }

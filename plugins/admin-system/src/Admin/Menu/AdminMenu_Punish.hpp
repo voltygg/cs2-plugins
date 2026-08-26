@@ -1,15 +1,12 @@
 #pragma once
 
+#include "../../Core/App.hpp"
+
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/Menu.hpp>
 #include <functional>
 #include <memory>
 #include <string>
-
-namespace AdminSystem
-{
-struct App;
-}
 
 namespace AdminSystem::Admin::Menu
 {

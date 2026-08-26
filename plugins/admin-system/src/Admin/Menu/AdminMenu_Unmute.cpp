@@ -22,11 +22,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
-using VoltMod::Core::Strings;
-using VoltMod::Menu::MenuBuilder;
-
-namespace
-{
+using VoltMod::MenuBuilder;
+using VoltMod::Strings;
 
 /** The slice of a mute the menu needs; each row's lambda holds a copy, so keep it small. */
 struct MuteRow
@@ -38,7 +35,7 @@ struct MuteRow
     std::string Reason;
 };
 
-void StartUnmuteConfirm(App& app, int adminSlot, MuteRow row)
+static void StartUnmuteConfirm(App& app, int adminSlot, MuteRow row)
 {
     VoltMod::Flow<MuteRow>::Create(app.Runtime.Menus, std::move(row))
         // The Mute flag may have been revoked (e.g. !admin_reload) while the menu was open.
@@ -85,7 +82,7 @@ void StartUnmuteConfirm(App& app, int adminSlot, MuteRow row)
 
 /** Turn a cache snapshot of voice/text mutes into tagged menu rows. */
 template <typename TMute>
-void AppendMuteRows(App& app, MenuBuilder& builder, const std::vector<TMute>& mutes, bool isVoice, int adminSlot)
+static void AppendMuteRows(App& app, MenuBuilder& builder, const std::vector<TMute>& mutes, bool isVoice, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     for (const auto& mute : mutes)
@@ -101,8 +98,6 @@ void AppendMuteRows(App& app, MenuBuilder& builder, const std::vector<TMute>& mu
         builder.AddButton(label, [&app, row = std::move(row)](int slot) { StartUnmuteConfirm(app, slot, row); });
     }
 }
-
-}  // namespace
 
 std::shared_ptr<VoltMod::MenuView> BuildUnmuteMenu(AdminSystem::App& app, int adminSlot)
 {

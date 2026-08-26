@@ -7,10 +7,13 @@
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Runtime.hpp>
 
+using VoltMod::CommandContext;
+using VoltMod::CommandResult;
+using VoltMod::MenuManager;
+using VoltMod::Runtime;
+
 namespace AdminSystem::Commands
 {
-
-using namespace VoltMod::Commands;
 
 void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app)
 {

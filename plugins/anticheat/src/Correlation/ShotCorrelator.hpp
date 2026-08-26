@@ -6,19 +6,17 @@
 // Aimbot, AntiAim and SilentAim have no adapter of their own, so they are dispatched from here.
 // Aimlock's per-slot lag estimate lives apart in Detectors/AimlockDetector.hpp.
 
+#include "../AnticheatTypes.hpp"
 #include "Core/Samples.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Engine/EngineTypes.hpp>
 #include <array>
 #include <cstdint>
 #include <vector>
 
-class IGameEvent;
-
 namespace Anticheat
 {
-
-class AntiCheatManager;
 
 class ShotCorrelator
 {
@@ -31,10 +29,10 @@ public:
 private:
     void OnCommand(int slot, const VoltMod::UserCmdView& cmd);
     void OnFrame();
-    void OnWeaponFire(const VoltMod::Events::WeaponFire& fire);
-    void OnBulletImpact(const VoltMod::Events::BulletImpact& impact);
+    void OnWeaponFire(const VoltMod::WeaponFire& fire);
+    void OnBulletImpact(const VoltMod::BulletImpact& impact);
     void OnPlayerHurt(IGameEvent* event);
-    void OnPlayerDeath(const VoltMod::Events::PlayerDeath& death);
+    void OnPlayerDeath(const VoltMod::PlayerDeath& death);
 
     /** World state for the frame, plus the userid table bullet impacts resolve their shooter with. */
     void CollectPositions(std::array<PositionSample, MaxSlots>& players);

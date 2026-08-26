@@ -22,11 +22,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
-using VoltMod::Core::Strings;
-using VoltMod::Menu::MenuBuilder;
-
-namespace
-{
+using VoltMod::MenuBuilder;
+using VoltMod::Strings;
 
 /** The slice of a Ban the menu needs; each row's lambda holds a copy, so keep it small. */
 struct BanRow
@@ -37,7 +34,7 @@ struct BanRow
     std::string Reason;
 };
 
-void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
+static void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
 {
     VoltMod::Flow<BanRow>::Create(app.Runtime.Menus, std::move(row))
         // The Unban flag may have been revoked (e.g. !admin_reload) while the menu was open.
@@ -77,8 +74,6 @@ void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
         })
         ->Start(adminSlot);
 }
-
-}  // namespace
 
 std::shared_ptr<VoltMod::MenuView> BuildUnbanMenu(AdminSystem::App& app, int adminSlot)
 {

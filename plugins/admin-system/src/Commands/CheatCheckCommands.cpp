@@ -8,10 +8,14 @@
 #include <VoltMod/Runtime.hpp>
 #include <format>
 
+using VoltMod::CommandContext;
+using VoltMod::Runtime;
+using VoltMod::Target;
+using VoltMod::Word;
+
 namespace AdminSystem::Commands
 {
 
-using namespace VoltMod::Commands;
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 
 void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app)

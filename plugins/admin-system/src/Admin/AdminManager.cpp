@@ -12,7 +12,7 @@ namespace AdminSystem::Admin
 {
 
 namespace Db = AdminSystem::Database;
-namespace Log = VoltMod::Core::Log;
+namespace Log = VoltMod::Log;
 using Core::ConfigManager;
 using Db::Admin;
 using Db::AdminGroup;

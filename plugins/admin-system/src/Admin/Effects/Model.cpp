@@ -4,34 +4,29 @@
 #include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Entities/PlayerController.hpp>
+#include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
-using VoltMod::Entities::PlayerController;
-
-namespace
-{
+using VoltMod::PlayerController;
 
 // Restore live players to a base team model; respawn restores their selected agent.
-constexpr const char* DefaultModelT = "characters/models/tm_phoenix/tm_phoenix.vmdl";
-constexpr const char* DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
+static constexpr const char* DefaultModelT = "characters/models/tm_phoenix/tm_phoenix.vmdl";
+static constexpr const char* DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
 
 // Spectators and unassigned players have no restore model.
-const char* DefaultModelForTeam(int team)
+static const char* DefaultModelForTeam(int team)
 {
-    if (team == VoltMod::Entities::TeamT)
+    if (team == VoltMod::TeamT)
         return DefaultModelT;
-    if (team == VoltMod::Entities::TeamCT)
+    if (team == VoltMod::TeamCT)
         return DefaultModelCt;
     return nullptr;
 }
-
-}  // namespace
 
 const std::vector<FunModel>& FunModels()
 {

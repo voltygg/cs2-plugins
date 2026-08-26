@@ -9,9 +9,7 @@
 namespace Anticheat
 {
 
-namespace
-{
-bool EqualsNoCase(std::string_view a, std::string_view b)
+static bool EqualsNoCase(std::string_view a, std::string_view b)
 {
     return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) {
                return std::tolower(static_cast<unsigned char>(x)) == std::tolower(static_cast<unsigned char>(y));
@@ -19,7 +17,7 @@ bool EqualsNoCase(std::string_view a, std::string_view b)
 }
 
 /** Whole-string parse: trailing junk makes the value invalid, not merely odd. */
-bool ParseNumber(std::string_view text, double& value)
+static bool ParseNumber(std::string_view text, double& value)
 {
     while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())))
         text.remove_prefix(1);
@@ -34,22 +32,22 @@ bool ParseNumber(std::string_view text, double& value)
     return end == buffer.c_str() + buffer.size() && std::isfinite(value);
 }
 
-bool IsOff(std::string_view value, bool numeric, double number)
+static bool IsOff(std::string_view value, bool numeric, double number)
 {
     return EqualsNoCase(value, "false") || (numeric && number == 0.0);
 }
 
-CvarVerdict Invalid(std::string reason, bool kickOnly)
+static CvarVerdict Invalid(std::string reason, bool kickOnly)
 {
     return {.Known = true, .Checked = true, .Invalid = true, .KickOnly = kickOnly, .Reason = std::move(reason)};
 }
 
-CvarVerdict Valid()
+static CvarVerdict Valid()
 {
     return {.Known = true, .Checked = true};
 }
 
-CvarVerdict Skipped()
+static CvarVerdict Skipped()
 {
     return {.Known = true, .Checked = false};
 }
@@ -58,7 +56,7 @@ CvarVerdict Skipped()
  * Why @p rule rejects this value, or nullopt when it accepts it. One switch rather than a
  * predicate and a message side by side, which nothing forced to agree.
  */
-std::optional<std::string> Violation(const CvarRule& rule, std::string_view value, bool numeric, double number)
+static std::optional<std::string> Violation(const CvarRule& rule, std::string_view value, bool numeric, double number)
 {
     switch (rule.constraint)
     {
@@ -93,7 +91,6 @@ std::optional<std::string> Violation(const CvarRule& rule, std::string_view valu
     }
     return std::nullopt;
 }
-}  // namespace
 
 std::vector<std::string> CvarRuleTable::Load(const std::vector<CvarRule>& rules)
 {

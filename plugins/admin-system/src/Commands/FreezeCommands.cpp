@@ -11,11 +11,17 @@
 #include <VoltMod/Runtime.hpp>
 #include <format>
 
+using VoltMod::CommandContext;
+using VoltMod::CommandResult;
+using VoltMod::ReasonTail;
+using VoltMod::Runtime;
+using VoltMod::Strings;
+using VoltMod::TargetOrSteamId;
+using VoltMod::Translations;
+using VoltMod::Word;
+
 namespace AdminSystem::Commands
 {
-
-using namespace VoltMod::Commands;
-using namespace VoltMod::Core;
 
 void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
 {

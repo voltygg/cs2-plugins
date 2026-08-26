@@ -8,20 +8,31 @@
 #include <array>
 #include <cmath>
 
+using Anticheat::AntiAimCore;
+using Anticheat::AntiAimTuning::DetectionThreshold;
+using Anticheat::AntiAimTuning::FastSpinRate;
+using Anticheat::AntiAimTuning::FastSpinSeconds;
+using Anticheat::AntiAimTuning::JitterTolerance;
+using Anticheat::AntiAimTuning::MediumSpinRate;
+using Anticheat::AntiAimTuning::MediumSpinSeconds;
+using Anticheat::AntiAimTuning::MinimumJitterSpan;
+using Anticheat::AntiAimTuning::MinimumSpinRate;
+using Anticheat::AntiAimTuning::MotionHistorySize;
+using Anticheat::AntiAimTuning::RequiredJitterSeconds;
+using Anticheat::AntiAimTuning::SlowSpinSeconds;
+using Anticheat::AntiAimTuning::SpinBreakAllowance;
+using Anticheat::AntiAimTuning::SpinConsistency;
+using Anticheat::AntiAimTuning::SpinSamples;
+
 namespace Anticheat
 {
 
-using namespace AntiAimTuning;
-
-namespace
-{
-constexpr float TierRates[] = {MinimumSpinRate, MediumSpinRate, FastSpinRate};
-constexpr float TierSeconds[] = {SlowSpinSeconds, MediumSpinSeconds, FastSpinSeconds};
+static constexpr float TierRates[] = {MinimumSpinRate, MediumSpinRate, FastSpinRate};
+static constexpr float TierSeconds[] = {SlowSpinSeconds, MediumSpinSeconds, FastSpinSeconds};
 static_assert(std::size(TierRates) == std::size(TierSeconds));
 
 /** Yaw periods a jitter bind cycles through; each needs four full repetitions to be believed. */
-constexpr int JitterPeriods[] = {2, 3, 5};
-}  // namespace
+static constexpr int JitterPeriods[] = {2, 3, 5};
 
 void AntiAimCore::EvaluateMotion(SlotData& data, const Command& command, double nowSec, std::optional<Finding>& out)
 {

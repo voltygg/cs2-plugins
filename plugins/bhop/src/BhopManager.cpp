@@ -7,7 +7,11 @@
 #include <cmath>
 #include <mathlib/vector.h>
 
-using namespace VoltMod;
+using VoltMod::MaxPlayers;
+using VoltMod::MessageKind;
+using VoltMod::Player;
+using VoltMod::PlayerController;
+
 namespace Log = VoltMod::Log;
 
 namespace Bhop
@@ -20,10 +24,10 @@ void BhopManager::Initialize()
 
     auto& events = _rt.Events;
     _subs.push_back(
-        events.Listen<Events::PlayerSpawn>([this](const Events::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
-    _subs.push_back(events.Listen<Events::PlayerJump>([this](const Events::PlayerJump& e) { OnPlayerJump(e.Slot); }));
+        events.Listen<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
+    _subs.push_back(events.Listen<VoltMod::PlayerJump>([this](const VoltMod::PlayerJump& e) { OnPlayerJump(e.Slot); }));
     // Gamemode cfg re-exec on map change can reset the convars; re-asserting is cheap.
-    _subs.push_back(events.Listen<Events::RoundStart>([this](const Events::RoundStart&) {
+    _subs.push_back(events.Listen<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) {
         if (_mode == Mode::Enabled)
             _conVars.ApplyGlobal();
     }));
@@ -81,7 +85,7 @@ void BhopManager::Grant(int64_t steamId, bool enabled)
         return;
 
     int slot = player->GetSlot();
-    if (!Core::IsValidSlot(slot))
+    if (!VoltMod::IsValidSlot(slot))
         return;
 
     _grantedSlots[slot] = enabled;
@@ -131,7 +135,7 @@ void BhopManager::OnPlayerDisconnect(Player* player)
     _granted.erase(player->GetSteamID());
 
     int slot = player->GetSlot();
-    if (Core::IsValidSlot(slot))
+    if (VoltMod::IsValidSlot(slot))
     {
         _grantedSlots[slot] = false;
         _lastJump[slot] = {};
@@ -140,7 +144,7 @@ void BhopManager::OnPlayerDisconnect(Player* player)
 
 void BhopManager::OnRunCommandPre(int slot)
 {
-    if (_mode == Mode::Grants && Core::IsValidSlot(slot) && _grantedSlots[slot])
+    if (_mode == Mode::Grants && VoltMod::IsValidSlot(slot) && _grantedSlots[slot])
         _conVars.FlipRaw();
 }
 
@@ -151,7 +155,7 @@ void BhopManager::OnRunCommandPost(int /*slot*/)
 
 bool BhopManager::IsActiveSlot(int slot) const
 {
-    if (!Core::IsValidSlot(slot))
+    if (!VoltMod::IsValidSlot(slot))
         return false;
     return _mode == Mode::Enabled || _grantedSlots[slot];
 }
@@ -187,7 +191,7 @@ void BhopManager::OnPlayerJump(int slot)
 
 void BhopManager::ForceAutoHop(int slot)
 {
-    if (!(_rt.Entities.GetPlayerButtons(slot) & Entities::IN_JUMP))
+    if (!(_rt.Entities.GetPlayerButtons(slot) & VoltMod::IN_JUMP))
         return;
 
     PlayerController controller = _rt.Entities.Controller(slot);
@@ -195,7 +199,7 @@ void BhopManager::ForceAutoHop(int slot)
         return;
 
     uint32_t flags = controller.GetFlags();
-    if (!(flags & Entities::FL_ONGROUND))
+    if (!(flags & VoltMod::FL_ONGROUND))
         return;
 
     Vector velocity = controller.GetVelocity();
@@ -207,7 +211,7 @@ void BhopManager::ForceAutoHop(int slot)
     controller.SetVelocity(velocity);
     // Leave the ground in the same frame: if the next movement command still sees FL_ONGROUND
     // it can re-ground and zero the vertical velocity for a tick - the "laggy jump" hitch.
-    controller.SetFlags(flags & ~Entities::FL_ONGROUND);
+    controller.SetFlags(flags & ~VoltMod::FL_ONGROUND);
 
     // A forced hop never emits player_jump, so feed the boost chain by hand.
     OnPlayerJump(slot);
@@ -216,7 +220,7 @@ void BhopManager::ForceAutoHop(int slot)
 void BhopManager::OnPlayerSpawn(int slot)
 {
     // Enabled mode replicates server-wide via ApplyGlobal, so only grants needs per-player work.
-    if (_mode != Mode::Grants || !Core::IsValidSlot(slot))
+    if (_mode != Mode::Grants || !VoltMod::IsValidSlot(slot))
         return;
 
     Player* player = _rt.Players.GetPlayerBySlot(slot);

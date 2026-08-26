@@ -2,25 +2,20 @@
 #include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
+#include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
 
-namespace
-{
-
 // Re-shaken faster than each shake decays, so the view never fully settles between ticks.
-constexpr int DrunkIntervalMs = 700;
-constexpr int DrunkDurationSec = 20;
-constexpr float ShakeDurationSec = 1.2f;
-constexpr float ShakeFrequency = 1.5f;  // slow enough to read as a sway rather than a rattle
+static constexpr int DrunkIntervalMs = 700;
+static constexpr int DrunkDurationSec = 20;
+static constexpr float ShakeDurationSec = 1.2f;
+static constexpr float ShakeFrequency = 1.5f;  // slow enough to read as a sway rather than a rattle
 constexpr float ShakeAmplitude = 8.0f;
-
-}  // namespace
 
 /**
  * Screen-sway on the target. Uses the engine's own shake user message rather than writing punch

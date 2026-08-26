@@ -7,10 +7,25 @@
 #include <format>
 #include <limits>
 
+using Anticheat::AntiAimCore;
+using Anticheat::AntiAimTuning::AttackReturnRatio;
+using Anticheat::AntiAimTuning::AttackReturnSurroundingAngle;
+using Anticheat::AntiAimTuning::AttackReturnWeight;
+using Anticheat::AntiAimTuning::CommandHistorySize;
+using Anticheat::AntiAimTuning::CommandMismatchSpacing;
+using Anticheat::AntiAimTuning::CommandYawMismatchAngle;
+using Anticheat::AntiAimTuning::DetectionThreshold;
+using Anticheat::AntiAimTuning::HistoryMismatchWeight;
+using Anticheat::AntiAimTuning::InconsistentCommandWeight;
+using Anticheat::AntiAimTuning::InvalidAnglesWeight;
+using Anticheat::AntiAimTuning::InvalidPitch;
+using Anticheat::AntiAimTuning::InvalidRoll;
+using Anticheat::AntiAimTuning::MinimumAttackReturnAngle;
+using Anticheat::AntiAimTuning::MismatchScoreDecayPerSecond;
+using Anticheat::AntiAimTuning::ScoreDecayPerSecond;
+
 namespace Anticheat
 {
-
-using namespace AntiAimTuning;
 
 void AntiAimCore::Reset()
 {

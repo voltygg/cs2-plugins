@@ -10,22 +10,19 @@
 namespace AdminSystem::Punishments
 {
 
-using VoltMod::Core::Strings;
-using VoltMod::Core::Time;
+using VoltMod::Strings;
+using VoltMod::Time;
 
-namespace
-{
 /** Between the reason, the expiry, and the appeal link on the disconnect screen. */
-constexpr const char* PieceSeparator = " | ";
-}  // namespace
+static constexpr const char* PieceSeparator = " | ";
 
-std::string BuildBanNotice(VoltMod::Core::Translations& translations, const Core::AppealSettings& appeal,
+std::string BuildBanNotice(VoltMod::Translations& translations, const Core::AppealSettings& appeal,
                            const std::string& reason, int64_t expiresAt, int64_t targetSteamId, int slot)
 {
     std::string expiry;
     if (appeal.showExpiry)
         expiry = Time::FormatExpiry(expiresAt, Time::Now(), translations.Get("kickNotice.permanent", slot),
-                                         translations.Get("kickNotice.expiresIn", slot));
+                                    translations.Get("kickNotice.expiresIn", slot));
 
     std::string appealLine;
     if (!appeal.url.empty())

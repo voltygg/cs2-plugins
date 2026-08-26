@@ -10,10 +10,13 @@
 #include <VoltMod/Runtime.hpp>
 #include <format>
 
+using VoltMod::CommandContext;
+using VoltMod::CommandResult;
+using VoltMod::PlayerManager;
+using VoltMod::Runtime;
+
 namespace AdminSystem::Commands
 {
-
-using namespace VoltMod::Commands;
 
 void RegisterInfoCommands(VoltMod::CommandManager& commands, App& app)
 {

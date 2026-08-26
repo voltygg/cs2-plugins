@@ -4,16 +4,21 @@
 #include <doctest/doctest.h>
 #include <string>
 
-using namespace Anticheat;
+using Anticheat::DetectionKind;
+using Anticheat::Finding;
+using Anticheat::IsBallisticWeapon;
+using Anticheat::NormalizeWeapon;
+using Anticheat::ShotView;
+using Anticheat::SilentAimCore;
+using Anticheat::SilentAimDeviationThreshold;
+using Anticheat::Vec3;
 
-namespace
-{
-constexpr int Slot = 0;
-constexpr double Now = 500.0;
+static constexpr int Slot = 0;
+static constexpr double Now = 500.0;
 
 /** Eye at the origin looking down positive X, so an impact at (1000, y, 0) deviates by atan(y/1000). */
-ShotView Shot(std::string weapon, Vec3 impact, bool hurt = true, bool airborne = false, bool headshot = false,
-              bool wallbang = false)
+static ShotView Shot(std::string weapon, Vec3 impact, bool hurt = true, bool airborne = false, bool headshot = false,
+                     bool wallbang = false)
 {
     ShotView shot;
     shot.Slot = Slot;
@@ -31,16 +36,15 @@ ShotView Shot(std::string weapon, Vec3 impact, bool hurt = true, bool airborne =
 }
 
 /** ~5.71 degrees off: above every precision weapon's ceiling, below the SMG and blatant ones. */
-constexpr Vec3 ModerateImpact{1000.0f, 100.0f, 0.0f};
+static constexpr Vec3 ModerateImpact{1000.0f, 100.0f, 0.0f};
 /** 45 degrees off at 141 units: past the blatant threshold. */
-constexpr Vec3 BlatantImpact{100.0f, 100.0f, 0.0f};
+static constexpr Vec3 BlatantImpact{100.0f, 100.0f, 0.0f};
 
-std::optional<Finding> Land(SilentAimCore& core, ShotView shot, double now = Now)
+static std::optional<Finding> Land(SilentAimCore& core, ShotView shot, double now = Now)
 {
     core.OnShotUpdated(Slot, shot);
     return core.Finalize(Slot, shot, now);
 }
-}  // namespace
 
 TEST_CASE("The per weapon deviation table matches each weapon class")
 {

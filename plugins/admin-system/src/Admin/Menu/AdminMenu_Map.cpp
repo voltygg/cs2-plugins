@@ -21,22 +21,19 @@ namespace AdminSystem::Admin::Menu
 {
 
 using AdminSystem::Maps::MapEntry;
-using VoltMod::Menu::MenuBuilder;
-
-namespace
-{
+using VoltMod::MenuBuilder;
 
 /** Whether @p slot still holds @p permission. Re-checked per click: the flag may have been
  *  revoked (e.g. !admin_reload) while the menu was open. Changing and queuing a map need the
  *  map flag, starting and cancelling a vote the vote flag - the same split the commands had. */
-bool MayUse(App& app, int slot, Permission permission)
+static bool MayUse(App& app, int slot, Permission permission)
 {
     auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
     return admin && app.Access.HasPermission(admin->GetSteamID(), permission);
 }
 
 /** Taking the server away from everyone confirms rather than firing on a single click. */
-void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
+static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
 {
     VoltMod::Flow<MapEntry>::Create(app.Runtime.Menus, std::move(map))
         ->OnValidate([&app](int slot, const MapEntry&) -> std::optional<std::string> {
@@ -64,7 +61,7 @@ void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
 }
 
 /** What an admin can do with one map: switch now, queue it, or put it to the players. */
-std::shared_ptr<VoltMod::MenuView> BuildMapActionsMenu(App& app, int adminSlot, const MapEntry& map)
+static std::shared_ptr<VoltMod::MenuView> BuildMapActionsMenu(App& app, int adminSlot, const MapEntry& map)
 {
     auto& tr = app.Runtime.Translations;
 
@@ -95,8 +92,6 @@ std::shared_ptr<VoltMod::MenuView> BuildMapActionsMenu(App& app, int adminSlot, 
             mayVote)
         .Build();
 }
-
-}  // namespace
 
 std::shared_ptr<VoltMod::MenuView> BuildMapMenu(AdminSystem::App& app, int adminSlot)
 {

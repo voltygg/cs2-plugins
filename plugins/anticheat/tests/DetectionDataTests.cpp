@@ -11,21 +11,22 @@
 #include <sstream>
 #include <string>
 
-using namespace Anticheat;
+using Anticheat::CvarConstraint;
+using Anticheat::CvarRuleTable;
+using Anticheat::CvarsPerPoll;
+using Anticheat::CvarTier;
+using Anticheat::DetectionData;
 
-namespace
-{
-DetectionData Parse(const std::string& text)
+static DetectionData Parse(const std::string& text)
 {
     return nlohmann::json::parse(text).get<DetectionData>();
 }
 
 /** A whole file with @p rules substituted in, since both sections are required. */
-std::string FileWith(const std::string& rules)
+static std::string FileWith(const std::string& rules)
 {
     return R"({"dllEventBlacklist": ["player_chat"], "cvarRules": [)" + rules + "]}";
 }
-}  // namespace
 
 TEST_CASE("Every tier and constraint spelling the shipped file uses round-trips")
 {

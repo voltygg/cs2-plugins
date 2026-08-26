@@ -5,16 +5,13 @@
 #include <VoltMod/Core/Log.hpp>
 #include <nlohmann/json.hpp>
 
-namespace Log = VoltMod::Core::Log;
+namespace Log = VoltMod::Log;
 
 namespace Anticheat
 {
 
-namespace
-{
-constexpr long RequestTimeoutMs = 5000;
-constexpr int EmbedColor = 0xE04F4F;
-}  // namespace
+static constexpr long RequestTimeoutMs = 5000;
+static constexpr int EmbedColor = 0xE04F4F;
 
 void DiscordReporter::Report(int slot, const std::string& playerName, int64_t steamId, const Finding& finding,
                              FunnelOutcome outcome)

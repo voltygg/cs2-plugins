@@ -3,16 +3,20 @@
 #include <cmath>
 #include <doctest/doctest.h>
 
-using namespace Anticheat;
-using namespace Anticheat::Geometry;
+using Anticheat::AimAngles;
+using Anticheat::Vec3;
+using Anticheat::Geometry::AimForward;
+using Anticheat::Geometry::AngularDistance;
+using Anticheat::Geometry::AngularSizeDeg;
+using Anticheat::Geometry::Bearing;
+using Anticheat::Geometry::IsFinite;
+using Anticheat::Geometry::NearestBodyAimError;
+using Anticheat::Geometry::YawDelta;
 
-namespace
-{
-bool Near(float a, float b, float eps = 0.01f)
+static bool Near(float a, float b, float eps = 0.01f)
 {
     return std::fabs(a - b) < eps;
 }
-}  // namespace
 
 TEST_CASE("AimForward points down positive X at zero angles and straight down at 90 degrees pitch")
 {

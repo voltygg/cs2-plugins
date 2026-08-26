@@ -5,10 +5,11 @@
 
 #include <VoltMod/Api.hpp>
 
+using VoltMod::CommandContext;
+using VoltMod::CommandResult;
+
 namespace AdminSystem::Commands
 {
-
-using namespace VoltMod::Commands;
 
 void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app)
 {

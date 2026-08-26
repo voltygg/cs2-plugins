@@ -20,9 +20,9 @@
 namespace AdminSystem::Admin
 {
 
-using VoltMod::Core::Translations;
-using VoltMod::Menu::MenuBuilder;
-using VoltMod::Players::PlayerManager;
+using VoltMod::MenuBuilder;
+using VoltMod::PlayerManager;
+using VoltMod::Translations;
 
 std::shared_ptr<VoltMod::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int adminSlot)
 {

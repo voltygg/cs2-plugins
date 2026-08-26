@@ -4,16 +4,14 @@
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 
+using VoltMod::PlayerManager;
+using VoltMod::Runtime;
+
 namespace AdminSystem::Fun
 {
 
-namespace
-{
-
-constexpr const char* KnifeT = "weapon_knife_t";
-constexpr const char* KnifeCT = "weapon_knife";
-
-}  // namespace
+static constexpr const char* KnifeT = "weapon_knife_t";
+static constexpr const char* KnifeCT = "weapon_knife";
 
 FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _lease(runtime.ConVars) {}
 
@@ -23,13 +21,12 @@ FunMode::~FunMode() = default;
 
 void FunMode::Start()
 {
-    using namespace VoltMod;
     auto& events = _rt.Events;
 
-    _subs.push_back(events.Listen<Events::RoundStart>([this](const Events::RoundStart&) { ApplyRoundStart(); }));
+    _subs.push_back(events.Listen<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) { ApplyRoundStart(); }));
 
     // Per spawn, so a player who joins mid-round still gets the round's rules.
-    _subs.push_back(events.Listen<Events::PlayerSpawn>([this](const Events::PlayerSpawn& e) {
+    _subs.push_back(events.Listen<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
         if (e.Slot >= 0 && _state.IsOn(Toggle::KnifeRound))
             GiveKnifeOnly(e.Slot);
     }));
@@ -87,7 +84,7 @@ void FunMode::GiveKnifeOnly(int slot)
         return;
 
     _rt.Items.StripWeapons(controller, false);
-    _rt.Items.Give(controller, controller.GetTeam() == VoltMod::Entities::TeamT ? KnifeT : KnifeCT);
+    _rt.Items.Give(controller, controller.GetTeam() == VoltMod::TeamT ? KnifeT : KnifeCT);
 }
 
 }  // namespace AdminSystem::Fun

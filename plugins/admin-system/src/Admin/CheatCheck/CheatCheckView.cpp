@@ -3,12 +3,12 @@
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Config.hpp"
 
-#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
+#include <VoltMod/Messaging/Messages.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Messaging/Messages.hpp>
 #include <format>
 #include <string>
 
@@ -17,14 +17,11 @@ namespace AdminSystem::Admin::CheatCheck
 
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
-using VoltMod::Core::Strings;
-using VoltMod::Core::Time;
-using VoltMod::Players::PlayerManager;
-using VoltMod::Messaging::Messages;
-namespace ChatColors = VoltMod::Messaging::ChatColors;
-
-namespace
-{
+using VoltMod::Messages;
+using VoltMod::PlayerManager;
+using VoltMod::Strings;
+using VoltMod::Time;
+namespace ChatColors = VoltMod::ChatColors;
 
 enum class PanelState
 {
@@ -35,7 +32,7 @@ enum class PanelState
     Generic,       // no URL and nothing pending
 };
 
-PanelState PanelStateFor(const PendingCheck& pc)
+static PanelState PanelStateFor(const PendingCheck& pc)
 {
     if (pc.SuspectJoined)
         return PanelState::Joined;
@@ -47,8 +44,6 @@ PanelState PanelStateFor(const PendingCheck& pc)
         return PanelState::HasUrl;
     return PanelState::Generic;
 }
-
-}  // namespace
 
 std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
 {

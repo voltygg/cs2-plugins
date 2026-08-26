@@ -2,14 +2,14 @@
 #include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Hooks/GlowVision.hpp>
+#include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
-using VoltMod::Hooks::GlowVision;
+using VoltMod::GlowVision;
 
 const Effect Wallhack{.Permission = Flag(Permission::Wallhack),
                       .Id = static_cast<int>(EffectId::Wallhack),

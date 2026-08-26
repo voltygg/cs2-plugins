@@ -13,37 +13,34 @@
 #include <mathlib/vector.h>
 #include <optional>
 
-using VoltMod::Core::IsValidSlot;
+using VoltMod::IsValidSlot;
 
 namespace Anticheat
 {
 
-namespace
-{
 /** Origin and view angles jump discontinuously around a teleport, so the whole window is unreadable. */
-constexpr float TeleportGraceSec = 5.0f;
+static constexpr float TeleportGraceSec = 5.0f;
 /** A shot older than this has received every event it can, so SilentAim may score it. */
-constexpr int SilentFinalizeAgeTicks = 2;
-constexpr int HitGroupGeneric = 0;
-constexpr int HitGroupHead = 1;
+static constexpr int SilentFinalizeAgeTicks = 2;
+static constexpr int HitGroupGeneric = 0;
+static constexpr int HitGroupHead = 1;
 
-Vec3 ToVec3(const Vector& v)
+static Vec3 ToVec3(const Vector& v)
 {
     return {v.x, v.y, v.z};
 }
 
-bool IsAirborne(const VoltMod::PlayerController& controller)
+static bool IsAirborne(const VoltMod::PlayerController& controller)
 {
     const uint32_t ground = controller.GetPawnField<uint32_t>("CBaseEntity", "m_hGroundEntity");
     const bool grounded = controller.GetPawnField<bool>("CCSPlayerPawn", "m_bOnGroundLastTick") ||
-                          ((controller.GetFlags() & VoltMod::Entities::FL_ONGROUND) &&
-                           ground != VoltMod::Entities::InvalidEntityHandle);
+                          ((controller.GetFlags() & VoltMod::FL_ONGROUND) && ground != VoltMod::InvalidEntityHandle);
     const auto walk = static_cast<uint8_t>(VoltMod::MoveType::Walk);
     return !grounded && controller.GetPawnField<uint8_t>("CBaseEntity", "m_MoveType") == walk &&
            controller.GetPawnField<uint8_t>("CBaseEntity", "m_nActualMoveType") == walk;
 }
 
-CmdSample BuildSample(const VoltMod::UserCmdView& cmd)
+static CmdSample BuildSample(const VoltMod::UserCmdView& cmd)
 {
     CmdSample sample;
     sample.CmdNum = cmd.CommandNumber;
@@ -89,7 +86,6 @@ CmdSample BuildSample(const VoltMod::UserCmdView& cmd)
     }
     return sample;
 }
-}  // namespace
 
 void ShotCorrelator::Initialize()
 {
@@ -101,18 +97,18 @@ void ShotCorrelator::Initialize()
         _rt.MovementHook.ListenPreCmd([this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); }));
     _subscriptions.push_back(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
-    _subscriptions.push_back(events.Listen<VoltMod::Events::PlayerSpawn>([this](const VoltMod::Events::PlayerSpawn& e) {
+    _subscriptions.push_back(events.Listen<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
         if (_manager.ModuleEnabled(DetectionKind::AntiAim))
             _manager.AntiAim().OnSlotChanged(e.Slot);
     }));
     _subscriptions.push_back(
-        events.Listen<VoltMod::Events::WeaponFire>([this](const VoltMod::Events::WeaponFire& e) { OnWeaponFire(e); }));
-    _subscriptions.push_back(events.Listen<VoltMod::Events::BulletImpact>(
-        [this](const VoltMod::Events::BulletImpact& e) { OnBulletImpact(e); }));
+        events.Listen<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
+    _subscriptions.push_back(
+        events.Listen<VoltMod::BulletImpact>([this](const VoltMod::BulletImpact& e) { OnBulletImpact(e); }));
     // player_hurt carries the hitgroup SilentAim scores headshots from, which the typed view omits.
     _subscriptions.push_back(events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); }));
-    _subscriptions.push_back(events.Listen<VoltMod::Events::PlayerDeath>(
-        [this](const VoltMod::Events::PlayerDeath& e) { OnPlayerDeath(e); }));
+    _subscriptions.push_back(
+        events.Listen<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) { OnPlayerDeath(e); }));
 }
 
 void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)
@@ -162,7 +158,7 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
     IVEngineServer2* engine = _rt.Interfaces.Engine;
     _userIdsResolved = engine != nullptr;
 
-    for (const VoltMod::Players::Player* player : _rt.Players.GetAllPlayers())
+    for (const VoltMod::Player* player : _rt.Players.GetAllPlayers())
     {
         const int slot = player ? player->GetSlot() : -1;
         if (!IsValidSlot(slot))
@@ -237,7 +233,7 @@ void ShotCorrelator::FinalizeSilentAim(int slot, int32_t serverTick, double nowS
     _manager.Report(slot, finding);
 }
 
-void ShotCorrelator::OnWeaponFire(const VoltMod::Events::WeaponFire& fire)
+void ShotCorrelator::OnWeaponFire(const VoltMod::WeaponFire& fire)
 {
     if (!_manager.DetectionsEnabled() || !_manager.IsEligible(fire.Slot))
         return;
@@ -254,7 +250,7 @@ void ShotCorrelator::OnWeaponFire(const VoltMod::Events::WeaponFire& fire)
         _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, Time::MonotonicSeconds()));
 }
 
-void ShotCorrelator::OnBulletImpact(const VoltMod::Events::BulletImpact& impact)
+void ShotCorrelator::OnBulletImpact(const VoltMod::BulletImpact& impact)
 {
     if (!_manager.DetectionsEnabled())
         return;
@@ -292,11 +288,10 @@ void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
     if (_manager.ModuleEnabled(DetectionKind::SilentAim))
         _manager.SilentAim().OnShotUpdated(attacker, *shot);
     if (_manager.ModuleEnabled(DetectionKind::Aimbot))
-        _manager.Report(attacker,
-                        _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, Time::MonotonicSeconds()));
+        _manager.Report(attacker, _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, Time::MonotonicSeconds()));
 }
 
-void ShotCorrelator::OnPlayerDeath(const VoltMod::Events::PlayerDeath& death)
+void ShotCorrelator::OnPlayerDeath(const VoltMod::PlayerDeath& death)
 {
     if (!_manager.DetectionsEnabled() || !_manager.IsEligible(death.AttackerSlot))
         return;

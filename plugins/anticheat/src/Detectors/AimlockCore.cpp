@@ -9,19 +9,17 @@
 namespace Anticheat
 {
 
-namespace
-{
-constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
-constexpr int RearmTicks = static_cast<int>(TickRate * 0.5f);     // 32
+static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
+constexpr int RearmTicks = static_cast<int>(TickRate * 0.5f);            // 32
 constexpr int LagSearchRadius = 2;
-constexpr float PlayerHalfWidth = 16.0f;  // the CS2 hull is 32 units wide, measured from its center
+static constexpr float PlayerHalfWidth = 16.0f;  // the CS2 hull is 32 units wide, measured from its center
 constexpr float MinimumDistance = 200.0f;
-constexpr float MinimumTargetTravel = 48.0f;  // one and a half player widths, as degrees at that range
+static constexpr float MinimumTargetTravel = 48.0f;  // one and a half player widths, as degrees at that range
 constexpr float MaximumInterpolationTicks = 19.0f;
-constexpr int DetectionThreshold = 3;
+static constexpr int DetectionThreshold = 3;
 
 /** 95% of the episode's samples must have been inside the target's angular width. */
-constexpr bool MeetsCoverage(int onTarget, int samples)
+static constexpr bool MeetsCoverage(int onTarget, int samples)
 {
     return samples > 0 && onTarget * 20 >= samples * 19;
 }
@@ -39,9 +37,9 @@ struct TargetEvaluation
     bool OnTarget() const { return Valid && Error <= MaximumError; }
 };
 
-TargetEvaluation EvaluateTarget(const ShotCorrelatorCore& shots, const AimAngles& angles, const Vec3& eyePos,
-                                int32_t serverTick, const PositionFrame& currentFrame, int observerSlot, int targetSlot,
-                                int bodyPoint, int lagTicks)
+static TargetEvaluation EvaluateTarget(const ShotCorrelatorCore& shots, const AimAngles& angles, const Vec3& eyePos,
+                                       int32_t serverTick, const PositionFrame& currentFrame, int observerSlot,
+                                       int targetSlot, int bodyPoint, int lagTicks)
 {
     TargetEvaluation result;
     if (!InSlotRange(observerSlot) || !InSlotRange(targetSlot) || bodyPoint < 0 ||
@@ -90,8 +88,8 @@ struct Candidate
  * ordered to reject early: the observer once, then each target slot once, and only then the lag
  * hypotheses and body points that need a full evaluation.
  */
-Candidate FindCandidate(const ShotCorrelatorCore& shots, const AimAngles& angles, const Vec3& eyePos,
-                        int32_t serverTick, const PositionFrame& frame, int observerSlot, const LagEstimate& lag)
+static Candidate FindCandidate(const ShotCorrelatorCore& shots, const AimAngles& angles, const Vec3& eyePos,
+                               int32_t serverTick, const PositionFrame& frame, int observerSlot, const LagEstimate& lag)
 {
     Candidate best;
     if (!lag.Valid || !InSlotRange(observerSlot) || !Geometry::IsFinite(eyePos) || !Geometry::IsFinite(angles))
@@ -135,7 +133,6 @@ Candidate FindCandidate(const ShotCorrelatorCore& shots, const AimAngles& angles
     best.Valid = best.Valid && !ambiguous;
     return best;
 }
-}  // namespace
 
 LagEstimate EstimateVisualLag(float rttSeconds, float interpRatio)
 {

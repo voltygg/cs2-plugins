@@ -1,31 +1,19 @@
 #pragma once
 
+#include "../Core/ChatService.hpp"
+#include "../Core/Config.hpp"
 #include "../Database/Entities/Ban.hpp"
 #include "../Database/Entities/TextMute.hpp"
 #include "../Database/Entities/VoiceMute.hpp"
 #include "../Database/Entities/Warning.hpp"
 
+#include <VoltMod/Database/PostgresDatabase.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <algorithm>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-namespace VoltMod
-{
-class Runtime;
-}
-
-namespace VoltMod::Database
-{
-class PostgresDatabase;
-}
-
-namespace AdminSystem::Core
-{
-class ChatService;
-class ConfigManager;
-}  // namespace AdminSystem::Core
 
 namespace AdminSystem::Punishments
 {
@@ -41,8 +29,8 @@ namespace AdminSystem::Punishments
 class PunishmentManager
 {
 public:
-    PunishmentManager(VoltMod::Database::PostgresDatabase& db, const Core::ConfigManager& config,
-                      VoltMod::Runtime& runtime, Core::ChatService& chat)
+    PunishmentManager(VoltMod::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime,
+                      Core::ChatService& chat)
         : _db(db), _config(config), _rt(runtime), _chat(chat)
     {}
 
@@ -84,7 +72,7 @@ public:
     void ExpireOldPunishments();
 
 private:
-    VoltMod::Database::PostgresDatabase& _db;
+    VoltMod::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;

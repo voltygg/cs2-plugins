@@ -83,6 +83,6 @@ struct Settings
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, anticheat)
 
 /** Subclass VoltMod::JsonConfig instead once you need post-load validation or accessors. */
-using ConfigManager = VoltMod::App::JsonConfig<Settings>;
+using ConfigManager = VoltMod::JsonConfig<Settings>;
 
 }  // namespace Anticheat

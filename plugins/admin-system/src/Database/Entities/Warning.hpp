@@ -25,7 +25,7 @@ struct Warning
     static constexpr const char* Key = "id";
     static constexpr auto Columns()
     {
-        using VoltMod::Database::Column;
+        using VoltMod::Column;
         return std::tuple{
             Column{"id", &Warning::Id},
             Column{"target_steam_id", &Warning::TargetSteamId},

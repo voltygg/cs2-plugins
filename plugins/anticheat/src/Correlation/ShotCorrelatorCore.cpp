@@ -8,21 +8,18 @@
 namespace Anticheat
 {
 
-namespace
-{
-constexpr size_t ShotCommandLimit = 32;
-constexpr size_t PendingShotLimit = 8;
-constexpr size_t PositionHistoryLimit = 128;
-constexpr int ShotMatchTicks = 1;
-constexpr int ShotLifetimeTicks = 2;
+static constexpr size_t ShotCommandLimit = 32;
+static constexpr size_t PendingShotLimit = 8;
+static constexpr size_t PositionHistoryLimit = 128;
+static constexpr int ShotMatchTicks = 1;
+static constexpr int ShotLifetimeTicks = 2;
 static_assert(ShotLifetimeTicks > ShotMatchTicks, "Shots must outlive the window every event matches in.");
 
-bool InWindow(int32_t serverTick, int32_t stampTick)
+static bool InWindow(int32_t serverTick, int32_t stampTick)
 {
     const int64_t delta = static_cast<int64_t>(serverTick) - stampTick;
     return delta >= 0 && delta <= ShotMatchTicks;
 }
-}  // namespace
 
 void ShotCorrelatorCore::AdvanceGeneration(SlotData& data)
 {

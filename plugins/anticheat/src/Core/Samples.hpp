@@ -12,11 +12,11 @@
 namespace Anticheat
 {
 
-inline constexpr int MaxSlots = VoltMod::Core::MaxPlayers;
+inline constexpr int MaxSlots = VoltMod::MaxPlayers;
 
 inline constexpr bool InSlotRange(int slot)
 {
-    return VoltMod::Core::IsValidSlot(slot);
+    return VoltMod::IsValidSlot(slot);
 }
 
 /**
@@ -27,7 +27,7 @@ inline constexpr float TickRate = 64.0f;
 
 /** Time::MonotonicSeconds() drives the rolling evidence windows: real elapsed time, not game
  *  time, and not the wall clock Time::Now() reports. */
-using VoltMod::Core::Time;
+using VoltMod::Time;
 
 struct Vec3
 {

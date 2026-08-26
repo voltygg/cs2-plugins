@@ -5,10 +5,7 @@
 namespace AdminSystem::Weapons
 {
 
-namespace
-{
-constexpr std::string_view ItemPrefix = "weapon_";
-}  // namespace
+static constexpr std::string_view ItemPrefix = "weapon_";
 
 std::string ValidateWeaponEntry(const WeaponEntry& entry)
 {

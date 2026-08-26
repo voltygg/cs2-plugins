@@ -1,19 +1,15 @@
 #pragma once
 
+#include "Config.hpp"
+
+#include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <map>
 #include <string>
 #include <string_view>
 
-namespace VoltMod
-{
-class Runtime;
-}
-
 namespace AdminSystem::Core
 {
-
-class ConfigManager;
 
 /**
  * Formats replies and admin broadcasts over `Runtime::Messages`. This service is

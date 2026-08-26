@@ -10,7 +10,7 @@
 #include <VoltMod/Core/SteamId.hpp>
 #include <string>
 
-namespace Log = VoltMod::Core::Log;
+namespace Log = VoltMod::Log;
 using Contracts::BanResult;
 
 namespace AdminSystem::Core
@@ -28,7 +28,7 @@ void AdminActionsService::Unpublish()
 
 BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::string_view reason)
 {
-    if (!VoltMod::Core::SteamId::IsValid(steamId))
+    if (!VoltMod::SteamId::IsValid(steamId))
     {
         Log::Warn("IAdminActions::Ban: {} is not a SteamID64.", steamId);
         return BanResult::InvalidSteamId;

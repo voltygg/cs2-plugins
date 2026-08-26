@@ -4,10 +4,11 @@
 #include <VoltMod/Database/Api.hpp>
 #include <utility>
 
+using VoltMod::InsertParams;
+using VoltMod::InsertSql;
+
 namespace AdminSystem::Database
 {
-
-using namespace VoltMod::Database;
 
 void ReportRepository::CreateAsync(const Report& report, std::function<void(bool)> onDone)
 {

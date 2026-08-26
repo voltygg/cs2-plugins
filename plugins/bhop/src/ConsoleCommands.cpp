@@ -3,10 +3,14 @@
 #include <VoltMod/Api.hpp>
 #include <format>
 
+using VoltMod::CommandContext;
+using VoltMod::CommandResult;
+using VoltMod::Int;
+using VoltMod::SteamId64;
+using VoltMod::Surface;
+
 namespace Bhop
 {
-
-using namespace VoltMod::Commands;
 
 // Server console commands are the cross-plugin surface: admin-system (a separate module)
 // drives grants through `bhop_player` via ExecuteServerCommand, and operators use both

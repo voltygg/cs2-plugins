@@ -10,18 +10,24 @@
 #include <string>
 #include <string_view>
 
-using VoltMod::Core::IsValidSlot;
-namespace Log = VoltMod::Core::Log;
+using VoltMod::CommandContext;
+using VoltMod::CommandResult;
+using VoltMod::Int;
+using VoltMod::IsValidSlot;
+using VoltMod::Surface;
+using VoltMod::Time;
+using VoltMod::Word;
+
+using VoltMod::IsValidSlot;
+namespace Log = VoltMod::Log;
 
 namespace Anticheat
 {
 
-namespace
-{
-constexpr int DefaultDumpTicks = 64;
-constexpr int MaxDumpTicks = 10000;
+static constexpr int DefaultDumpTicks = 64;
+static constexpr int MaxDumpTicks = 10000;
 
-std::optional<int> ParseInt(std::string_view text)
+static std::optional<int> ParseInt(std::string_view text)
 {
     int value{};
     const auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
@@ -29,7 +35,6 @@ std::optional<int> ParseInt(std::string_view text)
         return std::nullopt;
     return value;
 }
-}  // namespace
 
 void AntiCheatManager::Initialize()
 {
@@ -100,7 +105,6 @@ void AntiCheatManager::LoadDetectionData()
 
 void AntiCheatManager::RegisterCommands()
 {
-    using namespace VoltMod::Commands;
     auto& commands = _rt.Commands;
 
     commands.Register({
@@ -240,7 +244,7 @@ void AntiCheatManager::LogStatus() const
 
     const double now = Time::MonotonicSeconds();
     bool any = false;
-    for (const VoltMod::Players::Player* player : _rt.Players.GetAllPlayers())
+    for (const VoltMod::Player* player : _rt.Players.GetAllPlayers())
     {
         const int slot = player ? player->GetSlot() : -1;
         if (!InSlotRange(slot) || player->IsBot())
@@ -287,7 +291,7 @@ void AntiCheatManager::OnSlotChanged(int slot)
     std::apply([slot](auto&... modules) { (modules.OnSlotChanged(slot), ...); }, ResettableModules());
 }
 
-void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Players::Player* player)
+void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Player* player)
 {
     if (!player)
         return;
@@ -296,7 +300,7 @@ void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Players::Player* player)
     _invalidCvarPoller.OnFullyConnected(player->GetSlot());
 }
 
-void AntiCheatManager::OnPlayerSettingsChanged(VoltMod::Players::Player* player)
+void AntiCheatManager::OnPlayerSettingsChanged(VoltMod::Player* player)
 {
     _namechangerDetector.OnSettingsChanged(player);
 }
@@ -322,8 +326,7 @@ bool AntiCheatManager::DetectionsEnabled() const
 bool AntiCheatManager::EnforceCheatCvars() const
 {
     const VoltMod::ConVarStorage& cheats = CheatsConVar();
-    return ShouldEnforceCheatCvars(cheats.IsValid() && cheats.GetBool(), Time::MonotonicSeconds(),
-                                   _cheatGraceUntil);
+    return ShouldEnforceCheatCvars(cheats.IsValid() && cheats.GetBool(), Time::MonotonicSeconds(), _cheatGraceUntil);
 }
 
 bool AntiCheatManager::ModuleEnabled(DetectionKind kind) const
@@ -336,11 +339,11 @@ bool AntiCheatManager::IsEligible(int slot)
     if (!IsValidSlot(slot))
         return false;
     // The pawn flag is unreadable before a player has a pawn, so identity decides it first.
-    const VoltMod::Players::Player* player = _rt.Players.GetPlayerBySlot(slot);
+    const VoltMod::Player* player = _rt.Players.GetPlayerBySlot(slot);
     if (!player || player->IsBot())
         return false;
     VoltMod::PlayerController controller = _rt.Entities.Controller(slot);
-    return controller.IsValid() && !(controller.GetFlags() & VoltMod::Entities::FL_FAKECLIENT);
+    return controller.IsValid() && !(controller.GetFlags() & VoltMod::FL_FAKECLIENT);
 }
 
 void AntiCheatManager::Report(int slot, const std::optional<Finding>& finding)

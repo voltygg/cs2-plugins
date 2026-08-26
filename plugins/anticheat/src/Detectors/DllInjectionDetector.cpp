@@ -11,17 +11,14 @@
 namespace Anticheat
 {
 
-namespace
-{
 /** Pump cadence only; the per-slot deadlines do the real timing. */
-constexpr int64_t ScanIntervalMs = 1000;
+static constexpr int64_t ScanIntervalMs = 1000;
 /** First scan this long after full connect; retried once when no listener exists yet. */
-constexpr double DllInitialScanDelaySec = 10.0;
+static constexpr double DllInitialScanDelaySec = 10.0;
 /** Rescan cadence once the first scan succeeded. */
-constexpr double DllScanIntervalSec = 120.0;
+static constexpr double DllScanIntervalSec = 120.0;
 /** Evidence string cap before the matched names are elided. */
-constexpr size_t DllEvidenceCharBudget = 700;
-}  // namespace
+static constexpr size_t DllEvidenceCharBudget = 700;
 
 void DllInjectionDetector::Initialize()
 {

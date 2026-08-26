@@ -6,16 +6,24 @@
 #include <doctest/doctest.h>
 #include <limits>
 
-using namespace Anticheat;
+using Anticheat::AimAngles;
+using Anticheat::AimlockCore;
+using Anticheat::EstimateVisualLag;
+using Anticheat::LagEstimate;
+using Anticheat::MaxSlots;
+using Anticheat::PositionSample;
+using Anticheat::ShotCorrelatorCore;
+using Anticheat::TeamCT;
+using Anticheat::TeamT;
+using Anticheat::Vec3;
+namespace Geometry = Anticheat::Geometry;
 
-namespace
-{
-constexpr int Observer = 0;
-constexpr int Target = 1;
-constexpr double Now = 100.0;
-constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
-constexpr float TargetX = 500.0f;
-constexpr float TargetSpeed = 20.0f;  // units a tick, enough to move the bearing off a stale aim
+static constexpr int Observer = 0;
+static constexpr int Target = 1;
+static constexpr double Now = 100.0;
+static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
+static constexpr float TargetX = 500.0f;
+static constexpr float TargetSpeed = 20.0f;  // units a tick, enough to move the bearing off a stale aim
 
 /**
  * One observer standing still and one enemy walking sideways at a distance. The aim is generated
@@ -74,7 +82,6 @@ struct Harness
             Step(skewEvery > 0 && Tick % skewEvery == 0 ? 10.0f : 0.0f, aimLag);
     }
 };
-}  // namespace
 
 TEST_CASE("EstimateVisualLag adds the full round trip to the client's interpolation delay")
 {

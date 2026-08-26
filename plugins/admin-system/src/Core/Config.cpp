@@ -5,10 +5,11 @@
 #include <format>
 #include <optional>
 
+using VoltMod::ParseDuration;
+namespace Validation = VoltMod::Validation;
+
 namespace AdminSystem::Core
 {
-
-using namespace VoltMod::Core;
 
 bool ConfigManager::LoadSettings(const std::string& path)
 {
@@ -76,12 +77,9 @@ void ConfigManager::ResolveRuntimeSettings()
     ResolveWeaponMenu(settings.weapons);
 }
 
-namespace
-{
-
 // Whether a map file exists is the engine's call; MapCycleState re-checks the resolved names at
 // load so a stale entry surfaces in the load report.
-std::vector<Maps::MapEntry> BuildMapEntries(const std::vector<MapConfigEntry>& raw)
+static std::vector<Maps::MapEntry> BuildMapEntries(const std::vector<MapConfigEntry>& raw)
 {
     std::vector<Maps::MapEntry> entries;
     entries.reserve(raw.size());
@@ -100,7 +98,7 @@ std::vector<Maps::MapEntry> BuildMapEntries(const std::vector<MapConfigEntry>& r
     return entries;
 }
 
-std::vector<Weapons::WeaponEntry> BuildWeaponEntries(const std::vector<WeaponConfigEntry>& raw)
+static std::vector<Weapons::WeaponEntry> BuildWeaponEntries(const std::vector<WeaponConfigEntry>& raw)
 {
     std::vector<Weapons::WeaponEntry> entries;
     entries.reserve(raw.size());
@@ -118,8 +116,6 @@ std::vector<Weapons::WeaponEntry> BuildWeaponEntries(const std::vector<WeaponCon
         "weapons.menu");
     return entries;
 }
-
-}  // namespace
 
 // Both lists fall back to their struct defaults when nothing valid is left, since an empty Map or
 // Give weapon page reads as a broken plugin rather than as a configuration gap - most often on a

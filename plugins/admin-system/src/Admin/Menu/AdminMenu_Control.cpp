@@ -11,32 +11,35 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Entities/Entity.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Entities/Entity.hpp>
 #include <format>
 #include <memory>
 #include <string>
 
+using VoltMod::MenuBuilder;
+using VoltMod::MenuManager;
+using VoltMod::PlayerManager;
+using VoltMod::Runtime;
+using VoltMod::Translations;
+
 namespace AdminSystem::Admin::Menu
 {
 
-using VoltMod::Menu::MenuBuilder;
-using namespace VoltMod::Entities;
+using VoltMod::MenuBuilder;
 
-namespace
-{
-constexpr int HealthPresets[] = {1, 50, 100, 200, 500, 999};
-constexpr int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
-constexpr int SpeedPresets[] = {10, 25, 50, 100, 150, 200, 300};
-constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
+static constexpr int HealthPresets[] = {1, 50, 100, 200, 500, 999};
+static constexpr int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
+static constexpr int SpeedPresets[] = {10, 25, 50, 100, 150, 200, 300};
+static constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
 
 // Speed/Size cycle both up and down from normal, so they open anchored on 100% (no change).
-constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
-constexpr int SizeDefault = 4;   // index of 100 in SizePresets
+static constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
+constexpr int SizeDefault = 4;          // index of 100 in SizePresets
 
 /** Tell the admin why a weapon action did nothing. The menu is the only way to reach these, so
  *  a silent no-op would leave them guessing whether the click registered. */
@@ -56,7 +59,6 @@ void ReportWeaponOutcome(AdminSystem::App& app, int adminSlot, Weapons::WeaponAc
         break;
     }
 }
-}  // namespace
 
 std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int adminSlot)
 {
@@ -77,7 +79,7 @@ std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int a
         [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, Effects::Hide.Id); },
         [&app, adminSlot](int) { app.PlayerEffects.Toggle(adminSlot, adminSlot, Effects::Hide); }, hasB);
 
-    VoltMod::Menu::AppendPlayerRows(
+    VoltMod::AppendPlayerRows(
         builder, app.Runtime.Players, adminSlot,
         [&app](int admin, int target) {
             auto actions = BuildControlActionsMenu(app, admin, target);
@@ -123,7 +125,7 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
         .AddPresetChoiceRow("action.armor", "AP", ArmorPresets, Actions::SetArmor)
         .AddPresetChoiceRow("action.speed", "%", SpeedPresets, Actions::SetSpeed, SpeedDefault)
         .AddPresetChoiceRow("action.size", "%", SizePresets, Actions::SetSize, SizeDefault)
-        .AddStateToggleRow("action.godmode", VoltMod::HasPawnFlag(VoltMod::Entities::FL_GODMODE), Actions::Godmode)
+        .AddStateToggleRow("action.godmode", VoltMod::HasPawnFlag(VoltMod::FL_GODMODE), Actions::Godmode)
         .AddActionRow("action.bury", Actions::Bury)
         .AddActionRow("action.unbury", Actions::Unbury);
 

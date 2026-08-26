@@ -6,13 +6,13 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/App/PluginInfoStamp.hpp>
-#include <VoltMod/Unsafe/HookMacros.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <VoltMod/Unsafe/HookMacros.hpp>
 #include <string>
 
 using VoltMod::Player;
+using VoltMod::PlayerController;
 using VoltMod::PluginInfo;
-using VoltMod::Entities::PlayerController;
 namespace Log = VoltMod::Log;
 
 VOLTMOD_PLUGIN(AdminSystemPlugin);

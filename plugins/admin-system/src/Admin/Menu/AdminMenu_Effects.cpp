@@ -7,17 +7,17 @@
 #include "PlayerPicker.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Entities/PlayerController.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Entities/PlayerController.hpp>
 #include <format>
 
 namespace AdminSystem::Admin::Menu
 {
 
-using VoltMod::Menu::MenuBuilder;
+using VoltMod::MenuBuilder;
 
 std::shared_ptr<VoltMod::MenuView> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
 {

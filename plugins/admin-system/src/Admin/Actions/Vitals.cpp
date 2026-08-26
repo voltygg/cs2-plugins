@@ -1,7 +1,7 @@
 ﻿#include "Descriptors.hpp"
 
-#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
+#include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Admin::Actions
 {
@@ -12,8 +12,8 @@ const Action Kill{Flag(Permission::Control), /*requireAlive*/ true, [](const Act
                   }};
 
 const Action Godmode{Flag(Permission::Health), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                         return VoltMod::Entities::PawnOps::ToggleGodmode(ctx.TargetCtrl) ? "broadcast.godmodeOn"
-                                                                                     : "broadcast.godmodeOff";
+                         return VoltMod::PawnOps::ToggleGodmode(ctx.TargetCtrl) ? "broadcast.godmodeOn"
+                                                                                : "broadcast.godmodeOff";
                      }};
 
 const ParamAction SetHealth{Flag(Permission::Health), /*requireAlive*/ true,

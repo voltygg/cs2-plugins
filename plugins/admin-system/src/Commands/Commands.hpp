@@ -1,13 +1,11 @@
 #pragma once
 
-namespace VoltMod::Commands
-{
-class CommandManager;
-}
+#include "../Core/App.hpp"
+
+#include <VoltMod/Commands/CommandManager.hpp>
 
 namespace AdminSystem
 {
-struct App;
 
 /**
  * Each source file in this directory registers one group of commands. App::RegisterCommands
@@ -15,13 +13,13 @@ struct App;
  */
 namespace Commands
 {
-void RegisterAdminMenuCommand(VoltMod::Commands::CommandManager& commands, App& app);
-void RegisterAdminSelfCommands(VoltMod::Commands::CommandManager& commands, App& app);
-void RegisterCheatCheckCommands(VoltMod::Commands::CommandManager& commands, App& app);
-void RegisterFreezeCommands(VoltMod::Commands::CommandManager& commands, App& app);
-void RegisterInfoCommands(VoltMod::Commands::CommandManager& commands, App& app);
-void RegisterPunishmentCommands(VoltMod::Commands::CommandManager& commands, App& app);
-void RegisterReportCommand(VoltMod::Commands::CommandManager& commands, App& app);
+void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app);
+void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app);
+void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app);
+void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app);
+void RegisterInfoCommands(VoltMod::CommandManager& commands, App& app);
+void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app);
+void RegisterReportCommand(VoltMod::CommandManager& commands, App& app);
 }  // namespace Commands
 
 }  // namespace AdminSystem

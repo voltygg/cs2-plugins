@@ -1,16 +1,12 @@
 #pragma once
 
+#include "../Core/App.hpp"
 #include "PunishType.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <cstdint>
 #include <string>
-
-namespace AdminSystem
-{
-struct App;
-}
 
 namespace AdminSystem::Punishments
 {

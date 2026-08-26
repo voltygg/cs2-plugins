@@ -9,18 +9,15 @@
 namespace Anticheat
 {
 
-namespace
-{
 /** Pump cadence only; the per-slot deadlines do the real timing. */
-constexpr int64_t PollIntervalMs = 1000;
+static constexpr int64_t PollIntervalMs = 1000;
 
 /** A seed in [1, m-1], the only range std::minstd_rand accepts. */
-std::minstd_rand::result_type Seed()
+static std::minstd_rand::result_type Seed()
 {
     const auto ticks = static_cast<uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count());
     return static_cast<std::minstd_rand::result_type>(ticks % 2147483646U) + 1;
 }
-}  // namespace
 
 void InvalidCvarDetector::Initialize()
 {
@@ -126,7 +123,7 @@ void InvalidCvarDetector::OnReply(int slot, VoltMod::ClientCvarStatus status, st
     InvalidCvarRules& rules = _manager.InvalidCvars();
     _manager.Report(slot, status == VoltMod::ClientCvarStatus::ValueIntact
                               ? rules.Observe(slot, name, value, enforce)
-                              : rules.ObserveMissing(slot, name, VoltMod::Hooks::ToString(status), enforce));
+                              : rules.ObserveMissing(slot, name, VoltMod::ToString(status), enforce));
 }
 
 }  // namespace Anticheat

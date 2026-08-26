@@ -1,32 +1,19 @@
 #pragma once
 
+#include "../Core/ChatService.hpp"
+#include "../Core/Config.hpp"
 #include "../Database/Repositories/AdminRepository.hpp"
+#include "AdminManager.hpp"
 
+#include <VoltMod/Database/PostgresDatabase.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <unordered_map>
 
-namespace VoltMod
-{
-class Runtime;
-}
-
-namespace VoltMod::Database
-{
-class PostgresDatabase;
-}
-
-namespace AdminSystem::Core
-{
-class ChatService;
-class ConfigManager;
-}  // namespace AdminSystem::Core
-
 namespace AdminSystem::Admin
 {
-
-class AdminManager;
 
 /**
  * Admin-abuse protection. A frozen admin has ALL admin permissions denied - the gate lives in
@@ -39,7 +26,7 @@ class AdminManager;
 class FreezeManager
 {
 public:
-    FreezeManager(VoltMod::Database::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime,
+    FreezeManager(VoltMod::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime,
                   Core::ChatService& chat, AdminManager& admins)
         : _db(db), _config(config), _rt(runtime), _chat(chat), _admins(admins)
     {}
@@ -78,7 +65,7 @@ public:
     void NotifyFrozen(int64_t steamId);
 
 private:
-    VoltMod::Database::PostgresDatabase& _db;
+    VoltMod::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;

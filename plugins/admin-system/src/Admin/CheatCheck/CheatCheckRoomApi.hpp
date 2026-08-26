@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../Core/Config.hpp"
+
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Http/RestJsonApi.hpp>
 #include <cstdint>
@@ -7,16 +9,11 @@
 #include <string>
 #include <string_view>
 
-namespace AdminSystem::Core
-{
-struct CheatCheckWebsiteAutoRoom;
-}
-
 namespace AdminSystem::Admin::CheatCheck
 {
 
 /** A ready-to-send create-room HTTP POST, derived from config + the players involved. */
-using RoomRequest = VoltMod::Http::HttpRequest;
+using RoomRequest = VoltMod::HttpRequest;
 
 /** URLs extracted from a successful create-room response. */
 struct RoomUrls

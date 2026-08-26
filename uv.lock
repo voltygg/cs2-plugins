@@ -165,7 +165,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", specifier = ">=0.14.0" },
     { name = "typer", specifier = ">=0.27.1" },
-    { name = "voltmod", git = "https://github.com/voltygg/voltmod.git?rev=main" },
+    { name = "voltmod", git = "https://github.com/voltygg/voltmod.git?rev=refactor%2Fapi-v2" },
 ]
 
 [[package]]
@@ -469,7 +469,7 @@ wheels = [
 [[package]]
 name = "voltmod"
 version = "1.2.0"
-source = { git = "https://github.com/voltygg/voltmod.git?rev=main#e9c579edabe59596c9ba5cf1b25c8f421211efed" }
+source = { git = "https://github.com/voltygg/voltmod.git?rev=refactor%2Fapi-v2#51990d81b2947f974be4c9ad39cd2b87d811b169" }
 dependencies = [
     { name = "clang-format" },
     { name = "cmake" },

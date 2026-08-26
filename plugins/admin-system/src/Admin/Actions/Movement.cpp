@@ -5,12 +5,9 @@
 namespace AdminSystem::Admin::Actions
 {
 
-namespace PawnOps = VoltMod::Entities::PawnOps;
+namespace PawnOps = VoltMod::PawnOps;
 
-namespace
-{
-constexpr float BuryDepth = 15.0f;
-}  // namespace
+static constexpr float BuryDepth = 15.0f;
 
 const Action Noclip{Flag(Permission::Control), /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
                         return PawnOps::ToggleNoclip(ctx.TargetCtrl) ? "broadcast.noclipOn" : "broadcast.noclipOff";

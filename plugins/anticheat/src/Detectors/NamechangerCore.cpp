@@ -5,10 +5,7 @@
 namespace Anticheat
 {
 
-namespace
-{
-constexpr int DetectionThreshold = 5;
-}  // namespace
+static constexpr int DetectionThreshold = 5;
 
 void NamechangerCore::Reset()
 {

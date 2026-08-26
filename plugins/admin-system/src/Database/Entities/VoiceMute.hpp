@@ -28,13 +28,13 @@ struct VoiceMute
     std::optional<std::string> RemovedReason;
 
     bool IsPermanent() const { return ExpiresAt == 0; }
-    bool IsExpired() const { return !IsPermanent() && VoltMod::Core::Time::IsExpired(ExpiresAt); }
+    bool IsExpired() const { return !IsPermanent() && VoltMod::Time::IsExpired(ExpiresAt); }
 
     static constexpr const char* Table = "voice_mutes";
     static constexpr const char* Key = "id";
     static constexpr auto Columns()
     {
-        using VoltMod::Database::Column;
+        using VoltMod::Column;
         return std::tuple{
             Column{"id", &VoiceMute::Id},
             Column{"target_steam_id", &VoiceMute::TargetSteamId},

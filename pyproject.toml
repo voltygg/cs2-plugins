@@ -9,7 +9,7 @@ license = { text = "MIT" }
 dependencies = [
     # Provides the tasks and tool pins below. Replace `main` with a release tag
     # when builds must stop tracking framework changes.
-    "voltmod @ git+https://github.com/voltygg/voltmod.git@main",
+    "voltmod @ git+https://github.com/voltygg/voltmod.git@refactor/api-v2",
     "ruff>=0.14.0",
     "poethepoet>=0.47.0",
     "python-dotenv>=1.2.0",
@@ -29,7 +29,6 @@ doctor = "voltmod doctor"
 new-plugin = "voltmod new-plugin"
 install = "voltmod install"
 start-server = "voltmod serve"
-lint = "ruff check ."
 format = "voltmod format plugins"
 deploy-package = "python -m deploy.tools.cli package"
 deploy-render = "python -m deploy.tools.cli render"
@@ -39,6 +38,13 @@ deploy-cleanup = "python -m deploy.tools.cli cleanup"
 deploy-dbs = "python -m deploy.tools.cli ensure-dbs"
 deploy-tunnel = "python -m deploy.tools.cli tunnel-db"
 rcon = "python -m deploy.tools.cli rcon"
+
+[tool.poe.tasks.lint]
+help = "Lint the build tooling and check the plugin source conventions"
+sequence = [
+    { cmd = "ruff check ." },
+    { cmd = "voltmod modgraph --plugins ." },
+]
 
 [tool.ruff]
 line-length = 100

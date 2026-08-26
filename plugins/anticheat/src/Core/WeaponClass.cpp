@@ -6,18 +6,16 @@
 namespace Anticheat
 {
 
-namespace
-{
 // Deviation ceilings in degrees. Precision rifles sit lowest (their first shot is near-perfectly
 // accurate), SMGs highest (spray plus movement inaccuracy is legitimately wide). One table, so a
 // weapon cannot be ballistic without a ceiling or carry a ceiling without being ballistic.
-constexpr float RifleDeviation = 12.5f;
-constexpr float SniperDeviation = 2.5f;
-constexpr float HeavyPistolDeviation = 4.5f;
-constexpr float PistolDeviation = 4.3f;
-constexpr float SmgDeviation = 22.5f;
-constexpr float HeavyDeviation = 13.5f;
-constexpr float DefaultDeviation = 15.5f;
+static constexpr float RifleDeviation = 12.5f;
+static constexpr float SniperDeviation = 2.5f;
+static constexpr float HeavyPistolDeviation = 4.5f;
+static constexpr float PistolDeviation = 4.3f;
+static constexpr float SmgDeviation = 22.5f;
+static constexpr float HeavyDeviation = 13.5f;
+static constexpr float DefaultDeviation = 15.5f;
 
 struct BallisticWeapon
 {
@@ -25,7 +23,7 @@ struct BallisticWeapon
     float DeviationCeiling;
 };
 
-constexpr std::array BallisticWeapons = std::to_array<BallisticWeapon>({
+static constexpr std::array BallisticWeapons = std::to_array<BallisticWeapon>({
     {"ak47", RifleDeviation},
     {"aug", RifleDeviation},
     {"famas", RifleDeviation},
@@ -70,13 +68,12 @@ constexpr std::array BallisticWeapons = std::to_array<BallisticWeapon>({
     {"taser", DefaultDeviation},
 });
 
-const BallisticWeapon* Find(std::string_view weapon)
+static const BallisticWeapon* Find(std::string_view weapon)
 {
     auto found = std::find_if(BallisticWeapons.begin(), BallisticWeapons.end(),
                               [&](const BallisticWeapon& entry) { return entry.Name == weapon; });
     return found == BallisticWeapons.end() ? nullptr : &*found;
 }
-}  // namespace
 
 std::string_view NormalizeWeapon(std::string_view weapon)
 {

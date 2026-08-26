@@ -10,18 +10,15 @@
 namespace Anticheat
 {
 
-namespace
-{
-constexpr int DetectionScore = 12;
-constexpr float MinimumImpactDistance = 100.0f;
-constexpr float MaximumImpactDistance = 10000.0f;
+static constexpr int DetectionScore = 12;
+static constexpr float MinimumImpactDistance = 100.0f;
+static constexpr float MaximumImpactDistance = 10000.0f;
 
 // Beyond every weapon's ceiling, so worth more than a marginal deviation.
-constexpr float BlatantDeviation = 22.5f;
-constexpr int BlatantPoints = 3;
-constexpr int AirbornePoints = 1;  // inaccuracy while jumping makes a wide shot cheap evidence
+static constexpr float BlatantDeviation = 22.5f;
+static constexpr int BlatantPoints = 3;
+static constexpr int AirbornePoints = 1;  // inaccuracy while jumping makes a wide shot cheap evidence
 constexpr int GroundedPoints = 2;
-}  // namespace
 
 void SilentAimCore::Reset()
 {

@@ -3,13 +3,13 @@
 #include <doctest/doctest.h>
 #include <format>
 
-using namespace Anticheat;
+using Anticheat::DetectionKind;
+using Anticheat::Finding;
+using Anticheat::MaxSlots;
+using Anticheat::NamechangerCore;
 
-namespace
-{
-constexpr int Slot = 3;
-constexpr double Now = 100.0;
-}  // namespace
+static constexpr int Slot = 3;
+static constexpr double Now = 100.0;
 
 TEST_CASE("The fifth name change inside one minute fires and the fourth does not")
 {

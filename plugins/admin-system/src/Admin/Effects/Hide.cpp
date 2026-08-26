@@ -1,18 +1,18 @@
 #include "Descriptors.hpp"
 
-#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Entities/PlayerController.hpp>
 #include <VoltMod/Hooks/GlowVision.hpp>
 #include <VoltMod/Hooks/Transmit.hpp>
+#include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
-using VoltMod::Hooks::GlowVision;
-using VoltMod::Entities::PlayerController;
-using VoltMod::Entities::TeamSpectator;
+using VoltMod::GlowVision;
+using VoltMod::PlayerController;
+using VoltMod::TeamSpectator;
 
 // Hide moves the player to the spectator team and stops transmitting their
 // controller, which removes their row from every other client's scoreboard.

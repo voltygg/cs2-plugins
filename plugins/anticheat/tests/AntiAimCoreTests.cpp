@@ -3,14 +3,15 @@
 #include <cmath>
 #include <doctest/doctest.h>
 
-using namespace Anticheat;
+using Anticheat::AntiAimCore;
+using Anticheat::CmdSample;
+using Anticheat::Finding;
+using Anticheat::ShotView;
 
-namespace
-{
-constexpr int Slot = 0;
-constexpr double Now = 100.0;
+static constexpr int Slot = 0;
+static constexpr double Now = 100.0;
 
-CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f, float pitch = 0.0f, float roll = 0.0f)
+static CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f, float pitch = 0.0f, float roll = 0.0f)
 {
     CmdSample cmd;
     cmd.CmdNum = num;
@@ -21,15 +22,15 @@ CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f, float pitch = 0
     return cmd;
 }
 
-std::optional<Finding> Feed(AntiAimCore& core, const CmdSample& cmd, int32_t serverTick, double now = Now,
-                            bool teleported = false)
+static std::optional<Finding> Feed(AntiAimCore& core, const CmdSample& cmd, int32_t serverTick, double now = Now,
+                                   bool teleported = false)
 {
     core.OnCommand(Slot, cmd);
     return core.OnSimulated(Slot, cmd.CmdNum, serverTick, true, teleported, now);
 }
 
 /** A command whose base view angle disagrees with the angles it claims it fired along. */
-CmdSample MismatchCmd(int32_t num, int32_t tick)
+static CmdSample MismatchCmd(int32_t num, int32_t tick)
 {
     CmdSample cmd = Cmd(num, tick);
     cmd.HasHistoryAngles = true;
@@ -38,7 +39,7 @@ CmdSample MismatchCmd(int32_t num, int32_t tick)
 }
 
 /** Feeds @p count commands whose yaw follows @p yawAt, and returns the command number that fired. */
-int RunPattern(AntiAimCore& core, int count, float (*yawAt)(int))
+static int RunPattern(AntiAimCore& core, int count, float (*yawAt)(int))
 {
     for (int i = 1; i <= count; ++i)
         if (Feed(core, Cmd(i, i, yawAt(i)), i))
@@ -46,21 +47,20 @@ int RunPattern(AntiAimCore& core, int count, float (*yawAt)(int))
     return -1;
 }
 
-float SteadySpin(int i)
+static float SteadySpin(int i)
 {
     return std::fmod(6.0f * static_cast<float>(i), 360.0f);
 }
 
-float ReversingYaw(int i)
+static float ReversingYaw(int i)
 {
     return i % 2 == 0 ? 6.0f : 0.0f;
 }
 
-float TwoWayJitter(int i)
+static float TwoWayJitter(int i)
 {
     return i % 2 == 0 ? 20.0f : 0.0f;
 }
-}  // namespace
 
 TEST_CASE("A pitch past 89.01 degrees scores and 89.00 does not")
 {

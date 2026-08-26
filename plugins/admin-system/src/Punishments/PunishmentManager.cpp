@@ -9,30 +9,36 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Time.hpp>
-#include <VoltMod/Players/PlayerManager.hpp>
-#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Engine/Interfaces.hpp>
 #include <VoltMod/Entities/PlayerController.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <algorithm>
 #include <utility>
+
+using AdminSystem::Database::Ban;
+using AdminSystem::Database::PunishmentRepository;
+using AdminSystem::Database::TextMute;
+using AdminSystem::Database::VoiceMute;
+using AdminSystem::Database::WarningRepository;
+using VoltMod::Interfaces;
+using VoltMod::PlayerController;
+using VoltMod::PlayerManager;
+using VoltMod::Runtime;
+using VoltMod::Time;
 
 namespace AdminSystem::Punishments
 {
 
-using namespace AdminSystem::Database;
-using namespace VoltMod::Players;
-using namespace VoltMod::Core;
 using AdminSystem::Core::ChatService;
 using AdminSystem::Core::ConfigManager;
-
-namespace
-{
+namespace Log = VoltMod::Log;
 
 // Push the engine's per-pair voice channel state for `senderSteamId` to all currently
 // connected listeners. Our SetClientListening hook will still enforce the cached
 // IsVoiceMuted() decision; this just forces the engine to re-evaluate any channels
 // that were already negotiated before the (un)mute landed.
-void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, bool muted)
+static void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, bool muted)
 {
     auto* engine = rt.Interfaces.Engine;
     if (!engine)
@@ -53,15 +59,13 @@ void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, bool muted
     }
 }
 
-void StampTimes(auto& entity)
+static void StampTimes(auto& entity)
 {
     if (entity.CreatedAt == 0)
         entity.CreatedAt = Time::Now();
     if (entity.Duration > 0 && entity.ExpiresAt == 0)
         entity.ExpiresAt = Time::GetExpirationTime(entity.Duration);
 }
-
-}  // namespace
 
 bool PunishmentManager::LoadActivePunishments()
 {
@@ -218,7 +222,7 @@ bool PunishmentManager::IssueTextMute(TextMute& mute)
     return true;
 }
 
-bool PunishmentManager::IssueWarning(Warning& warning)
+bool PunishmentManager::IssueWarning(Database::Warning& warning)
 {
     if (warning.CreatedAt == 0)
         warning.CreatedAt = Time::Now();

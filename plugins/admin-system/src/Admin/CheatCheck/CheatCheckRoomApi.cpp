@@ -10,10 +10,10 @@
 namespace AdminSystem::Admin::CheatCheck
 {
 
-using VoltMod::Http::BuildJsonPost;
-using VoltMod::Http::ExtractField;
-using VoltMod::Http::IsSuccess;
-using VoltMod::Http::JsonPostSpec;
+using VoltMod::BuildJsonPost;
+using VoltMod::ExtractField;
+using VoltMod::IsSuccess;
+using VoltMod::JsonPostSpec;
 
 std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, int64_t targetSteamId,
                                             std::string_view targetName, int64_t adminSteamId,
@@ -44,11 +44,10 @@ std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom&
     if (code.empty())
         return std::nullopt;
 
-    using VoltMod::Core::Strings;
+    using VoltMod::Strings;
     return RoomUrls{
-        .PlayerUrl = cfg.playerUrlTemplate.empty()
-                         ? code
-                         : Strings::SubstituteTokens(cfg.playerUrlTemplate, {{"value", code}}),
+        .PlayerUrl =
+            cfg.playerUrlTemplate.empty() ? code : Strings::SubstituteTokens(cfg.playerUrlTemplate, {{"value", code}}),
         .CheckerUrl = ExtractField(result, cfg.checkerUrlField, cfg.checkerUrlTemplate),
         .RoomCode = std::move(code),
     };
@@ -60,17 +59,17 @@ std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAut
     if (cfg.presenceUrl.empty() || roomCode.empty())
         return std::nullopt;
 
-    VoltMod::Http::JsonGetSpec spec{
+    VoltMod::JsonGetSpec spec{
         .UrlTemplate = cfg.presenceUrl,
         .ApiKey = cfg.apiKey,
         .AuthHeader = cfg.authHeader,
         .AuthScheme = cfg.authScheme,
         .TimeoutMs = cfg.timeoutMs,
     };
-    return VoltMod::Http::BuildJsonGet(spec, {
-                                                 {"code", roomCode},
-                                                 {"steamId", std::to_string(targetSteamId)},
-                                             });
+    return VoltMod::BuildJsonGet(spec, {
+                                           {"code", roomCode},
+                                           {"steamId", std::to_string(targetSteamId)},
+                                       });
 }
 
 std::optional<bool> ParsePresence(const Core::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result)

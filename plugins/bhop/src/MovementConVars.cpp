@@ -4,21 +4,17 @@
 #include <VoltMod/Runtime.hpp>
 #include <format>
 
-using namespace VoltMod;
+using VoltMod::Runtime;
+
 namespace Log = VoltMod::Log;
 
 namespace Bhop
 {
 
-namespace
-{
-
-std::string FormatConVarValue(bool isFloat, float value)
+static std::string FormatConVarValue(bool isFloat, float value)
 {
     return isFloat ? std::format("{}", value) : (value != 0.0f ? "1" : "0");
 }
-
-}  // namespace
 
 void MovementConVars::Build(const BhopSettings& settings)
 {

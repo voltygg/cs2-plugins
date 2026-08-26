@@ -1,21 +1,13 @@
 #pragma once
 
+#include "../Core/Config.hpp"
 #include "../Core/Permissions.hpp"
 #include "../Database/Entities/Admin.hpp"
 #include "../Database/Entities/AdminGroup.hpp"
 
+#include <VoltMod/Database/PostgresDatabase.hpp>
 #include <string>
 #include <unordered_map>
-
-namespace VoltMod::Database
-{
-class PostgresDatabase;
-}
-
-namespace AdminSystem::Core
-{
-class ConfigManager;
-}
 
 namespace AdminSystem::Admin
 {
@@ -46,8 +38,7 @@ struct AdminChatStyle
 class AdminManager
 {
 public:
-    AdminManager(VoltMod::Database::PostgresDatabase& db, const Core::ConfigManager& config) : _db(db), _config(config)
-    {}
+    AdminManager(VoltMod::PostgresDatabase& db, const Core::ConfigManager& config) : _db(db), _config(config) {}
 
     bool LoadAdmins();
     bool LoadGroups();
@@ -101,7 +92,7 @@ public:
     }
 
 private:
-    VoltMod::Database::PostgresDatabase& _db;
+    VoltMod::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
 
     /** True if a resolved bitmask carries @p flag, or the root flag ('z') that grants everything. */

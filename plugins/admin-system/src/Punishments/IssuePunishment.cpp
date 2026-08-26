@@ -9,18 +9,19 @@
 #include <VoltMod/Entities/PlayerController.hpp>
 #include <format>
 
+using AdminSystem::Database::Ban;
+using AdminSystem::Database::TextMute;
+using AdminSystem::Database::VoiceMute;
+
 namespace AdminSystem::Punishments
 {
 
-using namespace AdminSystem::Database;
-using VoltMod::Players::Player;
-
-namespace
-{
+using VoltMod::Player;
 
 /** Fill the common target/admin/reason fields, plus Duration when the entity has one (Warning does not). */
 template <typename T>
-void Fill(T& punishment, const Player& target, const Player& admin, const std::string& reason, int64_t durationSec)
+static void Fill(T& punishment, const Player& target, const Player& admin, const std::string& reason,
+                 int64_t durationSec)
 {
     punishment.TargetSteamId = target.GetSteamID();
     punishment.TargetName = target.GetName();
@@ -34,8 +35,8 @@ void Fill(T& punishment, const Player& target, const Player& admin, const std::s
     }
 }
 
-bool Issue(App& app, const Player& admin, const Player& target, PunishType type, const std::string& reason,
-           int64_t durationSec)
+static bool Issue(App& app, const Player& admin, const Player& target, PunishType type, const std::string& reason,
+                  int64_t durationSec)
 {
     auto& pm = app.Punishments;
     switch (type)
@@ -67,15 +68,13 @@ bool Issue(App& app, const Player& admin, const Player& target, PunishType type,
     }
     case PunishType::Warn:
     {
-        Warning warn;
+        Database::Warning warn;
         Fill(warn, target, admin, reason, 0);
         return pm.IssueWarning(warn);
     }
     }
     return false;
 }
-
-}  // namespace
 
 bool IssuePunishment(App& app, const Player& admin, const Player& target, PunishType type, const std::string& reason,
                      int64_t durationSec)

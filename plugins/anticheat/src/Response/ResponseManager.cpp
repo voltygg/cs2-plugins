@@ -7,28 +7,25 @@
 #include <algorithm>
 #include <format>
 
-namespace Log = VoltMod::Core::Log;
+namespace Log = VoltMod::Log;
 
 namespace Anticheat
 {
 
-namespace
-{
 // The reason is also the kick message and the chat broadcast, and DLL-injection evidence runs
 // long. The full text is already in the log and the webhook.
-constexpr size_t MaxReasonLength = 200;
+static constexpr size_t MaxReasonLength = 200;
 
 /** admin-system's cross-plugin surface, or nullptr when that plugin is not loaded. */
-Contracts::IAdminActions* AdminActions(VoltMod::Runtime& rt)
+static Contracts::IAdminActions* AdminActions(VoltMod::Runtime& rt)
 {
     return rt.Exchange.Get<Contracts::IAdminActions>();
 }
 
-std::string TrimReason(std::string_view reason)
+static std::string TrimReason(std::string_view reason)
 {
     return std::string(reason.substr(0, std::min(reason.size(), MaxReasonLength)));
 }
-}  // namespace
 
 void ResponseManager::Initialize()
 {

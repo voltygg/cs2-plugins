@@ -3,16 +3,25 @@
 #include <array>
 #include <doctest/doctest.h>
 
-using namespace Anticheat;
+using Anticheat::AimAngles;
+using Anticheat::AimbotCore;
+using Anticheat::CmdSample;
+using Anticheat::DetectionKind;
+using Anticheat::Finding;
+using Anticheat::MaxSlots;
+using Anticheat::PositionSample;
+using Anticheat::ShotCorrelatorCore;
+using Anticheat::ShotView;
+using Anticheat::TeamCT;
+using Anticheat::TeamT;
+using Anticheat::Vec3;
 
-namespace
-{
-constexpr int Attacker = 0;
-constexpr int Victim = 1;
-constexpr double Now = 1000.0;
-constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
+static constexpr int Attacker = 0;
+static constexpr int Victim = 1;
+static constexpr double Now = 1000.0;
+static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
 
-std::array<PositionSample, MaxSlots> Frame(float victimX = 500.0f, bool teleported = false)
+static std::array<PositionSample, MaxSlots> Frame(float victimX = 500.0f, bool teleported = false)
 {
     std::array<PositionSample, MaxSlots> players{};
     players[Attacker] = {.Origin = {0.0f, 0.0f, 0.0f}, .EyePos = Eye, .Team = TeamT, .Valid = true, .Alive = true};
@@ -25,7 +34,7 @@ std::array<PositionSample, MaxSlots> Frame(float victimX = 500.0f, bool teleport
     return players;
 }
 
-CmdSample AimCmd(int32_t num, int32_t clientTick, float yaw)
+static CmdSample AimCmd(int32_t num, int32_t clientTick, float yaw)
 {
     CmdSample cmd;
     cmd.CmdNum = num;
@@ -52,7 +61,7 @@ struct Incident
     int32_t OlderClientTickOffset = 1;  // 2 breaks the strict adjacency the rule requires
 };
 
-std::optional<Finding> Run(ShotCorrelatorCore& correlator, AimbotCore& aimbot, const Incident& incident)
+static std::optional<Finding> Run(ShotCorrelatorCore& correlator, AimbotCore& aimbot, const Incident& incident)
 {
     correlator.CaptureFrame(incident.Tick - 1, Frame(incident.VictimX, incident.Teleported));
     correlator.CaptureFrame(incident.Tick, Frame(incident.VictimX, incident.Teleported));
@@ -70,7 +79,6 @@ std::optional<Finding> Run(ShotCorrelatorCore& correlator, AimbotCore& aimbot, c
     shot.FireTick = incident.Tick;
     return aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);
 }
-}  // namespace
 
 TEST_CASE("The wide convergence branch counts at a snap over 10 degrees collapsing below a fifth of the error")
 {

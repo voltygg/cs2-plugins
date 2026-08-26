@@ -17,11 +17,13 @@
 #include <string>
 #include <utility>
 
+using AdminSystem::Punishments::PermissionFor;
+using AdminSystem::Punishments::PunishType;
+
 namespace AdminSystem::Admin::Menu
 {
 
-using namespace AdminSystem::Punishments;
-using VoltMod::Menu::MenuBuilder;
+using VoltMod::MenuBuilder;
 
 std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int adminSlot)
 {
@@ -41,7 +43,7 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int ad
         tr.Get("action.unmute", adminSlot), [&app](int slot) { return BuildUnmuteMenu(app, slot); },
         app.Access.HasPermission(admin->GetSteamID(), Permission::Mute));
 
-    VoltMod::Menu::AppendPlayerRows(
+    VoltMod::AppendPlayerRows(
         builder, app.Runtime.Players, adminSlot,
         [&app](int admin, int target) {
             auto actions = BuildPunishActionsMenu(app, admin, target);

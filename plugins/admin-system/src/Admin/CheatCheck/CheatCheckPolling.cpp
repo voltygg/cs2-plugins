@@ -4,11 +4,11 @@
 #include "CheatCheckView.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Http/HttpClient.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <algorithm>
@@ -17,16 +17,13 @@
 namespace AdminSystem::Admin::CheatCheck
 {
 
-using VoltMod::Core::Time;
-namespace Log = VoltMod::Core::Log;
-namespace ChatColors = VoltMod::Messaging::ChatColors;
+using VoltMod::Time;
+namespace Log = VoltMod::Log;
+namespace ChatColors = VoltMod::ChatColors;
 
-namespace
-{
 // A site blip can briefly report a joined suspect as absent; never resume with less than this,
 // so they aren't kicked before the next poll can correct the picture.
-constexpr int64_t MinResumeSec = 15;
-}  // namespace
+static constexpr int64_t MinResumeSec = 15;
 
 void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 {
@@ -50,7 +47,7 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 
     pc.PollInFlight = true;
     const uint64_t seq = pc.RequestSeq;
-    VoltMod::Http::Get(_rt.Http, std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
+    VoltMod::Get(_rt.Http, std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
         OnPresenceResponse(targetSlot, seq, result);
     });
 }

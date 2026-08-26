@@ -6,17 +6,24 @@
 #include <iterator>
 #include <string_view>
 
-using namespace Anticheat;
+using Anticheat::Decide;
+using Anticheat::DetectionCatalog;
+using Anticheat::DetectionInfo;
+using Anticheat::FunnelDecision;
+using Anticheat::FunnelInput;
+using Anticheat::FunnelOutcome;
+using Anticheat::MaxSlots;
+using Anticheat::Mode;
+using Anticheat::ParseMode;
+using Anticheat::PunishmentLatch;
+using Anticheat::PunishmentLevel;
 
-namespace
-{
-constexpr int64_t SteamId = 76561198000000000LL;
+static constexpr int64_t SteamId = 76561198000000000LL;
 
-FunnelInput Input(Mode mode, bool kickOnly = false, PunishmentLevel issued = PunishmentLevel::None)
+static FunnelInput Input(Mode mode, bool kickOnly = false, PunishmentLevel issued = PunishmentLevel::None)
 {
     return {.SteamId = SteamId, .Whitelisted = false, .CurrentMode = mode, .KickOnly = kickOnly, .Issued = issued};
 }
-}  // namespace
 
 TEST_CASE("Every detection has a distinct display name and a console token free of whitespace")
 {

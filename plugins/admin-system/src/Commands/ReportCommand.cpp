@@ -6,10 +6,12 @@
 #include <VoltMod/Api.hpp>
 #include <string>
 
+using VoltMod::CommandContext;
+using VoltMod::CommandResult;
+
 namespace AdminSystem::Commands
 {
 
-using namespace VoltMod::Commands;
 using AdminSystem::Reports::ReportDenial;
 
 void RegisterReportCommand(VoltMod::CommandManager& commands, App& app)

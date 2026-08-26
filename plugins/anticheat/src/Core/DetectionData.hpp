@@ -40,7 +40,7 @@ constexpr bool ConstraintIsNumeric(CvarConstraint constraint)
     return constraint != CvarConstraint::Off && constraint != CvarConstraint::On;
 }
 
-namespace Detail
+namespace Internal
 {
 
 template <class TEnum, size_t N>
@@ -84,7 +84,7 @@ inline void RequireOnly(const nlohmann::json& object, std::initializer_list<std:
     }
 }
 
-}  // namespace Detail
+}  // namespace Internal
 
 /** Field names are the JSON keys, so they keep their lowercase spelling. */
 struct CvarRule
@@ -105,14 +105,15 @@ inline void from_json(const nlohmann::json& j, CvarRule& rule)
 {
     if (!j.is_object())
         throw nlohmann::json::type_error::create(302, "each cvar rule must be an object", &j);
-    Detail::RequireOnly(j, {"name", "tier", "constraint", "value", "max", "cheatProtected", "kickOnly"});
+    Internal::RequireOnly(j, {"name", "tier", "constraint", "value", "max", "cheatProtected", "kickOnly"});
 
     j.at("name").get_to(rule.name);
     if (rule.name.empty())
         throw nlohmann::json::other_error::create(501, "a cvar rule needs a name", &j);
 
-    rule.tier = j.contains("tier") ? Detail::ParseToken(j.at("tier"), "tier", Detail::TierNames) : CvarTier::Queried;
-    rule.constraint = Detail::ParseToken(j.at("constraint"), "constraint", Detail::ConstraintNames);
+    rule.tier =
+        j.contains("tier") ? Internal::ParseToken(j.at("tier"), "tier", Internal::TierNames) : CvarTier::Queried;
+    rule.constraint = Internal::ParseToken(j.at("constraint"), "constraint", Internal::ConstraintNames);
 
     // Require numeric bounds so a missing value cannot become an implicit zero.
     if (ConstraintIsNumeric(rule.constraint))
@@ -138,7 +139,7 @@ inline void from_json(const nlohmann::json& j, DetectionData& data)
 {
     if (!j.is_object())
         throw nlohmann::json::type_error::create(302, "detections must be a JSON object", &j);
-    Detail::RequireOnly(j, {"dllEventBlacklist", "cvarRules"});
+    Internal::RequireOnly(j, {"dllEventBlacklist", "cvarRules"});
 
     // A renamed section must fail instead of silently disabling its detector.
     j.at("dllEventBlacklist").get_to(data.dllEventBlacklist);
@@ -146,6 +147,6 @@ inline void from_json(const nlohmann::json& j, DetectionData& data)
 }
 
 /** The event/convar tables the detections compare against. */
-using DetectionDataManager = VoltMod::App::JsonConfig<DetectionData>;
+using DetectionDataManager = VoltMod::JsonConfig<DetectionData>;
 
 }  // namespace Anticheat

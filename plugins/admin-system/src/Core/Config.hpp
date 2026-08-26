@@ -11,17 +11,17 @@
 #include <string_view>
 #include <vector>
 
-namespace VoltMod::Database
+namespace VoltMod
 {
 // ADL requires this mapper in PostgresConfig's namespace. Keeping it here also
 // keeps nlohmann out of the framework header.
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PostgresConfig, host, port, database, username, password, sslMode)
-}  // namespace VoltMod::Database
+}  // namespace VoltMod
 
 namespace AdminSystem::Core
 {
 
-using DatabaseConfig = VoltMod::Database::PostgresConfig;
+using DatabaseConfig = VoltMod::PostgresConfig;
 
 inline constexpr std::string_view AddonName = "admin-system";
 

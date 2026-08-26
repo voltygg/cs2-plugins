@@ -2,8 +2,8 @@
 #include "EffectRegistry.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Runtime.hpp>
 #include <VoltMod/Entities/PlayerController.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <array>
 #include <cstdint>
 
@@ -12,20 +12,17 @@ namespace AdminSystem::Admin::Effects
 
 using Actions::ActionContext;
 
-namespace
-{
-constexpr uint8_t RenderModeNormal = 0;
-constexpr uint8_t RenderModeTransTexture = 3;
-constexpr uint32_t ColorOpaqueWhite = 0xFFFFFFFFu;
+static constexpr uint8_t RenderModeNormal = 0;
+static constexpr uint8_t RenderModeTransTexture = 3;
+static constexpr uint32_t ColorOpaqueWhite = 0xFFFFFFFFu;
 
 // Bright RGBA values cycled at 200 ms - red / orange / yellow / green / blue / magenta.
-constexpr std::array<uint32_t, 6> Palette = {
+static constexpr std::array<uint32_t, 6> Palette = {
     0xFF0000FFu, 0xFF8000FFu, 0xFFFF00FFu, 0x00FF00FFu, 0x0000FFFFu, 0xFF00FFFFu,
 };
 
-constexpr int DiscoIntervalMs = 200;
-constexpr int DiscoDurationSec = 15;
-}  // namespace
+static constexpr int DiscoIntervalMs = 200;
+static constexpr int DiscoDurationSec = 15;
 
 const Effect Disco{.Permission = Flag(Permission::Fun),
                    .Id = static_cast<int>(EffectId::Disco),

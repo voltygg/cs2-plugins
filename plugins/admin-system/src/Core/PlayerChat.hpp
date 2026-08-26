@@ -1,35 +1,19 @@
 #pragma once
 
+#include "../Admin/AdminManager.hpp"
+#include "../Punishments/PunishmentManager.hpp"
+#include "ChatService.hpp"
+#include "Config.hpp"
+
 #include <VoltMod/Core/Throttle.hpp>
+#include <VoltMod/Players/Player.hpp>
+#include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <optional>
 #include <string_view>
 
-namespace VoltMod
-{
-class Runtime;
-}
-
-namespace VoltMod::Players
-{
-class Player;
-}
-
-namespace AdminSystem::Admin
-{
-class AdminManager;
-}
-
-namespace AdminSystem::Punishments
-{
-class PunishmentManager;
-}
-
 namespace AdminSystem::Core
 {
-
-class ChatService;
-class ConfigManager;
 
 /**
  * The inbound half of chat: what a player says, and what they are allowed to say.
@@ -52,20 +36,20 @@ public:
      * admin chat with a colored prefix. Returns true when the original message should be
      * superseded (the hook caller must skip the engine's default broadcast).
      */
-    bool HandleSay(VoltMod::Players::Player* player, std::string_view message, bool isSayTeam);
+    bool HandleSay(VoltMod::Player* player, std::string_view message, bool isSayTeam);
 
     /**
      * Re-emit an admin's regular chat with their group's colored prefix attached.
      * Caller is expected to SUPERCEDE the original say/say_team in the chat hook.
      */
-    void RebroadcastAdminChat(const VoltMod::Players::Player* admin, std::string_view message, bool teamOnly);
+    void RebroadcastAdminChat(const VoltMod::Player* admin, std::string_view message, bool teamOnly);
 
     /**
      * Notify a voice-muted player that the engine is suppressing their microphone. Rate-limited
      * to avoid spam: the SetClientListening hook fires once per (receiver, sender) pair every
      * time the player keys voice, which can easily hit dozens of calls in a single press.
      */
-    void NotifyVoiceMuted(VoltMod::Players::Player* player);
+    void NotifyVoiceMuted(VoltMod::Player* player);
 
 private:
     VoltMod::Runtime& _rt;

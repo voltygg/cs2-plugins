@@ -3,20 +3,32 @@
 #include <doctest/doctest.h>
 #include <vector>
 
-using namespace Anticheat;
+using Anticheat::CvarConstraint;
+using Anticheat::CvarRule;
+using Anticheat::CvarRuleTable;
+using Anticheat::CvarsPerPoll;
+using Anticheat::CvarTier;
+using Anticheat::CvarVerdict;
+using Anticheat::DetectionKind;
+using Anticheat::Finding;
+using Anticheat::InvalidCvarRules;
+using Anticheat::MissingRepliesBeforeEvidence;
+using Anticheat::PollDelaySec;
+using Anticheat::PollIntervalMaxSec;
+using Anticheat::PollIntervalMinSec;
+using Anticheat::ShouldEnforceCheatCvars;
+using Anticheat::SvCheatsPropagationGraceSec;
 
-namespace
-{
-constexpr int Slot = 2;
-constexpr bool Enforcing = true;
-constexpr bool NotEnforcing = false;
+static constexpr int Slot = 2;
+static constexpr bool Enforcing = true;
+static constexpr bool NotEnforcing = false;
 
 /**
  * The rules the plugin ships in configs/detections.jsonc. The engine is what these cases test, so
  * the table is pinned here rather than read from the file - a deployment edit to the data must not
  * be able to turn a rule test green.
  */
-std::vector<CvarRule> ShippedRules()
+static std::vector<CvarRule> ShippedRules()
 {
     using enum CvarConstraint;
     return {
@@ -34,7 +46,7 @@ std::vector<CvarRule> ShippedRules()
     };
 }
 
-const CvarRuleTable& Rules()
+static const CvarRuleTable& Rules()
 {
     static const CvarRuleTable table = [] {
         CvarRuleTable loaded;
@@ -44,35 +56,34 @@ const CvarRuleTable& Rules()
     return table;
 }
 
-InvalidCvarRules MakeRules()
+static InvalidCvarRules MakeRules()
 {
     InvalidCvarRules rules;
     rules.LoadRules(ShippedRules());
     return rules;
 }
 
-CvarVerdict EvaluateCvar(std::string_view name, std::string_view value, bool enforcing)
+static CvarVerdict EvaluateCvar(std::string_view name, std::string_view value, bool enforcing)
 {
     return Rules().Evaluate(name, value, enforcing);
 }
 
-CvarVerdict EvaluateMissingCvar(std::string_view name, std::string_view statusName, bool enforcing, int replies)
+static CvarVerdict EvaluateMissingCvar(std::string_view name, std::string_view statusName, bool enforcing, int replies)
 {
     return Rules().EvaluateMissing(name, statusName, enforcing, replies);
 }
 
-bool Rejects(std::string_view name, std::string_view value, bool enforcing = Enforcing)
+static bool Rejects(std::string_view name, std::string_view value, bool enforcing = Enforcing)
 {
     const CvarVerdict verdict = EvaluateCvar(name, value, enforcing);
     return verdict.Checked && verdict.Invalid;
 }
 
-bool Accepts(std::string_view name, std::string_view value, bool enforcing = Enforcing)
+static bool Accepts(std::string_view name, std::string_view value, bool enforcing = Enforcing)
 {
     const CvarVerdict verdict = EvaluateCvar(name, value, enforcing);
     return verdict.Checked && !verdict.Invalid;
 }
-}  // namespace
 
 TEST_CASE("m_yaw must be a number at or below three tenths and only ever costs a kick")
 {

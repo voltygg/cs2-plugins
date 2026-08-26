@@ -6,7 +6,7 @@
 namespace AdminSystem::Database
 {
 
-using VoltMod::Core::Time;
+using VoltMod::Time;
 
 void PlayerRepository::RecordConnect(int64_t steamId, const std::string& name, const std::string& ipAddress)
 {

@@ -17,19 +17,16 @@
 namespace Anticheat
 {
 
-using VoltMod::Core::IsValidSlot;
-namespace Log = VoltMod::Core::Log;
+using VoltMod::IsValidSlot;
+namespace Log = VoltMod::Log;
 
-namespace
-{
-constexpr double SimulationSeconds = 10.0;
+static constexpr double SimulationSeconds = 10.0;
 /** Three is the middle jitter period AntiAim looks for. */
-constexpr int JitterPeriod = 3;
+static constexpr int JitterPeriod = 3;
 /** Well past AntiAim's 50.01 degree roll ceiling. */
-constexpr float BadRoll = 60.0f;
+static constexpr float BadRoll = 60.0f;
 /** Chest height, so the lock reads as a body point rather than a graze. */
-constexpr float LockHeight = 46.0f;
-}  // namespace
+static constexpr float LockHeight = 46.0f;
 
 void CheatSimulator::Initialize()
 {
@@ -138,7 +135,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
     Vec3 best;
     float bestDistance = 0.0f;
     bool found = false;
-    for (const VoltMod::Players::Player* player : _rt.Players.GetAllPlayers())
+    for (const VoltMod::Player* player : _rt.Players.GetAllPlayers())
     {
         const int other = player ? player->GetSlot() : -1;
         if (!IsValidSlot(other) || other == slot)
@@ -217,7 +214,7 @@ void CheatSimulator::OnFilter(int slot, VoltMod::UserCmdView& cmd)
         cmd.InputHistoryTotalCount = 1;
         cmd.InputHistorySamples[0] = {
             .HasViewAngles = true, .ViewPitch = cmd.ViewPitch, .ViewYaw = cmd.ViewYaw + state.param};
-        cmd.Attack1StartHistoryIndex = (cmd.ButtonsHeld & VoltMod::Entities::IN_ATTACK) != 0 ? 0 : -1;
+        cmd.Attack1StartHistoryIndex = (cmd.ButtonsHeld & VoltMod::IN_ATTACK) != 0 ? 0 : -1;
         break;
     case Kind::Off:
         break;

@@ -10,7 +10,7 @@ namespace Anticheat
 
 LagEstimate MeasureVisualLag(VoltMod::Runtime& rt, int slot)
 {
-    if (!VoltMod::Core::IsValidSlot(slot) || !rt.NetChannels.GetNetInfo(slot))
+    if (!VoltMod::IsValidSlot(slot) || !rt.NetChannels.GetNetInfo(slot))
         return {};
 
     const char* interp = rt.NetChannels.GetUserInfoCvar(slot, "cl_interp_ratio");

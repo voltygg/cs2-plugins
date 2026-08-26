@@ -1,19 +1,11 @@
 #pragma once
 
+#include "../../Core/ChatService.hpp"
+#include "../../Core/Config.hpp"
 #include "PendingCheck.hpp"
 
+#include <VoltMod/Runtime.hpp>
 #include <string>
-
-namespace VoltMod
-{
-class Runtime;
-}
-
-namespace AdminSystem::Core
-{
-class ChatService;
-class ConfigManager;
-}  // namespace AdminSystem::Core
 
 namespace AdminSystem::Admin::CheatCheck
 {

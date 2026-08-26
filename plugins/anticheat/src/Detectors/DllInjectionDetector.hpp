@@ -2,6 +2,7 @@
 
 // Detect injected listeners that subscribe to events unused by the stock HUD.
 
+#include "../AnticheatTypes.hpp"
 #include "Core/DetectionData.hpp"
 #include "Core/Samples.hpp"
 
@@ -11,8 +12,6 @@
 
 namespace Anticheat
 {
-
-class AntiCheatManager;
 
 class DllInjectionDetector
 {

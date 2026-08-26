@@ -20,20 +20,20 @@
 #include <utility>
 #include <vector>
 
+using AdminSystem::Punishments::IssuePunishment;
+using AdminSystem::Punishments::IsTimed;
+using AdminSystem::Punishments::PermissionFor;
+using AdminSystem::Punishments::PunishType;
+
 namespace AdminSystem::Admin::Menu
 {
 
-using namespace AdminSystem::Punishments;
-
-using VoltMod::Core::Strings;
-using VoltMod::Menu::MenuBuilder;
+using VoltMod::MenuBuilder;
+using VoltMod::Strings;
 using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 
-namespace
-{
-
 /** True if @p adminSlot may still punish @p targetSlot with @p type's permission. */
-bool CanStillPunish(App& app, int adminSlot, int targetSlot, PunishType type)
+static bool CanStillPunish(App& app, int adminSlot, int targetSlot, PunishType type)
 {
     auto& plrMgr = app.Runtime.Players;
     auto* admin = plrMgr.GetPlayerBySlot(adminSlot);
@@ -45,7 +45,7 @@ bool CanStillPunish(App& app, int adminSlot, int targetSlot, PunishType type)
 
 /** Flow validation: the target may have left (or the slot rehosts another player) and the
  *  admin's flags/immunity may have changed (e.g. !admin_reload) while the menu was open. */
-std::optional<std::string> ValidatePending(App& app, int slot, const PendingPunishment& pending)
+static std::optional<std::string> ValidatePending(App& app, int slot, const PendingPunishment& pending)
 {
     if (!app.Runtime.Players.GetPlayerBySlotIfSteamId(pending.TargetSlot, pending.TargetSteamId))
         return "punish.targetLost";
@@ -54,7 +54,7 @@ std::optional<std::string> ValidatePending(App& app, int slot, const PendingPuni
     return std::nullopt;
 }
 
-void Issue(App& app, int adminSlot, PendingPunishment& pending)
+static void Issue(App& app, int adminSlot, PendingPunishment& pending)
 {
     auto& tr = app.Runtime.Translations;
     auto* admin = app.Runtime.Players.GetPlayerBySlot(adminSlot);
@@ -77,7 +77,7 @@ void Issue(App& app, int adminSlot, PendingPunishment& pending)
 }
 
 /** The validated confirm -> issue tail every punish path shares. */
-PunishFlowT::Ptr MakeBaseFlow(App& app, PendingPunishment pending)
+static PunishFlowT::Ptr MakeBaseFlow(App& app, PendingPunishment pending)
 {
     auto type = pending.Type;
     return PunishFlowT::Create(app.Runtime.Menus, std::move(pending))
@@ -101,8 +101,6 @@ PunishFlowT::Ptr MakeBaseFlow(App& app, PendingPunishment pending)
             [&app](int slot) { return app.Runtime.Translations.Get("punish.cancel", slot); })
         ->OnFinish([&app](int adminSlot, PendingPunishment& p) { Issue(app, adminSlot, p); });
 }
-
-}  // namespace
 
 void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pending)
 {

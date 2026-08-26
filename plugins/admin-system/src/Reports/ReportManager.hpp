@@ -1,27 +1,15 @@
 #pragma once
 
+#include "../Core/Config.hpp"
+
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Throttle.hpp>
+#include <VoltMod/Database/PostgresDatabase.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
-
-namespace VoltMod
-{
-class Runtime;
-}
-
-namespace VoltMod::Database
-{
-class PostgresDatabase;
-}
-
-namespace AdminSystem::Core
-{
-class ConfigManager;
-}
 
 namespace AdminSystem::Reports
 {
@@ -53,7 +41,7 @@ struct ReportGate
 class ReportManager
 {
 public:
-    ReportManager(VoltMod::Database::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime)
+    ReportManager(VoltMod::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime)
         : _db(db), _config(config), _rt(runtime)
     {}
 
@@ -72,7 +60,7 @@ public:
                 const std::string& reasonText, std::function<void(bool ok)> onDone);
 
 private:
-    VoltMod::Database::PostgresDatabase& _db;
+    VoltMod::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
     VoltMod::Runtime& _rt;
 

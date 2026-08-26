@@ -3,14 +3,19 @@
 #include <array>
 #include <doctest/doctest.h>
 
-using namespace Anticheat;
+using Anticheat::AimAngles;
+using Anticheat::CmdSample;
+using Anticheat::MaxSlots;
+using Anticheat::PositionSample;
+using Anticheat::ShotCorrelatorCore;
+using Anticheat::ShotView;
+using Anticheat::TeamCT;
+using Anticheat::TeamT;
 
-namespace
-{
-constexpr int Shooter = 0;
-constexpr int Victim = 1;
+static constexpr int Shooter = 0;
+static constexpr int Victim = 1;
 
-CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f)
+static CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f)
 {
     CmdSample cmd;
     cmd.CmdNum = num;
@@ -21,7 +26,7 @@ CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f)
     return cmd;
 }
 
-std::array<PositionSample, MaxSlots> Players()
+static std::array<PositionSample, MaxSlots> Players()
 {
     std::array<PositionSample, MaxSlots> players{};
     players[Shooter] = {
@@ -32,12 +37,11 @@ std::array<PositionSample, MaxSlots> Players()
 }
 
 /** One command, simulated at @p serverTick, ready to be matched by a fire event. */
-void FeedSimulated(ShotCorrelatorCore& core, int32_t cmdNum, int32_t serverTick, float yaw = 0.0f)
+static void FeedSimulated(ShotCorrelatorCore& core, int32_t cmdNum, int32_t serverTick, float yaw = 0.0f)
 {
     core.OnCommand(Shooter, Cmd(cmdNum, serverTick, yaw));
     core.OnSimulated(Shooter, cmdNum, serverTick, {0.0f, 0.0f, 64.0f}, false);
 }
-}  // namespace
 
 TEST_CASE("A command whose attack angles were capped away never enters the ring")
 {

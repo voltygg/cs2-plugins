@@ -10,13 +10,8 @@
 namespace AdminSystem::Maps
 {
 
-namespace
-{
-
 /** The engine only renders its own vote tokens; arbitrary text does not appear. */
-constexpr const char* VoteTitleToken = "#SFUI_vote_changelevel";
-
-}  // namespace
+static constexpr const char* VoteTitleToken = "#SFUI_vote_changelevel";
 
 VoteState::VoteState(VoltMod::Runtime& runtime, const Core::ConfigManager& config, MapCycleState& cycle)
     : _rt(runtime), _config(config), _cycle(cycle)
