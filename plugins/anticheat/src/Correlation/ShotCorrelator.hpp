@@ -31,7 +31,7 @@ private:
     void OnFrame();
     void OnWeaponFire(const VoltMod::WeaponFire& fire);
     void OnBulletImpact(const VoltMod::BulletImpact& impact);
-    void OnPlayerHurt(IGameEvent* event);
+    void OnPlayerHurt(const VoltMod::PlayerHurt& hurt);
     void OnPlayerDeath(const VoltMod::PlayerDeath& death);
 
     /** World state for the frame, plus the userid table bullet impacts resolve their shooter with. */
@@ -40,11 +40,22 @@ private:
     /** Score every shot old enough that all of its events have arrived. */
     void FinalizeSilentAim(int slot, int32_t serverTick, double nowSec);
 
+    /** True while @p slot is inside the post-teleport window, where origin and view angles have
+     *  jumped and anything measuring motion across ticks reads as impossible. */
+    bool JustTeleported(int slot) const;
+
     AntiCheatManager& _manager;
     VoltMod::Runtime& _rt;
-    std::vector<VoltMod::Subscription> _subscriptions;
     std::array<int32_t, MaxSlots> _userIds{};
+    /** Server time of each slot's last teleport, 0 for none. Fed by the framework's Teleported
+     *  event, which is also what arms the per-pawn hook; bound to Slots.Changed so a stamp can
+     *  never outlive its player. */
+    VoltMod::PerSlot<float> _lastTeleport;
     bool _userIdsResolved = false;  // false when the engine interface never answered
+
+    /** Registrations, released together. Declared last: reverse member destruction stops the
+     *  handlers before the state they write to goes away. */
+    std::vector<VoltMod::Subscription> _subscriptions;
 };
 
 }  // namespace Anticheat

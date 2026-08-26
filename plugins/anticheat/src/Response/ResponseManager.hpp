@@ -50,6 +50,8 @@ private:
     DiscordReporter& _reporter;
     PunishmentLatch _latch;
     VoltMod::PairThrottle<int64_t, int> _alertThrottle{AlertThrottleSec};
+    /** Deferred kick per slot: a new one replaces whatever was pending, and unload cancels it. */
+    VoltMod::PerSlot<VoltMod::Subscription> _pendingKick;
 };
 
 }  // namespace Anticheat

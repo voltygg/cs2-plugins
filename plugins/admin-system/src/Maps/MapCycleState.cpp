@@ -42,7 +42,7 @@ void MapCycleState::ChangeAfter(const MapEntry& map, int64_t delayMs)
 {
     // Captures the engine service rather than `this`: the scheduler belongs to the runtime and
     // outlives this App-owned object, so a pending change must not reach back into plugin state.
-    _rt.Scheduler.Delay(delayMs, [&maps = _rt.Maps, map] {
+    _pendingChange = _rt.Scheduler.Delay(delayMs, [&maps = _rt.Maps, map] {
         if (map.WorkshopId != 0)
             maps.ChangeToWorkshop(map.WorkshopId);
         else

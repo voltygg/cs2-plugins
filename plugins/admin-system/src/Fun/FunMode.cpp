@@ -23,10 +23,10 @@ void FunMode::Start()
 {
     auto& events = _rt.Events;
 
-    _subs.push_back(events.Listen<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) { ApplyRoundStart(); }));
+    _subs.push_back(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) { ApplyRoundStart(); }));
 
     // Per spawn, so a player who joins mid-round still gets the round's rules.
-    _subs.push_back(events.Listen<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
+    _subs.push_back(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
         if (e.Slot >= 0 && _state.IsOn(Toggle::KnifeRound))
             GiveKnifeOnly(e.Slot);
     }));

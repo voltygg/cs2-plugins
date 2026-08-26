@@ -41,31 +41,26 @@ void AntiCheatManager::Initialize()
     _dumpTicks.BindReset(_rt.Slots);
     _simulator.Initialize();
 
-    // The teleport tracker binds itself from its own spawn listener, so it must be enabled here:
-    // registering a listener while the event service dispatches would mutate the map it walks.
-    _rt.Teleports.Enable();
-
-    _rt.MovementHook.Install();
-    _subs.push_back(
-        _rt.MovementHook.ListenPreCmd([this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); }));
-    _subs.push_back(_rt.Players.ListenSlotChange([this](int slot) { OnSlotChanged(slot); }));
+    // Subscribing installs the movement hook, which every aim module then feeds off.
+    _subs.push_back(_rt.MovementHook.PreCmd +=
+                    [this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); });
+    _subs.push_back(_rt.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
 
     // sv_cheats going off starts a propagation grace before client values mean anything again.
-    _subs.push_back(_rt.ConVars.OnChange([this](const char* name, const char*, const char* newValue) {
-        const std::string_view changed = name ? name : "";
-        if (changed == "mp_teammates_are_enemies")
+    _subs.push_back(_rt.ConVars.Changed += [this](const VoltMod::ConVarChange& change) {
+        if (change.Name == "mp_teammates_are_enemies")
         {
             RefreshTeamRules();
             ResetEvidence();
             return;
         }
-        if (changed != "sv_cheats")
+        if (change.Name != "sv_cheats")
             return;
-        const bool enabled = newValue && std::string_view(newValue) != "0" && std::string_view(newValue) != "false";
+        const bool enabled = !change.NewValue.empty() && change.NewValue != "0" && change.NewValue != "false";
         if (!enabled)
             _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
         ResetEvidence();
-    }));
+    });
     _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
     RefreshTeamRules();

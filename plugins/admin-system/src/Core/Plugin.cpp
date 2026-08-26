@@ -57,30 +57,22 @@ void AdminSystemPlugin::OnPlayerConnect(Player* player)
         app.Runtime.Translations.SetPlayerLanguage(player->GetSlot(), row->Language);
 
     // A frozen admin gets told up front instead of discovering it on their first denied command.
-    // Deferred a tick like the ban kick below so the freshly-connected client receives the line.
     if (app.Freeze.IsFrozen(player->GetSteamID()))
-    {
-        int64_t steamId = player->GetSteamID();
-        app.Runtime.Scheduler.NextTick([&app, steamId] { app.Freeze.NotifyFrozen(steamId); });
-    }
+        app.Freeze.NotifyFrozenSoon(player->GetSlot(), player->GetSteamID());
 
-    // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so we defer
-    // to the next game frame via the scheduler -- the player is fully connected by then. Bots have
-    // no real SteamID and never match an active ban.
+    // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so
+    // KickDeferred waits a frame -- the player is fully connected by then. Bots have no real
+    // SteamID and never match an active ban.
     if (auto ban = app.Punishments.GetActiveBan(player->GetSteamID()))
     {
         int slot = player->GetSlot();
         int64_t steamId = player->GetSteamID();
         // Built now, while the ban row is in hand, so the disconnect screen carries the expiry
         // and appeal link rather than the bare reason.
-        std::string reason = AdminSystem::Punishments::BuildBanNotice(app.Runtime.Translations, app.Config.GetAppeal(),
-                                                                      ban->Reason, ban->ExpiresAt, steamId, slot);
-        app.Runtime.Scheduler.NextTick([&rt = app.Runtime, slot, steamId, reason] {
-            // The seat can change hands before the deferred kick lands; kicking whoever took it
-            // is not what the ban says.
-            if (rt.Players.GetPlayerBySlotIfSteamId(slot, steamId))
-                rt.Entities.Controller(slot).Kick(reason.c_str());
-        });
+        app.Punishments.KickDeferred(
+            slot, steamId,
+            AdminSystem::Punishments::BuildBanNotice(app.Runtime.Translations, app.Config.GetAppeal(), ban->Reason,
+                                                     ban->ExpiresAt, steamId, slot));
     }
 }
 

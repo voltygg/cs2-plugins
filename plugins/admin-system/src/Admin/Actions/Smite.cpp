@@ -28,12 +28,9 @@ const Action Smite{Flag(Permission::Fun), /*requireAlive*/ true, [](const Action
                            }
                        }
 
-                       int slot = ctx.Target->GetSlot();
-                       ctx.Rt.Scheduler.Delay(SmiteSlayDelayMs, [&entities = ctx.Rt.Entities, slot]() {
-                           VoltMod::PlayerController pc = entities.Controller(slot);
-                           if (pc.IsValid() && pc.IsAlive())
-                               pc.Slay();
-                       });
+                       // Delayed so the blast plays before the target drops; Pawns owns the timer,
+                       // which is what keeps it off the next occupant of the slot.
+                       ctx.Rt.Pawns.SlayDelayed(ctx.Target->GetSlot(), SmiteSlayDelayMs);
                        return "broadcast.smote";
                    }};
 

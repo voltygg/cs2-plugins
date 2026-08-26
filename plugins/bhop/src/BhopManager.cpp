@@ -23,17 +23,19 @@ void BhopManager::Initialize()
     RegisterConsoleCommands();
 
     auto& events = _rt.Events;
-    _subs.push_back(
-        events.Listen<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
-    _subs.push_back(events.Listen<VoltMod::PlayerJump>([this](const VoltMod::PlayerJump& e) { OnPlayerJump(e.Slot); }));
+    _subs.push_back(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
+    _subs.push_back(events.On<VoltMod::PlayerJump>([this](const VoltMod::PlayerJump& e) { OnPlayerJump(e.Slot); }));
     // Gamemode cfg re-exec on map change can reset the convars; re-asserting is cheap.
-    _subs.push_back(events.Listen<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) {
+    _subs.push_back(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) {
         if (_mode == Mode::Enabled)
             _conVars.ApplyGlobal();
     }));
 
-    _subs.push_back(_rt.MovementHook.ListenPre([this](int slot) { OnRunCommandPre(slot); }));
-    _subs.push_back(_rt.MovementHook.ListenPost([this](int slot) { OnRunCommandPost(slot); }));
+    // Only grants need this pair - subtick movement ignores the scoped sv_autobunnyhopping
+    // override, so granted slots get a server-side flip instead. Subscribing installs the hook,
+    // and both handlers no-op in the other mode.
+    _subs.push_back(_rt.MovementHook.Pre += [this](int slot) { OnRunCommandPre(slot); });
+    _subs.push_back(_rt.MovementHook.Post += [this](int slot) { OnRunCommandPost(slot); });
 
     // Grants need a server-side hop because subtick movement ignores the scoped
     // sv_autobunnyhopping override. Run after simulation so landing state is available.
@@ -64,11 +66,6 @@ void BhopManager::ApplySettings()
 
     if (_mode == Mode::Enabled)
         _conVars.ApplyGlobal();  // sets and replicates the overrides server-wide
-    else
-        // Only grants need the per-usercmd hook: subtick movement ignores the scoped
-        // sv_autobunnyhopping override, so those slots get a server-side hop instead. Install()
-        // is a no-op once installed, so a ReloadSettings mode flip hooks exactly once.
-        _rt.MovementHook.Install();
 
     Log::Info("Bhop mode: {} ({} convar overrides).", _mode == Mode::Enabled ? "enabled" : "grants", _conVars.Count());
 }

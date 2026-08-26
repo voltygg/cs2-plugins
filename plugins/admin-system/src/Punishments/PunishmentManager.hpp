@@ -71,11 +71,22 @@ public:
     /** Mark expired bans/mutes inactive in the DB and rebuild the in-memory caches (all async). */
     void ExpireOldPunishments();
 
+    /**
+     * Kick @p slot on the next game frame, but only if @p steamId still occupies it.
+     *
+     * Deferred because both callers reach this from inside an engine hook on the target - the
+     * connect hook and, through IAdminActions, an anticheat detection - where kicking disconnects
+     * the client mid-virtual-call. The timer is owned per slot, so a reconnect replaces it and
+     * unload drops it.
+     */
+    void KickDeferred(int slot, int64_t steamId, std::string reason);
+
 private:
     VoltMod::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;
+    VoltMod::PerSlot<VoltMod::Subscription> _pendingKick;
 
     /** Re-query the three active lists off-thread and swap the caches when the rows arrive. */
     void RefreshCachesAsync();

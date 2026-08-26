@@ -64,12 +64,18 @@ public:
     /** Tell a frozen admin their privileges are suspended, if they are on this server. */
     void NotifyFrozen(int64_t steamId);
 
+    /** @ref NotifyFrozen on the next game frame, for the connect hook: a client that has only
+     *  just connected does not render a line sent from inside it. Owned per slot, so a reconnect
+     *  replaces the pending notice and unload drops it. */
+    void NotifyFrozenSoon(int slot, int64_t steamId);
+
 private:
     VoltMod::PostgresDatabase& _db;
     const Core::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;
     AdminManager& _admins;
+    VoltMod::PerSlot<VoltMod::Subscription> _pendingNotice;
 
     /** Plain admin_activity write, no enforcement attached. */
     void RecordAudit(int64_t adminSteamId, const std::string& adminName, const std::string& action,

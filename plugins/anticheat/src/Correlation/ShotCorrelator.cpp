@@ -4,8 +4,6 @@
 #include "Core/Geometry.hpp"
 #include "Detectors/AimlockDetector.hpp"
 
-#include <igameevents.h>
-
 #include <VoltMod/Core/Slot.hpp>
 #include <algorithm>
 #include <cmath>
@@ -22,8 +20,6 @@ namespace Anticheat
 static constexpr float TeleportGraceSec = 5.0f;
 /** A shot older than this has received every event it can, so SilentAim may score it. */
 static constexpr int SilentFinalizeAgeTicks = 2;
-static constexpr int HitGroupGeneric = 0;
-static constexpr int HitGroupHead = 1;
 
 static Vec3 ToVec3(const Vector& v)
 {
@@ -93,22 +89,29 @@ void ShotCorrelator::Initialize()
 
     auto& events = _rt.Events;
 
-    _subscriptions.push_back(
-        _rt.MovementHook.ListenPreCmd([this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); }));
+    _subscriptions.push_back(_rt.MovementHook.PreCmd +=
+                             [this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); });
     _subscriptions.push_back(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
-    _subscriptions.push_back(events.Listen<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
+    // The aim modules discount the frames after a teleport, so the stamps live here rather than in
+    // the framework: subscribing is what arms the per-pawn hook, and the grace window is ours.
+    _lastTeleport.BindReset(_rt.Slots);
+    _subscriptions.push_back(_rt.Teleports.Teleported += [this](int slot) {
+        if (IsValidSlot(slot))
+            _lastTeleport[slot] = _rt.Clock.Time();
+    });
+
+    _subscriptions.push_back(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
         if (_manager.ModuleEnabled(DetectionKind::AntiAim))
             _manager.AntiAim().OnSlotChanged(e.Slot);
     }));
+    _subscriptions.push_back(events.On<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
     _subscriptions.push_back(
-        events.Listen<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
+        events.On<VoltMod::BulletImpact>([this](const VoltMod::BulletImpact& e) { OnBulletImpact(e); }));
+    // player_hurt carries the hitgroup SilentAim scores headshots from.
+    _subscriptions.push_back(events.On<VoltMod::PlayerHurt>([this](const VoltMod::PlayerHurt& e) { OnPlayerHurt(e); }));
     _subscriptions.push_back(
-        events.Listen<VoltMod::BulletImpact>([this](const VoltMod::BulletImpact& e) { OnBulletImpact(e); }));
-    // player_hurt carries the hitgroup SilentAim scores headshots from, which the typed view omits.
-    _subscriptions.push_back(events.Listen("player_hurt", [this](IGameEvent* e) { OnPlayerHurt(e); }));
-    _subscriptions.push_back(
-        events.Listen<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) { OnPlayerDeath(e); }));
+        events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) { OnPlayerDeath(e); }));
 }
 
 void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)
@@ -147,9 +150,19 @@ void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)
     if (aimlock)
         _manager.Aimlock().OnSimulated(slot, serverTick, sample.BaseAngles(), eye);
     if (antiAim)
-        _manager.Report(slot,
-                        _manager.AntiAim().OnSimulated(slot, sample.CmdNum, serverTick, true,
-                                                       _rt.Teleports.JustTeleported(slot, TeleportGraceSec), now));
+        _manager.Report(
+            slot, _manager.AntiAim().OnSimulated(slot, sample.CmdNum, serverTick, true, JustTeleported(slot), now));
+}
+
+bool ShotCorrelator::JustTeleported(int slot) const
+{
+    if (!IsValidSlot(slot))
+        return false;
+
+    const float stamp = _lastTeleport[slot];
+    const float now = _rt.Clock.Time();
+    // The clock restarts with the map, so a stamp ahead of it belongs to the previous one.
+    return stamp != 0.0f && now >= stamp && now - stamp <= TeleportGraceSec;
 }
 
 void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& players)
@@ -175,7 +188,7 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
                          .Team = controller.GetTeam(),
                          .Valid = true,
                          .Alive = controller.IsAlive(),
-                         .Teleported = _rt.Teleports.JustTeleported(slot, TeleportGraceSec)};
+                         .Teleported = JustTeleported(slot)};
     }
 }
 
@@ -269,17 +282,17 @@ void ShotCorrelator::OnBulletImpact(const VoltMod::BulletImpact& impact)
         _manager.SilentAim().OnShotUpdated(slot, *shot);
 }
 
-void ShotCorrelator::OnPlayerHurt(IGameEvent* event)
+void ShotCorrelator::OnPlayerHurt(const VoltMod::PlayerHurt& hurt)
 {
-    if (!event || !_manager.DetectionsEnabled())
+    if (!_manager.DetectionsEnabled())
         return;
 
-    const int attacker = event->GetPlayerSlot("attacker").Get();
-    const int victim = event->GetPlayerSlot("userid").Get();
+    const int attacker = hurt.AttackerSlot;
+    const int victim = hurt.VictimSlot;
     if (!_manager.IsEligible(attacker) || !IsValidSlot(victim))
         return;
 
-    const bool headshot = event->GetInt("hitgroup", HitGroupGeneric) == HitGroupHead;
+    const bool headshot = hurt.Hitbox == VoltMod::HitGroup::Head;
     ShotView* shot =
         _manager.Correlator().OnPlayerHurt(attacker, victim, headshot, static_cast<int32_t>(_rt.Clock.Tick()));
     if (!shot)

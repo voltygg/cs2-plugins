@@ -173,18 +173,13 @@ bool PunishmentManager::IssueBan(Ban& ban)
             it->second.Id = id;
     });
 
-    // Kick if connected, deferred a tick: anticheat reaches this through IAdminActions from
-    // inside an engine hook on the target, where kicking disconnects it mid-virtual-call.
     if (auto* player = _rt.Players.GetPlayerBySteamId(ban.TargetSteamId))
     {
         // Same notice the connect-time reject builds, so a player banned mid-game and one
         // bounced on reconnect read the same thing.
-        auto notice = BuildBanNotice(_rt.Translations, _config.GetAppeal(), ban.Reason, ban.ExpiresAt,
-                                     ban.TargetSteamId, player->GetSlot());
-        _rt.Scheduler.NextTick([&rt = _rt, slot = player->GetSlot(), steamId = ban.TargetSteamId, notice] {
-            if (rt.Players.GetPlayerBySlotIfSteamId(slot, steamId))
-                rt.Entities.Controller(slot).Kick(notice.c_str());
-        });
+        KickDeferred(player->GetSlot(), ban.TargetSteamId,
+                     BuildBanNotice(_rt.Translations, _config.GetAppeal(), ban.Reason, ban.ExpiresAt, ban.TargetSteamId,
+                                    player->GetSlot()));
     }
 
     _chat.BroadcastPunishment("banned", ban.AdminName, ban.TargetName, ban.Reason, ban.Duration);
@@ -317,6 +312,19 @@ bool PunishmentManager::RemoveVoiceMuteBySteamId(int64_t steamId, int64_t remove
 bool PunishmentManager::RemoveTextMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
     return RemoveBySteamIdImpl(_activeTextMutes, steamId, removedBy, reason, &PunishmentManager::RemoveTextMute);
+}
+
+void PunishmentManager::KickDeferred(int slot, int64_t steamId, std::string reason)
+{
+    if (!VoltMod::IsValidSlot(slot))
+        return;
+
+    _pendingKick[slot] = _rt.Scheduler.NextTick([&rt = _rt, slot, steamId, reason = std::move(reason)] {
+        // The seat can change hands before the deferred kick lands; kicking whoever took it is
+        // not what the ban says.
+        if (rt.Players.GetPlayerBySlotIfSteamId(slot, steamId))
+            rt.Entities.Controller(slot).Kick(reason.c_str());
+    });
 }
 
 void PunishmentManager::ExpireOldPunishments()

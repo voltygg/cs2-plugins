@@ -158,4 +158,12 @@ void FreezeManager::NotifyFrozen(int64_t steamId)
     _rt.Messages.Reply(slot, std::format("{}{}", ChatColors::Red, notice));
 }
 
+void FreezeManager::NotifyFrozenSoon(int slot, int64_t steamId)
+{
+    if (!VoltMod::IsValidSlot(slot))
+        return;
+
+    _pendingNotice[slot] = _rt.Scheduler.NextTick([this, steamId] { NotifyFrozen(steamId); });
+}
+
 }  // namespace AdminSystem::Admin

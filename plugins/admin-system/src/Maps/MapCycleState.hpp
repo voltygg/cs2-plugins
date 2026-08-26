@@ -48,6 +48,8 @@ private:
     VoltMod::Runtime& _rt;
     const Core::ConfigManager& _config;
     std::optional<MapEntry> _next;
+    /** The pending timed change; a new ChangeAfter replaces it, and unload cancels it. */
+    VoltMod::Subscription _pendingChange;
 };
 
 }  // namespace AdminSystem::Maps
