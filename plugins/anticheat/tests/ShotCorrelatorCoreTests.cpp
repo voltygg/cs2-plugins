@@ -233,7 +233,7 @@ TEST_CASE("The position history holds 128 frames and replaces a repeated newest 
     players[Victim].Origin = {900.0f, 0.0f, 0.0f};
     core.CaptureFrame(199, players);
     CHECK(core.FrameCount() == 128);
-    REQUIRE(core.FindPosition(199, Victim) != nullptr);
+    REQUIRE(core.FindPosition(199, Victim).has_value());
     CHECK(core.FindPosition(199, Victim)->Origin.X == doctest::Approx(900.0f));
 }
 
@@ -241,9 +241,9 @@ TEST_CASE("FindPosition returns nothing for a slot that was not in the frame")
 {
     ShotCorrelatorCore core;
     core.CaptureFrame(5, Players());
-    CHECK(core.FindPosition(5, Shooter) != nullptr);
-    CHECK(core.FindPosition(5, 9) == nullptr);
-    CHECK(core.FindPosition(4, Shooter) == nullptr);
+    CHECK(core.FindPosition(5, Shooter).has_value());
+    CHECK(!core.FindPosition(5, 9).has_value());
+    CHECK(!core.FindPosition(4, Shooter).has_value());
 }
 
 TEST_CASE("AreOpponents requires both teams to be playing and honours free for all")

@@ -141,8 +141,8 @@ void AimbotCore::Evaluate(int slot, int32_t currentTick, double nowSec, std::opt
         return;
     }
 
-    const PositionSample* shotTarget = _shots.FindPosition(shot->ServerTick, data.VictimSlot);
-    const PositionSample* shotAttacker = _shots.FindPosition(shot->ServerTick, slot);
+    auto shotTarget = _shots.FindPosition(shot->ServerTick, data.VictimSlot);
+    auto shotAttacker = _shots.FindPosition(shot->ServerTick, slot);
     if (!shotTarget || !shotAttacker)
     {
         // The frame for the shot's tick may still be captured, so only give up once past it.
@@ -184,10 +184,10 @@ void AimbotCore::Evaluate(int slot, int32_t currentTick, double nowSec, std::opt
         if (static_cast<int64_t>(shot->ServerTick) - older->ServerTick > SnapWindowTicks)
             break;
 
-        const PositionSample* olderTarget = _shots.FindPosition(older->ServerTick, data.VictimSlot);
-        const PositionSample* newerTarget = _shots.FindPosition(newer->ServerTick, data.VictimSlot);
-        const PositionSample* olderAttacker = _shots.FindPosition(older->ServerTick, slot);
-        const PositionSample* newerAttacker = _shots.FindPosition(newer->ServerTick, slot);
+        auto olderTarget = _shots.FindPosition(older->ServerTick, data.VictimSlot);
+        auto newerTarget = _shots.FindPosition(newer->ServerTick, data.VictimSlot);
+        auto olderAttacker = _shots.FindPosition(older->ServerTick, slot);
+        auto newerAttacker = _shots.FindPosition(newer->ServerTick, slot);
         if (!olderTarget || !newerTarget || !olderAttacker || !newerAttacker || olderTarget->Teleported ||
             newerTarget->Teleported || olderAttacker->Teleported || newerAttacker->Teleported)
             break;

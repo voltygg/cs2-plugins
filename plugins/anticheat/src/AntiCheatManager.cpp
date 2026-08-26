@@ -180,7 +180,7 @@ void AntiCheatManager::DumpCommand(int slot, const VoltMod::UserCmdView& cmd)
     std::string attack = "none";
     if (attackIndex >= 0)
     {
-        if (const VoltMod::InputHistorySample* sample = cmd.SampleAt(attackIndex))
+        if (auto sample = cmd.SampleAt(attackIndex))
             attack = sample->HasViewAngles
                          ? std::format("[{}] pitch={:.2f} yaw={:.2f}", attackIndex, sample->ViewPitch, sample->ViewYaw)
                          : std::format("[{}] no angles", attackIndex);

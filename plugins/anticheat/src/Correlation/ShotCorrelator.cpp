@@ -70,7 +70,7 @@ CmdSample BuildSample(const VoltMod::UserCmdView& cmd)
     // Only an index the client never sent is a fabrication. One the transport cap dropped is merely
     // absent, and must never be clamped back into range - that reads another shot's angles.
     sample.AttackIndexInvalid = attackIndex < -1 || attackIndex >= cmd.InputHistoryTotalCount;
-    if (const VoltMod::InputHistorySample* attack = cmd.SampleAt(attackIndex); attack && attack->HasViewAngles)
+    if (auto attack = cmd.SampleAt(attackIndex); attack && attack->HasViewAngles)
         sample.AttackAngles = AimAngles{attack->ViewPitch, attack->ViewYaw};
 
     for (int i = 0; i < cmd.InputHistorySampleCount; ++i)

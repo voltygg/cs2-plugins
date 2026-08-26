@@ -3,6 +3,7 @@
 #include "../Database/Repositories/AdminRepository.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -51,7 +52,9 @@ public:
     void RefreshFromDatabase();
 
     bool IsFrozen(int64_t steamId) const { return _frozen.contains(steamId); }
-    const Database::FrozenAdmin* GetFrozen(int64_t steamId) const;
+    /** A copy of the frozen row, or nullopt when @p steamId is not frozen. By value because
+     *  Unfreeze() and the periodic refresh both erase from the live map. */
+    std::optional<Database::FrozenAdmin> GetFrozen(int64_t steamId) const;
 
     /** The live frozen set, keyed by admin steam ID (for the list/unfreeze commands). */
     const std::unordered_map<int64_t, Database::FrozenAdmin>& Frozen() const { return _frozen; }

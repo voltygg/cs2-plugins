@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <deque>
+#include <optional>
 #include <span>
 #include <string_view>
 
@@ -68,7 +69,7 @@ public:
     int ResolveImpactShooter(int truncatedUserId, int32_t serverTick, std::span<const int32_t> userIdBySlot) const;
 
     const PositionFrame* FindFrame(int32_t serverTick) const;
-    const PositionSample* FindPosition(int32_t serverTick, int slot) const;
+    std::optional<PositionSample> FindPosition(int32_t serverTick, int slot) const;
 
     /** Both teams playing, and either different or free-for-all. */
     static bool AreOpponents(int teamA, int teamB, bool teammatesAreEnemies);

@@ -42,10 +42,12 @@ void FreezeManager::RefreshFromDatabase()
     });
 }
 
-const Db::FrozenAdmin* FreezeManager::GetFrozen(int64_t steamId) const
+std::optional<Db::FrozenAdmin> FreezeManager::GetFrozen(int64_t steamId) const
 {
     auto it = _frozen.find(steamId);
-    return it != _frozen.end() ? &it->second : nullptr;
+    if (it == _frozen.end())
+        return std::nullopt;
+    return it->second;
 }
 
 bool FreezeManager::Freeze(int64_t targetSteamId, const std::string& targetName, int64_t bySteamId,
@@ -150,7 +152,7 @@ void FreezeManager::NotifyFrozen(int64_t steamId)
     if (!player)
         return;
 
-    const auto* row = GetFrozen(steamId);
+    auto row = GetFrozen(steamId);
     int slot = player->GetSlot();
     auto notice = _rt.Translations.Get("freeze.notice", slot, {{"reason", row ? row->Reason : ""}});
     _rt.Messages.Reply(slot, std::format("{}{}", ChatColors::Red, notice));

@@ -257,12 +257,12 @@ const PositionFrame* ShotCorrelatorCore::FindFrame(int32_t serverTick) const
     return nullptr;
 }
 
-const PositionSample* ShotCorrelatorCore::FindPosition(int32_t serverTick, int slot) const
+std::optional<PositionSample> ShotCorrelatorCore::FindPosition(int32_t serverTick, int slot) const
 {
     const PositionFrame* frame = FindFrame(serverTick);
     if (!frame || !InSlotRange(slot) || !frame->Players[slot].Valid)
-        return nullptr;
-    return &frame->Players[slot];
+        return std::nullopt;
+    return frame->Players[slot];
 }
 
 bool ShotCorrelatorCore::AreOpponents(int teamA, int teamB, bool teammatesAreEnemies)

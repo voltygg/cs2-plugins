@@ -82,14 +82,14 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
                         return c.Fail("target.ambiguous", {{"token", c.Word}, {"count", std::to_string(matches)}});
                 }
 
-                const auto* row = app.Freeze.GetFrozen(targetSteamId);
+                auto row = app.Freeze.GetFrozen(targetSteamId);
                 if (!row)
                     return c.Fail("cmd.unfreezeNone", {{"token", c.Word}});
 
-                std::string targetName = row->Name;
+                // Unfreeze erases the row; the name is ours because GetFrozen handed back a copy.
                 bool ok = app.Freeze.Unfreeze(targetSteamId, c.Caller->GetSteamID(), c.Caller->GetName());
-                return ok ? c.Ok("cmd.unfreezeSuccess", {{"name", targetName}})
-                          : c.Fail("cmd.freezeFailed", {{"name", targetName}});
+                return ok ? c.Ok("cmd.unfreezeSuccess", {{"name", row->Name}})
+                          : c.Fail("cmd.freezeFailed", {{"name", row->Name}});
             },
     });
 
