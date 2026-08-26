@@ -101,7 +101,13 @@ Current patterns:
   handler. Dropping one unsubscribes - and for a `Scheduler` timer, cancels it -
   so a fire-and-forget deferral still needs an owner.
 - A hook service arms itself on its first subscription (`Movement`, `Damage`,
-  `Teleport`); do not look for an `Install()` or `Enable()` to call.
+  `Teleport`) and disarms when the last one is dropped; do not look for an
+  `Install()` or `Enable()` to call. A leaked Subscription therefore leaves a
+  live vtable hook behind after `meta reload`.
+- Hook an engine vfunc the framework does not cover with `VOLTMOD_VHOOK*` at
+  file scope plus a `VoltMod::VtableHook` member
+  (`<VoltMod/Unsafe/VtableHook.hpp>`), one hooked vfunc per translation unit.
+  Do not call SourceHook's `SH_*` add, remove, or reconfigure macros directly.
 - Reach a player through the frame-local `Pawn` (the body: health, armor,
   movement, aim) or `Controller` (the identity: name, money, team), from
   `runtime.Entities.PawnOf(slot)` / `.Controller(slot)`. Schema fields are
