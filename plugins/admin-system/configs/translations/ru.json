@@ -111,8 +111,6 @@
     "headshotOnlyOff": "Только в голову ВЫКЛ",
     "knifeRoundOn": "Ножевой раунд ВКЛ",
     "knifeRoundOff": "Ножевой раунд ВЫКЛ",
-    "noScopeOnlyOn": "Только без прицела ВКЛ",
-    "noScopeOnlyOff": "Только без прицела ВЫКЛ",
     "oneHitKillOn": "Убийство с одного удара ВКЛ",
     "oneHitKillOff": "Убийство с одного удара ВЫКЛ",
     "funCleared": "Фан-режим выключен"
@@ -335,7 +333,6 @@
     "lowGravity": "Низкая гравитация",
     "headshotOnly": "Только в голову",
     "knifeRound": "Ножевой раунд",
-    "noScopeOnly": "Только без прицела",
     "oneHitKill": "Убийство с одного удара",
     "clearAll": "Выключить всё"
   }

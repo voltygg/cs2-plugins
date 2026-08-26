@@ -2,26 +2,57 @@
 
 #include "FunToggles.hpp"
 
+#include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscription.hpp>
-#include <optional>
-#include <string>
+#include <array>
+#include <string_view>
 #include <vector>
 
 namespace VoltMod
 {
 class Runtime;
-struct DamageView;
-}  // namespace VoltMod
+}
 
 namespace AdminSystem::Fun
 {
+
+/** One convar a toggle takes over: the value it holds while the toggle is on, and the engine
+ *  stock value, used only as a last resort when the live value cannot be read at all. */
+struct ToggleConVar
+{
+    Toggle Owner;
+    std::string_view Name;
+    float OnValue;
+    float StockValue;
+};
+
+/**
+ * Every convar the toggles drive, in no particular order.
+ *
+ * One-hit kill takes all four `mp_damage_scale_*` so it is symmetric across teams and still lands
+ * once headshot-only has narrowed the hits down to heads. The lethal scale turns the weakest hit
+ * into a few hundred damage, which kills through armor and hitgroup scaling - measured in game, a
+ * 23-damage leg hit lands as ~490.
+ */
+inline constexpr std::array<ToggleConVar, 6> ToggleConVars{{
+    {Toggle::LowGravity, "sv_gravity", 250.0f, 800.0f},
+    {Toggle::HeadshotOnly, "mp_damage_headshot_only", 1.0f, 0.0f},
+    {Toggle::OneHitKill, "mp_damage_scale_ct_body", 20.0f, 1.0f},
+    {Toggle::OneHitKill, "mp_damage_scale_t_body", 20.0f, 1.0f},
+    {Toggle::OneHitKill, "mp_damage_scale_ct_head", 20.0f, 1.0f},
+    {Toggle::OneHitKill, "mp_damage_scale_t_head", 20.0f, 1.0f},
+}};
 
 /**
  * Server-wide round modifiers: low gravity, headshot-only, knife rounds and the rest.
  *
  * App-owned. Everything here is round-scoped by intent - the state survives a round so an admin
- * does not have to re-enable it every round, but the effects it applies (gravity, weapons,
- * models) are re-applied at each round start and undone when the last toggle goes off.
+ * does not have to re-enable it every round, but the effects it applies (gravity, damage rules,
+ * weapons) are re-applied at each round start and undone when the toggle goes off.
+ *
+ * The damage-affecting toggles drive the engine's own convars rather than the damage hook, which
+ * only observes damage (see Sdk::DamageHook). ConVarOverrides holds the snapshot-and-restore
+ * ledger, so a server that never turned a toggle on keeps its own cfg.
  */
 class FunMode
 {
@@ -45,19 +76,14 @@ public:
 
 private:
     void ApplyRoundStart();
-    void ApplyGravity();
-    /** Put back the gravity this plugin overrode, if it overrode any. */
-    void RestoreGravity();
-    void SetGravity(float value);
+    /** Take over or hand back every @ref ToggleConVars row to match the current toggle state. */
+    void ApplyOverrides();
     void GiveKnifeOnly(int slot);
-    void OnDamage(VoltMod::DamageView& view);
-    /** Whether @p slot is currently scoped in (CCSPlayerPawn::m_bIsScoped). */
-    bool IsScoped(int slot) const;
 
     VoltMod::Runtime& _rt;
     ToggleState _state;
-    /** `sv_gravity` as it was before low gravity took it over; empty while untouched. */
-    std::optional<float> _savedGravity;
+    /** Restores whatever the toggles took over, including on unload. */
+    VoltMod::ConVarOverrides _conVars;
     /** Listener registrations, released together and declared last so they stop before the
      *  state their callbacks read. */
     std::vector<VoltMod::Subscription> _subs;

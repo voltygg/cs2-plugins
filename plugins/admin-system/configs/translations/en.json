@@ -111,8 +111,6 @@
     "headshotOnlyOff": "Headshot only is OFF",
     "knifeRoundOn": "Knife round is ON",
     "knifeRoundOff": "Knife round is OFF",
-    "noScopeOnlyOn": "No-scope only is ON",
-    "noScopeOnlyOff": "No-scope only is OFF",
     "oneHitKillOn": "One-hit kill is ON",
     "oneHitKillOff": "One-hit kill is OFF",
     "funCleared": "Fun Mode is off"
@@ -335,7 +333,6 @@
     "lowGravity": "Low gravity",
     "headshotOnly": "Headshot only",
     "knifeRound": "Knife round",
-    "noScopeOnly": "No-scope only",
     "oneHitKill": "One-hit kill",
     "clearAll": "Turn everything off"
   }

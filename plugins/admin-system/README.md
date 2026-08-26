@@ -16,7 +16,7 @@ multi-server grants, abuse protection, and cheat-check workflows.
 - Weapon control through the menu: give a configured weapon, a random one, or
   strip a player.
 - Fun Mode round modifiers through the menu: low gravity, headshot only, knife
-  round, no-scope only, and one-hit kill.
+  round, and one-hit kill.
 - Groups, flags, immunity, per-server grants, and admin stealth.
 - Network-wide punishments and automatic punishment enforcement.
 - Automatic or manual freezing of abusive admins with an audit trail.
