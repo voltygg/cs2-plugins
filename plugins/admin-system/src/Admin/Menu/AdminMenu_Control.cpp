@@ -1,6 +1,8 @@
 #include "AdminMenu_Control.hpp"
 
 #include "../../Core/App.hpp"
+#include "../../Core/ChatService.hpp"
+#include "../../Weapons/WeaponActions.hpp"
 #include "../../Weapons/WeaponCatalog.hpp"
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
@@ -14,7 +16,6 @@
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Sdk/Engine/ServerClock.hpp>
 #include <VoltMod/Sdk/Entity/Entity.hpp>
 #include <format>
 #include <memory>
@@ -37,14 +38,23 @@ constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
 constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
 constexpr int SizeDefault = 4;   // index of 100 in SizePresets
 
-/** Re-resolves permission and immunity per click: the menu may have been open a while. */
-void GiveWeapon(AdminSystem::App& app, int adminSlot, int targetSlot, const std::string& item)
+/** Tell the admin why a weapon action did nothing. The menu is the only way to reach these, so
+ *  a silent no-op would leave them guessing whether the click registered. */
+void ReportWeaponOutcome(AdminSystem::App& app, int adminSlot, Weapons::WeaponActionResult result, const char* failKey)
 {
-    auto ctx = app.Actions.Resolve(adminSlot, targetSlot, Flag(Permission::Weapon));
-    if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
-        return;
-    if (app.Runtime.Items.Give(ctx.TargetCtrl, item.c_str()))
-        app.Chat.BroadcastAction("broadcast.gaveWeapon", ctx.Caller->GetName(), ctx.Target->GetName());
+    auto& tr = app.Runtime.Translations;
+    switch (result)
+    {
+    case Weapons::WeaponActionResult::TargetDead:
+        app.Chat.Reply(adminSlot, tr.Get("cmd.weaponTargetDead", adminSlot));
+        break;
+    case Weapons::WeaponActionResult::EngineRefused:
+        app.Chat.Reply(adminSlot, tr.Get(failKey, adminSlot));
+        break;
+    case Weapons::WeaponActionResult::NotAllowed:  // the dispatcher's policy already replied
+    case Weapons::WeaponActionResult::Ok:
+        break;
+    }
 }
 }  // namespace
 
@@ -142,21 +152,22 @@ std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, int ad
     const auto& menu = app.Config.GetWeaponMenu();
     for (const auto& weapon : menu)
     {
-        builder.AddButton(weapon.Label(), [&app, adminSlot, targetSlot, item = weapon.Item](int) {
-            GiveWeapon(app, adminSlot, targetSlot, item);
+        builder.AddButton(weapon.Label(), [&app, adminSlot, targetSlot, item = weapon.Item](int slot) {
+            ReportWeaponOutcome(app, slot, Weapons::GiveWeapon(app, adminSlot, targetSlot, item),
+                                "cmd.weaponGiveFailed");
         });
     }
 
     if (!menu.empty())
     {
-        builder.AddButton(tr.Get("action.giveRandomWeapon", adminSlot), [&app, adminSlot, targetSlot](int) {
+        builder.AddButton(tr.Get("action.giveRandomWeapon", adminSlot), [&app, adminSlot, targetSlot](int slot) {
             const auto& weapons = app.Config.GetWeaponMenu();
             if (weapons.empty())
                 return;
-            // Slot and tick vary per click, which is randomness enough for a fun action and
-            // avoids a plugin-owned RNG.
-            auto pick = static_cast<std::size_t>(app.Runtime.Clock.Tick() + targetSlot) % weapons.size();
-            GiveWeapon(app, adminSlot, targetSlot, weapons[pick].Item);
+            ReportWeaponOutcome(
+                app, slot,
+                Weapons::GiveWeapon(app, adminSlot, targetSlot, weapons[VoltMod::RandomIndex(weapons.size())].Item),
+                "cmd.weaponGiveFailed");
         });
     }
     else
@@ -165,12 +176,8 @@ std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, int ad
         builder.AddButton(tr.Get("action.noWeapons", adminSlot), [](int) {}, false);
     }
 
-    builder.AddButton(tr.Get("action.strip", adminSlot), [&app, adminSlot, targetSlot](int) {
-        auto ctx = app.Actions.Resolve(adminSlot, targetSlot, Flag(Permission::Weapon));
-        if (!ctx.Valid() || !ctx.TargetCtrl.IsAlive())
-            return;
-        if (app.Runtime.Items.StripWeapons(ctx.TargetCtrl))
-            app.Chat.BroadcastAction("broadcast.stripped", ctx.Caller->GetName(), ctx.Target->GetName());
+    builder.AddButton(tr.Get("action.strip", adminSlot), [&app, adminSlot, targetSlot](int slot) {
+        ReportWeaponOutcome(app, slot, Weapons::StripWeapons(app, adminSlot, targetSlot), "cmd.weaponStripFailed");
     });
 
     return builder.Build();

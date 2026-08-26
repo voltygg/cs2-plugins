@@ -33,16 +33,6 @@ const std::vector<MapEntry>& MapCycleState::Cycle() const
     return _config.GetMapCycle();
 }
 
-MapLookup MapCycleState::Find(std::string_view query) const
-{
-    return FindMap(Cycle(), query);
-}
-
-bool MapCycleState::ChangeTo(const MapEntry& map)
-{
-    return map.WorkshopId != 0 ? _rt.Maps.ChangeToWorkshop(map.WorkshopId) : _rt.Maps.ChangeLevel(map.Name.c_str());
-}
-
 void MapCycleState::SetNext(const MapEntry& map)
 {
     _next = map;

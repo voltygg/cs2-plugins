@@ -20,6 +20,9 @@ class ConfigManager;
 namespace AdminSystem::Maps
 {
 
+/** Scoreboard pause between announcing a map change and taking the server away. */
+inline constexpr int64_t MapChangeAnnounceMs = 5000;
+
 /**
  * The configured map list, the pending next map, and the level change itself.
  *
@@ -37,12 +40,6 @@ public:
 
     const std::vector<MapEntry>& Cycle() const;
 
-    /** Resolve a player-typed name. See @ref FindMap for the matching tiers. */
-    MapLookup Find(std::string_view query) const;
-
-    /** Change level now. @return false when the engine rejects the map. */
-    bool ChangeTo(const MapEntry& map);
-
     /** Queue @p map for the end of the current round. Replaces any previous pick. */
     void SetNext(const MapEntry& map);
 
@@ -50,10 +47,10 @@ public:
     const std::optional<MapEntry>& Next() const { return _next; }
 
     /** Change to @p map after @p delayMs, giving players time to read the announcement. */
-    void ChangeAfter(const MapEntry& map, int64_t delayMs);
+    void ChangeAfter(const MapEntry& map, int64_t delayMs = MapChangeAnnounceMs);
 
     /** Change to the queued map after @p delayMs, then clear it. No-op when nothing is queued. */
-    void ChangeToNext(int64_t delayMs);
+    void ChangeToNext(int64_t delayMs = MapChangeAnnounceMs);
 
 private:
     VoltMod::Runtime& _rt;

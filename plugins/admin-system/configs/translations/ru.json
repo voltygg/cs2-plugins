@@ -50,6 +50,9 @@
     "unban": "Разбанить",
     "unmute": "Размутить",
     "changeMap": "Сменить карту",
+    "setNextMap": "Назначить следующей",
+    "voteMap": "Вынести на голосование",
+    "cancelVote": "Отменить голосование",
     "giveWeapon": "Выдать оружие",
     "giveRandomWeapon": "Случайное оружие",
     "strip": "Забрать оружие",
@@ -112,12 +115,7 @@
     "noScopeOnlyOff": "Только без прицела ВЫКЛ",
     "oneHitKillOn": "Убийство с одного удара ВКЛ",
     "oneHitKillOff": "Убийство с одного удара ВЫКЛ",
-    "infiniteMoneyOn": "Бесконечные деньги ВКЛ",
-    "infiniteMoneyOff": "Бесконечные деньги ВЫКЛ",
-    "chickenBotsOn": "Боты-курицы ВКЛ",
-    "chickenBotsOff": "Боты-курицы ВЫКЛ",
-    "funCleared": "Фан-режим выключен",
-    "rtvCounted": "{name} хочет сменить карту ({votes}/{needed})"
+    "funCleared": "Фан-режим выключен"
   },
   "common": {
     "selectSwapTarget": "Выберите второго игрока",
@@ -199,21 +197,9 @@
     "unfreezeNone": "Замороженный администратор '{token}' не найден.",
     "frozenNone": "Нет замороженных администраторов.",
     "frozenHeader": "Замороженные администраторы ({count}):",
-    "mapNoMatch": "Ни одна карта не соответствует «{map}».",
-    "mapAmbiguous": "«{map}» соответствует {count} картам. Уточните запрос.",
-    "mapCycleEmpty": "Карты не настроены.",
-    "mapListHeader": "Настроенные карты ({count}):",
-    "nextMap": "Следующая карта: {map}",
-    "nextMapUnset": "Следующая карта не задана.",
-    "weaponNoMatch": "Оружие «{weapon}» не найдено.",
-    "weaponAmbiguous": "«{weapon}» соответствует {count} видам оружия. Уточните запрос.",
-    "weaponGiven": "Игроку {name} выдано: {weapon}.",
-    "weaponGiveFailed": "Сервер отказал в выдаче: {weapon}.",
+    "weaponGiveFailed": "Сервер отказал в выдаче этого оружия.",
     "weaponStripFailed": "Не удалось забрать оружие.",
-    "weaponTargetDead": "{name} не жив.",
-    "rtvDisabled": "Голосование за смену карты отключено.",
-    "rtvTooEarly": "Голосование за смену карты ещё не открыто.",
-    "rtvAlreadyVoted": "Вы уже проголосовали за смену карты.",
+    "weaponTargetDead": "Этот игрок не жив.",
     "voteInProgress": "Голосование уже идёт.",
     "voteCancelled": "Голосование отменено.",
     "noVoteRunning": "Голосование не идёт."
@@ -351,10 +337,6 @@
     "knifeRound": "Ножевой раунд",
     "noScopeOnly": "Только без прицела",
     "oneHitKill": "Убийство с одного удара",
-    "infiniteMoney": "Бесконечные деньги",
-    "chickenBots": "Боты-курицы",
-    "clearAll": "Выключить всё",
-    "listHeader": "Переключатели фан-режима:",
-    "unknownToggle": "Неизвестный переключатель: «{name}»."
+    "clearAll": "Выключить всё"
   }
 }

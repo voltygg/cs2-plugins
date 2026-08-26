@@ -30,7 +30,7 @@ std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int admin
 
     MenuBuilder builder(tr.Get("category.fun", adminSlot));
 
-    for (const auto& info : Fun::Toggles())
+    for (const auto& info : Fun::Toggles)
     {
         builder.AddToggle(
             tr.Get(std::string(info.NameKey), adminSlot), tr.Get("effectState.on", adminSlot),

@@ -5,9 +5,7 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "$schema": {
-      "type": "string"
-    },
+    "$schema": { "type": "string" },
     "plugin": {
       "type": "object",
       "additionalProperties": false,
@@ -39,38 +37,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "host": {
-          "type": "string",
-          "default": "localhost",
-          "description": "PostgreSQL host."
-        },
-        "port": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 65535,
-          "default": 5432
-        },
-        "database": {
-          "type": "string",
-          "default": "admin_system"
-        },
-        "username": {
-          "type": "string",
-          "default": "postgres"
-        },
-        "password": {
-          "type": "string"
-        },
+        "host": { "type": "string", "default": "localhost", "description": "PostgreSQL host." },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "default": 5432 },
+        "database": { "type": "string", "default": "admin_system" },
+        "username": { "type": "string", "default": "postgres" },
+        "password": { "type": "string" },
         "sslMode": {
           "type": "string",
-          "enum": [
-            "disable",
-            "allow",
-            "prefer",
-            "require",
-            "verify-ca",
-            "verify-full"
-          ],
+          "enum": ["disable", "allow", "prefer", "require", "verify-ca", "verify-full"],
           "default": "prefer",
           "description": "libpq SSL mode."
         }
@@ -100,9 +74,7 @@
               "type": "string",
               "default": "",
               "description": "Appeal page. `{steamId}` is substituted; empty omits the appeal from the notice.",
-              "examples": [
-                "https://example.com/appeal?steam={steamId}"
-              ]
+              "examples": ["https://example.com/appeal?steam={steamId}"]
             },
             "showExpiry": {
               "type": "boolean",
@@ -117,65 +89,29 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "name",
-              "type",
-              "duration",
-              "reason"
-            ],
+            "required": ["name", "type", "duration", "reason"],
             "properties": {
-              "name": {
-                "type": "string",
-                "description": "Menu row label."
-              },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "ban",
-                  "voiceMute",
-                  "textMute"
-                ]
-              },
+              "name": { "type": "string", "description": "Menu row label." },
+              "type": { "type": "string", "enum": ["ban", "voiceMute", "textMute"] },
               "duration": {
                 "type": "string",
                 "pattern": "^(perm|[0-9]+[smhd]?)$",
                 "description": "\"perm\" (or \"0\") for permanent, otherwise <n>s / <n>m / <n>h / <n>d. A bare number means SECONDS - prefer an explicit suffix.",
-                "examples": [
-                  "perm",
-                  "30s",
-                  "5m",
-                  "2h",
-                  "7d"
-                ]
+                "examples": ["perm", "30s", "5m", "2h", "7d"]
               },
-              "reason": {
-                "type": "string",
-                "description": "Reason recorded with the punishment."
-              }
+              "reason": { "type": "string", "description": "Reason recorded with the punishment." }
             }
           }
         },
         "reasonPresets": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "description": "Preset reasons offered in the manual menu punish flow (a free-text \"Custom...\" row is always added)."
         },
         "menuDurations": {
           "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^(perm|[0-9]+[smhd]?)$"
-          },
-          "default": [
-            "5m",
-            "30m",
-            "1h",
-            "1d",
-            "7d",
-            "perm"
-          ],
+          "items": { "type": "string", "pattern": "^(perm|[0-9]+[smhd]?)$" },
+          "default": ["5m", "30m", "1h", "1d", "7d", "perm"],
           "description": "Rows of the menu duration picker (same grammar as template durations)."
         }
       }
@@ -196,27 +132,10 @@
           "default": 10,
           "description": "Sliding window (minutes) over which an admin's actions are counted."
         },
-        "maxBans": {
-          "type": "integer",
-          "minimum": 0,
-          "default": 5
-        },
-        "maxKicks": {
-          "type": "integer",
-          "minimum": 0,
-          "default": 10
-        },
-        "maxMutes": {
-          "type": "integer",
-          "minimum": 0,
-          "default": 15,
-          "description": "Voice + text mutes combined."
-        },
-        "maxWarnings": {
-          "type": "integer",
-          "minimum": 0,
-          "default": 15
-        }
+        "maxBans": { "type": "integer", "minimum": 0, "default": 5 },
+        "maxKicks": { "type": "integer", "minimum": 0, "default": 10 },
+        "maxMutes": { "type": "integer", "minimum": 0, "default": 15, "description": "Voice + text mutes combined." },
+        "maxWarnings": { "type": "integer", "minimum": 0, "default": 15 }
       }
     },
     "chat": {
@@ -238,18 +157,9 @@
           "default": "[ADMIN]",
           "description": "Prefix used when an admin has no group prefix set."
         },
-        "fallbackPrefixColor": {
-          "type": "string",
-          "default": "red"
-        },
-        "fallbackNameColor": {
-          "type": "string",
-          "default": "default"
-        },
-        "fallbackMessageColor": {
-          "type": "string",
-          "default": "default"
-        }
+        "fallbackPrefixColor": { "type": "string", "default": "red" },
+        "fallbackNameColor": { "type": "string", "default": "default" },
+        "fallbackMessageColor": { "type": "string", "default": "default" }
       }
     },
     "reports": {
@@ -257,10 +167,7 @@
       "additionalProperties": false,
       "description": "Player-to-player reporting (!r / !report). Reports are inserted into player_reports for an upstream website; nothing is surfaced in-game.",
       "properties": {
-        "enabled": {
-          "type": "boolean",
-          "default": true
-        },
+        "enabled": { "type": "boolean", "default": true },
         "cooldownSec": {
           "type": "integer",
           "minimum": 0,
@@ -284,10 +191,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "code",
-              "label"
-            ],
+            "required": ["code", "label"],
             "properties": {
               "code": {
                 "type": "string",
@@ -309,11 +213,7 @@
       "properties": {
         "mode": {
           "type": "string",
-          "enum": [
-            "fixedLink",
-            "websiteAutoRoom",
-            "playerProvided"
-          ],
+          "enum": ["fixedLink", "websiteAutoRoom", "playerProvided"],
           "default": "fixedLink",
           "description": "Active delivery mode."
         },
@@ -328,10 +228,7 @@
           "default": true,
           "description": "If true, auto-kick on timeout; if false, just unfreeze and notify the admin."
         },
-        "kickReason": {
-          "type": "string",
-          "default": "Failed to comply with cheat check"
-        },
+        "kickReason": { "type": "string", "default": "Failed to comply with cheat check" },
         "panelRefreshMs": {
           "type": "integer",
           "minimum": 50,
@@ -348,24 +245,14 @@
           "default": "",
           "description": "Optional online image (https) shown atop the panel; leave empty for no banner."
         },
-        "bannerWidth": {
-          "type": "integer",
-          "minimum": 1,
-          "default": 320
-        },
-        "bannerHeight": {
-          "type": "integer",
-          "minimum": 1,
-          "default": 180
-        },
+        "bannerWidth": { "type": "integer", "minimum": 1, "default": 320 },
+        "bannerHeight": { "type": "integer", "minimum": 1, "default": 180 },
         "fixedLink": {
           "type": "object",
           "additionalProperties": false,
           "description": "\"fixedLink\" mode: the single URL shown to the suspect. Also the fallback for websiteAutoRoom.",
           "properties": {
-            "url": {
-              "type": "string"
-            }
+            "url": { "type": "string" }
           }
         },
         "websiteAutoRoom": {
@@ -373,13 +260,8 @@
           "additionalProperties": false,
           "description": "\"websiteAutoRoom\" mode: the plugin POSTs here to create a per-check room. Backend-agnostic; string values may contain {steamId} {playerName} {adminSteamId} {adminName} placeholders.",
           "properties": {
-            "createRoomUrl": {
-              "type": "string",
-              "description": "Room-creation endpoint."
-            },
-            "apiKey": {
-              "type": "string"
-            },
+            "createRoomUrl": { "type": "string", "description": "Room-creation endpoint." },
+            "apiKey": { "type": "string" },
             "authHeader": {
               "type": "string",
               "default": "Authorization",
@@ -403,19 +285,12 @@
               "type": "string",
               "description": "{value} is replaced by playerUrlField; leave empty to use the field value as the URL directly."
             },
-            "checkerUrlField": {
-              "type": "string",
-              "default": "checkerUrl"
-            },
+            "checkerUrlField": { "type": "string", "default": "checkerUrl" },
             "checkerUrlTemplate": {
               "type": "string",
               "description": "Optional checker URL relayed to the calling admin."
             },
-            "timeoutMs": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 8000
-            },
+            "timeoutMs": { "type": "integer", "minimum": 1, "default": 8000 },
             "presenceUrl": {
               "type": "string",
               "description": "Presence poll GET; {code} = raw playerUrlField value, {steamId} = suspect's SteamID64. Empty disables polling."
@@ -446,59 +321,36 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "name"
-            ],
+            "required": ["name"],
             "properties": {
-              "name": {
-                "type": "string",
-                "description": "Engine map name, e.g. \"de_dust2\"."
-              },
-              "displayName": {
-                "type": "string",
-                "description": "Menu label; falls back to name when empty."
-              },
+              "name": { "type": "string", "description": "Engine map name, e.g. \"de_dust2\"." },
+              "displayName": { "type": "string", "description": "Menu label; falls back to name when empty." },
               "workshopId": {
                 "type": "integer",
                 "minimum": 0,
                 "default": 0,
                 "description": "Published-file id. Non-zero addresses a workshop map by id instead of by name."
-              },
-              "minPlayers": {
-                "type": "integer",
-                "minimum": 0,
-                "default": 0
-              },
-              "maxPlayers": {
-                "type": "integer",
-                "minimum": 0,
-                "default": 0,
-                "description": "0 means no upper limit."
               }
             }
           }
         },
-        "rtv": {
+        "vote": {
           "type": "object",
           "additionalProperties": false,
-          "description": "Player-driven map changes: !rtv and !votemap.",
+          "description": "The yes/no vote an admin opens from Map > Put to vote.",
           "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            },
             "successRatio": {
               "type": "number",
               "minimum": 0,
               "maximum": 1,
               "default": 0.6,
-              "description": "Share of connected humans that must agree; a strict majority of it is required."
+              "description": "Share of the ballots cast that must be yes; a strict majority of it is required."
             },
-            "voteDelaySec": {
+            "durationSec": {
               "type": "integer",
-              "minimum": 0,
-              "default": 120,
-              "description": "Seconds after a map starts before !rtv is accepted."
+              "minimum": 1,
+              "default": 20,
+              "description": "How long the vote panel stays open."
             }
           }
         }
@@ -515,14 +367,9 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "item"
-            ],
+            "required": ["item"],
             "properties": {
-              "name": {
-                "type": "string",
-                "description": "Menu label; falls back to item when empty."
-              },
+              "name": { "type": "string", "description": "Menu label; falls back to item when empty." },
               "item": {
                 "type": "string",
                 "pattern": "^weapon_[a-z0-9_]+$",

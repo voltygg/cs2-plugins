@@ -25,7 +25,7 @@ unrecognized key fails the load rather than being ignored.
 | `reports` | Player report reasons, cooldowns, and duplicate suppression |
 | `cheatCheck` | Cheat-check mode and the link or room API behind it |
 | `maps` | Maps admins may switch to |
-| `weapons` | Weapons `!give` and the weapon menu offer |
+| `weapons` | Weapons the Control > Give weapon menu offers |
 
 A mistyped value fails the whole load; a malformed entry inside a list
 (a punishment template, a report reason) is logged and skipped so one typo
@@ -64,19 +64,23 @@ usable list of its own, so this is the only source.
 ]
 ```
 
-`displayName` is the menu label and is also typeable, so `!map dust` finds a map
-labelled "Dust II". Queries match exact names first, then prefixes, then
-substrings; one matching several maps is reported, not guessed at.
+`displayName` is the label the Map menu shows; it falls back to `name`.
+
+Map control is menu-only: the Map category lists the cycle, and each entry
+offers Change map (with a confirmation, since it ends everyone's round), Set as
+next map, and Put to vote. Change map and Set as next map need the `m` flag,
+Put to vote and Cancel running vote the `v` flag; either one opens the category.
 
 Plain map names are checked against the engine at load, and one it cannot load
-is logged there rather than failing on the first `!map`. Workshop maps are not
-checked, because they are addressed by id and are not mounted yet.
+is logged there rather than failing when an admin picks it. Workshop maps are
+not checked, because they are addressed by id and are not mounted yet.
 
 ### Weapon list
 
-`weapons.menu` is what `!give` and the Control > Give weapon menu offer. `item`
-is the entity classname; an entry not starting with `weapon_` is skipped,
-since it would otherwise reach the engine as an arbitrary entity.
+`weapons.menu` is what Control > Give weapon offers. `item` is the entity
+classname; an entry not starting with `weapon_` is skipped, since it would
+otherwise reach the engine as an arbitrary entity. `name` is the menu label and
+falls back to `item`.
 
 ```jsonc
 "menu": [
@@ -84,27 +88,26 @@ since it would otherwise reach the engine as an arbitrary entity.
 ]
 ```
 
-Typing the `weapon_` prefix is optional, and the display name is matched too,
-so `!give ak47`, `!give weapon_ak47` and `!give AK-47` all work.
+The same menu offers a random pick from the list and a Strip weapons entry.
+All three need the `k` flag.
 
 Giving a weapon the target's team cannot buy works: the server retries once with
-the pawn briefly flipped to the other team, then puts it back.
+the pawn briefly flipped to the other team, then puts it back. A refusal the
+retry cannot fix is reported to the admin who clicked.
 
 ### Fun Mode
 
-Fun Mode is a set of server-wide round modifiers, toggled from the Fun Mode menu
-or with `!fun <toggle>`. `!fun` with no argument lists them and their state;
-`!fun off` turns everything off.
+Fun Mode is a set of server-wide round modifiers, toggled from the Fun Mode
+menu. Each entry shows its current state, and Clear all turns everything off.
+The category needs the `g` flag.
 
-| Toggle | Effect |
+| Modifier | Effect |
 | --- | --- |
-| `lowgravity` | Drops `sv_gravity` for everyone |
-| `headshotonly` | Only head hits deal damage |
-| `kniferound` | Strips weapons and gives a knife on spawn |
-| `noscopeonly` | Scoped shots deal no damage |
-| `onehitkill` | Any surviving hit kills outright |
-| `infinitemoney` | Tops every player back up to $16000 |
-| `chickenbots` | Puts the chicken model on every bot |
+| Low gravity | Drops `sv_gravity` for everyone |
+| Headshot only | Only head hits deal damage |
+| Knife round | Strips weapons and gives a knife on spawn |
+| No-scope only | Scoped shots deal no damage |
+| One-hit kill | Any surviving hit kills outright |
 
 Damage from the world - falling, fire, the bomb - is never suppressed by the
 aim rules, so a headshot-only round does not leave players immortal to all but
@@ -115,32 +118,31 @@ The three damage toggles need the `OnTakeDamage_Alive` hook. If it fails to
 resolve after a CS2 update, the plugin logs that at load and those three go
 inert; the rest still work. `admin_status` shows whether it installed.
 
-Chicken bots puts the chicken model on the bot pawn rather than spawning a real
-chicken: no server-side chicken spawn is reliable enough to build on.
+Low gravity restores the server's own value rather than a stock one. Turning it
+on snapshots the live `sv_gravity`, and turning it off - or Clear all, or
+unloading the plugin - puts that value back, so a server running
+`sv_gravity 600` keeps it. A server that never enables low gravity is never
+written to at all.
 
-### Rock the vote
+### Map vote
 
-`maps.rtv` controls the player-driven map change. `!rtv` takes one vote per
-SteamID; once enough players agree, the next map in `maps.cycle` is queued for
-the end of the round rather than changing level at once.
+`maps.vote` controls the yes/no vote an admin opens from Map > Put to vote.
+Players answer through the game's own vote panel, so the plugin keeps no tally
+of its own - the engine collects the ballots.
 
 ```jsonc
-"rtv": {
-  "enabled": true,
-  // Share of connected humans who must agree; a majority of it is required.
+"vote": {
+  // Share of the ballots cast that must be yes; a majority of it is required.
   "successRatio": 0.6,
-  // Seconds after a map starts before !rtv is accepted.
-  "voteDelaySec": 120
+  // How long the panel stays open.
+  "durationSec": 20
 }
 ```
 
-Bots are excluded, so they cannot raise the bar out of reach on a mostly-empty
-server, and a player who disconnects gives their vote back. The tally resets on
-a map change.
-
-`!votemap <name>` puts one map to the game's own yes/no panel and `!cancelvote`
-calls it off; both need the `v` flag. The panel judges on ballots actually
-cast, so abstaining is not a no.
+Judged on the ballots actually cast, not on everyone connected, so abstaining is
+not a no. A passing vote queues the map for the end of the round rather than
+cutting the round short. Cancel running vote calls a vote off early. Only one
+vote runs at a time, and both entries need the `v` flag.
 
 ## Permission flags
 
@@ -161,10 +163,10 @@ them. Root (`z`) grants everything.
 | `h` | Health, armor, and godmode |
 | `w` | Wallhack |
 | `j` | Bhop grants |
-| `m` | Change map and queue the next map |
+| `m` | Change map and queue the next map (Map menu) |
 | `k` | Give and strip weapons |
 | `g` | Fun Mode round modifiers |
-| `v` | Start and cancel map votes |
+| `v` | Start and cancel map votes (Map menu) |
 | `z` | Root access |
 
 Immunity is separate from flags: an admin cannot act on a target whose immunity

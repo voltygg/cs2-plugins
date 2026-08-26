@@ -59,7 +59,7 @@ std::shared_ptr<VoltMod::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int
             access.HasAnyPermission(adminSid, "gz"))
         .AddSubmenu(
             tr.Get("category.map", adminSlot), [&app, adminSlot](int) { return Menu::BuildMapMenu(app, adminSlot); },
-            access.HasAnyPermission(adminSid, "mz"))
+            access.HasAnyPermission(adminSid, "mvz"))
         .AddSubmenu(
             tr.Get("category.chatSettings", adminSlot),
             [&app, adminSlot](int) { return Menu::BuildChatSettingsMenu(app, adminSlot); }, adminMgr.IsAdmin(adminSid))

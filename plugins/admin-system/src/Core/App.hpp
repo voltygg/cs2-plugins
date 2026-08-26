@@ -57,9 +57,9 @@ struct App
     /** Configured map list, the queued next map, and the level change itself. */
     Maps::MapCycleState MapCycle{Runtime, Config};
     /** Server-wide round modifiers (Fun Mode). */
-    Fun::FunMode FunMode{*this};
-    /** Player-driven map changes: !rtv and !votemap. */
-    Maps::VoteState Votes{*this};
+    Fun::FunMode FunMode{Runtime};
+    /** The yes/no map vote an admin opens from the Map menu. */
+    Maps::VoteState Votes{Runtime, Config, MapCycle};
     Admin::AdminManager Admins{Db, Config};
     Admin::FreezeManager Freeze{Db, Config, Runtime, Chat, Admins};
     /** The permission gate: granted flags minus abuse-protection freezes. Ask this, not Admins. */

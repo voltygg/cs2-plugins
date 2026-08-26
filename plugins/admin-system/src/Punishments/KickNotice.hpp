@@ -21,7 +21,8 @@ namespace AdminSystem::Punishments
  * appeal it.
  *
  * Both kick paths for a ban (the connect-time reject and the kick that follows an online ban)
- * go through here so a player reads the same notice either way.
+ * go through here so a player reads the same notice either way. Pieces that are not configured
+ * are dropped rather than joined, so an absent appeal URL leaves no dangling separator.
  *
  * @param slot the target's slot, so the notice is in their language. Pass -1 for the server
  *        language when the seat is already gone.

@@ -50,6 +50,9 @@
     "unban": "Unban",
     "unmute": "Unmute",
     "changeMap": "Change map",
+    "setNextMap": "Set as next map",
+    "voteMap": "Put to vote",
+    "cancelVote": "Cancel running vote",
     "giveWeapon": "Give weapon",
     "giveRandomWeapon": "Random weapon",
     "strip": "Strip weapons",
@@ -112,12 +115,7 @@
     "noScopeOnlyOff": "No-scope only is OFF",
     "oneHitKillOn": "One-hit kill is ON",
     "oneHitKillOff": "One-hit kill is OFF",
-    "infiniteMoneyOn": "Infinite money is ON",
-    "infiniteMoneyOff": "Infinite money is OFF",
-    "chickenBotsOn": "Chicken bots are ON",
-    "chickenBotsOff": "Chicken bots are OFF",
-    "funCleared": "Fun Mode is off",
-    "rtvCounted": "{name} wants to change the map ({votes}/{needed})"
+    "funCleared": "Fun Mode is off"
   },
   "common": {
     "selectSwapTarget": "Select swap partner",
@@ -199,21 +197,9 @@
     "unfreezeNone": "No frozen admin matches '{token}'.",
     "frozenNone": "No admins are currently frozen.",
     "frozenHeader": "Frozen admins ({count}):",
-    "mapNoMatch": "No configured map matches ‘{map}’.",
-    "mapAmbiguous": "‘{map}’ matches {count} maps. Be more specific.",
-    "mapCycleEmpty": "No maps are configured.",
-    "mapListHeader": "Configured maps ({count}):",
-    "nextMap": "Next map: {map}",
-    "nextMapUnset": "No next map is set.",
-    "weaponNoMatch": "No configured weapon matches ‘{weapon}’.",
-    "weaponAmbiguous": "‘{weapon}’ matches {count} weapons. Be more specific.",
-    "weaponGiven": "Gave {weapon} to {name}.",
-    "weaponGiveFailed": "The server refused to give {weapon}.",
+    "weaponGiveFailed": "The server refused to give that weapon.",
     "weaponStripFailed": "Could not strip that player.",
-    "weaponTargetDead": "{name} is not alive.",
-    "rtvDisabled": "Rock the vote is disabled.",
-    "rtvTooEarly": "Rock the vote is not open yet.",
-    "rtvAlreadyVoted": "You have already voted to change the map.",
+    "weaponTargetDead": "That player is not alive.",
     "voteInProgress": "A vote is already running.",
     "voteCancelled": "Vote cancelled.",
     "noVoteRunning": "No vote is running."
@@ -351,10 +337,6 @@
     "knifeRound": "Knife round",
     "noScopeOnly": "No-scope only",
     "oneHitKill": "One-hit kill",
-    "infiniteMoney": "Infinite money",
-    "chickenBots": "Chicken bots",
-    "clearAll": "Turn everything off",
-    "listHeader": "Fun Mode toggles:",
-    "unknownToggle": "No such toggle: ‘{name}’."
+    "clearAll": "Turn everything off"
   }
 }

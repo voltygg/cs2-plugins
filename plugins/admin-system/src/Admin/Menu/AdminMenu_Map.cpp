@@ -4,6 +4,7 @@
 #include "../../Core/ChatService.hpp"
 #include "../../Core/Permissions.hpp"
 #include "../../Maps/MapCycleState.hpp"
+#include "../../Maps/VoteState.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>
@@ -25,17 +26,21 @@ using VoltMod::Menu::MenuBuilder;
 namespace
 {
 
-/** Seconds players get to read the announcement before the server drops them into the load. */
-constexpr int64_t ChangeAnnounceMs = 5000;
+/** Whether @p slot still holds @p permission. Re-checked per click: the flag may have been
+ *  revoked (e.g. !admin_reload) while the menu was open. Changing and queuing a map need the
+ *  map flag, starting and cancelling a vote the vote flag - the same split the commands had. */
+bool MayUse(App& app, int slot, Permission permission)
+{
+    auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
+    return admin && app.Access.HasPermission(admin->GetSteamID(), permission);
+}
 
-/** Changing map ends everyone's round, so it confirms rather than firing on a single click. */
-void StartMapChangeConfirm(App& app, int adminSlot, MapEntry map)
+/** Taking the server away from everyone confirms rather than firing on a single click. */
+void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
 {
     VoltMod::Flow<MapEntry>::Create(app.Runtime.Menus, std::move(map))
-        // The Map flag may have been revoked (e.g. !admin_reload) while the menu was open.
         ->OnValidate([&app](int slot, const MapEntry&) -> std::optional<std::string> {
-            auto* admin = app.Runtime.Players.GetPlayerBySlot(slot);
-            if (!admin || !app.Access.HasPermission(admin->GetSteamID(), Permission::Map))
+            if (!MayUse(app, slot, Permission::Map))
                 return "punish.notAllowed";
             return std::nullopt;
         })
@@ -45,18 +50,50 @@ void StartMapChangeConfirm(App& app, int adminSlot, MapEntry map)
                 return std::format("{}: {}", tr.Get("punish.confirmTitle", slot), tr.Get("action.changeMap", slot));
             },
             [&app](int slot, const MapEntry& m) {
-                auto& tr = app.Runtime.Translations;
                 std::vector<std::pair<std::string, std::string>> rows;
-                rows.emplace_back(tr.Get("map.name", slot), m.Label());
+                rows.emplace_back(app.Runtime.Translations.Get("map.name", slot), m.Label());
                 return rows;
             },
             [&app](int slot) { return app.Runtime.Translations.Get("punish.confirm", slot); },
             [&app](int slot) { return app.Runtime.Translations.Get("punish.cancel", slot); })
         ->OnFinish([&app](int, MapEntry& m) {
             app.Chat.BroadcastKey("broadcast.mapChanging", {{"map", m.Label()}});
-            app.MapCycle.ChangeAfter(m, ChangeAnnounceMs);
+            app.MapCycle.ChangeAfter(m);
         })
         ->Start(adminSlot);
+}
+
+/** What an admin can do with one map: switch now, queue it, or put it to the players. */
+std::shared_ptr<VoltMod::MenuView> BuildMapActionsMenu(App& app, int adminSlot, const MapEntry& map)
+{
+    auto& tr = app.Runtime.Translations;
+
+    const bool mayMap = MayUse(app, adminSlot, Permission::Map);
+    const bool mayVote = MayUse(app, adminSlot, Permission::Vote);
+
+    return MenuBuilder(map.Label())
+        .AddButton(
+            tr.Get("action.changeMap", adminSlot), [&app, map](int slot) { ConfirmMapChange(app, slot, map); }, mayMap)
+        // Queuing and voting only take effect later, so neither needs a confirmation step.
+        .AddButton(
+            tr.Get("action.setNextMap", adminSlot),
+            [&app, map](int slot) {
+                if (!MayUse(app, slot, Permission::Map))
+                    return;
+                app.MapCycle.SetNext(map);
+                app.Chat.BroadcastKey("broadcast.nextMapSet", {{"map", map.Label()}});
+            },
+            mayMap)
+        .AddButton(
+            tr.Get("action.voteMap", adminSlot),
+            [&app, map](int slot) {
+                if (!MayUse(app, slot, Permission::Vote))
+                    return;
+                if (!app.Votes.StartMapVote(map, slot))
+                    app.Chat.Reply(slot, app.Runtime.Translations.Get("cmd.voteInProgress", slot));
+            },
+            mayVote)
+        .Build();
 }
 
 }  // namespace
@@ -69,11 +106,22 @@ std::shared_ptr<VoltMod::MenuView> BuildMapMenu(AdminSystem::App& app, int admin
 
     const auto& cycle = app.MapCycle.Cycle();
     for (const auto& map : cycle)
-        builder.AddButton(map.Label(), [&app, map](int slot) { StartMapChangeConfirm(app, slot, map); });
+        builder.AddSubmenu(map.Label(), [&app, map](int slot) { return BuildMapActionsMenu(app, slot, map); });
 
     // Never show a dead-end empty page.
     if (cycle.empty())
         builder.AddButton(tr.Get("map.noMaps", adminSlot), [](int) {}, false);
+
+    builder.AddButton(
+        tr.Get("action.cancelVote", adminSlot),
+        [&app](int slot) {
+            if (!MayUse(app, slot, Permission::Vote))
+                return;
+            auto& translations = app.Runtime.Translations;
+            app.Chat.Reply(slot,
+                           translations.Get(app.Votes.CancelVote() ? "cmd.voteCancelled" : "cmd.noVoteRunning", slot));
+        },
+        MayUse(app, adminSlot, Permission::Vote));
 
     return builder.Build();
 }

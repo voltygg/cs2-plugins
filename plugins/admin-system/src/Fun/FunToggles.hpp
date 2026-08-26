@@ -1,9 +1,9 @@
 #pragma once
 
+#include <VoltMod/Sdk/Entity/HitGroup.hpp>
+#include <array>
 #include <cstdint>
-#include <string>
 #include <string_view>
-#include <vector>
 
 namespace AdminSystem::Fun
 {
@@ -16,8 +16,6 @@ enum class Toggle : uint8_t
     KnifeRound,
     NoScopeOnly,
     OneHitKill,
-    InfiniteMoney,
-    ChickenBots,
     Count,
 };
 
@@ -40,7 +38,7 @@ struct ToggleState
     bool AnyOn() const;
 };
 
-/** Translation-key stem and menu label key for one toggle. */
+/** The translation keys for one toggle: its menu label and its two broadcast lines. */
 struct ToggleInfo
 {
     Toggle Id;
@@ -49,17 +47,19 @@ struct ToggleInfo
     std::string_view OffKey;
 };
 
-/** Every toggle, in menu order. */
-const std::vector<ToggleInfo>& Toggles();
-
-/** The toggle @p name refers to, or Toggle::Count when nothing matches. Case-insensitive. */
-Toggle ParseToggle(std::string_view name);
-
-/** The chat command word for @p toggle, e.g. "lowgravity". */
-std::string_view ToggleWord(Toggle toggle);
-
-/** Engine hitgroup for a headshot, as CTakeDamageInfo reports it. */
-inline constexpr int HitGroupHead = 1;
+/**
+ * Every toggle, in menu order and indexable by @ref Toggle.
+ *
+ * One table keyed by the enum, so a new modifier cannot be added with its label and its
+ * broadcast lines out of step.
+ */
+inline constexpr std::array<ToggleInfo, ToggleCount> Toggles{{
+    {Toggle::LowGravity, "fun.lowGravity", "broadcast.lowGravityOn", "broadcast.lowGravityOff"},
+    {Toggle::HeadshotOnly, "fun.headshotOnly", "broadcast.headshotOnlyOn", "broadcast.headshotOnlyOff"},
+    {Toggle::KnifeRound, "fun.knifeRound", "broadcast.knifeRoundOn", "broadcast.knifeRoundOff"},
+    {Toggle::NoScopeOnly, "fun.noScopeOnly", "broadcast.noScopeOnlyOn", "broadcast.noScopeOnlyOff"},
+    {Toggle::OneHitKill, "fun.oneHitKill", "broadcast.oneHitKillOn", "broadcast.oneHitKillOff"},
+}};
 
 /**
  * What the damage rules make of one hit.
@@ -85,8 +85,8 @@ struct DamageDecision
  * allowed to land at all. Damage from the world (no attacker) is never suppressed by the aim
  * rules, so fall damage and fire still work during a headshot-only round.
  */
-DamageDecision DecideDamage(const ToggleState& state, int hitGroup, bool attackerScoped, bool hasAttacker,
-                            float incoming);
+DamageDecision DecideDamage(const ToggleState& state, VoltMod::Sdk::HitGroup hitGroup, bool attackerScoped,
+                            bool hasAttacker, float incoming);
 
 /** Damage that kills any player outright; well above the maximum health an admin can set. */
 inline constexpr float OneHitKillDamage = 10000.0f;

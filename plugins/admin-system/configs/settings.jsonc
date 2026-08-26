@@ -158,7 +158,6 @@
   "maps": {
     // Maps admins may switch to. The engine has no usable list of its own, so this is it.
     // workshopId != 0 addresses a workshop map by published-file id instead of by name.
-    // maxPlayers 0 means no upper limit.
     "cycle": [
       { "name": "de_dust2", "displayName": "Dust II" },
       { "name": "de_mirage", "displayName": "Mirage" },
@@ -167,13 +166,12 @@
       { "name": "de_ancient", "displayName": "Ancient" },
       { "name": "de_anubis", "displayName": "Anubis" }
     ],
-    // Player-driven map changes: !rtv and !votemap.
-    "rtv": {
-      "enabled": true,
-      // Share of connected humans that must agree; a strict majority of it is required.
+    // The yes/no vote an admin opens from Map > Put to vote.
+    "vote": {
+      // Share of the ballots cast that must be yes; a strict majority of it is required.
       "successRatio": 0.6,
-      // Seconds after a map starts before !rtv is accepted.
-      "voteDelaySec": 120
+      // How long the panel stays open.
+      "durationSec": 20
     }
   },
   "weapons": {

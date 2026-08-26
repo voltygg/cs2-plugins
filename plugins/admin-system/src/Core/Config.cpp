@@ -87,11 +87,7 @@ void ConfigManager::ResolveMapCycle(const MapSettings& maps)
     for (std::size_t i = 0; i < maps.cycle.size(); ++i)
     {
         const auto& raw = maps.cycle[i];
-        Maps::MapEntry entry{.Name = raw.name,
-                             .DisplayName = raw.displayName,
-                             .WorkshopId = raw.workshopId,
-                             .MinPlayers = raw.minPlayers,
-                             .MaxPlayers = raw.maxPlayers};
+        Maps::MapEntry entry{.Name = raw.name, .DisplayName = raw.displayName, .WorkshopId = raw.workshopId};
 
         if (auto problem = Maps::ValidateMapEntry(entry); !problem.empty())
         {

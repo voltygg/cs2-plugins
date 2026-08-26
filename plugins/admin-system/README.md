@@ -11,11 +11,12 @@ multi-server grants, abuse protection, and cheat-check workflows.
   health, armor, speed, size, and bury.
 - Visual and gameplay effects such as ghost, disco, wallhack, smite, model
   selection, and optional [bhop grants](../bhop/README.md).
-- Map control: change level, list maps, and queue the next map.
-- Player map voting: `!rtv` and a native yes/no `!votemap` panel.
-- Weapon control: give a configured weapon, a random one, or strip a player.
-- Fun Mode round modifiers: low gravity, headshot only, knife round, no-scope
-  only, one-hit kill, infinite money, and chicken bots.
+- Map control through the admin menu: change level, queue the next map, and put
+  a map to the game's own yes/no vote panel.
+- Weapon control through the menu: give a configured weapon, a random one, or
+  strip a player.
+- Fun Mode round modifiers through the menu: low gravity, headshot only, knife
+  round, no-scope only, and one-hit kill.
 - Groups, flags, immunity, per-server grants, and admin stealth.
 - Network-wide punishments and automatic punishment enforcement.
 - Automatic or manual freezing of abusive admins with an audit trail.
@@ -65,16 +66,20 @@ action supports it.
 | `h` | Health, armor, and godmode |
 | `w` | Wallhack |
 | `j` | Bhop grants |
-| `m` | Change map and queue the next map |
-| `k` | Give and strip weapons |
-| `g` | Fun Mode round modifiers |
-| `v` | Start and cancel map votes |
+| `m` | Change map and queue the next map (Map menu) |
+| `k` | Give and strip weapons (Control menu) |
+| `g` | Fun Mode round modifiers (Fun menu) |
+| `v` | Start and cancel map votes (Map menu) |
 | `z` | Root access |
 
 `!admin` has no dedicated flag, but the caller must be a registered admin.
 Individual menu categories and actions remain permission-gated.
 
 ## Commands
+
+Map control, weapons, and Fun Mode are menu-only - `!admin` opens the panel and
+each category is gated by its own flag. The commands below are the ones with no
+menu equivalent.
 
 ### Moderation and administration
 
@@ -83,16 +88,6 @@ Individual menu categories and actions remain permission-gated.
 | `!kick <target> [reason]` | `c` | Kick a player |
 | `!ban <target> <duration> [reason]` | `d` | Ban a player |
 | `!unban <steamid> [reason]` | `e` | Remove a ban |
-| `!map <name>` | `m` | Change map after a short announcement |
-| `!maps` | `m` | List configured maps; alias: `!maplist` |
-| `!setnextmap <name>` | `m` | Queue a map for the end of the round |
-| `!nextmap` | - | Show the queued map |
-| `!give <target> <weapon>` | `k` | Give a configured weapon |
-| `!strip <target>` | `k` | Remove every weapon a player carries |
-| `!fun [toggle]` | `g` | List or toggle a round modifier; `!fun off` clears |
-| `!rtv` | - | Vote to change the map at the end of the round |
-| `!votemap <name>` | `v` | Put a map to a yes/no vote |
-| `!cancelvote` | `v` | Cancel the running vote |
 | `!voice_mute <target> <duration> [reason]` | `o` | Mute voice; aliases: `!vmute`, `!mute` |
 | `!voice_unmute <target>` | `o` | Restore voice; aliases: `!vunmute`, `!unmute` |
 | `!text_mute <target> <duration> [reason]` | `o` | Block chat; aliases: `!tmute`, `!gag` |

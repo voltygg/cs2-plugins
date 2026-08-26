@@ -18,8 +18,7 @@ if(BUILD_TESTING)
         SOURCES
             src/Fun/FunToggles.cpp
             src/Maps/MapQuery.cpp
-            src/Maps/RtvCore.cpp
-            src/Punishments/KickNoticeCore.cpp
+            src/Maps/VoteMath.cpp
             src/Weapons/WeaponCatalog.cpp
         INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
     )

@@ -96,29 +96,26 @@ struct MapConfigEntry
     std::string name;
     std::string displayName;
     uint64_t workshopId = 0;
-    int minPlayers = 0;
-    int maxPlayers = 0;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapConfigEntry, name, displayName, workshopId, minPlayers, maxPlayers)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapConfigEntry, name, displayName, workshopId)
 
-/** Player-driven map changes: `!rtv` and `!votemap`. */
-struct RtvSettings
+/** The map vote an admin opens from the Map menu. */
+struct MapVoteSettings
 {
-    bool enabled = true;
-    /** Share of connected humans that must agree; a strict majority of it is required. */
+    /** Share of the ballots cast that must be yes; a strict majority of it is required. */
     double successRatio = 0.6;
-    /** Seconds after a map starts before `!rtv` is accepted. */
-    int voteDelaySec = 120;
+    /** How long the panel stays open. */
+    int durationSec = 20;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RtvSettings, enabled, successRatio, voteDelaySec)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapVoteSettings, successRatio, durationSec)
 
 /** Maps an admin may switch to. The engine offers no usable list of its own, so this is it. */
 struct MapSettings
 {
     std::vector<MapConfigEntry> cycle;
-    RtvSettings rtv;
+    MapVoteSettings vote;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapSettings, cycle, rtv)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapSettings, cycle, vote)
 
 /** Raw weapon entry, validated into Weapons::WeaponEntry during load. */
 struct WeaponConfigEntry

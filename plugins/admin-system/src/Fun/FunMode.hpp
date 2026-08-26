@@ -3,18 +3,15 @@
 #include "FunToggles.hpp"
 
 #include <VoltMod/Core/Subscription.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace VoltMod
 {
 class Runtime;
-}
-
-namespace AdminSystem
-{
-struct App;
-}
+struct DamageView;
+}  // namespace VoltMod
 
 namespace AdminSystem::Fun
 {
@@ -29,7 +26,11 @@ namespace AdminSystem::Fun
 class FunMode
 {
 public:
-    explicit FunMode(App& app);
+    /** @p runtime must outlive this object; App declares it above. */
+    explicit FunMode(VoltMod::Runtime& runtime);
+    ~FunMode();
+    FunMode(const FunMode&) = delete;
+    FunMode& operator=(const FunMode&) = delete;
 
     /** Subscribe to the round and spawn events the toggles need. Call once during load. */
     void Start();
@@ -38,7 +39,6 @@ public:
     bool Flip(Toggle toggle);
 
     bool IsOn(Toggle toggle) const { return _state.IsOn(toggle); }
-    const ToggleState& State() const { return _state; }
 
     /** Turn everything off and restore what the toggles changed. */
     void ClearAll();
@@ -46,15 +46,18 @@ public:
 private:
     void ApplyRoundStart();
     void ApplyGravity();
+    /** Put back the gravity this plugin overrode, if it overrode any. */
+    void RestoreGravity();
+    void SetGravity(float value);
     void GiveKnifeOnly(int slot);
-    void MakeChicken(int slot);
-    void TopUpMoney();
     void OnDamage(VoltMod::DamageView& view);
     /** Whether @p slot is currently scoped in (CCSPlayerPawn::m_bIsScoped). */
     bool IsScoped(int slot) const;
 
-    App& _app;
+    VoltMod::Runtime& _rt;
     ToggleState _state;
+    /** `sv_gravity` as it was before low gravity took it over; empty while untouched. */
+    std::optional<float> _savedGravity;
     /** Listener registrations, released together and declared last so they stop before the
      *  state their callbacks read. */
     std::vector<VoltMod::Subscription> _subs;

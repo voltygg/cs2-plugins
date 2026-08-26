@@ -2,55 +2,34 @@
 
 #include "MapQuery.hpp"
 
-#include <VoltMod/Core/Subscription.hpp>
-#include <cstdint>
-#include <string>
-#include <unordered_set>
-#include <vector>
-
 namespace VoltMod
 {
 class Runtime;
 }
 
-namespace AdminSystem
+namespace AdminSystem::Core
 {
-struct App;
+class ConfigManager;
 }
 
 namespace AdminSystem::Maps
 {
 
+class MapCycleState;
+
 /**
- * Player-driven map changes: `!rtv` and `!votemap`.
+ * The map vote an admin opens from the Map menu.
  *
- * App-owned. RTV accumulates one vote per SteamID and, once enough players agree, queues the
- * next map rather than changing level mid-round. `!votemap` puts one named map to the game's own
- * yes/no panel.
+ * App-owned. Players answer through the game's own yes/no panel, so there is no plugin-side
+ * tally to keep: the engine collects the ballots and @ref VoltMod::Sdk::PanoramaVote reports
+ * them. A passing vote queues the map for the end of the round rather than changing level
+ * mid-round.
  */
 class VoteState
 {
 public:
-    explicit VoteState(App& app);
-
-    /** Subscribe to the round and disconnect events RTV needs. Call once during load. */
-    void Start();
-
-    /** Result of one player calling `!rtv`. */
-    enum class RtvResult
-    {
-        Disabled,
-        TooEarly,  ///< still inside the post-map-start delay
-        AlreadyVoted,
-        Counted,
-        Passed,
-    };
-
-    RtvResult CastRtv(int slot, int64_t steamId);
-
-    /** Votes cast so far, and how many are needed. */
-    std::size_t RtvVotes() const { return _rtvVoters.size(); }
-    std::size_t RtvNeeded() const;
+    /** All three must outlive this object; App declares them above it. */
+    VoteState(VoltMod::Runtime& runtime, const Core::ConfigManager& config, MapCycleState& cycle);
 
     /** Put @p map to a yes/no vote. @return false when a vote is already running. */
     bool StartMapVote(const MapEntry& map, int callerSlot);
@@ -59,20 +38,9 @@ public:
     bool CancelVote();
 
 private:
-    void Reset();
-    std::size_t HumanCount() const;
-    /** Queue @p map and tell everyone it won. */
-    void QueueWinner(const MapEntry& map);
-
-    App& _app;
-    /** SteamIDs that have called !rtv this map, so a reconnect cannot vote twice. */
-    std::unordered_set<int64_t> _rtvVoters;
-    /** Map the tally belongs to; a change clears it. */
-    std::string _currentMap;
-    /** Monotonic seconds when the current map started, for the post-start RTV delay. */
-    double _mapStartedAt = 0.0;
-    bool _rtvPassed = false;
-    std::vector<VoltMod::Subscription> _subs;
+    VoltMod::Runtime& _rt;
+    const Core::ConfigManager& _config;
+    MapCycleState& _cycle;
 };
 
 }  // namespace AdminSystem::Maps
