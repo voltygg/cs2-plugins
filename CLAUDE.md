@@ -3,7 +3,7 @@
 This repository builds C++23 Metamod:Source plugins for Counter-Strike 2. Shared
 engine integration comes from the `voltmod/[~1.3]` Conan package. The local
 `vendor/voltmod` checkout is a separate Git repository used for coordinated
-framework work; it affects builds only after `conan editable add vendor/voltmod`.
+framework work; create its package locally and refresh `conan.lock` to consume it.
 
 ## Commands
 
@@ -35,12 +35,18 @@ Build output is under
 `build/<preset>/plugins/<name>/<platform-arch>/`. The build tasks run
 `voltmod`, installed by this repository's `pyproject.toml`.
 
-To work on VoltMod and a plugin together:
+To work on VoltMod and a plugin together, create the framework package and
+refresh the consumer lock:
+
+Remove any old `voltmod` editable registration once with
+`uv run conan editable remove voltmod`.
 
 ```bash
-conan editable add vendor/voltmod
+cd vendor/voltmod
+uv run voltmod package build kit
+cd ../..
+uv run conan lock create . --profile:all vendor/voltmod/conan/profiles/windows-msvc.txt -s build_type=Release -s compiler.runtime_type=Release --lockfile=conan.lock --lockfile-out=conan.lock --update="voltmod/*" --no-remote
 uv run poe build
-conan editable remove voltmod
 ```
 
 Treat the root worktree and `vendor/voltmod` as separate repositories. Check
