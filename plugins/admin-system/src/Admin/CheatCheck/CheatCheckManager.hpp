@@ -9,6 +9,7 @@
 #include <VoltMod/Entities/Entity.hpp>
 #include <VoltMod/Entities/MoveType.hpp>
 #include <VoltMod/Http/HttpResult.hpp>
+#include <VoltMod/Messaging/CenterHtml.hpp>
 #include <array>
 #include <cstdint>
 #include <functional>

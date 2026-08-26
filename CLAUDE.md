@@ -105,8 +105,8 @@ Current patterns:
   `Runtime.Players.Connected`/`.FullyConnected`/`.SettingsChanged`/`.Disconnected`,
   not by overriding a `MetamodPlugin` virtual.
 - Subscribe with `+=` on the framework's `Event` members (`runtime.Slots.Changed`,
-  `runtime.ConVars.Changed`, `runtime.MovementHook.Pre`, ...) and with
-  `runtime.Events.On<T>()` for game events. There is no other subscribe verb, and
+  `runtime.ConVars.Changed`, `runtime.Hooks.Movement.Pre`, ...) and with
+  `runtime.GameEvents.On<T>()` for game events. There is no other subscribe verb, and
   no string-keyed game event: model it in `Events/EventTypes.hpp` first.
 - Keep each returned `VoltMod::Subscription` beside the state captured by its
   handler. Dropping one unsubscribes - and for a `Scheduler` timer, cancels it -
@@ -163,7 +163,7 @@ Current patterns:
 - Pass dependencies through constructors. Do not add singletons or ambient
   service lookups in plugin code.
 - Bind stable services in constructors and App-owned objects named by behaviour
-  (Actions, PlayerEffects, Runtime.Pawns); pass request data such as slots and
+  (Actions, PlayerEffects, Runtime.World.Pawns); pass request data such as slots and
   descriptors to methods. Do not add generic Services/Env bags. `ActionContext`
   carries only the resolved pair and its controllers - never a `Runtime&`. An
   action or effect body that needs an engine service reaches it through the

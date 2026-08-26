@@ -29,7 +29,7 @@ void AntiCheatManager::Initialize()
     _simulator.Initialize();
 
     // Subscribing installs the movement hook, which every aim module then feeds off.
-    _subs.push_back(_rt.MovementHook.PreCmd +=
+    _subs.push_back(_rt.Hooks.Movement.PreCmd +=
                     [this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); });
     _subs.push_back(_rt.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
     _subs.push_back(_rt.Players.FullyConnected += [this](VoltMod::Player& player) { OnPlayerFullyConnected(player); });
@@ -59,7 +59,7 @@ void AntiCheatManager::Initialize()
     _dllInjection.Initialize();
     _invalidCvarPoller.Initialize();
 
-    _rt.Status.RegisterSection("anticheat", [this] { return StatusSnapshot(); });
+    _rt.Status.RegisterSection("anticheat", [this] { return StatusSnapshot().dump(); });
     RegisterCommands();
     Log::Info("Detection cores ready (mode={}).", _config.Get().anticheat.mode);
 }
@@ -236,8 +236,9 @@ void AntiCheatManager::LogStatus() const
             slot, player->Name(), player->SteamId(), PunishmentName(_response.Issued(slot)),
             _aimbot.IncidentCount(slot), _aimlock.IncidentCount(slot), _aimlock.IsTracking(slot) ? "/tracking" : "",
             _antiAim.Score(slot), _silentAim.Score(slot, now), _namechanger.ChangeCount(slot),
-            latched.empty() ? "-" : latched, _rt.ClientCvars.PendingCount(slot), _invalidCvarPoller.PollsIn(slot, now),
-            _correlator.Shots(slot).size(), _correlator.CommandCount(slot), _correlator.Generation(slot));
+            latched.empty() ? "-" : latched, _rt.Hooks.ClientCvars.PendingCount(slot),
+            _invalidCvarPoller.PollsIn(slot, now), _correlator.Shots(slot).size(), _correlator.CommandCount(slot),
+            _correlator.Generation(slot));
     }
     if (!any)
         Log::Info("[AC] no human players connected.");

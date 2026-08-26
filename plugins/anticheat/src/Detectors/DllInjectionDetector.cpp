@@ -69,7 +69,7 @@ void DllInjectionDetector::Reset()
 
 void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
 {
-    if (!_rt.Events.GetClientLegacyListener(slot))
+    if (!_rt.GameEvents.GetClientLegacyListener(slot))
     {
         // One grace period for a client still settling in. After that a missing listener is simply
         // nothing to scan, and the slot falls back to the normal cadence.
@@ -85,7 +85,7 @@ void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
     // cannot leave this detector checking a stale list.
     std::vector<std::string_view> matches;
     for (const std::string& name : _detections.Get().dllEventBlacklist)
-        if (_rt.Events.ClientListensTo(slot, name.c_str()))
+        if (_rt.GameEvents.ClientListensTo(slot, name.c_str()))
             matches.push_back(name);
     if (matches.empty())
         return;

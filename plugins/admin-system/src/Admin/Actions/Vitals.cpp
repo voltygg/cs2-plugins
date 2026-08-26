@@ -32,7 +32,7 @@ ParamAction MakeSetSize(VoltMod::Runtime& runtime)
 {
     return ParamAction{Flag(Permission::Fun), /*requireAlive*/ true,
                        [&runtime](const ActionContext& ctx, int percent) -> OptKey {
-                           runtime.EntityOps.SetModelScale(ctx.TargetPawn().Raw(), percent / 100.0f);
+                           runtime.World.EntityOps.SetModelScale(ctx.TargetPawn().Raw(), percent / 100.0f);
                            return "broadcast.sizeSet";
                        }};
 }

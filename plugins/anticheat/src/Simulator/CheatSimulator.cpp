@@ -108,7 +108,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     // The filter rewrites live player commands, so it stays uninstalled until the first Arm. A
     // disabled simulator then costs nothing on the per-tick movement path.
     if (!_filter)
-        _filter = _rt.MovementHook.FilterCmd +=
+        _filter = _rt.Hooks.Movement.FilterCmd +=
             [this](int filtered, VoltMod::UserCmdView& cmd) { OnFilter(filtered, cmd); };
 
     auto& state = _sim[slot];

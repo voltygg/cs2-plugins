@@ -2,6 +2,7 @@
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Entities/EntitySystem.hpp>
+#include <VoltMod/Events/EventTypes.hpp>
 #include <algorithm>
 #include <cmath>
 #include <mathlib/vector.h>
@@ -29,7 +30,7 @@ void BhopManager::Initialize()
     ApplySettings();
     RegisterConsoleCommands();
 
-    auto& events = _rt.Events;
+    auto& events = _rt.GameEvents;
     _subs.push_back(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
     _subs.push_back(events.On<VoltMod::PlayerJump>([this](const VoltMod::PlayerJump& e) { OnPlayerJump(e.Slot); }));
     // Gamemode cfg re-exec on map change can reset the convars; re-asserting is cheap.
@@ -41,8 +42,8 @@ void BhopManager::Initialize()
     // Only grants need this pair - subtick movement ignores the scoped sv_autobunnyhopping
     // override, so granted slots get a server-side flip instead. Subscribing installs the hook,
     // and both handlers no-op in the other mode.
-    _subs.push_back(_rt.MovementHook.Pre += [this](int slot) { OnRunCommandPre(slot); });
-    _subs.push_back(_rt.MovementHook.Post += [this](int slot) { OnRunCommandPost(slot); });
+    _subs.push_back(_rt.Hooks.Movement.Pre += [this](int slot) { OnRunCommandPre(slot); });
+    _subs.push_back(_rt.Hooks.Movement.Post += [this](int slot) { OnRunCommandPost(slot); });
 
     _subs.push_back(_rt.Players.Disconnected += [this](VoltMod::Player& player) { OnPlayerDisconnect(player); });
 

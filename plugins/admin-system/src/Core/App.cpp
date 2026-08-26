@@ -8,6 +8,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Database/Api.hpp>
+#include <VoltMod/Events/EventTypes.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -144,7 +145,7 @@ StageResult App::StartPunishments()
 
 void App::RegisterGameEventListeners()
 {
-    auto& events = Runtime.Events;
+    auto& events = Runtime.GameEvents;
     _subs.push_back(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) {
         // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
         if (e.VictimSlot >= 0)
@@ -170,17 +171,20 @@ void App::InstallStatusReporting()
         // after load must show as such.
         return nlohmann::json{{"connected", Db.IsConnected()},
                               {"migrationVersion", Migration.CurrentVersion},
-                              {"migrationsApplied", Migration.Applied}};
+                              {"migrationsApplied", Migration.Applied}}
+            .dump();
     });
 
-    status.RegisterSection(
-        "admins", [this] { return nlohmann::json{{"cached", Admins.AdminCount()}, {"groups", Admins.GroupCount()}}; });
+    status.RegisterSection("admins", [this] {
+        return nlohmann::json{{"cached", Admins.AdminCount()}, {"groups", Admins.GroupCount()}}.dump();
+    });
 
-    status.RegisterSection("commands", [this] { return nlohmann::json{{"registered", Runtime.Commands.Count()}}; });
+    status.RegisterSection("commands",
+                           [this] { return nlohmann::json{{"registered", Runtime.Commands.Count()}}.dump(); });
 
     status.RegisterSection("server", [this] {
         const auto& server = Config.GetServer();
-        return nlohmann::json{{"tag", server.tag}, {"name", server.name}};
+        return nlohmann::json{{"tag", server.tag}, {"name", server.name}}.dump();
     });
 
     status.InstallCommand("admin_status",

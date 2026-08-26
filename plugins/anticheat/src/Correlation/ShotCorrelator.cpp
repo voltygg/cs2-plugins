@@ -85,16 +85,16 @@ void ShotCorrelator::Initialize()
 {
     _userIds.fill(-1);
 
-    auto& events = _rt.Events;
+    auto& events = _rt.GameEvents;
 
-    _subscriptions.push_back(_rt.MovementHook.PreCmd +=
+    _subscriptions.push_back(_rt.Hooks.Movement.PreCmd +=
                              [this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); });
     _subscriptions.push_back(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
     // The aim modules discount the frames after a teleport, so the stamps live here rather than in
     // the framework: subscribing is what arms the per-pawn hook, and the grace window is ours.
     _lastTeleport.BindReset(_rt.Slots);
-    _subscriptions.push_back(_rt.Teleports.Teleported += [this](int slot) {
+    _subscriptions.push_back(_rt.Hooks.Teleport.Teleported += [this](int slot) {
         if (IsValidSlot(slot))
             _lastTeleport[slot] = _rt.Clock.Time();
     });
@@ -166,7 +166,7 @@ bool ShotCorrelator::JustTeleported(int slot) const
 void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& players)
 {
     _userIds.fill(-1);
-    IVEngineServer2* engine = _rt.Interfaces.Engine;
+    IVEngineServer2* engine = _rt.Unsafe.Interfaces.Engine;
     _userIdsResolved = engine != nullptr;
 
     for (const VoltMod::Player* player : _rt.Players.All())

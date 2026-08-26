@@ -88,7 +88,7 @@ bool PlayerChat::HandleSay(Player* player, std::string_view message, bool isSayT
 
     // Menu free-text input: if a chat capture is pending for this player, the line is
     // their menu answer, not a chat message. Always supersede so it isn't broadcast.
-    if (_rt.ChatInput.TryConsume(player->Slot(), message))
+    if (_rt.Hooks.ChatInput.TryConsume(player->Slot(), message))
         return true;
 
     // Returns false for an unprefixed line and for unknown commands (e.g. "!ads"), so both

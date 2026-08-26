@@ -52,7 +52,7 @@ static WeaponActionResult RunWeaponAction(App& app, int adminSlot, int targetSlo
 WeaponActionResult GiveWeapon(App& app, int adminSlot, int targetSlot, std::string_view item)
 {
     const std::string classname(item);
-    auto& items = app.Runtime.Items;
+    auto& items = app.Runtime.World.Items;
     return RunWeaponAction(
         app, adminSlot, targetSlot,
         [&items, &classname](const ActionContext& ctx) { return items.Give(ctx.TargetPawn(), classname.c_str()); },
@@ -61,7 +61,7 @@ WeaponActionResult GiveWeapon(App& app, int adminSlot, int targetSlot, std::stri
 
 WeaponActionResult StripWeapons(App& app, int adminSlot, int targetSlot)
 {
-    auto& items = app.Runtime.Items;
+    auto& items = app.Runtime.World.Items;
     return RunWeaponAction(
         app, adminSlot, targetSlot, [&items](const ActionContext& ctx) { return items.StripWeapons(ctx.TargetPawn()); },
         "broadcast.stripped");

@@ -10,10 +10,10 @@ namespace Anticheat
 
 LagEstimate MeasureVisualLag(VoltMod::Runtime& rt, int slot)
 {
-    if (!VoltMod::IsValidSlot(slot) || !rt.NetChannels.GetNetInfo(slot))
+    if (!VoltMod::IsValidSlot(slot) || !rt.World.NetChannels.GetNetInfo(slot))
         return {};
 
-    const char* interp = rt.NetChannels.GetUserInfoCvar(slot, "cl_interp_ratio");
+    const char* interp = rt.World.NetChannels.GetUserInfoCvar(slot, "cl_interp_ratio");
     if (!interp)
         return {};
 
@@ -23,7 +23,7 @@ LagEstimate MeasureVisualLag(VoltMod::Runtime& rt, int slot)
     if (parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size())
         return {};
 
-    return EstimateVisualLag(rt.NetChannels.EngineLatency(slot), ratio);
+    return EstimateVisualLag(rt.World.NetChannels.EngineLatency(slot), ratio);
 }
 
 }  // namespace Anticheat

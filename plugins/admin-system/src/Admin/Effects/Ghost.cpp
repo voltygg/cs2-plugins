@@ -22,7 +22,7 @@ Effect MakeGhost(VoltMod::Runtime& runtime)
                   .OffKey = "broadcast.ghostOff",
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
                       int slot = ctx.Target().Slot();
-                      auto& transmit = runtime.Transmit;
+                      auto& transmit = runtime.Hooks.Transmit;
                       transmit.SetPawnHidden(slot, true);
                       return {.OnStop = [&transmit, slot]() { transmit.SetPawnHidden(slot, false); }};
                   }};

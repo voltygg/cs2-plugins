@@ -92,9 +92,9 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
     // second one, so the batch never has to check what is pending.
     for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
     {
-        _rt.ClientCvars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
-                              [this](int replySlot, VoltMod::ClientCvarStatus status, std::string_view cvar,
-                                     std::string_view value) { OnReply(replySlot, status, cvar, value); });
+        _rt.Hooks.ClientCvars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
+                                    [this](int replySlot, VoltMod::ClientCvarStatus status, std::string_view cvar,
+                                           std::string_view value) { OnReply(replySlot, status, cvar, value); });
     }
     state.Cursor = rules.PollCvarIndex(state.Cursor, CvarsPerPoll);
 }
@@ -104,7 +104,7 @@ void InvalidCvarDetector::ReadUserInfo(int slot)
     const bool enforce = _manager.EnforceCheatCvars();
     for (const CvarRule& rule : _manager.InvalidCvars().Rules().UserInfo())
     {
-        const char* value = _rt.NetChannels.GetUserInfoCvar(slot, rule.name.c_str());
+        const char* value = _rt.World.NetChannels.GetUserInfoCvar(slot, rule.name.c_str());
         if (!value || *value == '\0')
             continue;
         _manager.Report(slot, _manager.InvalidCvars().Observe(slot, rule.name, value, enforce));

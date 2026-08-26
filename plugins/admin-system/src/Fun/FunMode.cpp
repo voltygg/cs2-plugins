@@ -1,6 +1,7 @@
 ﻿#include "FunMode.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Events/EventTypes.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <string>
@@ -25,7 +26,7 @@ void FunMode::Start()
 {
     ResolveConVars();
 
-    auto& events = _rt.Events;
+    auto& events = _rt.GameEvents;
 
     _subs.push_back(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) { ApplyRoundStart(); }));
 
@@ -123,8 +124,8 @@ void FunMode::GiveKnifeOnly(int slot)
     if (!pawn || !pawn.IsAlive())
         return;
 
-    _rt.Items.StripWeapons(pawn, false);
-    _rt.Items.Give(pawn, pawn.Team == VoltMod::TeamT ? KnifeT : KnifeCT);
+    _rt.World.Items.StripWeapons(pawn, false);
+    _rt.World.Items.Give(pawn, pawn.Team == VoltMod::TeamT ? KnifeT : KnifeCT);
 }
 
 }  // namespace AdminSystem::Fun

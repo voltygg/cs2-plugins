@@ -1,6 +1,7 @@
 #pragma once
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/App/Config.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>

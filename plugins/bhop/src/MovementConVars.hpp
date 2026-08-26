@@ -3,6 +3,7 @@
 #include "Config.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Entities/Api.hpp>
 #include <cstddef>
 #include <vector>
 

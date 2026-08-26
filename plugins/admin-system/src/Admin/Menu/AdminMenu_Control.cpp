@@ -10,8 +10,10 @@
 #include "PresetSubmenu.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Random.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Entities/Entity.hpp>
+#include <VoltMod/Entities/PawnPredicates.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Menu/MenuPresets.hpp>
@@ -100,7 +102,8 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
     if (!target || !admin)
         return nullptr;
 
-    MenuBuilder builder(app.Runtime.Menus, std::format("{}: {}", tr.Get("category.control", adminSlot), target->Name()));
+    MenuBuilder builder(app.Runtime.Menus,
+                        std::format("{}: {}", tr.Get("category.control", adminSlot), target->Name()));
     builder.For(admin->Ref(), target->Ref(), &app.Effects);
     bool hasS = builder.Allowed(Flag(Permission::Control));
 

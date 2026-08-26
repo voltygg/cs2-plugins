@@ -4,6 +4,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscription.hpp>
+#include <VoltMod/Engine/ConVarLease.hpp>
 #include <array>
 #include <string_view>
 #include <vector>

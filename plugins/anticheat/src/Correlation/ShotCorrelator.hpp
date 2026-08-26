@@ -11,6 +11,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Engine/EngineTypes.hpp>
+#include <VoltMod/Hooks/Api.hpp>
 #include <array>
 #include <cstdint>
 #include <vector>

@@ -41,11 +41,11 @@ void PrecacheModels(VoltMod::Runtime& runtime)
 {
     for (const auto& model : FunModels())
     {
-        runtime.Precache.Add(model.Path);
+        runtime.World.Precache.Add(model.Path);
     }
 
-    runtime.Precache.Add(DefaultModelT);
-    runtime.Precache.Add(DefaultModelCt);
+    runtime.World.Precache.Add(DefaultModelT);
+    runtime.World.Precache.Add(DefaultModelCt);
 }
 
 Effect MakeModel(VoltMod::Runtime& runtime)
@@ -68,12 +68,12 @@ Effect MakeModel(VoltMod::Runtime& runtime)
                       },
                   .Setup = [&runtime](const ActionContext& ctx, int param) -> EffectInstance {
                       // Dispatch already bounds-checked param and required the target alive.
-                      runtime.EntityOps.SetModel(ctx.TargetPawn().Raw(), FunModels()[param].Path.c_str());
+                      runtime.World.EntityOps.SetModel(ctx.TargetPawn().Raw(), FunModels()[param].Path.c_str());
 
                       // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
                       // team default when cleared while alive (a no-op on death, where IsAlive is false).
                       int targetSlot = ctx.Target().Slot();
-                      return {.OnStop = [&ops = runtime.EntityOps, &entities = runtime.Entities, targetSlot]() {
+                      return {.OnStop = [&ops = runtime.World.EntityOps, &entities = runtime.Entities, targetSlot]() {
                           Pawn pawn = entities.PawnOf(targetSlot);
                           if (!pawn || !pawn.IsAlive())
                               return;

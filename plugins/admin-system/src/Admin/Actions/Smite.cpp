@@ -18,7 +18,7 @@ constexpr int EnvExplosionNoDamage = 1;
 Action MakeSmite(VoltMod::Runtime& runtime)
 {
     return Action{Flag(Permission::Fun), /*requireAlive*/ true, [&runtime](const ActionContext& ctx) -> OptKey {
-                      auto& ops = runtime.EntityOps;
+                      auto& ops = runtime.World.EntityOps;
                       if (ops.CanSpawn())
                       {
                           VoltMod::KeyValues kv;
@@ -32,7 +32,7 @@ Action MakeSmite(VoltMod::Runtime& runtime)
 
                       // Delayed so the blast plays before the target drops; Pawns owns the timer,
                       // which is what keeps it off the next occupant of the slot.
-                      runtime.Pawns.SlayDelayed(ctx.Target().Slot(), SmiteSlayDelayMs);
+                      runtime.World.Pawns.SlayDelayed(ctx.Target().Slot(), SmiteSlayDelayMs);
                       return "broadcast.smote";
                   }};
 }

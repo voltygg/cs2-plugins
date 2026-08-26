@@ -38,7 +38,7 @@ namespace Log = VoltMod::Log;
 // that were already negotiated before the (un)mute landed.
 static void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, bool muted)
 {
-    auto* engine = rt.Interfaces.Engine;
+    auto* engine = rt.Unsafe.Interfaces.Engine;
     if (!engine)
         return;
 

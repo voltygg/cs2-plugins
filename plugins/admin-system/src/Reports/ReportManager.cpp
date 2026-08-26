@@ -71,7 +71,7 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
         .ReasonCode = reasonCode,
         .Reason = reasonText,
         .ServerTag = _config.GetServer().tag,
-        .MapName = _rt.CurrentMap,
+        .MapName = _rt.Map.Current(),
         .CreatedAt = now,
     };
 

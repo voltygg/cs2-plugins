@@ -41,12 +41,12 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                       (void)ctx.TargetCtrl.ChangeTeam(TeamSpectator);
 
                       int slot = ctx.Target().Slot();
-                      auto& transmit = runtime.Transmit;
+                      auto& transmit = runtime.Hooks.Transmit;
                       transmit.SetControllerHidden(slot, true);
 
                       // Hide is persistent, so the reconcile tick rebuilds the glow clones after
                       // round restarts and tracks spawns/deaths/team changes across rounds.
-                      auto glow = runtime.Visibility.CreateGlow(slot);
+                      auto glow = runtime.Hooks.Visibility.CreateGlow(slot);
                       glow->Reconcile();
 
                       return {.OnTick = [glow]() { glow->Reconcile(); },

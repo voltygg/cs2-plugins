@@ -5,6 +5,7 @@
 #include "../Weapons/WeaponCatalog.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/App/Config.hpp>
 #include <VoltMod/Database/PostgresDatabase.hpp>
 #include <nlohmann/json.hpp>
 #include <string>

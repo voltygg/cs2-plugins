@@ -168,7 +168,7 @@ std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, i
         };
         // Duration and reason are preset by the template, so the flow jumps straight to confirm.
         builder.Button(std::format("{} - {}", tmpl.Name, DurationLabel(tr, tmpl.DurationSec, adminSlot)),
-                          [&app, pending](int slot) { MakeBaseFlow(app, pending)->Start(slot); });
+                       [&app, pending](int slot) { MakeBaseFlow(app, pending)->Start(slot); });
         ++rows;
     }
 

@@ -19,12 +19,12 @@ VoteState::VoteState(VoltMod::Runtime& runtime, const Core::ConfigManager& confi
 
 bool VoteState::StartMapVote(const MapEntry& map, int callerSlot)
 {
-    if (_rt.Vote.InProgress())
+    if (_rt.Hooks.Vote.InProgress())
         return false;
 
     const auto& cfg = _config.GetMaps().vote;
 
-    return _rt.Vote.StartVote(
+    return _rt.Hooks.Vote.StartVote(
         VoteTitleToken, map.Label(), static_cast<float>(cfg.durationSec), callerSlot,
         [ratio = cfg.successRatio](const VoltMod::VoteTally& tally) {
             // Judged on the ballots actually cast, not on everyone connected: abstaining is not
@@ -41,9 +41,9 @@ bool VoteState::StartMapVote(const MapEntry& map, int callerSlot)
 
 bool VoteState::CancelVote()
 {
-    if (!_rt.Vote.InProgress())
+    if (!_rt.Hooks.Vote.InProgress())
         return false;
-    _rt.Vote.EndVote(VoltMod::VoteEndReason::Cancelled);
+    _rt.Hooks.Vote.EndVote(VoltMod::VoteEndReason::Cancelled);
     return true;
 }
 
