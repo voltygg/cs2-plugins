@@ -24,7 +24,6 @@ namespace
 constexpr float TeleportGraceSec = 5.0f;
 /** A shot older than this has received every event it can, so SilentAim may score it. */
 constexpr int SilentFinalizeAgeTicks = 2;
-constexpr uint32_t InvalidEntityHandle = 0xFFFFFFFFu;
 constexpr int HitGroupGeneric = 0;
 constexpr int HitGroupHead = 1;
 
@@ -37,7 +36,8 @@ bool IsAirborne(const VoltMod::PlayerController& controller)
 {
     const uint32_t ground = controller.GetPawnField<uint32_t>("CBaseEntity", "m_hGroundEntity");
     const bool grounded = controller.GetPawnField<bool>("CCSPlayerPawn", "m_bOnGroundLastTick") ||
-                          ((controller.GetFlags() & VoltMod::Sdk::FL_ONGROUND) && ground != InvalidEntityHandle);
+                          ((controller.GetFlags() & VoltMod::Sdk::FL_ONGROUND) &&
+                           ground != VoltMod::Sdk::InvalidEntityHandle);
     const auto walk = static_cast<uint8_t>(VoltMod::MoveType::Walk);
     return !grounded && controller.GetPawnField<uint8_t>("CBaseEntity", "m_MoveType") == walk &&
            controller.GetPawnField<uint8_t>("CBaseEntity", "m_nActualMoveType") == walk;

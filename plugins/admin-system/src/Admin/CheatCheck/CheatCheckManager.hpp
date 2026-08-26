@@ -27,7 +27,7 @@ class ConfigManager;
 namespace AdminSystem::Admin::CheatCheck
 {
 
-constexpr int MaxSlots = VoltMod::Sdk::MaxPlayers;
+constexpr int MaxSlots = VoltMod::MaxPlayers;
 
 /**
  * Owns all pending cheat checks: freezes the suspect, shows a persistent center-HTML panel +

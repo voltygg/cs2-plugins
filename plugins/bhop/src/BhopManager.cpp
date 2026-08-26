@@ -36,7 +36,7 @@ void BhopManager::Initialize()
     _subs.push_back(_rt.Scheduler.EveryFrame([this] {
         if (_mode != Mode::Grants)
             return;
-        for (int slot = 0; slot < Core::MaxPlayers; ++slot)
+        for (int slot = 0; slot < MaxPlayers; ++slot)
             if (_grantedSlots[slot])
                 ForceAutoHop(slot);
     }));
@@ -115,7 +115,7 @@ void BhopManager::ReloadSettings()
 
     // Granted clients predict with the old values until told otherwise.
     if (_mode == Mode::Grants)
-        for (int slot = 0; slot < Core::MaxPlayers; ++slot)
+        for (int slot = 0; slot < MaxPlayers; ++slot)
             if (_grantedSlots[slot])
                 _conVars.ReplicateOverrides(slot);
 
