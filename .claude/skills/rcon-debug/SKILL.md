@@ -5,19 +5,12 @@ description: Drive a live CS2 server over RCON to test plugin behaviour without 
 
 # Debug over RCON
 
-Runs console commands against a live CS2 instance from this machine. Use it to
-confirm a hypothesis about server-side behaviour **before** writing a
-speculative fix, and to verify what a deploy actually shipped.
-
-## When to use
-
-The user reports in-game behaviour ("the menu doesn't show", "the convar is
-ignored", "players can still bhop"), or asks to check something on the server.
-Reach for this instead of guessing at a fix and redeploying.
+Runs console commands against a live CS2 instance. Use it to confirm a
+hypothesis **before** writing a speculative fix, and to verify what a deploy
+shipped. Reach for it whenever in-game behaviour is reported ("the menu doesn't
+show", "players can still bhop") instead of guessing and redeploying.
 
 ## Targets
-
-There are two, and they use different paths.
 
 ### Remote instance from `deploy/inventory.yml`
 
@@ -32,45 +25,49 @@ printed under a `### <command>` header.
 `deploy/tools/rcon.py` resolves the host and port from `deploy/inventory.yml`,
 reads `RCON_<instance>` from `deploy/secrets/servers/<server-id>/.env`, opens a
 short-lived SSH tunnel, and speaks Source RCON over it. The RCON TCP port is
-**not** reachable directly from outside the box — the tunnel is mandatory.
+**not** reachable directly from outside the box - the tunnel is mandatory.
 
 ### Local dev server
 
 `poe rcon` only knows inventory servers. The local server started by
 `uv run poe start-server` runs with `-usercon +rcon_password <RCON_PASSWORD>`
-(from `.env`) on `CS2_PORT`, so talk to it with the same client directly:
+(from `.env`) on `CS2_PORT`, so use the same client directly.
+
+**It does not listen on `127.0.0.1`** - CS2 binds one real adapter (here the
+vEthernet address), so loopback gives `ConnectionRefusedError`. Look it up:
+
+```powershell
+Get-NetTCPConnection -LocalPort 27015 | Select-Object LocalAddress,State,OwningProcess
+```
 
 ```bash
 uv run python -c "
 from deploy.tools.rcon import RconClient
-c = RconClient('127.0.0.1', 27015, 'yourpassword')
-print(c.execute('meta list'))
+c = RconClient('172.24.64.1', 27015, '12345')   # address from above
+for cmd in ['sv_hibernate_when_empty 0', 'mp_warmup_end', 'mp_restartgame 1']:
+    print(c.execute(cmd))
 c.close()
 "
 ```
 
 ## First: confirm the binary is current
 
-Most 'the feature is missing' reports are a stale binary, not a bug. Check
+Most "the feature is missing" reports are a stale binary, not a bug. Check
 before reading any plugin code.
 
 ```bash
 uv run poe rcon "meta list"
 ```
 
-Plugins are built with `WithBuildInfo`, so the reported version carries the
-commit: `1.0.0+<sha>[-dirty]`. Compare that sha against `git log --oneline` — if
-it predates the commit that added the feature, the fix is a rebuild and
-redeploy, and nothing in the source is wrong. The admin panel title renders the
-same string in-game.
+`WithBuildInfo` puts the commit in the version (`1.0.0+<sha>[-dirty]`). If that
+sha predates the commit that added the feature, the fix is a rebuild - nothing
+in the source is wrong. The admin panel title shows the same string in-game.
 
-On the remote box, deployed binaries live at:
+Deployed binaries on the remote box, to check what CI shipped by mtime:
 
 ```text
 /home/steam/cs2/deploy/instances/<instance>/bundles/addons/<plugin>/bin/linuxsteamrt64/
 ```
-
-Check their mtime to confirm what CI actually shipped.
 
 ## SSH and logs (box-a)
 
@@ -79,61 +76,124 @@ ssh -i ~/.ssh/mehnatsevar_deploy -o IdentitiesOnly=yes -o BatchMode=yes steam@20
 docker logs box-a-cs2-main
 ```
 
-The key path comes from `SSH_KEY_FILE` in `deploy/secrets/servers/box-a/.env`.
-Container names follow `<server-id>-cs2-<instance>`. Plugin log lines are
-prefixed `[ADMIN]`, `[BHOP]`, and so on. `docker logs` also shows live command
-activity, which is how you tell whether players are on.
+Key path from `SSH_KEY_FILE` in `deploy/secrets/servers/box-a/.env`; container
+names follow `<server-id>-cs2-<instance>`. Plugin lines are prefixed `[ADMIN]`,
+`[BHOP]`, etc. `docker logs` also shows live command activity, which is how you
+tell whether players are on.
 
 ## Useful commands
 
-| Command | Use |
-| --- | --- |
-| `meta list` | Loaded plugins and their versions |
-| `status` | Connected players and their SteamIDs |
-| `<convar>` | Read a convar's current value |
-| `<convar> <value>` | Set it |
-| `mp_restartgame 1` | Force a fresh round |
-| `sv_cheats 1` | Needed for some experiments; restore it afterwards |
+| Command            | Use                                                |
+| ------------------ | -------------------------------------------------- |
+| `meta list`        | Loaded plugins and their versions                  |
+| `status`           | Connected players and their SteamIDs               |
+| `<convar>`         | Read a convar's current value                      |
+| `<convar> <value>` | Set it                                             |
+| `mp_restartgame 1` | Force a fresh round                                |
+| `sv_cheats 1`      | Needed for some experiments; restore it afterwards |
 
-**Only commands registered with `.Surfaces = Surface::Console` are reachable
-over RCON.** `CommandSpec::Surfaces` defaults to `Surface::Chat`, and chat
-commands are invoked by a player, so they have no console entry point. Today
-that means:
+**Only `.Surfaces = Surface::Console` commands are reachable over RCON.**
+`CommandSpec::Surfaces` defaults to `Surface::Chat`, which has no console entry
+point:
 
-| Plugin | Console commands |
-| --- | --- |
-| bhop | `bhop_player <steamid64> <0\|1>`, `bhop_reload` |
-| anticheat | `anticheat_reload`, `anticheat_status`, `anticheat_dumpcmd` |
-| admin-system | none — every command is chat-only (`!ban`, `!admin_reload`, ...) |
+| Plugin       | Console commands                                            |
+| ------------ | ----------------------------------------------------------- |
+| bhop         | `bhop_player <steamid64> <0\|1>`, `bhop_reload`             |
+| anticheat    | `anticheat_reload`, `anticheat_status`, `anticheat_dumpcmd` |
+| admin-system | none - all chat-only (`!ban`, `!admin_reload`, ...)         |
 
-So an admin-system change generally cannot be triggered from RCON. Verify it
-through convars, `meta list`, `docker logs`, and the database instead, or add
-`.Surfaces = Surface::Console` to the spec if an operator entry point is
-genuinely wanted. Note that `Permission` is never checked on the console
-surface — RCON is already root.
+So an admin-system change generally can't be triggered from RCON - verify via
+convars, `meta list`, `docker logs` and the database, or add
+`.Surfaces = Surface::Console` if an operator entry point is genuinely wanted.
+`Permission` is never checked on the console surface; RCON is already root.
 
 ## Rules
 
-- **Live players may be online.** Check `status` or `docker logs` first. Any
-  convar you flip for an experiment gets restored before you finish.
-- Read logs and drive the server to confirm a hypothesis *before* editing code.
-  A week of blind deploy-and-guess cycles on the bhop convar bug collapsed into
-  ~15 minutes of live RCON experiments once this was used.
-- `mp_restartgame`, map changes, and `sv_cheats` are visible to everyone on the
-  server. Ask before using them on a populated instance.
+- **Live players may be online.** Check `status` or `docker logs` first, and
+  restore any convar you flip.
+- Confirm a hypothesis on the server _before_ editing code.
+- `mp_restartgame`, map changes and `sv_cheats` are visible to everyone - ask
+  before using them on a populated instance.
 - Never print RCON passwords or SSH keys into the transcript.
 
-## Headless local repro
+## Headless local repro with bots
 
-To exercise per-tick hooks with no human player, run the local server with bots:
+Bots fighting each other exercise damage, movement and per-tick hooks with no
+human in the game. Start the server yourself to capture stdout - VoltMod logs to
+the console only, there is no file sink:
 
 ```powershell
-cs2.exe -dedicated -console -usercon +map de_dust2 +game_type 0 +game_mode 0 +sv_lan 1 +bot_join_after_player 0 +bot_quota_mode fill +bot_quota 6
+$log = "<scratchpad>\server.log"
+$a = @("-dedicated","-usercon","+map","de_dust2","-maxplayers","16","-port","27015",
+       "+game_type","0","+game_mode","0","+sv_lan","1","+rcon_password","12345",
+       "+bot_join_after_player","0","+bot_quota_mode","fill","+bot_quota","10",
+       "+sv_hibernate_when_empty","0")
+Start-Process -FilePath "C:\cs2-server\game\bin\win64\cs2.exe" -ArgumentList $a `
+  -WorkingDirectory "C:\cs2-server\game\bin\win64" `
+  -RedirectStandardOutput $log -RedirectStandardError "$log.err" -PassThru
 ```
 
-`bot_join_after_player 0` is what makes bots join an empty server.
+Then over RCON, to get a live round going:
+
+```text
+sv_hibernate_when_empty 0    # without this an empty server hibernates and bots never move
+mp_warmup_end
+bot_difficulty 3
+mp_freezetime 3
+mp_roundtime 60
+mp_roundtime_defuse 60
+mp_restartgame 1
+```
+
+To steer what the bots shoot with - useful when you need a specific weapon
+class, e.g. scoped rifles:
+
+```text
+bot_allow_grenades 0
+bot_allow_pistols 0
+bot_allow_shotguns 0
+bot_allow_sub_machine_guns 0
+bot_allow_machine_guns 0
+bot_allow_rifles 0
+bot_allow_snipers 1
+mp_free_armor 1
+```
+
+Two traps:
+
+- **Redirected stdout is block-buffered**, so the tail is lost on a crash and
+  the last log line is not the crash point. For output that must survive, write
+  it from the plugin with `fopen`/`fprintf`/`fflush` to an absolute path.
+- **PowerShell blocks `Start-Sleep` followed by more commands.** Poll in one
+  script (`while ($n -lt 30 -and -not (Select-String ... -Quiet)) { Start-Sleep 4; $n++ }`)
+  or use Bash `run_in_background` with an `until` loop.
+
+## Probing a path you can't reach from RCON
+
+admin-system is chat-only, so a toggle behind `!admin` can't be flipped from the
+console. Don't script the menu - hard-code the effect on an unconditional
+trigger, install, watch, then remove it.
+
+```cpp
+// PROBE: every chest hit, regardless of toggles.
+if (view.Hitbox == VoltMod::HitGroup::Chest)
+    view.Suppress = true;
+```
+
+## Confirm the effect, not the mechanism
+
+Log the state you mean to change and read consecutive lines. A correct-looking
+mechanism can be a total no-op - `MRES_SUPERCEDE` plus writes to
+`CTakeDamageInfo` and `CTakeDamageResult` changed nothing, visible only because
+the probe printed hp per hit:
+
+```text
+victim=1 hp=80 hitgroup=2 dmg=11.63   <- "suppressed"
+victim=1 hp=68 hitgroup=2 dmg=11.64   <- landed anyway
+```
 
 ## Report
 
-Quote the actual RCON responses rather than summarising them, name the instance
-you touched, and state any convar you changed and restored.
+Quote actual RCON responses, name the instance, and state any convar you changed
+and restored. For a local repro, say how many events you observed - two samples
+is not a result.
