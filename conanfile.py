@@ -1,4 +1,4 @@
-# Conan rebinds class attributes at runtime; ignore the Pyright false positives.
+# Conan replaces these class attributes at runtime, causing Pyright false positives.
 # pyright: reportAttributeAccessIssue=false
 
 from conan import ConanFile
@@ -8,8 +8,7 @@ from conan.tools.cmake import CMakeDeps, CMakeToolchain
 class CS2PluginsConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
 
-    # cpr, nlohmann_json and libpqxx arrive transitively through voltmod, along with
-    # the HL2SDK and Metamod packages.
+    # VoltMod supplies cpr, nlohmann_json, libpqxx, HL2SDK, and Metamod transitively.
     requires = ("voltmod/[~1.2]",)
 
     default_options = {
@@ -24,8 +23,7 @@ class CS2PluginsConan(ConanFile):
         self.test_requires("doctest/2.5.2")
 
     def layout(self):
-        # Where voltmod-build and the CMake presets expect the toolchain. Declared here rather
-        # than passed on the command line, so the recipe is the one description of it.
+        # Match the build path used by voltmod and the CMake presets.
         toolchain = "windows-msvc" if self.settings.os == "Windows" else "linux-steamrt"
         preset = f"{toolchain}-{str(self.settings.build_type).lower()}"
         self.folders.build = f"build/{preset}"
