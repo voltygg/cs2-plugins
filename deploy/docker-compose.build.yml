@@ -7,4 +7,4 @@ services:
     working_dir: /app
     volumes:
       - ..:/app
-    command: bash -lc 'CC=gcc-14 CXX=g++-14 voltmod build linux-steamrt-release'
+    command: bash -lc 'CC=gcc-14 CXX=g++-14 voltmod build linux-steamrt-release && voltmod test linux-steamrt-release'

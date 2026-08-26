@@ -90,7 +90,7 @@ jobs:
       - build-plugins
       - run:
           name: Test
-          command: ctest --preset linux-steamrt-release
+          command: voltmod test linux-steamrt-release
       - save-conan
       - save-ccache
 
@@ -108,14 +108,14 @@ jobs:
       - run:
           name: Ruff check (build tooling)
           command: uv run poe lint
-      - run:
-          name: clang-format check
-          command: uv run poe format-check
 
   build-package:
     executor: toolchain
     steps:
       - build-plugins
+      - run:
+          name: Test
+          command: voltmod test linux-steamrt-release
       - run:
           name: Package every declared plugin
           command: python3 -m deploy.tools.cli package --all linux

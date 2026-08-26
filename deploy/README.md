@@ -4,8 +4,9 @@ The deployment tools build and operate Docker-based CS2 servers derived from
 `joedwards32/cs2`. They package plugins, render per-instance Compose services,
 install Metamod, synchronize remote files, and manage server updates.
 
-`uv run poe deploy` and `uv run poe start-server` are local Windows
-development commands. The commands in this guide manage remote Linux hosts.
+`uv run poe install` and `uv run poe start-server` are the local
+single-machine commands; they come from the framework CLI. The commands in this
+guide manage remote Linux hosts.
 
 ## How deployment is organized
 

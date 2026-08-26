@@ -56,7 +56,8 @@ Bootstrap:
 6. Runs CTest.
 
 Success ends with a build path under `build/windows-msvc-release`. Use
-`uv run poe build` for later full builds.
+`uv run poe build` for later builds, and `uv run poe test` when you
+want CTest to run as well.
 
 ## Scaffold a plugin
 
@@ -98,17 +99,18 @@ The generated plugin already:
 ## Build and run it
 
 ```powershell
-uv run poe dev hello-world --start
+uv run poe build --install hello-world --start
 ```
 
-`dev` builds the configured preset, runs tests, installs only
-`hello-world` into `CS2_SERVER_PATH`, preserves an existing
-`settings.jsonc`, and starts the server when `--start` is present.
+`build` compiles the configured preset. `--install` installs only
+`hello-world` into `CS2_SERVER_PATH` and preserves an existing
+`settings.jsonc`; `--start` starts the server afterwards.
 
-For a faster iteration after the full test suite has passed:
+Tests are a separate command:
 
 ```powershell
-uv run poe dev hello-world --no-test
+uv run poe build --install hello-world
+uv run poe test
 ```
 
 To install without launching, omit `--start`. To launch later:
@@ -146,7 +148,7 @@ active, and its translation file was installed.
 The normal loop is:
 
 ```powershell
-uv run poe dev hello-world --no-test
+uv run poe build --install hello-world
 ```
 
 Metamod plugins are native modules. Restart the local server after replacing a
@@ -154,8 +156,8 @@ loaded DLL if the operating system keeps it locked. Before pushing, run:
 
 ```powershell
 uv run poe lint
-uv run poe format-check
-uv run poe build
+uv run poe format
+uv run poe test
 ```
 
 ## Local settings
@@ -196,7 +198,7 @@ game/csgo/addons/metamod/hello-world.vdf
 game/csgo/addons/hello-world/bin/win64/hello-world.dll
 ```
 
-Run `uv run poe dev hello-world` again after correcting the path.
+Run `uv run poe build --install hello-world` again after correcting the path.
 
 ### Conan cannot resolve SDK packages
 

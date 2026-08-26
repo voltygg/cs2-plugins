@@ -469,11 +469,12 @@ wheels = [
 [[package]]
 name = "voltmod"
 version = "1.2.0"
-source = { git = "https://github.com/voltygg/voltmod.git?rev=main#1a224651ffe224efaf54b4e8b873df529e55f369" }
+source = { git = "https://github.com/voltygg/voltmod.git?rev=main#e9c579edabe59596c9ba5cf1b25c8f421211efed" }
 dependencies = [
     { name = "clang-format" },
     { name = "cmake" },
     { name = "conan" },
     { name = "ninja" },
     { name = "pyyaml" },
+    { name = "typer" },
 ]

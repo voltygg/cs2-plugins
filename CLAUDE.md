@@ -12,17 +12,22 @@ uv sync
 uv run poe doctor
 uv run poe bootstrap
 uv run poe build
+uv run poe test
 uv run poe build windows-msvc-debug
 uv run poe build-linux
+uv run poe build --install <plugin> --start
 ctest --preset windows-msvc-release
 uv run poe lint
-uv run poe format-check
-uv run poe dev <plugin>
+uv run poe format
 ```
 
 `doctor` checks the local toolchain, project, Conan configuration, and an
 optional CS2 server without changing them. `bootstrap` installs VoltMod's Conan
-profiles and public remote, then builds.
+profiles and public remote, then builds. `build` compiles only; `test` brings
+the build up to date and runs CTest. On `build`, `--install <plugin>` copies the
+result into the local CS2 server at `CS2_SERVER_PATH` and `--start` launches
+that server afterwards. All of these come from the framework CLI (`voltmod
+build|test|install|serve`); `deploy/tools` only handles the remote fleet.
 Build output is under
 `build/<preset>/plugins/<name>/<platform-arch>/`. The build tasks run
 `voltmod`, installed by this repository's `pyproject.toml`.

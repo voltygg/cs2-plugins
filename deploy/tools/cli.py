@@ -1,6 +1,9 @@
-"""Unified deployment CLI for CS2 plugin servers (Docker/VPS and local).
+"""Fleet deployment CLI for CS2 plugin servers (Docker/VPS).
 
 Run as a module from the repo root: python -m deploy.tools.cli <subcommand>
+
+The single-machine loop - build, install into a local CS2 server, run it - lives
+in the framework CLI instead: `voltmod build`, `voltmod install`, `voltmod serve`.
 """
 
 from __future__ import annotations
@@ -23,13 +26,6 @@ from .common import (
 
 app = typer.Typer(help=__doc__, no_args_is_help=True)
 
-ServerPath = Annotated[str, typer.Option("--server-path", envvar="CS2_SERVER_PATH")]
-SteamcmdPath = Annotated[str, typer.Option("--steamcmd-path", envvar="STEAMCMD_PATH")]
-MapName = Annotated[str, typer.Option("--map", envvar="CS2_MAP")]
-GsltToken = Annotated[str, typer.Option("--gslt-token", envvar="GSLT_TOKEN")]
-MaxPlayers = Annotated[int, typer.Option("--max-players", envvar="CS2_MAX_PLAYERS")]
-ServerPort = Annotated[int, typer.Option("--port", envvar="CS2_PORT")]
-RconPassword = Annotated[str, typer.Option("--rcon-password", envvar="RCON_PASSWORD")]
 
 
 class OutputFormat(StrEnum):
@@ -206,81 +202,6 @@ def ensure_dbs(
     from . import database
 
     database.ensure_databases(server, admin_user, dry_run=dry_run)
-
-
-@app.command("local")
-def deploy_local(
-    server_path: ServerPath = "C:/cs2-server",
-    plugin_name: Annotated[str, typer.Option("--plugin-name")] = "",
-) -> None:
-    """Deploy built plugins into a local CS2 server tree."""
-    from . import local
-
-    local.deploy_local(server_path, plugin_name)
-
-
-@app.command()
-def start(
-    server_path: ServerPath = "C:/cs2-server",
-    steamcmd_path: SteamcmdPath = "C:/Program Files/steamcmd/steamcmd.exe",
-    map_: MapName = "de_dust2",
-    gslt_token: GsltToken = "",
-    max_players: MaxPlayers = 16,
-    port: ServerPort = 27015,
-    rcon_password: RconPassword = "",
-    check_update: Annotated[bool, typer.Option("--check-update")] = False,
-) -> None:
-    """Start a local CS2 dedicated server."""
-    from . import local
-
-    local.start_server(
-        server_path,
-        steamcmd_path,
-        map_,
-        gslt_token,
-        max_players,
-        port,
-        rcon_password,
-        check_update=check_update,
-    )
-
-
-@app.command()
-def dev(
-    plugin: Annotated[str, typer.Argument()],
-    server_path: ServerPath = "C:/cs2-server",
-    no_test: Annotated[
-        bool,
-        typer.Option("--no-test", help="Skip CTest for a faster iteration"),
-    ] = False,
-    start_server: Annotated[
-        bool,
-        typer.Option("--start", help="Launch the server after installation"),
-    ] = False,
-    steamcmd_path: SteamcmdPath = "C:/Program Files/steamcmd/steamcmd.exe",
-    map_: MapName = "de_dust2",
-    gslt_token: GsltToken = "",
-    max_players: MaxPlayers = 16,
-    port: ServerPort = 27015,
-    rcon_password: RconPassword = "",
-    check_update: Annotated[bool, typer.Option("--check-update")] = False,
-) -> None:
-    """Build, test, and install one plugin locally."""
-    from . import local
-
-    local.develop_plugin(
-        plugin,
-        server_path,
-        run_tests=not no_test,
-        launch=start_server,
-        steamcmd_path=steamcmd_path,
-        map_name=map_,
-        gslt_token=gslt_token,
-        max_players=max_players,
-        port=port,
-        rcon_password=rcon_password,
-        check_update=check_update,
-    )
 
 
 @app.command()

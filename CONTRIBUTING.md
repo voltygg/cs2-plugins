@@ -67,9 +67,12 @@ editable package, Conan resolves `voltmod/[~1.2]` from the public remote.
 
 ```powershell
 uv run poe lint
-uv run poe format-check
-uv run poe build
+uv run poe format
+uv run poe test
 ```
+
+`build` compiles only, so the local loop stays fast; `test` is what runs the
+suite.
 
 GitHub Actions is the primary CI and deployment path. CircleCI is the fallback;
 do not let both deploy `prod` unless duplicate deployment is intentional.

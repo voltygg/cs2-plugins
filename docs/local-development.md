@@ -36,11 +36,16 @@ optional `vendor/voltmod` checkout is only for coordinated framework work with
 uv run poe bootstrap
 uv run poe build windows-msvc-debug
 uv run poe build-linux
+uv run poe test
 ```
 
 Bootstrap performs the first release build and runs tests. Later build commands
-run Conan install, CMake configure, compilation, and CTest for the selected
-preset.
+run Conan install, CMake configure, and compilation for the selected preset.
+Tests are their own command, which brings the build up to date first:
+
+```powershell
+ctest --preset windows-msvc-release
+```
 
 Output is written under:
 
@@ -54,12 +59,12 @@ Copy [`.env.example`](../.env.example) to `.env` and set
 `CS2_SERVER_PATH`. Then run:
 
 ```powershell
-uv run poe dev admin-system
+uv run poe build --install admin-system
 uv run poe start-server
 ```
 
-Add `--start` to `dev` to launch immediately. Add `--no-test` for a fast local
-iteration after the full suite has passed.
+Add `--start` to launch the server in the same command. Tests are a separate
+`uv run poe test`, so the install loop stays fast.
 
 The installer uses the CMake component for the selected plugin and merges its
 server-ready `addons/` tree into `game/csgo`. It seeds

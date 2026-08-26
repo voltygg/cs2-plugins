@@ -1,7 +1,9 @@
 # Local deployment commands
 
-These commands install built plugins into a local Windows CS2 server. For
-remote Docker hosts, use the [production deployment guide](../deploy/README.md).
+These commands install built plugins into a local CS2 server. They come from
+the framework CLI (`voltmod build`, `voltmod install`, `voltmod serve`), so they
+work the same in any VoltMod project. For remote Docker hosts, use the
+[production deployment guide](../deploy/README.md).
 
 ## Configure defaults
 
@@ -15,35 +17,39 @@ path, map, port, player limit, GSLT, and RCON password.
 ## Build, install, and launch
 
 ```powershell
-uv run poe dev admin-system
-uv run poe dev admin-system --start
-uv run poe dev admin-system --no-test
+uv run poe build --install admin-system
+uv run poe build --install admin-system --start
+uv run poe build --install admin-system
+uv run poe test
 ```
 
-`dev` builds the repository and installs only the named plugin. Tests run by
-default. `--start` launches the server after installation, and `--no-test`
-uses the faster configure-and-build path.
+`build` compiles the repository. `--install` then installs only the named
+plugin into the local server, and `--start` launches that server afterwards.
+Tests are a separate command so the edit-build-reload loop stays fast; run
+`uv run poe test` before you commit.
 
 To keep the steps separate:
 
 ```powershell
 uv run poe build
-uv run poe deploy --plugin-name admin-system
+uv run poe install admin-system
 uv run poe start-server
 ```
+
+`install` with no plugin name installs every built plugin.
 
 Command-line values override `.env`:
 
 ```powershell
-uv run poe deploy --server-path D:/CS2-Server --plugin-name admin-system
+uv run poe install admin-system --server-path D:/CS2-Server
 uv run poe start-server --server-path D:/CS2-Server --map de_mirage
 ```
 
-Set `CS2_BUILD_PRESET` to install another build:
+Install from another build directory with `--preset`, or by setting
+`CS2_BUILD_PRESET`:
 
 ```powershell
-$env:CS2_BUILD_PRESET = "windows-msvc-debug"
-uv run poe deploy --plugin-name admin-system
+uv run poe install admin-system --preset windows-msvc-debug
 ```
 
 ## Installed layout

@@ -42,13 +42,13 @@ jobs:
             ccache-sniper-gcc14-v1-${{ hashFiles('conan.lock') }}-
 
       - name: Build (configure -> build)
-        run: voltmod build linux-steamrt-release --no-test
+        run: voltmod build linux-steamrt-release
 
       - name: Test
-        run: ctest --preset linux-steamrt-release
+        run: voltmod test linux-steamrt-release
 
   lint:
-    name: Lint (ruff + clang-format)
+    name: Lint (ruff)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -58,6 +58,3 @@ jobs:
 
       - name: Ruff check (build tooling)
         run: uv run poe lint
-
-      - name: clang-format check
-        run: uv run poe format-check

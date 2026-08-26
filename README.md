@@ -62,7 +62,7 @@ Create, build, install, and launch a working plugin:
 
 ```powershell
 uv run poe new-plugin hello-world
-uv run poe dev hello-world --start
+uv run poe build --install hello-world --start
 ```
 
 The scaffold registers itself in `CMakeLists.txt` and includes a `!ping`
@@ -82,14 +82,15 @@ loop.
 | --- | --- |
 | `uv run poe doctor` | Check tools, project files, Conan setup, and an optional CS2 server |
 | `uv run poe bootstrap` | Prepare Conan, then configure, build, and test |
-| `uv run poe build` | Run the normal release build and tests |
-| `uv run poe build windows-msvc-debug` | Build and test the Windows debug preset |
-| `uv run poe build-linux` | Build and test in the Linux Steam Runtime target |
+| `uv run poe build` | Run the normal release build |
+| `uv run poe test` | Build, then run the test suite |
+| `uv run poe build windows-msvc-debug` | Build the Windows debug preset |
+| `uv run poe build-linux` | Build in the Linux Steam Runtime target |
 | `uv run poe new-plugin <name>` | Scaffold and register a buildable plugin |
-| `uv run poe dev <name>` | Build, test, and install one plugin locally |
-| `uv run poe dev <name> --start` | Build, install, and launch the local server |
+| `uv run poe build --install <name>` | Build, then install one plugin locally |
+| `uv run poe build --install <name> --start` | Build, install, and launch the local server |
 | `uv run poe lint` | Check Python source |
-| `uv run poe format-check` | Check C++ formatting |
+| `uv run poe format` | Apply the pinned C++ formatting |
 
 Build output is written to
 `build/<preset>/plugins/<name>/<platform-arch>/`. Local installation preserves

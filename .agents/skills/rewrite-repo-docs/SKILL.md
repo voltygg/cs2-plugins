@@ -72,6 +72,6 @@ Review the diff after each batch. Avoid bulk regular-expression rewrites across 
 - Parse modified YAML, TOML, or JSON with the repository's existing tools.
 - Run documentation generators or link checks when the repository provides them.
 - Run the narrowest relevant lint, format check, build, or test command when comments touch parsed source or public headers.
-- For `cs2-plugins`, validate root and `vendor/voltmod` independently. Relevant existing checks include `uv run poe lint`, `uv run poe format-check`, and VoltMod's `uv run poe modgraph`.
+- For `cs2-plugins`, validate root and `vendor/voltmod` independently. Relevant existing checks include `uv run poe lint`, `uv run poe test`, and VoltMod's `uv run poe modgraph`.
 
 Finish with a concise summary grouped by audience or batch, the checks run in each repository, and any factual issue that could not be resolved from the repository.

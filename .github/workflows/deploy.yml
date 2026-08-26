@@ -83,6 +83,9 @@ jobs:
       - name: Build Linux plugins
         run: voltmod build linux-steamrt-release
 
+      - name: Test
+        run: voltmod test linux-steamrt-release
+
       - name: Package every declared plugin
         run: python3 -m deploy.tools.cli package --all linux
 
