@@ -5,25 +5,22 @@
 
 #include <VoltMod/Api.hpp>
 
-using VoltMod::CommandContext;
-using VoltMod::CommandResult;
+using VoltMod::Caller;
+using VoltMod::Reply;
+using VoltMod::Result;
 
 namespace AdminSystem::Commands
 {
 
-void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app)
+void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app, Subs& subs)
 {
-    commands.Register({
-        .Name = "hide",
-        .Description = "Toggle stealth-spectator mode on yourself.",
-        .Permission = Flag(Permission::Hide),
-        .Handler =
-            [&app](CommandContext& c) {
-                int slot = c.CallerSlot();
-                app.PlayerEffects.Toggle(slot, slot, AdminSystem::Admin::Effects::Hide);
-                return CommandResult::Silent();
-            },
-    });
+    subs.push_back(commands.Add("hide")
+                       .Describe("Toggle stealth-spectator mode on yourself.")
+                       .Permission(Flag(Permission::Hide))
+                       .Run([&app](Caller c) -> Result<Reply> {
+                           app.PlayerEffects.Toggle(c.Slot, c.Slot, AdminSystem::Admin::Effects::Hide);
+                           return Reply::Silent();
+                       }));
 }
 
 }  // namespace AdminSystem::Commands

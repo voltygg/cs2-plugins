@@ -6,65 +6,53 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <format>
 
-using VoltMod::CommandContext;
-using VoltMod::Runtime;
-using VoltMod::Target;
-using VoltMod::Word;
+using VoltMod::Caller;
+using VoltMod::Reply;
+using VoltMod::Result;
+
+namespace Args = VoltMod::Args;
 
 namespace AdminSystem::Commands
 {
 
 using AdminSystem::Admin::CheatCheck::CheatCheckManager;
 
-void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app)
+void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app, Subs& subs)
 {
-    commands.Register({
-        .Name = "cc",
-        .Description = "Submit your verification link for a pending cheat check.",
-        .Args = {Word()},
-        .Handler =
-            [&app](CommandContext& c) {
-                switch (app.CheatCheck.SubmitPlayerLink(c.CallerSlot(), c.Word))
-                {
-                case CheatCheckManager::SubmitResult::Relayed:
-                    return c.Ok("cheatCheck.linkReceived");
-                case CheatCheckManager::SubmitResult::Invalid:
-                    return c.Fail("cheatCheck.linkInvalid");
-                case CheatCheckManager::SubmitResult::NoActiveCheck:
-                default:
-                    return c.Fail("cheatCheck.noActiveCheck");
-                }
-            },
-    });
+    subs.push_back(commands.Add("cc")
+                       .Describe("Submit your verification link for a pending cheat check.")
+                       .Run([&app](Caller c, Args::Word link) -> Result<Reply> {
+                           switch (app.CheatCheck.SubmitPlayerLink(c.Slot, link.Value))
+                           {
+                           case CheatCheckManager::SubmitResult::Relayed:
+                               return c.Ok("cheatCheck.linkReceived");
+                           case CheatCheckManager::SubmitResult::Invalid:
+                               return c.Fail("cheatCheck.linkInvalid");
+                           case CheatCheckManager::SubmitResult::NoActiveCheck:
+                           default:
+                               return c.Fail("cheatCheck.noActiveCheck");
+                           }
+                       }));
 
-    commands.Register({
-        .Name = "check",
-        .Description = "Start a cheat check on a player.",
-        .Permission = Flag(Permission::Control),
-        .Args = {Target()},
-        .Handler =
-            [&app](CommandContext& c) {
-                if (!AdminSystem::Admin::Actions::CallCheck(app, c.CallerSlot(), c.Target().Slot()))
-                    return c.Fail("cmd.noPermission");
-                return c.Ok("cheatCheck.started", {{"name", c.Target().Name()}});
-            },
-    });
+    subs.push_back(commands.Add("check")
+                       .Describe("Start a cheat check on a player.")
+                       .Permission(Flag(Permission::Control))
+                       .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
+                           if (!AdminSystem::Admin::Actions::CallCheck(app, c.Slot, t.Value->Slot()))
+                               return c.Fail("cmd.noPermission");
+                           return c.Ok("cheatCheck.started", {{"name", t.Value->Name()}});
+                       }));
 
-    commands.Register({
-        .Name = "cccancel",
-        .Aliases = {"uncheck"},
-        .Description = "Cancel a pending cheat check on a player.",
-        .Permission = Flag(Permission::Control),
-        .Args = {Target()},
-        .Handler =
-            [&app](CommandContext& c) {
-                if (!AdminSystem::Admin::Actions::CancelCheck(app, c.CallerSlot(), c.Target().Slot()))
-                    return c.Fail("cheatCheck.noActiveCheck");
-                return c.Ok("cheatCheck.cancelled", {{"name", c.Target().Name()}});
-            },
-    });
+    subs.push_back(commands.Add("cccancel")
+                       .Alias("uncheck")
+                       .Describe("Cancel a pending cheat check on a player.")
+                       .Permission(Flag(Permission::Control))
+                       .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
+                           if (!AdminSystem::Admin::Actions::CancelCheck(app, c.Slot, t.Value->Slot()))
+                               return c.Fail("cheatCheck.noActiveCheck");
+                           return c.Ok("cheatCheck.cancelled", {{"name", t.Value->Name()}});
+                       }));
 }
 
 }  // namespace AdminSystem::Commands

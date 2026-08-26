@@ -89,8 +89,12 @@ does not include libpqxx.
 
 Current patterns:
 
-- Register declarative `CommandSpec` values from `App::Start()`. Resolve typed
-  targets, durations, and reasons before handlers run.
+- Register commands from `App::Start()` with the fluent builder
+  (`commands.Add(name).Describe(...).Permission(...).Run(handler)`). The handler's
+  parameter list is the argument spec - `Caller` first, then one `Args::` value per
+  argument - so targets, durations and trailing reasons are parsed, immunity-checked
+  and bound before the handler runs. Keep each returned `Subscription` in the App's
+  `_subs`.
 - Inject permissions, immunity, replies, and broadcasts once through
   `Runtime::Policy`, then ask `Policy::Authorize(caller, target, permission)`
   wherever the answer is needed. Do not re-implement the check: a plugin's

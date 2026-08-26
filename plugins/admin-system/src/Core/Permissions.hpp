@@ -30,7 +30,7 @@ enum class Permission : char
     Root = 'z',
 };
 
-/** The single-character flag string for a permission (for CommandSpec::Permission). */
+/** The single-character flag string for a permission (for `CommandBuilder::Permission`). */
 inline std::string Flag(Permission p)
 {
     return std::string(1, static_cast<char>(p));

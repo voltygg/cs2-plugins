@@ -7,37 +7,34 @@
 #include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Runtime.hpp>
 
-using VoltMod::CommandContext;
-using VoltMod::CommandResult;
-using VoltMod::MenuManager;
-using VoltMod::Runtime;
+using VoltMod::Caller;
+using VoltMod::Reply;
+using VoltMod::Result;
 
 namespace AdminSystem::Commands
 {
 
-void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app)
+void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app, Subs& subs)
 {
-    commands.Register({
-        .Name = "admin",
-        .Aliases = {"a", "menu"},
-        .Description = "Open the admin menu",
-        .Handler =
-            [&app](CommandContext& c) {
-                // Any registered admin may open the menu; each category inside is gated by its own flags.
-                if (!app.Admins.IsAdmin(c.Caller->SteamId()))
-                    return c.Fail("cmd.noPermission");
+    subs.push_back(commands.Add("admin")
+                       .Alias("a")
+                       .Alias("menu")
+                       .Describe("Open the admin menu")
+                       .Run([&app](Caller c) -> Result<Reply> {
+                           // Any registered admin may open the menu; each category inside is
+                           // gated by its own flags.
+                           if (!app.Admins.IsAdmin(c.P->SteamId()))
+                               return c.Fail("cmd.noPermission");
 
-                int slot = c.CallerSlot();
+                           // Panel language is registered at connect (see
+                           // AdminSystemPlugin::OnPlayerConnect).
+                           auto menu = AdminSystem::Admin::BuildAdminMainMenu(app, c.Slot);
+                           if (!menu)
+                               return c.Fail("cmd.menuFailed");
 
-                // Panel language is registered at connect (see AdminSystemPlugin::OnPlayerConnect).
-                auto menu = AdminSystem::Admin::BuildAdminMainMenu(app, slot);
-                if (!menu)
-                    return c.Fail("cmd.menuFailed");
-
-                app.Runtime.Menus.OpenMenu(slot, menu);
-                return CommandResult::Silent();  // the menu is the feedback
-            },
-    });
+                           app.Runtime.Menus.OpenMenu(c.Slot, menu);
+                           return Reply::Silent();  // the menu is the feedback
+                       }));
 }
 
 }  // namespace AdminSystem::Commands

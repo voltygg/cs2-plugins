@@ -3,11 +3,11 @@
 #include <VoltMod/Api.hpp>
 #include <format>
 
-using VoltMod::CommandContext;
-using VoltMod::CommandResult;
-using VoltMod::Int;
-using VoltMod::SteamId64;
-using VoltMod::Surface;
+using VoltMod::Caller;
+using VoltMod::Reply;
+using VoltMod::Result;
+
+namespace Args = VoltMod::Args;
 
 namespace Bhop
 {
@@ -19,30 +19,23 @@ void BhopManager::RegisterConsoleCommands()
 {
     auto& commands = _rt.Commands;
 
-    commands.Register({
-        .Name = "bhop_player",
-        .Description = "Grant/revoke session bhop for a player.",
-        .Args = {SteamId64(), Int()},
-        .Surfaces = Surface::Console,
-        .Handler =
-            [this](CommandContext& c) {
-                const bool enabled = c.Int().value_or(0) != 0;
-                Grant(c.SteamId, enabled);
-                return CommandResult{
-                    std::format("bhop_player: {} for {}.", enabled ? "granted" : "revoked", c.SteamId)};
-            },
-    });
+    _subs.push_back(commands.Add("bhop_player")
+                        .Describe("Grant/revoke session bhop for a player.")
+                        .ConsoleOnly()
+                        .Run([this](Caller, Args::SteamId steamId, Args::Int enabled) -> Result<Reply> {
+                            const bool granted = enabled.Value != 0;
+                            Grant(steamId.Value, granted);
+                            return Reply{
+                                std::format("bhop_player: {} for {}.", granted ? "granted" : "revoked", steamId.Value)};
+                        }));
 
-    commands.Register({
-        .Name = "bhop_reload",
-        .Description = "Re-read settings.jsonc and re-apply the bhop configuration.",
-        .Surfaces = Surface::Console,
-        .Handler =
-            [this](CommandContext&) {
-                ReloadSettings();
-                return CommandResult::Silent();
-            },
-    });
+    _subs.push_back(commands.Add("bhop_reload")
+                        .Describe("Re-read settings.jsonc and re-apply the bhop configuration.")
+                        .ConsoleOnly()
+                        .Run([this](Caller) -> Result<Reply> {
+                            ReloadSettings();
+                            return Reply::Silent();
+                        }));
 }
 
 }  // namespace Bhop

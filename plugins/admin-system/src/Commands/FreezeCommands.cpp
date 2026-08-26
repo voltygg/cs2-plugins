@@ -1,132 +1,116 @@
 #include "../Admin/AdminManager.hpp"
 #include "../Admin/FreezeManager.hpp"
 #include "../Core/App.hpp"
-#include "../Core/ChatService.hpp"
 #include "../Core/Permissions.hpp"
 #include "Commands.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Strings.hpp>
-#include <VoltMod/Core/Translations.hpp>
-#include <VoltMod/Runtime.hpp>
 #include <format>
+#include <string>
 
-using VoltMod::CommandContext;
-using VoltMod::CommandResult;
-using VoltMod::ReasonTail;
-using VoltMod::Runtime;
+using VoltMod::Caller;
+using VoltMod::Reply;
+using VoltMod::Result;
 using VoltMod::Strings;
-using VoltMod::TargetOrSteamId;
-using VoltMod::Translations;
-using VoltMod::Word;
+
+namespace Args = VoltMod::Args;
 
 namespace AdminSystem::Commands
 {
 
-void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
+void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app, Subs& subs)
 {
-    commands.Register({
-        .Name = "freeze_admin",
-        .Description = "Freeze all admin privileges of another admin pending review.",
-        .Permission = Flag(Permission::FreezeAdmins),
-        // TargetOrSteamId: a numeric token addresses an offline admin (they are in the loaded
-        // admins map); anything else resolves an online player.
-        .Args = {TargetOrSteamId(), ReasonTail("reason.frozenByAdmin")},
-        .Handler =
-            [&app](CommandContext& c) {
-                int64_t targetSteamId = c.SteamId;
-                std::string targetName = c.HasTarget() ? c.Target().Name() : std::to_string(targetSteamId);
+    subs.push_back(commands.Add("freeze_admin")
+                       .Describe("Freeze all admin privileges of another admin pending review.")
+                       .Permission(Flag(Permission::FreezeAdmins))
+                       // PlayerOrSteamId: an offline admin is addressed by the bare SteamID64 they are
+                       // stored under, anyone online by the usual selector grammar.
+                       .Run([&app](Caller c, Args::PlayerOrSteamId who, Args::Opt<Args::Rest> why) -> Result<Reply> {
+                           std::string targetName = who.Online ? who.Online->Name() : std::to_string(who.SteamId);
 
-                const auto* row = app.Admins.GetAdmin(targetSteamId);
-                if (!row)
-                    return c.Fail("cmd.freezeNotAdmin", {{"name", targetName}});
-                targetName = row->Name;
+                           const auto* row = app.Admins.GetAdmin(who.SteamId);
+                           if (!row)
+                               return c.Fail("cmd.freezeNotAdmin", {{"name", targetName}});
+                           targetName = row->Name;
 
-                // Targeting yourself is allowed in general, so freezing yourself needs an
-                // explicit rejection here.
-                if (targetSteamId == c.Caller->SteamId())
-                    return c.Fail("cmd.freezeSelf");
+                           // Targeting yourself is allowed in general, so freezing yourself needs an
+                           // explicit rejection here.
+                           if (who.SteamId == c.P->SteamId())
+                               return c.Fail("cmd.freezeSelf");
 
-                if (!app.Access.CanTarget(c.Caller->SteamId(), targetSteamId))
-                    return c.Fail("cmd.freezeNoOutrank", {{"name", targetName}});
+                           if (!app.Access.CanTarget(c.P->SteamId(), who.SteamId))
+                               return c.Fail("cmd.freezeNoOutrank", {{"name", targetName}});
 
-                if (app.Freeze.IsFrozen(targetSteamId))
-                    return c.Fail("cmd.freezeAlready", {{"name", targetName}});
+                           if (app.Freeze.IsFrozen(who.SteamId))
+                               return c.Fail("cmd.freezeAlready", {{"name", targetName}});
 
-                bool ok = app.Freeze.Freeze(targetSteamId, targetName, c.Caller->SteamId(), c.Caller->Name(), c.Reason);
-                return ok ? c.Ok("cmd.freezeSuccess", {{"name", targetName}})
-                          : c.Fail("cmd.freezeFailed", {{"name", targetName}});
-            },
-    });
+                           // The reason lands in the database and in the broadcast, so it is resolved in
+                           // the server language rather than the caller's.
+                           const std::string reason = why.Value ? why.Value->Value : c.Tr.Get("reason.frozenByAdmin");
+                           bool ok = app.Freeze.Freeze(who.SteamId, targetName, c.P->SteamId(), c.P->Name(), reason);
+                           return ok ? c.Ok("cmd.freezeSuccess", {{"name", targetName}})
+                                     : c.Fail("cmd.freezeFailed", {{"name", targetName}});
+                       }));
 
-    commands.Register({
-        .Name = "unfreeze_admin",
-        .Description = "Restore a frozen admin's privileges after reviewing their case.",
-        .Permission = Flag(Permission::FreezeAdmins),
-        // The target may be offline and not even resolvable as a player - it is matched against
-        // the frozen list itself, so this stays a bespoke Word argument.
-        .Args = {Word()},
-        .Handler =
-            [&app](CommandContext& c) {
-                int64_t targetSteamId = 0;
-                if (Strings::IsNumeric(c.Word))
-                {
-                    targetSteamId = std::stoll(c.Word);
-                }
-                else
-                {
-                    int matches = 0;
-                    for (const auto& [steamId, frozen] : app.Freeze.Frozen())
-                    {
-                        if (Strings::ContainsIgnoreCase(frozen.Name, c.Word))
-                        {
-                            targetSteamId = steamId;
-                            ++matches;
-                        }
-                    }
-                    if (matches > 1)
-                        return c.Fail("target.ambiguous", {{"token", c.Word}, {"count", std::to_string(matches)}});
-                }
+    subs.push_back(commands.Add("unfreeze_admin")
+                       .Describe("Restore a frozen admin's privileges after reviewing their case.")
+                       .Permission(Flag(Permission::FreezeAdmins))
+                       // The target may be offline and not even resolvable as a player - it is matched
+                       // against the frozen list itself, so this stays a bespoke Word argument.
+                       .Run([&app](Caller c, Args::Word token) -> Result<Reply> {
+                           int64_t targetSteamId = 0;
+                           if (Strings::IsNumeric(token.Value))
+                           {
+                               targetSteamId = std::stoll(token.Value);
+                           }
+                           else
+                           {
+                               int matches = 0;
+                               for (const auto& [steamId, frozen] : app.Freeze.Frozen())
+                               {
+                                   if (Strings::ContainsIgnoreCase(frozen.Name, token.Value))
+                                   {
+                                       targetSteamId = steamId;
+                                       ++matches;
+                                   }
+                               }
+                               if (matches > 1)
+                                   return c.Fail("target.ambiguous",
+                                                 {{"token", token.Value}, {"count", std::to_string(matches)}});
+                           }
 
-                auto row = app.Freeze.GetFrozen(targetSteamId);
-                if (!row)
-                    return c.Fail("cmd.unfreezeNone", {{"token", c.Word}});
+                           auto row = app.Freeze.GetFrozen(targetSteamId);
+                           if (!row)
+                               return c.Fail("cmd.unfreezeNone", {{"token", token.Value}});
 
-                // Unfreeze erases the row; the name is ours because GetFrozen handed back a copy.
-                bool ok = app.Freeze.Unfreeze(targetSteamId, c.Caller->SteamId(), c.Caller->Name());
-                return ok ? c.Ok("cmd.unfreezeSuccess", {{"name", row->Name}})
-                          : c.Fail("cmd.freezeFailed", {{"name", row->Name}});
-            },
-    });
+                           // Unfreeze erases the row; the name is ours because GetFrozen handed back a copy.
+                           bool ok = app.Freeze.Unfreeze(targetSteamId, c.P->SteamId(), c.P->Name());
+                           return ok ? c.Ok("cmd.unfreezeSuccess", {{"name", row->Name}})
+                                     : c.Fail("cmd.freezeFailed", {{"name", row->Name}});
+                       }));
 
-    commands.Register({
-        .Name = "frozen_admins",
-        .Description = "List admins whose privileges are currently frozen.",
-        .Permission = Flag(Permission::FreezeAdmins),
-        .Handler =
-            [&app](CommandContext& c) {
-                auto& tr = app.Runtime.Translations;
-                int slot = c.CallerSlot();
+    subs.push_back(commands.Add("frozen_admins")
+                       .Describe("List admins whose privileges are currently frozen.")
+                       .Permission(Flag(Permission::FreezeAdmins))
+                       .Run([&app](Caller c) -> Result<Reply> {
+                           const auto& frozen = app.Freeze.Frozen();
+                           if (frozen.empty())
+                               return c.Ok("cmd.frozenNone");
 
-                const auto& frozen = app.Freeze.Frozen();
-                if (frozen.empty())
-                    return c.Ok("cmd.frozenNone");
-
-                auto& chat = app.Chat;
-                chat.Reply(slot, tr.Get("cmd.frozenHeader", slot, {{"count", std::to_string(frozen.size())}}));
-                for (const auto& [steamId, row] : frozen)
-                {
-                    std::string by = "AUTO";
-                    if (row.FrozenBy != 0)
-                    {
-                        const auto* freezer = app.Admins.GetAdmin(row.FrozenBy);
-                        by = freezer ? freezer->Name : std::to_string(row.FrozenBy);
-                    }
-                    chat.Reply(slot, std::format("  {} ({}) - {}: {}", row.Name, row.SteamId, by, row.Reason));
-                }
-                return CommandResult::Silent();
-            },
-    });
+                           c.Say("cmd.frozenHeader", {{"count", std::to_string(frozen.size())}});
+                           for (const auto& [steamId, row] : frozen)
+                           {
+                               std::string by = "AUTO";
+                               if (row.FrozenBy != 0)
+                               {
+                                   const auto* freezer = app.Admins.GetAdmin(row.FrozenBy);
+                                   by = freezer ? freezer->Name : std::to_string(row.FrozenBy);
+                               }
+                               c.SayRaw(std::format("  {} ({}) - {}: {}", row.Name, row.SteamId, by, row.Reason));
+                           }
+                           return Reply::Silent();
+                       }));
 }
 
 }  // namespace AdminSystem::Commands

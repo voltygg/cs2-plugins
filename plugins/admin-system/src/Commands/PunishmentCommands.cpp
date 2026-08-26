@@ -6,145 +6,129 @@
 #include "Commands.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <chrono>
 #include <string>
 
 using AdminSystem::Punishments::IssuePunishment;
 using AdminSystem::Punishments::PunishType;
-using VoltMod::CommandContext;
-using VoltMod::CommandResult;
-using VoltMod::Duration;
-using VoltMod::ReasonTail;
-using VoltMod::Runtime;
-using VoltMod::SteamId64;
-using VoltMod::Target;
+using VoltMod::Caller;
+using VoltMod::Player;
+using VoltMod::Reply;
+using VoltMod::Result;
 using VoltMod::Tokens;
-using VoltMod::Translations;
+
+namespace Args = VoltMod::Args;
 
 namespace AdminSystem::Commands
 {
 
-using VoltMod::Tokens;
-
 /** Shared body of the kick/ban/mute/warn handlers: issue via the common entry point and
  *  reply in the caller's language. */
-static CommandResult Punish(App& app, CommandContext& c, PunishType type, const std::string& reason,
-                            const char* successKey, const char* failedKey)
+static Result<Reply> Punish(App& app, const Caller& c, Player& target, PunishType type, const std::string& reason,
+                            std::chrono::seconds duration, const char* successKey, const char* failedKey)
 {
     // Captured before issuing: bans and kicks can drop the target immediately.
-    std::string targetName = c.Target().Name();
-    if (!IssuePunishment(app, *c.Caller, c.Target(), type, reason, c.Duration().value_or(0)))
+    std::string targetName = target.Name();
+    if (!IssuePunishment(app, *c.P, target, type, reason, duration.count()))
         return c.Fail(failedKey);
     return c.Ok(successKey, {{"name", targetName}});
 }
 
-void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
+/** The reason a punishment carries when the caller typed none. Server language, because it
+ *  lands in the database and in the broadcast, not on one player's screen. */
+static std::string ReasonOr(const Caller& c, const Args::Opt<Args::Rest>& typed, const char* fallbackKey)
 {
-    commands.Register({
-        .Name = "kick",
-        .Description = "Kick a player.",
-        .Permission = Flag(Permission::Kick),
-        .Args = {Target(), ReasonTail("reason.kickedByAdmin")},
-        // Kick has no DB write, so IssuePunishment cannot fail and the failure key is never read.
-        .Handler =
-            [&app](CommandContext& c) {
-                return Punish(app, c, PunishType::Kick, c.Reason, "cmd.kickSuccess", "cmd.kickSuccess");
-            },
-    });
+    return typed.Value ? typed.Value->Value : c.Tr.Get(fallbackKey);
+}
 
-    commands.Register({
-        .Name = "ban",
-        .Description = "Ban a player. Duration: minutes (e.g. 30) or 30s/5m/2h/7d; 0/'perm' = permanent.",
-        .Permission = Flag(Permission::Ban),
-        .Args = {Target(), Duration(), ReasonTail()},
-        .Handler =
-            [&app](CommandContext& c) {
+void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app, Subs& subs)
+{
+    subs.push_back(commands.Add("kick")
+                       .Describe("Kick a player.")
+                       .Permission(Flag(Permission::Kick))
+                       // Kick has no DB write, so IssuePunishment cannot fail and the failure key is never read.
+                       .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) -> Result<Reply> {
+                           return Punish(app, c, *t.Value, PunishType::Kick, ReasonOr(c, why, "reason.kickedByAdmin"),
+                                         std::chrono::seconds{0}, "cmd.kickSuccess", "cmd.kickSuccess");
+                       }));
+
+    subs.push_back(
+        commands.Add("ban")
+            .Describe("Ban a player. Duration: minutes (e.g. 30) or 30s/5m/2h/7d; 0/'perm' = permanent.")
+            .Permission(Flag(Permission::Ban))
+            .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
                 // The default ban reason is a config string, not a translation key.
-                std::string reason = c.Reason.empty() ? app.Config.GetPunishments().defaultBanReason : c.Reason;
-                return Punish(app, c, PunishType::Ban, reason, "cmd.banSuccess", "cmd.banFailed");
-            },
-    });
+                std::string reason = why.Value ? why.Value->Value : app.Config.GetPunishments().defaultBanReason;
+                return Punish(app, c, *t.Value, PunishType::Ban, reason, d.Value, "cmd.banSuccess", "cmd.banFailed");
+            }));
 
-    commands.Register({
-        .Name = "unban",
-        .Description = "Lift an active ban for the given SteamID.",
-        .Permission = Flag(Permission::Unban),
-        .Args = {SteamId64("cmd.unbanUsage"), ReasonTail("reason.unbannedByAdmin")},
-        .Handler =
-            [&app](CommandContext& c) {
-                bool removed = app.Punishments.RemoveBanBySteamId(c.SteamId, c.Caller->SteamId(), c.Reason);
-                Tokens tokens{{"id", std::to_string(c.SteamId)}};
-                return removed ? c.Ok("cmd.unbanSuccess", tokens) : c.Fail("cmd.unbanNoBan", tokens);
-            },
-    });
+    subs.push_back(commands.Add("unban")
+                       .Describe("Lift an active ban for the given SteamID.")
+                       .Permission(Flag(Permission::Unban))
+                       .UsageKey("cmd.unbanUsage")
+                       .Run([&app](Caller c, Args::SteamId id, Args::Opt<Args::Rest> why) -> Result<Reply> {
+                           const std::string reason = ReasonOr(c, why, "reason.unbannedByAdmin");
+                           bool removed = app.Punishments.RemoveBanBySteamId(id.Value, c.P->SteamId(), reason);
+                           Tokens tokens{{"id", std::to_string(id.Value)}};
+                           return removed ? c.Ok("cmd.unbanSuccess", tokens) : c.Fail("cmd.unbanNoBan", tokens);
+                       }));
 
-    commands.Register({
-        .Name = "voice_mute",
-        .Aliases = {"vmute", "mute"},
-        .Description = "Voice-mute a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.",
-        .Permission = Flag(Permission::Mute),
-        .Args = {Target(), Duration(), ReasonTail("reason.voiceMutedByAdmin")},
-        .Handler =
-            [&app](CommandContext& c) {
-                return Punish(app, c, PunishType::VoiceMute, c.Reason, "cmd.voiceMuteSuccess", "cmd.voiceMuteFailed");
-            },
-    });
+    subs.push_back(
+        commands.Add("voice_mute")
+            .Alias("vmute")
+            .Alias("mute")
+            .Describe("Voice-mute a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.")
+            .Permission(Flag(Permission::Mute))
+            .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
+                return Punish(app, c, *t.Value, PunishType::VoiceMute, ReasonOr(c, why, "reason.voiceMutedByAdmin"),
+                              d.Value, "cmd.voiceMuteSuccess", "cmd.voiceMuteFailed");
+            }));
 
-    commands.Register({
-        .Name = "voice_unmute",
-        .Aliases = {"vunmute", "unmute"},
-        .Description = "Lift an active voice mute on the target.",
-        .Permission = Flag(Permission::Mute),
-        .Args = {Target()},
-        .Handler =
-            [&app](CommandContext& c) {
-                bool removed = app.Punishments.RemoveVoiceMuteBySteamId(
-                    c.Target().SteamId(), c.Caller->SteamId(),
-                    app.Runtime.Translations.Get("reason.voiceUnmutedByAdmin"));
-                Tokens tokens{{"name", c.Target().Name()}};
-                return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
-            },
-    });
+    subs.push_back(commands.Add("voice_unmute")
+                       .Alias("vunmute")
+                       .Alias("unmute")
+                       .Describe("Lift an active voice mute on the target.")
+                       .Permission(Flag(Permission::Mute))
+                       .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
+                           bool removed = app.Punishments.RemoveVoiceMuteBySteamId(
+                               t.Value->SteamId(), c.P->SteamId(), c.Tr.Get("reason.voiceUnmutedByAdmin"));
+                           Tokens tokens{{"name", t.Value->Name()}};
+                           return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens)
+                                          : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
+                       }));
 
-    commands.Register({
-        .Name = "text_mute",
-        .Aliases = {"tmute", "gag"},
-        .Description = "Text-mute (chat-block) a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.",
-        .Permission = Flag(Permission::Mute),
-        .Args = {Target(), Duration(), ReasonTail("reason.textMutedByAdmin")},
-        .Handler =
-            [&app](CommandContext& c) {
-                return Punish(app, c, PunishType::TextMute, c.Reason, "cmd.textMuteSuccess", "cmd.textMuteFailed");
-            },
-    });
+    subs.push_back(
+        commands.Add("text_mute")
+            .Alias("tmute")
+            .Alias("gag")
+            .Describe("Text-mute (chat-block) a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.")
+            .Permission(Flag(Permission::Mute))
+            .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
+                return Punish(app, c, *t.Value, PunishType::TextMute, ReasonOr(c, why, "reason.textMutedByAdmin"),
+                              d.Value, "cmd.textMuteSuccess", "cmd.textMuteFailed");
+            }));
 
-    commands.Register({
-        .Name = "text_unmute",
-        .Aliases = {"tunmute", "ungag"},
-        .Description = "Lift an active text mute on the target.",
-        .Permission = Flag(Permission::Mute),
-        .Args = {Target()},
-        .Handler =
-            [&app](CommandContext& c) {
-                bool removed =
-                    app.Punishments.RemoveTextMuteBySteamId(c.Target().SteamId(), c.Caller->SteamId(),
-                                                            app.Runtime.Translations.Get("reason.textUnmutedByAdmin"));
-                Tokens tokens{{"name", c.Target().Name()}};
-                return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
-            },
-    });
+    subs.push_back(commands.Add("text_unmute")
+                       .Alias("tunmute")
+                       .Alias("ungag")
+                       .Describe("Lift an active text mute on the target.")
+                       .Permission(Flag(Permission::Mute))
+                       .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
+                           bool removed = app.Punishments.RemoveTextMuteBySteamId(
+                               t.Value->SteamId(), c.P->SteamId(), c.Tr.Get("reason.textUnmutedByAdmin"));
+                           Tokens tokens{{"name", t.Value->Name()}};
+                           return removed ? c.Ok("cmd.textUnmuteSuccess", tokens)
+                                          : c.Fail("cmd.textUnmuteNotMuted", tokens);
+                       }));
 
-    commands.Register({
-        .Name = "warn",
-        .Description = "Issue a warning. Auto-escalates to a ban once the threshold is reached.",
-        .Permission = Flag(Permission::Mute),
-        .Args = {Target(), ReasonTail("reason.warnedByAdmin")},
-        .Handler =
-            [&app](CommandContext& c) {
-                return Punish(app, c, PunishType::Warn, c.Reason, "cmd.warnSuccess", "cmd.warnFailed");
-            },
-    });
+    subs.push_back(commands.Add("warn")
+                       .Describe("Issue a warning. Auto-escalates to a ban once the threshold is reached.")
+                       .Permission(Flag(Permission::Mute))
+                       .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) -> Result<Reply> {
+                           return Punish(app, c, *t.Value, PunishType::Warn, ReasonOr(c, why, "reason.warnedByAdmin"),
+                                         std::chrono::seconds{0}, "cmd.warnSuccess", "cmd.warnFailed");
+                       }));
 }
 
 }  // namespace AdminSystem::Commands

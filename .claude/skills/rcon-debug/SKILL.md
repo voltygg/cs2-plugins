@@ -92,9 +92,9 @@ tell whether players are on.
 | `mp_restartgame 1` | Force a fresh round                                |
 | `sv_cheats 1`      | Needed for some experiments; restore it afterwards |
 
-**Only `.Surfaces = Surface::Console` commands are reachable over RCON.**
-`CommandSpec::Surfaces` defaults to `Surface::Chat`, which has no console entry
-point:
+**Only commands whose builder called `.Console()` or `.ConsoleOnly()` are
+reachable over RCON.** A command is chat-only by default and has no console
+entry point:
 
 | Plugin       | Console commands                                            |
 | ------------ | ----------------------------------------------------------- |
@@ -103,9 +103,9 @@ point:
 | admin-system | none - all chat-only (`!ban`, `!admin_reload`, ...)         |
 
 So an admin-system change generally can't be triggered from RCON - verify via
-convars, `meta list`, `docker logs` and the database, or add
-`.Surfaces = Surface::Console` if an operator entry point is genuinely wanted.
-`Permission` is never checked on the console surface; RCON is already root.
+convars, `meta list`, `docker logs` and the database, or add `.Console()` to the
+registration if an operator entry point is genuinely wanted. A permission is
+never checked on the console surface; RCON is already root.
 
 ## Rules
 

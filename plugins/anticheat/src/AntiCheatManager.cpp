@@ -4,21 +4,17 @@
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Slot.hpp>
-#include <charconv>
 #include <format>
 #include <optional>
 #include <string>
-#include <string_view>
 
-using VoltMod::CommandContext;
-using VoltMod::CommandResult;
-using VoltMod::Int;
+using VoltMod::Caller;
 using VoltMod::IsValidSlot;
-using VoltMod::Surface;
+using VoltMod::Reply;
+using VoltMod::Result;
 using VoltMod::Time;
-using VoltMod::Word;
 
-using VoltMod::IsValidSlot;
+namespace Args = VoltMod::Args;
 namespace Log = VoltMod::Log;
 
 namespace Anticheat
@@ -26,15 +22,6 @@ namespace Anticheat
 
 static constexpr int DefaultDumpTicks = 64;
 static constexpr int MaxDumpTicks = 10000;
-
-static std::optional<int> ParseInt(std::string_view text)
-{
-    int value{};
-    const auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
-    if (ec != std::errc{} || ptr != text.data() + text.size())
-        return std::nullopt;
-    return value;
-}
 
 void AntiCheatManager::Initialize()
 {
@@ -106,66 +93,48 @@ void AntiCheatManager::RegisterCommands()
 {
     auto& commands = _rt.Commands;
 
-    commands.Register({
-        .Name = "anticheat_reload",
-        .Description = "Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.",
-        .Surfaces = Surface::Console,
-        .Handler =
-            [this](CommandContext&) {
-                if (!_config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")))
-                    return CommandResult::Silent();
-                // Keeps the rules already in memory when the edit does not parse, so a typo cannot
-                // silently disarm the two table-driven modules.
-                if (!_detections.Load(DetectionDataPath))
-                    Log::Warn("{} could not be re-read; keeping the tables already loaded.", DetectionDataPath);
-                else
-                    LoadDetectionData();
-                RefreshTeamRules();
-                ResetEvidence();
-                return CommandResult{
-                    std::format("Settings reloaded (mode={}); evidence cleared.", _config.Get().anticheat.mode)};
-            },
-    });
+    _subs.push_back(commands.Add("anticheat_reload")
+                        .Describe("Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.")
+                        .ConsoleOnly()
+                        .Run([this](Caller) -> Result<Reply> {
+                            if (!_config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")))
+                                return Reply::Silent();
+                            // Keeps the rules already in memory when the edit does not parse, so a typo cannot
+                            // silently disarm the two table-driven modules.
+                            if (!_detections.Load(DetectionDataPath))
+                                Log::Warn("{} could not be re-read; keeping the tables already loaded.",
+                                          DetectionDataPath);
+                            else
+                                LoadDetectionData();
+                            RefreshTeamRules();
+                            ResetEvidence();
+                            return Reply{std::format("Settings reloaded (mode={}); evidence cleared.",
+                                                     _config.Get().anticheat.mode)};
+                        }));
 
-    commands.Register({
-        .Name = "anticheat_status",
-        .Description = "Print the module state and per-player detection evidence.",
-        .Surfaces = Surface::Console,
-        .Handler =
-            [this](CommandContext&) {
-                LogStatus();
-                return CommandResult::Silent();
-            },
-    });
+    _subs.push_back(commands.Add("anticheat_status")
+                        .Describe("Print the module state and per-player detection evidence.")
+                        .ConsoleOnly()
+                        .Run([this](Caller) -> Result<Reply> {
+                            LogStatus();
+                            return Reply::Silent();
+                        }));
 
-    // The tick count rides in a Word because CommandContext carries one Int; the slot still gets
-    // arity checking, cmd.badNumber and the derived console registration from the spec.
-    commands.Register({
-        .Name = "anticheat_dumpcmd",
-        .Description = "Log raw usercmds for a slot.",
-        .Usage = "anticheat_dumpcmd <slot> [ticks=64]",
-        .Args = {Int(), Word(false)},
-        .Surfaces = Surface::Console,
-        .Handler =
-            [this](CommandContext& c) {
-                const int slot = c.Int().value_or(-1);
-                if (!IsValidSlot(slot))
-                    return CommandResult{std::format("anticheat_dumpcmd: {} is not a valid slot.", slot)};
+    // Two integers, two parameters: the tick count no longer has to ride in a Word.
+    _subs.push_back(commands.Add("anticheat_dumpcmd")
+                        .Describe("Log raw usercmds for a slot.")
+                        .ConsoleOnly()
+                        .Run([this](Caller, Args::Int slot, Args::Opt<Args::Int> requested) -> Result<Reply> {
+                            if (!IsValidSlot(slot.Value))
+                                return Reply{std::format("anticheat_dumpcmd: {} is not a valid slot.", slot.Value)};
 
-                int ticks = DefaultDumpTicks;
-                if (!c.Word.empty())
-                {
-                    // Reject non-numeric input instead of treating it as zero ticks.
-                    const auto requested = ParseInt(c.Word);
-                    if (!requested || *requested < 1 || *requested > MaxDumpTicks)
-                        return CommandResult{std::format("anticheat_dumpcmd: ticks must be 1-{}.", MaxDumpTicks)};
-                    ticks = *requested;
-                }
+                            const int ticks = requested.Value ? requested.Value->Value : DefaultDumpTicks;
+                            if (ticks < 1 || ticks > MaxDumpTicks)
+                                return Reply{std::format("anticheat_dumpcmd: ticks must be 1-{}.", MaxDumpTicks)};
 
-                _dumpTicks[slot] = ticks;
-                return CommandResult{std::format("Dumping {} usercmds for slot {}.", ticks, slot)};
-            },
-    });
+                            _dumpTicks[slot.Value] = ticks;
+                            return Reply{std::format("Dumping {} usercmds for slot {}.", ticks, slot.Value)};
+                        }));
 }
 
 void AntiCheatManager::DumpCommand(int slot, const VoltMod::UserCmdView& cmd)
