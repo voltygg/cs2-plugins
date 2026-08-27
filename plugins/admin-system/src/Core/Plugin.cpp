@@ -37,8 +37,8 @@ bool AdminSystemPlugin::OnLoad(VoltMod::Runtime& runtime, bool /*late*/)
 
 void AdminSystemPlugin::OnRegisterHooks(VoltMod::Runtime& runtime)
 {
-    _clientListening = VOLTMOD_SCOPED_HOOK(IVEngineServer2, SetClientListening, runtime.Unsafe.Interfaces.Engine,
-                                           SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false);
+    OwnHook(VOLTMOD_SCOPED_HOOK(IVEngineServer2, SetClientListening, runtime.Unsafe.Interfaces.Engine,
+                                SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false));
 }
 
 bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)

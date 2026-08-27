@@ -27,5 +27,4 @@ public:
 
 private:
     std::optional<AdminSystem::App> _app;
-    VoltMod::Subscription _clientListening;
 };
