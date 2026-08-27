@@ -25,7 +25,7 @@ extern const Action Goto;
 
 /** Exchange origins between two targets. The picker for the second target is built
  *  by the menu layer; this entry point assumes both are already resolved. */
-void Swap(App& app, int adminSlot, int firstSlot, int secondSlot);
+void Swap(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef first, VoltMod::PlayerRef second);
 
 /** Param is the destination team (VoltMod::TeamSpectator/TeamT/TeamCT); out-of-range values are ignored. */
 extern const ParamAction ChangeTeam;
@@ -60,9 +60,9 @@ struct ActionDescriptors
 };
 
 /** Returns false if the action was rejected (immunity/permission) or the check could not start. */
-bool CallCheck(App& app, int adminSlot, int targetSlot);
+bool CallCheck(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target);
 
 /** Returns false if the action was rejected (immunity/permission) or no check was active. */
-bool CancelCheck(App& app, int adminSlot, int targetSlot);
+bool CancelCheck(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Actions

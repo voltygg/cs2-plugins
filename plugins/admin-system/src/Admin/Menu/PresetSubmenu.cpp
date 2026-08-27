@@ -18,21 +18,22 @@ using VoltMod::MenuBuilder;
 using VoltMod::MenuManager;
 using VoltMod::Translations;
 
-std::shared_ptr<VoltMod::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                       VoltMod::PlayerRef target)
 {
     auto& tr = app.Runtime.Translations;
-    MenuBuilder builder(tr.Get("action.changeTeam", adminSlot));
+    MenuBuilder builder(tr.Get("action.changeTeam", admin.Slot));
 
     auto addTeam = [&](const std::string& label, int team) {
-        builder.Button(label, [&app, adminSlot, targetSlot, team](int slot) {
-            app.Actions.Run(adminSlot, targetSlot, team, Actions::ChangeTeam);
+        builder.Button(label, [&app, admin, target, team](int slot) {
+            app.Actions.Run(admin, target, team, Actions::ChangeTeam);
             app.Runtime.Menus.CloseAllMenus(slot);
         });
     };
 
-    addTeam(tr.Get("team.ct", adminSlot), VoltMod::TeamCT);
-    addTeam(tr.Get("team.t", adminSlot), VoltMod::TeamT);
-    addTeam(tr.Get("team.spec", adminSlot), VoltMod::TeamSpectator);
+    addTeam(tr.Get("team.ct", admin.Slot), VoltMod::TeamCT);
+    addTeam(tr.Get("team.t", admin.Slot), VoltMod::TeamT);
+    addTeam(tr.Get("team.spec", admin.Slot), VoltMod::TeamSpectator);
 
     return builder.Build();
 }

@@ -18,7 +18,8 @@ void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app, Subs
                        .Describe("Toggle stealth-spectator mode on yourself.")
                        .Permission(Flag(Permission::Hide))
                        .Run([&app](Caller c) -> Result<Reply> {
-                           app.PlayerEffects.Toggle(c.Slot, c.Slot, app.EffectDescriptors.Hide);
+                           const auto self = app.Runtime.Players.RefFor(c.Slot);
+                           app.PlayerEffects.Toggle(self, self, app.EffectDescriptors.Hide);
                            return Reply::Silent();
                        }));
 }

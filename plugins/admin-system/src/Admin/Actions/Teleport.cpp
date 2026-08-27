@@ -34,12 +34,12 @@ const Action Goto{Flag(Permission::Control), /*requireAlive*/ true, [](const Act
                       return "broadcast.goto";
                   }};
 
-void Swap(App& app, int adminSlot, int firstSlot, int secondSlot)
+void Swap(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef first, VoltMod::PlayerRef second)
 {
-    if (firstSlot == secondSlot)
+    if (first == second)
         return;
-    auto ctxA = app.Actions.Resolve(adminSlot, firstSlot, Flag(Permission::Control));
-    auto ctxB = app.Actions.Resolve(adminSlot, secondSlot, Flag(Permission::Control));
+    auto ctxA = app.Actions.Resolve(admin, first, Flag(Permission::Control));
+    auto ctxB = app.Actions.Resolve(admin, second, Flag(Permission::Control));
     if (!ctxA || !ctxB)
         return;
     if (!ctxA->TargetPawn().IsAlive() || !ctxB->TargetPawn().IsAlive())

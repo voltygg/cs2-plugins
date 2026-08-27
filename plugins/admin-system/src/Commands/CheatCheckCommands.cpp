@@ -39,7 +39,7 @@ void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app, Sub
                        .Describe("Start a cheat check on a player.")
                        .Permission(Flag(Permission::Control))
                        .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-                           if (!AdminSystem::Admin::Actions::CallCheck(app, c.Slot, t.Value->Slot()))
+                           if (!AdminSystem::Admin::Actions::CallCheck(app, app.Runtime.Players.RefFor(c.Slot), t.Value->Ref()))
                                return c.Fail("cmd.noPermission");
                            return c.Ok("cheatCheck.started", {{"name", t.Value->Name()}});
                        }));
@@ -49,7 +49,7 @@ void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app, Sub
                        .Describe("Cancel a pending cheat check on a player.")
                        .Permission(Flag(Permission::Control))
                        .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-                           if (!AdminSystem::Admin::Actions::CancelCheck(app, c.Slot, t.Value->Slot()))
+                           if (!AdminSystem::Admin::Actions::CancelCheck(app, app.Runtime.Players.RefFor(c.Slot), t.Value->Ref()))
                                return c.Fail("cheatCheck.noActiveCheck");
                            return c.Ok("cheatCheck.cancelled", {{"name", t.Value->Name()}});
                        }));

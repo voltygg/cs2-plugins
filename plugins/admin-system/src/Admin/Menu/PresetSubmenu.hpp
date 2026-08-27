@@ -9,6 +9,7 @@
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<VoltMod::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
+std::shared_ptr<VoltMod::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                       VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu

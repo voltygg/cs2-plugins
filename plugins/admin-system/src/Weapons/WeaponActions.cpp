@@ -22,13 +22,13 @@ using Admin::Actions::OptKey;
  * `RequireAlive` is left off and the aliveness check done here instead, because the dispatcher
  * skips a dead target silently and the chat commands need to say why nothing happened.
  */
-static WeaponActionResult RunWeaponAction(App& app, int adminSlot, int targetSlot,
+static WeaponActionResult RunWeaponAction(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target,
                                           const std::function<bool(const ActionContext&)>& body,
                                           const char* broadcastKey)
 {
     auto outcome = WeaponActionResult::NotAllowed;
 
-    app.Actions.Run(adminSlot, targetSlot,
+    app.Actions.Run(admin, target,
                     Action{.Permission = Flag(Permission::Weapon),
                            .RequireAlive = false,
                            .Body = [&](const ActionContext& ctx) -> OptKey {
@@ -49,21 +49,21 @@ static WeaponActionResult RunWeaponAction(App& app, int adminSlot, int targetSlo
     return outcome;
 }
 
-WeaponActionResult GiveWeapon(App& app, int adminSlot, int targetSlot, std::string_view item)
+WeaponActionResult GiveWeapon(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target, std::string_view item)
 {
     const std::string classname(item);
     auto& items = app.Runtime.World.Items;
     return RunWeaponAction(
-        app, adminSlot, targetSlot,
+        app, admin, target,
         [&items, &classname](const ActionContext& ctx) { return items.Give(ctx.TargetPawn(), classname.c_str()); },
         "broadcast.gaveWeapon");
 }
 
-WeaponActionResult StripWeapons(App& app, int adminSlot, int targetSlot)
+WeaponActionResult StripWeapons(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target)
 {
     auto& items = app.Runtime.World.Items;
     return RunWeaponAction(
-        app, adminSlot, targetSlot, [&items](const ActionContext& ctx) { return items.StripWeapons(ctx.TargetPawn()); },
+        app, admin, target, [&items](const ActionContext& ctx) { return items.StripWeapons(ctx.TargetPawn()); },
         "broadcast.stripped");
 }
 

@@ -71,6 +71,7 @@ std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int a
     if (!admin)
         return nullptr;
 
+    const VoltMod::PlayerRef adminRef = admin->Ref();
     bool hasB = access.HasPermission(admin->SteamId(), Permission::Hide);
 
     MenuBuilder builder(tr.Get("category.control", adminSlot));
@@ -79,43 +80,45 @@ std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int a
     builder.Toggle(
         tr.Get("action.hide", adminSlot), tr.Get("effectState.on", adminSlot), tr.Get("effectState.off", adminSlot),
         [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, app.EffectDescriptors.Hide.Id); },
-        [&app, adminSlot](int) { app.PlayerEffects.Toggle(adminSlot, adminSlot, app.EffectDescriptors.Hide); }, hasB);
+        [&app, adminRef](int) { app.PlayerEffects.Toggle(adminRef, adminRef, app.EffectDescriptors.Hide); }, hasB);
 
     VoltMod::AppendPlayerRows(
         builder, app.Runtime.Players, adminSlot,
-        [&app](int admin, int target) {
-            auto actions = BuildControlActionsMenu(app, admin, target);
+        [&app](int viewerSlot, int targetSlot) {
+            // Both slots are current at press time, so this is where they become references.
+            auto& players = app.Runtime.Players;
+            auto actions = BuildControlActionsMenu(app, players.RefFor(viewerSlot), players.RefFor(targetSlot));
             if (actions)
-                app.Runtime.Menus.OpenMenu(admin, actions);
+                app.Runtime.Menus.OpenMenu(viewerSlot, actions);
         },
         tr.Get("common.noPlayers", adminSlot));
 
     return builder.Build();
 }
 
-std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                           VoltMod::PlayerRef target)
 {
     auto& tr = app.Runtime.Translations;
 
-    auto* admin = app.Runtime.Players.Get(adminSlot);
-    auto* target = app.Runtime.Players.Get(targetSlot);
-    if (!target || !admin)
+    auto* adminPlayer = app.Runtime.Players.Get(admin);
+    auto* targetPlayer = app.Runtime.Players.Get(target);
+    if (!targetPlayer || !adminPlayer)
         return nullptr;
 
     MenuBuilder builder(app.Runtime.Menus,
-                        std::format("{}: {}", tr.Get("category.control", adminSlot), target->Name()));
-    builder.For(admin->Ref(), target->Ref(), &app.Effects);
+                        std::format("{}: {}", tr.Get("category.control", admin.Slot), targetPlayer->Name()));
+    builder.For(admin, target, &app.Effects);
     bool hasS = builder.Allowed(Flag(Permission::Control));
 
     // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
     // (no broadcast / bool result), so they stay plain buttons rather than Actions descriptors.
-    const bool checkActive = app.CheatCheck.IsActive(targetSlot);
+    const bool checkActive = app.CheatCheck.IsActive(target.Slot);
     builder.Button(
-        builder.Tr("action.callCheck"),
-        [&app, adminSlot, targetSlot](int) { Actions::CallCheck(app, adminSlot, targetSlot); }, hasS);
+        builder.Tr("action.callCheck"), [&app, admin, target](int) { Actions::CallCheck(app, admin, target); }, hasS);
     builder.Button(
-        builder.Tr("action.cancelCheck"),
-        [&app, adminSlot, targetSlot](int) { Actions::CancelCheck(app, adminSlot, targetSlot); }, hasS && checkActive);
+        builder.Tr("action.cancelCheck"), [&app, admin, target](int) { Actions::CancelCheck(app, admin, target); },
+        hasS && checkActive);
 
     builder.Row("action.kill", Actions::Kill)
         .Row("action.bring", Actions::Bring)
@@ -133,55 +136,56 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
 
     builder.Submenu(
         builder.Tr("action.changeTeam"),
-        [&app, adminSlot, targetSlot](int) { return BuildTeamPickerMenu(app, adminSlot, targetSlot); }, hasS);
+        [&app, admin, target](int) { return BuildTeamPickerMenu(app, admin, target); }, hasS);
 
     builder.Submenu(
         builder.Tr("action.giveWeapon"),
-        [&app, adminSlot, targetSlot](int) { return BuildWeaponMenu(app, adminSlot, targetSlot); },
+        [&app, admin, target](int) { return BuildWeaponMenu(app, admin, target); },
         builder.Allowed(Flag(Permission::Weapon)));
 
     return builder.Build();
 }
 
-std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                   VoltMod::PlayerRef target)
 {
     auto& tr = app.Runtime.Translations;
 
-    auto* target = app.Runtime.Players.Get(targetSlot);
-    if (!target)
+    auto* targetPlayer = app.Runtime.Players.Get(target);
+    if (!targetPlayer)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("action.giveWeapon", adminSlot), target->Name()));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("action.giveWeapon", admin.Slot), targetPlayer->Name()));
 
     const auto& menu = app.Config.GetWeaponMenu();
     for (const auto& weapon : menu)
     {
-        builder.Button(weapon.Label(), [&app, adminSlot, targetSlot, item = weapon.Item](int slot) {
-            ReportWeaponOutcome(app, slot, Weapons::GiveWeapon(app, adminSlot, targetSlot, item),
+        builder.Button(weapon.Label(), [&app, admin, target, item = weapon.Item](int slot) {
+            ReportWeaponOutcome(app, slot, Weapons::GiveWeapon(app, admin, target, item),
                                 "cmd.weaponGiveFailed");
         });
     }
 
     if (!menu.empty())
     {
-        builder.Button(tr.Get("action.giveRandomWeapon", adminSlot), [&app, adminSlot, targetSlot](int slot) {
+        builder.Button(tr.Get("action.giveRandomWeapon", admin.Slot), [&app, admin, target](int slot) {
             const auto& weapons = app.Config.GetWeaponMenu();
             if (weapons.empty())
                 return;
             ReportWeaponOutcome(
                 app, slot,
-                Weapons::GiveWeapon(app, adminSlot, targetSlot, weapons[VoltMod::RandomIndex(weapons.size())].Item),
+                Weapons::GiveWeapon(app, admin, target, weapons[VoltMod::RandomIndex(weapons.size())].Item),
                 "cmd.weaponGiveFailed");
         });
     }
     else
     {
         // Never show a dead-end empty page.
-        builder.Button(tr.Get("action.noWeapons", adminSlot), [](int) {}, false);
+        builder.Button(tr.Get("action.noWeapons", admin.Slot), [](int) {}, false);
     }
 
-    builder.Button(tr.Get("action.strip", adminSlot), [&app, adminSlot, targetSlot](int slot) {
-        ReportWeaponOutcome(app, slot, Weapons::StripWeapons(app, adminSlot, targetSlot), "cmd.weaponStripFailed");
+    builder.Button(tr.Get("action.strip", admin.Slot), [&app, admin, target](int slot) {
+        ReportWeaponOutcome(app, slot, Weapons::StripWeapons(app, admin, target), "cmd.weaponStripFailed");
     });
 
     return builder.Build();

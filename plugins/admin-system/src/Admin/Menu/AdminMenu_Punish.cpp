@@ -74,10 +74,12 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app,
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.punish", adminSlot), target->Name()));
 
-    if (AnyTemplateUsable(app, adminSlot, targetSlot))
+    if (AnyTemplateUsable(app, adminSlot, target->Ref()))
     {
         builder.Submenu(tr.Get("punish.quickPunish", adminSlot),
-                        [&app, targetSlot](int slot) { return BuildQuickPunishMenu(app, slot, targetSlot); });
+                        [&app, targetRef = target->Ref()](int slot) {
+                            return BuildQuickPunishMenu(app, slot, targetRef);
+                        });
     }
 
     for (PunishType type :

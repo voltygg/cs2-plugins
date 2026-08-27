@@ -10,8 +10,10 @@ namespace AdminSystem::Admin::Menu
 {
 
 std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int adminSlot);
-std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
+std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                           VoltMod::PlayerRef target);
 /** Weapon picker for one target: every configured weapon, a random pick, and strip. */
-std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
+std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                   VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu

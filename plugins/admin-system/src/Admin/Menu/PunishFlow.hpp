@@ -34,9 +34,10 @@ struct PendingPunishment
 void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pending);
 
 /** Quick Punish list of the configured templates the admin may use on this target. */
-std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot, int targetSlot);
+std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot,
+                                                        VoltMod::PlayerRef target);
 
 /** True if at least one configured template is usable by @p adminSlot against @p targetSlot. */
-bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, int targetSlot);
+bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu
