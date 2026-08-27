@@ -7,6 +7,7 @@
 #include <VoltMod/Engine/ConVarLease.hpp>
 #include <array>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace AdminSystem::Fun
@@ -25,15 +26,14 @@ struct ToggleConVar
  * A resolved @ref ToggleConVar.
  *
  * The rows do not share one engine type - the damage scales and gravity are floats while
- * headshot-only is a bool - so each resolves as whichever it is and the other handle stays empty.
- * A row the server does not have leaves both empty and is skipped.
+ * headshot-only is a bool - so each resolves as whichever it is. A row the server does not have
+ * resolves as neither and never becomes a handle at all.
  */
 struct ToggleHandle
 {
     Toggle Owner;
     float OnValue = 0.0f;
-    VoltMod::ConVar<float> Number;
-    VoltMod::ConVar<bool> Flag;
+    std::variant<VoltMod::ConVar<float>, VoltMod::ConVar<bool>> Handle;
 };
 
 /**

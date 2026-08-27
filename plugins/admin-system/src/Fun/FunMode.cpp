@@ -4,8 +4,11 @@
 #include <VoltMod/Events/EventTypes.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <concepts>
 #include <string>
+#include <type_traits>
 #include <utility>
+#include <variant>
 
 using VoltMod::PlayerManager;
 using VoltMod::Runtime;
@@ -76,22 +79,16 @@ void FunMode::ResolveConVars()
     for (const auto& row : ToggleConVars)
     {
         const std::string name(row.Name);
-        ToggleHandle handle{.Owner = row.Owner, .OnValue = row.OnValue};
 
         // Try the numeric form first: only headshot-only is a switch, and asking for the wrong
         // type is refused rather than silently writing nothing.
         if (auto number = VoltMod::ConVar<float>::Find(_rt.ConVars, name))
-            handle.Number = std::move(*number);
+            _handles.push_back({.Owner = row.Owner, .OnValue = row.OnValue, .Handle = std::move(*number)});
         else if (auto flag = VoltMod::ConVar<bool>::Find(_rt.ConVars, name))
-            handle.Flag = std::move(*flag);
+            _handles.push_back({.Owner = row.Owner, .OnValue = row.OnValue, .Handle = std::move(*flag)});
         else
-        {
             VoltMod::Log::Warn("Fun mode: convar '{}' unusable ({}); the toggle that drives it is inert.", name,
                                flag.error().Detail);
-            continue;
-        }
-
-        _handles.push_back(std::move(handle));
     }
 }
 
@@ -100,21 +97,21 @@ void FunMode::ApplyOverrides()
     for (auto& handle : _handles)
     {
         const bool on = _state.IsOn(handle.Owner);
-        if (handle.Number.IsValid())
-        {
-            if (on)
-                _lease.Override(handle.Number, handle.OnValue);
-            else
-                _lease.Restore(handle.Number);
-        }
-        else if (on)
-        {
-            _lease.Override(handle.Flag, handle.OnValue != 0.0f);
-        }
-        else
-        {
-            _lease.Restore(handle.Flag);
-        }
+        std::visit(
+            [&](auto& convar) {
+                if (!on)
+                {
+                    _lease.Restore(convar);
+                    return;
+                }
+                // The one bool row's on-value is written as a bool, not as a float that happens
+                // to be 1.0 - ConVarLease refuses the wrong type rather than writing nothing.
+                if constexpr (std::same_as<std::remove_cvref_t<decltype(convar)>, VoltMod::ConVar<bool>>)
+                    _lease.Override(convar, handle.OnValue != 0.0f);
+                else
+                    _lease.Override(convar, handle.OnValue);
+            },
+            handle.Handle);
     }
 }
 

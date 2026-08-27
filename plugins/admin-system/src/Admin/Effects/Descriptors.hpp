@@ -45,17 +45,6 @@ Effect MakeBhop(VoltMod::Runtime& runtime);
 Effect MakeDrunk(VoltMod::Runtime& runtime);
 
 /**
- * @brief Effects-menu row with exactly one descriptor.
- *
- * MenuEffects defines display order explicitly. Hide is a self-only Control row and `!hide`
- * command, so it is not listed here.
- */
-struct EffectEntry
-{
-    const Effect* Toggle = nullptr;
-};
-
-/**
  * @brief Every effect descriptor for one load cycle, built from the @ref VoltMod::Runtime the
  * bodies act through. Owned by `App`, next to the `EffectManager`/`EffectDispatcher` that drive
  * them - see `Core/App.hpp`.
@@ -80,12 +69,10 @@ struct EffectDescriptors
     Effect Bhop;
     Effect Drunk;
 
-    /** Every auto-listed effect, in the order the menu renders them. Pointers into the members
-     *  above, stable for this object's lifetime (one load cycle). */
-    const std::array<EffectEntry, 6> MenuEffects{
-        EffectEntry{&Ghost}, EffectEntry{&Disco}, EffectEntry{&Wallhack},
-        EffectEntry{&Model}, EffectEntry{&Bhop},  EffectEntry{&Drunk},
-    };
+    /** Every auto-listed effect, in the order the menu renders them. Points into the members
+     *  above, so it is stable for this object's lifetime (one load cycle). Hide is missing on
+     *  purpose: it is a self-only Control row and the `!hide` command. */
+    const std::array<const Effect*, 6> MenuEffects{&Ghost, &Disco, &Wallhack, &Model, &Bhop, &Drunk};
 };
 
 }  // namespace AdminSystem::Admin::Effects

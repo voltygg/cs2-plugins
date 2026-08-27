@@ -16,6 +16,7 @@
 namespace AdminSystem::Admin::Menu
 {
 
+using VoltMod::EffectDescriptor;
 using VoltMod::MenuBuilder;
 
 std::shared_ptr<VoltMod::MenuView> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
@@ -45,15 +46,12 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app
     builder.For(admin, target, &app.Effects);
     bool hasS = builder.Allowed(Flag(Permission::Control));
 
-    for (const auto& entry : app.EffectDescriptors.MenuEffects)
+    for (const EffectDescriptor* effect : app.EffectDescriptors.MenuEffects)
     {
-        if (entry.Toggle)
-        {
-            if (entry.Toggle->Choices)
-                builder.EffectPicker(*entry.Toggle);
-            else
-                builder.Effect(*entry.Toggle);
-        }
+        if (effect->Choices)
+            builder.EffectPicker(*effect);
+        else
+            builder.Effect(*effect);
     }
 
     builder.Row("action.slap", app.ActionDescriptors.Slap).Row("action.smite", app.ActionDescriptors.Smite);
