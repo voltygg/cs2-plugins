@@ -58,14 +58,14 @@ void MovementConVars::ApplyGlobal()
     // It writes through the console: a server-only set leaves FCVAR_REPLICATED movement convars
     // unnetworked, and clients keep predicting the defaults - no auto-hop, no speed retention.
     for (auto& entry : _flags)
-        _globalLease.Override(entry.Cvar, entry.Value);
+        _globalOverrides.Set(entry.Cvar, entry.Value);
     for (auto& entry : _numbers)
-        _globalLease.Override(entry.Cvar, entry.Value);
+        _globalOverrides.Set(entry.Cvar, entry.Value);
 }
 
 void MovementConVars::RestoreGlobal()
 {
-    _globalLease.RestoreAll();
+    _globalOverrides.RestoreAll();
 }
 
 void MovementConVars::ReplicateOverrides(int slot)

@@ -17,9 +17,9 @@ namespace AdminSystem::Fun
 static constexpr const char* KnifeT = "weapon_knife_t";
 static constexpr const char* KnifeCT = "weapon_knife";
 
-FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _lease(runtime.ConVars) {}
+FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _overrides(runtime.ConVars) {}
 
-// ~ConVarLease restores everything the toggles took over, so an unload cannot leave the server
+// ConVarOverrides restores everything the toggles took over, so an unload cannot leave the server
 // at low gravity or on lethal damage scales with nothing left to turn them off.
 FunMode::~FunMode() = default;
 
@@ -99,15 +99,15 @@ void FunMode::ApplyOverrides()
             [&](auto& convar) {
                 if (!on)
                 {
-                    _lease.Restore(convar);
+                    _overrides.Restore(convar);
                     return;
                 }
                 // The one bool row's on-value is written as a bool, not as a float that happens
-                // to be 1.0 - ConVarLease refuses the wrong type rather than writing nothing.
+                // to be 1.0 - typed handles refuse the wrong type rather than writing nothing.
                 if constexpr (std::same_as<std::remove_cvref_t<decltype(convar)>, VoltMod::ConVar<bool>>)
-                    _lease.Override(convar, handle.OnValue != 0.0f);
+                    _overrides.Set(convar, handle.OnValue != 0.0f);
                 else
-                    _lease.Override(convar, handle.OnValue);
+                    _overrides.Set(convar, handle.OnValue);
             },
             handle.Handle);
     }

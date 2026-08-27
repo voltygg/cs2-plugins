@@ -28,7 +28,7 @@ class MovementConVars
 public:
     explicit MovementConVars(VoltMod::ConVars& conVars) : _conVars(conVars) {}
 
-    // _globalLease's destructor restores whatever ApplyGlobal took, so unload leaves the
+    // _globalOverrides restores whatever ApplyGlobal changed, so unload leaves the
     // server's convars as we found them.
     ~MovementConVars() = default;
 
@@ -75,7 +75,7 @@ private:
     VoltMod::ConVars& _conVars;
     /** The server-wide take-over for "enabled" mode; the saved values and their restore live here.
      *  The raw flips and per-client replication below are bhop-specific and stay put. */
-    VoltMod::ConVarLease _globalLease{_conVars};
+    VoltMod::ConVarOverrides _globalOverrides{_conVars};
     std::vector<Override<bool>> _flags;
     std::vector<Override<float>> _numbers;
     /** Live only between HoldRaw and ReleaseRaw; each one restores its convar when it dies. */

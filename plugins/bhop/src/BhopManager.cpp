@@ -215,7 +215,7 @@ void BhopManager::ForceAutoHop(int slot)
         return;  // already ascending: the engine (or last frame's hop) took this jump
 
     constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0); engine default
-    velocity.z = _jumpImpulse.IsValid() ? _jumpImpulse.Get() : DefaultJumpImpulse;
+    velocity.z = _jumpImpulse ? _jumpImpulse.Get() : DefaultJumpImpulse;
     pawn.Velocity = velocity;
     // Leave the ground in the same frame: if the next movement command still sees FL_ONGROUND
     // it can re-ground and zero the vertical velocity for a tick - the "laggy jump" hitch.

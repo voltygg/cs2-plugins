@@ -77,7 +77,7 @@ void AntiCheatManager::Initialize()
 
 void AntiCheatManager::RefreshTeamRules()
 {
-    _correlator.SetTeammatesAreEnemies(_teammatesAreEnemies.IsValid() && _teammatesAreEnemies.Get());
+    _correlator.SetTeammatesAreEnemies(_teammatesAreEnemies && _teammatesAreEnemies.Get());
 }
 
 void AntiCheatManager::LoadDetectionData()
@@ -286,7 +286,7 @@ bool AntiCheatManager::DetectionsEnabled() const
     if (!settings.enabled)
         return false;
     const VoltMod::ConVar<bool>& cheats = _svCheats;
-    if (!cheats.IsValid())
+    if (!cheats)
         return true;
     return !cheats.Get() || settings.allowSvCheatsTesting;
 }
@@ -294,7 +294,7 @@ bool AntiCheatManager::DetectionsEnabled() const
 bool AntiCheatManager::EnforceCheatCvars() const
 {
     const VoltMod::ConVar<bool>& cheats = _svCheats;
-    return ShouldEnforceCheatCvars(cheats.IsValid() && cheats.Get(), Time::MonotonicSeconds(), _cheatGraceUntil);
+    return ShouldEnforceCheatCvars(cheats && cheats.Get(), Time::MonotonicSeconds(), _cheatGraceUntil);
 }
 
 bool AntiCheatManager::ModuleEnabled(DetectionKind kind) const

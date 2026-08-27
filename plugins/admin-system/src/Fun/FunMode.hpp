@@ -4,7 +4,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscription.hpp>
-#include <VoltMod/Engine/ConVarLease.hpp>
+#include <VoltMod/Engine/ConVarOverrides.hpp>
 #include <array>
 #include <string_view>
 #include <variant>
@@ -14,7 +14,7 @@ namespace AdminSystem::Fun
 {
 
 /** One convar a toggle takes over, and the value it holds while the toggle is on. What it goes
- *  back to is the operator's own value, saved by ConVarLease before the first write. */
+ *  back to is the operator's own value, saved before the first write. */
 struct ToggleConVar
 {
     Toggle Owner;
@@ -61,7 +61,7 @@ inline constexpr std::array<ToggleConVar, 6> ToggleConVars{{
  * weapons) are re-applied at each round start and undone when the toggle goes off.
  *
  * The damage-affecting toggles drive the engine's own convars: that is the only way to change
- * what a victim loses. ConVarLease holds the saved values, so a server that never turned a
+ * what a victim loses. ConVarOverrides holds the saved values, so a server that never turned a
  * toggle on keeps its own cfg.
  */
 class FunMode
@@ -97,7 +97,7 @@ private:
     /** @ref ToggleConVars resolved once in Start; empty until then. */
     std::vector<ToggleHandle> _handles;
     /** Restores whatever the toggles took over, including on unload. */
-    VoltMod::ConVarLease _lease;
+    VoltMod::ConVarOverrides _overrides;
     /** Listener registrations, released together and declared last so they stop before the
      *  state their callbacks read. */
     std::vector<VoltMod::Subscription> _subs;
