@@ -104,7 +104,21 @@ text below where they conflict. Full reasoning:
       deduped (voltmod f59919d). The Subscription-ownership "duplication" measured at one line
       per guide - appropriate, not consolidated. The Conan block's three copies serve three
       audiences and stay.
-- [ ] Phase 9: package, integrate, and complete all verification.
+- [x] Phase 9: packaged, integrated, and smoke-tested on the local server 2026-08-26.
+
+Phase 9 notes:
+
+- `windows-msvc-debug` still does not link (the vendored Release `libprotobuf.lib` clashes on
+  `_ITERATOR_DEBUG_LEVEL`); `linux-steamrt` builds only in the CI container. Both pre-existing.
+- The smoke run caught a real regression: the plugin DLL had been compiled against the new
+  `CommandBuilder` header but linked against a stale `voltmod-runtime.lib`, so every command
+  registered nothing (`0 chat commands` against 19 before). Wiping `build/windows-msvc-release`
+  fixed it; unit tests cannot see this. Recorded in memory as `stale-framework-link`.
+- Smoke 1 (load), 2 (unload/reload cycle), 6 (malformed gamedata), 7 (ambiguous signature) and
+  8 (anticheat without admin-system) pass. 6 and 7 confirm the Phase 1.1/1.2 fixes live:
+  ambiguous logs "refusing it" and turns Precache off; a non-object section yields a Degraded
+  report naming it rather than an exception.
+- Smoke 3, 4, 5 and the immune-SteamID ban check need a connected player and were not run.
 
 Claude Code should execute one numbered phase at a time. At the end of a phase:
 
