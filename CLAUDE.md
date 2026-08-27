@@ -27,8 +27,9 @@ profiles and public remote, then builds. `build` compiles only; `test` brings
 the build up to date and runs CTest. On `build`, `--install <plugin>` copies the
 result into the local CS2 server at `CS2_SERVER_PATH` and `--start` launches
 that server afterwards. `lint` runs ruff over the build tooling and then
-`voltmod modgraph --plugins .`, which fails a plugin source that forward-declares
-a type, opens an anonymous namespace, or uses a using-directive. All of these
+`voltmod modgraph --plugins .`, which fails a plugin header that forward-declares
+a type, or any plugin source that opens an anonymous namespace or uses a
+using-directive. All of these
 come from the framework CLI (`voltmod build|test|install|serve|modgraph`);
 `deploy/tools` only handles the remote fleet.
 Build output is under
@@ -155,9 +156,10 @@ Current patterns:
   Write the qualified name, or name what a .cpp uses with targeted
   using-declarations (`using VoltMod::Player;`). Never a using-directive, and
   never a using-declaration in a header.
-- Do not forward-declare a type. Include the header that defines it. A pair of
-  classes that owns one another is the only exception, and its declaration goes
-  in the plugin's one `*Types.hpp` header with a comment saying why.
+- Do not forward-declare a type in a header. Include the header that defines it.
+  A pair of classes that owns one another is the only exception, and its
+  declaration goes in the plugin's one `*Types.hpp` header with a comment saying
+  why - that filename is what modgraph exempts.
 - Do not use anonymous namespaces. A file-local helper is a `static` function or
   constant at the top of the .cpp, or a private static member when it needs
   class state.
