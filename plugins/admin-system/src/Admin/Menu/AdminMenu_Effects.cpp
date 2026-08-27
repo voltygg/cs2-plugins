@@ -21,14 +21,13 @@ using VoltMod::MenuBuilder;
 std::shared_ptr<VoltMod::MenuView> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
-    return BuildPlayerPicker(app, adminSlot, tr.Get("category.effects", adminSlot),
-                             [&app](int viewerSlot, int targetSlot) {
-                                 auto& players = app.Runtime.Players;
-                                 auto actions = BuildEffectsActionsMenu(app, players.RefFor(viewerSlot),
-                                                                        players.RefFor(targetSlot));
-                                 if (actions)
-                                     app.Runtime.Menus.OpenMenu(viewerSlot, actions);
-                             });
+    return BuildPlayerPicker(
+        app, adminSlot, tr.Get("category.effects", adminSlot), [&app](int viewerSlot, int targetSlot) {
+            auto& players = app.Runtime.Players;
+            auto actions = BuildEffectsActionsMenu(app, players.RefFor(viewerSlot), players.RefFor(targetSlot));
+            if (actions)
+                app.Runtime.Menus.OpenMenu(viewerSlot, actions);
+        });
 }
 
 std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,

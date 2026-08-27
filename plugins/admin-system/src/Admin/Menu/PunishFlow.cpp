@@ -145,8 +145,7 @@ bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef 
     return false;
 }
 
-std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot,
-                                                        VoltMod::PlayerRef target)
+std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target)
 {
     auto& tr = app.Runtime.Translations;
     auto* targetPlayer = app.Runtime.Players.Get(target);

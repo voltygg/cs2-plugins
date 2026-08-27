@@ -135,12 +135,11 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
         .Row("action.unbury", Actions::Unbury);
 
     builder.Submenu(
-        builder.Tr("action.changeTeam"),
-        [&app, admin, target](int) { return BuildTeamPickerMenu(app, admin, target); }, hasS);
+        builder.Tr("action.changeTeam"), [&app, admin, target](int) { return BuildTeamPickerMenu(app, admin, target); },
+        hasS);
 
     builder.Submenu(
-        builder.Tr("action.giveWeapon"),
-        [&app, admin, target](int) { return BuildWeaponMenu(app, admin, target); },
+        builder.Tr("action.giveWeapon"), [&app, admin, target](int) { return BuildWeaponMenu(app, admin, target); },
         builder.Allowed(Flag(Permission::Weapon)));
 
     return builder.Build();
@@ -161,8 +160,7 @@ std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, VoltMo
     for (const auto& weapon : menu)
     {
         builder.Button(weapon.Label(), [&app, admin, target, item = weapon.Item](int slot) {
-            ReportWeaponOutcome(app, slot, Weapons::GiveWeapon(app, admin, target, item),
-                                "cmd.weaponGiveFailed");
+            ReportWeaponOutcome(app, slot, Weapons::GiveWeapon(app, admin, target, item), "cmd.weaponGiveFailed");
         });
     }
 
@@ -173,8 +171,7 @@ std::shared_ptr<VoltMod::MenuView> BuildWeaponMenu(AdminSystem::App& app, VoltMo
             if (weapons.empty())
                 return;
             ReportWeaponOutcome(
-                app, slot,
-                Weapons::GiveWeapon(app, admin, target, weapons[VoltMod::RandomIndex(weapons.size())].Item),
+                app, slot, Weapons::GiveWeapon(app, admin, target, weapons[VoltMod::RandomIndex(weapons.size())].Item),
                 "cmd.weaponGiveFailed");
         });
     }

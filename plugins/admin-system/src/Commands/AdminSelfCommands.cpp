@@ -12,16 +12,16 @@ using VoltMod::Result;
 namespace AdminSystem::Commands
 {
 
-void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app, Subs& subs)
+void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app)
 {
-    subs.push_back(commands.Add("hide")
-                       .Describe("Toggle stealth-spectator mode on yourself.")
-                       .Permission(Flag(Permission::Hide))
-                       .Run([&app](Caller c) -> Result<Reply> {
-                           const auto self = app.Runtime.Players.RefFor(c.Slot);
-                           app.PlayerEffects.Toggle(self, self, app.EffectDescriptors.Hide);
-                           return Reply::Silent();
-                       }));
+    commands.Add("hide")
+        .Describe("Toggle stealth-spectator mode on yourself.")
+        .Permission(Flag(Permission::Hide))
+        .Run([&app](Caller c) -> Result<Reply> {
+            const auto self = app.Runtime.Players.RefFor(c.Slot);
+            app.PlayerEffects.Toggle(self, self, app.EffectDescriptors.Hide);
+            return Reply::Silent();
+        });
 }
 
 }  // namespace AdminSystem::Commands

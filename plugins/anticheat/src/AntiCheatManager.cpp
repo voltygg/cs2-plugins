@@ -93,48 +93,46 @@ void AntiCheatManager::RegisterCommands()
 {
     auto& commands = _rt.Commands;
 
-    _subs.push_back(commands.Add("anticheat_reload")
-                        .Describe("Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.")
-                        .ConsoleOnly()
-                        .Run([this](Caller) -> Result<Reply> {
-                            if (!_config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")))
-                                return Reply::Silent();
-                            // Keeps the rules already in memory when the edit does not parse, so a typo cannot
-                            // silently disarm the two table-driven modules.
-                            if (!_detections.Load(DetectionDataPath))
-                                Log::Warn("{} could not be re-read; keeping the tables already loaded.",
-                                          DetectionDataPath);
-                            else
-                                LoadDetectionData();
-                            RefreshTeamRules();
-                            ResetEvidence();
-                            return Reply{std::format("Settings reloaded (mode={}); evidence cleared.",
-                                                     _config.Get().anticheat.mode)};
-                        }));
+    commands.Add("anticheat_reload")
+        .Describe("Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.")
+        .ConsoleOnly()
+        .Run([this](Caller) -> Result<Reply> {
+            if (!_config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")))
+                return Reply::Silent();
+            // Keeps the rules already in memory when the edit does not parse, so a typo cannot
+            // silently disarm the two table-driven modules.
+            if (!_detections.Load(DetectionDataPath))
+                Log::Warn("{} could not be re-read; keeping the tables already loaded.", DetectionDataPath);
+            else
+                LoadDetectionData();
+            RefreshTeamRules();
+            ResetEvidence();
+            return Reply{std::format("Settings reloaded (mode={}); evidence cleared.", _config.Get().anticheat.mode)};
+        });
 
-    _subs.push_back(commands.Add("anticheat_status")
-                        .Describe("Print the module state and per-player detection evidence.")
-                        .ConsoleOnly()
-                        .Run([this](Caller) -> Result<Reply> {
-                            LogStatus();
-                            return Reply::Silent();
-                        }));
+    commands.Add("anticheat_status")
+        .Describe("Print the module state and per-player detection evidence.")
+        .ConsoleOnly()
+        .Run([this](Caller) -> Result<Reply> {
+            LogStatus();
+            return Reply::Silent();
+        });
 
     // Two integers, two parameters: the tick count no longer has to ride in a Word.
-    _subs.push_back(commands.Add("anticheat_dumpcmd")
-                        .Describe("Log raw usercmds for a slot.")
-                        .ConsoleOnly()
-                        .Run([this](Caller, Args::Int slot, Args::Opt<Args::Int> requested) -> Result<Reply> {
-                            if (!IsValidSlot(slot.Value))
-                                return Reply{std::format("anticheat_dumpcmd: {} is not a valid slot.", slot.Value)};
+    commands.Add("anticheat_dumpcmd")
+        .Describe("Log raw usercmds for a slot.")
+        .ConsoleOnly()
+        .Run([this](Caller, Args::Int slot, Args::Opt<Args::Int> requested) -> Result<Reply> {
+            if (!IsValidSlot(slot.Value))
+                return Reply{std::format("anticheat_dumpcmd: {} is not a valid slot.", slot.Value)};
 
-                            const int ticks = requested.Value ? requested.Value->Value : DefaultDumpTicks;
-                            if (ticks < 1 || ticks > MaxDumpTicks)
-                                return Reply{std::format("anticheat_dumpcmd: ticks must be 1-{}.", MaxDumpTicks)};
+            const int ticks = requested.Value ? requested.Value->Value : DefaultDumpTicks;
+            if (ticks < 1 || ticks > MaxDumpTicks)
+                return Reply{std::format("anticheat_dumpcmd: ticks must be 1-{}.", MaxDumpTicks)};
 
-                            _dumpTicks[slot.Value] = ticks;
-                            return Reply{std::format("Dumping {} usercmds for slot {}.", ticks, slot.Value)};
-                        }));
+            _dumpTicks[slot.Value] = ticks;
+            return Reply{std::format("Dumping {} usercmds for slot {}.", ticks, slot.Value)};
+        });
 }
 
 void AntiCheatManager::DumpCommand(int slot, const VoltMod::UserCmdView& cmd)

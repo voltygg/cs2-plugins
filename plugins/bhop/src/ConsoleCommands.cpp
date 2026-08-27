@@ -19,23 +19,22 @@ void BhopManager::RegisterConsoleCommands()
 {
     auto& commands = _rt.Commands;
 
-    _subs.push_back(commands.Add("bhop_player")
-                        .Describe("Grant/revoke session bhop for a player.")
-                        .ConsoleOnly()
-                        .Run([this](Caller, Args::SteamId steamId, Args::Int enabled) -> Result<Reply> {
-                            const bool granted = enabled.Value != 0;
-                            Grant(steamId.Value, granted);
-                            return Reply{
-                                std::format("bhop_player: {} for {}.", granted ? "granted" : "revoked", steamId.Value)};
-                        }));
+    commands.Add("bhop_player")
+        .Describe("Grant/revoke session bhop for a player.")
+        .ConsoleOnly()
+        .Run([this](Caller, Args::SteamId steamId, Args::Int enabled) -> Result<Reply> {
+            const bool granted = enabled.Value != 0;
+            Grant(steamId.Value, granted);
+            return Reply{std::format("bhop_player: {} for {}.", granted ? "granted" : "revoked", steamId.Value)};
+        });
 
-    _subs.push_back(commands.Add("bhop_reload")
-                        .Describe("Re-read settings.jsonc and re-apply the bhop configuration.")
-                        .ConsoleOnly()
-                        .Run([this](Caller) -> Result<Reply> {
-                            ReloadSettings();
-                            return Reply::Silent();
-                        }));
+    commands.Add("bhop_reload")
+        .Describe("Re-read settings.jsonc and re-apply the bhop configuration.")
+        .ConsoleOnly()
+        .Run([this](Caller) -> Result<Reply> {
+            ReloadSettings();
+            return Reply::Silent();
+        });
 }
 
 }  // namespace Bhop

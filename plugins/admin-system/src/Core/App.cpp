@@ -195,13 +195,13 @@ void App::InstallStatusReporting()
 void App::RegisterCommands()
 {
     auto& commands = Runtime.Commands;
-    Commands::RegisterAdminMenuCommand(commands, *this, _subs);
-    Commands::RegisterAdminSelfCommands(commands, *this, _subs);
-    Commands::RegisterCheatCheckCommands(commands, *this, _subs);
-    Commands::RegisterFreezeCommands(commands, *this, _subs);
-    Commands::RegisterInfoCommands(commands, *this, _subs);
-    Commands::RegisterPunishmentCommands(commands, *this, _subs);
-    Commands::RegisterReportCommand(commands, *this, _subs);
+    Commands::RegisterAdminMenuCommand(commands, *this);
+    Commands::RegisterAdminSelfCommands(commands, *this);
+    Commands::RegisterCheatCheckCommands(commands, *this);
+    Commands::RegisterFreezeCommands(commands, *this);
+    Commands::RegisterInfoCommands(commands, *this);
+    Commands::RegisterPunishmentCommands(commands, *this);
+    Commands::RegisterReportCommand(commands, *this);
 }
 
 bool App::Start()
