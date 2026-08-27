@@ -1,0 +1,72 @@
+/*
+	Panorama CSS, not web CSS. Nested rules and `&` work, as Valve's own welcome.css shows;
+	flexbox does not - use flow-children.
+
+	The pattern worth copying from welcome.css: give the panel its visible state in #id, and
+	put the hidden state in a nested `&.Class` that the server toggles. That is what makes a
+	server-driven show/hide one SetHasClass call rather than a layout swap.
+
+	    hudlab_class lab_card Hidden Absent    -> show
+	    hudlab_class lab_card Hidden Present   -> hide
+*/
+
+.Root {
+	width: 100%;
+	height: 100%;
+}
+
+#lab_card {
+	width: 380px;
+	horizontal-align: center;
+	margin-top: 200px;
+	flow-children: down;
+
+	padding: 20px;
+	background-color: #000000ee;
+	border: 1px solid gold;
+	color: white;
+
+	transition-property: opacity;
+	transition-duration: .1s;
+	opacity: 1;
+
+	&.Hidden {
+		opacity: 0;
+	}
+}
+
+.Title {
+	font-size: 26px;
+	color: gold;
+	text-align: center;
+	margin-bottom: 8px;
+}
+
+.Body {
+	font-size: 18px;
+	text-align: center;
+	margin-bottom: 16px;
+}
+
+#lab_buttons {
+	flow-children: right;
+	horizontal-align: center;
+}
+
+.Button {
+	border-radius: 4px;
+	padding: 8px 15px;
+	margin-right: 8px;
+
+	transition-property: background-color;
+	transition-duration: .1s;
+	background-color: #000000bb;
+
+	&:hover {
+		background-color: #777777bb;
+	}
+}
+
+.Button--accept {
+	background-color: #3c6e47bb;
+}
