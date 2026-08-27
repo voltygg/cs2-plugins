@@ -60,9 +60,9 @@ inline constexpr std::array<ToggleConVar, 6> ToggleConVars{{
  * does not have to re-enable it every round, but the effects it applies (gravity, damage rules,
  * weapons) are re-applied at each round start and undone when the toggle goes off.
  *
- * The damage-affecting toggles drive the engine's own convars rather than the damage hook, which
- * only observes damage (see VoltMod::Damage). ConVarLease holds the saved values, so a
- * server that never turned a toggle on keeps its own cfg.
+ * The damage-affecting toggles drive the engine's own convars: that is the only way to change
+ * what a victim loses. ConVarLease holds the saved values, so a server that never turned a
+ * toggle on keeps its own cfg.
  */
 class FunMode
 {

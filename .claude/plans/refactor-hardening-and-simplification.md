@@ -29,11 +29,9 @@ Every claim in Phase 1 was verified TRUE against the source. These amendments su
 text below where they conflict. Full reasoning:
 `C:\Users\admin\.claude\plans\review-this-plan-i-playful-pony.md`.
 
-1. **New Phase 0 - find the out-of-bounds write.** `src/Runtime.cpp:284` still carries the
-   `_tail` canary because a +8-byte `sizeof(Runtime)` change reliably crashed admin-system.
-   Phase 3.1 deletes four Runtime members and moves that layout. Run ASan
-   (`linux-steamrt-debug`) and load all three plugins before any deletion. If it is not found
-   in a day, keep the canary and load the server after every `sizeof(Runtime)` change.
+1. ~~New Phase 0 - find the out-of-bounds write.~~ **Dropped.** The static audit found no live
+   bug (see the Phase 0 note), and the dynamic hunt was judged not worth the effort. Keep the
+   canary; if a load-time crash appears after a header change, check `sizeof(Runtime)` first.
 2. **Re-sequenced.** Delete before you fix, and put CI first: 2 -> 0 -> 3 -> 1 -> 4 -> 5 -> 6
    -> 7 -> 8 -> 9. The framework's 294 test cases are never compiled or run by its own CI
    (`conanfile.py:108-109` forces `BUILD_TESTING=False`), so Phase 2 gates everything after it.
@@ -85,7 +83,7 @@ text below where they conflict. Full reasoning:
 
 - [x] Record both repository baselines and run the existing verification commands.
 - [x] Phase 2: make VoltMod CI run CTest.
-- [ ] Phase 0: find the out-of-bounds write behind the Runtime canary.
+- [x] Phase 0: dropped after a static audit - no live bug, see the phase note.
 - [ ] Phase 3: remove confirmed unused surface (start with Hooks::Damage, in isolation).
 - [ ] Phase 1: fix correctness and lifetime blockers (now including 4.3 StatusService).
 - [ ] Checkpoint: re-scope 5.7-5.12 and Phase 7 with the deletions banked.
@@ -142,6 +140,23 @@ Explicit non-goals:
 - Do not replace API-surface tests with the Conan test package.
 - Do not introduce an AppPlugin<T> inheritance layer.
 - Do not flatten WorldServices or HookServices merely to reduce one level of member access.
+
+## Phase 0: the out-of-bounds write - dropped
+
+Static audit only; the dynamic repro was cancelled as not worth the effort.
+
+What the audit established: `PerSlot<T>::operator[]`
+(`include/VoltMod/Core/PerSlot.hpp:45-52`) bounds-checks with `assert`, which compiles out
+under NDEBUG, and `windows-msvc-release` is the only preset that links. But **every current
+caller validates with `IsValidSlot` first** - `MenuManager::_states` (its unguarded indexers
+are private and reached only from `OnGameFrame`'s bounded loop), anticheat's `_dumpTicks`,
+`_sim`, `_lastTeleport`, `_pendingKick`, and admin-system's `_pendingNotice`, `_pendingKick`.
+So there is no live bug here, only a convention. A hardening attempt was reverted as
+over-engineering.
+
+The Runtime canary stays as-is. Treat the layout sensitivity as a known hazard: if a load-time
+crash appears after a header change, check whether `sizeof(Runtime)` moved before chasing the
+reported crash site.
 
 ## Phase 1: correctness and lifetime blockers
 
