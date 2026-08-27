@@ -1,5 +1,6 @@
 ﻿#include "BhopManager.hpp"
 
+#include <VoltMod/Core/EnumNames.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Entities/EntitySystem.hpp>
 #include <VoltMod/Events/EventTypes.hpp>
@@ -56,10 +57,8 @@ void BhopManager::ApplySettings()
 {
     const BhopSettings& settings = _config.Get().bhop;
 
-    if (settings.mode == "grants")
-        _mode = Mode::Grants;
-    else if (settings.mode == "enabled")
-        _mode = Mode::Enabled;
+    if (auto parsed = VoltMod::Parse<Mode>(settings.mode))
+        _mode = *parsed;
     else
     {
         Log::Warn("Unknown bhop.mode '{}'; falling back to 'enabled'.", settings.mode);

@@ -4,6 +4,7 @@
 
 #include "Core/Samples.hpp"
 
+#include <VoltMod/Core/EnumNames.hpp>
 #include <array>
 #include <cstdint>
 #include <string_view>
@@ -18,13 +19,11 @@ enum class Mode
     Ban       // Alert, then kick or ban.
 };
 
+/** The configured mode, or Observe when the value names no mode. Case-insensitive: a mistyped
+ *  "Ban" silently reporting instead of enforcing is not a defensible reading of the setting. */
 constexpr Mode ParseMode(std::string_view mode)
 {
-    if (mode == "ban")
-        return Mode::Ban;
-    if (mode == "alert")
-        return Mode::Alert;
-    return Mode::Observe;
+    return VoltMod::Parse<Mode>(mode).value_or(Mode::Observe);
 }
 
 constexpr const char* ModeName(Mode mode)

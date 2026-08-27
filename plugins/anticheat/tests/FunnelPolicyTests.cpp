@@ -46,13 +46,16 @@ TEST_CASE("Every detection has a distinct display name and a console token free 
     }
 }
 
-TEST_CASE("ParseMode falls back to observe for anything it does not recognise")
+TEST_CASE("ParseMode reads a mode in any casing and falls back to observe otherwise")
 {
     CHECK(ParseMode("observe") == Mode::Observe);
     CHECK(ParseMode("alert") == Mode::Alert);
     CHECK(ParseMode("ban") == Mode::Ban);
     CHECK(ParseMode("") == Mode::Observe);
-    CHECK(ParseMode("BAN") == Mode::Observe);
+    CHECK(ParseMode("nonsense") == Mode::Observe);
+    // Case-insensitive on purpose: a mistyped mode must not silently disable enforcement.
+    CHECK(ParseMode("BAN") == Mode::Ban);
+    CHECK(ParseMode("Alert") == Mode::Alert);
 }
 
 TEST_CASE("A detection without a resolved SteamID is reported but never punished")

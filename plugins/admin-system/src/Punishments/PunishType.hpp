@@ -2,6 +2,7 @@
 
 #include "../Core/Permissions.hpp"
 
+#include <VoltMod/Core/EnumNames.hpp>
 #include <optional>
 #include <string_view>
 
@@ -18,20 +19,11 @@ enum class PunishType
     Warn,
 };
 
-/** Parse a punishment-type config string ("kick" | "ban" | "voiceMute" | "textMute" | "warn"). */
+/** Parse a punishment-type config string ("kick" | "ban" | "voiceMute" | "textMute" | "warn"),
+ *  case-insensitively. */
 inline std::optional<PunishType> ParsePunishType(std::string_view text)
 {
-    if (text == "kick")
-        return PunishType::Kick;
-    if (text == "ban")
-        return PunishType::Ban;
-    if (text == "voiceMute")
-        return PunishType::VoiceMute;
-    if (text == "textMute")
-        return PunishType::TextMute;
-    if (text == "warn")
-        return PunishType::Warn;
-    return std::nullopt;
+    return VoltMod::Parse<PunishType>(text);
 }
 
 /** Translation key of the human-facing action name (e.g. "action.ban"). */
