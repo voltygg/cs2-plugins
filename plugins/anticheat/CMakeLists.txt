@@ -1,8 +1,6 @@
 voltmod_add_plugin(anticheat
     VERSION 1.0.0
     DESCRIPTION "Behavioural anticheat: detection cores, correlation and response"
-    # Detectors still run without admin-system, but cannot issue bans or alerts.
-    DEPENDS "admin-system>=1.0"
     LIBRARIES
         cs2-contracts
         nlohmann_json::nlohmann_json
