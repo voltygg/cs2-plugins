@@ -21,9 +21,6 @@ namespace AdminSystem::Admin::Menu
 
 using VoltMod::ChoiceOption;
 using VoltMod::MenuBuilder;
-using VoltMod::MenuManager;
-using VoltMod::PlayerManager;
-using VoltMod::Translations;
 
 namespace ChatColors = VoltMod::ChatColors;
 

@@ -14,7 +14,6 @@
 
 using VoltMod::Player;
 using VoltMod::StageResult;
-using VoltMod::StageStatus;
 namespace Log = VoltMod::Log;
 
 namespace AdminSystem

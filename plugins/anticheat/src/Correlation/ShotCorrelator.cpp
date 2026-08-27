@@ -5,6 +5,7 @@
 #include "Detectors/AimlockDetector.hpp"
 
 #include <VoltMod/Core/Slot.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <algorithm>
 #include <cmath>
 #include <eiface.h>
@@ -15,6 +16,8 @@ using VoltMod::IsValidSlot;
 
 namespace Anticheat
 {
+
+using VoltMod::Time;
 
 /** Origin and view angles jump discontinuously around a teleport, so the whole window is unreadable. */
 static constexpr float TeleportGraceSec = 5.0f;

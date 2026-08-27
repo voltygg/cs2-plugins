@@ -35,13 +35,6 @@ static Result<Reply> Punish(App& app, const Caller& c, Player& target, PunishTyp
     return c.Ok(successKey, {{"name", targetName}});
 }
 
-/** The reason a punishment carries when the caller typed none. Server language, because it
- *  lands in the database and in the broadcast, not on one player's screen. */
-static std::string ReasonOr(const Caller& c, const Args::Opt<Args::Rest>& typed, const char* fallbackKey)
-{
-    return typed.Value ? typed.Value->Value : c.Tr.Get(fallbackKey);
-}
-
 void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
 {
     commands.Add("kick")

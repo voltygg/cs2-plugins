@@ -9,6 +9,8 @@
 namespace Anticheat
 {
 
+using VoltMod::Time;
+
 /** Pump cadence only; the per-slot deadlines do the real timing. */
 static constexpr int64_t PollIntervalMs = 1000;
 

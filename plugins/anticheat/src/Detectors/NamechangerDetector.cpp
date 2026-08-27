@@ -3,10 +3,12 @@
 #include "AntiCheatManager.hpp"
 
 #include <VoltMod/Core/Slot.hpp>
-#include <VoltMod/Runtime.hpp>
+#include <VoltMod/Core/Time.hpp>
 
 namespace Anticheat
 {
+
+using VoltMod::Time;
 
 // Baselining is bookkeeping, not judgement, so it runs even while detections are gated off:
 // a change measured against a stale name would be a false positive later.

@@ -14,7 +14,7 @@ static constexpr int DrunkIntervalMs = 700;
 static constexpr int DrunkDurationSec = 20;
 static constexpr float ShakeDurationSec = 1.2f;
 static constexpr float ShakeFrequency = 1.5f;  // slow enough to read as a sway rather than a rattle
-constexpr float ShakeAmplitude = 8.0f;
+static constexpr float ShakeAmplitude = 8.0f;
 
 /**
  * Screen-sway on the target. Uses the engine's own shake user message rather than writing punch

@@ -45,9 +45,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
             if (app.Freeze.IsFrozen(who.SteamId))
                 return c.Fail("cmd.freezeAlready", {{"name", targetName}});
 
-            // The reason lands in the database and in the broadcast, so it is resolved in
-            // the server language rather than the caller's.
-            const std::string reason = why.Value ? why.Value->Value : c.Tr.Get("reason.frozenByAdmin");
+            const std::string reason = ReasonOr(c, why, "reason.frozenByAdmin");
             bool ok = app.Freeze.Freeze(who.SteamId, targetName, c.P->SteamId(), c.P->Name(), reason);
             return ok ? c.Ok("cmd.freezeSuccess", {{"name", targetName}})
                       : c.Fail("cmd.freezeFailed", {{"name", targetName}});

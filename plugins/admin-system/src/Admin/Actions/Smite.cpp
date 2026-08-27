@@ -9,11 +9,11 @@
 namespace AdminSystem::Admin::Actions
 {
 
-constexpr int SmiteSlayDelayMs = 300;
-constexpr float ExplosionCleanupSeconds = 1.0f;
+static constexpr int SmiteSlayDelayMs = 300;
+static constexpr float ExplosionCleanupSeconds = 1.0f;
 // env_explosion spawnflag 1 = No Damage: the fireball and boom play, the kill
 // below stays deterministic, and bystanders are untouched. Flag 64 would mute it.
-constexpr int EnvExplosionNoDamage = 1;
+static constexpr int EnvExplosionNoDamage = 1;
 
 Action MakeSmite(VoltMod::Runtime& runtime)
 {

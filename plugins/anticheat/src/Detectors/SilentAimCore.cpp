@@ -18,7 +18,7 @@ static constexpr float MaximumImpactDistance = 10000.0f;
 static constexpr float BlatantDeviation = 22.5f;
 static constexpr int BlatantPoints = 3;
 static constexpr int AirbornePoints = 1;  // inaccuracy while jumping makes a wide shot cheap evidence
-constexpr int GroundedPoints = 2;
+static constexpr int GroundedPoints = 2;
 
 void SilentAimCore::Reset()
 {

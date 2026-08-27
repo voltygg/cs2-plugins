@@ -5,12 +5,10 @@
 #include <VoltMod/Database/Api.hpp>
 #include <utility>
 
-using VoltMod::InsertParams;
-using VoltMod::Time;
-
 namespace AdminSystem::Database
 {
 
+using VoltMod::InsertParams;
 using VoltMod::InsertSql;
 using VoltMod::Time;
 

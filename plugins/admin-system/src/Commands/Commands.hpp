@@ -2,7 +2,9 @@
 
 #include "../Core/App.hpp"
 
+#include <VoltMod/Api.hpp>
 #include <VoltMod/Commands/CommandManager.hpp>
+#include <string>
 
 namespace AdminSystem
 {
@@ -16,6 +18,14 @@ namespace AdminSystem
  */
 namespace Commands
 {
+/** The reason an action carries when the caller typed none. Resolved in the server language,
+ *  because it lands in the database and in the broadcast, not on one player's screen. */
+inline std::string ReasonOr(const VoltMod::Caller& c, const VoltMod::Args::Opt<VoltMod::Args::Rest>& typed,
+                            const char* fallbackKey)
+{
+    return typed.Value ? typed.Value->Value : c.Tr.Get(fallbackKey);
+}
+
 void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app);
 void RegisterAdminSelfCommands(VoltMod::CommandManager& commands, App& app);
 void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app);

@@ -10,8 +10,6 @@
 #include <utility>
 #include <variant>
 
-using VoltMod::PlayerManager;
-using VoltMod::Runtime;
 
 namespace AdminSystem::Fun
 {

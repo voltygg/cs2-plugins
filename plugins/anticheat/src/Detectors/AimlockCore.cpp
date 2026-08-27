@@ -10,12 +10,12 @@ namespace Anticheat
 {
 
 static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
-constexpr int RearmTicks = static_cast<int>(TickRate * 0.5f);            // 32
-constexpr int LagSearchRadius = 2;
+static constexpr int RearmTicks = static_cast<int>(TickRate * 0.5f);            // 32
+static constexpr int LagSearchRadius = 2;
 static constexpr float PlayerHalfWidth = 16.0f;  // the CS2 hull is 32 units wide, measured from its center
-constexpr float MinimumDistance = 200.0f;
+static constexpr float MinimumDistance = 200.0f;
 static constexpr float MinimumTargetTravel = 48.0f;  // one and a half player widths, as degrees at that range
-constexpr float MaximumInterpolationTicks = 19.0f;
+static constexpr float MaximumInterpolationTicks = 19.0f;
 static constexpr int DetectionThreshold = 3;
 
 /** 95% of the episode's samples must have been inside the target's angular width. */

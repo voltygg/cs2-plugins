@@ -32,10 +32,9 @@ using VoltMod::MenuBuilder;
 using VoltMod::Strings;
 using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 
-/** True if @p adminSlot may still punish @p target with @p type's permission. @p target is the
- *  reference the flow stored, so a target who left is refused rather than retargeted; the admin
- *  slot is the presser's, live at the moment this runs. */
-static bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishType type)
+/** @p target is the reference the flow stored, so a target who left is refused rather than
+ *  retargeted; the admin slot is the presser's, live at the moment this runs. */
+bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishType type)
 {
     auto& players = app.Runtime.Players;
     return app.Runtime.Policy.Authorize(players.RefFor(adminSlot), target, Flag(PermissionFor(type))).has_value();

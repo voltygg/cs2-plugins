@@ -2,7 +2,7 @@
 
 #include "../Core/App.hpp"
 
-#include <cstdint>
+#include <VoltMod/Api.hpp>
 #include <string>
 
 namespace AdminSystem::Reports
@@ -14,10 +14,9 @@ namespace AdminSystem::Reports
  */
 struct PendingReport
 {
-    int TargetSlot = -1;
-    /** Captured at selection and re-verified at every step, so slot reuse can't redirect the report. */
-    int64_t TargetSteamId = 0;
-    std::string TargetName;
+    /** Captured at selection and re-verified at every step, so slot reuse can't redirect the
+     *  report; the name is resolved fresh at display time rather than carried here stale. */
+    VoltMod::PlayerRef Target;
     std::string ReasonCode;
     std::string ReasonText;
 };

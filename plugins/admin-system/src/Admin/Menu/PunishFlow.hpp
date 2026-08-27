@@ -40,4 +40,8 @@ std::shared_ptr<VoltMod::MenuView> BuildQuickPunishMenu(AdminSystem::App& app, i
 /** True if at least one configured template is usable by @p adminSlot against @p targetSlot. */
 bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target);
 
+/** True if @p adminSlot may punish @p target with @p type's permission. The one answer the menu
+ *  row and the flow's re-validation both ask, so a row cannot offer what the press will refuse. */
+bool CanStillPunish(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target, Punishments::PunishType type);
+
 }  // namespace AdminSystem::Admin::Menu

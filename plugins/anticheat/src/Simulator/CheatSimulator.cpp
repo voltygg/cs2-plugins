@@ -8,6 +8,7 @@
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Slot.hpp>
+#include <VoltMod/Core/Time.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -18,6 +19,7 @@ namespace Anticheat
 {
 
 using VoltMod::IsValidSlot;
+using VoltMod::Time;
 namespace Log = VoltMod::Log;
 
 static constexpr double SimulationSeconds = 10.0;
@@ -128,8 +130,9 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
     const Vector eye = self.EyePosition();
     const Vec3 from{eye.x, eye.y, eye.z};
     const int team = self.Team;
-    auto teammatesAreEnemies = VoltMod::ConVar<bool>::Find(_rt.ConVars, "mp_teammates_are_enemies");
-    const bool freeForAll = teammatesAreEnemies && teammatesAreEnemies->Get();
+    // The correlator's copy of the free-for-all rule is kept current by RefreshTeamRules, so the
+    // simulation opposes exactly who the detectors do - and pays no name lookup per usercmd.
+    const ShotCorrelatorCore& correlator = _manager.Correlator();
 
     Vec3 best;
     float bestDistance = 0.0f;
@@ -140,7 +143,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
         if (!IsValidSlot(other) || other == slot)
             continue;
         const VoltMod::Pawn pawn = _rt.Entities.PawnOf(other);
-        if (!pawn || !pawn.IsAlive() || !ShotCorrelatorCore::AreOpponents(team, pawn.Team, freeForAll))
+        if (!pawn || !pawn.IsAlive() || !correlator.AreOpponents(team, pawn.Team))
             continue;
 
         const Vector origin = pawn.Origin();

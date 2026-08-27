@@ -13,9 +13,6 @@ namespace AdminSystem::Admin
 
 namespace Db = AdminSystem::Database;
 namespace Log = VoltMod::Log;
-using Core::ConfigManager;
-using Db::Admin;
-using Db::AdminGroup;
 using Db::AdminGroupRepository;
 using Db::AdminRepository;
 

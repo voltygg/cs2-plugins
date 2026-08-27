@@ -16,7 +16,6 @@
 namespace AdminSystem::Admin::Menu
 {
 
-using AdminSystem::Fun::Toggle;
 using VoltMod::MenuBuilder;
 
 std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int adminSlot)

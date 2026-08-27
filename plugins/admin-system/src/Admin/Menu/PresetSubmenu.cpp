@@ -15,8 +15,6 @@ namespace AdminSystem::Admin::Menu
 {
 
 using VoltMod::MenuBuilder;
-using VoltMod::MenuManager;
-using VoltMod::Translations;
 
 std::shared_ptr<VoltMod::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
                                                        VoltMod::PlayerRef target)

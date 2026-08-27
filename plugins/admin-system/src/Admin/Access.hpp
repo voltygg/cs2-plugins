@@ -37,12 +37,6 @@ public:
         return _admins.CanTarget(adminSteamId, targetSteamId);
     }
 
-    /** True if the admin both holds @p flag and outranks the target. */
-    bool CanActOn(int64_t adminSteamId, int64_t targetSteamId, Permission flag)
-    {
-        return HasPermission(adminSteamId, flag) && CanTarget(adminSteamId, targetSteamId);
-    }
-
 private:
     AdminManager& _admins;
     const FreezeManager& _freeze;

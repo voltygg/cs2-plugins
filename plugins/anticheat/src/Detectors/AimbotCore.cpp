@@ -12,7 +12,7 @@ namespace Anticheat
 
 static constexpr size_t CommandHistorySize = 128;
 static constexpr int SnapWindowTicks = static_cast<int>(TickRate * 0.5f);  // 32
-constexpr float MinimumDistance = 100.0f;
+static constexpr float MinimumDistance = 100.0f;
 static constexpr int DetectionThreshold = 4;
 
 // Convergence: a large jump landing far closer to the target than it started. The two branches

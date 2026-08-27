@@ -47,10 +47,10 @@ static std::optional<std::string> ValidatePending(App& app, int slot, const Pend
     if (!reporter)
         return "report.failed";
 
-    if (!app.Runtime.Players.Get(VoltMod::PlayerRef{pending.TargetSlot, pending.TargetSteamId}))
+    if (!app.Runtime.Players.Get(pending.Target))
         return "report.targetLost";
 
-    if (!app.Reports.CanReport(reporter->SteamId(), pending.TargetSteamId))
+    if (!app.Reports.CanReport(reporter->SteamId(), pending.Target.SteamId))
         return "report.blocked";
 
     return std::nullopt;
@@ -59,7 +59,7 @@ static std::optional<std::string> ValidatePending(App& app, int slot, const Pend
 static void Submit(App& app, int reporterSlot, PendingReport& pending)
 {
     auto* reporter = app.Runtime.Players.Get(reporterSlot);
-    auto* target = app.Runtime.Players.Get(pending.TargetSlot);
+    auto* target = app.Runtime.Players.Get(pending.Target);
     if (!reporter || !target)
         return;
 
@@ -67,7 +67,7 @@ static void Submit(App& app, int reporterSlot, PendingReport& pending)
     app.Reports.Submit(*reporter, *target, pending.ReasonCode, pending.ReasonText,
                        // The reporter may be gone by the time the write lands, and their old slot
                        // may host somebody else - re-find them by SteamID.
-                       [&app, reporterSteamId, name = pending.TargetName](bool ok) {
+                       [&app, reporterSteamId, name = target->Name()](bool ok) {
                            auto* player = app.Runtime.Players.BySteamId(reporterSteamId);
                            if (!player)
                                return;
@@ -84,7 +84,7 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
 
     ReportFlowT::Create(
         app.Runtime.Menus,
-        PendingReport{.TargetSlot = targetSlot, .TargetSteamId = target->SteamId(), .TargetName = target->Name()})
+        PendingReport{.Target = target->Ref()})
         ->OnValidate([&app](int slot, const PendingReport& p) { return ValidatePending(app, slot, p); })
         ->AddOptionsStep([&app](int slot) { return app.Runtime.Translations.Get("report.selectReason", slot); },
                          [&app](int slot) {
@@ -108,7 +108,9 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
                       [&app](int slot, const PendingReport& pending) {
                           auto& tr = app.Runtime.Translations;
                           std::vector<std::pair<std::string, std::string>> rows;
-                          rows.emplace_back(tr.Get("report.target", slot), pending.TargetName);
+                          auto* targetPlayer = app.Runtime.Players.Get(pending.Target);
+                          rows.emplace_back(tr.Get("report.target", slot),
+                                            targetPlayer ? targetPlayer->Name() : std::string());
                           rows.emplace_back(tr.Get("report.reason", slot),
                                             Strings::TruncateUtf8(pending.ReasonText, 40));
                           return rows;

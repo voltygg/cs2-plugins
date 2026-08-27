@@ -106,18 +106,17 @@ private:
     InvalidCvarRules _invalidCvars;
 
     ShotCorrelator _feed{*this, _rt};
-    NamechangerDetector _namechangerDetector{*this, _rt};
+    NamechangerDetector _namechangerDetector{*this};
     DllInjectionDetector _dllInjection{*this, _rt, _detections};
     InvalidCvarDetector _invalidCvarPoller{*this, _rt};
 
     // Stamped when sv_cheats goes off, so replicated client values get time to catch up.
     double _cheatGraceUntil = 0.0;
 
-    /** Resolved on first use: a registered convar's handle is stable for the load cycle, and
-     *  every detection path reads it. */
-    mutable VoltMod::ConVar<bool> _svCheats;
-    mutable bool _svCheatsResolved = false;
-    const VoltMod::ConVar<bool>& CheatsConVar() const;
+    /** Resolved once in Initialize: a registered convar's handle is stable for the load cycle,
+     *  and every detection path reads it. An unusable handle reads as invalid. */
+    VoltMod::ConVar<bool> _svCheats;
+    VoltMod::ConVar<bool> _teammatesAreEnemies;
 
     VoltMod::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
     CheatSimulator _simulator;

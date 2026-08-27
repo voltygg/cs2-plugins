@@ -6,7 +6,6 @@
 #include "../AnticheatTypes.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <string>
 
 namespace Anticheat
 {
@@ -14,7 +13,7 @@ namespace Anticheat
 class NamechangerDetector
 {
 public:
-    NamechangerDetector(AntiCheatManager& manager, VoltMod::Runtime& runtime) : _manager(manager), _rt(runtime) {}
+    explicit NamechangerDetector(AntiCheatManager& manager) : _manager(manager) {}
 
     /** Full connect: the first point the controller's name is meaningful. */
     void OnFullyConnected(VoltMod::Player& player);
@@ -24,7 +23,6 @@ public:
 
 private:
     AntiCheatManager& _manager;
-    VoltMod::Runtime& _rt;
 };
 
 }  // namespace Anticheat

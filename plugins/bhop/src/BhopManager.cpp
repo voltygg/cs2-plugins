@@ -39,12 +39,6 @@ void BhopManager::Initialize()
             _conVars.ApplyGlobal();
     }));
 
-    // Only grants need this pair - subtick movement ignores the scoped sv_autobunnyhopping
-    // override, so granted slots get a server-side flip instead. Subscribing installs the hook,
-    // and both handlers no-op in the other mode.
-    _subs.push_back(_rt.Hooks.Movement.Pre += [this](int slot) { OnRunCommandPre(slot); });
-    _subs.push_back(_rt.Hooks.Movement.Post += [this](int slot) { OnRunCommandPost(slot); });
-
     _subs.push_back(_rt.Players.Disconnected += [this](VoltMod::Player& player) { OnPlayerDisconnect(player); });
 
     // Grants need a server-side hop because subtick movement ignores the scoped
@@ -73,6 +67,17 @@ void BhopManager::ApplySettings()
     }
 
     _conVars.Build(settings);
+
+    // Only grants need the Movement pair - subtick movement ignores the scoped sv_autobunnyhopping
+    // override, so granted slots get a server-side flip instead. The hook arms on its first
+    // subscription and disarms with the last, so an 'enabled' server pays nothing per usercmd.
+    if (_mode == Mode::Grants && _movementSubs.empty())
+    {
+        _movementSubs.push_back(_rt.Hooks.Movement.Pre += [this](int slot) { OnRunCommandPre(slot); });
+        _movementSubs.push_back(_rt.Hooks.Movement.Post += [this](int slot) { OnRunCommandPost(slot); });
+    }
+    else if (_mode != Mode::Grants)
+        _movementSubs.clear();
 
     if (_mode == Mode::Enabled)
         _conVars.ApplyGlobal();  // sets and replicates the overrides server-wide

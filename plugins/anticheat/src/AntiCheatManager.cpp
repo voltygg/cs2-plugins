@@ -53,6 +53,17 @@ void AntiCheatManager::Initialize()
     });
     _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
+    // Resolved once, before anything reads them: a name lookup per detection path is the pattern
+    // this branch converted away from everywhere else.
+    if (auto cheats = VoltMod::ConVar<bool>::Find(_rt.ConVars, "sv_cheats"))
+        _svCheats = std::move(*cheats);
+    else
+        Log::Warn("sv_cheats unusable ({}); detections run as if it were off.", cheats.error().Detail);
+    if (auto freeForAll = VoltMod::ConVar<bool>::Find(_rt.ConVars, "mp_teammates_are_enemies"))
+        _teammatesAreEnemies = std::move(*freeForAll);
+    else
+        Log::Warn("mp_teammates_are_enemies unusable ({}); normal team rules apply.", freeForAll.error().Detail);
+
     RefreshTeamRules();
     LoadDetectionData();
     _feed.Initialize();
@@ -66,8 +77,7 @@ void AntiCheatManager::Initialize()
 
 void AntiCheatManager::RefreshTeamRules()
 {
-    auto freeForAll = VoltMod::ConVar<bool>::Find(_rt.ConVars, "mp_teammates_are_enemies");
-    _correlator.SetTeammatesAreEnemies(freeForAll && freeForAll->Get());
+    _correlator.SetTeammatesAreEnemies(_teammatesAreEnemies.IsValid() && _teammatesAreEnemies.Get());
 }
 
 void AntiCheatManager::LoadDetectionData()
@@ -270,25 +280,12 @@ void AntiCheatManager::OnPlayerSettingsChanged(VoltMod::Player& player)
     _namechangerDetector.OnSettingsChanged(player);
 }
 
-const VoltMod::ConVar<bool>& AntiCheatManager::CheatsConVar() const
-{
-    if (!_svCheatsResolved)
-    {
-        _svCheatsResolved = true;
-        if (auto cheats = VoltMod::ConVar<bool>::Find(_rt.ConVars, "sv_cheats"))
-            _svCheats = std::move(*cheats);
-        else
-            Log::Warn("sv_cheats unusable ({}); detections run as if it were off.", cheats.error().Detail);
-    }
-    return _svCheats;
-}
-
 bool AntiCheatManager::DetectionsEnabled() const
 {
     const auto& settings = _config.Get().anticheat;
     if (!settings.enabled)
         return false;
-    const VoltMod::ConVar<bool>& cheats = CheatsConVar();
+    const VoltMod::ConVar<bool>& cheats = _svCheats;
     if (!cheats.IsValid())
         return true;
     return !cheats.Get() || settings.allowSvCheatsTesting;
@@ -296,7 +293,7 @@ bool AntiCheatManager::DetectionsEnabled() const
 
 bool AntiCheatManager::EnforceCheatCvars() const
 {
-    const VoltMod::ConVar<bool>& cheats = CheatsConVar();
+    const VoltMod::ConVar<bool>& cheats = _svCheats;
     return ShouldEnforceCheatCvars(cheats.IsValid() && cheats.Get(), Time::MonotonicSeconds(), _cheatGraceUntil);
 }
 

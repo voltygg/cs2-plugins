@@ -58,19 +58,14 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int ad
 std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
     auto& tr = app.Runtime.Translations;
-    auto& access = app.Access;
     auto& plrMgr = app.Runtime.Players;
 
     auto* target = plrMgr.Get(targetSlot);
     if (!target)
         return nullptr;
 
-    auto* admin = plrMgr.Get(adminSlot);
-    if (!admin)
+    if (!plrMgr.Get(adminSlot))
         return nullptr;
-
-    int64_t adminSid = admin->SteamId();
-    int64_t targetSid = target->SteamId();
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.punish", adminSlot), target->Name()));
 
@@ -88,7 +83,7 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app,
         builder.Button(
             tr.Get(ActionTranslationKey(type), adminSlot),
             [&app, pending = std::move(pending)](int slot) { StartPunishFlow(app, slot, pending); },
-            access.CanActOn(adminSid, targetSid, PermissionFor(type)));
+            CanStillPunish(app, adminSlot, target->Ref(), type));
     }
 
     return builder.Build();

@@ -23,12 +23,6 @@
 #include <memory>
 #include <string>
 
-using VoltMod::MenuBuilder;
-using VoltMod::MenuManager;
-using VoltMod::PlayerManager;
-using VoltMod::Runtime;
-using VoltMod::Translations;
-
 namespace AdminSystem::Admin::Menu
 {
 
@@ -41,11 +35,11 @@ static constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
 
 // Speed/Size cycle both up and down from normal, so they open anchored on 100% (no change).
 static constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
-constexpr int SizeDefault = 4;          // index of 100 in SizePresets
+static constexpr int SizeDefault = 4;   // index of 100 in SizePresets
 
 /** Tell the admin why a weapon action did nothing. The menu is the only way to reach these, so
  *  a silent no-op would leave them guessing whether the click registered. */
-void ReportWeaponOutcome(AdminSystem::App& app, int adminSlot, Weapons::WeaponActionResult result, const char* failKey)
+static void ReportWeaponOutcome(AdminSystem::App& app, int adminSlot, Weapons::WeaponActionResult result, const char* failKey)
 {
     auto& tr = app.Runtime.Translations;
     switch (result)
