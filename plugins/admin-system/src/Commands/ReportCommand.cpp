@@ -25,7 +25,7 @@ void RegisterReportCommand(VoltMod::CommandManager& commands, App& app)
         .Run([&app](Caller c) -> Result<Reply> {
             // Fail before opening a menu; the flow re-runs the full gate before
             // it writes.
-            const auto gate = app.Reports.CanReport(c.P->SteamId());
+            const auto gate = app.Reports.CanReport(c.Player->SteamId());
             switch (gate.Reason)
             {
             case ReportDenial::Disabled:

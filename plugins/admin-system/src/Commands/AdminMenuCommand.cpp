@@ -23,7 +23,7 @@ void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app)
         .Run([&app](Caller c) -> Result<Reply> {
             // Any registered admin may open the menu; each category inside is
             // gated by its own flags.
-            if (!app.Admins.IsAdmin(c.P->SteamId()))
+            if (!app.Admins.IsAdmin(c.Player->SteamId()))
                 return c.Fail("cmd.noPermission");
 
             // Panel language is registered at connect (see

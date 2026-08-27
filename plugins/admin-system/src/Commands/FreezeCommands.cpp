@@ -36,17 +36,17 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
 
             // Targeting yourself is allowed in general, so freezing yourself needs an
             // explicit rejection here.
-            if (who.SteamId == c.P->SteamId())
+            if (who.SteamId == c.Player->SteamId())
                 return c.Fail("cmd.freezeSelf");
 
-            if (!app.Access.CanTarget(c.P->SteamId(), who.SteamId))
+            if (!app.Access.CanTarget(c.Player->SteamId(), who.SteamId))
                 return c.Fail("cmd.freezeNoOutrank", {{"name", targetName}});
 
             if (app.Freeze.IsFrozen(who.SteamId))
                 return c.Fail("cmd.freezeAlready", {{"name", targetName}});
 
             const std::string reason = ReasonOr(c, why, "reason.frozenByAdmin");
-            bool ok = app.Freeze.Freeze(who.SteamId, targetName, c.P->SteamId(), c.P->Name(), reason);
+            bool ok = app.Freeze.Freeze(who.SteamId, targetName, c.Player->SteamId(), c.Player->Name(), reason);
             return ok ? c.Ok("cmd.freezeSuccess", {{"name", targetName}})
                       : c.Fail("cmd.freezeFailed", {{"name", targetName}});
         });
@@ -82,7 +82,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
                 return c.Fail("cmd.unfreezeNone", {{"token", token.Value}});
 
             // Unfreeze erases the row; the name is ours because GetFrozen handed back a copy.
-            bool ok = app.Freeze.Unfreeze(targetSteamId, c.P->SteamId(), c.P->Name());
+            bool ok = app.Freeze.Unfreeze(targetSteamId, c.Player->SteamId(), c.Player->Name());
             return ok ? c.Ok("cmd.unfreezeSuccess", {{"name", row->Name}})
                       : c.Fail("cmd.freezeFailed", {{"name", row->Name}});
         });
