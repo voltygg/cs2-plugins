@@ -45,18 +45,20 @@ text below where they conflict. Full reasoning:
 6. **1.7's minimal solution is insufficient.** Plain `Button(..., Allowed("s"))` rows get no
    runtime re-check at all - the pattern `docs/menu.md:75-79` recommends and
    `AdminMenu_Control.cpp:108,113-118,134-141` uses. Fixing docs alone leaves those enforcing
-   a build-time snapshot.
+   a build-time snapshot. **Resolved (voltmod 001567c):** docs-only after all - every such row
+   in admin-system routes its callback through `ActionDispatcher::Resolve`/`Run`, which
+   authorizes against the stored pair. The docs now say `Allowed` is presentation, not
+   enforcement, and that the enabled state is a build-time snapshot.
 7. **Phase 7 rule reversals - mostly dropped.** Keep the anonymous-namespace ban (314
    file-scope statics stand in for it; relaxing deletes nothing) and the using-directive ban
    (zero violations today). For forward declarations, fix the tooling rather than the policy:
    `modgraph.py:78` exempts any `\w*Types\.hpp$` by regex and only fires on headers, while both
    CLAUDE.md files ban it globally. Name the exempt files explicitly and correct the docs to
    say "in headers".
-8. **4.1 magic_enum - middle path.** `Core/Capabilities.hpp:3` also includes `EnumNames.hpp`
-   and `Runtime.hpp` pulls it in, so magic_enum reaches every TU regardless of `Api.hpp`. Add a
-   `Count` sentinel to `Capability`, drop the include from both `Capabilities.hpp` and
-   `Api.hpp`, add direct includes to the 6 `.cpp` files that call `Name()`, delete the unused
-   `Parse<E>()`. No hand-written switches.
+8. ~~**4.1 magic_enum - middle path.**~~ **Dropped 2026-08-26.** The full removal was tried and
+   reverted at the user's direction - five hand-written `Name()` switches are more per-file
+   ceremony than the dependency costs. magic_enum and `Core/EnumNames.hpp` stay as they were,
+   umbrella include included.
 9. **3.3 - investigate before deleting.** The dependency warning
    (`PluginIdentity.cpp:13-38`, identity-key lookup) and the functional fallback
    (`ResponseManager.cpp:101-106`, `IAdminActions` via `Exchange.Get<>`) are independent paths.
@@ -85,9 +87,13 @@ text below where they conflict. Full reasoning:
 - [x] Phase 2: make VoltMod CI run CTest.
 - [x] Phase 0: dropped after a static audit - no live bug, see the phase note.
 - [x] Phase 3: remove confirmed unused surface. Done 2026-08-26; ~870 lines out.
-- [ ] Phase 1: fix correctness and lifetime blockers (now including 4.3 StatusService).
+- [x] Phase 1: fix correctness and lifetime blockers (including 4.3 StatusService). Done
+      2026-08-26; 1.1-1.8 plus the promoted StatusService fix.
+- [x] Phase 4: reduce public include and dependency cost. 4.2 done, 4.1 dropped, 4.3 landed
+      with Phase 1.
+- [x] Command registration: `CommandBuilder::Run` installs and returns void; the manager owns
+      every registration and drops them before `OnUnload` (voltmod 6371123, plugins 1b62a70).
 - [ ] Checkpoint: re-scope 5.7-5.12 and Phase 7 with the deletions banked.
-- [ ] Phase 4: reduce public include and dependency cost.
 - [ ] Phase 5: simplify plugin-side boilerplate.
 - [ ] Phase 6: simplify tests and test seams carefully.
 - [ ] Phase 7: simplify modgraph and repository rules.
@@ -615,7 +621,16 @@ If the startup version warning is operationally valuable, retain this subsystem 
 
 ## Phase 4: reduce public include and dependency cost
 
-### 4.1 Remove magic_enum from the public API
+### 4.1 Remove magic_enum from the public API - DROPPED (2026-08-26)
+
+Attempted and reverted at the user's direction: hand-written `Name()` switches for the five
+enums are more per-file ceremony than the dependency costs. `Core/EnumNames.hpp` and
+magic_enum stay exactly as they were, umbrella include included. Revisit only if magic_enum
+causes a real problem.
+
+The original text follows for the record.
+
+#### Original: remove magic_enum from the public API
 
 Current use spans approximately these enum domains:
 
@@ -642,7 +657,12 @@ Acceptance:
 - Unknown enum values return a stable fallback string or empty string, as decided per existing behavior.
 - Capability indexing remains bounds-safe.
 
-### 4.2 Narrow VoltMod/Api.hpp
+### 4.2 Narrow VoltMod/Api.hpp - DONE (voltmod 6faf53a, plugins 561ef91)
+
+All five removals landed, `EffectDispatcher.hpp` kept. Three headers took `ChatColors` from
+the umbrella and now include it directly: `Menu/MenuPresets.hpp`,
+`admin-system/src/Admin/AdminManager.hpp`, `admin-system/src/Database/Entities/AdminGroup.hpp`.
+Gates green: 289 / 158 tests, lint and modgraph clean in both repos.
 
 Remove root-umbrella includes whose consumers already use specific module headers:
 
