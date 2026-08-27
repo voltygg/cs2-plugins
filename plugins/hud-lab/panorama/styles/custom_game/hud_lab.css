@@ -1,13 +1,9 @@
 /*
-	Panorama CSS, not web CSS. Nested rules and `&` work, as Valve's own welcome.css shows;
-	flexbox does not - use flow-children.
+	Panorama CSS, not web CSS - see docs/custom-hud.md. #lab_card holds the visible state and
+	the nested `&.Hidden` the hidden one, so showing and hiding is one SetClass call:
 
-	The pattern worth copying from welcome.css: give the panel its visible state in #id, and
-	put the hidden state in a nested `&.Class` that the server toggles. That is what makes a
-	server-driven show/hide one SetHasClass call rather than a layout swap.
-
-	    hudlab_class lab_card Hidden Absent    -> show
-	    hudlab_class lab_card Hidden Present   -> hide
+	    hudlab_class lab_card Hidden 0    -> show
+	    hudlab_class lab_card Hidden 1    -> hide
 */
 
 .Root {

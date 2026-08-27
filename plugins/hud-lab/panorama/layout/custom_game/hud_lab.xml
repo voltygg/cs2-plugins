@@ -1,19 +1,9 @@
 <root>
 	<!--
-		Modelled on Valve's own CustomHud layout, which ships as source at
+		Modelled on Valve's own layout, which ships as source at
 		csgo_addons/cs_script_demo/panorama_stripped/panorama/layout/custom_game/welcome.xml.
-
-		Rules the client enforces, and what each one costs if broken:
-		  - Only Panel, Label, Image and Button. Anything else is rejected with
-		    "Layout contains disallowed panel type" - that is how panorama/layout/hud/hud.xml
-		    fails, on CSGOHud.
-		  - No <scripts> or <script> node. Those are ELayoutNodeType values the validator
-		    refuses outright, which is how "no client-side scripting" is enforced.
-		  - Every Button needs an id, or the client logs "Button clicked with no id attribute."
-		    and drops the press.
-
-		The stylesheet is included by SOURCE name (.css, under {resources}), exactly as Valve
-		does it - not the compiled .vcss_c name.
+		The client's markup rules are in docs/custom-hud.md; breaking one is rejected silently
+		server-side and printed only on the client console.
 	-->
 	<styles>
 		<include src="file://{resources}/styles/custom_game/hud_lab.css" />
@@ -22,11 +12,11 @@
 	<Panel class="Root">
 		<Panel id="lab_card" class="Hidden">
 			<!--
-				Two labels on purpose. lab_title reads a dialog variable, lab_body is static
-				text, so one probe tells us whether the attribute whitelist allows dialog
-				variables at all - Valve's own example only uses static text.
+				Two labels on purpose: lab_title reads a dialog variable and lab_body is static
+				text, so one probe says whether the attribute whitelist allows dialog variables
+				at all - Valve's own example only uses static text.
 
-				Drive it with:  hudlab_var lab_title title "Ready"
+				Drive it with:  hudlab_var lab_title title Ready
 			-->
 			<Label id="lab_title" class="Title" text="{s:title}" />
 			<Label id="lab_body" class="Body" text="hud-lab is live." />

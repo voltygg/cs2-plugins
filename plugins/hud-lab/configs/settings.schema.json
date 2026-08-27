@@ -16,6 +16,17 @@
           "description": "Translation language; matches a file in configs/translations."
         }
       }
+    },
+    "hud": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layout": {
+          "type": "string",
+          "default": "hud_lab",
+          "description": "Layout hudlab_spawn uses with no argument. A bare name is expanded to panorama/layout/custom_game/<name>.xml."
+        }
+      }
     }
   }
 }
