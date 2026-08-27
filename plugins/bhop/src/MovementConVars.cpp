@@ -12,7 +12,7 @@ namespace Bhop
 template <class T>
 void MovementConVars::Add(const char* name, T value, std::vector<Override<T>>& into)
 {
-    auto cvar = VoltMod::ConVar<T>::Find(_conVars, name);
+    auto cvar = _conVars.Find<T>(name);
     if (!cvar)
     {
         Log::Warn("ConVar '{}' unusable ({}); bhop override skipped.", name, cvar.error().Detail);
@@ -53,10 +53,7 @@ void MovementConVars::Reset()
 
 void MovementConVars::ApplyGlobal()
 {
-    // Override() saves on the first take and re-asserts afterwards, which is what lets this be
-    // called again after a map change without saving the override as the operator's own value.
-    // It writes through the console: a server-only set leaves FCVAR_REPLICATED movement convars
-    // unnetworked, and clients keep predicting the defaults - no auto-hop, no speed retention.
+    // Preserve the original once, then replicate overrides after each map reset.
     for (auto& entry : _flags)
         _globalOverrides.Set(entry.Cvar, entry.Value);
     for (auto& entry : _numbers)
@@ -86,9 +83,7 @@ void MovementConVars::ReplicateServerValues(int slot)
 
 void MovementConVars::HoldRaw()
 {
-    // Raw flips: server-side movement for this player's command sees bhop values; no callbacks
-    // fire and nothing is networked. The scopes put the real values back in ReleaseRaw, before
-    // anyone else runs.
+    // Apply unnetworked values only while this player's command runs.
     for (auto& entry : _flags)
         _flagFlips.push_back(entry.Cvar.RawScope(entry.Value));
     for (auto& entry : _numbers)

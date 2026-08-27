@@ -10,7 +10,6 @@
 #include <utility>
 #include <variant>
 
-
 namespace AdminSystem::Fun
 {
 
@@ -19,8 +18,7 @@ static constexpr const char* KnifeCT = "weapon_knife";
 
 FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _overrides(runtime.ConVars) {}
 
-// ConVarOverrides restores everything the toggles took over, so an unload cannot leave the server
-// at low gravity or on lethal damage scales with nothing left to turn them off.
+// Restores changed convars when the plugin unloads.
 FunMode::~FunMode() = default;
 
 void FunMode::Start()
@@ -31,7 +29,7 @@ void FunMode::Start()
 
     _subs.push_back(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) { ApplyRoundStart(); }));
 
-    // Per spawn, so a player who joins mid-round still gets the round's rules.
+    // Apply round rules to late joins.
     _subs.push_back(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
         if (e.Slot >= 0 && _state.IsOn(Toggle::KnifeRound))
             GiveKnifeOnly(e.Slot);
@@ -43,7 +41,7 @@ bool FunMode::Flip(Toggle toggle)
     const bool on = _state.Flip(toggle);
 
     if (toggle == Toggle::KnifeRound)
-        ApplyRoundStart();  // acts on spawn; applying now covers everyone already alive
+        ApplyRoundStart();  // Also update players already alive.
     else
         ApplyOverrides();
 
@@ -58,8 +56,7 @@ void FunMode::ClearAll()
 
 void FunMode::ApplyRoundStart()
 {
-    // Re-applied every round, not only when flipped: the engine resets convars around a map
-    // change, which would otherwise silently drop the active toggles.
+    // Map changes can reset convars, so reapply active toggles each round.
     ApplyOverrides();
 
     if (!_state.IsOn(Toggle::KnifeRound))
@@ -78,11 +75,10 @@ void FunMode::ResolveConVars()
     {
         const std::string name(row.Name);
 
-        // Try the numeric form first: only headshot-only is a switch, and asking for the wrong
-        // type is refused rather than silently writing nothing.
-        if (auto number = VoltMod::ConVar<float>::Find(_rt.ConVars, name))
+        // Only headshot-only is bool; Find rejects a mismatched engine type.
+        if (auto number = _rt.ConVars.Find<float>(name))
             _handles.push_back({.Owner = row.Owner, .OnValue = row.OnValue, .Handle = std::move(*number)});
-        else if (auto flag = VoltMod::ConVar<bool>::Find(_rt.ConVars, name))
+        else if (auto flag = _rt.ConVars.Find<bool>(name))
             _handles.push_back({.Owner = row.Owner, .OnValue = row.OnValue, .Handle = std::move(*flag)});
         else
             VoltMod::Log::Warn("Fun mode: convar '{}' unusable ({}); the toggle that drives it is inert.", name,
@@ -102,8 +98,7 @@ void FunMode::ApplyOverrides()
                     _overrides.Restore(convar);
                     return;
                 }
-                // The one bool row's on-value is written as a bool, not as a float that happens
-                // to be 1.0 - typed handles refuse the wrong type rather than writing nothing.
+                // Headshot-only is the sole bool setting.
                 if constexpr (std::same_as<std::remove_cvref_t<decltype(convar)>, VoltMod::ConVar<bool>>)
                     _overrides.Set(convar, handle.OnValue != 0.0f);
                 else

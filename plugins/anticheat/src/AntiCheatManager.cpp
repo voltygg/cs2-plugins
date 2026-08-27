@@ -28,7 +28,7 @@ void AntiCheatManager::Initialize()
     _dumpTicks.BindReset(_rt.Slots);
     _simulator.Initialize();
 
-    // Subscribing installs the movement hook, which every aim module then feeds off.
+    // Aim modules share this movement hook.
     _subs.push_back(_rt.Hooks.Movement.PreCmd +=
                     [this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); });
     _subs.push_back(_rt.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
@@ -36,7 +36,7 @@ void AntiCheatManager::Initialize()
     _subs.push_back(_rt.Players.SettingsChanged +=
                     [this](VoltMod::Player& player) { OnPlayerSettingsChanged(player); });
 
-    // sv_cheats going off starts a propagation grace before client values mean anything again.
+    // Allow client values to settle after sv_cheats is disabled.
     _subs.push_back(_rt.ConVars.Changed += [this](const VoltMod::ConVarChange& change) {
         if (change.Name == "mp_teammates_are_enemies")
         {
@@ -53,13 +53,12 @@ void AntiCheatManager::Initialize()
     });
     _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
-    // Resolved once, before anything reads them: a name lookup per detection path is the pattern
-    // this branch converted away from everywhere else.
-    if (auto cheats = VoltMod::ConVar<bool>::Find(_rt.ConVars, "sv_cheats"))
+    // Cache convars used by detection paths.
+    if (auto cheats = _rt.ConVars.Find<bool>("sv_cheats"))
         _svCheats = std::move(*cheats);
     else
         Log::Warn("sv_cheats unusable ({}); detections run as if it were off.", cheats.error().Detail);
-    if (auto freeForAll = VoltMod::ConVar<bool>::Find(_rt.ConVars, "mp_teammates_are_enemies"))
+    if (auto freeForAll = _rt.ConVars.Find<bool>("mp_teammates_are_enemies"))
         _teammatesAreEnemies = std::move(*freeForAll);
     else
         Log::Warn("mp_teammates_are_enemies unusable ({}); normal team rules apply.", freeForAll.error().Detail);
@@ -85,7 +84,6 @@ void AntiCheatManager::LoadDetectionData()
     const DetectionData& data = _detections.Get();
     const std::vector<std::string> rejected = _invalidCvars.LoadRules(data.cvarRules);
 
-    // Log rejected rule names for the operator who edited the table.
     if (!rejected.empty())
     {
         std::string names;
@@ -94,7 +92,6 @@ void AntiCheatManager::LoadDetectionData()
         Log::Warn("Ignoring duplicate cvar rule(s): {}.", names);
     }
 
-    // Zero identifies a table-driven detector with no active data.
     Log::Info("Detection data: {} cvar rule(s), {} blacklisted event(s).", _invalidCvars.Rules().Size(),
               data.dllEventBlacklist.size());
 }
@@ -109,8 +106,7 @@ void AntiCheatManager::RegisterCommands()
         .Run([this](Caller) -> Result<Reply> {
             if (!_config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")))
                 return Reply::Silent();
-            // Keeps the rules already in memory when the edit does not parse, so a typo cannot
-            // silently disarm the two table-driven modules.
+            // Keep valid rules active if the edited file cannot be parsed.
             if (!_detections.Load(DetectionDataPath))
                 Log::Warn("{} could not be re-read; keeping the tables already loaded.", DetectionDataPath);
             else
@@ -128,7 +124,6 @@ void AntiCheatManager::RegisterCommands()
             return Reply::Silent();
         });
 
-    // Two integers, two parameters: the tick count no longer has to ride in a Word.
     commands.Add("anticheat_dumpcmd")
         .Describe("Log raw usercmds for a slot.")
         .ConsoleOnly()
@@ -154,8 +149,7 @@ void AntiCheatManager::DumpCommand(int slot, const VoltMod::UserCmdView& cmd)
         return;
     --remaining;
 
-    // The aim modules judge the attack angles, so show what the index resolved to: present, capped
-    // away by the history limit, or never sent at all.
+    // Show whether the attack sample was present, capped, or absent.
     const int attackIndex = cmd.Attack1StartHistoryIndex;
     std::string attack = "none";
     if (attackIndex >= 0)
@@ -202,8 +196,7 @@ nlohmann::json AntiCheatManager::StatusSnapshot() const
         {"clientCvars", _rt.Capabilities.Has(VoltMod::Capability::ClientCvars) ? "available" : "degraded"},
         {"teleportTracker", _rt.Capabilities.Has(VoltMod::Capability::Teleport)},
         {"correlatorFrames", _correlator.FrameCount()},
-        // A module with an empty table is inert however its toggle reads, so report the tables the
-        // way clientCvars availability is reported: a health check must be able to see it.
+        // Empty tables leave their modules inert, so expose their health.
         {"detectionData",
          {
              {"cvarRules", _invalidCvars.Rules().Size()},
@@ -306,7 +299,7 @@ bool AntiCheatManager::IsEligible(int slot)
 {
     if (!IsValidSlot(slot))
         return false;
-    // The pawn flag is unreadable before a player has a pawn, so identity decides it first.
+    // Identity is available before the player's pawn exists.
     const VoltMod::Player* player = _rt.Players.Get(slot);
     if (!player || player->IsBot())
         return false;

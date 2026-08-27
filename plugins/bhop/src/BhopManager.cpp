@@ -21,9 +21,8 @@ namespace Bhop
 
 void BhopManager::Initialize()
 {
-    // Resolved once: the forced hop reads it every frame per granted player, and a registered
-    // convar's handle stays valid across map changes.
-    if (auto impulse = VoltMod::ConVar<float>::Find(_rt.ConVars, "sv_jump_impulse"))
+    // Forced hops read this every frame.
+    if (auto impulse = _rt.ConVars.Find<float>("sv_jump_impulse"))
         _jumpImpulse = std::move(*impulse);
     else
         Log::Warn("sv_jump_impulse unusable ({}); forced hops use the engine default.", impulse.error().Detail);
@@ -34,7 +33,7 @@ void BhopManager::Initialize()
     auto& events = _rt.GameEvents;
     _subs.push_back(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
     _subs.push_back(events.On<VoltMod::PlayerJump>([this](const VoltMod::PlayerJump& e) { OnPlayerJump(e.Slot); }));
-    // Gamemode cfg re-exec on map change can reset the convars; re-asserting is cheap.
+    // Map changes can reset gamemode convars.
     _subs.push_back(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) {
         if (_mode == Mode::Enabled)
             _conVars.ApplyGlobal();
@@ -42,8 +41,7 @@ void BhopManager::Initialize()
 
     _subs.push_back(_rt.Players.Disconnected += [this](VoltMod::Player& player) { OnPlayerDisconnect(player); });
 
-    // Grants need a server-side hop because subtick movement ignores the scoped
-    // sv_autobunnyhopping override. Run after simulation so landing state is available.
+    // Grants need a post-simulation hop because subtick movement ignores the scoped override.
     _subs.push_back(_rt.Scheduler.EveryFrame([this] {
         if (_mode != Mode::Grants)
             return;
@@ -67,9 +65,7 @@ void BhopManager::ApplySettings()
 
     _conVars.Build(settings);
 
-    // Only grants need the Movement pair - subtick movement ignores the scoped sv_autobunnyhopping
-    // override, so granted slots get a server-side flip instead. The hook arms on its first
-    // subscription and disarms with the last, so an 'enabled' server pays nothing per usercmd.
+    // Only grant mode needs per-player movement hooks.
     if (_mode == Mode::Grants && _movementSubs.empty())
     {
         _movementSubs.push_back(_rt.Hooks.Movement.Pre += [this](int slot) { OnRunCommandPre(slot); });
@@ -79,7 +75,7 @@ void BhopManager::ApplySettings()
         _movementSubs.clear();
 
     if (_mode == Mode::Enabled)
-        _conVars.ApplyGlobal();  // sets and replicates the overrides server-wide
+        _conVars.ApplyGlobal();
 
     Log::Info("Bhop mode: {} ({} convar overrides).", _mode == Mode::Enabled ? "enabled" : "grants", _conVars.Count());
 }
@@ -128,7 +124,7 @@ void BhopManager::ReloadSettings()
 
     ApplySettings();
 
-    // Granted clients predict with the old values until told otherwise.
+    // Refresh prediction values for granted clients.
     if (_mode == Mode::Grants)
         for (int slot = 0; slot < MaxPlayers; ++slot)
             if (_grantedSlots[slot])
@@ -139,7 +135,7 @@ void BhopManager::ReloadSettings()
 
 void BhopManager::OnPlayerDisconnect(Player& player)
 {
-    // Grants are session-only: a reconnect starts clean.
+    // Grants do not survive reconnects.
     _granted.erase(player.SteamId());
 
     int slot = player.Slot();
@@ -212,22 +208,21 @@ void BhopManager::ForceAutoHop(int slot)
 
     Vector velocity = pawn.Velocity;
     if (velocity.z > 0.0f)
-        return;  // already ascending: the engine (or last frame's hop) took this jump
+        return;  // The engine already applied the jump.
 
-    constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0); engine default
+    constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0)
     velocity.z = _jumpImpulse ? _jumpImpulse.Get() : DefaultJumpImpulse;
     pawn.Velocity = velocity;
-    // Leave the ground in the same frame: if the next movement command still sees FL_ONGROUND
-    // it can re-ground and zero the vertical velocity for a tick - the "laggy jump" hitch.
+    // Clear FL_ONGROUND now to prevent a one-tick re-grounding hitch.
     pawn.Flags = flags & ~VoltMod::FL_ONGROUND;
 
-    // A forced hop never emits player_jump, so feed the boost chain by hand.
+    // Forced hops do not emit player_jump.
     OnPlayerJump(slot);
 }
 
 void BhopManager::OnPlayerSpawn(int slot)
 {
-    // Enabled mode replicates server-wide via ApplyGlobal, so only grants needs per-player work.
+    // Enabled mode already replicates values server-wide.
     if (_mode != Mode::Grants || !VoltMod::IsValidSlot(slot))
         return;
 
@@ -235,7 +230,7 @@ void BhopManager::OnPlayerSpawn(int slot)
     bool granted = player && _granted.contains(player->SteamId());
     _grantedSlots[slot] = granted;
 
-    // The connect/map-change convar snapshot clobbered the client's override; re-send.
+    // Restore the override after the engine's spawn snapshot.
     if (granted)
         _conVars.ReplicateOverrides(slot);
 }
