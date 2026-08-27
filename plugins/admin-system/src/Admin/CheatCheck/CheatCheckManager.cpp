@@ -118,7 +118,7 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     auto& pc = _checks[targetSlot];
     auto* target = _rt.Players.Get(targetSlot);
 
-    std::optional<RoomRequest> request;
+    std::optional<VoltMod::HttpRequest> request;
     if (target)
     {
         auto* admin = _rt.Players.Get(pc.AdminSlot);
@@ -135,7 +135,7 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     }
 
     const uint64_t seq = pc.RequestSeq;
-    VoltMod::Post(_rt.Http, std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
+    _rt.Http.Send(std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
         OnRoomResponse(targetSlot, seq, result);
     });
 }

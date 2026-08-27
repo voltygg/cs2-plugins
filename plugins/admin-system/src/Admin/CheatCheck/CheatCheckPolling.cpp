@@ -47,7 +47,7 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 
     pc.PollInFlight = true;
     const uint64_t seq = pc.RequestSeq;
-    VoltMod::Get(_rt.Http, std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
+    _rt.Http.Send(std::move(*request), [this, targetSlot, seq](const VoltMod::HttpResult& result) {
         OnPresenceResponse(targetSlot, seq, result);
     });
 }

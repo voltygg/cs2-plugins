@@ -41,11 +41,13 @@ void DiscordReporter::Report(int slot, const std::string& playerName, int64_t st
     // throws on - and this runs on an engine frame with nothing to catch it.
     std::string body = payload.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
 
-    _rt.Http.Post(settings.webhook.url, std::move(body), {"Content-Type: application/json"}, RequestTimeoutMs,
-                  [](const VoltMod::HttpResult& result) {
-                      if (!result.Ok)
-                          Log::Warn("Webhook delivery failed: {}", result.Error);
-                  });
+    _rt.Http.Post(
+        settings.webhook.url, std::move(body),
+        [](const VoltMod::HttpResult& result) {
+            if (!result.Ok)
+                Log::Warn("Webhook delivery failed: {}", result.Error);
+        },
+        {"Content-Type: application/json"}, RequestTimeoutMs);
 }
 
 }  // namespace Anticheat

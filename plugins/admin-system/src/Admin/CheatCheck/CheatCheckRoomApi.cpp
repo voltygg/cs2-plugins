@@ -3,6 +3,7 @@
 #include "../../Core/Config.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Json.hpp>
 #include <VoltMod/Core/Strings.hpp>
 #include <map>
 #include <utility>
@@ -10,34 +11,51 @@
 namespace AdminSystem::Admin::CheatCheck
 {
 
-using VoltMod::BuildJsonPost;
-using VoltMod::ExtractField;
-using VoltMod::IsSuccess;
-using VoltMod::JsonPostSpec;
-
-std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, int64_t targetSteamId,
-                                            std::string_view targetName, int64_t adminSteamId,
-                                            std::string_view adminName)
+static std::string ExtractField(const VoltMod::HttpResult& result, std::string_view path,
+                                const std::string& valueTemplate = {})
 {
-    JsonPostSpec spec{
+    if (path.empty())
+        return {};
+
+    const auto json = nlohmann::json::parse(result.Body, nullptr, /*allow_exceptions=*/false);
+    if (!json.is_structured())
+        return {};
+
+    const std::string value = VoltMod::Json::GetStringByPath(json, path);
+    if (value.empty() || valueTemplate.empty())
+        return value;
+    return VoltMod::Strings::SubstituteTokens(valueTemplate, {{"value", value}});
+}
+
+std::optional<VoltMod::HttpRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, int64_t targetSteamId,
+                                                     std::string_view targetName, int64_t adminSteamId,
+                                                     std::string_view adminName)
+{
+    if (cfg.createRoomUrl.empty())
+        return std::nullopt;
+
+    nlohmann::json body = cfg.requestBody.is_null() ? nlohmann::json::object() : cfg.requestBody;
+    VoltMod::Json::SubstituteTokens(body, {
+                                              {"steamId", std::to_string(targetSteamId)},
+                                              {"playerName", std::string(targetName)},
+                                              {"adminSteamId", std::to_string(adminSteamId)},
+                                              {"adminName", std::string(adminName)},
+                                          });
+
+    VoltMod::HttpRequest request{
+        .Method = VoltMod::HttpMethod::Post,
         .Url = cfg.createRoomUrl,
-        .ApiKey = cfg.apiKey,
-        .AuthHeader = cfg.authHeader,
-        .AuthScheme = cfg.authScheme,
-        .BodyTemplate = cfg.requestBody,
+        .Body = body.dump(),
         .TimeoutMs = cfg.timeoutMs,
     };
-    return BuildJsonPost(spec, {
-                                   {"steamId", std::to_string(targetSteamId)},
-                                   {"playerName", std::string(targetName)},
-                                   {"adminSteamId", std::to_string(adminSteamId)},
-                                   {"adminName", std::string(adminName)},
-                               });
+    request.AddHeader("Content-Type", "application/json");
+    request.AddAuth(cfg.authHeader, cfg.authScheme, cfg.apiKey);
+    return request;
 }
 
 std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result)
 {
-    if (!IsSuccess(result))
+    if (!result.IsSuccess())
         return std::nullopt;
 
     std::string code = ExtractField(result, cfg.playerUrlField);
@@ -53,28 +71,28 @@ std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom&
     };
 }
 
-std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, const std::string& roomCode,
-                                                int64_t targetSteamId)
+std::optional<VoltMod::HttpRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg,
+                                                         const std::string& roomCode, int64_t targetSteamId)
 {
     if (cfg.presenceUrl.empty() || roomCode.empty())
         return std::nullopt;
 
-    VoltMod::JsonGetSpec spec{
-        .UrlTemplate = cfg.presenceUrl,
-        .ApiKey = cfg.apiKey,
-        .AuthHeader = cfg.authHeader,
-        .AuthScheme = cfg.authScheme,
+    VoltMod::HttpRequest request{
+        .Method = VoltMod::HttpMethod::Get,
+        .Url = VoltMod::Strings::SubstituteTokens(cfg.presenceUrl,
+                                                  {
+                                                      {"code", roomCode},
+                                                      {"steamId", std::to_string(targetSteamId)},
+                                                  }),
         .TimeoutMs = cfg.timeoutMs,
     };
-    return VoltMod::BuildJsonGet(spec, {
-                                           {"code", roomCode},
-                                           {"steamId", std::to_string(targetSteamId)},
-                                       });
+    request.AddAuth(cfg.authHeader, cfg.authScheme, cfg.apiKey);
+    return request;
 }
 
 std::optional<bool> ParsePresence(const Core::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result)
 {
-    if (!IsSuccess(result))
+    if (!result.IsSuccess())
         return std::nullopt;
 
     const std::string present = ExtractField(result, cfg.presenceField);

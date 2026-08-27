@@ -3,7 +3,7 @@
 #include "../../Core/Config.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Http/RestJsonApi.hpp>
+#include <VoltMod/Http/HttpClient.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -11,9 +11,6 @@
 
 namespace AdminSystem::Admin::CheatCheck
 {
-
-/** A ready-to-send create-room HTTP POST, derived from config + the players involved. */
-using RoomRequest = VoltMod::HttpRequest;
 
 /** URLs extracted from a successful create-room response. */
 struct RoomUrls
@@ -28,9 +25,9 @@ struct RoomUrls
  * {steamId}/{playerName}/{adminSteamId}/{adminName} into the body template and assembles the auth
  * header. Returns nullopt when there is no endpoint configured.
  */
-std::optional<RoomRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, int64_t targetSteamId,
-                                            std::string_view targetName, int64_t adminSteamId,
-                                            std::string_view adminName);
+std::optional<VoltMod::HttpRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, int64_t targetSteamId,
+                                                     std::string_view targetName, int64_t adminSteamId,
+                                                     std::string_view adminName);
 
 /**
  * Parse the create-room response into player/checker URLs per the config's field + template rules.
@@ -43,8 +40,8 @@ std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom&
  * Build the presence GET from the websiteAutoRoom config. Substitutes {code}/{steamId} into the
  * URL template. Returns nullopt when polling is not configured or @p roomCode is empty.
  */
-std::optional<RoomRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, const std::string& roomCode,
-                                                int64_t targetSteamId);
+std::optional<VoltMod::HttpRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg,
+                                                         const std::string& roomCode, int64_t targetSteamId);
 
 /**
  * Read the in-room flag from a presence response. Returns nullopt on transport/HTTP/parse
