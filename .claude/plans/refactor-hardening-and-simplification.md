@@ -93,11 +93,17 @@ text below where they conflict. Full reasoning:
       with Phase 1.
 - [x] Command registration: `CommandBuilder::Run` installs and returns void; the manager owns
       every registration and drops them before `OnUnload` (voltmod 6371123, plugins 1b62a70).
-- [ ] Checkpoint: re-scope 5.7-5.12 and Phase 7 with the deletions banked.
-- [ ] Phase 5: simplify plugin-side boilerplate.
-- [ ] Phase 6: simplify tests and test seams carefully.
-- [ ] Phase 7: simplify modgraph and repository rules.
-- [ ] Phase 8: consolidate documentation.
+- [x] Checkpoint: re-scoped 2026-08-26. 5.1/5.2 kept, 5.3/5.5/5.6 already settled, 5.4 and
+      5.7-5.12 dropped as taste with no measured payoff. Phase 6 dropped: its items were
+      folded into the phases that touched the code (amendment 12).
+- [x] Phase 5: 5.1 effect table and 5.2 FunMode variant (plugins 17cbb4d). 5.4 dropped - a
+      framework facility for one 3-line helper is machinery, not simplification.
+- [x] Phase 7: modgraph decl-home fix, LOWER_MODULES cut, one-pass scan, 17 pytest cases
+      (voltmod 52c30f6, plugins b498029).
+- [x] Phase 8: layering table generated from ALLOWED and guarded by a test; game-event list
+      deduped (voltmod f59919d). The Subscription-ownership "duplication" measured at one line
+      per guide - appropriate, not consolidated. The Conan block's three copies serve three
+      audiences and stay.
 - [ ] Phase 9: package, integrate, and complete all verification.
 
 Claude Code should execute one numbered phase at a time. At the end of a phase:
