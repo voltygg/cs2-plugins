@@ -84,7 +84,7 @@ text below where they conflict. Full reasoning:
 - [x] Record both repository baselines and run the existing verification commands.
 - [x] Phase 2: make VoltMod CI run CTest.
 - [x] Phase 0: dropped after a static audit - no live bug, see the phase note.
-- [ ] Phase 3: remove confirmed unused surface (start with Hooks::Damage, in isolation).
+- [x] Phase 3: remove confirmed unused surface. Done 2026-08-26; ~870 lines out.
 - [ ] Phase 1: fix correctness and lifetime blockers (now including 4.3 StatusService).
 - [ ] Checkpoint: re-scope 5.7-5.12 and Phase 7 with the deletions banked.
 - [ ] Phase 4: reduce public include and dependency cost.
@@ -499,6 +499,39 @@ Acceptance:
 - A deliberately failing doctest fails the workflow during local workflow validation or a temporary test commit.
 
 ## Phase 3: remove confirmed unused surface
+
+**Done 2026-08-26.** Six commits, ~870 lines removed from the framework. Framework 281 tests
+green (294 -> 281 as tests for deleted surface went), plugins 158 green, lint and modgraph
+clean in both.
+
+3.1 removed Hooks::Damage (with Capability::Damage, the OnTakeDamageAlive binding, the
+CCSPlayerPawn vtable ref, the CTakeDamageInfo/hitbox offsets and 7 gamedata entries), the
+InputHistory service, Entities::EffectOps and Movement::PostCmd. HitGroup stayed - PlayerHurt
+carries it and anticheat reads it. The Runtime canary went too, by request.
+
+3.2 removed Args::Targets, SetMode::Server, MetamodPlugin::Rt/IsLateLoad, three Json helpers,
+Strings::Split, the caller-id CallbackRegistry::Add overload, four Field operators, and the
+plugin-side MayUseOn. Two things were *kept* against the plan's list because reference search
+disproved it: Field `|=`/`&=`/`==` are used (PawnOps, FunMode, Hide), and JsonConfig::Mutable
+is used (admin-system Config.cpp:27). TargetRules::AllowMultiple also stayed - it is internal
+to src/ and is what lets the selector-grammar tests cover multi-match filtering.
+
+3.3 removed the manifest/identity layer after the investigation below.
+
+**ServiceExchange investigation (the prerequisite you asked for).** The reported
+"dependency 'admin-system' is not loaded" warning could not be reproduced statically: the
+manifests generate and install correctly, admin-system publishes `IdentityKey("admin-system")`,
+anticheat looks up the identical string, and both go through the same `MetaFactory` path. The
+note predates the api-v2 refactor and may be stale. Crucially the two paths are **not**
+independent as first thought - `Exchange.Get<IAdminActions>()` and the identity lookup both call
+`ServiceExchange::Query`, so deleting the manifest layer removed a duplicate symptom rather than
+a unique signal. If cross-plugin lookup is ever broken, it now surfaces at the point of use,
+where `ResponseManager` logs "cannot ban {}: admin-system is not loaded".
+
+Residual: stale `*.manifest.json` files remain in the local CS2 server's addons/ from earlier
+installs. Harmless (nothing reads them now); delete them if tidiness matters.
+
+### Original scope
 
 Perform this as several mechanical commits. For every deletion, remove its implementation, header exposure, build registration, capability, gamedata, tests that only test the deleted feature, and documentation.
 
