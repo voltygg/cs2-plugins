@@ -50,5 +50,5 @@
     "editor.tabSize": 2
   },
   "sql-formatter.dialect": "pl/sql",
-  "VSCodeCounter.exclude": ["references", "vendor"]
+  "VSCodeCounter.exclude": ["references"]
 }
