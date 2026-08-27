@@ -6,6 +6,7 @@
 #include "../Database/Entities/AdminGroup.hpp"
 
 #include <VoltMod/Database/PostgresDatabase.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <string>
 #include <unordered_map>
 

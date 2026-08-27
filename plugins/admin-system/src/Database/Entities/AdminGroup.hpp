@@ -1,5 +1,6 @@
 #pragma once
 
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <cstdint>
 #include <string>
 #include <vector>
