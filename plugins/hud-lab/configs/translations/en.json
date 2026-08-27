@@ -1,8 +1,3 @@
 {
-  "cmd.noPermission": "You do not have permission to use this command.",
-  "cmd.usage": "Usage: {usage}",
-  "cmd.usage.int": "number",
-  "cmd.usage.u64": "id",
-  "cmd.usage.word": "value",
   "cmd.usage.rest": "text"
 }

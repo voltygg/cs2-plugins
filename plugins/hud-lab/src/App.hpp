@@ -42,12 +42,10 @@ private:
     /** Report a press in chat and on the panel, so a click is visibly round-tripping. */
     void OnButton(int slot, std::string_view button);
 
-    /** Handlers for the current layout's buttons, replaced whenever it is respawned. */
+    /** Handlers for the current layout's buttons, replaced whenever it is respawned. Declared
+     *  last: reverse member destruction stops the handlers before the state they capture, Layout
+     *  included, goes away. */
     std::vector<VoltMod::Subscription> _buttons;
-
-    /** Listener registrations, released together. Declared last: reverse member destruction stops
-     *  the handlers before the state they capture goes away. */
-    std::vector<VoltMod::Subscription> _subs;
 };
 
 }  // namespace HudLab

@@ -55,8 +55,8 @@ void RegisterCommands(App& app)
         .Describe("Report feature availability and the spawned layout.")
         .ConsoleOnly()
         .Run([&app](Caller c) -> Result<Reply> {
-            for (VoltMod::Capability capability : {VoltMod::Capability::CustomHud, VoltMod::Capability::HudClicks,
-                                                   VoltMod::Capability::Addons})
+            for (VoltMod::Capability capability :
+                 {VoltMod::Capability::CustomHud, VoltMod::Capability::HudClicks, VoltMod::Capability::Addons})
             {
                 const bool ready = app.Runtime.Capabilities.Has(capability);
                 c.SayRaw(std::format("{}: {}", VoltMod::Name(capability),
@@ -96,7 +96,8 @@ void RegisterCommands(App& app)
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int enabled) -> Result<Reply> {
             const bool on = enabled.Value != 0;
-            return Done(app.Layout.SetInputCapture(on), std::format("input capture {} for everyone.", on ? "on" : "off"));
+            return Done(app.Layout.SetInputCapture(on),
+                        std::format("input capture {} for everyone.", on ? "on" : "off"));
         });
 
     commands.Add("hudlab_capture_slot")
