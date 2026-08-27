@@ -46,7 +46,9 @@ Remove any old `voltmod` editable registration once with
 cd vendor/voltmod
 uv run voltmod package build kit
 cd ../..
-uv run conan lock create . --profile:all vendor/voltmod/conan/profiles/windows-msvc.txt -s build_type=Release -s compiler.runtime_type=Release --lockfile=conan.lock --lockfile-out=conan.lock --update="voltmod/*" --no-remote
+# --update does not re-pin a revision the lock already names, so drop it first.
+uv run conan lock remove --requires="voltmod/*" --lockfile=conan.lock --lockfile-out=conan.lock
+uv run conan lock create . --profile:all vendor/voltmod/conan/profiles/windows-msvc.txt -s build_type=Release -s compiler.runtime_type=Release --lockfile=conan.lock --lockfile-out=conan.lock --no-remote
 uv run poe build
 ```
 
@@ -132,6 +134,12 @@ Current patterns:
   members - `pawn.Health = 100` writes and replicates. `explicit operator bool()`
   is the only validity check. Never store a wrapper past the frame: store an
   `EntityRef` or a `PlayerRef` and resolve it again where it is used.
+- A `custom_hud_layout` is the one entity a plugin *owns* rather than re-resolves:
+  `runtime.Hud.Spawn(name)` returns a move-only `VoltMod::Hud` whose destructor removes
+  the entity, so keep it as a member and a `meta reload` cannot leave a panel behind.
+  `hud.For(slot)` narrows a write to one player and `hud.OnClick(id, ...)` filters presses
+  to that layout. Workshop addons work the same way: `runtime.Addons.Require(id)` returns a
+  lease, and the requirement lasts exactly as long as you hold it.
 - Return `VoltMod::Result<T>`/`VoltMod::Status` where a caller has to know why
   something failed; `Error::Detail` is the log text and `Error::Key` the
   translation key for a player-facing reply.
