@@ -40,21 +40,17 @@ Build output is under
 `build/<preset>/plugins/<name>/<platform-arch>/`. The build tasks run
 `voltmod`, installed by this repository's `pyproject.toml`.
 
-To work on VoltMod and a plugin together, create the framework package and
-refresh the consumer lock:
-
-Remove any old `voltmod` editable registration once with
-`uv run conan editable remove voltmod`.
+To work on VoltMod and a plugin together:
 
 ```bash
-cd vendor/voltmod
-uv run voltmod package build kit
-cd ../..
-# --update does not re-pin a revision the lock already names, so drop it first.
-uv run conan lock remove --requires="voltmod/*" --lockfile=conan.lock --lockfile-out=conan.lock
-uv run conan lock create . --profile:all vendor/voltmod/conan/profiles/windows-msvc.txt -s build_type=Release -s compiler.runtime_type=Release --lockfile=conan.lock --lockfile-out=conan.lock --no-remote
-uv run poe build
+uv run poe build --framework vendor/voltmod
 ```
+
+This packages the checkout, re-pins `voltmod` in `conan.lock` against the local
+cache, wipes `build/<preset>` (CMake caches the package folder, so a relock alone
+keeps linking the old framework) and builds. Commit the relocked `conan.lock` with
+the plugin change. Remove any old `voltmod` editable registration once with
+`uv run conan editable remove voltmod`.
 
 Treat the root worktree and `vendor/voltmod` as separate repositories. Check
 their status and diffs independently. Do not edit the read-only projects under

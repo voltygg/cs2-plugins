@@ -32,29 +32,31 @@ A `'vswhere.exe' is not recognized` line printed by the launcher itself is benig
 ## 2. Consuming the framework
 
 `conan.lock` pins a `voltmod` package revision. A plain `uv run poe build` uses it
-and never compiles `vendor/voltmod`, so a framework edit is invisible until a new
-package exists and the lock names it:
+and never compiles `vendor/voltmod`, so after any framework edit build with:
 
 ```powershell
-Set-Location vendor\voltmod
-uv run voltmod package build kit
-Set-Location ..\..
-uv run conan lock remove --requires="voltmod/*" --lockfile=conan.lock --lockfile-out=conan.lock
-uv run conan lock create . --profile:all vendor/voltmod/conan/profiles/windows-msvc.txt -s build_type=Release -s compiler.runtime_type=Release --lockfile=conan.lock --lockfile-out=conan.lock --no-remote
-uv run poe build
+uv run poe build --framework vendor/voltmod
 ```
 
-`conan lock remove` first: `--update` does not re-pin a revision the lock already
-names. Commit the relocked `conan.lock` with the plugin change ("chore: relock
-voltmod for ...").
+The `voltmod` CLI here is installed from the git ref in `pyproject.toml`, so a
+flag that only exists in the checkout is reachable through the checkout's own
+environment until that ref is pushed and `uv sync -U` has run:
+`uv run --project vendor/voltmod voltmod build --framework vendor/voltmod`.
+
+It packages the checkout (`voltmod package build kit`), re-pins `voltmod` in
+`conan.lock` against the local cache, wipes `build/<preset>` and builds. The wipe
+is not optional: CMake caches the package folder it was configured with, and a
+relock alone keeps linking the old framework while still printing "Build
+complete" - three "fixed" DLLs shipped stale code that way. When in doubt, check
+the DLL for a string the new code adds:
+`Select-String -Path <dll> -Pattern "<new log text>" -Quiet`.
+
+Commit the relocked `conan.lock` with the plugin change ("chore: relock voltmod
+for ..."). The framework's own suite runs with `uv run poe test` inside
+`vendor/voltmod`.
 
 If `uv run conan editable list` still shows `voltmod`, remove it once with
 `uv run conan editable remove voltmod`; the editable flow is gone.
-
-**ABI change in a VoltMod header** (a member added to `Runtime` or another
-by-value service): wipe `build/<preset>` before rebuilding the plugins. A package
-rebuild alone relinks against stale layouts and ships a DLL that loads and then
-misbehaves.
 
 ## 3. Presets and tests
 
