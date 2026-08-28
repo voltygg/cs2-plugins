@@ -358,7 +358,7 @@
         "style": {
           "enum": ["auto", "panorama", "centerHtml"],
           "default": "auto",
-          "description": "auto prefers the clickable Panorama menu and falls back to center HTML where the custom-UI capability is off; a pinned panorama falls back too rather than showing nothing."
+          "description": "auto and panorama both prefer the clickable Panorama menu and fall back to center HTML where the custom-UI capability is off; centerHtml pins the plain menu."
         },
         "layout": {
           "type": "string",

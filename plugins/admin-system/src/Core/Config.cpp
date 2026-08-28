@@ -1,5 +1,6 @@
 #include "Config.hpp"
 
+#include <VoltMod/Core/EnumNames.hpp>
 #include <VoltMod/Core/Validation.hpp>
 #include <algorithm>
 #include <format>
@@ -72,6 +73,18 @@ void ConfigManager::ResolveRuntimeSettings()
     // Negative windows would make every elapsed check pass; treat them as "disabled".
     reports.cooldownSec = std::max(reports.cooldownSec, 0);
     reports.duplicateWindowSec = std::max(reports.duplicateWindowSec, 0);
+
+    // By name, so a typo cannot pick a host by accident: a misspelling read as Panorama falls back
+    // silently on a server without the capability, and the bad value never surfaces.
+    if (auto style = VoltMod::Parse<MenuStyle>(settings.menu.style))
+    {
+        _menuStyle = *style;
+    }
+    else
+    {
+        VoltMod::Log::Warn("menu.style '{}' is not auto/panorama/centerHtml; using auto.", settings.menu.style);
+        _menuStyle = MenuStyle::Auto;
+    }
 
     ResolveMapCycle(settings.maps);
     ResolveWeaponMenu(settings.weapons);

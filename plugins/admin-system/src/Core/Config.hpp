@@ -247,13 +247,20 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckSettings, mode, timeou
 /**
  * Which menu host the plugin opens its menus on.
  *
- * `auto` prefers the Panorama menu and falls back to center HTML when
- * VoltMod::Capability::CustomUi is off, which today means any non-Windows server. `panorama` and
- * `centerHtml` pin one; a pinned `panorama` on a server without the capability still falls back,
- * because a menu nobody can see is worse than an unstyled one.
+ * `Panorama` is `Auto` under another name: neither can be honoured without
+ * VoltMod::Capability::CustomUi (today, any non-Windows server), and both fall back to center HTML
+ * rather than show nobody a menu. `CenterHtml` pins the plain menu on every build.
  */
+enum class MenuStyle
+{
+    Auto,
+    Panorama,
+    CenterHtml,
+};
+
 struct MenuSettings
 {
+    /** `auto` | `panorama` | `centerHtml`; anything else warns at load and is read as `auto`. */
     std::string style = "auto";
     /** Layout resource to drive; must honour the ids VoltMod's own layout declares. */
     std::string layout = "voltmod_menu";
@@ -310,6 +317,9 @@ public:
     /** Which menu host to open menus on, and the layout behind it. */
     const MenuSettings& GetMenu() const { return Get().menu; }
 
+    /** `menu.style` parsed once at load; an unrecognized value has already warned and reads Auto. */
+    MenuStyle GetMenuStyle() const { return _menuStyle; }
+
     /** Offerable maps. Invalid entries are logged and skipped. */
     const std::vector<Maps::MapEntry>& GetMapCycle() const { return _resolvedMaps; }
 
@@ -321,6 +331,7 @@ private:
     void ResolveMapCycle(const MapSettings& maps);
     void ResolveWeaponMenu(const WeaponSettings& weapons);
 
+    MenuStyle _menuStyle = MenuStyle::Auto;
     std::vector<ResolvedTemplate> _resolvedTemplates;
     std::vector<int> _menuDurationSecs;
     std::vector<Maps::MapEntry> _resolvedMaps;

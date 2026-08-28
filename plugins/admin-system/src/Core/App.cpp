@@ -257,7 +257,7 @@ bool App::Start()
 void App::SelectMenuHost()
 {
     const auto& settings = Config.GetMenu();
-    const bool wantsPanorama = settings.style != "centerHtml";
+    const bool wantsPanorama = Config.GetMenuStyle() != Core::MenuStyle::CenterHtml;
     const bool canDoPanorama = Runtime.Capabilities.Has(VoltMod::Capability::CustomUi);
 
     if (wantsPanorama && canDoPanorama)

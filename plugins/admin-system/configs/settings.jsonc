@@ -175,14 +175,12 @@
     ]
   },
   "menu": {
-    // Which menu to draw: "auto" prefers the clickable Panorama menu and falls back to center
-    // HTML where the custom-UI capability is off (any non-Windows server today). "panorama" and
-    // "centerHtml" pin one; a pinned "panorama" still falls back rather than showing nothing.
+    // "auto"/"panorama" draw the Panorama menu, falling back to center HTML where the custom-UI
+    // capability is off (any non-Windows server); "centerHtml" pins it. Anything else warns.
     "style": "auto",
     // Panorama layout to drive. A replacement must declare the same panel ids.
     "layout": "voltmod_menu",
-    // Workshop addon carrying the compiled layout. 0 requires nothing of connecting clients,
-    // which is what you want while copying the compiled files into your own client by hand.
+    // Workshop addon carrying the compiled layout; 0 asks nothing of clients, for a hand copy.
     "addonId": 0
   }
 }
