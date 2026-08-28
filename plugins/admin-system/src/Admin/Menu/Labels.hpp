@@ -3,7 +3,10 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>
+#include <format>
+#include <functional>
 #include <string>
+#include <string_view>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -24,6 +27,24 @@ inline std::string ExpiryLabel(VoltMod::Translations& tr, int64_t expiresAt, int
 {
     return VoltMod::Time::FormatExpiry(expiresAt, VoltMod::Time::Now(), tr.Get("duration.perm", adminSlot),
                                        tr.Get("unban.expiresIn", adminSlot));
+}
+
+/** "Confirm: Ban" - the confirm-step title every flow that asks before acting shares. */
+inline std::string ConfirmTitle(VoltMod::Translations& tr, std::string_view actionKey, int slot)
+{
+    return std::format("{}: {}", tr.Get("punish.confirmTitle", slot), tr.Get(actionKey, slot));
+}
+
+/** The confirm button's per-slot label. @p tr belongs to the runtime, which outlives every flow. */
+inline std::function<std::string(int)> ConfirmLabel(VoltMod::Translations& tr)
+{
+    return [&tr](int slot) { return tr.Get("punish.confirm", slot); };
+}
+
+/** The cancel button's per-slot label. */
+inline std::function<std::string(int)> CancelLabel(VoltMod::Translations& tr)
+{
+    return [&tr](int slot) { return tr.Get("punish.cancel", slot); };
 }
 
 }  // namespace AdminSystem::Admin::Menu

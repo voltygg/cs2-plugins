@@ -16,7 +16,6 @@
 #include <string>
 #include <utility>
 
-using AdminSystem::Punishments::PermissionFor;
 using AdminSystem::Punishments::PunishType;
 
 namespace AdminSystem::Admin::Menu

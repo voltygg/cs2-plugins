@@ -21,4 +21,15 @@ inline bool MayUse(App& app, int slot, Permission permission)
     return app.Runtime.Policy.Authorize(players.RefFor(slot), std::nullopt, Flag(permission)).has_value();
 }
 
+/** Flow validator that re-checks @p permission on the presser: a flag may have been revoked
+ *  (e.g. by !admin_reload) while the menu was open. */
+inline auto RequirePermission(App& app, Permission permission)
+{
+    return [&app, permission](int slot, const auto&) -> std::optional<std::string> {
+        if (!MayUse(app, slot, permission))
+            return "punish.notAllowed";
+        return std::nullopt;
+    };
+}
+
 }  // namespace AdminSystem::Admin::Menu

@@ -5,6 +5,7 @@
 #include "../../Core/Permissions.hpp"
 #include "../../Maps/MapCycleState.hpp"
 #include "../../Maps/VoteState.hpp"
+#include "Labels.hpp"
 #include "MenuAccess.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -12,7 +13,6 @@
 #include <VoltMod/Menu/Flow.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <format>
 #include <optional>
 #include <string>
 #include <utility>
@@ -31,23 +31,14 @@ using VoltMod::MenuBuilder;
 static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
 {
     VoltMod::Flow<MapEntry>::Create(app.Menus(), std::move(map))
-        ->OnValidate([&app](int slot, const MapEntry&) -> std::optional<std::string> {
-            if (!MayUse(app, slot, Permission::Map))
-                return "punish.notAllowed";
-            return std::nullopt;
-        })
-        ->WithConfirm(
-            [&app](int slot) {
-                auto& tr = app.Runtime.Translations;
-                return std::format("{}: {}", tr.Get("punish.confirmTitle", slot), tr.Get("action.changeMap", slot));
-            },
-            [&app](int slot, const MapEntry& m) {
-                std::vector<std::pair<std::string, std::string>> rows;
-                rows.emplace_back(app.Runtime.Translations.Get("map.name", slot), m.Label());
-                return rows;
-            },
-            [&app](int slot) { return app.Runtime.Translations.Get("punish.confirm", slot); },
-            [&app](int slot) { return app.Runtime.Translations.Get("punish.cancel", slot); })
+        ->OnValidate(RequirePermission(app, Permission::Map))
+        ->WithConfirm([&app](int slot) { return ConfirmTitle(app.Runtime.Translations, "action.changeMap", slot); },
+                      [&app](int slot, const MapEntry& m) {
+                          std::vector<std::pair<std::string, std::string>> rows;
+                          rows.emplace_back(app.Runtime.Translations.Get("map.name", slot), m.Label());
+                          return rows;
+                      },
+                      ConfirmLabel(app.Runtime.Translations), CancelLabel(app.Runtime.Translations))
         ->OnFinish([&app](int, MapEntry& m) {
             app.Chat.BroadcastKey("broadcast.mapChanging", {{"map", m.Label()}});
             app.MapCycle.ChangeAfter(m);

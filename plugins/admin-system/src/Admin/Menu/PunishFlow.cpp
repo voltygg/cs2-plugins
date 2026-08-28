@@ -81,11 +81,7 @@ static PunishFlowT::Ptr MakeBaseFlow(App& app, PendingPunishment pending)
     return PunishFlowT::Create(app.Menus(), std::move(pending))
         ->OnValidate([&app](int slot, const PendingPunishment& p) { return ValidatePending(app, slot, p); })
         ->WithConfirm(
-            [&app, type](int slot) {
-                auto& tr = app.Runtime.Translations;
-                return std::format("{}: {}", tr.Get("punish.confirmTitle", slot),
-                                   tr.Get(ActionTranslationKey(type), slot));
-            },
+            [&app, type](int slot) { return ConfirmTitle(app.Runtime.Translations, ActionTranslationKey(type), slot); },
             [&app](int slot, const PendingPunishment& p) {
                 auto& tr = app.Runtime.Translations;
                 auto* target = app.Runtime.Players.Get(p.Target);
@@ -96,8 +92,7 @@ static PunishFlowT::Ptr MakeBaseFlow(App& app, PendingPunishment pending)
                 rows.emplace_back(tr.Get("punish.reason", slot), Strings::TruncateUtf8(p.Reason, 40));
                 return rows;
             },
-            [&app](int slot) { return app.Runtime.Translations.Get("punish.confirm", slot); },
-            [&app](int slot) { return app.Runtime.Translations.Get("punish.cancel", slot); })
+            ConfirmLabel(app.Runtime.Translations), CancelLabel(app.Runtime.Translations))
         ->OnFinish([&app](int adminSlot, PendingPunishment& p) { Issue(app, adminSlot, p); });
 }
 
