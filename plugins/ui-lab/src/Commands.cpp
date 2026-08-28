@@ -176,6 +176,23 @@ void RegisterCommands(App& app)
                         std::format("{} class '{}' left to the layout.", panel.Value, className.Value));
         });
 
+    commands.Add("uilab_clicks")
+        .Describe("Log every custom HUD press from every layout: uilab_clicks <0|1>")
+        .ConsoleOnly()
+        .Run([&app](Caller, Args::Int enabled) -> Result<Reply> {
+            if (enabled.Value == 0)
+            {
+                app.ClickLogger.Reset();
+                return Reply{"click logging off."};
+            }
+
+            app.ClickLogger = app.Runtime.Ui.Clicks.Clicked += [](const VoltMod::UiClick& click) {
+                VoltMod::Log::Info("ui-lab: slot {} pressed '{}' in layout {:#x}.", click.Slot, click.ButtonId,
+                                   click.Layout.Handle);
+            };
+            return Reply{"click logging on."};
+        });
+
     // UiClicks needs the click message's id, and the registry has not answered to the name the
     // proto declares. This says what a given name does resolve to, so the right one can be found
     // by asking rather than by guessing in C++.

@@ -1,34 +1,34 @@
 <root>
-	<!--
-		Modelled on Valve's own layout, which ships as source at
-		csgo_addons/cs_script_demo/panorama_stripped/panorama/layout/custom_game/welcome.xml.
-		The client's markup rules are in docs/custom-ui.md; breaking one is rejected silently
-		server-side and printed only on the client console.
-	-->
-	<styles>
-		<include src="file://{resources}/styles/custom_game/ui_lab.css" />
-	</styles>
+  <!--
+    Modelled on Valve's own layout, which ships as source at
+    csgo_addons/cs_script_demo/panorama_stripped/panorama/layout/custom_game/welcome.xml.
+    The client's markup rules are in docs/custom-ui.md; breaking one is rejected silently
+    server-side and printed only on the client console.
+  -->
+  <styles>
+    <include src="file://{resources}/styles/custom_game/ui_lab.css" />
+  </styles>
 
-	<Panel class="Root">
-		<Panel id="lab_card" class="Hidden">
-			<!--
-				Two labels on purpose: lab_title reads a dialog variable and lab_body is static
-				text, so one probe says whether the attribute whitelist allows dialog variables
-				at all - Valve's own example only uses static text.
+  <Panel class="Root" hittest="false">
+    <Panel id="lab_card" class="Hidden" hittest="true">
+      <!--
+        Two labels on purpose: lab_title reads a dialog variable and lab_body is static
+        text, so one probe says whether the attribute whitelist allows dialog variables
+        at all - Valve's own example only uses static text.
 
-				Drive it with:  uilab_var lab_title title Ready
-			-->
-			<Label id="lab_title" class="Title" text="{s:title}" />
-			<Label id="lab_body" class="Body" text="ui-lab is live." />
+        Drive it with:  uilab_var lab_title title Ready
+      -->
+      <Label id="lab_title" class="Title" text="{s:title}" />
+      <Label id="lab_body" class="Body" text="ui-lab is live." />
 
-			<Panel id="lab_buttons" class="Buttons">
-				<Button id="lab_accept" class="Button Button--accept">
-					<Label text="Accept" />
-				</Button>
-				<Button id="lab_decline" class="Button">
-					<Label text="Decline" />
-				</Button>
-			</Panel>
-		</Panel>
-	</Panel>
+      <Panel id="lab_buttons" class="Buttons" hittest="true">
+        <Button id="lab_accept" class="Button Button--accept">
+          <Label text="Accept" />
+        </Button>
+        <Button id="lab_decline" class="Button">
+          <Label text="Decline" />
+        </Button>
+      </Panel>
+    </Panel>
+  </Panel>
 </root>

@@ -38,6 +38,10 @@ struct App
     /** One lease per workshop addon required, from `uilab_addon`. */
     std::vector<VoltMod::Subscription> Addons;
 
+    /** Logs every press from every layout while `uilab_clicks 1` is on. The first diagnostic for
+     *  a dead button: it tells "the press never arrived" apart from "nothing handled it". */
+    VoltMod::Subscription ClickLogger;
+
 private:
     /** Report a press in chat and on the panel, so a click is visibly round-tripping. */
     void OnButton(int slot, std::string_view button);
