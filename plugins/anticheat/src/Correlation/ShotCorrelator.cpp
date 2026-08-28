@@ -90,29 +90,27 @@ void ShotCorrelator::Initialize()
 
     auto& events = _rt.GameEvents;
 
-    _subscriptions.push_back(_rt.Hooks.Movement.PreCmd +=
-                             [this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); });
-    _subscriptions.push_back(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
+    _subscriptions.On(_rt.Hooks.Movement.PreCmd,
+                      [this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); });
+    _subscriptions.Add(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
     // The aim modules discount the frames after a teleport, so the stamps live here rather than in
     // the framework: subscribing is what arms the per-pawn hook, and the grace window is ours.
     _lastTeleport.BindReset(_rt.Slots);
-    _subscriptions.push_back(_rt.Hooks.Teleport.Teleported += [this](int slot) {
+    _subscriptions.On(_rt.Hooks.Teleport.Teleported, [this](int slot) {
         if (IsValidSlot(slot))
             _lastTeleport[slot] = _rt.Clock.Time();
     });
 
-    _subscriptions.push_back(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
+    _subscriptions.Add(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
         if (_manager.ModuleEnabled(DetectionKind::AntiAim))
             _manager.AntiAim().OnSlotChanged(e.Slot);
     }));
-    _subscriptions.push_back(events.On<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
-    _subscriptions.push_back(
-        events.On<VoltMod::BulletImpact>([this](const VoltMod::BulletImpact& e) { OnBulletImpact(e); }));
+    _subscriptions.Add(events.On<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
+    _subscriptions.Add(events.On<VoltMod::BulletImpact>([this](const VoltMod::BulletImpact& e) { OnBulletImpact(e); }));
     // player_hurt carries the hitgroup SilentAim scores headshots from.
-    _subscriptions.push_back(events.On<VoltMod::PlayerHurt>([this](const VoltMod::PlayerHurt& e) { OnPlayerHurt(e); }));
-    _subscriptions.push_back(
-        events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) { OnPlayerDeath(e); }));
+    _subscriptions.Add(events.On<VoltMod::PlayerHurt>([this](const VoltMod::PlayerHurt& e) { OnPlayerHurt(e); }));
+    _subscriptions.Add(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) { OnPlayerDeath(e); }));
 }
 
 void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)

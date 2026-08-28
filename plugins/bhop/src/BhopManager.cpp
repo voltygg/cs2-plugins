@@ -32,18 +32,18 @@ void BhopManager::Initialize()
     RegisterConsoleCommands();
 
     auto& events = _rt.GameEvents;
-    _subs.push_back(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
-    _subs.push_back(events.On<VoltMod::PlayerJump>([this](const VoltMod::PlayerJump& e) { OnPlayerJump(e.Slot); }));
+    _subs.Add(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
+    _subs.Add(events.On<VoltMod::PlayerJump>([this](const VoltMod::PlayerJump& e) { OnPlayerJump(e.Slot); }));
     // Map changes can reset gamemode convars.
-    _subs.push_back(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) {
+    _subs.Add(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) {
         if (_mode == Mode::Enabled)
             _conVars.ApplyGlobal();
     }));
 
-    _subs.push_back(_rt.Players.Disconnected += [this](VoltMod::Player& player) { OnPlayerDisconnect(player); });
+    _subs.On(_rt.Players.Disconnected, [this](VoltMod::Player& player) { OnPlayerDisconnect(player); });
 
     // Grants need a post-simulation hop because subtick movement ignores the scoped override.
-    _subs.push_back(_rt.Scheduler.EveryFrame([this] {
+    _subs.Add(_rt.Scheduler.EveryFrame([this] {
         if (_mode != Mode::Grants)
             return;
         for (int slot = 0; slot < MaxPlayers; ++slot)
@@ -67,13 +67,13 @@ void BhopManager::ApplySettings()
     _conVars.Build(settings);
 
     // Only grant mode needs per-player movement hooks.
-    if (_mode == Mode::Grants && _movementSubs.empty())
+    if (_mode == Mode::Grants && _movementSubs.Empty())
     {
-        _movementSubs.push_back(_rt.Hooks.Movement.Pre += [this](int slot) { OnRunCommandPre(slot); });
-        _movementSubs.push_back(_rt.Hooks.Movement.Post += [this](int slot) { OnRunCommandPost(slot); });
+        _movementSubs.On(_rt.Hooks.Movement.Pre, [this](int slot) { OnRunCommandPre(slot); });
+        _movementSubs.On(_rt.Hooks.Movement.Post, [this](int slot) { OnRunCommandPost(slot); });
     }
     else if (_mode != Mode::Grants)
-        _movementSubs.clear();
+        _movementSubs.Clear();
 
     if (_mode == Mode::Enabled)
         _conVars.ApplyGlobal();

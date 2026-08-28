@@ -109,7 +109,7 @@ void RegisterCommands(App& app)
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int enabled) -> Result<Reply> {
             const bool on = enabled.Value != 0;
-            return Done(app.Layout.SetInputCapture(on),
+            return Done(app.Layout.InputCapture(VoltMod::UiPanel::Everyone, on),
                         std::format("input capture {} for everyone.", on ? "on" : "off"));
         });
 
@@ -118,7 +118,7 @@ void RegisterCommands(App& app)
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot, Args::Int enabled) -> Result<Reply> {
             const bool on = enabled.Value != 0;
-            return Done(app.Layout.For(slot.Value).SetInputCapture(on),
+            return Done(app.Layout.InputCapture(slot.Value, on),
                         std::format("slot {} input capture {}.", slot.Value, on ? "on" : "off"));
         });
 
@@ -128,7 +128,7 @@ void RegisterCommands(App& app)
         .Describe("Read input capture for a slot: uilab_capture_get <slot>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot) -> Result<Reply> {
-            auto enabled = app.Layout.For(slot.Value).InputCaptureEnabled();
+            auto enabled = app.Layout.InputCaptured(slot.Value);
             if (!enabled)
                 return std::unexpected(enabled.error());
             return Reply{std::format("slot {} input capture: {}", slot.Value, *enabled ? "on" : "off")};
@@ -138,7 +138,7 @@ void RegisterCommands(App& app)
         .Describe("Set a dialog variable for everyone: uilab_var <panelId> <variable> <value...>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Word panel, Args::Word variable, Args::Rest value) -> Result<Reply> {
-            return Done(app.Layout.SetText(panel.Value, variable.Value, value.Value),
+            return Done(app.Layout.Text(VoltMod::UiPanel::Everyone, panel.Value, variable.Value, value.Value),
                         std::format("{}.{} = '{}' for everyone.", panel.Value, variable.Value, value.Value));
         });
 
@@ -146,7 +146,7 @@ void RegisterCommands(App& app)
         .Describe("Set a dialog variable for one slot: uilab_var_slot <slot> <panelId> <variable> <value...>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot, Args::Word panel, Args::Word variable, Args::Rest value) -> Result<Reply> {
-            return Done(app.Layout.For(slot.Value).SetText(panel.Value, variable.Value, value.Value),
+            return Done(app.Layout.Text(slot.Value, panel.Value, variable.Value, value.Value),
                         std::format("{}.{} = '{}' for slot {}.", panel.Value, variable.Value, value.Value, slot.Value));
         });
 
@@ -155,7 +155,7 @@ void RegisterCommands(App& app)
         .ConsoleOnly()
         .Run([&app](Caller, Args::Word panel, Args::Word className, Args::Int on) -> Result<Reply> {
             const bool present = on.Value != 0;
-            return Done(app.Layout.SetClass(panel.Value, className.Value, present),
+            return Done(app.Layout.Class(VoltMod::UiPanel::Everyone, panel.Value, className.Value, present),
                         std::format("{} class '{}' {}.", panel.Value, className.Value, present ? "added" : "removed"));
         });
 
@@ -164,7 +164,7 @@ void RegisterCommands(App& app)
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot, Args::Word panel, Args::Word className, Args::Int on) -> Result<Reply> {
             const bool present = on.Value != 0;
-            return Done(app.Layout.For(slot.Value).SetClass(panel.Value, className.Value, present),
+            return Done(app.Layout.Class(slot.Value, panel.Value, className.Value, present),
                         std::format("{} class '{}' {} for slot {}.", panel.Value, className.Value,
                                     present ? "added" : "removed", slot.Value));
         });
@@ -173,7 +173,7 @@ void RegisterCommands(App& app)
         .Describe("Hand a class back to the layout: uilab_class_reset <panelId> <className>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Word panel, Args::Word className) -> Result<Reply> {
-            return Done(app.Layout.ResetClass(panel.Value, className.Value),
+            return Done(app.Layout.ResetClass(VoltMod::UiPanel::Everyone, panel.Value, className.Value),
                         std::format("{} class '{}' left to the layout.", panel.Value, className.Value));
         });
 
@@ -187,7 +187,7 @@ void RegisterCommands(App& app)
                 return Reply{"click logging off."};
             }
 
-            app.ClickLogger = app.Runtime.Ui.Clicks.Clicked += [](const VoltMod::UiClick& click) {
+            app.ClickLogger = app.Runtime.Ui.Clicked += [](const VoltMod::UiClick& click) {
                 VoltMod::Log::Info("ui-lab: slot {} pressed '{}' in layout {:#x}.", click.Slot, click.ButtonId,
                                    click.Layout.Handle);
             };
@@ -233,7 +233,7 @@ void RegisterCommands(App& app)
                 return std::unexpected(lease.error());
 
             // The lease is the requirement: held here, dropped with the plugin.
-            app.Addons.push_back(std::move(*lease));
+            app.Addons.Add(std::move(*lease));
             return Reply{std::format("requiring addon {}; clients get it on their next connect.", id.Value)};
         });
 

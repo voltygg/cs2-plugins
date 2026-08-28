@@ -24,22 +24,22 @@ class InvalidCvarDetector
 public:
     InvalidCvarDetector(AntiCheatManager& manager, VoltMod::Runtime& runtime) : _manager(manager), _rt(runtime) {}
 
-    /** Start the poll pump. Idempotent. */
+    /** Start the repeating poll timer. Idempotent. */
     void Initialize();
 
-    /** A player is in the server: arm their first poll. */
+    /** A player is in the server: schedule their first poll. */
     void OnFullyConnected(int slot);
 
     void OnSlotChanged(int slot);
     void Reset();
 
-    /** Seconds until @p slot's next poll, or 0 when it is not armed. Diagnostics only. */
+    /** Seconds until @p slot's next poll, or 0 when none is scheduled. Diagnostics only. */
     double PollsIn(int slot, double nowSec) const;
 
 private:
     struct SlotState
     {
-        double NextPoll = 0.0;  // 0 = not armed
+        double NextPoll = 0.0;  // 0 = not scheduled
         size_t Cursor = 0;      // where this slot's next batch starts in the queried tier
     };
 

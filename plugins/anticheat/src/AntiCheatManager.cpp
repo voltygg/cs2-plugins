@@ -29,15 +29,13 @@ void AntiCheatManager::Initialize()
     _simulator.Initialize();
 
     // Aim modules share this movement hook.
-    _subs.push_back(_rt.Hooks.Movement.PreCmd +=
-                    [this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); });
-    _subs.push_back(_rt.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
-    _subs.push_back(_rt.Players.FullyConnected += [this](VoltMod::Player& player) { OnPlayerFullyConnected(player); });
-    _subs.push_back(_rt.Players.SettingsChanged +=
-                    [this](VoltMod::Player& player) { OnPlayerSettingsChanged(player); });
+    _subs.On(_rt.Hooks.Movement.PreCmd, [this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); });
+    _subs.On(_rt.Slots.Changed, [this](int slot) { OnSlotChanged(slot); });
+    _subs.On(_rt.Players.FullyConnected, [this](VoltMod::Player& player) { OnPlayerFullyConnected(player); });
+    _subs.On(_rt.Players.SettingsChanged, [this](VoltMod::Player& player) { OnPlayerSettingsChanged(player); });
 
     // Allow client values to settle after sv_cheats is disabled.
-    _subs.push_back(_rt.ConVars.Changed += [this](const VoltMod::ConVarChange& change) {
+    _subs.On(_rt.ConVars.Changed, [this](const VoltMod::ConVarChange& change) {
         if (change.Name == "mp_teammates_are_enemies")
         {
             RefreshTeamRules();

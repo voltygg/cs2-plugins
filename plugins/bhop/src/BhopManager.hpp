@@ -4,12 +4,12 @@
 #include "MovementConVars.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Subscriptions.hpp>
 #include <array>
 #include <chrono>
 #include <cstdint>
 #include <optional>
 #include <unordered_set>
-#include <vector>
 
 namespace Bhop
 {
@@ -77,12 +77,12 @@ private:
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */
-    std::vector<VoltMod::Subscription> _subs;
+    VoltMod::Subscriptions _subs;
 
     /** The Movement pair, held apart from @ref _subs because only grants mode needs it and the
      *  hook arms on its first subscription: dropping these disarms the per-usercmd vtable hook
      *  for a server that never leaves the default mode. Rebuilt by ApplySettings. */
-    std::vector<VoltMod::Subscription> _movementSubs;
+    VoltMod::Subscriptions _movementSubs;
 };
 
 }  // namespace Bhop

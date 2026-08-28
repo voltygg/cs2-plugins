@@ -52,7 +52,7 @@ public:
     bool CanReport(int64_t reporterSteamId, int64_t targetSteamId) const;
 
     /**
-     * Re-check the gate, persist, and arm the reporter's cooldown. @p onDone reports the write
+     * Re-check the gate, persist, and start the reporter's cooldown. @p onDone reports the write
      * outcome on the game thread; false also covers a refused gate. A failed write releases the
      * cooldown, so an outage costs the reporter nothing.
      */
@@ -70,8 +70,8 @@ private:
 
     /** Claim the reporter's next slot before the write (so a double-press can't produce two rows)
      *  and sweep both throttles, this being their only growth point. */
-    void Arm(int64_t reporterSteamId, int64_t targetSteamId, int64_t now);
-    void Release(int64_t reporterSteamId, int64_t targetSteamId);
+    void StartCooldown(int64_t reporterSteamId, int64_t targetSteamId, int64_t now);
+    void ReleaseCooldown(int64_t reporterSteamId, int64_t targetSteamId);
 
     /** Intervals come from reloadable config, so they are passed per call rather than constructed. */
     VoltMod::Throttle<int64_t> _anyTarget;               // reporter -> last report of anyone

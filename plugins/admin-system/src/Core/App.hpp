@@ -19,11 +19,11 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/EffectManager.hpp>
+#include <VoltMod/Core/Subscriptions.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Players/ActionDispatcher.hpp>
 #include <VoltMod/Players/EffectDispatcher.hpp>
 #include <string>
-#include <vector>
 
 namespace AdminSystem
 {
@@ -113,7 +113,7 @@ private:
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */
-    std::vector<VoltMod::Subscription> _subs;
+    VoltMod::Subscriptions _subs;
 };
 
 }  // namespace AdminSystem

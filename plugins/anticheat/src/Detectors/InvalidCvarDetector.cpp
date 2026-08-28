@@ -11,7 +11,7 @@ namespace Anticheat
 
 using VoltMod::Time;
 
-/** Pump cadence only; the per-slot deadlines do the real timing. */
+/** Poll-loop cadence only; the per-slot deadlines do the real timing. */
 static constexpr int64_t PollIntervalMs = 1000;
 
 /** A seed in [1, m-1], the only range std::minstd_rand accepts. */

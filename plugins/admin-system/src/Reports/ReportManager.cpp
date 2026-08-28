@@ -75,7 +75,7 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
         .CreatedAt = now,
     };
 
-    Arm(reporterSteamId, targetSteamId, now);
+    StartCooldown(reporterSteamId, targetSteamId, now);
     Log::Info("Report: {} ({}) reported {} ({}) for '{}' [{}]", report.ReporterName, reporterSteamId, report.TargetName,
               targetSteamId, reasonText, reasonCode);
 
@@ -84,13 +84,13 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
             // The write is the only database-health signal there is, so a failure refunds the
             // attempt rather than costing the reporter a cooldown.
             if (!ok)
-                Release(reporterSteamId, targetSteamId);
+                ReleaseCooldown(reporterSteamId, targetSteamId);
             if (onDone)
                 onDone(ok);
         });
 }
 
-void ReportManager::Arm(int64_t reporterSteamId, int64_t targetSteamId, int64_t now)
+void ReportManager::StartCooldown(int64_t reporterSteamId, int64_t targetSteamId, int64_t now)
 {
     _anyTarget.Acquire(reporterSteamId, now);
     _perTarget.Acquire({reporterSteamId, targetSteamId}, now);
@@ -102,7 +102,7 @@ void ReportManager::Arm(int64_t reporterSteamId, int64_t targetSteamId, int64_t 
     _perTarget.Prune(now, horizon);
 }
 
-void ReportManager::Release(int64_t reporterSteamId, int64_t targetSteamId)
+void ReportManager::ReleaseCooldown(int64_t reporterSteamId, int64_t targetSteamId)
 {
     _anyTarget.Reset(reporterSteamId);
     _perTarget.Reset({reporterSteamId, targetSteamId});

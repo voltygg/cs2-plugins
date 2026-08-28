@@ -1,7 +1,7 @@
 /*
 	Panorama CSS, not web CSS - see docs/custom-ui.md. Selectors are flat, and every panel on the
 	click path has a resolved size. #lab_card holds the visible state and #lab_card.Hidden the
-	hidden one, so showing and hiding is one SetClass call:
+	hidden one, so showing and hiding is one Class call:
 
 	    uilab_class lab_card Hidden 0    -> show
 	    uilab_class lab_card Hidden 1    -> hide

@@ -3,9 +3,9 @@
 #include "Config.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Subscriptions.hpp>
 #include <VoltMod/Ui/Api.hpp>
 #include <string_view>
-#include <vector>
 
 namespace UiLab
 {
@@ -39,7 +39,7 @@ struct App
     bool MenuToggle = false;
 
     /** One lease per workshop addon required, from `uilab_addon`. */
-    std::vector<VoltMod::Subscription> Addons;
+    VoltMod::Subscriptions Addons;
 
     /** Logs every press from every layout while `uilab_clicks 1` is on. The first diagnostic for
      *  a dead button: it tells "the press never arrived" apart from "nothing handled it". */
@@ -52,7 +52,7 @@ private:
     /** Handlers for the current layout's buttons, replaced whenever it is respawned. Declared
      *  last: reverse member destruction stops the handlers before the state they capture, Layout
      *  included, goes away. */
-    std::vector<VoltMod::Subscription> _buttons;
+    VoltMod::Subscriptions _buttons;
 };
 
 }  // namespace UiLab

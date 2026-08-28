@@ -28,10 +28,10 @@ void FunMode::Start()
 
     auto& events = _rt.GameEvents;
 
-    _subs.push_back(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) { ApplyRoundStart(); }));
+    _subs.Add(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) { ApplyRoundStart(); }));
 
     // Apply round rules to late joins.
-    _subs.push_back(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
+    _subs.Add(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
         if (e.Slot >= 0 && _state.IsOn(Toggle::KnifeRound))
             GiveKnifeOnly(e.Slot);
     }));

@@ -20,10 +20,10 @@ public:
         : _manager(manager), _rt(runtime), _detections(detections)
     {}
 
-    /** Start the scan pump. Idempotent. */
+    /** Start the repeating scan timer. Idempotent. */
     void Initialize();
 
-    /** A player is in the server: arm their first scan. */
+    /** A player is in the server: schedule their first scan. */
     void OnFullyConnected(int slot);
 
     void OnSlotChanged(int slot);
@@ -32,7 +32,7 @@ public:
 private:
     struct SlotState
     {
-        double NextScan = 0.0;  // 0 = not armed
+        double NextScan = 0.0;  // 0 = not scheduled
         bool Retried = false;   // the one grace scan for a client whose listener was not up yet
     };
 

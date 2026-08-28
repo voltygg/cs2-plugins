@@ -13,7 +13,7 @@ namespace Anticheat
 
 using VoltMod::Time;
 
-/** Pump cadence only; the per-slot deadlines do the real timing. */
+/** Scan-loop cadence only; the per-slot deadlines do the real timing. */
 static constexpr int64_t ScanIntervalMs = 1000;
 /** First scan this long after full connect; retried once when no listener exists yet. */
 static constexpr double DllInitialScanDelaySec = 10.0;

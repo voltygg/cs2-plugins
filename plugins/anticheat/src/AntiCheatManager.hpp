@@ -19,10 +19,10 @@
 #include "Simulator/CheatSimulator.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Subscriptions.hpp>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <tuple>
-#include <vector>
 
 namespace Anticheat
 {
@@ -123,7 +123,7 @@ private:
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */
-    std::vector<VoltMod::Subscription> _subs;
+    VoltMod::Subscriptions _subs;
 };
 
 }  // namespace Anticheat

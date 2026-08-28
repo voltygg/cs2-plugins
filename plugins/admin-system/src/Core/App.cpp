@@ -57,8 +57,8 @@ void App::InstallPolicy()
 // the managers they touch are destroyed.
 void App::RegisterPlayerLifecycle()
 {
-    _subs.push_back(Runtime.Players.Connected += [this](Player& player) { OnPlayerConnect(player); });
-    _subs.push_back(Runtime.Players.Disconnected += [this](Player& player) { OnPlayerDisconnect(player); });
+    _subs.On(Runtime.Players.Connected, [this](Player& player) { OnPlayerConnect(player); });
+    _subs.On(Runtime.Players.Disconnected, [this](Player& player) { OnPlayerDisconnect(player); });
 }
 
 void App::OnPlayerConnect(Player& player)
@@ -129,7 +129,7 @@ StageResult App::StartPunishments()
 
     // Every minute: sweep expired bans/mutes, pick up admin freezes issued on other servers
     // sharing this database, and advance this server's registry heartbeat.
-    _subs.push_back(Runtime.Scheduler.Repeat(60'000, [this] {
+    _subs.Add(Runtime.Scheduler.Repeat(60'000, [this] {
         Punishments.ExpireOldPunishments();
         Freeze.RefreshFromDatabase();
         Database::ServerRepository{Db}.Heartbeat(Config.GetServer().tag);
@@ -145,19 +145,18 @@ StageResult App::StartPunishments()
 void App::RegisterGameEventListeners()
 {
     auto& events = Runtime.GameEvents;
-    _subs.push_back(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) {
+    _subs.Add(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) {
         // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
         if (e.VictimSlot >= 0)
             Effects.CancelOnDeath(e.VictimSlot);
     }));
-    _subs.push_back(events.On<VoltMod::RoundEnd>([this](const VoltMod::RoundEnd&) {
+    _subs.Add(events.On<VoltMod::RoundEnd>([this](const VoltMod::RoundEnd&) {
         Effects.CancelRound();
         // A map queued from the menu or by a passing vote lands here rather than mid-round,
         // after a pause long enough to read the scoreboard. No-op when nothing is queued.
         MapCycle.ChangeToNext();
     }));
-    _subs.push_back(
-        events.On<VoltMod::RoundPrestart>([this](const VoltMod::RoundPrestart&) { Effects.CancelRound(); }));
+    _subs.Add(events.On<VoltMod::RoundPrestart>([this](const VoltMod::RoundPrestart&) { Effects.CancelRound(); }));
 }
 
 // Add plugin status sections and require a live database for overall health.

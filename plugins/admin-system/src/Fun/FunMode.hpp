@@ -3,7 +3,7 @@
 #include "FunToggles.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Subscription.hpp>
+#include <VoltMod/Core/Subscriptions.hpp>
 #include <VoltMod/Engine/ConVarOverrides.hpp>
 #include <array>
 #include <string_view>
@@ -100,7 +100,7 @@ private:
     VoltMod::ConVarOverrides _overrides;
     /** Listener registrations, released together and declared last so they stop before the
      *  state their callbacks read. */
-    std::vector<VoltMod::Subscription> _subs;
+    VoltMod::Subscriptions _subs;
 };
 
 }  // namespace AdminSystem::Fun
