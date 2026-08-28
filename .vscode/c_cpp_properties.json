@@ -2,14 +2,64 @@
   "configurations": [
     {
       "name": "Windows",
-      "compileCommands": "${workspaceFolder}/build/windows-msvc-release/compile_commands.json",
+      "compileCommands": [
+        "${workspaceFolder}/build/windows-msvc-release/compile_commands.json",
+        "${workspaceFolder}/vendor/voltmod/build/windows-msvc-release/compile_commands.json"
+      ],
+      "includePath": [
+        "${workspaceFolder}/references/hl2sdk/public",
+        "${workspaceFolder}/references/hl2sdk/public/engine",
+        "${workspaceFolder}/references/hl2sdk/public/mathlib",
+        "${workspaceFolder}/references/hl2sdk/public/tier0",
+        "${workspaceFolder}/references/hl2sdk/public/tier1",
+        "${workspaceFolder}/references/hl2sdk/public/entity2",
+        "${workspaceFolder}/references/hl2sdk/game/shared",
+        "${workspaceFolder}/references/hl2sdk/game/server",
+        "${workspaceFolder}/references/hl2sdk/common"
+      ],
+      "defines": [
+        "COMPILER_MSVC",
+        "COMPILER_MSVC64",
+        "META_IS_SOURCE2",
+        "NOMINMAX",
+        "PLATFORM_64BITS",
+        "RAD_TELEMETRY_DISABLED",
+        "SOURCE_ENGINE=25",
+        "WIN32",
+        "WIN64",
+        "X64BITS"
+      ],
       "cStandard": "c17",
       "cppStandard": "c++23",
       "intelliSenseMode": "windows-msvc-x64"
     },
     {
       "name": "Linux",
-      "compileCommands": "${workspaceFolder}/build/linux-steamrt-release/compile_commands.json",
+      "compileCommands": [
+        "${workspaceFolder}/build/linux-steamrt-release/compile_commands.json",
+        "${workspaceFolder}/vendor/voltmod/build/linux-steamrt-release/compile_commands.json"
+      ],
+      "includePath": [
+        "${workspaceFolder}/references/hl2sdk/public",
+        "${workspaceFolder}/references/hl2sdk/public/engine",
+        "${workspaceFolder}/references/hl2sdk/public/mathlib",
+        "${workspaceFolder}/references/hl2sdk/public/tier0",
+        "${workspaceFolder}/references/hl2sdk/public/tier1",
+        "${workspaceFolder}/references/hl2sdk/public/entity2",
+        "${workspaceFolder}/references/hl2sdk/game/shared",
+        "${workspaceFolder}/references/hl2sdk/game/server",
+        "${workspaceFolder}/references/hl2sdk/common"
+      ],
+      "defines": [
+        "COMPILER_GCC",
+        "META_IS_SOURCE2",
+        "PLATFORM_64BITS",
+        "POSIX",
+        "RAD_TELEMETRY_DISABLED",
+        "SOURCE_ENGINE=25",
+        "_LINUX",
+        "linux"
+      ],
       "cStandard": "c17",
       "cppStandard": "c++23",
       "intelliSenseMode": "linux-gcc-x64"
