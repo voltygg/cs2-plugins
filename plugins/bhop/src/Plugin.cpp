@@ -17,7 +17,7 @@ VoltMod::PluginInfo BhopPlugin::Info() const
     });
 }
 
-bool BhopPlugin::OnLoad(VoltMod::Runtime& runtime, bool late)
+bool BhopPlugin::OnLoad(VoltMod::Runtime& runtime)
 {
     _app.emplace(runtime);
     return _app->Start();

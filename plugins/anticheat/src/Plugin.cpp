@@ -17,13 +17,13 @@ VoltMod::PluginInfo AnticheatPlugin::Info() const
     });
 }
 
-bool AnticheatPlugin::OnLoad(VoltMod::Runtime& runtime, bool /*late*/)
+bool AnticheatPlugin::OnLoad(VoltMod::Runtime& runtime)
 {
     _app.emplace(runtime);
     return _app->Start();
 }
 
-void AnticheatPlugin::OnServerStartup(const char* /*mapName*/)
+void AnticheatPlugin::OnServerStartup(std::string_view /*mapName*/)
 {
     _app->AntiCheat.OnMapStart();
 }

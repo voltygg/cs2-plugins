@@ -14,9 +14,9 @@ class AnticheatPlugin final : public VoltMod::MetamodPlugin
 {
 protected:
     VoltMod::PluginInfo Info() const override;
-    bool OnLoad(VoltMod::Runtime& runtime, bool late) override;
+    bool OnLoad(VoltMod::Runtime& runtime) override;
     void OnUnload() override { _app.reset(); }
-    void OnServerStartup(const char* mapName) override;
+    void OnServerStartup(std::string_view mapName) override;
 
 private:
     std::optional<Anticheat::App> _app;

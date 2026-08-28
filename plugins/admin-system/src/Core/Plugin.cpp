@@ -28,7 +28,7 @@ PluginInfo AdminSystemPlugin::Info() const
     });
 }
 
-bool AdminSystemPlugin::OnLoad(VoltMod::Runtime& runtime, bool /*late*/)
+bool AdminSystemPlugin::OnLoad(VoltMod::Runtime& runtime)
 {
     Log::Info("Loading v{}...", Info().Version);
     _app.emplace(runtime, Info().Version);

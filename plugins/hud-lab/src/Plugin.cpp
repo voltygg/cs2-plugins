@@ -17,7 +17,7 @@ VoltMod::PluginInfo HudLabPlugin::Info() const
     });
 }
 
-bool HudLabPlugin::OnLoad(VoltMod::Runtime& runtime, bool late)
+bool HudLabPlugin::OnLoad(VoltMod::Runtime& runtime)
 {
     _app.emplace(runtime);
     return _app->Start();

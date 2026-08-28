@@ -15,7 +15,7 @@ class AdminSystemPlugin final : public VoltMod::MetamodPlugin
 {
 protected:
     VoltMod::PluginInfo Info() const override;
-    bool OnLoad(VoltMod::Runtime& runtime, bool late) override;
+    bool OnLoad(VoltMod::Runtime& runtime) override;
     void OnUnload() override { _app.reset(); }
     bool OnPlayerChat(VoltMod::Player* player, std::string_view message, bool teamChat) override;
     void OnRegisterHooks(VoltMod::Runtime& runtime) override;
