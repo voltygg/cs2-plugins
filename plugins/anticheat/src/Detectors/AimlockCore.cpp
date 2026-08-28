@@ -10,7 +10,7 @@ namespace Anticheat
 {
 
 static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
-static constexpr int RearmTicks = static_cast<int>(TickRate * 0.5f);            // 32
+static constexpr int RearmTicks = static_cast<int>(TickRate * 0.5f);     // 32
 static constexpr int LagSearchRadius = 2;
 static constexpr float PlayerHalfWidth = 16.0f;  // the CS2 hull is 32 units wide, measured from its center
 static constexpr float MinimumDistance = 200.0f;
