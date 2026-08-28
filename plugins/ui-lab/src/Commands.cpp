@@ -3,7 +3,11 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/Api.hpp>
 #include <VoltMod/Ui/Api.hpp>
+#include <VoltMod/Unsafe/Api.hpp>
 #include <format>
+#include <networksystem/inetworkmessages.h>
+#include <networksystem/inetworkserializer.h>
+#include <networksystem/iprotobufbinding.h>
 #include <optional>
 #include <string>
 #include <utility>
@@ -162,6 +166,35 @@ void RegisterCommands(App& app)
         .Run([&app](Caller, Args::Word panel, Args::Word className) -> Result<Reply> {
             return Done(app.Layout.ResetClass(panel.Value, className.Value),
                         std::format("{} class '{}' left to the layout.", panel.Value, className.Value));
+        });
+
+    // UiClicks needs the click message's id, and the registry has not answered to the name the
+    // proto declares. This says what a given name does resolve to, so the right one can be found
+    // by asking rather than by guessing in C++.
+    commands.Add("uilab_msg")
+        .Describe("Look a network message up by exact then partial name: uilab_msg <name>")
+        .ConsoleOnly()
+        .Run([&app](Caller c, Args::Rest name) -> Result<Reply> {
+            auto* messages = app.Runtime.Unsafe.Interfaces.NetworkMessages;
+            if (!messages)
+                return std::unexpected(VoltMod::Error::NotReady("no INetworkMessages interface"));
+
+            for (const char* how : {"exact", "partial"})
+            {
+                INetworkMessageInternal* found = how[0] == 'e'
+                                                     ? messages->FindNetworkMessage(name.Value.c_str())
+                                                     : messages->FindNetworkMessagePartial(name.Value.c_str());
+                if (!found)
+                {
+                    c.SayRaw(std::format("  {}: no match", how));
+                    continue;
+                }
+
+                NetMessageInfo_t* info = found->GetNetMessageInfo();
+                const char* resolved = info && info->m_pBinding ? info->m_pBinding->GetName() : "?";
+                c.SayRaw(std::format("  {}: '{}' id {}", how, resolved, info ? info->m_MessageId : -1));
+            }
+            return Reply::Silent();
         });
 
     // How the layout actually reaches a client that does not already have it: put the compiled
