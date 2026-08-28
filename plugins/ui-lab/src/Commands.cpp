@@ -205,21 +205,20 @@ void RegisterCommands(App& app)
             if (!messages)
                 return std::unexpected(VoltMod::Error::NotReady("no INetworkMessages interface"));
 
-            for (const char* how : {"exact", "partial"})
-            {
-                INetworkMessageInternal* found = how[0] == 'e'
-                                                     ? messages->FindNetworkMessage(name.Value.c_str())
-                                                     : messages->FindNetworkMessagePartial(name.Value.c_str());
+            const auto report = [&c](const char* how, INetworkMessageInternal* found) {
                 if (!found)
                 {
                     c.SayRaw(std::format("  {}: no match", how));
-                    continue;
+                    return;
                 }
 
                 NetMessageInfo_t* info = found->GetNetMessageInfo();
                 const char* resolved = info && info->m_pBinding ? info->m_pBinding->GetName() : "?";
                 c.SayRaw(std::format("  {}: '{}' id {}", how, resolved, info ? info->m_MessageId : -1));
-            }
+            };
+
+            report("exact", messages->FindNetworkMessage(name.Value.c_str()));
+            report("partial", messages->FindNetworkMessagePartial(name.Value.c_str()));
             return Reply::Silent();
         });
 
