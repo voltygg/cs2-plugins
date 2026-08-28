@@ -4,7 +4,7 @@
 #include "Commands.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Menu/MenuManager.hpp>
+#include <VoltMod/Menu/Html/HtmlMenuManager.hpp>
 #include <VoltMod/Runtime.hpp>
 
 using VoltMod::Caller;
@@ -32,7 +32,7 @@ void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app)
             if (!menu)
                 return c.Fail("cmd.menuFailed");
 
-            app.Runtime.Menus.OpenMenu(c.Slot, menu);
+            app.Runtime.HtmlMenus.OpenMenu(c.Slot, menu);
             return Reply::Silent();  // the menu is the feedback
         });
 }

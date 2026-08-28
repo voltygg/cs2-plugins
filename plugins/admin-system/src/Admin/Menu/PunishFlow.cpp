@@ -78,7 +78,7 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
 static PunishFlowT::Ptr MakeBaseFlow(App& app, PendingPunishment pending)
 {
     auto type = pending.Type;
-    return PunishFlowT::Create(app.Runtime.Menus, std::move(pending))
+    return PunishFlowT::Create(app.Runtime.HtmlMenus, std::move(pending))
         ->OnValidate([&app](int slot, const PendingPunishment& p) { return ValidatePending(app, slot, p); })
         ->WithConfirm(
             [&app, type](int slot) {

@@ -15,7 +15,7 @@
 #include <VoltMod/Entities/Entity.hpp>
 #include <VoltMod/Entities/PawnPredicates.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Menu/MenuManager.hpp>
+#include <VoltMod/Menu/Html/HtmlMenuManager.hpp>
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -85,7 +85,7 @@ std::shared_ptr<VoltMod::MenuView> BuildControlMenu(AdminSystem::App& app, int a
             auto& players = app.Runtime.Players;
             auto actions = BuildControlActionsMenu(app, players.RefFor(viewerSlot), players.RefFor(targetSlot));
             if (actions)
-                app.Runtime.Menus.OpenMenu(viewerSlot, actions);
+                app.Runtime.HtmlMenus.OpenMenu(viewerSlot, actions);
         },
         tr.Get("common.noPlayers", adminSlot));
 
@@ -102,7 +102,7 @@ std::shared_ptr<VoltMod::MenuView> BuildControlActionsMenu(AdminSystem::App& app
     if (!targetPlayer || !adminPlayer)
         return nullptr;
 
-    MenuBuilder builder(app.Runtime.Menus,
+    MenuBuilder builder(app.Runtime.HtmlMenus,
                         std::format("{}: {}", tr.Get("category.control", admin.Slot), targetPlayer->Name()));
     builder.For(admin, target, &app.Effects);
     bool hasS = builder.Allowed(Flag(Permission::Control));

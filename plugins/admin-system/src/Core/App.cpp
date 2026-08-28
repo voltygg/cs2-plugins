@@ -215,7 +215,7 @@ bool App::Start()
         RegisterPlayerLifecycle();
         // Freeze the player while an admin menu is open so WASD navigation doesn't also walk
         // them around.
-        Runtime.Menus.SetFreezePlayer(true);
+        Runtime.HtmlMenus.SetFreezePlayer(true);
         return StageResult::Ok();
     });
 

@@ -30,7 +30,7 @@ using VoltMod::MenuBuilder;
 /** Taking the server away from everyone confirms rather than firing on a single click. */
 static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
 {
-    VoltMod::Flow<MapEntry>::Create(app.Runtime.Menus, std::move(map))
+    VoltMod::Flow<MapEntry>::Create(app.Runtime.HtmlMenus, std::move(map))
         ->OnValidate([&app](int slot, const MapEntry&) -> std::optional<std::string> {
             if (!MayUse(app, slot, Permission::Map))
                 return "punish.notAllowed";
