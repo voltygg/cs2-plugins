@@ -8,8 +8,11 @@
     "charliermarsh.ruff",
     "ms-python.mypy-type-checker",
 
-    // JSON
+    // JSON and CSS
     "esbenp.prettier-vscode",
+
+    // Panorama XML layouts
+    "redhat.vscode-xml",
 
     // Database
     "mtxr.sqltools"
