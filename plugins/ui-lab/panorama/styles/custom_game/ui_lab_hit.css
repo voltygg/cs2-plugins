@@ -1,0 +1,83 @@
+/*
+	Styles for the hit-test probe in ui_lab_hit.xml. Everything a Button sits in is identical
+	across the six columns except the one property being tested, so a column that stops taking
+	clicks is evidence about that property and nothing else.
+
+	.Probe lights up on hover. Hover is the same hit test a click uses, so a Button that never
+	highlights is one the client is not testing - visible without reading a log.
+*/
+
+.Root {
+  width: 100%;
+  height: 100%;
+}
+
+.Grid {
+  width: 1080px;
+  height: 300px;
+  horizontal-align: center;
+  vertical-align: center;
+  flow-children: right;
+  background-color: rgba(0, 0, 0, 0.75);
+  border: 1px solid gold;
+}
+
+/* Resolved on both axes, so the only unresolved box in any column is .Box itself. */
+.Cell {
+  width: 180px;
+  height: 100%;
+  flow-children: down;
+}
+
+.Cap {
+  width: 100%;
+  height: 24px;
+  font-size: 15px;
+  color: gold;
+  text-align: center;
+}
+
+.Box {
+  width: 100%;
+  flow-children: down;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Exactly what A's fit-children pass computes: 3 * (40 + 4). */
+.Box--fixed {
+  height: 132px;
+}
+
+.Box--pad {
+  padding: 16px;
+}
+
+.Box--vac {
+  vertical-align: center;
+}
+
+/* A collapsed last child, which is what #vm_prompt is in the menu for most of its life. */
+.Ghost {
+  width: 100%;
+  height: 40px;
+  visibility: collapse;
+}
+
+.Probe {
+  width: 100%;
+  height: 40px;
+  margin-bottom: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 16px;
+}
+
+.Probe Label {
+  horizontal-align: center;
+  vertical-align: center;
+}
+
+.Probe:hover {
+  background-color: gold;
+  color: black;
+}

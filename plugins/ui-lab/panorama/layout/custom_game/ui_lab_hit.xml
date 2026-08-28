@@ -1,0 +1,83 @@
+<root>
+  <!--
+    Hit-test probe. Six identical columns of three identical Buttons; the only thing that differs
+    is the container holding them, so whichever column stops taking clicks names the cause.
+
+      A  hit_a1..3  fit-children height            (the baseline)
+      B  hit_b1..3  height: 132px                  (exactly what A computes)
+      C  hit_c1..3  fit-children + padding
+      D  hit_d1..3  fit-children + vertical-align
+      E  hit_e1..3  fit-children + a collapsed last child
+      F  hit_f1..3  C + D + E at once              (what #vm_root in voltmod_menu is)
+
+    Every Probe lights up on hover, so the answer is visible without clicking: a Button the client
+    is not hit-testing never highlights. Click the ones that do to confirm the press arrives.
+
+      uilab_spawn ui_lab_hit
+      uilab_capture 1
+      uilab_clicks 1
+  -->
+  <styles>
+    <include src="file://{resources}/styles/custom_game/ui_lab_hit.css" />
+  </styles>
+
+  <Panel class="Root" hittest="false">
+    <Panel class="Grid" hittest="true">
+      <Panel class="Cell" hittest="true">
+        <Label class="Cap" text="A fit" />
+        <Panel class="Box" hittest="true">
+          <Button id="hit_a1" class="Probe"><Label text="A1" /></Button>
+          <Button id="hit_a2" class="Probe"><Label text="A2" /></Button>
+          <Button id="hit_a3" class="Probe"><Label text="A3" /></Button>
+        </Panel>
+      </Panel>
+
+      <Panel class="Cell" hittest="true">
+        <Label class="Cap" text="B fixed" />
+        <Panel class="Box Box--fixed" hittest="true">
+          <Button id="hit_b1" class="Probe"><Label text="B1" /></Button>
+          <Button id="hit_b2" class="Probe"><Label text="B2" /></Button>
+          <Button id="hit_b3" class="Probe"><Label text="B3" /></Button>
+        </Panel>
+      </Panel>
+
+      <Panel class="Cell" hittest="true">
+        <Label class="Cap" text="C padding" />
+        <Panel class="Box Box--pad" hittest="true">
+          <Button id="hit_c1" class="Probe"><Label text="C1" /></Button>
+          <Button id="hit_c2" class="Probe"><Label text="C2" /></Button>
+          <Button id="hit_c3" class="Probe"><Label text="C3" /></Button>
+        </Panel>
+      </Panel>
+
+      <Panel class="Cell" hittest="true">
+        <Label class="Cap" text="D valign" />
+        <Panel class="Box Box--vac" hittest="true">
+          <Button id="hit_d1" class="Probe"><Label text="D1" /></Button>
+          <Button id="hit_d2" class="Probe"><Label text="D2" /></Button>
+          <Button id="hit_d3" class="Probe"><Label text="D3" /></Button>
+        </Panel>
+      </Panel>
+
+      <Panel class="Cell" hittest="true">
+        <Label class="Cap" text="E collapsed" />
+        <Panel class="Box" hittest="true">
+          <Button id="hit_e1" class="Probe"><Label text="E1" /></Button>
+          <Button id="hit_e2" class="Probe"><Label text="E2" /></Button>
+          <Button id="hit_e3" class="Probe"><Label text="E3" /></Button>
+          <Panel class="Ghost" />
+        </Panel>
+      </Panel>
+
+      <Panel class="Cell" hittest="true">
+        <Label class="Cap" text="F = menu" />
+        <Panel class="Box Box--pad Box--vac" hittest="true">
+          <Button id="hit_f1" class="Probe"><Label text="F1" /></Button>
+          <Button id="hit_f2" class="Probe"><Label text="F2" /></Button>
+          <Button id="hit_f3" class="Probe"><Label text="F3" /></Button>
+          <Panel class="Ghost" />
+        </Panel>
+      </Panel>
+    </Panel>
+  </Panel>
+</root>
