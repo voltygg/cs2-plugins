@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <tuple>
 
 namespace AdminSystem::Database
@@ -31,8 +32,8 @@ struct Ban
     bool IsPermanent() const { return ExpiresAt == 0; }
     bool IsExpired() const { return !IsPermanent() && VoltMod::Time::IsExpired(ExpiresAt); }
 
-    static constexpr const char* Table = "bans";
-    static constexpr const char* Key = "id";
+    static constexpr std::string_view Table = "bans";
+    static constexpr std::string_view Key = "id";
     static constexpr auto Columns()
     {
         using VoltMod::Column;

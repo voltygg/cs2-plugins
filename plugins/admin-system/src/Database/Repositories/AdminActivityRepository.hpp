@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <string_view>
 
 namespace AdminSystem::Database
 {
@@ -27,8 +28,8 @@ class AdminActivityRepository
 public:
     explicit AdminActivityRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
 
-    void Record(int64_t adminSteamId, const std::string& adminName, const std::string& action, int64_t targetSteamId,
-                const std::string& targetName, const std::string& detail, const std::string& serverTag);
+    void Record(int64_t adminSteamId, std::string_view adminName, std::string_view action, int64_t targetSteamId,
+                std::string_view targetName, std::string_view detail, std::string_view serverTag);
 
     /** Per-type action counts for one admin since @p sinceEpoch, across all servers; delivered
      *  on the game thread (FIFO after any audit insert enqueued before it). */

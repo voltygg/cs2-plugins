@@ -23,7 +23,7 @@ void MapCycleState::VerifyAgainstEngine()
         // answer for it here; only plain names are checkable.
         if (map.WorkshopId != 0)
             continue;
-        if (!_rt.Map.IsValid(map.Name.c_str()))
+        if (!_rt.Map.IsValid(map.Name))
             Log::Warn("maps.cycle: '{}' is not a map this server can load.", map.Name);
     }
 }
@@ -46,7 +46,7 @@ void MapCycleState::ChangeAfter(const MapEntry& map, int64_t delayMs)
         if (map.WorkshopId != 0)
             maps.ChangeToWorkshop(map.WorkshopId);
         else
-            maps.ChangeLevel(map.Name.c_str());
+            maps.ChangeLevel(map.Name);
     });
 }
 

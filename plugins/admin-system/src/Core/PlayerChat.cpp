@@ -32,7 +32,7 @@ static std::string MuteExpiryText(VoltMod::Translations& tr, int64_t expiresAt, 
 }
 
 template <class TMute>
-void PlayerChat::ReplyMuteNotice(int slot, const char* noticeKey, const std::optional<TMute>& mute)
+void PlayerChat::ReplyMuteNotice(int slot, std::string_view noticeKey, const std::optional<TMute>& mute)
 {
     auto& tr = _rt.Translations;
     if (!mute)

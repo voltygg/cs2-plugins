@@ -9,6 +9,7 @@
 #include <VoltMod/Runtime.hpp>
 #include <chrono>
 #include <string>
+#include <string_view>
 
 using AdminSystem::Punishments::IssuePunishment;
 using AdminSystem::Punishments::PunishType;
@@ -26,7 +27,7 @@ namespace AdminSystem::Commands
 /** Shared body of the kick/ban/mute/warn handlers: issue via the common entry point and
  *  reply in the caller's language. */
 static Result<Reply> Punish(App& app, const Caller& c, Player& target, PunishType type, const std::string& reason,
-                            std::chrono::seconds duration, const char* successKey, const char* failedKey)
+                            std::chrono::seconds duration, std::string_view successKey, std::string_view failedKey)
 {
     // Captured before issuing: bans and kicks can drop the target immediately.
     std::string targetName = target.Name();

@@ -7,14 +7,17 @@
 namespace AdminSystem::Database
 {
 
-void AdminActivityRepository::Record(int64_t adminSteamId, const std::string& adminName, const std::string& action,
-                                     int64_t targetSteamId, const std::string& targetName, const std::string& detail,
-                                     const std::string& serverTag)
+void AdminActivityRepository::Record(int64_t adminSteamId, std::string_view adminName, std::string_view action,
+                                     int64_t targetSteamId, std::string_view targetName, std::string_view detail,
+                                     std::string_view serverTag)
 {
+    // The insert is enqueued for the database worker, so every text value is copied into the
+    // parameter pack here rather than left pointing at the caller's storage.
     _db.Exec("record_admin_activity",
              "INSERT INTO admin_activity (admin_steam_id, admin_name, action, target_steam_id, "
              "target_name, detail, server_tag) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-             pqxx::params{adminSteamId, adminName, action, targetSteamId, targetName, detail, serverTag});
+             pqxx::params{adminSteamId, std::string(adminName), std::string(action), targetSteamId,
+                          std::string(targetName), std::string(detail), std::string(serverTag)});
 }
 
 void AdminActivityRepository::CountSinceAsync(int64_t adminSteamId, int64_t sinceEpoch,

@@ -6,6 +6,7 @@
 #include <VoltMod/Core/Time.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <format>
+#include <string_view>
 
 namespace AdminSystem::Punishments
 {
@@ -14,7 +15,7 @@ using VoltMod::Strings;
 using VoltMod::Time;
 
 /** Between the reason, the expiry, and the appeal link on the disconnect screen. */
-static constexpr const char* PieceSeparator = " | ";
+static constexpr std::string_view PieceSeparator = " | ";
 
 std::string BuildBanNotice(VoltMod::Translations& translations, const Core::AppealSettings& appeal,
                            const std::string& reason, int64_t expiresAt, int64_t targetSteamId, int slot)

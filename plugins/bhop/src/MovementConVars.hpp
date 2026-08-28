@@ -5,6 +5,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/Api.hpp>
 #include <cstddef>
+#include <string_view>
 #include <vector>
 
 namespace Bhop
@@ -68,7 +69,7 @@ private:
 
     /** Resolve @p name and record it with @p value, warning when the server does not have it. */
     template <class T>
-    void Add(const char* name, T value, std::vector<Override<T>>& into);
+    void Add(std::string_view name, T value, std::vector<Override<T>>& into);
 
     void RestoreGlobal();
 

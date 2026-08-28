@@ -8,6 +8,7 @@
 #include <VoltMod/Runtime.hpp>
 #include <functional>
 #include <string>
+#include <string_view>
 
 namespace AdminSystem::Weapons
 {
@@ -24,7 +25,7 @@ using Admin::Actions::OptKey;
  */
 static WeaponActionResult RunWeaponAction(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target,
                                           const std::function<bool(const ActionContext&)>& body,
-                                          const char* broadcastKey)
+                                          std::string_view broadcastKey)
 {
     auto outcome = WeaponActionResult::NotAllowed;
 
@@ -43,7 +44,7 @@ static WeaponActionResult RunWeaponAction(App& app, VoltMod::PlayerRef admin, Vo
                                    return std::nullopt;
                                }
                                outcome = WeaponActionResult::Ok;
-                               return broadcastKey;
+                               return std::string(broadcastKey);
                            }});
 
     return outcome;
@@ -55,7 +56,7 @@ WeaponActionResult GiveWeapon(App& app, VoltMod::PlayerRef admin, VoltMod::Playe
     auto& items = app.Runtime.World.Items;
     return RunWeaponAction(
         app, admin, target,
-        [&items, &classname](const ActionContext& ctx) { return items.Give(ctx.TargetPawn(), classname.c_str()); },
+        [&items, &classname](const ActionContext& ctx) { return items.Give(ctx.TargetPawn(), classname); },
         "broadcast.gaveWeapon");
 }
 

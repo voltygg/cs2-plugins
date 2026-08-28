@@ -65,7 +65,7 @@ private:
     /** The red "you are muted" line plus its optional reason, for either mute kind. The two
      *  entities share ExpiresAt/Reason, so the notice differs only in which key names it. */
     template <class TMute>
-    void ReplyMuteNotice(int slot, const char* noticeKey, const std::optional<TMute>& mute);
+    void ReplyMuteNotice(int slot, std::string_view noticeKey, const std::optional<TMute>& mute);
 
     VoltMod::Throttle<int> _voiceMuteNotice{MuteNoticeIntervalSec};
     VoltMod::Throttle<int> _textMuteNotice{MuteNoticeIntervalSec};

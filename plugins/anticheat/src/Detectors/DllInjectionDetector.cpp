@@ -87,7 +87,7 @@ void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
     // cannot leave this detector checking a stale list.
     std::vector<std::string_view> matches;
     for (const std::string& name : _detections.Get().dllEventBlacklist)
-        if (_rt.GameEvents.ClientListensTo(slot, name.c_str()))
+        if (_rt.GameEvents.ClientListensTo(slot, name))
             matches.push_back(name);
     if (matches.empty())
         return;

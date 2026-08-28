@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace AdminSystem::Admin
@@ -58,8 +59,8 @@ public:
      * then runs the auto-freeze rate check for the acting admin when abuseProtection is
      * enabled (console and root admins are exempt).
      */
-    void RecordPunishment(int64_t adminSteamId, const std::string& adminName, const std::string& action,
-                          int64_t targetSteamId, const std::string& targetName, const std::string& detail);
+    void RecordPunishment(int64_t adminSteamId, std::string_view adminName, std::string_view action,
+                          int64_t targetSteamId, std::string_view targetName, std::string_view detail);
 
     /** Tell a frozen admin their privileges are suspended, if they are on this server. */
     void NotifyFrozen(int64_t steamId);
@@ -78,15 +79,15 @@ private:
     VoltMod::PerSlot<VoltMod::Subscription> _pendingNotice;
 
     /** Plain admin_activity write, no enforcement attached. */
-    void RecordAudit(int64_t adminSteamId, const std::string& adminName, const std::string& action,
-                     int64_t targetSteamId, const std::string& targetName, const std::string& detail);
+    void RecordAudit(int64_t adminSteamId, std::string_view adminName, std::string_view action, int64_t targetSteamId,
+                     std::string_view targetName, std::string_view detail);
 
     /** Shared body of manual + automatic freezing: persist, cache, audit, notify. The differing
      *  log line and broadcast stay at the call sites. */
     bool ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId, const std::string& byName,
                      const std::string& reason);
 
-    void CheckAutoFreeze(int64_t adminSteamId, const std::string& adminName);
+    void CheckAutoFreeze(int64_t adminSteamId, std::string_view adminName);
 
     std::unordered_map<int64_t, Database::FrozenAdmin> _frozen; /**< keyed by admin steam ID */
 };

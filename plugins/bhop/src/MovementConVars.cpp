@@ -10,7 +10,7 @@ namespace Bhop
 {
 
 template <class T>
-void MovementConVars::Add(const char* name, T value, std::vector<Override<T>>& into)
+void MovementConVars::Add(std::string_view name, T value, std::vector<Override<T>>& into)
 {
     auto cvar = _conVars.Find<T>(name);
     if (!cvar)

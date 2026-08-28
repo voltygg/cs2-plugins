@@ -7,6 +7,7 @@
 #include <format>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -72,7 +73,7 @@ public:
     }
 
 private:
-    static constexpr const char* ActiveWhere = "is_active = true AND (expires_at = 0 OR expires_at > $1)";
+    static constexpr std::string_view ActiveWhere = "is_active = true AND (expires_at = 0 OR expires_at > $1)";
 
     // Distinct prepared-statement name per table, e.g. "voice_mutes_find_all_active".
     std::string Stmt(std::string_view op) const { return std::format("{}_{}", TEntity::Table, op); }

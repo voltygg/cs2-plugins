@@ -79,8 +79,8 @@ bool FreezeManager::Unfreeze(int64_t targetSteamId, int64_t bySteamId, const std
     return true;
 }
 
-void FreezeManager::RecordPunishment(int64_t adminSteamId, const std::string& adminName, const std::string& action,
-                                     int64_t targetSteamId, const std::string& targetName, const std::string& detail)
+void FreezeManager::RecordPunishment(int64_t adminSteamId, std::string_view adminName, std::string_view action,
+                                     int64_t targetSteamId, std::string_view targetName, std::string_view detail)
 {
     RecordAudit(adminSteamId, adminName, action, targetSteamId, targetName, detail);
 
@@ -96,8 +96,8 @@ void FreezeManager::RecordPunishment(int64_t adminSteamId, const std::string& ad
     CheckAutoFreeze(adminSteamId, adminName);
 }
 
-void FreezeManager::RecordAudit(int64_t adminSteamId, const std::string& adminName, const std::string& action,
-                                int64_t targetSteamId, const std::string& targetName, const std::string& detail)
+void FreezeManager::RecordAudit(int64_t adminSteamId, std::string_view adminName, std::string_view action,
+                                int64_t targetSteamId, std::string_view targetName, std::string_view detail)
 {
     Db::AdminActivityRepository{_db}.Record(adminSteamId, adminName, action, targetSteamId, targetName, detail,
                                             _config.GetServer().tag);
@@ -117,14 +117,16 @@ bool FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_
     return true;
 }
 
-void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, const std::string& adminName)
+void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, std::string_view adminName)
 {
     const auto& cfg = _config.GetAbuseProtection();
     int64_t windowStart = Time::Now() - static_cast<int64_t>(cfg.windowMinutes) * 60;
 
     // FIFO on the worker: this count sees the audit insert that triggered the check.
     Db::AdminActivityRepository{_db}.CountSinceAsync(
-        adminSteamId, windowStart, [this, adminSteamId, adminName](Db::ActivityCounts counts) {
+        // The name is copied: the completion runs on a later game frame, long after the caller's
+        // view is gone.
+        adminSteamId, windowStart, [this, adminSteamId, adminName = std::string(adminName)](Db::ActivityCounts counts) {
             const auto& limits = _config.GetAbuseProtection();
             bool tripped = (limits.maxBans > 0 && counts.Bans >= limits.maxBans) ||
                            (limits.maxKicks > 0 && counts.Kicks >= limits.maxKicks) ||

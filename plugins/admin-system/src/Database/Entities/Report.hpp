@@ -3,6 +3,7 @@
 #include <VoltMod/Database/Column.hpp>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <tuple>
 
 namespace AdminSystem::Database
@@ -24,8 +25,8 @@ struct Report
     std::string MapName;
     int64_t CreatedAt = 0;
 
-    static constexpr const char* Table = "player_reports";
-    static constexpr const char* Key = "id";
+    static constexpr std::string_view Table = "player_reports";
+    static constexpr std::string_view Key = "id";
     /** InsertSql/InsertParams write every entry except the key, so the website-owned triage columns
      *  (status/handled_by/handled_at/resolution) are omitted and keep their database defaults. */
     static constexpr auto Columns()

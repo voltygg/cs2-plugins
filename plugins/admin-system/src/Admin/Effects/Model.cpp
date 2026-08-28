@@ -5,6 +5,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <string_view>
 
 namespace AdminSystem::Admin::Effects
 {
@@ -13,24 +14,24 @@ using Actions::ActionContext;
 using VoltMod::Pawn;
 
 // Restore live players to a base team model; respawn restores their selected agent.
-static constexpr const char* DefaultModelT = "characters/models/tm_phoenix/tm_phoenix.vmdl";
-static constexpr const char* DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
+static constexpr std::string_view DefaultModelT = "characters/models/tm_phoenix/tm_phoenix.vmdl";
+static constexpr std::string_view DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
 
-// Spectators and unassigned players have no restore model.
-static const char* DefaultModelForTeam(int team)
+// Spectators and unassigned players have no restore model; SetModel ignores the empty view.
+static std::string_view DefaultModelForTeam(int team)
 {
     if (team == VoltMod::TeamT)
         return DefaultModelT;
     if (team == VoltMod::TeamCT)
         return DefaultModelCt;
-    return nullptr;
+    return {};
 }
 
 const std::vector<FunModel>& FunModels()
 {
     // Use always-mounted assets so every vanilla map can render these models.
     static const std::vector<FunModel> models = {
-        {"Chicken", ChickenModelPath},
+        {"Chicken", std::string(ChickenModelPath)},
         {"Fire Hydrant", "models/props_street/firehydrant.vmdl"},
         {"C4 Bomb", "weapons/models/c4/weapon_c4.vmdl"},
     };
@@ -68,7 +69,7 @@ Effect MakeModel(VoltMod::Runtime& runtime)
                       },
                   .Setup = [&runtime](const ActionContext& ctx, int param) -> EffectInstance {
                       // Dispatch already bounds-checked param and required the target alive.
-                      runtime.World.EntityOps.SetModel(ctx.TargetPawn().Raw(), FunModels()[param].Path.c_str());
+                      runtime.World.EntityOps.SetModel(ctx.TargetPawn().Raw(), FunModels()[param].Path);
 
                       // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
                       // team default when cleared while alive (a no-op on death, where IsAlive is false).
@@ -77,8 +78,7 @@ Effect MakeModel(VoltMod::Runtime& runtime)
                           Pawn pawn = entities.PawnOf(targetSlot);
                           if (!pawn || !pawn.IsAlive())
                               return;
-                          if (const char* def = DefaultModelForTeam(pawn.Team))
-                              ops.SetModel(pawn.Raw(), def);
+                          ops.SetModel(pawn.Raw(), DefaultModelForTeam(pawn.Team));
                       }};
                   }};
 }

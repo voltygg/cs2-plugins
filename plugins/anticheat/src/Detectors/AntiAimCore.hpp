@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <deque>
 #include <optional>
+#include <string_view>
 
 namespace Anticheat
 {
@@ -123,8 +124,8 @@ private:
 
     static void ResetMotion(SlotData& data);
     static void ApplyDecay(SlotData& data, double nowSec);
-    void AddEvidence(SlotData& data, float weight, const char* reason, bool continuous, bool mismatch, double nowSec,
-                     std::optional<Finding>& out);
+    void AddEvidence(SlotData& data, float weight, std::string_view reason, bool continuous, bool mismatch,
+                     double nowSec, std::optional<Finding>& out);
     Command* Find(SlotData& data, int32_t cmdNum);
     /** Defined in AntiAimMotionCore.cpp. */
     void EvaluateMotion(SlotData& data, const Command& command, double nowSec, std::optional<Finding>& out);

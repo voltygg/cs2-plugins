@@ -13,11 +13,10 @@ LagEstimate MeasureVisualLag(VoltMod::Runtime& rt, int slot)
     if (!VoltMod::IsValidSlot(slot) || !rt.World.NetChannels.GetNetInfo(slot))
         return {};
 
-    const char* interp = rt.World.NetChannels.GetUserInfoCvar(slot, "cl_interp_ratio");
-    if (!interp)
+    const std::string_view text = rt.World.NetChannels.GetUserInfoCvar(slot, "cl_interp_ratio");
+    if (text.empty())
         return {};
 
-    const std::string_view text(interp);
     float ratio = 0.0f;
     const auto parsed = std::from_chars(text.data(), text.data() + text.size(), ratio);
     if (parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size())

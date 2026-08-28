@@ -64,7 +64,7 @@ void AntiAimCore::ApplyDecay(SlotData& data, double nowSec)
     data.MismatchScore = std::max(0.0f, data.MismatchScore - elapsed * MismatchScoreDecayPerSecond);
 }
 
-void AntiAimCore::AddEvidence(SlotData& data, float weight, const char* reason, bool continuous, bool mismatch,
+void AntiAimCore::AddEvidence(SlotData& data, float weight, std::string_view reason, bool continuous, bool mismatch,
                               double nowSec, std::optional<Finding>& out)
 {
     if (data.SuppressContinuous)

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace AdminSystem::Admin::Effects
@@ -16,7 +17,7 @@ struct FunModel
 
 /** The chicken model, shared with Fun Mode's chicken-bots round toggle. Precached by
  *  @ref PrecacheModels, so both users get it from the same queue. */
-inline constexpr const char* ChickenModelPath = "models/chicken/chicken.vmdl";
+inline constexpr std::string_view ChickenModelPath = "models/chicken/chicken.vmdl";
 
 /** The curated, hardcoded fun-model list shown in the Effects > Model submenu. */
 const std::vector<FunModel>& FunModels();

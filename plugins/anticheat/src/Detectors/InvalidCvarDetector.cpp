@@ -106,8 +106,8 @@ void InvalidCvarDetector::ReadUserInfo(int slot)
     const bool enforce = _manager.EnforceCheatCvars();
     for (const CvarRule& rule : _manager.InvalidCvars().Rules().UserInfo())
     {
-        const char* value = _rt.World.NetChannels.GetUserInfoCvar(slot, rule.name.c_str());
-        if (!value || *value == '\0')
+        const std::string_view value = _rt.World.NetChannels.GetUserInfoCvar(slot, rule.name);
+        if (value.empty())
             continue;
         _manager.Report(slot, _manager.InvalidCvars().Observe(slot, rule.name, value, enforce));
     }

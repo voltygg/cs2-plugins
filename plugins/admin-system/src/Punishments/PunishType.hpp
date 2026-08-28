@@ -27,7 +27,7 @@ inline std::optional<PunishType> ParsePunishType(std::string_view text)
 }
 
 /** Translation key of the human-facing action name (e.g. "action.ban"). */
-inline const char* ActionTranslationKey(PunishType type)
+inline std::string_view ActionTranslationKey(PunishType type)
 {
     switch (type)
     {
@@ -46,7 +46,7 @@ inline const char* ActionTranslationKey(PunishType type)
 }
 
 /** The admin_activity `action` value for this punishment (audit trail + rate detection). */
-inline const char* AuditActionName(PunishType type)
+inline std::string_view AuditActionName(PunishType type)
 {
     switch (type)
     {

@@ -76,15 +76,18 @@ bool CheatSimulator::Enabled() const
     return _config.Get().anticheat.debug.simulator;
 }
 
-int CheatSimulator::ResolveSlot(const char* arg)
+int CheatSimulator::ResolveSlot(std::string_view arg)
 {
-    if (std::strlen(arg) > 10)  // too long to be a slot index; treat as a steamid64
+    const auto number = VoltMod::ParseInt64(arg);
+    if (!number)
+        return -1;
+
+    if (arg.size() > 10)  // too long to be a slot index; treat as a steamid64
     {
-        const int64_t steamId = std::strtoll(arg, nullptr, 10);
-        auto* player = _rt.Players.BySteamId(steamId);
+        auto* player = _rt.Players.BySteamId(*number);
         return player ? player->Slot() : -1;
     }
-    return std::atoi(arg);
+    return static_cast<int>(*number);
 }
 
 void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)

@@ -14,7 +14,7 @@
 namespace Anticheat
 {
 
-inline constexpr const char* DetectionDataPath = "addons/anticheat/configs/detections.jsonc";
+inline constexpr std::string_view DetectionDataPath = "addons/anticheat/configs/detections.jsonc";
 
 /** How the value reaches us. A convar must appear in one tier only: the two share a latch and
  *  would flip it back and forth against each other. */
@@ -44,7 +44,8 @@ namespace Internal
 {
 
 template <class TEnum, size_t N>
-TEnum ParseToken(const nlohmann::json& value, const char* field, const std::pair<std::string_view, TEnum> (&names)[N])
+TEnum ParseToken(const nlohmann::json& value, std::string_view field,
+                 const std::pair<std::string_view, TEnum> (&names)[N])
 {
     if (!value.is_string())
         throw nlohmann::json::type_error::create(302, std::string(field) + " must be a string", &value);

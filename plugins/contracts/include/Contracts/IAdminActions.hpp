@@ -27,7 +27,7 @@ enum class BanResult : int
  */
 struct IAdminActions
 {
-    static constexpr const char* InterfaceName = "cs2plugins.IAdminActions/1";
+    static constexpr std::string_view InterfaceName = "cs2plugins.IAdminActions/1";
 
     /** Ban @p steamId for @p durationSec seconds, 0 being permanent. @p reason is copied
      *  before this returns. */

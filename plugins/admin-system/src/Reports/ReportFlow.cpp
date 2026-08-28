@@ -27,7 +27,8 @@ namespace AdminSystem::Reports
 using ReportFlowT = VoltMod::Flow<PendingReport>;
 
 /** Reason code recorded when the reporter types their own text. */
-static constexpr const char* CustomReasonCode = "other";
+// Owning: Flow::AddOptionsStep takes the custom value by value and keeps it in the step.
+static const std::string CustomReasonCode = "other";
 
 /** `report.reasons.<code>` when the translation files define it, else the config label - so
  *  operator-added codes need no translation entry. Get() echoes a missing key back verbatim. */
@@ -82,9 +83,7 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
     if (!target)
         return;
 
-    ReportFlowT::Create(
-        app.Runtime.Menus,
-        PendingReport{.Target = target->Ref()})
+    ReportFlowT::Create(app.Runtime.Menus, PendingReport{.Target = target->Ref()})
         ->OnValidate([&app](int slot, const PendingReport& p) { return ValidatePending(app, slot, p); })
         ->AddOptionsStep([&app](int slot) { return app.Runtime.Translations.Get("report.selectReason", slot); },
                          [&app](int slot) {
@@ -104,19 +103,18 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
                          },
                          [&app](int slot) { return app.Runtime.Translations.Get("report.customReasonPrompt", slot); },
                          CustomReasonCode)
-        ->WithConfirm([&app](int slot) { return app.Runtime.Translations.Get("report.confirmTitle", slot); },
-                      [&app](int slot, const PendingReport& pending) {
-                          auto& tr = app.Runtime.Translations;
-                          std::vector<std::pair<std::string, std::string>> rows;
-                          auto* targetPlayer = app.Runtime.Players.Get(pending.Target);
-                          rows.emplace_back(tr.Get("report.target", slot),
-                                            targetPlayer ? targetPlayer->Name() : std::string());
-                          rows.emplace_back(tr.Get("report.reason", slot),
-                                            Strings::TruncateUtf8(pending.ReasonText, 40));
-                          return rows;
-                      },
-                      [&app](int slot) { return app.Runtime.Translations.Get("report.confirm", slot); },
-                      [&app](int slot) { return app.Runtime.Translations.Get("report.cancel", slot); })
+        ->WithConfirm(
+            [&app](int slot) { return app.Runtime.Translations.Get("report.confirmTitle", slot); },
+            [&app](int slot, const PendingReport& pending) {
+                auto& tr = app.Runtime.Translations;
+                std::vector<std::pair<std::string, std::string>> rows;
+                auto* targetPlayer = app.Runtime.Players.Get(pending.Target);
+                rows.emplace_back(tr.Get("report.target", slot), targetPlayer ? targetPlayer->Name() : std::string());
+                rows.emplace_back(tr.Get("report.reason", slot), Strings::TruncateUtf8(pending.ReasonText, 40));
+                return rows;
+            },
+            [&app](int slot) { return app.Runtime.Translations.Get("report.confirm", slot); },
+            [&app](int slot) { return app.Runtime.Translations.Get("report.cancel", slot); })
         ->OnFinish([&app](int slot, PendingReport& p) { Submit(app, slot, p); })
         ->Start(reporterSlot);
 }

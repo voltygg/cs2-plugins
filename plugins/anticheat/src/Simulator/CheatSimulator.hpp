@@ -15,6 +15,7 @@
 #include <VoltMod/Api.hpp>
 #include <cstdint>
 #include <optional>
+#include <string_view>
 
 namespace Anticheat
 {
@@ -59,7 +60,7 @@ private:
     /** Point the command at the nearest opponent's chest; false with nobody to lock onto. */
     bool AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd);
 
-    int ResolveSlot(const char* arg);
+    int ResolveSlot(std::string_view arg);
 
     bool Enabled() const;
 

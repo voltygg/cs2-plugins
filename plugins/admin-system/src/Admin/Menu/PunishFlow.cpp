@@ -17,6 +17,7 @@
 #include <format>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -103,7 +104,7 @@ static PunishFlowT::Ptr MakeBaseFlow(App& app, PendingPunishment pending)
 void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pending)
 {
     auto type = pending.Type;
-    auto stepTitle = [&app, type](int slot, const char* suffixKey) {
+    auto stepTitle = [&app, type](int slot, std::string_view suffixKey) {
         auto& tr = app.Runtime.Translations;
         return std::format("{}: {}", tr.Get(ActionTranslationKey(type), slot), tr.Get(suffixKey, slot));
     };

@@ -3,6 +3,7 @@
 #include <VoltMod/Database/Column.hpp>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <tuple>
 
 namespace AdminSystem::Database
@@ -21,8 +22,8 @@ struct Warning
     bool IsActive = true;
     int64_t ExpiresAt = 0;
 
-    static constexpr const char* Table = "warnings";
-    static constexpr const char* Key = "id";
+    static constexpr std::string_view Table = "warnings";
+    static constexpr std::string_view Key = "id";
     static constexpr auto Columns()
     {
         using VoltMod::Column;

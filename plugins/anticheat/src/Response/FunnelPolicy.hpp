@@ -26,7 +26,7 @@ constexpr Mode ParseMode(std::string_view mode)
     return VoltMod::Parse<Mode>(mode).value_or(Mode::Observe);
 }
 
-constexpr const char* ModeName(Mode mode)
+constexpr std::string_view ModeName(Mode mode)
 {
     switch (mode)
     {
@@ -48,7 +48,7 @@ enum class PunishmentLevel
     Ban = 2,
 };
 
-constexpr const char* PunishmentName(PunishmentLevel level)
+constexpr std::string_view PunishmentName(PunishmentLevel level)
 {
     switch (level)
     {
@@ -74,7 +74,7 @@ enum class FunnelOutcome
     BanIssued,
 };
 
-constexpr const char* OutcomeName(FunnelOutcome outcome)
+constexpr std::string_view OutcomeName(FunnelOutcome outcome)
 {
     switch (outcome)
     {

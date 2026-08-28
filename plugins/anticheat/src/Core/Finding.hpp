@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <iterator>
 #include <string>
+#include <string_view>
 
 namespace Anticheat
 {
@@ -24,8 +25,8 @@ enum class DetectionKind
 struct DetectionInfo
 {
     DetectionKind Kind;
-    const char* Display;
-    const char* Token;
+    std::string_view Display;
+    std::string_view Token;
 };
 
 /** The one place a detection is named; adding a kind without a row here fails to compile. */
@@ -58,12 +59,12 @@ constexpr const DetectionInfo& Info(DetectionKind kind)
     return DetectionCatalog[static_cast<size_t>(kind)];
 }
 
-constexpr const char* DisplayName(DetectionKind kind)
+constexpr std::string_view DisplayName(DetectionKind kind)
 {
     return Info(kind).Display;
 }
 
-constexpr const char* TokenName(DetectionKind kind)
+constexpr std::string_view TokenName(DetectionKind kind)
 {
     return Info(kind).Token;
 }

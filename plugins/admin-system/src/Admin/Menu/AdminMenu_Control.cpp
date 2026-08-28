@@ -22,6 +22,7 @@
 #include <format>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -39,7 +40,8 @@ static constexpr int SizeDefault = 4;   // index of 100 in SizePresets
 
 /** Tell the admin why a weapon action did nothing. The menu is the only way to reach these, so
  *  a silent no-op would leave them guessing whether the click registered. */
-static void ReportWeaponOutcome(AdminSystem::App& app, int adminSlot, Weapons::WeaponActionResult result, const char* failKey)
+static void ReportWeaponOutcome(AdminSystem::App& app, int adminSlot, Weapons::WeaponActionResult result,
+                                std::string_view failKey)
 {
     auto& tr = app.Runtime.Translations;
     switch (result)
