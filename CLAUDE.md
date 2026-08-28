@@ -83,8 +83,7 @@ Add third-party C++ dependencies to `conanfile.py`, find them in the root
 ## Plugin structure
 
 Plugins derive from `VoltMod::MetamodPlugin`. The base creates one
-`VoltMod::Runtime` per load cycle and passes it to
-`OnLoad(Runtime&, bool late)`. Build the plugin's object graph there and release
+`VoltMod::Runtime` per load cycle and passes it to `OnLoad(Runtime&)`. Build the plugin's object graph there and release
 it in `OnUnload`; no plugin state may survive `meta reload`.
 
 Use `VOLTMOD_PLUGIN(Klass)` in `Plugin.cpp`. Use `VoltMod::WithBuildInfo` for
