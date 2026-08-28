@@ -9,7 +9,10 @@
 namespace AdminSystem::Admin::Menu
 {
 
-/** Combined list of active voice/text mutes; selecting one opens an unmute confirmation dialog. */
+/** Paginated list of active bans; selecting one opens an unban confirmation. */
+std::shared_ptr<VoltMod::MenuView> BuildUnbanMenu(AdminSystem::App& app, int adminSlot);
+
+/** Paginated list of active voice and text mutes; selecting one opens an unmute confirmation. */
 std::shared_ptr<VoltMod::MenuView> BuildUnmuteMenu(AdminSystem::App& app, int adminSlot);
 
 }  // namespace AdminSystem::Admin::Menu

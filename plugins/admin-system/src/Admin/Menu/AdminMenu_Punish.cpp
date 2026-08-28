@@ -2,8 +2,7 @@
 
 #include "../../Core/App.hpp"
 #include "../AdminManager.hpp"
-#include "AdminMenu_Unban.hpp"
-#include "AdminMenu_Unmute.hpp"
+#include "AdminMenu_Lift.hpp"
 #include "PunishFlow.hpp"
 
 #include <VoltMod/Api.hpp>
