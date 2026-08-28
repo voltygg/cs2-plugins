@@ -19,6 +19,7 @@ uv run poe build --install <plugin> --start
 ctest --preset windows-msvc-release
 uv run poe lint
 uv run poe format
+uv run poe panorama
 ```
 
 `doctor` checks the local toolchain, project, Conan configuration, and an
@@ -29,8 +30,11 @@ result into the local CS2 server at `CS2_SERVER_PATH` and `--start` launches
 that server afterwards. `lint` runs ruff over the build tooling and then
 `voltmod modgraph --plugins .`, which fails a plugin header that forward-declares
 a type, or any plugin source that opens an anonymous namespace or uses a
-using-directive. All of these
-come from the framework CLI (`voltmod build|test|install|serve|modgraph`);
+using-directive. `panorama` compiles every `panorama/` directory in the project
+with the CS2 Workshop Tools and installs the result into your own client at
+`CS2_CLIENT_PATH` (found through Steam when unset); it is Windows only, and a
+custom UI shows nothing until it has run. All of these
+come from the framework CLI (`voltmod build|test|install|serve|modgraph|panorama`);
 `deploy/tools` only handles the remote fleet.
 Build output is under
 `build/<preset>/plugins/<name>/<platform-arch>/`. The build tasks run
