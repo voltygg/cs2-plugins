@@ -134,9 +134,9 @@ Current patterns:
   is the only validity check. Never store a wrapper past the frame: store an
   `EntityRef` or a `PlayerRef` and resolve it again where it is used.
 - A `custom_hud_layout` is the one entity a plugin *owns* rather than re-resolves:
-  `runtime.Hud.Spawn(name)` returns a move-only `VoltMod::Hud` whose destructor removes
+  `runtime.Ui.Spawn(name)` returns a move-only `VoltMod::UiPanel` whose destructor removes
   the entity, so keep it as a member and a `meta reload` cannot leave a panel behind.
-  `hud.For(slot)` narrows a write to one player and `hud.OnClick(id, ...)` filters presses
+  `panel.For(slot)` narrows a write to one player and `panel.OnClick(id, ...)` filters presses
   to that layout. Workshop addons work the same way: `runtime.Addons.Require(id)` returns a
   lease, and the requirement lasts exactly as long as you hold it.
 - Return `VoltMod::Result<T>`/`VoltMod::Status` where a caller has to know why

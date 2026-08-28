@@ -5,19 +5,19 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/App/PluginInfoStamp.hpp>
 
-VOLTMOD_PLUGIN(HudLabPlugin);
+VOLTMOD_PLUGIN(UiLabPlugin);
 
-VoltMod::PluginInfo HudLabPlugin::Info() const
+VoltMod::PluginInfo UiLabPlugin::Info() const
 {
     return VoltMod::WithBuildInfo({
-        .Name = "Hud Lab",
+        .Name = "UI Lab",
         .Author = "Sukhrob Ilyosbekov",
         .Description = "Experiments with CS2 native custom_hud_layout Panorama UI.",
-        .LogTag = "HUDLAB",
+        .LogTag = "UILAB",
     });
 }
 
-bool HudLabPlugin::OnLoad(VoltMod::Runtime& runtime)
+bool UiLabPlugin::OnLoad(VoltMod::Runtime& runtime)
 {
     _app.emplace(runtime);
     return _app->Start();

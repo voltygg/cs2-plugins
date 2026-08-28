@@ -3,18 +3,18 @@
 #include "Config.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Hud/Api.hpp>
+#include <VoltMod/Ui/Api.hpp>
 #include <string_view>
 #include <vector>
 
-namespace HudLab
+namespace UiLab
 {
 
 /**
  * Everything this plugin owns for one Load/Unload cycle. The plugin creates it in OnLoad and
  * drops it in OnUnload, so no state survives a `meta reload`.
  *
- * This is the worked example for `runtime.Hud` and `runtime.Addons`: every command is a thin
+ * This is the worked example for `runtime.Ui` and `runtime.Addons`: every command is a thin
  * wrapper over one framework call, and the Panorama sources under `panorama/` are the layout
  * those calls drive.
  */
@@ -33,9 +33,9 @@ struct App
 
     /** The layout this lab is driving. It owns its entity: dropping it removes the panel, which
      *  is what stops one surviving a `meta reload`. Falsy until something spawns it. */
-    VoltMod::Hud Layout;
+    VoltMod::UiPanel Layout;
 
-    /** One lease per workshop addon required, from `hudlab_addon`. */
+    /** One lease per workshop addon required, from `uilab_addon`. */
     std::vector<VoltMod::Subscription> Addons;
 
 private:
@@ -48,4 +48,4 @@ private:
     std::vector<VoltMod::Subscription> _buttons;
 };
 
-}  // namespace HudLab
+}  // namespace UiLab

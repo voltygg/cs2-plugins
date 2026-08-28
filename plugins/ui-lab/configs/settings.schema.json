@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "hud-lab settings.jsonc",
-  "description": "Runtime configuration for the hud-lab plugin. Extend alongside the Settings struct in src/Config.hpp - missing keys fall back to their C++ defaults.",
+  "title": "ui-lab settings.jsonc",
+  "description": "Runtime configuration for the ui-lab plugin. Extend alongside the Settings struct in src/Config.hpp - missing keys fall back to their C++ defaults.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -17,14 +17,14 @@
         }
       }
     },
-    "hud": {
+    "ui": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "layout": {
           "type": "string",
-          "default": "hud_lab",
-          "description": "Layout hudlab_spawn uses with no argument. A bare name is expanded to panorama/layout/custom_game/<name>.xml."
+          "default": "ui_lab",
+          "description": "Layout uilab_spawn uses with no argument. A bare name is expanded to panorama/layout/custom_game/<name>.xml."
         }
       }
     }

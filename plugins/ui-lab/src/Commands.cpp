@@ -2,7 +2,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/Api.hpp>
-#include <VoltMod/Hud/Api.hpp>
+#include <VoltMod/Ui/Api.hpp>
 #include <format>
 #include <optional>
 #include <string>
@@ -15,7 +15,7 @@ using VoltMod::Status;
 
 namespace Args = VoltMod::Args;
 
-namespace HudLab
+namespace UiLab
 {
 
 /** A failed Status as the handler's error: the router prints `Error::Detail` for us. */
@@ -32,16 +32,16 @@ void RegisterCommands(App& app)
 {
     auto& commands = app.Runtime.Commands;
 
-    commands.Add("hudlab_spawn")
-        .Describe("Spawn the lab layout, or a named one: hudlab_spawn [layout]")
+    commands.Add("uilab_spawn")
+        .Describe("Spawn the lab layout, or a named one: uilab_spawn [layout]")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Opt<Args::Rest> layout) -> Result<Reply> {
-            const std::string& name = layout.Value ? layout.Value->Value : app.Config.Get().hud.layout;
+            const std::string& name = layout.Value ? layout.Value->Value : app.Config.Get().ui.layout;
             return Done(app.Spawn(name),
                         std::format("spawned '{}'. Watch the CLIENT console for validation lines.", name));
         });
 
-    commands.Add("hudlab_remove")
+    commands.Add("uilab_remove")
         .Describe("Remove the spawned layout.")
         .ConsoleOnly()
         .Run([&app](Caller) -> Result<Reply> {
@@ -51,12 +51,12 @@ void RegisterCommands(App& app)
 
     // What actually breaks after a CS2 update is the byte-pattern signatures, and the capability
     // carries the reason. Schema offsets resolve themselves by name, so there is nothing to dump.
-    commands.Add("hudlab_probe")
+    commands.Add("uilab_probe")
         .Describe("Report feature availability and the spawned layout.")
         .ConsoleOnly()
         .Run([&app](Caller c) -> Result<Reply> {
             for (VoltMod::Capability capability :
-                 {VoltMod::Capability::CustomHud, VoltMod::Capability::HudClicks, VoltMod::Capability::Addons})
+                 {VoltMod::Capability::CustomUi, VoltMod::Capability::UiClicks, VoltMod::Capability::Addons})
             {
                 const bool ready = app.Runtime.Capabilities.Has(capability);
                 c.SayRaw(std::format("{}: {}", VoltMod::Name(capability),
@@ -71,9 +71,9 @@ void RegisterCommands(App& app)
                                      app.Layout.PlayerStateCount())};
         });
 
-    // The ownership check: a layout is removed when its Hud handle drops, so this stays at 1
+    // The ownership check: a layout is removed when its UiPanel handle drops, so this stays at 1
     // across a `meta unload` + `meta load`. A climbing count means one leaked into the world.
-    commands.Add("hudlab_count")
+    commands.Add("uilab_count")
         .Describe("Count the custom_hud_layout entities alive in the world.")
         .ConsoleOnly()
         .Run([&app](Caller) -> Result<Reply> {
@@ -91,8 +91,8 @@ void RegisterCommands(App& app)
         });
 
     // Nothing in a layout is clickable without this: no capture means no cursor.
-    commands.Add("hudlab_capture")
-        .Describe("Give everyone a cursor: hudlab_capture <0|1>")
+    commands.Add("uilab_capture")
+        .Describe("Give everyone a cursor: uilab_capture <0|1>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int enabled) -> Result<Reply> {
             const bool on = enabled.Value != 0;
@@ -100,8 +100,8 @@ void RegisterCommands(App& app)
                         std::format("input capture {} for everyone.", on ? "on" : "off"));
         });
 
-    commands.Add("hudlab_capture_slot")
-        .Describe("Give one player a cursor: hudlab_capture_slot <slot> <0|1>")
+    commands.Add("uilab_capture_slot")
+        .Describe("Give one player a cursor: uilab_capture_slot <slot> <0|1>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot, Args::Int enabled) -> Result<Reply> {
             const bool on = enabled.Value != 0;
@@ -111,8 +111,8 @@ void RegisterCommands(App& app)
 
     // The one side-effect-free bound call, and so the safest to run first after a CS2 update: it
     // proves the pattern binding and the calling convention without touching state.
-    commands.Add("hudlab_capture_get")
-        .Describe("Read input capture for a slot: hudlab_capture_get <slot>")
+    commands.Add("uilab_capture_get")
+        .Describe("Read input capture for a slot: uilab_capture_get <slot>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot) -> Result<Reply> {
             auto enabled = app.Layout.For(slot.Value).InputCaptureEnabled();
@@ -121,24 +121,24 @@ void RegisterCommands(App& app)
             return Reply{std::format("slot {} input capture: {}", slot.Value, *enabled ? "on" : "off")};
         });
 
-    commands.Add("hudlab_var")
-        .Describe("Set a dialog variable for everyone: hudlab_var <panelId> <variable> <value...>")
+    commands.Add("uilab_var")
+        .Describe("Set a dialog variable for everyone: uilab_var <panelId> <variable> <value...>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Word panel, Args::Word variable, Args::Rest value) -> Result<Reply> {
             return Done(app.Layout.SetText(panel.Value, variable.Value, value.Value),
                         std::format("{}.{} = '{}' for everyone.", panel.Value, variable.Value, value.Value));
         });
 
-    commands.Add("hudlab_var_slot")
-        .Describe("Set a dialog variable for one slot: hudlab_var_slot <slot> <panelId> <variable> <value...>")
+    commands.Add("uilab_var_slot")
+        .Describe("Set a dialog variable for one slot: uilab_var_slot <slot> <panelId> <variable> <value...>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot, Args::Word panel, Args::Word variable, Args::Rest value) -> Result<Reply> {
             return Done(app.Layout.For(slot.Value).SetText(panel.Value, variable.Value, value.Value),
                         std::format("{}.{} = '{}' for slot {}.", panel.Value, variable.Value, value.Value, slot.Value));
         });
 
-    commands.Add("hudlab_class")
-        .Describe("Toggle a class for everyone: hudlab_class <panelId> <className> <0|1>")
+    commands.Add("uilab_class")
+        .Describe("Toggle a class for everyone: uilab_class <panelId> <className> <0|1>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Word panel, Args::Word className, Args::Int on) -> Result<Reply> {
             const bool present = on.Value != 0;
@@ -146,8 +146,8 @@ void RegisterCommands(App& app)
                         std::format("{} class '{}' {}.", panel.Value, className.Value, present ? "added" : "removed"));
         });
 
-    commands.Add("hudlab_class_slot")
-        .Describe("Toggle a class for one slot: hudlab_class_slot <slot> <panelId> <className> <0|1>")
+    commands.Add("uilab_class_slot")
+        .Describe("Toggle a class for one slot: uilab_class_slot <slot> <panelId> <className> <0|1>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot, Args::Word panel, Args::Word className, Args::Int on) -> Result<Reply> {
             const bool present = on.Value != 0;
@@ -156,8 +156,8 @@ void RegisterCommands(App& app)
                                     present ? "added" : "removed", slot.Value));
         });
 
-    commands.Add("hudlab_class_reset")
-        .Describe("Hand a class back to the layout: hudlab_class_reset <panelId> <className>")
+    commands.Add("uilab_class_reset")
+        .Describe("Hand a class back to the layout: uilab_class_reset <panelId> <className>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Word panel, Args::Word className) -> Result<Reply> {
             return Done(app.Layout.ResetClass(panel.Value, className.Value),
@@ -166,8 +166,8 @@ void RegisterCommands(App& app)
 
     // How the layout actually reaches a client that does not already have it: put the compiled
     // .vxml_c/.vcss_c in a workshop addon and require its id here.
-    commands.Add("hudlab_addon")
-        .Describe("Require a workshop addon of every client: hudlab_addon <id>")
+    commands.Add("uilab_addon")
+        .Describe("Require a workshop addon of every client: uilab_addon <id>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::U64 id) -> Result<Reply> {
             auto lease = app.Runtime.Addons.Require(id.Value);
@@ -179,7 +179,7 @@ void RegisterCommands(App& app)
             return Reply{std::format("requiring addon {}; clients get it on their next connect.", id.Value)};
         });
 
-    commands.Add("hudlab_addons")
+    commands.Add("uilab_addons")
         .Describe("List the workshop addons clients are required to have.")
         .ConsoleOnly()
         .Run([&app](Caller c) -> Result<Reply> {
@@ -193,4 +193,4 @@ void RegisterCommands(App& app)
         });
 }
 
-}  // namespace HudLab
+}  // namespace UiLab

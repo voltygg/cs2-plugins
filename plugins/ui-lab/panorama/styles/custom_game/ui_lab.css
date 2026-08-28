@@ -1,9 +1,9 @@
 /*
-	Panorama CSS, not web CSS - see docs/custom-hud.md. #lab_card holds the visible state and
+	Panorama CSS, not web CSS - see docs/custom-ui.md. #lab_card holds the visible state and
 	the nested `&.Hidden` the hidden one, so showing and hiding is one SetClass call:
 
-	    hudlab_class lab_card Hidden 0    -> show
-	    hudlab_class lab_card Hidden 1    -> hide
+	    uilab_class lab_card Hidden 0    -> show
+	    uilab_class lab_card Hidden 1    -> hide
 */
 
 .Root {

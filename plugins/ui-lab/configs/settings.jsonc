@@ -3,7 +3,7 @@
   "plugin": {
     "locale": "en"
   },
-  "hud": {
-    "layout": "hud_lab"
+  "ui": {
+    "layout": "ui_lab"
   }
 }

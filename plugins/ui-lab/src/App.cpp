@@ -1,19 +1,19 @@
 #include "App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Hud/Api.hpp>
+#include <VoltMod/Ui/Api.hpp>
 #include <format>
 #include <string>
 #include <utility>
 
-namespace HudLab
+namespace UiLab
 {
 
 void RegisterCommands(App& app);
 
 bool App::Start()
 {
-    if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Addon = "hud-lab"}))
+    if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Addon = "ui-lab"}))
         return false;
 
     RegisterCommands(*this);
@@ -22,12 +22,12 @@ bool App::Start()
 
 VoltMod::Status App::Spawn(std::string_view layout)
 {
-    auto hud = Runtime.Hud.Spawn(layout);
-    if (!hud)
-        return std::unexpected(hud.error());
+    auto spawned = Runtime.Ui.Spawn(layout);
+    if (!spawned)
+        return std::unexpected(spawned.error());
 
     // Assigning removes the layout this was driving before, so the lab keeps one at a time.
-    Layout = std::move(*hud);
+    Layout = std::move(*spawned);
 
     // Subscribing is what installs the click hook, and OnClick filters to this layout and this
     // button - two layouts with a `lab_accept` do not trigger each other.
@@ -39,15 +39,15 @@ VoltMod::Status App::Spawn(std::string_view layout)
 
 void App::OnButton(int slot, std::string_view button)
 {
-    VoltMod::Log::Info("hud-lab: slot {} pressed '{}'.", slot, button);
+    VoltMod::Log::Info("ui-lab: slot {} pressed '{}'.", slot, button);
 
     // Per-player, so two players clicking see their own answer. lab_title is the Label carrying
     // the {s:title} dialog variable; lab_body next to it is static text and cannot be written.
     // This fails when the entity carries no per-player state - worth saying out loud in a lab
     // rather than looking like it worked.
     if (auto wrote = Layout.For(slot).SetText("lab_title", "title", std::format("you pressed {}", button)); !wrote)
-        VoltMod::Log::Warn("hud-lab: per-player write failed ({}); hudlab_var writes it for everyone.",
+        VoltMod::Log::Warn("ui-lab: per-player write failed ({}); uilab_var writes it for everyone.",
                            wrote.error().Detail);
 }
 
-}  // namespace HudLab
+}  // namespace UiLab
