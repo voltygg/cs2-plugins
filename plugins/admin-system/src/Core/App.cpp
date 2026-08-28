@@ -258,7 +258,10 @@ void App::SelectMenuHost()
 {
     const auto& settings = Config.GetMenu();
     const bool wantsPanorama = Config.GetMenuStyle() != Core::MenuStyle::CenterHtml;
-    const bool canDoPanorama = Runtime.Capabilities.Has(VoltMod::Capability::CustomUi);
+    // CustomUi draws the layout; UiClicks reports presses on it. Different gamedata bindings,
+    // so either can be off while the other is on - both are required for a usable menu.
+    const bool canDoPanorama = Runtime.Capabilities.Has(VoltMod::Capability::CustomUi) &&
+                                Runtime.Capabilities.Has(VoltMod::Capability::UiClicks);
 
     if (wantsPanorama && canDoPanorama)
     {
@@ -285,7 +288,13 @@ void App::SelectMenuHost()
     // Worth saying out loud: a server configured for the styled menu and silently serving the
     // plain one otherwise looks like the setting was ignored.
     if (wantsPanorama)
-        VoltMod::Log::Info("Menus: center HTML - the custom UI capability is off on this build.");
+    {
+        const VoltMod::Capability missing = Runtime.Capabilities.Has(VoltMod::Capability::CustomUi)
+                                                 ? VoltMod::Capability::UiClicks
+                                                 : VoltMod::Capability::CustomUi;
+        VoltMod::Log::Info("Menus: center HTML - {} is off on this build ({}).", VoltMod::Name(missing),
+                            Runtime.Capabilities.Reason(missing));
+    }
     else
         VoltMod::Log::Info("Menus: center HTML, as configured.");
 }
