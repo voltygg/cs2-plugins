@@ -7,6 +7,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/App/Config.hpp>
 #include <VoltMod/Database/PostgresDatabase.hpp>
+#include <cstdint>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
@@ -243,6 +244,25 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CheatCheckSettings, mode, timeou
                                                 moveToSpectator, bannerImageUrl, bannerWidth, bannerHeight, fixedLink,
                                                 websiteAutoRoom)
 
+/**
+ * Which menu host the plugin opens its menus on.
+ *
+ * `auto` prefers the Panorama menu and falls back to center HTML when
+ * VoltMod::Capability::CustomUi is off, which today means any non-Windows server. `panorama` and
+ * `centerHtml` pin one; a pinned `panorama` on a server without the capability still falls back,
+ * because a menu nobody can see is worse than an unstyled one.
+ */
+struct MenuSettings
+{
+    std::string style = "auto";
+    /** Layout resource to drive; must honour the ids VoltMod's own layout declares. */
+    std::string layout = "voltmod_menu";
+    /** Workshop addon carrying the compiled layout. 0 requires nothing of connecting clients,
+     *  which is what you want while copying the files into your own client by hand. */
+    uint64_t addonId = 0;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MenuSettings, style, layout, addonId)
+
 struct Settings
 {
     PluginSettings plugin;
@@ -255,9 +275,10 @@ struct Settings
     CheatCheckSettings cheatCheck;
     MapSettings maps;
     WeaponSettings weapons;
+    MenuSettings menu;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, database, punishments, abuseProtection, chat,
-                                                reports, cheatCheck, maps, weapons)
+                                                reports, cheatCheck, maps, weapons, menu)
 
 /** Loads settings and resolves string-based punishment values. Admin and group
  *  records remain owned by the database. */
@@ -285,6 +306,9 @@ public:
 
     /** Menu duration-picker rows in seconds (0 = permanent), parsed from `punishments.menuDurations`. */
     const std::vector<int>& GetMenuDurations() const { return _menuDurationSecs; }
+
+    /** Which menu host to open menus on, and the layout behind it. */
+    const MenuSettings& GetMenu() const { return Get().menu; }
 
     /** Offerable maps. Invalid entries are logged and skipped. */
     const std::vector<Maps::MapEntry>& GetMapCycle() const { return _resolvedMaps; }

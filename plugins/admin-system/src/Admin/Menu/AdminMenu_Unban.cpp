@@ -37,7 +37,7 @@ struct BanRow
 
 static void StartUnbanConfirm(App& app, int adminSlot, BanRow row)
 {
-    VoltMod::Flow<BanRow>::Create(app.Runtime.HtmlMenus, std::move(row))
+    VoltMod::Flow<BanRow>::Create(app.Menus(), std::move(row))
         // The Unban flag may have been revoked (e.g. !admin_reload) while the menu was open.
         ->OnValidate([&app](int slot, const BanRow&) -> std::optional<std::string> {
             if (!MayUse(app, slot, Permission::Unban))

@@ -350,6 +350,29 @@
         }
       }
     },
+    "menu": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Which menu host to draw menus on, and the Panorama layout behind it.",
+      "properties": {
+        "style": {
+          "enum": ["auto", "panorama", "centerHtml"],
+          "default": "auto",
+          "description": "auto prefers the clickable Panorama menu and falls back to center HTML where the custom-UI capability is off; a pinned panorama falls back too rather than showing nothing."
+        },
+        "layout": {
+          "type": "string",
+          "default": "voltmod_menu",
+          "description": "Panorama layout resource to drive; a replacement must declare the same panel ids."
+        },
+        "addonId": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Workshop addon carrying the compiled layout; 0 requires nothing of connecting clients."
+        }
+      }
+    },
     "weapons": {
       "type": "object",
       "additionalProperties": false,

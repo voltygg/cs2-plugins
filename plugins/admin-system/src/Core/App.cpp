@@ -213,9 +213,11 @@ bool App::Start()
     report.Run("Policy", [this] {
         InstallPolicy();
         RegisterPlayerLifecycle();
-        // Freeze the player while an admin menu is open so WASD navigation doesn't also walk
-        // them around.
-        Runtime.HtmlMenus.SetFreezePlayer(true);
+        SelectMenuHost();
+        // Freeze the player while an admin menu is open. Center HTML needs it so WASD navigation
+        // doesn't also walk them around; the Panorama menu needs it because a cursor takes
+        // mouse-look and being shoved around while clicking is worse, not better.
+        Menus().SetFreezePlayer(true);
         return StageResult::Ok();
     });
 
@@ -250,6 +252,42 @@ bool App::Start()
 
     InstallStatusReporting();
     return true;
+}
+
+void App::SelectMenuHost()
+{
+    const auto& settings = Config.GetMenu();
+    const bool wantsPanorama = settings.style != "centerHtml";
+    const bool canDoPanorama = Runtime.Capabilities.Has(VoltMod::Capability::CustomUi);
+
+    if (wantsPanorama && canDoPanorama)
+    {
+        Runtime.UiMenus.SetLayout(settings.layout);
+        _menus = &Runtime.UiMenus;
+
+        // A workshop addon is how the layout reaches players who did not copy it in by hand. The
+        // requirement lasts exactly as long as this lease, so it goes when the plugin does.
+        if (settings.addonId != 0)
+        {
+            if (auto lease = Runtime.Addons.Require(settings.addonId))
+                _menuAddon = std::move(*lease);
+            else
+                VoltMod::Log::Warn("Menu addon {} not required ({}); players without the layout see nothing.",
+                                   settings.addonId, lease.error().Detail);
+        }
+
+        VoltMod::Log::Info("Menus: Panorama, layout '{}'.", settings.layout);
+        return;
+    }
+
+    _menus = &Runtime.HtmlMenus;
+
+    // Worth saying out loud: a server configured for the styled menu and silently serving the
+    // plain one otherwise looks like the setting was ignored.
+    if (wantsPanorama)
+        VoltMod::Log::Info("Menus: center HTML - the custom UI capability is off on this build.");
+    else
+        VoltMod::Log::Info("Menus: center HTML, as configured.");
 }
 
 }  // namespace AdminSystem

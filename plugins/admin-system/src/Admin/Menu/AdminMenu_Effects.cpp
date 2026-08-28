@@ -8,7 +8,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Menu/Html/HtmlMenuManager.hpp>
+#include <VoltMod/Menu/MenuHost.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <format>
@@ -27,7 +27,7 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsMenu(AdminSystem::App& app, int a
             auto& players = app.Runtime.Players;
             auto actions = BuildEffectsActionsMenu(app, players.RefFor(viewerSlot), players.RefFor(targetSlot));
             if (actions)
-                app.Runtime.HtmlMenus.OpenMenu(viewerSlot, actions);
+                app.Menus().OpenMenu(viewerSlot, actions);
         });
 }
 
@@ -41,7 +41,7 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app
     if (!targetPlayer || !adminPlayer)
         return nullptr;
 
-    MenuBuilder builder(app.Runtime.HtmlMenus,
+    MenuBuilder builder(app.Menus(),
                         std::format("{}: {}", tr.Get("category.effects", admin.Slot), targetPlayer->Name()));
     builder.For(admin, target, &app.Effects);
     bool hasS = builder.Allowed(Flag(Permission::Control));
@@ -65,7 +65,7 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app
                 [&app, first = target](int viewerSlot, int secondSlot) {
                     auto& players = app.Runtime.Players;
                     Actions::Swap(app, players.RefFor(viewerSlot), first, players.RefFor(secondSlot));
-                    app.Runtime.HtmlMenus.CloseAllMenus(viewerSlot);
+                    app.Menus().CloseAllMenus(viewerSlot);
                 },
                 [&entities = app.Runtime.Entities, first = target](int candidate) {
                     // Gray out partners Swap would reject: the already-picked player and the dead.
@@ -73,7 +73,7 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app
                     return candidate != first.Slot && pawn && pawn.IsAlive();
                 });
             if (picker)
-                app.Runtime.HtmlMenus.OpenMenu(slot, picker);
+                app.Menus().OpenMenu(slot, picker);
         },
         hasS);
 

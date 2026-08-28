@@ -83,7 +83,7 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
     if (!target)
         return;
 
-    ReportFlowT::Create(app.Runtime.HtmlMenus, PendingReport{.Target = target->Ref()})
+    ReportFlowT::Create(app.Menus(), PendingReport{.Target = target->Ref()})
         ->OnValidate([&app](int slot, const PendingReport& p) { return ValidatePending(app, slot, p); })
         ->AddOptionsStep([&app](int slot) { return app.Runtime.Translations.Get("report.selectReason", slot); },
                          [&app](int slot) {
@@ -145,7 +145,7 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
 
     // Reporters may press !report mid-round, where being held still would get them killed. The
     // rest of the flow pushes onto this session, so it stays unfrozen throughout.
-    app.Runtime.HtmlMenus.OpenMenu(reporterSlot, menu, {.FreezeMovement = false});
+    app.Menus().OpenMenu(reporterSlot, menu, {.FreezeMovement = false});
 }
 
 }  // namespace AdminSystem::Reports

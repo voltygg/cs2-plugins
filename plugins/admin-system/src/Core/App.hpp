@@ -44,6 +44,15 @@ struct App
     /** Connect the database, run migrations, load admins and register commands. */
     bool Start();
 
+    /**
+     * The menu host every menu in this plugin opens on.
+     *
+     * Chosen once in Start from `menu.style` and whether VoltMod::Capability::CustomUi is on, so
+     * a session never straddles two hosts. Everything else asks for it here rather than reaching
+     * for Runtime.HtmlMenus or Runtime.UiMenus directly.
+     */
+    VoltMod::MenuHost& Menus() const { return *_menus; }
+
     VoltMod::Runtime& Runtime;
     const std::string Version;
 
@@ -92,6 +101,15 @@ private:
     void RegisterGameEventListeners();
     void InstallStatusReporting();
     void RegisterCommands();
+
+    /** Pick the menu host from settings and capabilities, and say which one and why. */
+    void SelectMenuHost();
+
+    /** Never null after Start; points at a Runtime member, so it outlives this. */
+    VoltMod::MenuHost* _menus = &Runtime.HtmlMenus;
+
+    /** Held only when a workshop addon carries the layout; dropping it drops the requirement. */
+    VoltMod::Subscription _menuAddon;
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */
