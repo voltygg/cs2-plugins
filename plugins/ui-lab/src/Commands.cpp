@@ -22,6 +22,10 @@ namespace Args = VoltMod::Args;
 namespace UiLab
 {
 
+// What the spawn keyvalue actually became. Read back rather than trusted: a keyvalue the engine
+// rejects is reported on its own console, not to the caller that set it.
+static const VoltMod::SchemaField<const char*> kLayoutResource{"CCSCustomHudLayout", "m_strLayout"};
+
 /** A failed Status as the handler's error: the router prints `Error::Detail` for us. */
 static Result<Reply> Done(const Status& status, std::string ok)
 {
@@ -71,8 +75,12 @@ void RegisterCommands(App& app)
                 return Reply{"no layout spawned."};
 
             // Zero per-player states is why a `_slot` command would fail, so it is worth saying.
-            return Reply{std::format("layout: handle {}, {} per-player states", app.Layout.Ref().Handle,
-                                     app.Layout.PlayerStateCount())};
+            c.SayRaw(std::format("layout: handle {}, {} per-player states", app.Layout.Ref().Handle,
+                                 app.Layout.PlayerStateCount()));
+
+            VoltMod::Entity entity = app.Runtime.Entities.Resolve(app.Layout.Ref());
+            const char* resource = entity ? VoltMod::SchemaPtr{entity.Raw()}.Get(kLayoutResource, nullptr) : nullptr;
+            return Reply{std::format("m_strLayout: {}", resource ? resource : "<unset>")};
         });
 
     // The ownership check: a layout is removed when its UiPanel handle drops, so this stays at 1
