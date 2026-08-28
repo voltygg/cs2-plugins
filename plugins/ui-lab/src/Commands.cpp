@@ -2,6 +2,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/Api.hpp>
+#include <VoltMod/Menu/Api.hpp>
 #include <VoltMod/Ui/Api.hpp>
 #include <VoltMod/Unsafe/Api.hpp>
 #include <format>
@@ -248,6 +249,32 @@ void RegisterCommands(App& app)
             for (uint64_t id : required)
                 c.SayRaw(std::format("  {}", id));
             return Reply::Silent();
+        });
+
+    // The menu host on the same panel machinery, without admin-system's permissions in the way:
+    // a submenu for Back, a toggle and a choice for the steppers, and Close on the footer.
+    commands.Add("uilab_menu")
+        .Describe("Open a sample menu on the Panorama host for a player: uilab_menu <slot>")
+        .ConsoleOnly()
+        .Run([&app](Caller, Args::Int slot) -> Result<Reply> {
+            auto& menus = app.Runtime.UiMenus;
+            auto submenu = [&app](int) {
+                return VoltMod::MenuBuilder("Lab submenu")
+                    .Text("Back should return to the lab menu.")
+                    .Button("Log a press", [](int who) { VoltMod::Log::Info("ui-lab: slot {} pressed the row.", who); })
+                    .Build();
+            };
+            auto menu = VoltMod::MenuBuilder("Lab menu")
+                            .Subtitle("uilab_menu")
+                            .Toggle(
+                                "Toggle", "ON", "OFF", [&app](int) { return app.MenuToggle; },
+                                [&app](int) { app.MenuToggle = !app.MenuToggle; })
+                            .Choice<int>("Choice", {{"One", 1}, {"Two", 2}, {"Three", 3}}, [](int, const int&) {})
+                            .Submenu("Submenu", submenu)
+                            .Button("Close from a row", [&menus](int who) { menus.CloseAllMenus(who); })
+                            .Build();
+            menus.OpenMenu(slot.Value, std::move(menu), {.FreezeMovement = false});
+            return Reply{std::format("menu opened for slot {}.", slot.Value)};
         });
 }
 

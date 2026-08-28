@@ -35,6 +35,9 @@ struct App
      *  is what stops one surviving a `meta reload`. Falsy until something spawns it. */
     VoltMod::UiPanel Layout;
 
+    /** The state behind `uilab_menu`'s toggle row. */
+    bool MenuToggle = false;
+
     /** One lease per workshop addon required, from `uilab_addon`. */
     std::vector<VoltMod::Subscription> Addons;
 
