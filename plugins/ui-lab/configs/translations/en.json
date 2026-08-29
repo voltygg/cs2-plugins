@@ -1,3 +1,5 @@
 {
-  "cmd.usage.rest": "text"
+  "cmd.usage.rest": "text",
+  "menu.promptHint": "Answer in chat",
+  "menu.empty": "Nothing here"
 }

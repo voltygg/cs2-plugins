@@ -326,6 +326,10 @@
     "en": "English",
     "ru": "Русский"
   },
+  "menu": {
+    "promptHint": "Answer in chat",
+    "empty": "Nothing here"
+  },
   "nav": {
     "navigate": "Navigate",
     "select": "Select",

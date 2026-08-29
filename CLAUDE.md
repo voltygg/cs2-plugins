@@ -134,17 +134,19 @@ Current patterns:
   is the only validity check. Never store a wrapper past the frame: store an
   `EntityRef` or a `PlayerRef` and resolve it again where it is used.
 - A `custom_hud_layout` is the one entity a plugin *owns* rather than re-resolves:
-  `runtime.Ui.Spawn(name)` returns a move-only `VoltMod::UiPanel` whose destructor removes
-  the entity, so keep it as a member and a `meta reload` cannot leave a panel behind.
-  `panel.For(slot)` narrows a write to one player and `panel.OnClick(id, ...)` filters presses
-  to that layout. Workshop addons work the same way: `runtime.Addons.Require(id)` returns a
-  lease, and the requirement lasts exactly as long as you hold it.
+  `runtime.Ui.Panel(name)` (or `.Spawn(name)`) returns a move-only `VoltMod::UiPanel` whose
+  destructor removes the entity, so keep it as a member and a `meta reload` cannot leave a
+  panel behind. `panel.Text(slot, …)` writes to one player and `panel.Button("id") += …`
+  filters presses to that layout. Workshop addons work the same way: `runtime.Addons.Require(id)`
+  returns a lease, and the requirement lasts exactly as long as you hold it.
 - Return `VoltMod::Result<T>`/`VoltMod::Status` where a caller has to know why
   something failed; `Error::Detail` is the log text and `Error::Key` the
   translation key for a player-facing reply.
 - Define admin effects as `EffectDescriptor` values and keep menu order in the
   explicit `MenuEffects` table.
-- Use `Flow<TState>` for multi-step menu actions.
+- Build menus through `runtime.Menus`: `MenuBuilder(title).Add(ButtonRow{…})` for rows,
+  `ActionRows` for rows acting on an admin/target pair, and `Flow<TState>::Create(menus, slot,
+  state)` for multi-step menu actions.
 - Define repository column tables with `Table`, `Key`, and `Columns()`. Keep
   handwritten SQL for queries whose UPDATE or WHERE clauses are specific.
 - Send player-facing text through `Runtime::Messages` and translation keys.
