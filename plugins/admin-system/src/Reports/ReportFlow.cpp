@@ -31,12 +31,10 @@ using ReportFlowT = VoltMod::Flow<PendingReport>;
 static const std::string CustomReasonCode = "other";
 
 /** `report.reasons.<code>` when the translation files define it, else the config label - so
- *  operator-added codes need no translation entry. Get() echoes a missing key back verbatim. */
+ *  operator-added codes need no translation entry. */
 static std::string ReasonLabel(App& app, const Core::ReportReason& reason, int slot)
 {
-    const std::string key = "report.reasons." + reason.code;
-    std::string text = app.Runtime.Translations.Get(key, slot);
-    return text == key ? reason.label : text;
+    return app.Runtime.Translations.GetOr("report.reasons." + reason.code, slot, reason.label);
 }
 
 /** Re-runs before every step and at confirm: the target may have left and the gate may have closed

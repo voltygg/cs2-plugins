@@ -7,6 +7,7 @@
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/Descriptors.hpp"
+#include "PlayerPicker.hpp"
 #include "PresetSubmenu.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -84,18 +85,15 @@ std::shared_ptr<VoltMod::Menu> BuildControlMenu(AdminSystem::App& app, int admin
         .Flip = [&app, adminRef](int) { app.PlayerEffects.Toggle(adminRef, adminRef, app.EffectDescriptors.Hide); },
         .Enabled = hasB});
 
-    VoltMod::AppendPlayerRows(builder, app.Runtime.Players,
-                              {.Pick =
-                                   [&app, adminSlot](int targetSlot) {
-                                       // The target slot is current at press time, so this is
-                                       // where it becomes a reference.
-                                       auto& players = app.Runtime.Players;
-                                       auto actions = BuildControlActionsMenu(app, players.RefFor(adminSlot),
-                                                                              players.RefFor(targetSlot));
-                                       if (actions)
-                                           app.Runtime.Menus.Open(adminSlot, actions);
-                                   },
-                               .EmptyLabel = tr.Get("common.noPlayers", adminSlot)});
+    AppendPlayerRows(app, adminSlot, builder, {.Pick = [&app, adminSlot](int targetSlot) {
+                         // The target slot is current at press time, so this is where it
+                         // becomes a reference.
+                         auto& players = app.Runtime.Players;
+                         auto actions =
+                             BuildControlActionsMenu(app, players.RefFor(adminSlot), players.RefFor(targetSlot));
+                         if (actions)
+                             app.Runtime.Menus.Open(adminSlot, actions);
+                     }});
 
     return builder.Build();
 }
@@ -193,7 +191,7 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponMenu(AdminSystem::App& app, VoltMod::P
     else
     {
         // Never show a dead-end empty page.
-        builder.Add(ButtonRow{.Label = tr.Get("action.noWeapons", admin.Slot), .Enabled = false});
+        builder.Text(tr.Get("action.noWeapons", admin.Slot));
     }
 
     builder.Button(tr.Get("action.strip", admin.Slot), [&app, admin, target](int slot) {

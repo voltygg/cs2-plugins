@@ -3,6 +3,7 @@
 #include "../../Core/App.hpp"
 #include "../AdminManager.hpp"
 #include "AdminMenu_Lift.hpp"
+#include "PlayerPicker.hpp"
 #include "PunishFlow.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -43,14 +44,11 @@ std::shared_ptr<VoltMod::Menu> BuildPunishMenu(AdminSystem::App& app, int adminS
                            .Build = [&app](int slot) { return BuildUnmuteMenu(app, slot); },
                            .Enabled = app.Access.HasPermission(admin->SteamId(), Permission::Mute)});
 
-    VoltMod::AppendPlayerRows(builder, app.Runtime.Players,
-                              {.Pick =
-                                   [&app, adminSlot](int target) {
-                                       auto actions = BuildPunishActionsMenu(app, adminSlot, target);
-                                       if (actions)
-                                           app.Runtime.Menus.Open(adminSlot, actions);
-                                   },
-                               .EmptyLabel = tr.Get("common.noPlayers", adminSlot)});
+    AppendPlayerRows(app, adminSlot, builder, {.Pick = [&app, adminSlot](int target) {
+                         auto actions = BuildPunishActionsMenu(app, adminSlot, target);
+                         if (actions)
+                             app.Runtime.Menus.Open(adminSlot, actions);
+                     }});
 
     return builder.Build();
 }

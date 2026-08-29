@@ -97,7 +97,7 @@ std::shared_ptr<VoltMod::Menu> BuildMapMenu(AdminSystem::App& app, int adminSlot
 
     // Never show a dead-end empty page.
     if (cycle.empty())
-        builder.Add(ButtonRow{.Label = tr.Get("map.noMaps", adminSlot), .Enabled = false});
+        builder.Text(tr.Get("map.noMaps", adminSlot));
 
     builder.Add(ButtonRow{
         .Label = tr.Get("action.cancelVote", adminSlot),

@@ -173,7 +173,7 @@ std::shared_ptr<VoltMod::Menu> BuildQuickPunishMenu(AdminSystem::App& app, int a
 
     // Permissions can change between the actions menu and here; never show a dead-end empty page.
     if (rows == 0)
-        builder.Add(VoltMod::ButtonRow{.Label = tr.Get("punish.noTemplates", adminSlot), .Enabled = false});
+        builder.Text(tr.Get("punish.noTemplates", adminSlot));
 
     return builder.Build();
 }

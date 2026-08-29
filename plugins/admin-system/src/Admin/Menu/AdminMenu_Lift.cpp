@@ -139,7 +139,7 @@ std::shared_ptr<VoltMod::Menu> BuildUnbanMenu(AdminSystem::App& app, int adminSl
 
     // Never show a dead-end empty page.
     if (bans.empty())
-        builder.Add(ButtonRow{.Label = tr.Get("unban.noBans", adminSlot), .Enabled = false});
+        builder.Text(tr.Get("unban.noBans", adminSlot));
 
     return builder.Build();
 }
@@ -155,7 +155,7 @@ std::shared_ptr<VoltMod::Menu> BuildUnmuteMenu(AdminSystem::App& app, int adminS
     AppendRows(app, builder, textMutes, PunishType::TextMute, adminSlot);
 
     if (voiceMutes.empty() && textMutes.empty())
-        builder.Add(ButtonRow{.Label = tr.Get("unmute.noMutes", adminSlot), .Enabled = false});
+        builder.Text(tr.Get("unmute.noMutes", adminSlot));
 
     return builder.Build();
 }

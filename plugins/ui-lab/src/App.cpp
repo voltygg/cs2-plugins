@@ -16,11 +16,10 @@ bool App::Start()
     if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Addon = "ui-lab"}))
         return false;
 
-    // ui-lab is the Panorama lab: prefer the Panorama menu driver whenever the build supports it,
-    // and fall back to center HTML with no fuss otherwise - there is no menu.style setting here to
-    // honor either way.
-    if (Runtime.Capabilities.Has(VoltMod::Capability::CustomUi) && Runtime.Capabilities.Has(VoltMod::Capability::UiClicks))
-        (void)Runtime.Menus.UsePanorama();
+    // ui-lab is the Panorama lab: prefer the Panorama menu driver whenever the build supports it.
+    // UsePanorama checks its own capabilities and leaves the session on center HTML when one is
+    // missing, so refusing is the fallback - there is no menu.style setting here to honor either way.
+    (void)Runtime.Menus.UsePanorama();
 
     RegisterCommands(*this);
     return true;

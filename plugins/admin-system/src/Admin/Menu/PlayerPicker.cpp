@@ -11,10 +11,22 @@
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker spec)
+// The defaults every picker in this plugin carries, whichever entry point draws it.
+static void ApplyDefaults(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker& spec)
 {
     spec.EmptyLabel = app.Runtime.Translations.Get("common.noPlayers", adminSlot);
+}
+
+std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker spec)
+{
+    ApplyDefaults(app, adminSlot, spec);
     return ::VoltMod::BuildPlayerPicker(app.Runtime.Players, std::move(spec));
+}
+
+void AppendPlayerRows(AdminSystem::App& app, int adminSlot, VoltMod::MenuBuilder& builder, VoltMod::PlayerPicker spec)
+{
+    ApplyDefaults(app, adminSlot, spec);
+    ::VoltMod::AppendPlayerRows(builder, app.Runtime.Players, spec);
 }
 
 }  // namespace AdminSystem::Admin::Menu

@@ -259,31 +259,30 @@ void App::SelectMenuDriver()
 
     // Worth saying out loud either way: a server configured for the styled menu and silently
     // serving the plain one otherwise looks like the setting was ignored.
-    if (Config.GetMenuStyle() != Core::MenuStyle::CenterHtml)
+    if (Config.GetMenuStyle() == Core::MenuStyle::CenterHtml)
     {
-        if (auto chosen = Runtime.Menus.UsePanorama(settings.layout); !chosen)
-        {
-            VoltMod::Log::Info("Menus: center HTML - {}.", chosen.error().Detail);
-        }
-        else
-        {
-            // A workshop addon is how the layout reaches players who did not copy it in by hand. The
-            // requirement lasts exactly as long as this lease, so it goes when the plugin does.
-            if (settings.addonId != 0)
-            {
-                if (auto lease = Runtime.Addons.Require(settings.addonId))
-                    _menuAddon = std::move(*lease);
-                else
-                    VoltMod::Log::Warn("Menu addon {} not required ({}); players without the layout see nothing.",
-                                       settings.addonId, lease.error().Detail);
-            }
-
-            VoltMod::Log::Info("Menus: Panorama, layout '{}'.", settings.layout);
-            return;
-        }
-    }
-    else
         VoltMod::Log::Info("Menus: center HTML, as configured.");
+        return;
+    }
+
+    if (auto chosen = Runtime.Menus.UsePanorama(settings.layout); !chosen)
+    {
+        VoltMod::Log::Info("Menus: center HTML - {}.", chosen.error().Detail);
+        return;
+    }
+
+    // A workshop addon is how the layout reaches players who did not copy it in by hand. The
+    // requirement lasts exactly as long as this lease, so it goes when the plugin does.
+    if (settings.addonId != 0)
+    {
+        if (auto lease = Runtime.Addons.Require(settings.addonId))
+            _menuAddon = std::move(*lease);
+        else
+            VoltMod::Log::Warn("Menu addon {} not required ({}); players without the layout see nothing.",
+                               settings.addonId, lease.error().Detail);
+    }
+
+    VoltMod::Log::Info("Menus: Panorama, layout '{}'.", settings.layout);
 }
 
 }  // namespace AdminSystem

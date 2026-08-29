@@ -134,9 +134,7 @@ static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& ti
 // `lang.<code>` translations fall back to the raw code.
 static std::string LanguageLabel(App& app, const std::string& code, int viewerSlot)
 {
-    std::string key = "lang." + code;
-    std::string label = app.Runtime.Translations.Get(key, viewerSlot);
-    return label == key ? code : label;
+    return app.Runtime.Translations.GetOr("lang." + code, viewerSlot, code);
 }
 
 static std::vector<std::string> AvailableLanguagesSorted(App& app)
