@@ -6,7 +6,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Menu/MenuHost.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
@@ -175,11 +175,11 @@ static void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, i
                                                app.Admins.UpdateLanguage(steamId, lang);
                                                app.Runtime.Translations.SetPlayerLanguage(menuSlot, lang);
                                                // Rebuild so the baked labels re-render in the new language. Use the
-                                               // by-value menuSlot (not a capture): CloseMenu frees this row and its
+                                               // by-value menuSlot (not a capture): Close frees this row and its
                                                // captures, so nothing read after it may live in the lambda's closure.
-                                               auto& mgr = app.Menus();
-                                               mgr.CloseMenu(menuSlot);
-                                               mgr.OpenMenu(menuSlot, BuildChatSettingsMenu(app, menuSlot));
+                                               auto& mgr = app.Runtime.Menus;
+                                               mgr.Close(menuSlot);
+                                               mgr.Open(menuSlot, BuildChatSettingsMenu(app, menuSlot));
                                            },
                                        .Index = initialIndex});
 }

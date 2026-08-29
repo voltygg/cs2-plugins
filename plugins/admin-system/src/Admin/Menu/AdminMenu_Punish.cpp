@@ -8,7 +8,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Menu/MenuHost.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -48,7 +48,7 @@ std::shared_ptr<VoltMod::Menu> BuildPunishMenu(AdminSystem::App& app, int adminS
                                    [&app, adminSlot](int target) {
                                        auto actions = BuildPunishActionsMenu(app, adminSlot, target);
                                        if (actions)
-                                           app.Menus().OpenMenu(adminSlot, actions);
+                                           app.Runtime.Menus.Open(adminSlot, actions);
                                    },
                                .EmptyLabel = tr.Get("common.noPlayers", adminSlot)});
 

@@ -8,7 +8,7 @@
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Menu/MenuHost.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Admin::Menu
@@ -25,7 +25,7 @@ std::shared_ptr<VoltMod::Menu> BuildTeamPickerMenu(AdminSystem::App& app, VoltMo
     auto addTeam = [&](const std::string& label, int team) {
         builder.Button(label, [&app, admin, target, team](int slot) {
             app.Actions.Run(admin, target, team, Actions::ChangeTeam);
-            app.Menus().CloseAllMenus(slot);
+            app.Runtime.Menus.CloseAll(slot);
         });
     };
 

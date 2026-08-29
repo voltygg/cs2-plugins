@@ -15,7 +15,7 @@
 #include <VoltMod/Entities/Entity.hpp>
 #include <VoltMod/Entities/PawnPredicates.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Menu/MenuHost.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -93,7 +93,7 @@ std::shared_ptr<VoltMod::Menu> BuildControlMenu(AdminSystem::App& app, int admin
                                        auto actions = BuildControlActionsMenu(app, players.RefFor(adminSlot),
                                                                               players.RefFor(targetSlot));
                                        if (actions)
-                                           app.Menus().OpenMenu(adminSlot, actions);
+                                           app.Runtime.Menus.Open(adminSlot, actions);
                                    },
                                .EmptyLabel = tr.Get("common.noPlayers", adminSlot)});
 

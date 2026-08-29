@@ -134,6 +134,34 @@ void RegisterCommands(App& app)
             return Reply{std::format("slot {} input capture: {}", slot.Value, *enabled ? "on" : "off")};
         });
 
+    // Held buttons come straight off the pawn's movement state, not through the layout, so this
+    // answers whether WASD/E/R still reach the server while uilab_capture has taken the cursor.
+    commands.Add("uilab_buttons")
+        .Describe("Print a player's held keys: uilab_buttons <slot>. Run with input capture on to "
+                  "see whether keys still arrive under a cursor.")
+        .ConsoleOnly()
+        .Run([&app](Caller, Args::Int slot) -> Result<Reply> {
+            const uint64_t buttons = app.Runtime.Entities.Buttons(slot.Value);
+
+            std::string held;
+            const auto add = [&held](const char* name, bool set) {
+                if (!set)
+                    return;
+                if (!held.empty())
+                    held += ", ";
+                held += name;
+            };
+            add("IN_FORWARD", (buttons & VoltMod::IN_FORWARD) != 0);
+            add("IN_BACK", (buttons & VoltMod::IN_BACK) != 0);
+            add("IN_MOVELEFT", (buttons & VoltMod::IN_MOVELEFT) != 0);
+            add("IN_MOVERIGHT", (buttons & VoltMod::IN_MOVERIGHT) != 0);
+            add("IN_USE", (buttons & VoltMod::IN_USE) != 0);
+            add("IN_RELOAD", (buttons & VoltMod::IN_RELOAD) != 0);
+
+            return Reply{
+                std::format("slot {} buttons: {:#x} [{}]", slot.Value, buttons, held.empty() ? "none" : held)};
+        });
+
     commands.Add("uilab_var")
         .Describe("Set a dialog variable for everyone: uilab_var <panelId> <variable> <value...>")
         .ConsoleOnly()
@@ -256,7 +284,7 @@ void RegisterCommands(App& app)
         .Describe("Open a sample menu on the Panorama host for a player: uilab_menu <slot>")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot) -> Result<Reply> {
-            auto& menus = app.Runtime.UiMenus;
+            auto& menus = app.Runtime.Menus;
             auto submenu = [&app](int) {
                 return VoltMod::MenuBuilder("Lab submenu")
                     .Text("Back should return to the lab menu.")
@@ -272,9 +300,9 @@ void RegisterCommands(App& app)
                                                          .Choices = {{"One", 1}, {"Two", 2}, {"Three", 3}},
                                                          .Commit = [](int, const int&) {}})
                             .Submenu("Submenu", submenu)
-                            .Button("Close from a row", [&menus](int who) { menus.CloseAllMenus(who); })
+                            .Button("Close from a row", [&menus](int who) { menus.CloseAll(who); })
                             .Build();
-            menus.OpenMenu(slot.Value, std::move(menu), {.FreezeMovement = false});
+            menus.Open(slot.Value, std::move(menu), {.FreezeMovement = false});
             return Reply{std::format("menu opened for slot {}.", slot.Value)};
         });
 }

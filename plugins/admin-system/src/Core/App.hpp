@@ -48,15 +48,6 @@ struct App
     bool Start();
 
     /**
-     * The menu host every menu in this plugin opens on.
-     *
-     * Chosen once in Start from `menu.style` and whether VoltMod::Capability::CustomUi is on, so
-     * a session never straddles two hosts. Everything else asks for it here rather than reaching
-     * for Runtime.HtmlMenus or Runtime.UiMenus directly.
-     */
-    VoltMod::MenuHost& Menus() const { return *_menus; }
-
-    /**
      * The admin-panel rows for one admin/target pair, bound to this plugin's services.
      *
      * The one place the VoltMod::ActionRows::Services bag is spelled: every menu file asks here
@@ -71,7 +62,7 @@ struct App
                                     .Translations = Runtime.Translations,
                                     .Players = Runtime.Players,
                                     .Entities = Runtime.Entities,
-                                    .Menus = Menus(),
+                                    .Menus = Runtime.Menus,
                                     .Effects = &Effects},
                                    admin, std::move(target));
     }
@@ -125,11 +116,8 @@ private:
     void InstallStatusReporting();
     void RegisterCommands();
 
-    /** Pick the menu host from settings and capabilities, and say which one and why. */
-    void SelectMenuHost();
-
-    /** Never null after Start; points at a Runtime member, so it outlives this. */
-    VoltMod::MenuHost* _menus = &Runtime.HtmlMenus;
+    /** Pick the menu driver from settings and capabilities, and say which one and why. */
+    void SelectMenuDriver();
 
     /** Held only when a workshop addon carries the layout; dropping it drops the requirement. */
     VoltMod::Subscription _menuAddon;

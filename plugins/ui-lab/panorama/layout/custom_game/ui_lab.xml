@@ -19,6 +19,13 @@
         Drive it with:  uilab_var lab_title title Ready
       -->
       <Label id="lab_title" class="Title" text="{s:title}" />
+      <!--
+        lab_echo does not own {s:title} - lab_card does. It inherits the variable from that
+        ancestor instead of declaring its own, to probe whether an inherited dialog variable
+        repaints immediately on uilab_var_slot <slot> lab_card title X, or only after the next
+        relayout (a click). Watch it side by side with lab_title, which is set directly.
+      -->
+      <Label id="lab_echo" class="Echo" text="{s:title}" hittest="false" />
       <Label id="lab_body" class="Body" text="ui-lab is live." />
 
       <Panel id="lab_buttons" class="Buttons" hittest="true">

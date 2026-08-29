@@ -79,7 +79,7 @@ static PunishFlowT::Ptr MakeBaseFlow(App& app, int adminSlot, PendingPunishment 
 {
     auto& tr = app.Runtime.Translations;
     auto type = pending.Type;
-    return PunishFlowT::Create(app.Menus(), adminSlot, std::move(pending))
+    return PunishFlowT::Create(app.Runtime.Menus, adminSlot, std::move(pending))
         ->Validate([&app, adminSlot](const PendingPunishment& p) { return ValidatePending(app, adminSlot, p); })
         ->Confirm({.Title = ConfirmTitle(tr, ActionTranslationKey(type), adminSlot),
                    .Summary =

@@ -8,7 +8,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Menu/MenuHost.hpp>
+#include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <format>
@@ -29,7 +29,7 @@ std::shared_ptr<VoltMod::Menu> BuildEffectsMenu(AdminSystem::App& app, int admin
                              auto actions =
                                  BuildEffectsActionsMenu(app, players.RefFor(adminSlot), players.RefFor(targetSlot));
                              if (actions)
-                                 app.Menus().OpenMenu(adminSlot, actions);
+                                 app.Runtime.Menus.Open(adminSlot, actions);
                          }});
 }
 
@@ -70,7 +70,7 @@ std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, Vo
                                                auto& players = app.Runtime.Players;
                                                Actions::Swap(app, players.RefFor(viewerSlot), first,
                                                              players.RefFor(secondSlot));
-                                               app.Menus().CloseAllMenus(viewerSlot);
+                                               app.Runtime.Menus.CloseAll(viewerSlot);
                                            },
                                        .Enabled =
                                            [&entities = app.Runtime.Entities, first = target](int candidate) {
@@ -80,7 +80,7 @@ std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, Vo
                                                return candidate != first.Slot && pawn && pawn.IsAlive();
                                            }});
                                   if (picker)
-                                      app.Menus().OpenMenu(slot, picker);
+                                      app.Runtime.Menus.Open(slot, picker);
                               },
                           .Enabled = hasS});
 
