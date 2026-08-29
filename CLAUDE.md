@@ -101,8 +101,8 @@ Current patterns:
   (`commands.Add(name).Describe(...).Permission(...).Run(handler)`). The handler's
   parameter list is the argument spec - `Caller` first, then one `Args::` value per
   argument - so targets, durations and trailing reasons are parsed, immunity-checked
-  and bound before the handler runs. Keep each returned `Subscription` in the App's
-  `_subs`.
+  and bound before the handler runs. `CommandManager` owns commands for the load
+  cycle; keep event, timer, and hook subscriptions in the App's `_subs`.
 - Inject permissions, immunity, replies, and broadcasts once through
   `Runtime::Policy`, then ask `Policy::Authorize(caller, target, permission)`
   wherever the answer is needed. Do not re-implement the check: a plugin's
@@ -119,8 +119,8 @@ Current patterns:
 - Keep each returned `VoltMod::Subscription` beside the state captured by its
   handler. Dropping one unsubscribes - and for a `Scheduler` timer, cancels it -
   so a fire-and-forget deferral still needs an owner.
-- A hook service arms itself on its first subscription (`Movement`, `Damage`,
-  `Teleport`) and disarms when the last one is dropped; do not look for an
+- A hook service arms itself on its first subscription (`Movement`, `Teleport`)
+  and disarms when the last one is dropped; do not look for an
   `Install()` or `Enable()` to call. A leaked Subscription therefore leaves a
   live vtable hook behind after `meta reload`.
 - Hook an engine vfunc the framework does not cover with `VOLTMOD_VHOOK*` at
