@@ -31,32 +31,27 @@ A `'vswhere.exe' is not recognized` line printed by the launcher itself is benig
 
 ## 2. Consuming the framework
 
-`conan.lock` pins a `voltmod` package revision. A plain `uv run poe build` uses it
-and never compiles `vendor/voltmod`, so after any framework edit build with:
+`conan.lock` pins a `voltmod` package revision. To work on the framework, register
+the checkout as the editable `voltmod` package once (`uv run conan editable list`
+shows whether it is):
 
 ```powershell
-uv run poe build --framework vendor/voltmod
+uv run conan editable add vendor/voltmod
+uv run poe build            # compiles vendor/voltmod first, then the plugins - both incremental
+uv run poe build --relock   # before committing: export a package, pin conan.lock, drop the editable
 ```
 
-The `voltmod` CLI here is installed from the git ref in `pyproject.toml`, so a
-flag that only exists in the checkout is reachable through the checkout's own
-environment until that ref is pushed and `uv sync -U` has run:
-`uv run --project vendor/voltmod voltmod build --framework vendor/voltmod`.
+The `voltmod` CLI here is installed from the git ref in `pyproject.toml`; until
+that ref carries the editable-aware `build`, use the checkout's own:
+`uv run --project vendor/voltmod voltmod build [--relock]`. An older CLI links an
+editable checkout **without rebuilding it** - a stale DLL that prints "Build
+complete".
 
-It packages the checkout (`voltmod package build kit`), re-pins `voltmod` in
-`conan.lock` against the local cache, wipes `build/<preset>` and builds. The wipe
-is not optional: CMake caches the package folder it was configured with, and a
-relock alone keeps linking the old framework while still printing "Build
-complete" - three "fixed" DLLs shipped stale code that way. When in doubt, check
-the DLL for a string the new code adds:
-`Select-String -Path <dll> -Pattern "<new log text>" -Quiet`.
-
-Commit the relocked `conan.lock` with the plugin change ("chore: relock voltmod
-for ..."). The framework's own suite runs with `uv run poe test` inside
-`vendor/voltmod`.
-
-If `uv run conan editable list` still shows `voltmod`, remove it once with
-`uv run conan editable remove voltmod`; the editable flow is gone.
+`--relock` builds the checkout, exports it to the Conan cache (`conan export-pkg`),
+re-pins `voltmod` in `conan.lock`, removes the editable, builds the plugins, and dies
+if `build/<preset>/generators` does not point at the new package. Commit the
+relocked `conan.lock` with the plugin change ("chore: relock voltmod for ...").
+The framework's own suite runs with `uv run poe test` inside `vendor/voltmod`.
 
 ## 3. Presets and tests
 

@@ -40,17 +40,17 @@ Build output is under
 `build/<preset>/plugins/<name>/<platform-arch>/`. The build tasks run
 `voltmod`, installed by this repository's `pyproject.toml`.
 
-To work on VoltMod and a plugin together:
+To work on VoltMod and a plugin together, register the checkout as the editable
+`voltmod` package once:
 
 ```bash
-uv run poe build --framework vendor/voltmod
+uv run conan editable add vendor/voltmod
+uv run poe build                  # compiles the checkout first, then the plugins, both incrementally
+uv run poe build --relock         # before committing: export it as a package, pin conan.lock, drop the editable
 ```
 
-This packages the checkout, re-pins `voltmod` in `conan.lock` against the local
-cache, wipes `build/<preset>` (CMake caches the package folder, so a relock alone
-keeps linking the old framework) and builds. Commit the relocked `conan.lock` with
-the plugin change. Remove any old `voltmod` editable registration once with
-`uv run conan editable remove voltmod`.
+`--relock` fails if the plugin build tree is not configured against the new
+package. Commit the relocked `conan.lock` with the plugin change.
 
 Treat the root worktree and `vendor/voltmod` as separate repositories. Check
 their status and diffs independently. Do not edit the read-only projects under
