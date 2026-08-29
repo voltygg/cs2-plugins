@@ -16,9 +16,11 @@
 namespace AdminSystem::Admin::Menu
 {
 
+using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
+using VoltMod::ToggleRow;
 
-std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildFunMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
 
@@ -32,28 +34,31 @@ std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int admin
 
     for (const auto& info : Fun::Toggles)
     {
-        builder.Toggle(
-            tr.Get(std::string(info.NameKey), adminSlot), tr.Get("effectState.on", adminSlot),
-            tr.Get("effectState.off", adminSlot), [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
-            [&app, id = info.Id, onKey = std::string(info.OnKey), offKey = std::string(info.OffKey)](int slot) {
-                // Re-check per click: the menu may have been open across an !admin_reload.
-                if (!MayUse(app, slot, Permission::FunMode))
-                    return;
-                bool on = app.FunMode.Flip(id);
-                app.Chat.BroadcastKey(on ? onKey : offKey);
-            },
-            allowed);
+        builder.Add(ToggleRow{
+            .Label = tr.Get(std::string(info.NameKey), adminSlot),
+            .On = tr.Get("effectState.on", adminSlot),
+            .Off = tr.Get("effectState.off", adminSlot),
+            .Get = [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
+            .Flip =
+                [&app, id = info.Id, onKey = std::string(info.OnKey), offKey = std::string(info.OffKey)](int slot) {
+                    // Re-check per click: the menu may have been open across an !admin_reload.
+                    if (!MayUse(app, slot, Permission::FunMode))
+                        return;
+                    bool on = app.FunMode.Flip(id);
+                    app.Chat.BroadcastKey(on ? onKey : offKey);
+                },
+            .Enabled = allowed});
     }
 
-    builder.Button(
-        tr.Get("fun.clearAll", adminSlot),
-        [&app](int slot) {
-            if (!MayUse(app, slot, Permission::FunMode))
-                return;
-            app.FunMode.ClearAll();
-            app.Chat.BroadcastKey("broadcast.funCleared");
-        },
-        allowed);
+    builder.Add(ButtonRow{.Label = tr.Get("fun.clearAll", adminSlot),
+                          .Activate =
+                              [&app](int slot) {
+                                  if (!MayUse(app, slot, Permission::FunMode))
+                                      return;
+                                  app.FunMode.ClearAll();
+                                  app.Chat.BroadcastKey("broadcast.funCleared");
+                              },
+                          .Enabled = allowed});
 
     return builder.Build();
 }

@@ -9,8 +9,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<VoltMod::MenuView> BuildEffectsMenu(AdminSystem::App& app, int adminSlot);
-std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                           VoltMod::PlayerRef target);
+std::shared_ptr<VoltMod::Menu> BuildEffectsMenu(AdminSystem::App& app, int adminSlot);
+std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                       VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu

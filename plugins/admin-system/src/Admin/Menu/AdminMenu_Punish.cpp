@@ -21,9 +21,11 @@ using AdminSystem::Punishments::PunishType;
 namespace AdminSystem::Admin::Menu
 {
 
+using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
+using VoltMod::SubmenuRow;
 
-std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildPunishMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
 
@@ -33,27 +35,27 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishMenu(AdminSystem::App& app, int ad
 
     MenuBuilder builder(tr.Get("category.punish", adminSlot));
 
-    builder.Submenu(
-        tr.Get("action.unban", adminSlot), [&app](int slot) { return BuildUnbanMenu(app, slot); },
-        app.Access.HasPermission(admin->SteamId(), Permission::Unban));
+    builder.Add(SubmenuRow{.Label = tr.Get("action.unban", adminSlot),
+                           .Build = [&app](int slot) { return BuildUnbanMenu(app, slot); },
+                           .Enabled = app.Access.HasPermission(admin->SteamId(), Permission::Unban)});
 
-    builder.Submenu(
-        tr.Get("action.unmute", adminSlot), [&app](int slot) { return BuildUnmuteMenu(app, slot); },
-        app.Access.HasPermission(admin->SteamId(), Permission::Mute));
+    builder.Add(SubmenuRow{.Label = tr.Get("action.unmute", adminSlot),
+                           .Build = [&app](int slot) { return BuildUnmuteMenu(app, slot); },
+                           .Enabled = app.Access.HasPermission(admin->SteamId(), Permission::Mute)});
 
-    VoltMod::AppendPlayerRows(
-        builder, app.Runtime.Players, adminSlot,
-        [&app](int admin, int target) {
-            auto actions = BuildPunishActionsMenu(app, admin, target);
-            if (actions)
-                app.Menus().OpenMenu(admin, actions);
-        },
-        tr.Get("common.noPlayers", adminSlot));
+    VoltMod::AppendPlayerRows(builder, app.Runtime.Players,
+                              {.Pick =
+                                   [&app, adminSlot](int target) {
+                                       auto actions = BuildPunishActionsMenu(app, adminSlot, target);
+                                       if (actions)
+                                           app.Menus().OpenMenu(adminSlot, actions);
+                                   },
+                               .EmptyLabel = tr.Get("common.noPlayers", adminSlot)});
 
     return builder.Build();
 }
 
-std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::Menu> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
 {
     auto& tr = app.Runtime.Translations;
     auto& plrMgr = app.Runtime.Players;
@@ -78,10 +80,10 @@ std::shared_ptr<VoltMod::MenuView> BuildPunishActionsMenu(AdminSystem::App& app,
          {PunishType::Kick, PunishType::Ban, PunishType::VoiceMute, PunishType::TextMute, PunishType::Warn})
     {
         PendingPunishment pending{.Type = type, .Target = target->Ref()};
-        builder.Button(
-            tr.Get(ActionTranslationKey(type), adminSlot),
-            [&app, pending = std::move(pending)](int slot) { StartPunishFlow(app, slot, pending); },
-            CanStillPunish(app, adminSlot, target->Ref(), type));
+        builder.Add(ButtonRow{
+            .Label = tr.Get(ActionTranslationKey(type), adminSlot),
+            .Activate = [&app, pending = std::move(pending)](int slot) { StartPunishFlow(app, slot, pending); },
+            .Enabled = CanStillPunish(app, adminSlot, target->Ref(), type)});
     }
 
     return builder.Build();

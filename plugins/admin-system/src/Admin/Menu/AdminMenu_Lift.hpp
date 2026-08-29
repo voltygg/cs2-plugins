@@ -10,9 +10,9 @@ namespace AdminSystem::Admin::Menu
 {
 
 /** Paginated list of active bans; selecting one opens an unban confirmation. */
-std::shared_ptr<VoltMod::MenuView> BuildUnbanMenu(AdminSystem::App& app, int adminSlot);
+std::shared_ptr<VoltMod::Menu> BuildUnbanMenu(AdminSystem::App& app, int adminSlot);
 
 /** Paginated list of active voice and text mutes; selecting one opens an unmute confirmation. */
-std::shared_ptr<VoltMod::MenuView> BuildUnmuteMenu(AdminSystem::App& app, int adminSlot);
+std::shared_ptr<VoltMod::Menu> BuildUnmuteMenu(AdminSystem::App& app, int adminSlot);
 
 }  // namespace AdminSystem::Admin::Menu

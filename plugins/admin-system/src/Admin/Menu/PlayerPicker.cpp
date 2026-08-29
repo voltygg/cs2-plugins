@@ -11,13 +11,10 @@
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<VoltMod::MenuView> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, const std::string& title,
-                                                     std::function<void(int adminSlot, int targetSlot)> onPick,
-                                                     std::function<bool(int targetSlot)> isEnabled)
+std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker spec)
 {
-    auto& tr = app.Runtime.Translations;
-    return ::VoltMod::BuildPlayerPicker(app.Runtime.Players, adminSlot, title, std::move(onPick),
-                                        tr.Get("common.noPlayers", adminSlot), std::move(isEnabled));
+    spec.EmptyLabel = app.Runtime.Translations.Get("common.noPlayers", adminSlot);
+    return ::VoltMod::BuildPlayerPicker(app.Runtime.Players, std::move(spec));
 }
 
 }  // namespace AdminSystem::Admin::Menu

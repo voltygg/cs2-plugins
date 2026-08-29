@@ -15,12 +15,18 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace AdminSystem::Admin::Menu
 {
 
-using VoltMod::ChoiceOption;
+using VoltMod::ChoiceRow;
 using VoltMod::MenuBuilder;
+using VoltMod::ToggleRow;
+
+/** One labeled entry of a colour or language choice row. */
+using LabeledValue = std::pair<std::string, std::string>;
 
 namespace ChatColors = VoltMod::ChatColors;
 
@@ -51,12 +57,12 @@ static int IndexForColor(std::string_view color)
     return 0;
 }
 
-static std::vector<ChoiceOption<std::string>::Choice> BuildColorChoices(App& app, int viewerSlot)
+static std::vector<LabeledValue> BuildColorChoices(App& app, int viewerSlot)
 {
     auto& tr = app.Runtime.Translations;
     const auto& keys = ColorLabelKeys();
 
-    std::vector<ChoiceOption<std::string>::Choice> choices;
+    std::vector<LabeledValue> choices;
     choices.reserve(ChatColors::Palette.size() + 1);
 
     // Group inheritance is distinct from the `default` color override.
@@ -100,27 +106,29 @@ static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& ti
     auto choices = BuildColorChoices(app, viewerSlot);
     int initialIndex = IndexForColor(CurrentSlotColor(app, steamId, slot));
 
-    builder.Choice<std::string>(
-        title, std::move(choices),
-        [&app, steamId, slot](int /*menuSlot*/, const std::string& value) {
-            auto& mgr = app.Admins;
-            const auto* admin = mgr.GetAdmin(steamId);
-            if (!admin)
-                return;
-            std::string nameColor = admin->NameColor;
-            std::string messageColor = admin->MessageColor;
-            switch (slot)
-            {
-            case ColorSlot::Name:
-                nameColor = value;
-                break;
-            case ColorSlot::Message:
-                messageColor = value;
-                break;
-            }
-            mgr.UpdateChatStyle(steamId, admin->DisplayPrefix, nameColor, messageColor);
-        },
-        true, initialIndex);
+    builder.Add(ChoiceRow<std::string>{.Label = title,
+                                       .Choices = std::move(choices),
+                                       .Commit =
+                                           [&app, steamId, slot](int /*menuSlot*/, const std::string& value) {
+                                               auto& mgr = app.Admins;
+                                               const auto* admin = mgr.GetAdmin(steamId);
+                                               if (!admin)
+                                                   return;
+                                               std::string nameColor = admin->NameColor;
+                                               std::string messageColor = admin->MessageColor;
+                                               switch (slot)
+                                               {
+                                               case ColorSlot::Name:
+                                                   nameColor = value;
+                                                   break;
+                                               case ColorSlot::Message:
+                                                   messageColor = value;
+                                                   break;
+                                               }
+                                               mgr.UpdateChatStyle(steamId, admin->DisplayPrefix, nameColor,
+                                                                   messageColor);
+                                           },
+                                       .Index = initialIndex});
 }
 
 // `lang.<code>` translations fall back to the raw code.
@@ -149,7 +157,7 @@ static void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, i
 {
     auto langs = AvailableLanguagesSorted(app);
 
-    std::vector<ChoiceOption<std::string>::Choice> choices;
+    std::vector<LabeledValue> choices;
     choices.reserve(langs.size());
 
     for (const auto& code : langs)
@@ -160,22 +168,23 @@ static void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, i
     const auto* admin = app.Admins.GetAdmin(steamId);
     int initialIndex = IndexForLanguage(langs, admin ? admin->Language : std::string("en"));
 
-    builder.Choice<std::string>(
-        app.Runtime.Translations.Get("chat.panelLanguage", viewerSlot), std::move(choices),
-        [&app, steamId](int menuSlot, const std::string& lang) {
-            app.Admins.UpdateLanguage(steamId, lang);
-            app.Runtime.Translations.SetPlayerLanguage(menuSlot, lang);
-            // Rebuild so the baked labels re-render in the new language. Use the by-value
-            // menuSlot (not a capture): CloseMenu frees this option and its captures, so
-            // nothing read after it may live in the lambda's closure.
-            auto& mgr = app.Menus();
-            mgr.CloseMenu(menuSlot);
-            mgr.OpenMenu(menuSlot, BuildChatSettingsMenu(app, menuSlot));
-        },
-        true, initialIndex);
+    builder.Add(ChoiceRow<std::string>{.Label = app.Runtime.Translations.Get("chat.panelLanguage", viewerSlot),
+                                       .Choices = std::move(choices),
+                                       .Commit =
+                                           [&app, steamId](int menuSlot, const std::string& lang) {
+                                               app.Admins.UpdateLanguage(steamId, lang);
+                                               app.Runtime.Translations.SetPlayerLanguage(menuSlot, lang);
+                                               // Rebuild so the baked labels re-render in the new language. Use the
+                                               // by-value menuSlot (not a capture): CloseMenu frees this row and its
+                                               // captures, so nothing read after it may live in the lambda's closure.
+                                               auto& mgr = app.Menus();
+                                               mgr.CloseMenu(menuSlot);
+                                               mgr.OpenMenu(menuSlot, BuildChatSettingsMenu(app, menuSlot));
+                                           },
+                                       .Index = initialIndex});
 }
 
-std::shared_ptr<VoltMod::MenuView> BuildChatSettingsMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildChatSettingsMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     auto* admin = app.Runtime.Players.Get(adminSlot);
@@ -186,20 +195,22 @@ std::shared_ptr<VoltMod::MenuView> BuildChatSettingsMenu(AdminSystem::App& app, 
     MenuBuilder builder(tr.Get("category.chatSettings", adminSlot));
 
     // Persist each row immediately; the menu has no Save action.
-    builder.Toggle(
-        tr.Get("chat.displayPrefix", adminSlot), tr.Get("effectState.on", adminSlot),
-        tr.Get("effectState.off", adminSlot),
-        [&app, steamId](int) {
-            const auto* a = app.Admins.GetAdmin(steamId);
-            return a ? a->DisplayPrefix : true;
-        },
-        [&app, steamId](int) {
-            auto& mgr = app.Admins;
-            const auto* a = mgr.GetAdmin(steamId);
-            if (!a)
-                return;
-            mgr.UpdateChatStyle(steamId, !a->DisplayPrefix, a->NameColor, a->MessageColor);
-        });
+    builder.Add(ToggleRow{.Label = tr.Get("chat.displayPrefix", adminSlot),
+                          .On = tr.Get("effectState.on", adminSlot),
+                          .Off = tr.Get("effectState.off", adminSlot),
+                          .Get =
+                              [&app, steamId](int) {
+                                  const auto* a = app.Admins.GetAdmin(steamId);
+                                  return a ? a->DisplayPrefix : true;
+                              },
+                          .Flip =
+                              [&app, steamId](int) {
+                                  auto& mgr = app.Admins;
+                                  const auto* a = mgr.GetAdmin(steamId);
+                                  if (!a)
+                                      return;
+                                  mgr.UpdateChatStyle(steamId, !a->DisplayPrefix, a->NameColor, a->MessageColor);
+                              }});
 
     AddColorChoice(app, builder, tr.Get("chat.nameColor", adminSlot), steamId, ColorSlot::Name, adminSlot);
     AddColorChoice(app, builder, tr.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message, adminSlot);

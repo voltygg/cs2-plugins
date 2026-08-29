@@ -16,23 +16,25 @@
 namespace AdminSystem::Admin::Menu
 {
 
+using VoltMod::ButtonRow;
 using VoltMod::EffectDescriptor;
 using VoltMod::MenuBuilder;
 
-std::shared_ptr<VoltMod::MenuView> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     return BuildPlayerPicker(
-        app, adminSlot, tr.Get("category.effects", adminSlot), [&app](int viewerSlot, int targetSlot) {
-            auto& players = app.Runtime.Players;
-            auto actions = BuildEffectsActionsMenu(app, players.RefFor(viewerSlot), players.RefFor(targetSlot));
-            if (actions)
-                app.Menus().OpenMenu(viewerSlot, actions);
-        });
+        app, adminSlot, {.Title = tr.Get("category.effects", adminSlot), .Pick = [&app, adminSlot](int targetSlot) {
+                             auto& players = app.Runtime.Players;
+                             auto actions =
+                                 BuildEffectsActionsMenu(app, players.RefFor(adminSlot), players.RefFor(targetSlot));
+                             if (actions)
+                                 app.Menus().OpenMenu(adminSlot, actions);
+                         }});
 }
 
-std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                           VoltMod::PlayerRef target)
+std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                       VoltMod::PlayerRef target)
 {
     auto& tr = app.Runtime.Translations;
 
@@ -41,41 +43,46 @@ std::shared_ptr<VoltMod::MenuView> BuildEffectsActionsMenu(AdminSystem::App& app
     if (!targetPlayer || !adminPlayer)
         return nullptr;
 
-    MenuBuilder builder(app.Menus(),
-                        std::format("{}: {}", tr.Get("category.effects", admin.Slot), targetPlayer->Name()));
-    builder.For(admin, target, &app.Effects);
-    bool hasS = builder.Allowed(Flag(Permission::Control));
+    MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", admin.Slot), targetPlayer->Name()));
+    auto rows = app.MenuRows(admin, target);
+    bool hasS = rows.Allowed(Flag(Permission::Control));
 
     for (const EffectDescriptor* effect : app.EffectDescriptors.MenuEffects)
     {
         if (effect->Choices)
-            builder.EffectPicker(*effect);
+            builder.Add(rows.EffectPicker(*effect));
         else
-            builder.Effect(*effect);
+            builder.Add(rows.Effect(*effect));
     }
 
-    builder.Row("action.slap", app.ActionDescriptors.Slap).Row("action.smite", app.ActionDescriptors.Smite);
+    builder.Add(rows.Action("action.slap", app.ActionDescriptors.Slap))
+        .Add(rows.Action("action.smite", app.ActionDescriptors.Smite));
 
     // Swap opens a second player picker, then runs the dual-target Swap.
-    builder.Button(
-        builder.Tr("action.swap"),
-        [&app, admin, target](int slot) {
-            auto picker = BuildPlayerPicker(
-                app, admin.Slot, app.Runtime.Translations.Get("common.selectSwapTarget", admin.Slot),
-                [&app, first = target](int viewerSlot, int secondSlot) {
-                    auto& players = app.Runtime.Players;
-                    Actions::Swap(app, players.RefFor(viewerSlot), first, players.RefFor(secondSlot));
-                    app.Menus().CloseAllMenus(viewerSlot);
-                },
-                [&entities = app.Runtime.Entities, first = target](int candidate) {
-                    // Gray out partners Swap would reject: the already-picked player and the dead.
-                    VoltMod::Pawn pawn = entities.PawnOf(candidate);
-                    return candidate != first.Slot && pawn && pawn.IsAlive();
-                });
-            if (picker)
-                app.Menus().OpenMenu(slot, picker);
-        },
-        hasS);
+    builder.Add(ButtonRow{.Label = rows.Tr("action.swap"),
+                          .Activate =
+                              [&app, admin, target](int slot) {
+                                  auto picker = BuildPlayerPicker(
+                                      app, admin.Slot,
+                                      {.Title = app.Runtime.Translations.Get("common.selectSwapTarget", admin.Slot),
+                                       .Pick =
+                                           [&app, viewerSlot = admin.Slot, first = target](int secondSlot) {
+                                               auto& players = app.Runtime.Players;
+                                               Actions::Swap(app, players.RefFor(viewerSlot), first,
+                                                             players.RefFor(secondSlot));
+                                               app.Menus().CloseAllMenus(viewerSlot);
+                                           },
+                                       .Enabled =
+                                           [&entities = app.Runtime.Entities, first = target](int candidate) {
+                                               // Gray out partners Swap would reject: the already-picked player and the
+                                               // dead.
+                                               VoltMod::Pawn pawn = entities.PawnOf(candidate);
+                                               return candidate != first.Slot && pawn && pawn.IsAlive();
+                                           }});
+                                  if (picker)
+                                      app.Menus().OpenMenu(slot, picker);
+                              },
+                          .Enabled = hasS});
 
     return builder.Build();
 }

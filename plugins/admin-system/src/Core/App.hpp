@@ -21,9 +21,12 @@
 #include <VoltMod/Core/EffectManager.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>
 #include <VoltMod/Database/Api.hpp>
+#include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Players/ActionDispatcher.hpp>
 #include <VoltMod/Players/EffectDispatcher.hpp>
+#include <optional>
 #include <string>
+#include <utility>
 
 namespace AdminSystem
 {
@@ -52,6 +55,26 @@ struct App
      * for Runtime.HtmlMenus or Runtime.UiMenus directly.
      */
     VoltMod::MenuHost& Menus() const { return *_menus; }
+
+    /**
+     * The admin-panel rows for one admin/target pair, bound to this plugin's services.
+     *
+     * The one place the VoltMod::ActionRows::Services bag is spelled: every menu file asks here
+     * instead of assembling it again. An empty @p target is a panel with no target yet, whose
+     * rows deny.
+     */
+    [[nodiscard]] VoltMod::ActionRows MenuRows(VoltMod::PlayerRef admin,
+                                               std::optional<VoltMod::PlayerRef> target = std::nullopt)
+    {
+        return VoltMod::ActionRows({.Actions = Actions,
+                                    .Policy = Runtime.Policy,
+                                    .Translations = Runtime.Translations,
+                                    .Players = Runtime.Players,
+                                    .Entities = Runtime.Entities,
+                                    .Menus = Menus(),
+                                    .Effects = &Effects},
+                                   admin, std::move(target));
+    }
 
     VoltMod::Runtime& Runtime;
     const std::string Version;

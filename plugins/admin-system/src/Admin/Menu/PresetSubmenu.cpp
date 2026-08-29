@@ -16,8 +16,8 @@ namespace AdminSystem::Admin::Menu
 
 using VoltMod::MenuBuilder;
 
-std::shared_ptr<VoltMod::MenuView> BuildTeamPickerMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                       VoltMod::PlayerRef target)
+std::shared_ptr<VoltMod::Menu> BuildTeamPickerMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                   VoltMod::PlayerRef target)
 {
     auto& tr = app.Runtime.Translations;
     MenuBuilder builder(tr.Get("action.changeTeam", admin.Slot));

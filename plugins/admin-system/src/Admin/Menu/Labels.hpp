@@ -4,7 +4,6 @@
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <format>
-#include <functional>
 #include <string>
 #include <string_view>
 
@@ -35,16 +34,16 @@ inline std::string ConfirmTitle(VoltMod::Translations& tr, std::string_view acti
     return std::format("{}: {}", tr.Get("punish.confirmTitle", slot), tr.Get(actionKey, slot));
 }
 
-/** The confirm button's per-slot label. @p tr belongs to the runtime, which outlives every flow. */
-inline std::function<std::string(int)> ConfirmLabel(VoltMod::Translations& tr)
+/** The confirm button's label. A flow runs for one player, so it resolves once here. */
+inline std::string ConfirmLabel(VoltMod::Translations& tr, int slot)
 {
-    return [&tr](int slot) { return tr.Get("punish.confirm", slot); };
+    return tr.Get("punish.confirm", slot);
 }
 
-/** The cancel button's per-slot label. */
-inline std::function<std::string(int)> CancelLabel(VoltMod::Translations& tr)
+/** The cancel button's label, resolved for the one player the flow runs for. */
+inline std::string CancelLabel(VoltMod::Translations& tr, int slot)
 {
-    return [&tr](int slot) { return tr.Get("punish.cancel", slot); };
+    return tr.Get("punish.cancel", slot);
 }
 
 }  // namespace AdminSystem::Admin::Menu

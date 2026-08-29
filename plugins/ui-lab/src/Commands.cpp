@@ -265,10 +265,12 @@ void RegisterCommands(App& app)
             };
             auto menu = VoltMod::MenuBuilder("Lab menu")
                             .Subtitle("uilab_menu")
-                            .Toggle(
-                                "Toggle", "ON", "OFF", [&app](int) { return app.MenuToggle; },
-                                [&app](int) { app.MenuToggle = !app.MenuToggle; })
-                            .Choice<int>("Choice", {{"One", 1}, {"Two", 2}, {"Three", 3}}, [](int, const int&) {})
+                            .Add(VoltMod::ToggleRow{.Label = "Toggle",
+                                                    .Get = [&app](int) { return app.MenuToggle; },
+                                                    .Flip = [&app](int) { app.MenuToggle = !app.MenuToggle; }})
+                            .Add(VoltMod::ChoiceRow<int>{.Label = "Choice",
+                                                         .Choices = {{"One", 1}, {"Two", 2}, {"Three", 3}},
+                                                         .Commit = [](int, const int&) {}})
                             .Submenu("Submenu", submenu)
                             .Button("Close from a row", [&menus](int who) { menus.CloseAllMenus(who); })
                             .Build();

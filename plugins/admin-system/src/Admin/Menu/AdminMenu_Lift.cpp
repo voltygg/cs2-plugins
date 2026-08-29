@@ -26,6 +26,7 @@ using AdminSystem::Punishments::PunishType;
 namespace AdminSystem::Admin::Menu
 {
 
+using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 using VoltMod::Strings;
 
@@ -73,31 +74,38 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
     const std::string_view done = ban ? "unban.done" : "unmute.done";
     const std::string_view gone = ban ? "unban.gone" : "unmute.gone";
 
-    VoltMod::Flow<LiftRow>::Create(app.Menus(), std::move(row))
-        ->OnValidate(RequirePermission(app, permission))
-        ->WithConfirm([&app, action](int slot) { return ConfirmTitle(app.Runtime.Translations, action, slot); },
-                      [&app](int slot, const LiftRow& r) {
-                          auto& tr = app.Runtime.Translations;
-                          std::vector<std::pair<std::string, std::string>> rows;
-                          rows.emplace_back(tr.Get("punish.target", slot), r.Name);
-                          if (const auto tag = TagKey(r.Kind); !tag.empty())
-                              rows.emplace_back(tr.Get(tag, slot), "");
-                          rows.emplace_back(tr.Get("punish.duration", slot), ExpiryLabel(tr, r.ExpiresAt, slot));
-                          rows.emplace_back(tr.Get("punish.reason", slot), Strings::TruncateUtf8(r.Reason, 40));
-                          return rows;
-                      },
-                      ConfirmLabel(app.Runtime.Translations), CancelLabel(app.Runtime.Translations))
-        ->OnFinish([&app, done, gone](int slot, LiftRow& r) {
-            auto& tr = app.Runtime.Translations;
-            auto* admin = app.Runtime.Players.Get(slot);
+    auto& tr = app.Runtime.Translations;
+
+    VoltMod::Flow<LiftRow>::Create(app.Menus(), adminSlot, std::move(row))
+        ->Validate(RequirePermission(app, permission, adminSlot))
+        ->Confirm({.Title = ConfirmTitle(tr, action, adminSlot),
+                   .Summary =
+                       [&app, adminSlot](const LiftRow& r) {
+                           auto& translations = app.Runtime.Translations;
+                           std::vector<std::pair<std::string, std::string>> rows;
+                           rows.emplace_back(translations.Get("punish.target", adminSlot), r.Name);
+                           if (const auto tag = TagKey(r.Kind); !tag.empty())
+                               rows.emplace_back(translations.Get(tag, adminSlot), "");
+                           rows.emplace_back(translations.Get("punish.duration", adminSlot),
+                                             ExpiryLabel(translations, r.ExpiresAt, adminSlot));
+                           rows.emplace_back(translations.Get("punish.reason", adminSlot),
+                                             Strings::TruncateUtf8(r.Reason, 40));
+                           return rows;
+                       },
+                   .ConfirmLabel = ConfirmLabel(tr, adminSlot),
+                   .CancelLabel = CancelLabel(tr, adminSlot)})
+        ->Finish([&app, adminSlot, done, gone](LiftRow& r) {
+            auto& translations = app.Runtime.Translations;
+            auto* admin = app.Runtime.Players.Get(adminSlot);
             if (!admin)
                 return;
 
             // Lift broadcasts the removal; the reply covers broadcasts being disabled.
             const bool removed = Lift(app, r, admin->SteamId());
-            app.Chat.Reply(slot, removed ? tr.Get(done, slot, {{"name", r.Name}}) : tr.Get(gone, slot));
+            app.Chat.Reply(adminSlot, removed ? translations.Get(done, adminSlot, {{"name", r.Name}})
+                                              : translations.Get(gone, adminSlot));
         })
-        ->Start(adminSlot);
+        ->Start();
 }
 
 /** One row per punishment. Bans carry no tag; mutes are tagged with their kind. */
@@ -121,7 +129,7 @@ static void AppendRows(App& app, MenuBuilder& builder, const std::vector<TPunish
     }
 }
 
-std::shared_ptr<VoltMod::MenuView> BuildUnbanMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildUnbanMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     MenuBuilder builder(tr.Get("unban.title", adminSlot));
@@ -131,12 +139,12 @@ std::shared_ptr<VoltMod::MenuView> BuildUnbanMenu(AdminSystem::App& app, int adm
 
     // Never show a dead-end empty page.
     if (bans.empty())
-        builder.Button(tr.Get("unban.noBans", adminSlot), [](int) {}, false);
+        builder.Add(ButtonRow{.Label = tr.Get("unban.noBans", adminSlot), .Enabled = false});
 
     return builder.Build();
 }
 
-std::shared_ptr<VoltMod::MenuView> BuildUnmuteMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildUnmuteMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     MenuBuilder builder(tr.Get("unmute.title", adminSlot));
@@ -147,7 +155,7 @@ std::shared_ptr<VoltMod::MenuView> BuildUnmuteMenu(AdminSystem::App& app, int ad
     AppendRows(app, builder, textMutes, PunishType::TextMute, adminSlot);
 
     if (voiceMutes.empty() && textMutes.empty())
-        builder.Button(tr.Get("unmute.noMutes", adminSlot), [](int) {}, false);
+        builder.Add(ButtonRow{.Label = tr.Get("unmute.noMutes", adminSlot), .Enabled = false});
 
     return builder.Build();
 }

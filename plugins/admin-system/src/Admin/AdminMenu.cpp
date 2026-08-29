@@ -21,8 +21,9 @@ namespace AdminSystem::Admin
 {
 
 using VoltMod::MenuBuilder;
+using VoltMod::SubmenuRow;
 
-std::shared_ptr<VoltMod::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildAdminMainMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
     auto& adminMgr = app.Admins;
@@ -39,27 +40,24 @@ std::shared_ptr<VoltMod::MenuView> BuildAdminMainMenu(AdminSystem::App& app, int
     // show a subtitle, and only one of them can render a <font> tag.
     return MenuBuilder(tr.Get("panel.admin", adminSlot))
         .Subtitle(std::format("v{}", app.Version))
-        .Submenu(
-            tr.Get("category.punish", adminSlot),
-            [&app, adminSlot](int) { return Menu::BuildPunishMenu(app, adminSlot); },
-            access.HasAnyPermission(adminSid, "cdoe"))
-        .Submenu(
-            tr.Get("category.control", adminSlot),
-            [&app, adminSlot](int) { return Menu::BuildControlMenu(app, adminSlot); },
-            access.HasAnyPermission(adminSid, "bskz"))
-        .Submenu(
-            tr.Get("category.effects", adminSlot),
-            [&app, adminSlot](int) { return Menu::BuildEffectsMenu(app, adminSlot); },
-            access.HasAnyPermission(adminSid, "fjz"))
-        .Submenu(
-            tr.Get("category.fun", adminSlot), [&app, adminSlot](int) { return Menu::BuildFunMenu(app, adminSlot); },
-            access.HasAnyPermission(adminSid, "gz"))
-        .Submenu(
-            tr.Get("category.map", adminSlot), [&app, adminSlot](int) { return Menu::BuildMapMenu(app, adminSlot); },
-            access.HasAnyPermission(adminSid, "mvz"))
-        .Submenu(
-            tr.Get("category.chatSettings", adminSlot),
-            [&app, adminSlot](int) { return Menu::BuildChatSettingsMenu(app, adminSlot); }, adminMgr.IsAdmin(adminSid))
+        .Add(SubmenuRow{.Label = tr.Get("category.punish", adminSlot),
+                        .Build = [&app, adminSlot](int) { return Menu::BuildPunishMenu(app, adminSlot); },
+                        .Enabled = access.HasAnyPermission(adminSid, "cdoe")})
+        .Add(SubmenuRow{.Label = tr.Get("category.control", adminSlot),
+                        .Build = [&app, adminSlot](int) { return Menu::BuildControlMenu(app, adminSlot); },
+                        .Enabled = access.HasAnyPermission(adminSid, "bskz")})
+        .Add(SubmenuRow{.Label = tr.Get("category.effects", adminSlot),
+                        .Build = [&app, adminSlot](int) { return Menu::BuildEffectsMenu(app, adminSlot); },
+                        .Enabled = access.HasAnyPermission(adminSid, "fjz")})
+        .Add(SubmenuRow{.Label = tr.Get("category.fun", adminSlot),
+                        .Build = [&app, adminSlot](int) { return Menu::BuildFunMenu(app, adminSlot); },
+                        .Enabled = access.HasAnyPermission(adminSid, "gz")})
+        .Add(SubmenuRow{.Label = tr.Get("category.map", adminSlot),
+                        .Build = [&app, adminSlot](int) { return Menu::BuildMapMenu(app, adminSlot); },
+                        .Enabled = access.HasAnyPermission(adminSid, "mvz")})
+        .Add(SubmenuRow{.Label = tr.Get("category.chatSettings", adminSlot),
+                        .Build = [&app, adminSlot](int) { return Menu::BuildChatSettingsMenu(app, adminSlot); },
+                        .Enabled = adminMgr.IsAdmin(adminSid)})
         .Build();
 }
 

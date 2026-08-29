@@ -4,21 +4,19 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/Menu.hpp>
-#include <functional>
+#include <VoltMod/Menu/MenuPresets.hpp>
 #include <memory>
-#include <string>
 
 namespace AdminSystem::Admin::Menu
 {
 
 /**
- * @brief Build a paginated picker listing every connected player.
- * Selecting a player invokes onPick(adminSlot, targetSlot) which is expected
- * to open the appropriate per-target actions submenu. @p isEnabled, when supplied,
- * decides per-row whether a target is selectable (e.g. to gray out an already-picked player).
+ * @brief Build a paginated picker listing every connected player for @p adminSlot.
+ *
+ * The framework picker with this plugin's "nobody connected" label filled in; @p spec supplies
+ * the title, what a pick does, and - optionally - which rows render disabled (e.g. to gray out
+ * an already-picked player). The viewer is @p adminSlot, so `Pick` receives only the target.
  */
-std::shared_ptr<VoltMod::MenuView> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, const std::string& title,
-                                                     std::function<void(int adminSlot, int targetSlot)> onPick,
-                                                     std::function<bool(int targetSlot)> isEnabled = {});
+std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker spec);
 
 }  // namespace AdminSystem::Admin::Menu

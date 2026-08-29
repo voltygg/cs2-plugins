@@ -9,6 +9,6 @@ namespace AdminSystem::Admin::Menu
 {
 
 /** Fun Mode: one toggle row per server-wide round modifier, plus a clear-all row. */
-std::shared_ptr<VoltMod::MenuView> BuildFunMenu(AdminSystem::App& app, int adminSlot);
+std::shared_ptr<VoltMod::Menu> BuildFunMenu(AdminSystem::App& app, int adminSlot);
 
 }  // namespace AdminSystem::Admin::Menu
