@@ -7,6 +7,7 @@
         "${workspaceFolder}/vendor/voltmod/build/windows-msvc-release/compile_commands.json"
       ],
       "includePath": [
+        "${workspaceFolder}/vendor/voltmod/include",
         "${workspaceFolder}/references/hl2sdk/public",
         "${workspaceFolder}/references/hl2sdk/public/engine",
         "${workspaceFolder}/references/hl2sdk/public/mathlib",
@@ -40,6 +41,7 @@
         "${workspaceFolder}/vendor/voltmod/build/linux-steamrt-release/compile_commands.json"
       ],
       "includePath": [
+        "${workspaceFolder}/vendor/voltmod/include",
         "${workspaceFolder}/references/hl2sdk/public",
         "${workspaceFolder}/references/hl2sdk/public/engine",
         "${workspaceFolder}/references/hl2sdk/public/mathlib",
