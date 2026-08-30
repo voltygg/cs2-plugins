@@ -29,14 +29,13 @@ void DiscordReporter::Report(int slot, const std::string& playerName, int64_t st
         return glz::obj{"name", name, "value", std::forward<decltype(value)>(value), "inline", inlined};
     };
     const auto payload = glz::obj{
-        "embeds",
-        glz::arr{glz::obj{
-            "title", DisplayName(finding.Kind), "color", EmbedColor, "fields",
-            glz::arr{field("Player", playerName.empty() ? std::string("<unknown>") : playerName, true),
-                     field("SteamID64", steamId ? std::to_string(steamId) : std::string("unavailable"), true),
-                     field("Slot", std::to_string(slot), true), field("Outcome", OutcomeName(outcome), true),
-                     field("Mode", ModeName(ParseMode(settings.mode)), true),
-                     field("Evidence", finding.Evidence.empty() ? std::string("-") : finding.Evidence)}}}};
+        "embeds", glz::arr{glz::obj{
+                      "title", DisplayName(finding.Kind), "color", EmbedColor, "fields",
+                      glz::arr{field("Player", playerName.empty() ? std::string("<unknown>") : playerName, true),
+                               field("SteamID64", steamId ? std::to_string(steamId) : std::string("unavailable"), true),
+                               field("Slot", std::to_string(slot), true), field("Outcome", OutcomeName(outcome), true),
+                               field("Mode", ModeName(ParseMode(settings.mode)), true),
+                               field("Evidence", finding.Evidence.empty() ? std::string("-") : finding.Evidence)}}}};
 
     _rt.Http.Post(
         settings.webhook.url, VoltMod::Json::Write(payload),

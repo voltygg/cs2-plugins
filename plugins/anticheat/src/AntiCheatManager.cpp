@@ -189,15 +189,30 @@ std::string AntiCheatManager::StatusSnapshot() const
     for (const DetectionInfo& detection : DetectionCatalog)
         modules.emplace(detection.Token, ModuleEnabled(detection.Kind));
 
-    return VoltMod::Json::Write(glz::obj{
-        "enabled", settings.enabled, "mode", ModeName(_response.CurrentMode()), "detecting", DetectionsEnabled(),
-        "enforcingCheatCvars", EnforceCheatCvars(), "modules", modules, "clientCvars",
-        _rt.Capabilities.Has(VoltMod::Capability::ClientCvars) ? "available" : "degraded", "teleportTracker",
-        _rt.Capabilities.Has(VoltMod::Capability::Teleport), "correlatorFrames", _correlator.FrameCount(),
-        "detectionData",
-        glz::obj{"cvarRules", _invalidCvars.Rules().Size(), "blacklistedEvents",
-                 _detections.Get().dllEventBlacklist.size()},
-        "webhook", !settings.webhook.url.empty(), "simulator", settings.debug.simulator});
+    return VoltMod::Json::Write(
+        glz::obj{"enabled",
+                 settings.enabled,
+                 "mode",
+                 ModeName(_response.CurrentMode()),
+                 "detecting",
+                 DetectionsEnabled(),
+                 "enforcingCheatCvars",
+                 EnforceCheatCvars(),
+                 "modules",
+                 modules,
+                 "clientCvars",
+                 _rt.Capabilities.Has(VoltMod::Capability::ClientCvars) ? "available" : "degraded",
+                 "teleportTracker",
+                 _rt.Capabilities.Has(VoltMod::Capability::Teleport),
+                 "correlatorFrames",
+                 _correlator.FrameCount(),
+                 "detectionData",
+                 glz::obj{"cvarRules", _invalidCvars.Rules().Size(), "blacklistedEvents",
+                          _detections.Get().dllEventBlacklist.size()},
+                 "webhook",
+                 !settings.webhook.url.empty(),
+                 "simulator",
+                 settings.debug.simulator});
 }
 
 void AntiCheatManager::LogStatus() const

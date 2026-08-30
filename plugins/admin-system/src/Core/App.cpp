@@ -174,9 +174,8 @@ void App::InstallStatusReporting()
         return VoltMod::Json::Write(glz::obj{"cached", Admins.AdminCount(), "groups", Admins.GroupCount()});
     });
 
-    status.RegisterSection("commands", [this] {
-        return VoltMod::Json::Write(glz::obj{"registered", Runtime.Commands.Count()});
-    });
+    status.RegisterSection("commands",
+                           [this] { return VoltMod::Json::Write(glz::obj{"registered", Runtime.Commands.Count()}); });
 
     status.RegisterSection("server", [this] {
         const auto& server = Settings.GetServer();
