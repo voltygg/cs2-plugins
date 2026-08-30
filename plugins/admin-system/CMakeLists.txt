@@ -7,7 +7,7 @@ voltmod_add_plugin(admin-system
     LIBRARIES
         cs2-contracts
         libpqxx::pqxx
-        nlohmann_json::nlohmann_json
+        glaze::glaze
     PCH_HEADERS
         "<pqxx/pqxx>"
 )

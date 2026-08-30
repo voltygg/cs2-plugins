@@ -8,7 +8,7 @@ from conan.tools.cmake import CMakeDeps, CMakeToolchain
 class CS2PluginsConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
 
-    # VoltMod supplies cpr, nlohmann_json, libpqxx, HL2SDK, and Metamod transitively.
+    # VoltMod supplies cpr, glaze, libpqxx, HL2SDK, and Metamod transitively.
     requires = ("voltmod/[~1.3]",)
 
     default_options = {

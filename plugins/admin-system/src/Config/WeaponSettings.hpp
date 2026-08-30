@@ -1,19 +1,16 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
 namespace AdminSystem::Config
 {
-
 /** Raw weapon entry, validated into Weapons::WeaponEntry during load. */
 struct WeaponConfigEntry
 {
     std::string name;
     std::string item;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WeaponConfigEntry, name, item)
 
 /** Weapons offered by `!give` and the weapon menu. Defaulted for the same reason as
  *  @ref MapSettings::cycle. */
@@ -34,6 +31,5 @@ struct WeaponSettings
         {"Molotov", "weapon_molotov"},
     };
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WeaponSettings, menu)
 
 }  // namespace AdminSystem::Config

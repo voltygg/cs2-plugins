@@ -1,19 +1,16 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
 namespace AdminSystem::Config
 {
-
 /** Report reason. `label` is the fallback for a missing `report.reasons.<code>` translation. */
 struct ReportReason
 {
     std::string code;
     std::string label;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportReason, code, label)
 
 /** Player reports stored for the website; the plugin has no in-game report list. */
 struct ReportSettings
@@ -30,7 +27,5 @@ struct ReportSettings
         {"abuse", "Toxic behavior"},       {"micspam", "Mic spam"},  {"nickname", "Inappropriate nickname"},
     };
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportSettings, enabled, cooldownSec, duplicateWindowSec,
-                                                allowCustomReason, reasons)
 
 }  // namespace AdminSystem::Config

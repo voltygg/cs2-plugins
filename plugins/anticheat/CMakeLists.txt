@@ -3,7 +3,7 @@ voltmod_add_plugin(anticheat
     DESCRIPTION "Behavioural anticheat: detection cores, correlation and response"
     LIBRARIES
         cs2-contracts
-        nlohmann_json::nlohmann_json
+        glaze::glaze
 )
 
 # Recompile SDK-free detector cores into the test binary.
@@ -20,7 +20,7 @@ if(BUILD_TESTING)
             src/Detectors/NamechangerCore.cpp
             src/Detectors/InvalidCvarRules.cpp
         INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
-        LIBRARIES nlohmann_json::nlohmann_json
+        LIBRARIES glaze::glaze
     )
 
     # Fail tests when the shipped operator-editable table cannot be parsed.

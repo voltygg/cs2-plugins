@@ -12,12 +12,10 @@
 #include "WeaponSettings.hpp"
 
 #include <VoltMod/App/Config.hpp>
-#include <nlohmann/json.hpp>
 #include <string_view>
 
 namespace AdminSystem::Config
 {
-
 inline constexpr std::string_view AddonName = "admin-system";
 
 using PluginSettings = VoltMod::StandardPluginSettings;
@@ -38,7 +36,8 @@ struct Settings
     WeaponSettings weapons;
     MenuSettings menu;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, server, database, punishments, abuseProtection, chat,
-                                                reports, cheatCheck, maps, weapons, menu)
 
 }  // namespace AdminSystem::Config
+
+/** Accepts the `"$schema"` key settings.jsonc names for editor completion. */
+VOLTMOD_SETTINGS_ROOT(AdminSystem::Config::Settings)

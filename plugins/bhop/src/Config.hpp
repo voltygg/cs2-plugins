@@ -1,14 +1,13 @@
 #pragma once
 
-#include <VoltMod/Api.hpp>
+// SDK-free, like anticheat's: the settings model is plain structs, so its test binary can
+// recompile it without the engine headers. The umbrella is not needed to declare them.
 #include <VoltMod/App/Config.hpp>
-#include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
 
 namespace Bhop
 {
-
 /** "bhop.hopBoost" section: server-side velocity boost per chained hop. */
 struct HopBoostSettings
 {
@@ -17,7 +16,6 @@ struct HopBoostSettings
     int chainWindowMs = 1000;  // a jump within this window of the previous one chains
     float maxSpeed = 1200.0f;  // horizontal speed cap for the boost
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(HopBoostSettings, enabled, factor, chainWindowMs, maxSpeed)
 
 /** "bhop" section of settings.jsonc. Float fields use -1 = leave the server value untouched. */
 struct BhopSettings
@@ -33,9 +31,6 @@ struct BhopSettings
     HopBoostSettings hopBoost;
     bool notifyPlayer = true;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BhopSettings, mode, autoBunnyhopping, enableBunnyhopping,
-                                                staminaJumpCost, staminaLandCost, airAccelerate, airMaxWishSpeed,
-                                                maxVelocity, hopBoost, notifyPlayer)
 
 /** Root of settings.jsonc. Add a struct + a member here for each new section. */
 struct Settings
@@ -43,7 +38,6 @@ struct Settings
     VoltMod::StandardPluginSettings plugin;
     BhopSettings bhop;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, plugin, bhop)
 
 using ConfigManager = VoltMod::JsonConfig<Settings>;
 
@@ -51,3 +45,6 @@ using ConfigManager = VoltMod::JsonConfig<Settings>;
 inline constexpr std::string_view AddonName = "bhop";
 
 }  // namespace Bhop
+
+/** Accepts the `"$schema"` key settings.jsonc names for editor completion. */
+VOLTMOD_SETTINGS_ROOT(Bhop::Settings)

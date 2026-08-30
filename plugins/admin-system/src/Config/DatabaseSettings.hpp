@@ -1,18 +1,13 @@
 #pragma once
 
-#include <VoltMod/Database/PostgresDatabase.hpp>
-#include <nlohmann/json.hpp>
-
-namespace VoltMod
-{
-// ADL requires this mapper in PostgresConfig's namespace. Keeping it here also
-// keeps nlohmann out of the framework header.
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PostgresConfig, host, port, database, username, password, sslMode)
-}  // namespace VoltMod
+#include <VoltMod/Database/PostgresConfig.hpp>
 
 namespace AdminSystem::Config
 {
 
+// PostgresConfig's fields are lowercase so a JSON section maps straight onto them, and reflection
+// needs no mapper - the "database" section deserializes into it as it stands. Note that this
+// exposes every field, `connectTimeoutSec` included.
 using DatabaseConfig = VoltMod::PostgresConfig;
 
 }  // namespace AdminSystem::Config

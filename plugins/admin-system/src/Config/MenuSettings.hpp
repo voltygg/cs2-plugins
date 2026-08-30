@@ -1,12 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include <nlohmann/json.hpp>
 #include <string>
 
 namespace AdminSystem::Config
 {
-
 /**
  * Which menu host the plugin opens its menus on.
  *
@@ -31,6 +29,5 @@ struct MenuSettings
      *  which is what you want while copying the files into your own client by hand. */
     uint64_t addonId = 0;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MenuSettings, style, layout, addonId)
 
 }  // namespace AdminSystem::Config

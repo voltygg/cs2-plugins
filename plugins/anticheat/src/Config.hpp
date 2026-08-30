@@ -2,7 +2,7 @@
 
 #include <VoltMod/App/JsonConfig.hpp>
 
-// SDK-free so cores and their tests can include it: JsonConfig is header-only over nlohmann.
+// SDK-free so cores and their tests can include it: JsonConfig is header-only.
 // Detection thresholds are deliberately absent - every tuned constant is constexpr in its own core,
 // leaving only the operational surface below for an operator to reason about.
 #include "Core/Finding.hpp"
@@ -10,14 +10,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
-#include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
 #include <vector>
 
 namespace Anticheat
 {
-
 /** The addon folder name - matches the CMake target and keys every addons/ path. */
 inline constexpr std::string_view AddonName = "anticheat";
 
@@ -32,8 +30,6 @@ struct DetectionToggles
     bool invalidCvar = true;
     bool namechanger = true;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DetectionToggles, aimbot, aimlock, antiAim, silentAim, dllInjection,
-                                                invalidCvar, namechanger)
 
 /** Toggle per DetectionKind, in enum order - the only place the two lists have to agree. */
 inline constexpr bool DetectionToggles::* DetectionToggleTable[] = {
@@ -53,14 +49,12 @@ struct WebhookSettings
 {
     std::string url;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WebhookSettings, url)
 
 /** The simulator rewrites live player commands: leave it off outside a test box. */
 struct DebugSettings
 {
     bool simulator = false;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DebugSettings, simulator)
 
 struct AntiCheatSettings
 {
@@ -73,16 +67,16 @@ struct AntiCheatSettings
     WebhookSettings webhook;
     DebugSettings debug;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AntiCheatSettings, enabled, mode, banDurationSec, whitelistSteamIds,
-                                                allowSvCheatsTesting, detections, webhook, debug)
 
 struct Settings
 {
     AntiCheatSettings anticheat;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Settings, anticheat)
 
 /** Subclass VoltMod::JsonConfig instead once you need post-load validation or accessors. */
 using ConfigManager = VoltMod::JsonConfig<Settings>;
 
 }  // namespace Anticheat
+
+/** Accepts the `"$schema"` key settings.jsonc names for editor completion. */
+VOLTMOD_SETTINGS_ROOT(Anticheat::Settings)
