@@ -176,7 +176,7 @@
   },
   "menu": {
     // "auto"/"panorama" draw the Panorama menu, falling back to center HTML where the custom-UI
-    // capability is off (any non-Windows server); "centerHtml" pins it. Anything else warns.
+    // capability is off; "centerHtml" pins it. Anything else warns.
     "style": "auto",
     // Panorama layout to drive. A replacement must declare the same panel ids.
     "layout": "voltmod_menu",

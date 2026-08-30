@@ -9,8 +9,8 @@ namespace AdminSystem::Config
  * Which menu host the plugin opens its menus on.
  *
  * `Panorama` is `Auto` under another name: neither can be honoured without
- * VoltMod::Capability::CustomUi (today, any non-Windows server), and both fall back to center HTML
- * rather than show nobody a menu. `CenterHtml` pins the plain menu on every build.
+ * VoltMod::Capability::CustomUi, and both fall back to center HTML rather than show nobody a menu.
+ * `CenterHtml` pins the plain menu on every build.
  */
 enum class MenuStyle
 {
