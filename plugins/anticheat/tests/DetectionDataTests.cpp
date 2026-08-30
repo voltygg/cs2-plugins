@@ -23,7 +23,7 @@ using Anticheat::DetectionDocument;
 /** The whole load path: read, then validate. */
 static VoltMod::Result<DetectionData> Parse(const std::string& text)
 {
-    auto document = VoltMod::Json::Read<DetectionDocument>(text);
+    auto document = VoltMod::Json::Read<DetectionDocument, VoltMod::Json::StrictReadOptions>(text);
     if (!document)
         return std::unexpected(document.error());
     return Anticheat::ValidateDetectionData(std::move(*document));

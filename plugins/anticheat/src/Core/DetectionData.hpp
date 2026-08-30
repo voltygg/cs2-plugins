@@ -1,6 +1,5 @@
 #pragma once
 
-#include <VoltMod/App/JsonConfig.hpp>
 #include <VoltMod/Core/Json.hpp>
 #include <VoltMod/Core/Result.hpp>
 
@@ -64,13 +63,7 @@ struct DetectionData
     std::vector<CvarRule> cvarRules;
 };
 
-// The document as written, before validation. Reflection covers two of the three checks the
-// hand-written reader used to make: an unknown key is an error, and an unrecognized `tier` or
-// `constraint` token is an error. What it cannot state - that a section is present, that a
-// numeric constraint carries its bound, and that a range's max is not below its value - is
-// exactly what ValidateDetectionData is for. Every field that must be *required* is optional
-// here so its absence is a validation message rather than a silent default.
-
+/** The file shape before conditional validation. */
 struct DetectionDocument
 {
     struct Rule

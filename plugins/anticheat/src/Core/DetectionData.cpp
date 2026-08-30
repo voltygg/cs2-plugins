@@ -1,6 +1,5 @@
 #include "Core/DetectionData.hpp"
 
-#include <VoltMod/Core/Log.hpp>
 #include <format>
 #include <string>
 #include <utility>
@@ -10,7 +9,6 @@ using VoltMod::Error;
 namespace Anticheat
 {
 
-/** Every check the document's shape cannot state, for one rule. */
 static VoltMod::Result<CvarRule> ValidateRule(const DetectionDocument::Rule& raw)
 {
     if (raw.name.empty())

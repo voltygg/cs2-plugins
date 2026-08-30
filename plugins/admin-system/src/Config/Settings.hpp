@@ -40,4 +40,3 @@ struct Settings
 }  // namespace AdminSystem::Config
 
 /** Accepts the `"$schema"` key settings.jsonc names for editor completion. */
-VOLTMOD_SETTINGS_ROOT(AdminSystem::Config::Settings)

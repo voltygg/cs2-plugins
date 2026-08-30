@@ -28,7 +28,7 @@ public:
      */
     VoltMod::Status LoadSettings(std::string_view path);
 
-    /** The effective settings. `LoadStandardConfig` reads `plugin.locale` through this. */
+    /** The effective settings. */
     const Settings& Get() const { return _snapshot.Values; }
 
     const PluginSettings& GetPlugin() const { return _snapshot.Values.plugin; }
@@ -61,11 +61,6 @@ public:
     const std::vector<Weapons::WeaponEntry>& GetWeaponMenu() const { return _snapshot.Weapons; }
 
 private:
-    /**
-     * One consistent view of the configuration: the normalized settings and everything derived
-     * from them. Replaced wholesale, never edited in place - which is why validation runs on a
-     * local that has not been published yet.
-     */
     struct ConfigSnapshot
     {
         Settings Values;
@@ -76,8 +71,6 @@ private:
         std::vector<Weapons::WeaponEntry> Weapons;
     };
 
-    /** Normalize @p raw and derive everything that hangs off it. Takes by value: the caller's
-     *  parse result is consumed, and nothing here can touch published state. */
     static ConfigSnapshot BuildSnapshot(Settings raw);
 
     ConfigSnapshot _snapshot;

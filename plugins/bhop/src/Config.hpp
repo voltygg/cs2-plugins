@@ -47,4 +47,3 @@ inline constexpr std::string_view AddonName = "bhop";
 }  // namespace Bhop
 
 /** Accepts the `"$schema"` key settings.jsonc names for editor completion. */
-VOLTMOD_SETTINGS_ROOT(Bhop::Settings)

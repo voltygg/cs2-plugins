@@ -18,33 +18,6 @@ namespace Log = VoltMod::Log;
 namespace AdminSystem
 {
 
-// Fixed-shape status payloads. At namespace scope because reflection reads member names off the
-// type, which a struct declared inside a lambda does not give it.
-
-struct StatusDbSection
-{
-    bool connected = false;
-    int migrationVersion = 0;
-    int migrationsApplied = 0;
-};
-
-struct StatusAdminsSection
-{
-    size_t cached = 0;
-    size_t groups = 0;
-};
-
-struct StatusCommandsSection
-{
-    size_t registered = 0;
-};
-
-struct StatusServerSection
-{
-    std::string tag;
-    std::string name;
-};
-
 App::~App()
 {
     // Stop answering other plugins' MetaFactory queries before the managers it delegates to go.
@@ -193,23 +166,21 @@ void App::InstallStatusReporting()
     status.RegisterSection("db", [this] {
         // Live worker state, not the load-time stage result: a database that died (or recovered)
         // after load must show as such.
-        return VoltMod::Json::Write(StatusDbSection{.connected = Db.IsConnected(),
-                                                    .migrationVersion = Migration.CurrentVersion,
-                                                    .migrationsApplied = Migration.Applied});
+        return VoltMod::Json::Write(glz::obj{"connected", Db.IsConnected(), "migrationVersion",
+                                             Migration.CurrentVersion, "migrationsApplied", Migration.Applied});
     });
 
     status.RegisterSection("admins", [this] {
-        return VoltMod::Json::Write(StatusAdminsSection{.cached = Admins.AdminCount(), .groups = Admins.GroupCount()});
+        return VoltMod::Json::Write(glz::obj{"cached", Admins.AdminCount(), "groups", Admins.GroupCount()});
     });
 
     status.RegisterSection("commands", [this] {
-        return VoltMod::Json::Write(StatusCommandsSection{.registered = Runtime.Commands.Count()});
+        return VoltMod::Json::Write(glz::obj{"registered", Runtime.Commands.Count()});
     });
 
     status.RegisterSection("server", [this] {
-        // Serialized, not formatted: the server name is operator text and may contain a quote.
         const auto& server = Settings.GetServer();
-        return VoltMod::Json::Write(StatusServerSection{.tag = server.tag, .name = server.name});
+        return VoltMod::Json::Write(glz::obj{"tag", server.tag, "name", server.name});
     });
 
     status.InstallCommand("admin_status",

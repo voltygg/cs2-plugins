@@ -5,15 +5,12 @@
 #include <string>
 #include <utility>
 
-// Split from DetectionData.cpp because this half reads a file: the SDK-free test binary
-// recompiles the validation rules without dragging the framework's path and logging plumbing in.
-
 namespace Anticheat
 {
 
 VoltMod::Status DetectionDataManager::Load(std::string_view path)
 {
-    auto document = VoltMod::Json::ReadFile<DetectionDocument>(path);
+    auto document = VoltMod::Json::ReadFile<DetectionDocument, VoltMod::Json::StrictReadOptions>(path);
     if (!document)
         return std::unexpected(document.error());
 

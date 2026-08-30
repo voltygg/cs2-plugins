@@ -22,29 +22,6 @@ namespace Log = VoltMod::Log;
 namespace Anticheat
 {
 
-// The `status` section's payload. At namespace scope because reflection reads member names off
-// the type; `modules` is a map because its keys are detection tokens, which are data.
-struct StatusDetectionData
-{
-    size_t cvarRules = 0;
-    size_t blacklistedEvents = 0;
-};
-
-struct StatusSection
-{
-    bool enabled = false;
-    std::string mode;
-    bool detecting = false;
-    bool enforcingCheatCvars = false;
-    std::map<std::string, bool> modules;
-    std::string clientCvars;
-    bool teleportTracker = false;
-    size_t correlatorFrames = 0;
-    StatusDetectionData detectionData;
-    bool webhook = false;
-    bool simulator = false;
-};
-
 static constexpr int DefaultDumpTicks = 64;
 static constexpr int MaxDumpTicks = 10000;
 
@@ -208,25 +185,19 @@ void AntiCheatManager::DumpCommand(int slot, const VoltMod::UserCmdView& cmd)
 std::string AntiCheatManager::StatusSnapshot() const
 {
     const auto& settings = _config.Get().anticheat;
-
-    StatusSection section{
-        .enabled = settings.enabled,
-        .mode = std::string(ModeName(_response.CurrentMode())),
-        .detecting = DetectionsEnabled(),
-        .enforcingCheatCvars = EnforceCheatCvars(),
-        .clientCvars = _rt.Capabilities.Has(VoltMod::Capability::ClientCvars) ? "available" : "degraded",
-        .teleportTracker = _rt.Capabilities.Has(VoltMod::Capability::Teleport),
-        .correlatorFrames = _correlator.FrameCount(),
-        // Empty tables leave their modules inert, so expose their health.
-        .detectionData = {.cvarRules = _invalidCvars.Rules().Size(),
-                          .blacklistedEvents = _detections.Get().dllEventBlacklist.size()},
-        .webhook = !settings.webhook.url.empty(),
-        .simulator = settings.debug.simulator,
-    };
+    std::map<std::string, bool> modules;
     for (const DetectionInfo& detection : DetectionCatalog)
-        section.modules.emplace(detection.Token, ModuleEnabled(detection.Kind));
+        modules.emplace(detection.Token, ModuleEnabled(detection.Kind));
 
-    return VoltMod::Json::Write(section);
+    return VoltMod::Json::Write(glz::obj{
+        "enabled", settings.enabled, "mode", ModeName(_response.CurrentMode()), "detecting", DetectionsEnabled(),
+        "enforcingCheatCvars", EnforceCheatCvars(), "modules", modules, "clientCvars",
+        _rt.Capabilities.Has(VoltMod::Capability::ClientCvars) ? "available" : "degraded", "teleportTracker",
+        _rt.Capabilities.Has(VoltMod::Capability::Teleport), "correlatorFrames", _correlator.FrameCount(),
+        "detectionData",
+        glz::obj{"cvarRules", _invalidCvars.Rules().Size(), "blacklistedEvents",
+                 _detections.Get().dllEventBlacklist.size()},
+        "webhook", !settings.webhook.url.empty(), "simulator", settings.debug.simulator});
 }
 
 void AntiCheatManager::LogStatus() const

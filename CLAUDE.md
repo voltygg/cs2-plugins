@@ -155,10 +155,8 @@ Current patterns:
 - Read and write convars through `VoltMod::ConVar<T>` handles resolved once at start, not by
   name at each call.
 - A settings struct is a plain aggregate at namespace scope: the member name is the JSON key,
-  reflection needs no registration, and a missing key keeps the member's initializer. An
-  **unknown key fails the load**, so give every settings root `VOLTMOD_SETTINGS_ROOT(T)` to
-  accept the `$schema` key its file names, and keep a test that parses the shipped
-  `settings.jsonc` - nothing else catches a renamed member.
+  reflection needs no registration, a missing key keeps the member's initializer, and unknown
+  keys are ignored for compatibility with older files.
 - When a plugin has to validate or derive from settings, compose `Json::ReadFile` in a
   `ConfigManager` of its own and publish a snapshot in one assignment (`admin-system`'s
   `Config/ConfigManager.*`). Do not subclass `JsonConfig`: resolving into a value that has not

@@ -79,4 +79,3 @@ using ConfigManager = VoltMod::JsonConfig<Settings>;
 }  // namespace Anticheat
 
 /** Accepts the `"$schema"` key settings.jsonc names for editor completion. */
-VOLTMOD_SETTINGS_ROOT(Anticheat::Settings)

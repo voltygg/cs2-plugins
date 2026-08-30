@@ -50,22 +50,27 @@ static std::vector<Entry> ResolveList(const std::vector<Raw>& rows, const std::v
     return entries;
 }
 
-// Each helper below takes what it normalizes and hands it back. They run against a local Settings
-// that has not been published, so a rejected entry cannot be observed half-removed.
-
-/** A blank or oversized tag would silently orphan per-server grants (the DB column is VARCHAR(64)). */
-static std::string NormalizedTag(std::string tag)
+VoltMod::Status ConfigManager::LoadSettings(std::string_view path)
 {
-    Validation::NormalizeTag(tag, 64, "default", "server.tag");
-    return tag;
+    auto raw = VoltMod::Json::ReadFile<Settings>(path);
+    if (!raw)
+        return std::unexpected(raw.error());
+
+    _snapshot = BuildSnapshot(std::move(*raw));
+    VoltMod::Log::Info("Loaded settings from {}", path);
+    return {};
 }
 
-/** Bad entries are skipped with a warning rather than failing the load: a typo'd template must
- *  not take down ban/mute enforcement for the whole server. */
-static std::vector<PunishmentTemplate> ValidTemplates(std::vector<PunishmentTemplate> rows)
+ConfigManager::ConfigSnapshot ConfigManager::BuildSnapshot(Settings raw)
 {
+    ConfigSnapshot snapshot{.Values = std::move(raw)};
+    auto& settings = snapshot.Values;
+
+    Validation::NormalizeTag(settings.server.tag, 64, "default", "server.tag");
+
+    auto& punishments = settings.punishments;
     Validation::FilterValid(
-        rows,
+        punishments.templates,
         [](const PunishmentTemplate& t, std::size_t) -> std::optional<std::string> {
             auto type = Punishments::ParsePunishType(t.type);
             if (!type || !Punishments::IsTimed(*type))
@@ -77,81 +82,36 @@ static std::vector<PunishmentTemplate> ValidTemplates(std::vector<PunishmentTemp
             return std::nullopt;
         },
         "punishments.templates");
-    return rows;
-}
 
-/** @p rows must already have passed @ref ValidTemplates; the parses below cannot fail. */
-static std::vector<ResolvedTemplate> ResolveTemplates(const std::vector<PunishmentTemplate>& rows)
-{
-    std::vector<ResolvedTemplate> resolved;
-    resolved.reserve(rows.size());
-    for (const auto& t : rows)
-        resolved.push_back({t.name, *Punishments::ParsePunishType(t.type), ParseDuration(t.duration), t.reason});
-    return resolved;
-}
+    snapshot.Templates.reserve(punishments.templates.size());
+    for (const auto& t : punishments.templates)
+        snapshot.Templates.push_back(
+            {t.name, *Punishments::ParsePunishType(t.type), ParseDuration(t.duration), t.reason});
 
-static ReportSettings NormalizedReports(ReportSettings reports)
-{
+    // An empty duration picker would dead-end the menu ban/mute flow; the helper falls back to
+    // the struct defaults so the list exists in exactly one place.
+    snapshot.MenuDurationSecs = Validation::ParseDurations(
+        punishments.menuDurations, PunishmentSettings{}.menuDurations, "punishments.menuDurations");
+
+    auto& reports = settings.reports;
     Validation::FilterValid(
         reports.reasons,
         [](const ReportReason& r, std::size_t) -> std::optional<std::string> {
             if (r.code.empty() || r.label.empty())
                 return std::string("code and label must be non-empty");
-            if (r.code.size() > 32)  // the reason_code column is VARCHAR(32)
+            if (r.code.size() > 32)
                 return std::format("code '{}' is longer than 32 chars", r.code);
             return std::nullopt;
         },
         "reports.reasons");
-
-    // A reason picker with only the free-text row (or nothing at all) is a dead end.
     Validation::FallbackIfEmpty(reports.reasons, [] { return ReportSettings{}.reasons; }, "reports.reasons");
-
-    // Negative windows would make every elapsed check pass; treat them as "disabled".
     reports.cooldownSec = std::max(reports.cooldownSec, 0);
     reports.duplicateWindowSec = std::max(reports.duplicateWindowSec, 0);
-    return reports;
-}
 
-// By name, so a typo cannot pick a host by accident: a misspelling read as Panorama falls back
-// silently on a server without the capability, and the bad value never surfaces.
-static MenuStyle ResolveMenuStyle(std::string_view style)
-{
-    if (auto parsed = VoltMod::Parse<MenuStyle>(style))
-        return *parsed;
-
-    VoltMod::Log::Warn("menu.style '{}' is not auto/panorama/centerHtml; using auto.", style);
-    return MenuStyle::Auto;
-}
-
-VoltMod::Status ConfigManager::LoadSettings(std::string_view path)
-{
-    auto raw = VoltMod::Json::ReadFile<Settings>(path);
-    if (!raw)
-        return std::unexpected(raw.error());
-
-    // Publish only after everything resolved: a failed reload leaves the previous snapshot whole.
-    _snapshot = BuildSnapshot(std::move(*raw));
-    VoltMod::Log::Info("Loaded settings from {}", path);
-    return {};
-}
-
-ConfigManager::ConfigSnapshot ConfigManager::BuildSnapshot(Settings raw)
-{
-    ConfigSnapshot snapshot{.Values = std::move(raw)};
-    auto& settings = snapshot.Values;
-
-    settings.server.tag = NormalizedTag(std::move(settings.server.tag));
-    settings.punishments.templates = ValidTemplates(std::move(settings.punishments.templates));
-    settings.reports = NormalizedReports(std::move(settings.reports));
-
-    snapshot.Templates = ResolveTemplates(settings.punishments.templates);
-
-    // An empty duration picker would dead-end the menu ban/mute flow; the helper falls back to
-    // the struct defaults so the list exists in exactly one place.
-    snapshot.MenuDurationSecs = Validation::ParseDurations(
-        settings.punishments.menuDurations, PunishmentSettings{}.menuDurations, "punishments.menuDurations");
-
-    snapshot.Style = ResolveMenuStyle(settings.menu.style);
+    if (auto style = VoltMod::Parse<MenuStyle>(settings.menu.style))
+        snapshot.Style = *style;
+    else
+        VoltMod::Log::Warn("menu.style '{}' is not auto/panorama/centerHtml; using auto.", settings.menu.style);
 
     snapshot.Maps = ResolveList<Maps::MapEntry>(
         settings.maps.cycle, MapSettings{}.cycle,
