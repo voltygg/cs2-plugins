@@ -1,6 +1,8 @@
 # Conan replaces these class attributes at runtime, causing Pyright false positives.
 # pyright: reportAttributeAccessIssue=false
 
+import shutil
+
 from conan import ConanFile
 from conan.tools.cmake import CMakeDeps, CMakeToolchain
 
@@ -36,4 +38,7 @@ class CS2PluginsConan(ConanFile):
         toolchain = CMakeToolchain(self)
         toolchain.user_presets_path = False
         toolchain.variables["CMAKE_POSITION_INDEPENDENT_CODE"] = True
+        # Via the toolchain so `cmake --preset`, `conan build` and `conan create` all get it.
+        if shutil.which("ccache"):
+            toolchain.variables["CMAKE_CXX_COMPILER_LAUNCHER"] = "ccache"
         toolchain.generate()
