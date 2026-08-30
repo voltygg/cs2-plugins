@@ -1,12 +1,14 @@
 #pragma once
 
 #include <VoltMod/App/JsonConfig.hpp>
+#include <VoltMod/Core/Json.hpp>
+#include <VoltMod/Core/Result.hpp>
 
 // Reloadable Valve event and convar data. Parsing rejects unknown tokens and
 // missing keys so a typo cannot silently change a detector rule. Kept SDK-free
 // for unit tests.
 
-#include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -40,53 +42,6 @@ constexpr bool ConstraintIsNumeric(CvarConstraint constraint)
     return constraint != CvarConstraint::Off && constraint != CvarConstraint::On;
 }
 
-namespace Internal
-{
-
-template <class TEnum, size_t N>
-TEnum ParseToken(const nlohmann::json& value, std::string_view field,
-                 const std::pair<std::string_view, TEnum> (&names)[N])
-{
-    if (!value.is_string())
-        throw nlohmann::json::type_error::create(302, std::string(field) + " must be a string", &value);
-
-    const auto text = value.get<std::string>();
-    for (const auto& [token, parsed] : names)
-        if (token == text)
-            return parsed;
-
-    std::string allowed;
-    for (const auto& [token, parsed] : names)
-        allowed += (allowed.empty() ? "" : ", ") + std::string(token);
-    throw nlohmann::json::other_error::create(
-        501, std::string(field) + " is \"" + text + "\"; expected one of " + allowed, &value);
-}
-
-inline constexpr std::pair<std::string_view, CvarTier> TierNames[] = {
-    {"queried", CvarTier::Queried},
-    {"userinfo", CvarTier::UserInfo},
-};
-
-inline constexpr std::pair<std::string_view, CvarConstraint> ConstraintNames[] = {
-    {"equals", CvarConstraint::Equals},       {"max", CvarConstraint::Max}, {"range", CvarConstraint::Range},
-    {"minOrZero", CvarConstraint::MinOrZero}, {"off", CvarConstraint::Off}, {"on", CvarConstraint::On},
-};
-
-/** Reject keys not in @p allowed. */
-inline void RequireOnly(const nlohmann::json& object, std::initializer_list<std::string_view> allowed)
-{
-    for (const auto& [key, unused] : object.items())
-    {
-        bool known = false;
-        for (std::string_view candidate : allowed)
-            known = known || candidate == key;
-        if (!known)
-            throw nlohmann::json::other_error::create(501, "unknown key \"" + key + "\"", &object);
-    }
-}
-
-}  // namespace Internal
-
 /** Field names are the JSON keys, so they keep their lowercase spelling. */
 struct CvarRule
 {
@@ -102,52 +57,73 @@ struct CvarRule
     bool kickOnly = false;
 };
 
-inline void from_json(const nlohmann::json& j, CvarRule& rule)
-{
-    if (!j.is_object())
-        throw nlohmann::json::type_error::create(302, "each cvar rule must be an object", &j);
-    Internal::RequireOnly(j, {"name", "tier", "constraint", "value", "max", "cheatProtected", "kickOnly"});
-
-    j.at("name").get_to(rule.name);
-    if (rule.name.empty())
-        throw nlohmann::json::other_error::create(501, "a cvar rule needs a name", &j);
-
-    rule.tier =
-        j.contains("tier") ? Internal::ParseToken(j.at("tier"), "tier", Internal::TierNames) : CvarTier::Queried;
-    rule.constraint = Internal::ParseToken(j.at("constraint"), "constraint", Internal::ConstraintNames);
-
-    // Require numeric bounds so a missing value cannot become an implicit zero.
-    if (ConstraintIsNumeric(rule.constraint))
-        j.at("value").get_to(rule.value);
-    if (rule.constraint == CvarConstraint::Range)
-    {
-        j.at("max").get_to(rule.max);
-        if (rule.max < rule.value)
-            throw nlohmann::json::other_error::create(501, "range max is below its value for " + rule.name, &j);
-    }
-
-    rule.cheatProtected = j.value("cheatProtected", false);
-    rule.kickOnly = j.value("kickOnly", false);
-}
-
+/** The event/convar tables the detections compare against. */
 struct DetectionData
 {
     std::vector<std::string> dllEventBlacklist;
     std::vector<CvarRule> cvarRules;
 };
 
-inline void from_json(const nlohmann::json& j, DetectionData& data)
+// The document as written, before validation. Reflection covers two of the three checks the
+// hand-written reader used to make: an unknown key is an error, and an unrecognized `tier` or
+// `constraint` token is an error. What it cannot state - that a section is present, that a
+// numeric constraint carries its bound, and that a range's max is not below its value - is
+// exactly what ValidateDetectionData is for. Every field that must be *required* is optional
+// here so its absence is a validation message rather than a silent default.
+
+struct DetectionDocument
 {
-    if (!j.is_object())
-        throw nlohmann::json::type_error::create(302, "detections must be a JSON object", &j);
-    Internal::RequireOnly(j, {"dllEventBlacklist", "cvarRules"});
+    struct Rule
+    {
+        std::string name;
+        CvarTier tier = CvarTier::Queried;
+        std::optional<CvarConstraint> constraint;
+        std::optional<double> value;
+        std::optional<double> max;
+        bool cheatProtected = false;
+        bool kickOnly = false;
+    };
 
-    // A renamed section must fail instead of silently disabling its detector.
-    j.at("dllEventBlacklist").get_to(data.dllEventBlacklist);
-    j.at("cvarRules").get_to(data.cvarRules);
-}
+    std::optional<std::vector<std::string>> dllEventBlacklist;
+    std::optional<std::vector<Rule>> cvarRules;
+};
 
-/** The event/convar tables the detections compare against. */
-using DetectionDataManager = VoltMod::JsonConfig<DetectionData>;
+/**
+ * @brief Apply every rule the document's shape cannot state.
+ *
+ * Both sections must be present (a renamed section must fail rather than silently disabling its
+ * detector), a rule needs a non-empty name and a constraint, a numeric constraint needs its
+ * `value`, and `range` needs a `max` that is not below it.
+ */
+VoltMod::Result<DetectionData> ValidateDetectionData(DetectionDocument document);
+
+/** Loads @ref DetectionData, validating it before publishing. */
+class DetectionDataManager
+{
+public:
+    /** On failure the previously loaded tables stand unchanged. */
+    VoltMod::Status Load(std::string_view path);
+
+    const DetectionData& Get() const { return _data; }
+
+private:
+    DetectionData _data;
+};
 
 }  // namespace Anticheat
+
+/** The tokens the file uses; an unrecognized one is rejected by name. */
+template <>
+struct glz::meta<Anticheat::CvarTier>
+{
+    using enum Anticheat::CvarTier;
+    static constexpr auto value = glz::enumerate("queried", Queried, "userinfo", UserInfo);
+};
+
+template <>
+struct glz::meta<Anticheat::CvarConstraint>
+{
+    using enum Anticheat::CvarConstraint;
+    static constexpr auto value =
+        glz::enumerate("equals", Equals, "max", Max, "range", Range, "minOrZero", MinOrZero, "off", Off, "on", On);
+};

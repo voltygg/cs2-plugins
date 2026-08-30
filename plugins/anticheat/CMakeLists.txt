@@ -19,6 +19,8 @@ if(BUILD_TESTING)
             src/Detectors/SilentAimCore.cpp
             src/Detectors/NamechangerCore.cpp
             src/Detectors/InvalidCvarRules.cpp
+            # Validation only; the file-reading half lives in DetectionDataManager.cpp.
+            src/Core/DetectionData.cpp
         INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
         LIBRARIES glaze::glaze
     )
