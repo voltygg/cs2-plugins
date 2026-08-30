@@ -84,12 +84,11 @@ no console entry point, and permissions are never checked on the console.
 | --- | --- |
 | bhop | `bhop_player <steamid64> <0\|1>`, `bhop_reload` |
 | anticheat | `anticheat_reload`, `anticheat_status`, `anticheat_dumpcmd` |
-| ui-lab | `uilab_*` - spawn/write/click-log a layout, `uilab_menu <slot>` opens the Panorama menu host for a player, `uilab_probe` reports capabilities |
 | admin-system | none; everything is chat (`!admin`, `!ban`, `!admin_reload`) |
 
 So an admin-system change is verified through convars, `meta list`, logs and the
-database - or, for anything on the shared menu/UI machinery, through ui-lab, which
-exercises the same framework services from the console.
+database, driving the chat commands from an in-game client where the console
+cannot reach them.
 
 Useful engine commands: `meta list`, `status`, `<convar>` (read) / `<convar>
 <value>` (set), `mp_restartgame 1`, `sv_cheats 1` (restore it afterwards).

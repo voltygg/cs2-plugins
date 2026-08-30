@@ -1,7 +1,7 @@
 #include "AdminMenu.hpp"
 
 #include "../Core/App.hpp"
-#include "../Core/Plugin.hpp"
+#include "../Plugin.hpp"
 #include "AdminManager.hpp"
 #include "Menu/AdminMenu_ChatSettings.hpp"
 #include "Menu/AdminMenu_Control.hpp"
