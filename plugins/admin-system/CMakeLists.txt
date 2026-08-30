@@ -20,5 +20,11 @@ if(BUILD_TESTING)
             src/Maps/VoteMath.cpp
             src/Weapons/WeaponCatalog.cpp
         INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        LIBRARIES glaze::glaze
     )
+
+    # The reader rejects unknown keys, so a key the shipped file carries but the model does not
+    # know now fails the load. That must fail here rather than on a server.
+    target_compile_definitions(admin-system-tests PRIVATE
+        ADMIN_SETTINGS_JSONC="${CMAKE_CURRENT_SOURCE_DIR}/configs/settings.jsonc")
 endif()

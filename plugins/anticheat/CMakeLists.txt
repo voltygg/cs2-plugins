@@ -27,5 +27,6 @@ if(BUILD_TESTING)
 
     # Fail tests when the shipped operator-editable table cannot be parsed.
     target_compile_definitions(anticheat-tests PRIVATE
-        ANTICHEAT_DETECTIONS_JSONC="${CMAKE_CURRENT_SOURCE_DIR}/configs/detections.jsonc")
+        ANTICHEAT_DETECTIONS_JSONC="${CMAKE_CURRENT_SOURCE_DIR}/configs/detections.jsonc"
+        ANTICHEAT_SETTINGS_JSONC="${CMAKE_CURRENT_SOURCE_DIR}/configs/settings.jsonc")
 endif()
