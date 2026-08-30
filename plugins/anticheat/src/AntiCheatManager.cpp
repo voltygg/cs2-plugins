@@ -2,9 +2,11 @@
 
 #include "App.hpp"
 
+#include <VoltMod/Core/Json.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Slot.hpp>
 #include <format>
+#include <map>
 #include <optional>
 #include <string>
 
@@ -19,6 +21,29 @@ namespace Log = VoltMod::Log;
 
 namespace Anticheat
 {
+
+// The `status` section's payload. At namespace scope because reflection reads member names off
+// the type; `modules` is a map because its keys are detection tokens, which are data.
+struct StatusDetectionData
+{
+    size_t cvarRules = 0;
+    size_t blacklistedEvents = 0;
+};
+
+struct StatusSection
+{
+    bool enabled = false;
+    std::string mode;
+    bool detecting = false;
+    bool enforcingCheatCvars = false;
+    std::map<std::string, bool> modules;
+    std::string clientCvars;
+    bool teleportTracker = false;
+    size_t correlatorFrames = 0;
+    StatusDetectionData detectionData;
+    bool webhook = false;
+    bool simulator = false;
+};
 
 static constexpr int DefaultDumpTicks = 64;
 static constexpr int MaxDumpTicks = 10000;
@@ -67,7 +92,7 @@ void AntiCheatManager::Initialize()
     _dllInjection.Initialize();
     _invalidCvarPoller.Initialize();
 
-    _rt.Status.RegisterSection("anticheat", [this] { return StatusSnapshot().dump(); });
+    _rt.Status.RegisterSection("anticheat", [this] { return StatusSnapshot(); });
     RegisterCommands();
     Log::Info("Detection cores ready (mode={}).", _config.Get().anticheat.mode);
 }
@@ -102,11 +127,14 @@ void AntiCheatManager::RegisterCommands()
         .Describe("Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.")
         .ConsoleOnly()
         .Run([this](Caller) -> Result<Reply> {
-            if (!_config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")))
-                return Reply::Silent();
+            // The reason names the offending key and its position, which is what an operator
+            // who just mistyped a setting needs to see.
+            if (auto loaded = _config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")); !loaded)
+                return Reply{std::format("Settings not reloaded: {}", loaded.error().Detail)};
             // Keep valid rules active if the edited file cannot be parsed.
-            if (!_detections.Load(DetectionDataPath))
-                Log::Warn("{} could not be re-read; keeping the tables already loaded.", DetectionDataPath);
+            if (auto loaded = _detections.Load(DetectionDataPath); !loaded)
+                Log::Warn("{} could not be re-read ({}); keeping the tables already loaded.", DetectionDataPath,
+                          loaded.error().Detail);
             else
                 LoadDetectionData();
             RefreshTeamRules();
@@ -177,37 +205,33 @@ void AntiCheatManager::DumpCommand(int slot, const VoltMod::UserCmdView& cmd)
         cmd.InputHistorySampleCount, cmd.InputHistoryTotalCount, attack);
 }
 
-nlohmann::json AntiCheatManager::StatusSnapshot() const
+std::string AntiCheatManager::StatusSnapshot() const
 {
     const auto& settings = _config.Get().anticheat;
 
-    nlohmann::json modules = nlohmann::json::object();
-    for (const DetectionInfo& detection : DetectionCatalog)
-        modules[detection.Token] = ModuleEnabled(detection.Kind);
-
-    return nlohmann::json{
-        {"enabled", settings.enabled},
-        {"mode", ModeName(_response.CurrentMode())},
-        {"detecting", DetectionsEnabled()},
-        {"enforcingCheatCvars", EnforceCheatCvars()},
-        {"modules", std::move(modules)},
-        {"clientCvars", _rt.Capabilities.Has(VoltMod::Capability::ClientCvars) ? "available" : "degraded"},
-        {"teleportTracker", _rt.Capabilities.Has(VoltMod::Capability::Teleport)},
-        {"correlatorFrames", _correlator.FrameCount()},
+    StatusSection section{
+        .enabled = settings.enabled,
+        .mode = std::string(ModeName(_response.CurrentMode())),
+        .detecting = DetectionsEnabled(),
+        .enforcingCheatCvars = EnforceCheatCvars(),
+        .clientCvars = _rt.Capabilities.Has(VoltMod::Capability::ClientCvars) ? "available" : "degraded",
+        .teleportTracker = _rt.Capabilities.Has(VoltMod::Capability::Teleport),
+        .correlatorFrames = _correlator.FrameCount(),
         // Empty tables leave their modules inert, so expose their health.
-        {"detectionData",
-         {
-             {"cvarRules", _invalidCvars.Rules().Size()},
-             {"blacklistedEvents", _detections.Get().dllEventBlacklist.size()},
-         }},
-        {"webhook", !settings.webhook.url.empty()},
-        {"simulator", settings.debug.simulator},
+        .detectionData = {.cvarRules = _invalidCvars.Rules().Size(),
+                          .blacklistedEvents = _detections.Get().dllEventBlacklist.size()},
+        .webhook = !settings.webhook.url.empty(),
+        .simulator = settings.debug.simulator,
     };
+    for (const DetectionInfo& detection : DetectionCatalog)
+        section.modules.emplace(detection.Token, ModuleEnabled(detection.Kind));
+
+    return VoltMod::Json::Write(section);
 }
 
 void AntiCheatManager::LogStatus() const
 {
-    Log::Info("[AC] {}", StatusSnapshot().dump());
+    Log::Info("[AC] {}", StatusSnapshot());
 
     const double now = Time::MonotonicSeconds();
     bool any = false;

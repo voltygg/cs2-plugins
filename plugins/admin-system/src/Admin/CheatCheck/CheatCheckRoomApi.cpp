@@ -17,11 +17,8 @@ static std::string ExtractField(const VoltMod::HttpResult& result, std::string_v
     if (path.empty())
         return {};
 
-    const auto json = nlohmann::json::parse(result.Body, nullptr, /*allow_exceptions=*/false);
-    if (!json.is_structured())
-        return {};
-
-    const std::string value = VoltMod::Json::GetStringByPath(json, path);
+    // Reads "" for a body that does not parse, so the structural guard is the same call.
+    const std::string value = VoltMod::Json::GetStringByPath(result.Body, path);
     if (value.empty() || valueTemplate.empty())
         return value;
     return VoltMod::Strings::SubstituteTokens(valueTemplate, {{"value", value}});
@@ -34,7 +31,11 @@ std::optional<VoltMod::HttpRequest> BuildRoomRequest(const Config::CheatCheckWeb
     if (cfg.createRoomUrl.empty())
         return std::nullopt;
 
-    nlohmann::json body = cfg.requestBody.is_null() ? nlohmann::json::object() : cfg.requestBody;
+    // Substituting inside the parsed template rather than its text is what keeps a player name
+    // containing a quote or a backslash from producing a body the room service cannot read.
+    glz::generic body = cfg.requestBody;
+    if (body.is_null())
+        body = glz::generic::object_t{};
     VoltMod::Json::SubstituteTokens(body, {
                                               {"steamId", std::to_string(targetSteamId)},
                                               {"playerName", std::string(targetName)},
@@ -45,7 +46,7 @@ std::optional<VoltMod::HttpRequest> BuildRoomRequest(const Config::CheatCheckWeb
     VoltMod::HttpRequest request{
         .Method = VoltMod::HttpMethod::Post,
         .Url = cfg.createRoomUrl,
-        .Body = body.dump(),
+        .Body = VoltMod::Json::Write(body),
         .TimeoutMs = cfg.timeoutMs,
     };
     request.AddHeader("Content-Type", "application/json");

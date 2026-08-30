@@ -20,7 +20,6 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>
-#include <nlohmann/json.hpp>
 #include <optional>
 #include <tuple>
 
@@ -65,7 +64,9 @@ public:
     /** Cheat-protected client values only mean something once a disabled sv_cheats has reached them. */
     bool EnforceCheatCvars() const;
 
-    nlohmann::json StatusSnapshot() const;
+    /** This plugin's `status` section as compact JSON text. Text, not a document, so this
+     *  header stays clear of the JSON library. */
+    std::string StatusSnapshot() const;
 
     ShotCorrelatorCore& Correlator() { return _correlator; }
     AimbotCore& Aimbot() { return _aimbot; }

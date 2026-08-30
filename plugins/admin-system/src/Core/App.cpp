@@ -9,7 +9,6 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Events/EventTypes.hpp>
-#include <nlohmann/json.hpp>
 #include <string>
 
 using VoltMod::Player;
@@ -18,6 +17,33 @@ namespace Log = VoltMod::Log;
 
 namespace AdminSystem
 {
+
+// Fixed-shape status payloads. At namespace scope because reflection reads member names off the
+// type, which a struct declared inside a lambda does not give it.
+
+struct StatusDbSection
+{
+    bool connected = false;
+    int migrationVersion = 0;
+    int migrationsApplied = 0;
+};
+
+struct StatusAdminsSection
+{
+    size_t cached = 0;
+    size_t groups = 0;
+};
+
+struct StatusCommandsSection
+{
+    size_t registered = 0;
+};
+
+struct StatusServerSection
+{
+    std::string tag;
+    std::string name;
+};
 
 App::~App()
 {
@@ -167,22 +193,23 @@ void App::InstallStatusReporting()
     status.RegisterSection("db", [this] {
         // Live worker state, not the load-time stage result: a database that died (or recovered)
         // after load must show as such.
-        return nlohmann::json{{"connected", Db.IsConnected()},
-                              {"migrationVersion", Migration.CurrentVersion},
-                              {"migrationsApplied", Migration.Applied}}
-            .dump();
+        return VoltMod::Json::Write(StatusDbSection{.connected = Db.IsConnected(),
+                                                    .migrationVersion = Migration.CurrentVersion,
+                                                    .migrationsApplied = Migration.Applied});
     });
 
     status.RegisterSection("admins", [this] {
-        return nlohmann::json{{"cached", Admins.AdminCount()}, {"groups", Admins.GroupCount()}}.dump();
+        return VoltMod::Json::Write(StatusAdminsSection{.cached = Admins.AdminCount(), .groups = Admins.GroupCount()});
     });
 
-    status.RegisterSection("commands",
-                           [this] { return nlohmann::json{{"registered", Runtime.Commands.Count()}}.dump(); });
+    status.RegisterSection("commands", [this] {
+        return VoltMod::Json::Write(StatusCommandsSection{.registered = Runtime.Commands.Count()});
+    });
 
     status.RegisterSection("server", [this] {
+        // Serialized, not formatted: the server name is operator text and may contain a quote.
         const auto& server = Settings.GetServer();
-        return nlohmann::json{{"tag", server.tag}, {"name", server.name}}.dump();
+        return VoltMod::Json::Write(StatusServerSection{.tag = server.tag, .name = server.name});
     });
 
     status.InstallCommand("admin_status",
@@ -278,8 +305,8 @@ void App::SelectMenuDriver()
         if (auto lease = Runtime.Addons.Require(menu.addonId))
             _menuAddon = std::move(*lease);
         else
-            VoltMod::Log::Warn("Menu addon {} not required ({}); players without the layout see nothing.",
-                               menu.addonId, lease.error().Detail);
+            VoltMod::Log::Warn("Menu addon {} not required ({}); players without the layout see nothing.", menu.addonId,
+                               lease.error().Detail);
     }
 
     VoltMod::Log::Info("Menus: Panorama, layout '{}'.", menu.layout);

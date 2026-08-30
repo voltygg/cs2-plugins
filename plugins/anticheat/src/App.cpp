@@ -1,6 +1,7 @@
 #include "App.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <format>
 
 namespace Anticheat
 {
@@ -13,8 +14,9 @@ bool App::Start()
     // A missing data file leaves the two table-driven modules inert rather than taking the plugin
     // down: the aim modules, which carry no data file, are the ones worth keeping alive.
     Runtime.LoadReport.Run("Detection data", [this] {
-        if (!Detections.Load(DetectionDataPath))
-            return VoltMod::StageResult::Degraded("file unreadable; DLL injection and invalid cvar modules are inert");
+        if (auto loaded = Detections.Load(DetectionDataPath); !loaded)
+            return VoltMod::StageResult::Degraded(
+                std::format("{}; DLL injection and invalid cvar modules are inert", loaded.error().Detail));
         return VoltMod::StageResult::Ok(DetectionDataPath);
     });
 
