@@ -129,8 +129,10 @@ Current patterns:
   Do not call SourceHook's `SH_*` add, remove, or reconfigure macros directly.
 - Reach a player through the frame-local `Pawn` (the body: health, armor,
   movement, aim) or `Controller` (the identity: name, money, team), from
-  `runtime.Entities.PawnOf(slot)` / `.Controller(slot)`. Schema fields are
-  members - `pawn.Health = 100` writes and replicates. `explicit operator bool()`
+  `runtime.Entities.PawnOf(slot)` / `.Controller(slot)`. Schema fields are generated
+  accessor pairs - `pawn.Health()` reads and `pawn.SetHealth(100)` writes and
+  replicates; the offsets are baked in by `voltmod schemagen` and the load aborts if
+  they no longer match the engine. `explicit operator bool()`
   is the only validity check. Never store a wrapper past the frame: store an
   `EntityRef` or a `PlayerRef` and resolve it again where it is used.
 - A `custom_hud_layout` is the one entity a plugin *owns* rather than re-resolves:

@@ -132,7 +132,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
 
     const Vector eye = self.EyePosition();
     const Vec3 from{eye.x, eye.y, eye.z};
-    const int team = self.Team;
+    const int team = self.Team();
     // The correlator's copy of the free-for-all rule is kept current by RefreshTeamRules, so the
     // simulation opposes exactly who the detectors do - and pays no name lookup per usercmd.
     const ShotCorrelatorCore& correlator = _manager.Correlator();
@@ -146,7 +146,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
         if (!IsValidSlot(other) || other == slot)
             continue;
         const VoltMod::Pawn pawn = _rt.Entities.PawnOf(other);
-        if (!pawn || !pawn.IsAlive() || !correlator.AreOpponents(team, pawn.Team))
+        if (!pawn || !pawn.IsAlive() || !correlator.AreOpponents(team, pawn.Team()))
             continue;
 
         const Vector origin = pawn.Origin();

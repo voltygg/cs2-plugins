@@ -32,8 +32,8 @@ Effect MakeDisco(VoltMod::Runtime& runtime)
                   .TickIntervalMs = DiscoIntervalMs,
                   .DurationMs = DiscoDurationSec * 1000,
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
-                      auto savedMode = static_cast<VoltMod::RenderMode_t>(ctx.TargetPawn().RenderMode.Get());
-                      uint32_t savedColor = ctx.TargetPawn().RenderColor;
+                      auto savedMode = static_cast<VoltMod::RenderMode_t>(ctx.TargetPawn().RenderMode());
+                      uint32_t savedColor = ctx.TargetPawn().RenderColor();
                       int slot = ctx.Target().Slot();
 
                       return {.OnTick =

@@ -31,10 +31,10 @@ static Vec3 ToVec3(const Vector& v)
 
 static bool IsAirborne(const VoltMod::Pawn& pawn)
 {
-    const bool grounded = pawn.OnGroundLastTick || ((pawn.Flags.Get() & VoltMod::FL_ONGROUND) &&
-                                                    pawn.GroundEntity.Get() != VoltMod::InvalidEntityHandle);
+    const bool grounded = pawn.OnGroundLastTick() || ((pawn.Flags() & VoltMod::FL_ONGROUND) &&
+                                                      pawn.GroundEntity() != VoltMod::InvalidEntityHandle);
     return !grounded && pawn.Move() == VoltMod::MoveType::Walk &&
-           pawn.ActualMoveTypeRaw.Get() == static_cast<uint8_t>(VoltMod::MoveType::Walk);
+           pawn.ActualMoveTypeRaw() == static_cast<VoltMod::Schema::MoveType_t>(VoltMod::MoveType::Walk);
 }
 
 static CmdSample BuildSample(const VoltMod::UserCmdView& cmd)
@@ -184,7 +184,7 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
 
         players[slot] = {.Origin = ToVec3(pawn.Origin()),
                          .EyePos = ToVec3(pawn.EyePosition()),
-                         .Team = pawn.Team,
+                         .Team = pawn.Team(),
                          .Valid = true,
                          .Alive = pawn.IsAlive(),
                          .Teleported = JustTeleported(slot)};
@@ -251,7 +251,7 @@ void ShotCorrelator::OnWeaponFire(const VoltMod::WeaponFire& fire)
         return;
 
     const VoltMod::Pawn pawn = _rt.Entities.PawnOf(fire.Slot);
-    const QAngle eyeAngles = pawn.EyeAngles;
+    const QAngle eyeAngles = pawn.EyeAngles();
     const AimAngles visible{eyeAngles.x, eyeAngles.y};
     // Without a pawn the field read fabricates a perfectly finite-looking (0,0).
     const bool hasVisible = static_cast<bool>(pawn) && Geometry::IsFinite(visible);

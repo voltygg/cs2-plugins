@@ -297,7 +297,7 @@ bool AntiCheatManager::IsEligible(int slot)
     if (!player || player->IsBot())
         return false;
     VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot);
-    return static_cast<bool>(pawn) && !(pawn.Flags.Get() & VoltMod::FL_FAKECLIENT);
+    return static_cast<bool>(pawn) && !(pawn.Flags() & VoltMod::FL_FAKECLIENT);
 }
 
 void AntiCheatManager::Report(int slot, const std::optional<Finding>& finding)

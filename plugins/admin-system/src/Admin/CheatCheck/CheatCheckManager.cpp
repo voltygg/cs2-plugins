@@ -64,7 +64,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     // PriorTeam is 0 (sentinel) unless we actually move them, so the restore decision survives a config reload.
     const bool wasActive = _checks[targetSlot].Active;
     const MoveType priorMove = wasActive ? _checks[targetSlot].PriorMoveType : targetPawn.Move();
-    const int priorTeam = wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? int{targetPawn.Team} : 0);
+    const int priorTeam = wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? int{targetPawn.Team()} : 0);
     if (wasActive)
         ResetCheck(targetSlot);
 

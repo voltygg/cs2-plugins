@@ -183,7 +183,7 @@ void BhopManager::OnPlayerJump(int slot)
     if (!pawn)
         return;
 
-    Vector velocity = pawn.Velocity;
+    Vector velocity = pawn.Velocity();
     float speed = std::hypot(velocity.x, velocity.y);
     if (speed < 1.0f)
         return;
@@ -191,7 +191,7 @@ void BhopManager::OnPlayerJump(int slot)
     float scaled = std::min(speed * boost.factor, std::max(boost.maxSpeed, speed));
     velocity.x *= scaled / speed;
     velocity.y *= scaled / speed;
-    pawn.Velocity = velocity;
+    pawn.SetVelocity(velocity);
 }
 
 void BhopManager::ForceAutoHop(int slot)
@@ -203,19 +203,19 @@ void BhopManager::ForceAutoHop(int slot)
     if (!pawn)
         return;
 
-    uint32_t flags = pawn.Flags;
+    uint32_t flags = pawn.Flags();
     if (!(flags & VoltMod::FL_ONGROUND))
         return;
 
-    Vector velocity = pawn.Velocity;
+    Vector velocity = pawn.Velocity();
     if (velocity.z > 0.0f)
         return;  // The engine already applied the jump.
 
     constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0)
     velocity.z = _jumpImpulse ? _jumpImpulse.Get() : DefaultJumpImpulse;
-    pawn.Velocity = velocity;
+    pawn.SetVelocity(velocity);
     // Clear FL_ONGROUND now to prevent a one-tick re-grounding hitch.
-    pawn.Flags = flags & ~VoltMod::FL_ONGROUND;
+    pawn.SetFlags(flags & ~VoltMod::FL_ONGROUND);
 
     // Forced hops do not emit player_jump.
     OnPlayerJump(slot);

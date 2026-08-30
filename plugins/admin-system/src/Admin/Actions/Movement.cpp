@@ -29,7 +29,7 @@ const Action Unbury{Flag(Permission::Control), /*requireAlive*/ true, [](const A
 
 const ParamAction SetSpeed{Flag(Permission::Control), /*requireAlive*/ true,
                            [](const ActionContext& ctx, int percent) -> OptKey {
-                               ctx.TargetPawn().SpeedModifier = percent / 100.0f;
+                               ctx.TargetPawn().SetSpeedModifier(percent / 100.0f);
                                return "broadcast.speedSet";
                            }};
 

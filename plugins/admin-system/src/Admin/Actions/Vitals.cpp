@@ -18,13 +18,13 @@ const Action Godmode{Flag(Permission::Health), /*requireAlive*/ true, [](const A
 
 const ParamAction SetHealth{Flag(Permission::Health), /*requireAlive*/ true,
                             [](const ActionContext& ctx, int health) -> OptKey {
-                                ctx.TargetPawn().Health = health;
+                                ctx.TargetPawn().SetHealth(health);
                                 return "broadcast.healed";
                             }};
 
 const ParamAction SetArmor{Flag(Permission::Health), /*requireAlive*/ true,
                            [](const ActionContext& ctx, int armor) -> OptKey {
-                               ctx.TargetPawn().Armor = armor;
+                               ctx.TargetPawn().SetArmor(armor);
                                return "broadcast.armored";
                            }};
 

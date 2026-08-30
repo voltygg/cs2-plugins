@@ -34,10 +34,10 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                   .OffKey = "",
                   .TickIntervalMs = GlowVision::ReconcileIntervalMs,
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
-                      int savedTeam = ctx.TargetPawn().Team;
-                      std::string savedName = ctx.TargetCtrl.Name.Get().Str();
+                      int savedTeam = ctx.TargetPawn().Team();
+                      std::string savedName(ctx.TargetCtrl.Name());
 
-                      ctx.TargetCtrl.Name = "";
+                      ctx.TargetCtrl.SetName("");
                       (void)ctx.TargetCtrl.ChangeTeam(TeamSpectator);
 
                       int slot = ctx.Target().Slot();
@@ -57,8 +57,8 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                                       Controller controller = entities.Controller(slot);
                                       if (!controller)
                                           return;
-                                      controller.Name = savedName.c_str();
-                                      if (controller.GetPawn().Team != savedTeam)
+                                      controller.SetName(savedName);
+                                      if (controller.GetPawn().Team() != savedTeam)
                                           (void)controller.ChangeTeam(savedTeam);
                                   }};
                   }};
