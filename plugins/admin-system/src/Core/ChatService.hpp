@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Config.hpp"
+#include "../Config/ConfigManager.hpp"
 
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>
@@ -18,7 +18,7 @@ namespace AdminSystem::Core
 class ChatService
 {
 public:
-    ChatService(VoltMod::Runtime& runtime, const ConfigManager& config) : _rt(runtime), _config(config) {}
+    ChatService(VoltMod::Runtime& runtime, const Config::ConfigManager& config) : _rt(runtime), _config(config) {}
 
     /**
      * Send one chat line. Preserve existing color codes and prepend the default
@@ -65,7 +65,7 @@ public:
 
 private:
     VoltMod::Runtime& _rt;
-    const ConfigManager& _config;
+    const Config::ConfigManager& _config;
 
     /** Phrase at `translationKey`, or the key itself so a missing translation is obvious. */
     std::string BroadcastPhrase(const std::string& translationKey) const;

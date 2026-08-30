@@ -1,6 +1,6 @@
 #include "VoteState.hpp"
 
-#include "../Core/Config.hpp"
+#include "../Config/ConfigManager.hpp"
 #include "MapCycleState.hpp"
 #include "VoteMath.hpp"
 
@@ -14,7 +14,7 @@ namespace AdminSystem::Maps
 /** The engine only renders its own vote tokens; arbitrary text does not appear. */
 static constexpr std::string_view VoteTitleToken = "#SFUI_vote_changelevel";
 
-VoteState::VoteState(VoltMod::Runtime& runtime, const Core::ConfigManager& config, MapCycleState& cycle)
+VoteState::VoteState(VoltMod::Runtime& runtime, const Config::ConfigManager& config, MapCycleState& cycle)
     : _rt(runtime), _config(config), _cycle(cycle)
 {}
 

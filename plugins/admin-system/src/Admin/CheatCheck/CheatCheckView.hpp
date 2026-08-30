@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../../Config/ConfigManager.hpp"
 #include "../../Core/ChatService.hpp"
-#include "../../Core/Config.hpp"
 #include "PendingCheck.hpp"
 
 #include <VoltMod/Runtime.hpp>
@@ -14,7 +14,7 @@ namespace AdminSystem::Admin::CheatCheck
 class CheatCheckView
 {
 public:
-    CheatCheckView(VoltMod::Runtime& runtime, const Core::ConfigManager& config, Core::ChatService& chat)
+    CheatCheckView(VoltMod::Runtime& runtime, const Config::ConfigManager& config, Core::ChatService& chat)
         : _rt(runtime), _config(config), _chat(chat)
     {}
 
@@ -27,7 +27,7 @@ public:
 
 private:
     VoltMod::Runtime& _rt;
-    const Core::ConfigManager& _config;
+    const Config::ConfigManager& _config;
     Core::ChatService& _chat;
 };
 

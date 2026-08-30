@@ -1,7 +1,7 @@
 #include "CheatCheckManager.hpp"
 
+#include "../../Config/ConfigManager.hpp"
 #include "../../Core/ChatService.hpp"
-#include "../../Core/Config.hpp"
 #include "../Actions/Descriptors.hpp"
 #include "CheatCheckRoomApi.hpp"
 #include "CheatCheckView.hpp"

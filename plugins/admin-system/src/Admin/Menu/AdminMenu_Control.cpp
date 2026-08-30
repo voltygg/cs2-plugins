@@ -169,7 +169,7 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponMenu(AdminSystem::App& app, VoltMod::P
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("action.giveWeapon", admin.Slot), targetPlayer->Name()));
 
-    const auto& menu = app.Config.GetWeaponMenu();
+    const auto& menu = app.Settings.GetWeaponMenu();
     for (const auto& weapon : menu)
     {
         builder.Button(weapon.Label(), [&app, admin, target, item = weapon.Item](int slot) {
@@ -180,7 +180,7 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponMenu(AdminSystem::App& app, VoltMod::P
     if (!menu.empty())
     {
         builder.Button(tr.Get("action.giveRandomWeapon", admin.Slot), [&app, admin, target](int slot) {
-            const auto& weapons = app.Config.GetWeaponMenu();
+            const auto& weapons = app.Settings.GetWeaponMenu();
             if (weapons.empty())
                 return;
             ReportWeaponOutcome(

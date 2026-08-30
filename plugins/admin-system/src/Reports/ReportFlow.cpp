@@ -1,8 +1,8 @@
 #include "ReportFlow.hpp"
 
 #include "../Admin/Menu/PlayerPicker.hpp"
+#include "../Config/ReportSettings.hpp"
 #include "../Core/App.hpp"
-#include "../Core/Config.hpp"
 #include "ReportManager.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -32,7 +32,7 @@ static const std::string CustomReasonCode = "other";
 
 /** `report.reasons.<code>` when the translation files define it, else the config label - so
  *  operator-added codes need no translation entry. */
-static std::string ReasonLabel(App& app, const Core::ReportReason& reason, int slot)
+static std::string ReasonLabel(App& app, const Config::ReportReason& reason, int slot)
 {
     return app.Runtime.Translations.GetOr("report.reasons." + reason.code, slot, reason.label);
 }
@@ -85,7 +85,7 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
 
     // The flow runs for one reporter, so every step string resolves in their language here.
     std::vector<std::pair<std::string, std::string>> reasons;
-    for (const auto& reason : app.Config.GetReports().reasons)
+    for (const auto& reason : app.Settings.GetReports().reasons)
         reasons.emplace_back(ReasonLabel(app, reason, reporterSlot), reason.code);
 
     ReportFlowT::Create(app.Runtime.Menus, reporterSlot, PendingReport{.Target = target->Ref()})
@@ -97,7 +97,7 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
                                   p.ReasonText = label;
                                   p.ReasonCode = code;
                               },
-                          .CustomLabel = app.Config.GetReports().allowCustomReason
+                          .CustomLabel = app.Settings.GetReports().allowCustomReason
                                              ? tr.Get("report.customReason", reporterSlot)
                                              : std::string(),
                           .CustomPrompt = tr.Get("report.customReasonPrompt", reporterSlot),

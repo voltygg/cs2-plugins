@@ -1,5 +1,5 @@
+#include "../Config/ConfigManager.hpp"
 #include "../Core/App.hpp"
-#include "../Core/Config.hpp"
 #include "../Core/Permissions.hpp"
 #include "../Punishments/IssuePunishment.hpp"
 #include "../Punishments/PunishmentManager.hpp"
@@ -52,7 +52,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Permission(Flag(Permission::Ban))
         .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
             // The default ban reason is a config string, not a translation key.
-            std::string reason = why.Value ? why.Value->Value : app.Config.GetPunishments().defaultBanReason;
+            std::string reason = why.Value ? why.Value->Value : app.Settings.GetPunishments().defaultBanReason;
             return Punish(app, c, *t.Value, PunishType::Ban, reason, d.Value, "cmd.banSuccess", "cmd.banFailed");
         });
 

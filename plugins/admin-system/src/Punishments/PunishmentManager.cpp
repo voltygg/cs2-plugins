@@ -1,7 +1,7 @@
 ﻿#include "PunishmentManager.hpp"
 
+#include "../Config/ConfigManager.hpp"
 #include "../Core/ChatService.hpp"
-#include "../Core/Config.hpp"
 #include "../Database/Repositories/PunishmentRepository.hpp"
 #include "../Database/Repositories/WarningRepository.hpp"
 #include "KickNotice.hpp"

@@ -1,6 +1,6 @@
 #include "ChatService.hpp"
 
-#include "Config.hpp"
+#include "../Config/ConfigManager.hpp"
 
 #include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Time.hpp>

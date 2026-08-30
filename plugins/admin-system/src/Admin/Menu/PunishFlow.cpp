@@ -1,8 +1,8 @@
 #include "PunishFlow.hpp"
 
+#include "../../Config/ConfigManager.hpp"
 #include "../../Core/App.hpp"
 #include "../../Core/ChatService.hpp"
-#include "../../Core/Config.hpp"
 #include "../../Punishments/IssuePunishment.hpp"
 #include "../AdminManager.hpp"
 #include "Labels.hpp"
@@ -65,7 +65,7 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
         app.Chat.Reply(adminSlot, tr.Get("punish.failed", adminSlot,
                                          {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)}}));
     }
-    else if (!app.Config.GetChat().broadcastPunishments)
+    else if (!app.Settings.GetChat().broadcastPunishments)
     {
         // With broadcasts on, the admin already sees the server-wide line; avoid double messaging.
         app.Chat.Reply(adminSlot, tr.Get("punish.issued", adminSlot,
@@ -111,11 +111,11 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
     };
 
     std::vector<std::pair<std::string, int>> durations;
-    for (int seconds : app.Config.GetMenuDurations())
+    for (int seconds : app.Settings.GetMenuDurations())
         durations.emplace_back(DurationLabel(tr, seconds, adminSlot), seconds);
 
     std::vector<std::pair<std::string, std::string>> reasons;
-    for (const auto& reason : app.Config.GetPunishments().reasonPresets)
+    for (const auto& reason : app.Settings.GetPunishments().reasonPresets)
         reasons.emplace_back(reason, reason);
 
     MakeBaseFlow(app, adminSlot, std::move(pending))
@@ -136,7 +136,7 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
 
 bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target)
 {
-    for (const auto& tmpl : app.Config.GetPunishmentTemplates())
+    for (const auto& tmpl : app.Settings.GetPunishmentTemplates())
     {
         if (CanStillPunish(app, adminSlot, target, tmpl.Type))
             return true;
@@ -154,7 +154,7 @@ std::shared_ptr<VoltMod::Menu> BuildQuickPunishMenu(AdminSystem::App& app, int a
     MenuBuilder builder(std::format("{}: {}", tr.Get("punish.quickPunish", adminSlot), targetPlayer->Name()));
 
     int rows = 0;
-    for (const auto& tmpl : app.Config.GetPunishmentTemplates())
+    for (const auto& tmpl : app.Settings.GetPunishmentTemplates())
     {
         if (!CanStillPunish(app, adminSlot, target, tmpl.Type))
             continue;

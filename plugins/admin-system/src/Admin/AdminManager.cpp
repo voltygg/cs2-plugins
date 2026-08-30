@@ -1,6 +1,6 @@
 #include "AdminManager.hpp"
 
-#include "../Core/Config.hpp"
+#include "../Config/ConfigManager.hpp"
 #include "../Database/Repositories/AdminRepository.hpp"
 #include "../Database/Repositories/ServerRepository.hpp"
 

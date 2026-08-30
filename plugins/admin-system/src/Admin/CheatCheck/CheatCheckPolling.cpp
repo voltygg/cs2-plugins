@@ -1,4 +1,4 @@
-#include "../../Core/Config.hpp"
+#include "../../Config/ConfigManager.hpp"
 #include "CheatCheckManager.hpp"
 #include "CheatCheckRoomApi.hpp"
 #include "CheatCheckView.hpp"

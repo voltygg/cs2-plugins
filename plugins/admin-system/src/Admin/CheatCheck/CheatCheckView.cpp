@@ -1,7 +1,7 @@
 #include "CheatCheckView.hpp"
 
+#include "../../Config/ConfigManager.hpp"
 #include "../../Core/ChatService.hpp"
-#include "../../Core/Config.hpp"
 
 #include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Time.hpp>

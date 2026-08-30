@@ -1,16 +1,53 @@
-#include "Config.hpp"
+#include "ConfigManager.hpp"
 
 #include <VoltMod/Core/EnumNames.hpp>
 #include <VoltMod/Core/Validation.hpp>
 #include <algorithm>
+#include <cstddef>
 #include <format>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 
 using VoltMod::ParseDuration;
 namespace Validation = VoltMod::Validation;
 
-namespace AdminSystem::Core
+namespace AdminSystem::Config
 {
+
+// maps.cycle and weapons.menu are the same shape of list: convert the raw config rows to their
+// runtime type, drop the ones their domain check rejects, and fall back to the struct defaults
+// when nothing valid is left - an empty Map or Give page reads as a broken plugin rather than as
+// a configuration gap, most often on a server whose settings.jsonc predates the section.
+// Whether a map file exists is the engine's call; MapCycleState re-checks the resolved names at
+// load so a stale entry surfaces in the load report.
+template <class Entry, class Raw, class ToEntry>
+static std::vector<Entry> ResolveList(const std::vector<Raw>& rows, const std::vector<Raw>& defaults, ToEntry toEntry,
+                                      std::string (*validate)(const Entry&), std::string_view what)
+{
+    auto build = [&](const std::vector<Raw>& source) {
+        std::vector<Entry> entries;
+        entries.reserve(source.size());
+        for (const auto& row : source)
+            entries.push_back(toEntry(row));
+
+        Validation::FilterValid(
+            entries,
+            [validate](const Entry& entry, std::size_t) -> std::optional<std::string> {
+                auto problem = validate(entry);
+                if (problem.empty())
+                    return std::nullopt;
+                return problem;
+            },
+            what);
+        return entries;
+    };
+
+    auto entries = build(rows);
+    Validation::FallbackIfEmpty(entries, [&] { return build(defaults); }, what);
+    return entries;
+}
 
 bool ConfigManager::LoadSettings(const std::string& path)
 {
@@ -86,64 +123,17 @@ void ConfigManager::ResolveRuntimeSettings()
         _menuStyle = MenuStyle::Auto;
     }
 
-    ResolveMapCycle(settings.maps);
-    ResolveWeaponMenu(settings.weapons);
-}
-
-// Whether a map file exists is the engine's call; MapCycleState re-checks the resolved names at
-// load so a stale entry surfaces in the load report.
-static std::vector<Maps::MapEntry> BuildMapEntries(const std::vector<MapConfigEntry>& raw)
-{
-    std::vector<Maps::MapEntry> entries;
-    entries.reserve(raw.size());
-    for (const auto& e : raw)
-        entries.push_back({.Name = e.name, .DisplayName = e.displayName, .WorkshopId = e.workshopId});
-
-    Validation::FilterValid(
-        entries,
-        [](const Maps::MapEntry& entry, std::size_t) -> std::optional<std::string> {
-            auto problem = Maps::ValidateMapEntry(entry);
-            if (problem.empty())
-                return std::nullopt;
-            return problem;
+    _resolvedMaps = ResolveList<Maps::MapEntry>(
+        settings.maps.cycle, MapSettings{}.cycle,
+        [](const MapConfigEntry& e) {
+            return Maps::MapEntry{.Name = e.name, .DisplayName = e.displayName, .WorkshopId = e.workshopId};
         },
-        "maps.cycle");
-    return entries;
+        Maps::ValidateMapEntry, "maps.cycle");
+
+    _resolvedWeapons = ResolveList<Weapons::WeaponEntry>(
+        settings.weapons.menu, WeaponSettings{}.menu,
+        [](const WeaponConfigEntry& e) { return Weapons::WeaponEntry{.Name = e.name, .Item = e.item}; },
+        Weapons::ValidateWeaponEntry, "weapons.menu");
 }
 
-static std::vector<Weapons::WeaponEntry> BuildWeaponEntries(const std::vector<WeaponConfigEntry>& raw)
-{
-    std::vector<Weapons::WeaponEntry> entries;
-    entries.reserve(raw.size());
-    for (const auto& e : raw)
-        entries.push_back({.Name = e.name, .Item = e.item});
-
-    Validation::FilterValid(
-        entries,
-        [](const Weapons::WeaponEntry& entry, std::size_t) -> std::optional<std::string> {
-            auto problem = Weapons::ValidateWeaponEntry(entry);
-            if (problem.empty())
-                return std::nullopt;
-            return problem;
-        },
-        "weapons.menu");
-    return entries;
-}
-
-// Both lists fall back to their struct defaults when nothing valid is left, since an empty Map or
-// Give weapon page reads as a broken plugin rather than as a configuration gap - most often on a
-// server whose settings.jsonc predates them.
-void ConfigManager::ResolveMapCycle(const MapSettings& maps)
-{
-    _resolvedMaps = BuildMapEntries(maps.cycle);
-    Validation::FallbackIfEmpty(_resolvedMaps, [] { return BuildMapEntries(MapSettings{}.cycle); }, "maps.cycle");
-}
-
-void ConfigManager::ResolveWeaponMenu(const WeaponSettings& weapons)
-{
-    _resolvedWeapons = BuildWeaponEntries(weapons.menu);
-    Validation::FallbackIfEmpty(
-        _resolvedWeapons, [] { return BuildWeaponEntries(WeaponSettings{}.menu); }, "weapons.menu");
-}
-
-}  // namespace AdminSystem::Core
+}  // namespace AdminSystem::Config

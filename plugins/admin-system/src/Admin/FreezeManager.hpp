@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../Config/ConfigManager.hpp"
 #include "../Core/ChatService.hpp"
-#include "../Core/Config.hpp"
 #include "../Database/Repositories/AdminRepository.hpp"
 #include "AdminManager.hpp"
 
@@ -27,7 +27,7 @@ namespace AdminSystem::Admin
 class FreezeManager
 {
 public:
-    FreezeManager(VoltMod::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime,
+    FreezeManager(VoltMod::PostgresDatabase& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
                   Core::ChatService& chat, AdminManager& admins)
         : _db(db), _config(config), _rt(runtime), _chat(chat), _admins(admins)
     {}
@@ -72,7 +72,7 @@ public:
 
 private:
     VoltMod::PostgresDatabase& _db;
-    const Core::ConfigManager& _config;
+    const Config::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;
     AdminManager& _admins;

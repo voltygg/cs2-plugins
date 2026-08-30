@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Config.hpp"
+#include "../Config/ConfigManager.hpp"
 #include "MapQuery.hpp"
 
 #include <VoltMod/Runtime.hpp>
@@ -24,7 +24,7 @@ inline constexpr int64_t MapChangeAnnounceMs = 5000;
 class MapCycleState
 {
 public:
-    MapCycleState(VoltMod::Runtime& runtime, const Core::ConfigManager& config);
+    MapCycleState(VoltMod::Runtime& runtime, const Config::ConfigManager& config);
 
     /** Cross-check the configured names against the engine and log the ones it cannot load.
      *  Called once at load so a typo shows up there instead of on the first `!map`. */
@@ -46,7 +46,7 @@ public:
 
 private:
     VoltMod::Runtime& _rt;
-    const Core::ConfigManager& _config;
+    const Config::ConfigManager& _config;
     std::optional<MapEntry> _next;
     /** The pending timed change; a new ChangeAfter replaces it, and unload cancels it. */
     VoltMod::Subscription _pendingChange;

@@ -1,7 +1,7 @@
 #include "FreezeManager.hpp"
 
+#include "../Config/ConfigManager.hpp"
 #include "../Core/ChatService.hpp"
-#include "../Core/Config.hpp"
 #include "../Core/Permissions.hpp"
 #include "../Database/Repositories/AdminActivityRepository.hpp"
 #include "AdminManager.hpp"

@@ -6,6 +6,7 @@
 #include "../Admin/CheatCheck/CheatCheckManager.hpp"
 #include "../Admin/Effects/Descriptors.hpp"
 #include "../Admin/FreezeManager.hpp"
+#include "../Config/ConfigManager.hpp"
 #include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Fun/FunMode.hpp"
 #include "../Maps/MapCycleState.hpp"
@@ -14,7 +15,6 @@
 #include "../Reports/ReportManager.hpp"
 #include "AdminActionsService.hpp"
 #include "ChatService.hpp"
-#include "Config.hpp"
 #include "PlayerChat.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -70,7 +70,7 @@ struct App
     VoltMod::Runtime& Runtime;
     const std::string Version;
 
-    Core::ConfigManager Config;
+    Config::ConfigManager Settings;
     /** Runs the action descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
     VoltMod::ActionDispatcher Actions{Runtime.Policy, Runtime.Players, Runtime.Entities};
     /** Action descriptors whose body needs an engine service beyond ActionContext (Slap, Smite,
@@ -78,26 +78,26 @@ struct App
     Admin::Actions::ActionDescriptors ActionDescriptors{Runtime};
     VoltMod::PostgresDatabase Db{Runtime.Scheduler};
     Database::PlayerRepository PlayerRepo{Db};
-    Core::ChatService Chat{Runtime, Config};
+    Core::ChatService Chat{Runtime, Settings};
     /** Configured map list, the queued next map, and the level change itself. */
-    Maps::MapCycleState MapCycle{Runtime, Config};
+    Maps::MapCycleState MapCycle{Runtime, Settings};
     /** Server-wide round modifiers (Fun Mode). */
     Fun::FunMode FunMode{Runtime};
     /** The yes/no map vote an admin opens from the Map menu. */
-    Maps::VoteState Votes{Runtime, Config, MapCycle};
-    Admin::AdminManager Admins{Db, Config};
-    Admin::FreezeManager Freeze{Db, Config, Runtime, Chat, Admins};
+    Maps::VoteState Votes{Runtime, Settings, MapCycle};
+    Admin::AdminManager Admins{Db, Settings};
+    Admin::FreezeManager Freeze{Db, Settings, Runtime, Chat, Admins};
     /** The permission gate: granted flags minus abuse-protection freezes. Ask this, not Admins. */
     Admin::Access Access{Admins, Freeze};
-    Punishments::PunishmentManager Punishments{Db, Config, Runtime, Chat};
-    Core::PlayerChat PlayerChat{Runtime, Config, Chat, Admins, Punishments};
-    Reports::ReportManager Reports{Db, Config, Runtime};
+    Punishments::PunishmentManager Punishments{Db, Settings, Runtime, Chat};
+    Core::PlayerChat PlayerChat{Runtime, Settings, Chat, Admins, Punishments};
+    Reports::ReportManager Reports{Db, Settings, Runtime};
     VoltMod::EffectManager Effects{Runtime.Scheduler};
     /** Runs the effect descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
     VoltMod::EffectDispatcher PlayerEffects{Actions, Effects};
     /** Every effect descriptor for this load cycle, built from Runtime. */
     Admin::Effects::EffectDescriptors EffectDescriptors{Runtime};
-    Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Config, Chat};
+    Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Settings, Chat};
     /** Published to other plugins in Start; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
     /** Load-time migration outcome shown by `admin_status`. */

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Config.hpp"
+#include "../Config/PunishmentSettings.hpp"
 
 #include <VoltMod/Core/Translations.hpp>
 #include <cstdint>
@@ -21,7 +21,7 @@ namespace AdminSystem::Punishments
  *        language when the seat is already gone.
  * @param expiresAt Unix seconds, or 0 for a permanent ban.
  */
-std::string BuildBanNotice(VoltMod::Translations& translations, const Core::AppealSettings& appeal,
+std::string BuildBanNotice(VoltMod::Translations& translations, const Config::AppealSettings& appeal,
                            const std::string& reason, int64_t expiresAt, int64_t targetSteamId, int slot);
 
 }  // namespace AdminSystem::Punishments

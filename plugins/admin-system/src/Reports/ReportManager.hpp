@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Config.hpp"
+#include "../Config/ConfigManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Throttle.hpp>
@@ -41,7 +41,7 @@ struct ReportGate
 class ReportManager
 {
 public:
-    ReportManager(VoltMod::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime)
+    ReportManager(VoltMod::PostgresDatabase& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime)
         : _db(db), _config(config), _rt(runtime)
     {}
 
@@ -61,7 +61,7 @@ public:
 
 private:
     VoltMod::PostgresDatabase& _db;
-    const Core::ConfigManager& _config;
+    const Config::ConfigManager& _config;
     VoltMod::Runtime& _rt;
 
     /** Both CanReport overloads, parameterized by @p now so a submit gates and stamps from one

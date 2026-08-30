@@ -2,9 +2,9 @@
 
 #include "../Admin/Effects/Model.hpp"
 #include "../Commands/Commands.hpp"
+#include "../Config/ConfigManager.hpp"
 #include "../Database/Repositories/ServerRepository.hpp"
 #include "../Punishments/KickNotice.hpp"
-#include "Config.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Database/Api.hpp>
@@ -84,7 +84,7 @@ void App::OnPlayerConnect(Player& player)
         // Built now, while the ban row is in hand, so the disconnect screen carries the expiry
         // and appeal link rather than the bare reason.
         Punishments.KickDeferred(slot, steamId,
-                                 AdminSystem::Punishments::BuildBanNotice(Runtime.Translations, Config.GetAppeal(),
+                                 AdminSystem::Punishments::BuildBanNotice(Runtime.Translations, Settings.GetAppeal(),
                                                                           ban->Reason, ban->ExpiresAt, steamId, slot));
     }
 }
@@ -98,15 +98,15 @@ void App::OnPlayerDisconnect(Player& player)
 
 StageResult App::ConnectDatabase()
 {
-    if (!Db.Start(Config.GetDatabase()))
+    if (!Db.Start(Settings.GetDatabase()))
         return StageResult::Degraded("unavailable; chat commands will reject all callers");
 
-    Migration = VoltMod::RunMigrations(Db, VoltMod::AddonFile(Core::AddonName, "configs/migrations"),
+    Migration = VoltMod::RunMigrations(Db, VoltMod::AddonFile(Config::AddonName, "configs/migrations"),
                                        {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
     if (!Migration)
         return StageResult::Degraded("migrations failed; not loading admins against an out-of-date schema");
 
-    const auto& server = Config.GetServer();
+    const auto& server = Settings.GetServer();
     if (!Database::ServerRepository{Db}.Upsert(server.tag, server.name))
         Log::Warn("Failed to register server '{}' in the servers table.", server.tag);
 
@@ -132,7 +132,7 @@ StageResult App::StartPunishments()
     _subs.Add(Runtime.Scheduler.Repeat(60'000, [this] {
         Punishments.ExpireOldPunishments();
         Freeze.RefreshFromDatabase();
-        Database::ServerRepository{Db}.Heartbeat(Config.GetServer().tag);
+        Database::ServerRepository{Db}.Heartbeat(Settings.GetServer().tag);
     }));
 
     // Typed surface the anticheat plugin drives (bans need the DB, alerts need admin data).
@@ -181,7 +181,7 @@ void App::InstallStatusReporting()
                            [this] { return nlohmann::json{{"registered", Runtime.Commands.Count()}}.dump(); });
 
     status.RegisterSection("server", [this] {
-        const auto& server = Config.GetServer();
+        const auto& server = Settings.GetServer();
         return nlohmann::json{{"tag", server.tag}, {"name", server.name}}.dump();
     });
 
@@ -206,7 +206,7 @@ bool App::Start()
 {
     auto& report = Runtime.LoadReport;
 
-    if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Addon = Core::AddonName}))
+    if (!VoltMod::LoadStandardConfig(Runtime, Settings, {.Addon = Config::AddonName}))
         return false;
 
     report.Run("Policy", [this] {
@@ -255,17 +255,17 @@ bool App::Start()
 
 void App::SelectMenuDriver()
 {
-    const auto& settings = Config.GetMenu();
+    const auto& menu = Settings.GetMenu();
 
     // Worth saying out loud either way: a server configured for the styled menu and silently
     // serving the plain one otherwise looks like the setting was ignored.
-    if (Config.GetMenuStyle() == Core::MenuStyle::CenterHtml)
+    if (Settings.GetMenuStyle() == Config::MenuStyle::CenterHtml)
     {
         VoltMod::Log::Info("Menus: center HTML, as configured.");
         return;
     }
 
-    if (auto chosen = Runtime.Menus.UsePanorama(settings.layout); !chosen)
+    if (auto chosen = Runtime.Menus.UsePanorama(menu.layout); !chosen)
     {
         VoltMod::Log::Info("Menus: center HTML - {}.", chosen.error().Detail);
         return;
@@ -273,16 +273,16 @@ void App::SelectMenuDriver()
 
     // A workshop addon is how the layout reaches players who did not copy it in by hand. The
     // requirement lasts exactly as long as this lease, so it goes when the plugin does.
-    if (settings.addonId != 0)
+    if (menu.addonId != 0)
     {
-        if (auto lease = Runtime.Addons.Require(settings.addonId))
+        if (auto lease = Runtime.Addons.Require(menu.addonId))
             _menuAddon = std::move(*lease);
         else
             VoltMod::Log::Warn("Menu addon {} not required ({}); players without the layout see nothing.",
-                               settings.addonId, lease.error().Detail);
+                               menu.addonId, lease.error().Detail);
     }
 
-    VoltMod::Log::Info("Menus: Panorama, layout '{}'.", settings.layout);
+    VoltMod::Log::Info("Menus: Panorama, layout '{}'.", menu.layout);
 }
 
 }  // namespace AdminSystem

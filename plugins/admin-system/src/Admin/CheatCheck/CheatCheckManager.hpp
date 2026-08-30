@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../../Config/ConfigManager.hpp"
 #include "../../Core/ChatService.hpp"
-#include "../../Core/Config.hpp"
 #include "CheatCheckView.hpp"
 #include "PendingCheck.hpp"
 
@@ -29,7 +29,7 @@ constexpr int MaxSlots = VoltMod::MaxPlayers;
 class CheatCheckManager
 {
 public:
-    CheatCheckManager(VoltMod::Runtime& runtime, const Core::ConfigManager& config, Core::ChatService& chat)
+    CheatCheckManager(VoltMod::Runtime& runtime, const Config::ConfigManager& config, Core::ChatService& chat)
         : _rt(runtime), _config(config), _chat(chat)
     {}
 
@@ -60,7 +60,7 @@ public:
 
 private:
     VoltMod::Runtime& _rt;
-    const Core::ConfigManager& _config;
+    const Config::ConfigManager& _config;
     Core::ChatService& _chat;
     CheatCheckView _view{_rt, _config, _chat};
     /** Owns the panel re-send loop; CS2 drops center-HTML within a second or two. Declared after

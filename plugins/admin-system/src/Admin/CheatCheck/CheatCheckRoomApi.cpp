@@ -1,6 +1,6 @@
 #include "CheatCheckRoomApi.hpp"
 
-#include "../../Core/Config.hpp"
+#include "../../Config/CheatCheckSettings.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Json.hpp>
@@ -27,9 +27,9 @@ static std::string ExtractField(const VoltMod::HttpResult& result, std::string_v
     return VoltMod::Strings::SubstituteTokens(valueTemplate, {{"value", value}});
 }
 
-std::optional<VoltMod::HttpRequest> BuildRoomRequest(const Core::CheatCheckWebsiteAutoRoom& cfg, int64_t targetSteamId,
-                                                     std::string_view targetName, int64_t adminSteamId,
-                                                     std::string_view adminName)
+std::optional<VoltMod::HttpRequest> BuildRoomRequest(const Config::CheatCheckWebsiteAutoRoom& cfg,
+                                                     int64_t targetSteamId, std::string_view targetName,
+                                                     int64_t adminSteamId, std::string_view adminName)
 {
     if (cfg.createRoomUrl.empty())
         return std::nullopt;
@@ -53,7 +53,8 @@ std::optional<VoltMod::HttpRequest> BuildRoomRequest(const Core::CheatCheckWebsi
     return request;
 }
 
-std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result)
+std::optional<RoomUrls> ParseRoomResponse(const Config::CheatCheckWebsiteAutoRoom& cfg,
+                                          const VoltMod::HttpResult& result)
 {
     if (!result.IsSuccess())
         return std::nullopt;
@@ -71,7 +72,7 @@ std::optional<RoomUrls> ParseRoomResponse(const Core::CheatCheckWebsiteAutoRoom&
     };
 }
 
-std::optional<VoltMod::HttpRequest> BuildPresenceRequest(const Core::CheatCheckWebsiteAutoRoom& cfg,
+std::optional<VoltMod::HttpRequest> BuildPresenceRequest(const Config::CheatCheckWebsiteAutoRoom& cfg,
                                                          const std::string& roomCode, int64_t targetSteamId)
 {
     if (cfg.presenceUrl.empty() || roomCode.empty())
@@ -90,7 +91,7 @@ std::optional<VoltMod::HttpRequest> BuildPresenceRequest(const Core::CheatCheckW
     return request;
 }
 
-std::optional<bool> ParsePresence(const Core::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result)
+std::optional<bool> ParsePresence(const Config::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result)
 {
     if (!result.IsSuccess())
         return std::nullopt;

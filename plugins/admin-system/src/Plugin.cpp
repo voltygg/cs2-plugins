@@ -1,7 +1,6 @@
 #include "Plugin.hpp"
 
 #include "Core/App.hpp"
-#include "Core/Config.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/App/PluginInfoStamp.hpp>

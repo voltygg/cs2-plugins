@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../Admin/AdminManager.hpp"
+#include "../Config/ConfigManager.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "ChatService.hpp"
-#include "Config.hpp"
 
 #include <VoltMod/Core/Throttle.hpp>
 #include <VoltMod/Players/Player.hpp>
@@ -25,8 +25,8 @@ namespace AdminSystem::Core
 class PlayerChat
 {
 public:
-    PlayerChat(VoltMod::Runtime& runtime, const ConfigManager& config, ChatService& chat, Admin::AdminManager& admins,
-               Punishments::PunishmentManager& punishments)
+    PlayerChat(VoltMod::Runtime& runtime, const Config::ConfigManager& config, ChatService& chat,
+               Admin::AdminManager& admins, Punishments::PunishmentManager& punishments)
         : _rt(runtime), _config(config), _chat(chat), _admins(admins), _punishments(punishments)
     {}
 
@@ -53,7 +53,7 @@ public:
 
 private:
     VoltMod::Runtime& _rt;
-    const ConfigManager& _config;
+    const Config::ConfigManager& _config;
     ChatService& _chat;
     Admin::AdminManager& _admins;
     Punishments::PunishmentManager& _punishments;

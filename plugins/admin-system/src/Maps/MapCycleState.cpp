@@ -1,6 +1,6 @@
 #include "MapCycleState.hpp"
 
-#include "../Core/Config.hpp"
+#include "../Config/ConfigManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
@@ -11,7 +11,7 @@ namespace AdminSystem::Maps
 
 namespace Log = VoltMod::Log;
 
-MapCycleState::MapCycleState(VoltMod::Runtime& runtime, const Core::ConfigManager& config)
+MapCycleState::MapCycleState(VoltMod::Runtime& runtime, const Config::ConfigManager& config)
     : _rt(runtime), _config(config)
 {}
 

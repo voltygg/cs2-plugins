@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Config.hpp"
+#include "../Config/ConfigManager.hpp"
 #include "MapCycleState.hpp"
 #include "MapQuery.hpp"
 
@@ -21,7 +21,7 @@ class VoteState
 {
 public:
     /** All three must outlive this object; App declares them above it. */
-    VoteState(VoltMod::Runtime& runtime, const Core::ConfigManager& config, MapCycleState& cycle);
+    VoteState(VoltMod::Runtime& runtime, const Config::ConfigManager& config, MapCycleState& cycle);
 
     /** Put @p map to a yes/no vote. @return false when a vote is already running. */
     bool StartMapVote(const MapEntry& map, int callerSlot);
@@ -31,7 +31,7 @@ public:
 
 private:
     VoltMod::Runtime& _rt;
-    const Core::ConfigManager& _config;
+    const Config::ConfigManager& _config;
     MapCycleState& _cycle;
 };
 

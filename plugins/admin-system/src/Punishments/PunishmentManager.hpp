@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../Config/ConfigManager.hpp"
 #include "../Core/ChatService.hpp"
-#include "../Core/Config.hpp"
 #include "../Database/Entities/Ban.hpp"
 #include "../Database/Entities/TextMute.hpp"
 #include "../Database/Entities/VoiceMute.hpp"
@@ -29,7 +29,7 @@ namespace AdminSystem::Punishments
 class PunishmentManager
 {
 public:
-    PunishmentManager(VoltMod::PostgresDatabase& db, const Core::ConfigManager& config, VoltMod::Runtime& runtime,
+    PunishmentManager(VoltMod::PostgresDatabase& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
                       Core::ChatService& chat)
         : _db(db), _config(config), _rt(runtime), _chat(chat)
     {}
@@ -83,7 +83,7 @@ public:
 
 private:
     VoltMod::PostgresDatabase& _db;
-    const Core::ConfigManager& _config;
+    const Config::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;
     VoltMod::PerSlot<VoltMod::Subscription> _pendingKick;

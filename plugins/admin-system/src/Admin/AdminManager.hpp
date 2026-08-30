@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Config.hpp"
+#include "../Config/ConfigManager.hpp"
 #include "../Core/Permissions.hpp"
 #include "../Database/Entities/Admin.hpp"
 #include "../Database/Entities/AdminGroup.hpp"
@@ -39,7 +39,7 @@ struct AdminChatStyle
 class AdminManager
 {
 public:
-    AdminManager(VoltMod::PostgresDatabase& db, const Core::ConfigManager& config) : _db(db), _config(config) {}
+    AdminManager(VoltMod::PostgresDatabase& db, const Config::ConfigManager& config) : _db(db), _config(config) {}
 
     bool LoadAdmins();
     bool LoadGroups();
@@ -94,7 +94,7 @@ public:
 
 private:
     VoltMod::PostgresDatabase& _db;
-    const Core::ConfigManager& _config;
+    const Config::ConfigManager& _config;
 
     /** True if a resolved bitmask carries @p flag, or the root flag ('z') that grants everything. */
     static bool HasBit(uint32_t resolved, char flag)
