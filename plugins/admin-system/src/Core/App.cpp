@@ -41,9 +41,10 @@ void App::InstallPolicy()
         return Access.HasAnyPermission(steamId, std::string(permission));
     };
     // Immunity only: Policy::Authorize has already dealt with the console (no caller) and with a
-    // caller targeting themselves before this is consulted.
-    policy.CanTarget = [this](const Player& caller, const Player& target) {
-        return Access.CanTarget(caller.SteamId(), target.SteamId());
+    // caller targeting themselves before this is consulted. SteamIDs, so the same rule answers
+    // for an offline target through Policy::AuthorizeSteamId.
+    policy.CanTarget = [this](int64_t callerSteamId, int64_t targetSteamId) {
+        return Access.CanTarget(callerSteamId, targetSteamId);
     };
     policy.Reply = [this](int slot, std::string_view message) { Chat.Reply(slot, message); };
     policy.Broadcast = [this](const VoltMod::Authorized& who, std::string_view key) {

@@ -39,7 +39,9 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
             if (who.SteamId == c.Player->SteamId())
                 return c.Fail("cmd.freezeSelf");
 
-            if (!app.Access.CanTarget(c.Player->SteamId(), who.SteamId))
+            // Through Policy, not Access: the same gate that guards an online target, so an
+            // offline admin addressed by SteamID cannot skip the immunity comparison.
+            if (!app.Runtime.Policy.AuthorizeSteamId(app.Runtime.Players.RefFor(c.Slot), who.SteamId, {}))
                 return c.Fail("cmd.freezeNoOutrank", {{"name", targetName}});
 
             if (app.Freeze.IsFrozen(who.SteamId))
@@ -80,6 +82,12 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
             auto row = app.Freeze.GetFrozen(targetSteamId);
             if (!row)
                 return c.Fail("cmd.unfreezeNone", {{"token", token.Value}});
+
+            // Restoring privileges is as much an act on that admin as freezing them, so it takes
+            // the same immunity check - without this, holding FreezeAdmins was enough to unfreeze
+            // someone you could never have frozen.
+            if (!app.Runtime.Policy.AuthorizeSteamId(app.Runtime.Players.RefFor(c.Slot), targetSteamId, {}))
+                return c.Fail("cmd.freezeNoOutrank", {{"name", row->Name}});
 
             // Unfreeze erases the row; the name is ours because GetFrozen handed back a copy.
             bool ok = app.Freeze.Unfreeze(targetSteamId, c.Player->SteamId(), c.Player->Name());

@@ -72,7 +72,7 @@ struct App
 
     Config::ConfigManager Settings;
     /** Runs the action descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
-    VoltMod::ActionDispatcher Actions{Runtime.Policy, Runtime.Players, Runtime.Entities};
+    VoltMod::ActionDispatcher Actions{Runtime.Policy, Runtime.Entities};
     /** Action descriptors whose body needs an engine service beyond ActionContext (Slap, Smite,
      *  SetSize), built from Runtime once here. */
     Admin::Actions::ActionDescriptors ActionDescriptors{Runtime};
