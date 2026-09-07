@@ -7,9 +7,7 @@
 namespace AdminSystem::Admin::Actions
 {
 
-// The action scaffold lives in the framework; the plugin supplies its permission/immunity/broadcast
-// policy through app.Runtime.Policy (set once in OnLoad) and dispatches through app.Actions. These
-// aliases keep descriptor files and call sites on the established local names.
+// VoltMod owns dispatch and policy. These aliases keep plugin descriptors on the local names.
 using ActionContext = VoltMod::ActionContext;
 using Action = VoltMod::Action;
 using ParamAction = VoltMod::ParamAction;

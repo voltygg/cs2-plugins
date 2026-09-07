@@ -23,17 +23,13 @@ extern const ParamAction SetSpeed;
 extern const Action Bring;
 extern const Action Goto;
 
-/** Exchange origins between two targets. The picker for the second target is built
- *  by the menu layer; this entry point assumes both are already resolved. */
+/** Exchange origins between two already-resolved targets. */
 void Swap(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef first, VoltMod::PlayerRef second);
 
 /** Param is the destination team (VoltMod::TeamSpectator/TeamT/TeamCT); out-of-range values are ignored. */
 extern const ParamAction ChangeTeam;
 
-// Slap, Smite and SetSize reach an engine service (Pawns, EntityOps) an ActionContext does not
-// carry, so - like the effect descriptors - they are built from a Runtime& by a factory function
-// rather than declared as file-scope constants. AdminSystem::App owns the built instances next to
-// Actions, its ActionDispatcher.
+// These actions need engine services outside ActionContext, so App builds them from Runtime once.
 
 /** Apply upward velocity and three seconds of fall protection. */
 Action MakeSlap(VoltMod::Runtime& runtime);
@@ -47,7 +43,7 @@ Action MakeSmite(VoltMod::Runtime& runtime);
 /** Param is the model-size percent (100 = normal); the body divides by 100 and the framework clamps it. */
 ParamAction MakeSetSize(VoltMod::Runtime& runtime);
 
-/** Every Runtime&-bound action descriptor for one load cycle. Owned by `App` next to `Actions`. */
+/** Runtime-bound action descriptors owned by `App` for one load cycle. */
 struct ActionDescriptors
 {
     explicit ActionDescriptors(VoltMod::Runtime& runtime)

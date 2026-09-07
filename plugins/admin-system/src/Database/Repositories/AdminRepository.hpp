@@ -23,11 +23,7 @@ struct FrozenAdmin
     std::string Reason;
 };
 
-/**
- * Repository for the admins table. The full-table load blocks (load-time / !admin_reload);
- * the chat-style/language writes are fire-and-forget; the freeze writes block because a
- * freeze must be confirmed persisted network-wide before the caller reports success.
- */
+/** Repository for admins. Loads and freeze writes block; style and language writes do not. */
 class AdminRepository
 {
 public:
@@ -48,9 +44,7 @@ public:
     /** Lift a freeze. Returns true even if the admin wasn't frozen (idempotent). Blocking. */
     bool ClearFrozen(int64_t steamId);
 
-    /** All currently frozen admins; the cheap periodic poll behind cross-server propagation.
-     *  @p onDone runs on the game thread and is NOT called on DB failure, so callers keep
-     *  their cached frozen set instead of accidentally unfreezing everyone. */
+    /** Poll frozen admins for cross-server propagation. On DB failure, @p onDone is not called. */
     void FindFrozenAsync(std::function<void(std::vector<FrozenAdmin>)> onDone);
 
 private:

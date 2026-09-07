@@ -305,7 +305,7 @@ Admin-system migration:
 
 Tests or verification:
 
-- If MetamodPlugin is practical to unit-test, use fake Subscriptions to assert teardown ordering.
+- If MetamodPlugin is practical to unit-test, use fake Subscriptions to assert cleanup order.
 - Otherwise extract the small subscription owner into an SDK-free helper with an ordering test.
 - Manually exercise successful load/unload, meta reload, and an intentionally failed OnLoad.
 

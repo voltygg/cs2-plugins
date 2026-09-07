@@ -8,11 +8,7 @@
 namespace AdminSystem::Database
 {
 
-/**
- * Parse a libpqxx text-array field (e.g. `{foo,bar,baz}`) into a std::vector<std::string>.
- * Returns empty on null. libpqxx's `array_parser` walks the textual representation token by token.
- * (Array columns are why these two repos keep hand-written ParseRow instead of the Column table.)
- */
+/** Parse a libpqxx text array. Null fields return an empty vector. */
 static std::vector<std::string> ParseTextArray(const pqxx::field& field)
 {
     std::vector<std::string> out;

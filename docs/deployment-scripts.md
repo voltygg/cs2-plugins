@@ -19,7 +19,6 @@ path, map, port, player limit, GSLT, and RCON password.
 ```powershell
 uv run poe build --install admin-system
 uv run poe build --install admin-system --start
-uv run poe build --install admin-system
 uv run poe test
 ```
 

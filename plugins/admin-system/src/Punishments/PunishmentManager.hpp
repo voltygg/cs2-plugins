@@ -19,12 +19,9 @@ namespace AdminSystem::Punishments
 {
 
 /**
- * Manages active punishments (bans, voice mutes, text mutes, warnings).
- *
- * Cache-first: every gameplay decision (ban-on-connect, IsVoiceMuted, the unban/unmute menus)
- * reads the in-memory caches, which are updated synchronously when a punishment is issued or
- * removed. The database writes ride the async worker - a failed write is logged, never blocks
- * the game thread, and the row id from an insert is backfilled into the cache when it lands.
+ * Manages active bans, mutes, and warnings. Gameplay reads in-memory caches, which are updated
+ * synchronously; database writes run asynchronously, failures are logged, and inserted row IDs
+ * are backfilled when they return.
  */
 class PunishmentManager
 {
@@ -37,7 +34,7 @@ public:
     bool LoadActivePunishments();
     /** Snapshot of the cached active bans, newest first (drives the unban menu). */
     std::vector<Database::Ban> GetActiveBans() const;
-    /** Snapshots of the cached active voice/text mutes, newest first (drive the unmute menu). */
+    /** Snapshots of cached active voice and text mutes, newest first. */
     std::vector<Database::VoiceMute> GetActiveVoiceMutes() const;
     std::vector<Database::TextMute> GetActiveTextMutes() const;
     std::optional<Database::Ban> GetActiveBan(int64_t steamId);
@@ -48,12 +45,9 @@ public:
 
     /** Issue a ban: persist, kick the player if online, broadcast. */
     bool IssueBan(Database::Ban& ban);
-    /**
-     * Issue a voice mute: persist, broadcast, and immediately suppress the target's outbound
-     * voice for every connected listener via the SetClientListening hook.
-     */
+    /** Persist and broadcast a voice mute, then suppress the target through SetClientListening. */
     bool IssueVoiceMute(Database::VoiceMute& mute);
-    /** Issue a text mute: persist, broadcast. The chat hook in Plugin.cpp drops messages from text-muted players. */
+    /** Issue a text mute; Plugin.cpp drops messages from text-muted players. */
     bool IssueTextMute(Database::TextMute& mute);
     /** Issue a warning: persist, broadcast, and auto-ban once the configured threshold is reached. */
     bool IssueWarning(Database::Warning& warning);
@@ -74,10 +68,8 @@ public:
     /**
      * Kick @p slot on the next game frame, but only if @p steamId still occupies it.
      *
-     * Deferred because both callers reach this from inside an engine hook on the target - the
-     * connect hook and, through IAdminActions, an anticheat detection - where kicking disconnects
-     * the client mid-virtual-call. The timer is owned per slot, so a reconnect replaces it and
-     * unload drops it.
+     * Defer the kick because callers run inside target hooks and disconnecting there would interrupt
+     * the virtual call. The per-slot timer is replaced on reconnect and released on unload.
      */
     void KickDeferred(int slot, int64_t steamId, std::string reason);
 
@@ -91,8 +83,7 @@ private:
     /** Re-query the three active lists off-thread and swap the caches when the rows arrive. */
     void RefreshCachesAsync();
 
-    // Shared body for the three GetActive* snapshots: copy the non-expired cache entries out,
-    // newest first. Keyed the same way for bans/voice/text mutes.
+    // Shared implementation for active ban, voice-mute, and text-mute snapshots.
     template <typename TEntity>
     static std::vector<TEntity> SnapshotActive(const std::unordered_map<int64_t, TEntity>& cache)
     {
@@ -107,9 +98,7 @@ private:
         return out;
     }
 
-    // Shared body for the three Remove*BySteamId methods. The caches mirror ALL active rows
-    // (shared across servers, refreshed by the sweep), so a cache miss means no active row -
-    // no DB fallback lookup needed.
+    // The caches mirror all active rows, so a miss needs no database lookup.
     using RemoveByIdFn = bool (PunishmentManager::*)(int64_t, int64_t, const std::string&);
 
     template <typename TEntity>

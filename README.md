@@ -55,8 +55,8 @@ uv run poe bootstrap
 ```
 
 `bootstrap` installs the Conan profiles and package remote, resolves
-dependencies, configures CMake, builds, and runs tests. It is the first build;
-do not run `poe build` immediately afterward.
+dependencies, configures CMake, builds, and runs tests. It is the first build,
+so use `poe build` for later changes.
 
 Create, build, install, and launch a working plugin:
 

@@ -22,9 +22,8 @@ namespace AdminSystem::Admin::CheatCheck
 constexpr int MaxSlots = VoltMod::MaxPlayers;
 
 /**
- * Owns all pending cheat checks: freezes the suspect, shows a persistent center-HTML panel +
- * chat link, runs a countdown, and auto-kicks (or unfreezes) on timeout. All methods run on the
- * game thread; async HTTP completions are marshalled back via HttpClient::DispatchCompletions before reaching here.
+ * Owns pending checks, including the freeze, center-HTML panel, countdown, and timeout action.
+ * Methods run on the game thread; HTTP completions are dispatched there before they arrive here.
  */
 class CheatCheckManager
 {
@@ -43,7 +42,7 @@ public:
     /** Start a check on `targetSlot` called by `adminSlot`. Re-call replaces any existing check. */
     bool StartCheck(int adminSlot, int targetSlot);
 
-    /** Admin-initiated cancel: unfreeze, clear the panel, broadcast cleared. Returns false if no check was active. */
+    /** Cancel a check, unfreeze the suspect, clear its panel, and broadcast the result. Returns false if inactive. */
     bool Cancel(int targetSlot);
 
     /** True while a check is pending on `slot` (drives menu enablement). */
@@ -52,10 +51,10 @@ public:
     /** A suspect submitted a link via `!cc` (playerProvided mode). */
     SubmitResult SubmitPlayerLink(int callerSlot, const std::string& link);
 
-    /** Silent teardown for a disconnecting slot (no unfreeze/broadcast - the player is gone). */
+    /** Remove a disconnecting slot without unfreezing or broadcasting. */
     void CancelAllForSlot(int slot);
 
-    /** Tear down every active check (plugin unload). */
+    /** Remove every active check during plugin unload. */
     void CancelAll();
 
 private:
@@ -63,8 +62,7 @@ private:
     const Config::ConfigManager& _config;
     Core::ChatService& _chat;
     CheatCheckView _view{_rt, _config, _chat};
-    /** Owns the panel re-send loop; CS2 drops center-HTML within a second or two. Declared after
-     *  _view because its render callback reads through it. */
+    /** Panel refresh loop. Declared after _view because its callback reads through it. */
     VoltMod::CenterHtml _panel{_rt.Messages, _rt.Scheduler};
 
     void Tick(int targetSlot);
@@ -78,18 +76,16 @@ private:
     void OnRoomFailed(int targetSlot);
     void RelayCheckerUrl(int targetSlot, const std::string& checkerUrl);
 
-    // Presence polling (CheatCheckPolling.cpp): pauses the countdown while the suspect
-    // is in the check room and resumes it if they leave.
+    // Presence polling pauses the countdown while the suspect is in the check room.
     void PollPresenceIfDue(int targetSlot);
     void OnPresenceResponse(int targetSlot, uint64_t seq, const VoltMod::HttpResult& result);
 
     void FallbackToFixed(PendingCheck& pc);  // drop awaiting state, use the configured fixed link if any
 
-    // Slot of the admin who called the check, or nullopt when they disconnected / the slot
-    // now hosts a different player.
+    // Nullopt when the calling admin disconnected or the slot was reused.
     std::optional<int> ResolveAdminSlot(const PendingCheck& pc) const;
 
-    // Reply to the admin who called the check, guarding against a disconnected/replaced admin slot.
+    // Reply only while the calling admin still occupies the recorded slot.
     void ReplyToAdmin(const PendingCheck& pc, const std::function<std::string()>& buildMessage);
 
     bool ValidSlot(int slot) const { return slot >= 0 && slot < MaxSlots; }

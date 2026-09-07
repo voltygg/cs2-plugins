@@ -20,6 +20,7 @@ Some comments affect builds, generated documentation, tooling, or legal obligati
 - copyright and license notices
 - generated-file warnings and source attribution
 - formatter, linter, coverage, spelling, and static-analysis directives such as `clang-format`, `NOLINT`, and IWYU annotations
+- namespace-closing comments when the repository's formatter or linter owns them, such as `// namespace VoltMod`
 - documentation-generator tags, anchors, groups, and code examples
 - `TODO`, `FIXME`, issue identifiers, URLs, commands, paths, and exact symbol names
 - comments whose placement inside a macro or conditional-compilation block is significant
@@ -35,6 +36,7 @@ Treat a comment as functional when repository tooling or configuration recognize
 - Preserve negation, conditions, exception cases, and modal words such as `must`, `may`, and `can`.
 - Use the identifiers already present in the code when they make the comment precise. Do not rotate terminology for variety.
 - Condense repeated explanations to one authoritative location when a nearby reference remains clear.
+- Delete decorative banner comments that only label or divide sections. Repeated punctuation, boxed headings, and comments that restate the following declaration do not justify their diff noise.
 - Do not add comments to uncommented code merely to make coverage look consistent. Add or relocate a comment only when needed to preserve important rationale or when the user asks for new documentation.
 - Follow established repository conventions for namespace closers, labeled blocks, Doxygen form, and docstring syntax.
 

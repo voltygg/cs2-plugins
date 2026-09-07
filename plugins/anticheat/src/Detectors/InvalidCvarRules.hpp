@@ -19,7 +19,7 @@ namespace Anticheat
 /** A replicated sv_cheats change needs time to reach clients before their values mean anything. */
 inline constexpr double SvCheatsPropagationGraceSec = 30.0;
 
-/** Randomized inside this range so the schedule is not predictable. */
+/** Poll intervals are randomized within this range. */
 inline constexpr float PollIntervalMinSec = 1.0f;
 inline constexpr float PollIntervalMaxSec = 5.0f;
 
@@ -29,9 +29,8 @@ inline constexpr float PollIntervalMaxSec = 5.0f;
 inline constexpr size_t CvarsPerPoll = 4;
 
 /**
- * Consecutive refusals required before a cheat-protected cvar becomes evidence.
- * This prevents a renamed or removed
- * cvar from detecting every client at once.
+ * Refusals required before a cheat-protected cvar becomes evidence. This avoids
+ * treating a renamed or removed cvar as a client fault.
  */
 inline constexpr int MissingRepliesBeforeEvidence = 3;
 
@@ -51,16 +50,13 @@ struct CvarVerdict
 };
 
 /**
- * Loaded rules and stateless evaluation. An empty table judges nothing.
- *
- * Rules are stored queried tier first, so each tier is a span rather than a second container to
- * keep in step.
+ * Loaded rules and stateless evaluation. An empty table judges nothing. Queried rules
+ * precede userinfo rules so each tier can be exposed as a span.
  */
 class CvarRuleTable
 {
 public:
-    /** Keeps the rules that validate, queried tier first; returns the names it dropped. Duplicates
-     *  are rejected, since a second rule for one cvar would share the first one's latch. */
+    /** Load valid rules with queried entries first; return dropped names. Duplicate rules are rejected. */
     std::vector<std::string> Load(const std::vector<CvarRule>& rules);
 
     size_t Size() const { return _rules.size(); }
@@ -83,10 +79,9 @@ public:
      * Evaluate a reply that refused to return a value. @p consecutiveReplies
      * includes the current refusal.
  *
-     * Silence is never judged - an unanswered query simply never arrives. A refusal is different,
-     * since every name in the table ships with the game, but it is still only evidence for the
-     * cheat-protected ones, only after @ref MissingRepliesBeforeEvidence back to back, and only as
-     * a kick.
+     * Silence is never judged. Refusals are evidence only for cheat-protected rules after
+     * @ref MissingRepliesBeforeEvidence consecutive replies, and only for a kick. The rule table
+     * contains names supplied by the game, so a refusal differs from an unanswered query.
      */
     CvarVerdict EvaluateMissing(std::string_view name, std::string_view statusName, bool enforceCheatCvars,
                                 int consecutiveReplies) const;
@@ -138,8 +133,7 @@ private:
     size_t At(int slot, size_t index) const { return static_cast<size_t>(slot) * _rules.Size() + index; }
 
     CvarRuleTable _rules;
-    // Sized MaxSlots * rule count at load: the table is runtime data, so a compile-time cap would
-    // only put a second limit on what the file may contain.
+    // Size this from the loaded table; the configuration has no compile-time rule limit.
     std::vector<uint8_t> _latched;
     /** Any reply that does carry a value puts the count back to zero. */
     std::vector<int> _missingReplies;

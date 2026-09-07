@@ -50,6 +50,7 @@ When in doubt, make the passage clearer before making it shorter.
 - Write every document and comment in plain English. Use familiar words unless an exact technical term is necessary.
 - Write like a careful developer helping another person. Keep the tone calm, direct, and natural.
 - Use specific nouns and verbs. Prefer "Conan resolves the locked revision" to "This robust process ensures consistency."
+- Replace informal implementation jargon with literal actions when precision is unchanged. Prefer "remove," "release," "connect," or "start" to phrases such as "tear down," "wire up," or "spin up." Preserve established technical terms and exact identifiers.
 - State the point without "In this section," "It is important to note," "Let's explore," or a generic recap.
 - Avoid inflated words such as "pivotal," "seamless," "powerful," "comprehensive," and "cutting-edge" unless the claim is precise and supported.
 - Name the source of a claim. Do not write "experts recommend" or "best practices suggest" without an actual source.

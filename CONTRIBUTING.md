@@ -16,8 +16,8 @@ uv run poe bootstrap
 ```
 
 Bootstrap installs the Conan configuration, builds, and runs tests. See
-[Create your first plugin](docs/getting-started-plugin.md) to run a plugin on a
-local server.
+[Create your first plugin](docs/getting-started-plugin.md) for the local-server
+loop.
 
 ## Add a plugin
 

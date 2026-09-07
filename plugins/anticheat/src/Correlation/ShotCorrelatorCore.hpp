@@ -27,14 +27,13 @@ struct PositionFrame
 class ShotCorrelatorCore
 {
 public:
-    /** Mirrors mp_teammates_are_enemies. Only changed through a reset: it decides which shots are
-     *  hostile. */
+    /** Mirrors mp_teammates_are_enemies for hostile-shot matching. */
     void SetTeammatesAreEnemies(bool value) { _teammatesAreEnemies = value; }
 
     /** Map change or config reload: drop every command, shot and frame. */
     void Reset();
 
-    /** Connect or disconnect: invalidate the slot's in-flight shots, leaving other slots alone. */
+    /** Invalidate one slot's in-flight shots after connect or disconnect. */
     void OnSlotChanged(int slot);
 
     /** Duplicates (same CmdNum) are dropped. */
@@ -50,9 +49,8 @@ public:
     void Prune(int32_t serverTick);
 
     /**
-     * weapon_fire for a ballistic weapon. Null when zero or several commands could have fired it -
-     * an ambiguous window is evidence of nothing, and its candidates are consumed so a later event
-     * cannot pick one of them arbitrarily.
+     * weapon_fire for a ballistic weapon. Returns null when no unique command matches; ambiguous
+     * candidates are consumed so later events cannot select one arbitrarily.
      */
     ShotView* OnWeaponFire(int slot, std::string_view weapon, int32_t serverTick, const AimAngles& visibleAngles,
                            bool hasVisibleAngles);
@@ -103,8 +101,7 @@ private:
 
     std::array<SlotData, MaxSlots> _slots{};
     std::deque<PositionFrame> _frames;
-    /** Returned for an out-of-range slot, so Shots() never has to hand back a null or a shared
-     *  static. Nothing writes to it. */
+    /** Read-only empty result returned for an out-of-range slot. */
     std::deque<ShotView> _noShots;
     bool _teammatesAreEnemies = false;
 };

@@ -1,4 +1,3 @@
-# Build, package, and deploy the configured CS2 servers.
 name: Deploy
 
 on:

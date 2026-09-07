@@ -14,9 +14,8 @@ using EffectInstance = VoltMod::EffectInstance;
 using EffectChoice = VoltMod::EffectChoice;
 using EffectScope = VoltMod::EffectScope;
 
-// Each factory below builds one Effect. A body needs an engine service (Transmit, Entities,
-// ConVars, ...) it cannot reach through ActionContext - an EffectDescriptor is data built once at
-// load, before any per-request context exists - so it captures the Runtime& its factory is given.
+// Effect bodies need engine services outside ActionContext, so each descriptor captures Runtime
+// while App builds the set for a load cycle.
 
 /** Cycle render colors until the effect expires. */
 Effect MakeDisco(VoltMod::Runtime& runtime);
@@ -45,9 +44,7 @@ Effect MakeBhop(VoltMod::Runtime& runtime);
 Effect MakeDrunk(VoltMod::Runtime& runtime);
 
 /**
- * @brief Every effect descriptor for one load cycle, built from the @ref VoltMod::Runtime the
- * bodies act through. Owned by `App`, next to the `EffectManager`/`EffectDispatcher` that drive
- * them - see `Core/App.hpp`.
+ * @brief Effect descriptors for one load cycle, owned by `App`.
  */
 struct EffectDescriptors
 {
@@ -69,9 +66,8 @@ struct EffectDescriptors
     Effect Bhop;
     Effect Drunk;
 
-    /** Every auto-listed effect, in the order the menu renders them. Points into the members
-     *  above, so it is stable for this object's lifetime (one load cycle). Hide is missing on
-     *  purpose: it is a self-only Control row and the `!hide` command. */
+    /** Menu order for auto-listed effects. Pointers remain valid for this object's lifetime.
+     * Hide is a self-only Control row and `!hide` command. */
     const std::array<const Effect*, 6> MenuEffects{&Ghost, &Disco, &Wallhack, &Model, &Bhop, &Drunk};
 };
 

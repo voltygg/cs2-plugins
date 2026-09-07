@@ -4,14 +4,6 @@ Bhop provides server-authoritative bunny-hop assistance while preserving
 client-side movement prediction. It can enable autobhop for everyone or grant
 it per player through the admin system.
 
-## Features
-
-- Client-predicted autobhop without repeated correction from the server.
-- Optional stamina removal and movement-convar tuning.
-- Configurable velocity boost with a speed cap.
-- Global and per-player operating modes.
-- Runtime configuration reloads.
-
 ## Operating modes
 
 | Mode | Behavior |

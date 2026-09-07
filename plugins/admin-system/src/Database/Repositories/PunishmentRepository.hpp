@@ -14,12 +14,7 @@
 namespace AdminSystem::Database
 {
 
-/**
- * Repository for punishment records, templated over the entity (Ban / VoiceMute / TextMute)
- * since all three tables share an identical schema - the table name and SQL come from the
- * entity's column table. Load-time reads block on the database worker; gameplay writes are
- * fire-and-forget or callback-based.
- */
+/** Repository for Ban, VoiceMute, or TextMute records sharing the same table shape. */
 template <typename TEntity>
 class PunishmentRepository
 {
@@ -34,7 +29,7 @@ public:
         return result ? VoltMod::FromResult<TEntity>(*result) : std::vector<TEntity>{};
     }
 
-    /** Async snapshot for the periodic cache refresh; @p onDone runs on the game thread. */
+    /** Async snapshot for cache refresh; @p onDone runs on the game thread. */
     void FindAllActiveAsync(std::function<void(std::vector<TEntity>)> onDone)
     {
         _db.Query(Stmt("find_all_active"), VoltMod::SelectSql<TEntity>(ActiveWhere), pqxx::params{VoltMod::Time::Now()},
@@ -44,7 +39,7 @@ public:
                   });
     }
 
-    /** Async insert; @p onId receives the generated row id on the game thread. */
+    /** Async insert; @p onId receives the generated row ID on the game thread. */
     void CreateAsync(const TEntity& record, std::function<void(int64_t)> onId = {})
     {
         _db.Query(Stmt("create"), VoltMod::InsertSql<TEntity>(), VoltMod::InsertParams(record),

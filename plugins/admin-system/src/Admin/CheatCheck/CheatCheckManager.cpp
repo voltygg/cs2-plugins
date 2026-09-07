@@ -29,9 +29,7 @@ using VoltMod::Time;
 namespace Log = VoltMod::Log;
 namespace ChatColors = VoltMod::ChatColors;
 
-/** Death, team changes and HUD updates dismiss center HTML, so the panel is redrawn far more often
- *  than its nominal five-second lifetime. Not configurable: slower blinks, faster only burns user
- *  messages. */
+/** CS2 dismisses center HTML on common HUD events, so refresh it every 100 ms. */
 static constexpr int PanelRefreshMs = 100;
 
 /** The deadline and the presence poll are both second-granularity, so they need nothing faster. */
@@ -60,8 +58,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     Pawn targetPawn = targetCtrl.GetPawn();
     const auto& cfg = _config.GetCheatCheck();
 
-    // Re-call: keep the original movetype/team (target is already frozen/spectated, so reading now is stale).
-    // PriorTeam is 0 (sentinel) unless we actually move them, so the restore decision survives a config reload.
+    // A repeated check must restore the original movement/team state.
     const bool wasActive = _checks[targetSlot].Active;
     const MoveType priorMove = wasActive ? _checks[targetSlot].PriorMoveType : targetPawn.Move();
     const int priorTeam =
@@ -129,8 +126,7 @@ void CheatCheckManager::RequestRoom(int targetSlot)
 
     if (!request)
     {
-        // No endpoint to call (or the target vanished): fall back synchronously. StartCheck renders the
-        // panel/chat afterward, so we only set state here (OnRoomFailed would double-send the instructions).
+        // StartCheck renders the instructions, so fallback only updates state here.
         FallbackToFixed(pc);
         return;
     }
@@ -155,11 +151,11 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const VoltM
         pc.ResolvedUrl = std::move(urls->PlayerUrl);
         pc.AwaitingUrl = false;
 
-        // An empty RoomCode keeps the per-tick poll gate on its fast path when polling is off.
+        // Leave RoomCode empty when presence polling is disabled.
         if (!roomCfg.presenceUrl.empty())
         {
             pc.RoomCode = std::move(urls->RoomCode);
-            // First poll one interval out: the suspect can't have opened the link yet.
+            // Delay the first poll by one interval.
             pc.NextPollAtSec = Time::Now() + roomCfg.pollIntervalSec;
         }
 
@@ -205,8 +201,7 @@ void CheatCheckManager::Tick(int targetSlot)
     if (!pc.Active)
         return;
 
-    // While the suspect is in the check room the deadline is suspended; polling still runs so
-    // leaving the room resumes the countdown.
+    // Polling continues while the room suspends the deadline.
     if (!pc.SuspectJoined && Time::Now() >= pc.DeadlineSec)
     {
         Expire(targetSlot);
@@ -267,8 +262,7 @@ void CheatCheckManager::ReplyToAdmin(const PendingCheck& pc, const std::function
 
 void CheatCheckManager::ShowPanel(int targetSlot)
 {
-    // Reads _checks live on every refresh, so the countdown and every state change (room created,
-    // link submitted, suspect joined) reach the panel without anyone redrawing it.
+    // Read _checks on each refresh so state changes appear without a redraw call.
     _panel.Show(targetSlot, PanelRefreshMs, [this](int slot) { return _view.PanelHtml(slot, _checks[slot]); });
 }
 
