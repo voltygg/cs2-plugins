@@ -6,7 +6,7 @@
 #include "Core/Samples.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Subscriptions.hpp>
+#include <VoltMod/Core/SubscriptionScope.hpp>
 #include <VoltMod/Engine/EngineTypes.hpp>
 #include <VoltMod/Hooks/Api.hpp>
 #include <array>
@@ -48,7 +48,7 @@ private:
     bool _userIdsResolved = false;  // false when the engine interface never answered
 
     /** Registrations released after the state they capture. */
-    VoltMod::Subscriptions _subscriptions;
+    VoltMod::SubscriptionScope _subscriptions;
 };
 
 }  // namespace Anticheat

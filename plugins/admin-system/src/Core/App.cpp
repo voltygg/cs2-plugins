@@ -57,8 +57,8 @@ void App::InstallPolicy()
 // the managers they touch are destroyed.
 void App::RegisterPlayerLifecycle()
 {
-    _subs.On(Runtime.Players.Connected, [this](Player& player) { OnPlayerConnect(player); });
-    _subs.On(Runtime.Players.Disconnected, [this](Player& player) { OnPlayerDisconnect(player); });
+    _subs.Add(Runtime.Players.Connected += [this](Player& player) { OnPlayerConnect(player); });
+    _subs.Add(Runtime.Players.Disconnected += [this](Player& player) { OnPlayerDisconnect(player); });
 }
 
 void App::OnPlayerConnect(Player& player)

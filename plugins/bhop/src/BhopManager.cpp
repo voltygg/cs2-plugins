@@ -40,7 +40,7 @@ void BhopManager::Initialize()
             _conVars.ApplyGlobal();
     }));
 
-    _subs.On(_rt.Players.Disconnected, [this](VoltMod::Player& player) { OnPlayerDisconnect(player); });
+    _subs.Add(_rt.Players.Disconnected += [this](VoltMod::Player& player) { OnPlayerDisconnect(player); });
 
     // Grants need a post-simulation hop because subtick movement ignores the scoped override.
     _subs.Add(_rt.Scheduler.EveryFrame([this] {
@@ -69,8 +69,8 @@ void BhopManager::ApplySettings()
     // Only grant mode needs per-player movement hooks.
     if (_mode == Mode::Grants && _movementSubs.Empty())
     {
-        _movementSubs.On(_rt.Hooks.Movement.Pre, [this](int slot) { OnRunCommandPre(slot); });
-        _movementSubs.On(_rt.Hooks.Movement.Post, [this](int slot) { OnRunCommandPost(slot); });
+        _movementSubs.Add(_rt.Hooks.Movement.Pre += [this](int slot) { OnRunCommandPre(slot); });
+        _movementSubs.Add(_rt.Hooks.Movement.Post += [this](int slot) { OnRunCommandPost(slot); });
     }
     else if (_mode != Mode::Grants)
         _movementSubs.Clear();

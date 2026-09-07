@@ -19,7 +19,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/EffectManager.hpp>
-#include <VoltMod/Core/Subscriptions.hpp>
+#include <VoltMod/Core/SubscriptionScope.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Players/ActionDispatcher.hpp>
@@ -124,7 +124,7 @@ private:
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */
-    VoltMod::Subscriptions _subs;
+    VoltMod::SubscriptionScope _subs;
 };
 
 }  // namespace AdminSystem

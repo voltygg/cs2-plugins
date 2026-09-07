@@ -34,10 +34,10 @@ bool AdminSystemPlugin::OnLoad(VoltMod::Runtime& runtime)
     return _app->Start();
 }
 
-void AdminSystemPlugin::OnRegisterHooks(VoltMod::Runtime& runtime)
+void AdminSystemPlugin::OnRegisterHooks(VoltMod::Runtime& runtime, VoltMod::SubscriptionScope& hooks)
 {
-    OwnHook(VOLTMOD_SCOPED_HOOK(IVEngineServer2, SetClientListening, runtime.Unsafe.Interfaces.Engine,
-                                SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false));
+    hooks.Add(VOLTMOD_SCOPED_HOOK(IVEngineServer2, SetClientListening, runtime.Unsafe.Interfaces.Engine,
+                                  SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false));
 }
 
 bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)

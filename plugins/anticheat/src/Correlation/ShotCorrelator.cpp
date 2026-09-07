@@ -90,14 +90,14 @@ void ShotCorrelator::Initialize()
 
     auto& events = _rt.GameEvents;
 
-    _subscriptions.On(_rt.Hooks.Movement.PreCmd,
-                      [this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); });
+    _subscriptions.Add(_rt.Hooks.Movement.PreCmd +=
+                       [this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); });
     _subscriptions.Add(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
     // The aim modules discount the frames after a teleport, so the stamps live here rather than in
     // the framework: subscribing is what arms the per-pawn hook, and the grace window is ours.
     _lastTeleport.BindReset(_rt.Slots);
-    _subscriptions.On(_rt.Hooks.Teleport.Teleported, [this](int slot) {
+    _subscriptions.Add(_rt.Hooks.Teleport.Teleported += [this](int slot) {
         if (IsValidSlot(slot))
             _lastTeleport[slot] = _rt.Clock.Time();
     });

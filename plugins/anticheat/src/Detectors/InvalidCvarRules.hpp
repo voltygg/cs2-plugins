@@ -78,7 +78,7 @@ public:
     /**
      * Evaluate a reply that refused to return a value. @p consecutiveReplies
      * includes the current refusal.
- *
+     *
      * Silence is never judged. Refusals are evidence only for cheat-protected rules after
      * @ref MissingRepliesBeforeEvidence consecutive replies, and only for a kick. The rule table
      * contains names supplied by the game, so a refusal differs from an unanswered query.
