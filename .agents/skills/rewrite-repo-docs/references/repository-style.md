@@ -58,12 +58,12 @@ When in doubt, make the passage clearer before making it shorter.
 - Use headings and lists when they help navigation, not to give every sentence a label.
 - Use sentence-case headings and restrained emphasis.
 - Keep paragraphs focused, but do not force every sentence to be short.
-- Do not use an em dash or en dash in prose, and do not substitute a spaced hyphen for one. Use a period, comma, colon, semicolon, or parentheses. The character is fine where it is content rather than punctuation: code samples, CLI flags, math, and diagrams. A spaced hyphen is also fine as the separator in a definition list, such as the `@subpage <anchor> - <gloss>` index lines.
+- Do not use an em dash or en dash as punctuation. Use a period, comma, colon, semicolon, or parentheses instead. Preserve either character when it is content, such as in code, CLI flags, math, identifiers, or copied data.
 - Do not ban passive voice, contractions, or groups of three mechanically. Rewrite them only when the result is clearer.
 - Use contractions when they sound natural in user-facing prose. Do not force them into API contracts or formal requirements.
 - Leave neutral technical prose neutral. A human tone does not mean adding jokes, opinions, fake enthusiasm, or personal stories.
 
-These voice checks adapt the useful parts of [Humanizer](https://github.com/blader/humanizer) for software documentation. The dash rule above is Humanizer's and applies as written. Its remaining blanket punctuation rules and its general-purpose personality guidance do not apply here.
+These voice checks adapt the useful parts of [Humanizer](https://github.com/blader/humanizer) for software documentation. The dash rule above applies as written. Its other blanket punctuation rules and general-purpose personality guidance do not apply here.
 
 ## Make procedures unambiguous
 

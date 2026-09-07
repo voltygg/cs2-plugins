@@ -1,22 +1,46 @@
 ---
 name: rewrite-repo-docs
-description: Rewrite and condense repository comments and documentation in plain English and a natural human tone without changing behavior. Use for repository-wide cleanup of docstrings, READMEs, CLAUDE.md files, public API docs, and developer guides; do not use for ordinary feature work or code refactoring.
+description: Rewrite and condense repository documentation or existing code comments in plain English without changing behavior or documented contracts. Use for repository-wide documentation cleanup and targeted source-comment or docstring cleanup; do not use for ordinary feature work, code refactoring, or adding commentary during implementation.
 ---
 
-# Rewrite repository documentation
+# Rewrite repository prose
 
-Rewrite all documentation and comments in plain English and a natural human tone without changing runtime behavior. Clear is the goal. Shorter is better only when it preserves the facts, contracts, and reasons a reader needs.
+Rewrite the documentation or comments within the user's requested scope. A full rewrite is allowed when it produces a cleaner result; do not limit the work to sentence-level edits. Clear is the goal. Shorter is better only when it preserves the facts, contracts, and reasons a reader needs.
 
 Read [references/repository-style.md](references/repository-style.md) before editing.
 
-## Establish scope
+For source comments or docstrings, also read [references/code-comments.md](references/code-comments.md).
+
+## Choose the scope
+
+Follow the user's stated scope. Do not turn a targeted cleanup into a repository-wide pass.
+
+- For code-comment cleanup, inspect only the requested files, directories, or repository roots. Rewrite, merge, split, move, or delete existing comments and docstrings as needed to remove bloat. Do not include READMEs, guides, or `CLAUDE.md` files unless the user asks for them.
+- For repository-wide documentation cleanup, inventory the documentation and comments in every repository the user included.
+- When the request includes both, treat documentation and code comments as separate review batches.
+- If the user names no paths, infer the narrowest scope that satisfies the request from the current repository and conversation. State the assumption before editing.
+
+For any included repository:
 
 1. Find every repository root and its instruction files.
 2. Inspect each worktree separately. Preserve unrelated changes and never assume nested repositories share status or history.
-3. Build the inventory from tracked files in each repository. Do not use a broad filesystem crawl as the source of truth.
-4. Read the main public docs and all `CLAUDE.md` files completely before rewriting them.
+3. Build repository-wide inventories from tracked files. Do not use a broad filesystem crawl as the source of truth.
+4. Read the instruction files that govern each file being edited. For a repository-wide documentation pass, also read the main public docs and all `CLAUDE.md` files completely.
 
-For the `cs2-plugins` workspace, treat the root and `vendor/voltmod` as separate Git repositories. Include both `CLAUDE.md` and `vendor/voltmod/CLAUDE.md` in every repository-wide pass.
+For the `cs2-plugins` workspace, treat the root and `vendor/voltmod` as separate Git repositories. Include both only when the requested scope reaches both. In a repository-wide pass across the workspace, include both `CLAUDE.md` files.
+
+## Delegate rewriting to Luna
+
+When agent collaboration is available, use one or more `gpt-5.6-luna` subagents for the first-pass rewrites. This applies to documentation and code-comment cleanup, including narrow requests.
+
+- The primary agent determines scope, reads the applicable instructions and references, inspects worktree state, and divides the work into non-overlapping file batches.
+- Give each Luna agent an exact repository root and file list. Tell it which prose type it is editing, what must remain unchanged, and which validation it owns.
+- Never assign the same file to more than one rewriting agent. Keep separate Git repositories in separate batches.
+- Luna agents edit only their assigned files and report uncertain or apparently incorrect claims instead of changing code to match the prose.
+- The primary agent reviews every resulting diff, resolves inconsistencies, and runs the final cross-file and cross-repository validation.
+- If Luna or collaboration is unavailable, continue locally and disclose that the requested delegation could not be used.
+
+## Repository-wide inventory
 
 Include tracked:
 
@@ -53,7 +77,7 @@ Exclude generated output, caches, lockfiles, vendored dependency output, tempora
 
 ## Work in reviewable batches
 
-Create and maintain a plan. Use this order unless the repository suggests a better dependency:
+Create and maintain a plan. For a repository-wide pass, use this order unless the repository suggests a better dependency:
 
 1. Inventory files, audiences, duplicated topics, and project terminology.
 2. Rewrite high-traffic user documentation and READMEs.
@@ -65,10 +89,19 @@ Create and maintain a plan. Use this order unless the repository suggests a bett
 
 Review the diff after each batch. Avoid bulk regular-expression rewrites across unrelated file types. Continue across context compaction rather than restarting completed batches. Do not commit unless the user asks.
 
+For a targeted code-comment pass:
+
+1. Inventory existing comments and docstrings only in the requested scope.
+2. Classify each as keep, rewrite, delete, or protected before editing.
+3. Divide the files into non-overlapping Luna batches.
+4. Review each batch for lost rationale, altered contracts, directive damage, and non-comment changes.
+5. Check terminology and repeated explanations across the full requested scope.
+
 ## Validate
 
 - Run `git diff --check` and inspect `git diff --stat` in every repository.
 - Review prose diffs for lost facts, changed commands, broken anchors, malformed Markdown, and accidental source changes.
+- For code-comment cleanup, verify that non-comment tokens did not change and that protected comments retained their required text and placement.
 - Parse modified YAML, TOML, or JSON with the repository's existing tools.
 - Run documentation generators or link checks when the repository provides them.
 - Run the narrowest relevant lint, format check, build, or test command when comments touch parsed source or public headers.
