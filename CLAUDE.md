@@ -1,227 +1,56 @@
-# CS2 plugins repository
+# CS2 plugins
 
-This repository builds C++23 Metamod:Source plugins for Counter-Strike 2. Shared
-engine integration comes from the `voltmod/[~1.3]` Conan package. The local
-`vendor/voltmod` checkout is a separate Git repository used for coordinated
-framework work; create its package locally and refresh `conan.lock` to consume it.
+C++23 Metamod:Source plugins for Counter-Strike 2 on the VoltMod framework
+(Conan package `voltmod/[~1.3]`).
+
+- `vendor/voltmod` is a separate Git repo with its own `CLAUDE.md`. Check its status and diffs separately.
+- `references/` is read-only.
+
+## Comments and names
+
+MUST:
+
+- Comment only where the code cannot say it: intent, ownership, lifetime, threading, compatibility.
+- One line inside a function. A public contract may take a few lines of Doxygen. No essays.
+- Names are plain words a new developer understands. If a name needs a comment to decode it, rename it.
 
 ## Commands
 
 ```bash
-uv sync
-uv run poe doctor
-uv run poe bootstrap
-uv run poe build
-uv run poe test
-uv run poe build windows-msvc-debug
-uv run poe build-linux
-uv run poe build --install <plugin> --start
-ctest --preset windows-msvc-release
-uv run poe lint
-uv run poe format
-uv run poe panorama
-```
-
-`doctor` checks the local toolchain, project, Conan configuration, and an
-optional CS2 server without changing them. `bootstrap` installs VoltMod's Conan
-profiles and public remote, then builds. `build` compiles only; `test` brings
-the build up to date and runs CTest. On `build`, `--install <plugin>` copies the
-result into the local CS2 server at `CS2_SERVER_PATH` and `--start` launches
-that server afterwards. `lint` runs ruff over the build tooling and then
-`voltmod modgraph --plugins .`, which fails a plugin header that forward-declares
-a type, or any plugin source that opens an anonymous namespace or uses a
-using-directive. `panorama` compiles every `panorama/` directory in the project
-with the CS2 Workshop Tools and installs the result into your own client at
-`CS2_CLIENT_PATH` (found through Steam when unset); it is Windows only, and a
-custom UI shows nothing until it has run. All of these
-come from the framework CLI (`voltmod build|test|install|serve|modgraph|panorama`);
-`deploy/tools` only handles the remote fleet.
-Build output is under
-`build/<preset>/plugins/<name>/<platform-arch>/`. The build tasks run
-`voltmod`, installed by this repository's `pyproject.toml`.
-
-To work on VoltMod and a plugin together, register the checkout as the editable
-`voltmod` package once:
-
-```bash
-uv run conan editable add vendor/voltmod
-uv run poe build                  # compiles the checkout first, then the plugins, both incrementally
-uv run poe build --relock         # before committing: export it as a package, pin conan.lock, drop the editable
-```
-
-`--relock` fails if the plugin build tree is not configured against the new
-package. Commit the relocked `conan.lock` with the plugin change.
-
-Treat the root worktree and `vendor/voltmod` as separate repositories. Check
-their status and diffs independently. Do not edit the read-only projects under
-`references/`.
-
-## Repository map
-
-```text
-plugins/admin-system/  Admins, punishments, menus, reports, and PostgreSQL data
-plugins/anticheat/     Detection cores, engine adapters, and response handling
-plugins/bhop/          Server-wide and per-player bunnyhop modes
-plugins/contracts/     Interfaces shared between plugin modules
-deploy/                Docker deployment CLI, inventory, templates, and scripts
-docs/                  Local development and deployment notes
-vendor/voltmod/        Separate VoltMod framework checkout
-```
-
-Each plugin owns its `src/`, `configs/`, tests, and `CMakeLists.txt`.
-`voltmod_add_plugin(<name> VERSION <version> ...)` discovers `src/*.cpp`, creates
-the Metamod module, and generates its VDF and install bundle. Register a new
-plugin with `add_subdirectory()` in the root `CMakeLists.txt`, or run:
-
-```bash
+uv run poe doctor                            # check toolchain, Conan, optional CS2 server
+uv run poe bootstrap                         # first-time: install VoltMod profiles and remote
+uv run poe build                             # compile (windows-msvc-release)
+uv run poe test                              # compile, then CTest
+uv run poe lint                              # ruff + voltmod modgraph
+uv run poe build --install <plugin> --start  # copy to CS2_SERVER_PATH and launch
+uv run poe panorama                          # compile panorama/ UI into the client (Windows)
 uv run poe new-plugin <name>
 ```
 
-Add third-party C++ dependencies to `conanfile.py`, find them in the root
-`CMakeLists.txt`, and link their imported targets in the plugin CMake file.
+Output: `build/<preset>/plugins/<name>/<platform-arch>/`. Compiling needs an MSVC dev
+shell; see the `/build-local` skill. `build-linux` only works in the CI container.
 
-## Plugin structure
+Framework and plugin together:
 
-Plugins derive from `VoltMod::MetamodPlugin`. The base creates one
-`VoltMod::Runtime` per load cycle and passes it to `OnLoad(Runtime&)`. Build the plugin's object graph there and release
-it in `OnUnload`; no plugin state may survive `meta reload`.
+```bash
+uv run conan editable add vendor/voltmod   # once
+uv run poe build                           # checkout first, then plugins
+uv run poe build --relock                  # before committing; commit conan.lock with the change
+```
 
-Use `VOLTMOD_PLUGIN(Klass)` in `Plugin.cpp`. Use `VoltMod::WithBuildInfo` for
-metadata and `VoltMod::LoadStandardConfig` for the normal configuration and
-translation load stages.
+## Layout
 
-The runtime owns framework services such as commands, players, menus, messages,
-events, scheduling, HTTP, and engine wrappers. Database translation units must
-include `<VoltMod/Database/Api.hpp>`; the main `<VoltMod/Api.hpp>` deliberately
-does not include libpqxx.
+```text
+plugins/admin-system/  Admins, punishments, menus, reports, PostgreSQL
+plugins/anticheat/     Detection cores, engine adapters, responses
+plugins/bhop/          Bunnyhop modes
+plugins/contracts/     Interfaces shared between plugins
+deploy/                Docker deployment CLI
+docs/                  Development and deployment notes
+```
 
-Current patterns:
+A plugin owns `src/`, `configs/`, `tests/`, and a `CMakeLists.txt` calling
+`voltmod_add_plugin(<name> VERSION <v>)`; register it with `add_subdirectory()` in the
+root. C++ deps: `conanfile.py`, then `find_package` in the root CMake, then link in the plugin.
 
-- Register commands from `App::Start()` with the fluent builder
-  (`commands.Add(name).Describe(...).Permission(...).Run(handler)`). The handler's
-  parameter list is the argument spec - `Caller` first, then one `Args::` value per
-  argument - so targets, durations and trailing reasons are parsed, immunity-checked
-  and bound before the handler runs. `CommandManager` owns commands for the load
-  cycle; keep event, timer, and hook subscriptions in the App's `_subs`.
-- Inject permissions, immunity, replies, and broadcasts once through
-  `Runtime::Policy`, then ask `Policy::Authorize(caller, target, permission)`
-  wherever the answer is needed. Do not re-implement the check: a plugin's
-  `CanTarget` is an immunity comparison and nothing else, because the console and
-  self-targeting are settled before it is consulted.
-- Track players by `PlayerRef` (slot + SteamID) and resolve through
-  `Runtime.Players.Get(ref)`. Handle connect/disconnect by subscribing to
-  `Runtime.Players.Connected`/`.FullyConnected`/`.SettingsChanged`/`.Disconnected`,
-  not by overriding a `MetamodPlugin` virtual.
-- Subscribe with `+=` on the framework's `Event` members (`runtime.Slots.Changed`,
-  `runtime.ConVars.Changed`, `runtime.Hooks.Movement.Pre`, ...) and with
-  `runtime.GameEvents.On<T>()` for game events. There is no other subscribe verb, and
-  no string-keyed game event: model it in `Events/EventTypes.hpp` first.
-- Keep each returned `VoltMod::Subscription` beside the state captured by its
-  handler. Dropping one unsubscribes - and for a `Scheduler` timer, cancels it -
-  so a fire-and-forget deferral still needs an owner.
-- A hook service arms itself on its first subscription (`Movement`, `Teleport`)
-  and disarms when the last one is dropped; do not look for an
-  `Install()` or `Enable()` to call. A leaked Subscription therefore leaves a
-  live vtable hook behind after `meta reload`.
-- Hook an engine vfunc the framework does not cover with `VOLTMOD_VHOOK*` at
-  file scope plus a `VoltMod::VtableHook` member
-  (`<VoltMod/Unsafe/VtableHook.hpp>`), one hooked vfunc per translation unit.
-  Do not call SourceHook's `SH_*` add, remove, or reconfigure macros directly.
-- Reach a player through the frame-local `Pawn` (the body: health, armor,
-  movement, aim) or `Controller` (the identity: name, money, team), from
-  `runtime.Entities.PawnOf(slot)` / `.Controller(slot)`. Schema fields are generated
-  accessor pairs - `pawn.Health()` reads and `pawn.SetHealth(100)` writes and
-  replicates; the offsets are baked in by `voltmod schemagen` and the load aborts if
-  they no longer match the engine. `explicit operator bool()`
-  is the only validity check. Never store a wrapper past the frame: store an
-  `EntityRef` or a `PlayerRef` and resolve it again where it is used.
-- A `custom_hud_layout` is the one entity a plugin *owns* rather than re-resolves:
-  `runtime.Ui.Panel(name)` (or `.Spawn(name)`) returns a move-only `VoltMod::UiPanel` whose
-  destructor removes the entity, so keep it as a member and a `meta reload` cannot leave a
-  panel behind. `panel.Text(slot, …)` writes to one player and `panel.Button("id") += …`
-  filters presses to that layout. Workshop addons work the same way: `runtime.Addons.Require(id)`
-  returns a lease, and the requirement lasts exactly as long as you hold it.
-- Return `VoltMod::Result<T>`/`VoltMod::Status` where a caller has to know why
-  something failed; `Error::Detail` is the log text and `Error::Key` the
-  translation key for a player-facing reply.
-- Define admin effects as `EffectDescriptor` values and keep menu order in the
-  explicit `MenuEffects` table.
-- Build menus through `runtime.Menus`: `MenuBuilder(title).Add(ButtonRow{…})` for rows,
-  `ActionRows` for rows acting on an admin/target pair, and `Flow<TState>::Create(menus, slot,
-  state)` for multi-step menu actions.
-- Define repository column tables with `Table`, `Key`, and `Columns()`. Keep
-  handwritten SQL for queries whose UPDATE or WHERE clauses are specific.
-- Send player-facing text through `Runtime::Messages` and translation keys.
-- Ask `runtime.Capabilities.Has(...)` before using a feature that depends on gamedata or an
-  engine interface; services no longer expose `Available()`/`Enabled()` flags of their own.
-- Read and write convars through `VoltMod::ConVar<T>` handles resolved once at start, not by
-  name at each call.
-- A settings struct is a plain aggregate at namespace scope: the member name is the JSON key,
-  reflection needs no registration, a missing key keeps the member's initializer, and unknown
-  keys are ignored for compatibility with older files.
-- When a plugin has to validate or derive from settings, compose `Json::ReadFile` in a
-  `ConfigManager` of its own and publish a snapshot in one assignment (`admin-system`'s
-  `Config/ConfigManager.*`). Do not subclass `JsonConfig`: resolving into a value that has not
-  been published is what keeps a failed reload from leaving half-applied state.
-
-## Conventions
-
-- Use C++23 and `.hpp` headers.
-- Use `PascalCase` for types and methods, `_camelCase` for members, and
-  `camelCase` for local variables and parameters.
-- Prefer `std::format`, designated initializers, and `int64_t` SteamIDs.
-- Every framework name is `VoltMod::Thing`; there are no module sub-namespaces.
-  Write the qualified name, or name what a .cpp uses with targeted
-  using-declarations (`using VoltMod::Player;`). Never a using-directive, and
-  never a using-declaration in a header.
-- Do not forward-declare a type in a header. Include the header that defines it.
-  A pair of classes that owns one another is the only exception, and its
-  declaration goes in the plugin's one `*Types.hpp` header with a comment saying
-  why - that filename is what modgraph exempts.
-- Do not use anonymous namespaces. A file-local helper is a `static` function or
-  constant at the top of the .cpp, or a private static member when it needs
-  class state.
-- Game code runs on the main thread. Do not add plugin-owned worker threads or
-  mutexes. VoltMod's database and HTTP workers replay completions on the game
-  thread.
-- Use asynchronous database calls during gameplay. Blocking calls are limited
-  to load-time work such as migrations and explicit admin reloads.
-- Pass dependencies through constructors. Do not add singletons or ambient
-  service lookups in plugin code.
-- Bind stable services in constructors and App-owned objects named by behaviour
-  (Actions, PlayerEffects, Runtime.World.Pawns); pass request data such as slots and
-  descriptors to methods. Do not add generic Services/Env bags. `ActionContext`
-  carries only the resolved pair and its controllers - never a `Runtime&`. An
-  action or effect body that needs an engine service reaches it through the
-  plugin's own captured `App&` (a menu row or command handler already has one)
-  or, for a body built as static data before any `App` exists (an
-  `EffectDescriptor`'s `Setup`), through a `Runtime&` captured by a small
-  per-descriptor factory function - see `Admin/Effects/*.cpp`.
-- Keep files near 300-350 lines when that improves readability.
-
-## Commenting and documentation
-
-- Comment only to explain intent, constraints, ownership, lifetime, threading,
-  security, or compatibility. Keep comments near the code and remove stale or
-  obvious narration.
-- Use Doxygen for non-obvious public contracts. Cover preconditions, ownership,
-  errors, return behavior, and concurrency only when relevant; preserve exact
-  symbols and tags.
-- Keep docs task-first, accurate, and runnable. Preserve commands, paths,
-  identifiers, defaults, links, and configuration keys.
-- Use plain English and sentence-case headings. Call VoltMod the framework;
-  reserve "library" for actual libraries or CMake targets. Update affected docs
-  and templates with behavior or API changes.
-
-## Tests and configuration
-
-Plugin tests live under `plugins/<name>/tests/` and use doctest through
-`voltmod_add_tests()`. Each doctest case becomes a CTest entry, so case names
-must not contain `[`, `]`, or `;`.
-
-The admin-system runtime settings are in
-`plugins/admin-system/configs/settings.jsonc`; migrations are in its
-`configs/migrations/` directory. Several servers may share the database.
-`server.tag` is the stable per-server identity used by `admin_server_groups`.
-Admin freeze state is stored on `admins`, and actions are audited in
-`admin_activity`. Run `!admin_reload` after changing admin data directly.
+Conventions and framework patterns are in `.claude/rules/` and load per file path.
