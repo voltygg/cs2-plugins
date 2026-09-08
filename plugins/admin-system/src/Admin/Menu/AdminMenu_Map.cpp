@@ -49,8 +49,8 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlo
 {
     auto& tr = app.Runtime.Translations;
 
-    const VoltMod::Condition mayMap = Allows(app, Permission::Map);
-    const VoltMod::Condition mayVote = Allows(app, Permission::Vote);
+    const VoltMod::EnabledCondition mayMap = Allows(app, Permission::Map);
+    const VoltMod::EnabledCondition mayVote = Allows(app, Permission::Vote);
 
     return MenuBuilder(map.Label())
         .Add(ButtonRow{.Label = tr.Get("action.changeMap", adminSlot),

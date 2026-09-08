@@ -21,9 +21,9 @@ inline bool MayUse(App& app, int slot, Permission permission)
 
 /** @ref MayUse as a row's condition: asked on every redraw, and it refuses the press itself, so
  *  no handler repeats the check. */
-inline VoltMod::Condition Allows(App& app, Permission permission)
+inline VoltMod::EnabledCondition Allows(App& app, Permission permission)
 {
-    return VoltMod::Condition([&app, permission](int slot) { return MayUse(app, slot, permission); });
+    return VoltMod::EnabledCondition([&app, permission](int slot) { return MayUse(app, slot, permission); });
 }
 
 /** Flow validator that re-checks @p permission on @p slot, the one player the flow runs for: a

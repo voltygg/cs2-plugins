@@ -101,7 +101,7 @@ std::shared_ptr<VoltMod::Menu> BuildControlActionsMenu(AdminSystem::App& app, Vo
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", admin.Slot), targetPlayer->Name()));
     auto rows = app.MenuRows(admin, target);
-    VoltMod::Condition control = rows.Allows(Flag(Permission::Control));
+    VoltMod::EnabledCondition control = rows.Allows(Flag(Permission::Control));
 
     // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
     // (no broadcast / bool result), so they stay plain buttons rather than Actions descriptors.

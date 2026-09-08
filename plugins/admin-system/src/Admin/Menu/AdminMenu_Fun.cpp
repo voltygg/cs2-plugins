@@ -27,7 +27,7 @@ std::shared_ptr<VoltMod::Menu> BuildFunMenu(AdminSystem::App& app, int adminSlot
     if (!app.Runtime.Players.Get(adminSlot))
         return nullptr;
 
-    const VoltMod::Condition allowed = Allows(app, Permission::FunMode);
+    const VoltMod::EnabledCondition allowed = Allows(app, Permission::FunMode);
 
     MenuBuilder builder(tr.Get("category.fun", adminSlot));
 
