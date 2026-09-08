@@ -17,16 +17,16 @@ Effect MakeWallhack(VoltMod::Runtime& runtime)
                   .OnKey = "broadcast.wallhackOn",
                   .OffKey = "broadcast.wallhackOff",
                   .Scope = EffectScope::Round,
-                  .TickIntervalMs = GlowVision::ReconcileIntervalMs,
+                  .TickIntervalMs = GlowVision::RefreshIntervalMs,
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
                       auto glow = runtime.Hooks.Visibility.CreateGlow(ctx.Target().Slot());
 
                       // Build the glow clones immediately; the repeating tick then tracks spawns/deaths/team
-                      // changes. OnStop clears the transmit-filter entries and removes any surviving clones
+                      // changes. OnStop clears the visibility-filter entries and removes any surviving clones
                       // (on a round restart the props are already gone).
-                      glow->Reconcile();
+                      glow->Refresh();
 
-                      return {.OnTick = [glow]() { glow->Reconcile(); }, .OnStop = [glow]() { glow->Destroy(); }};
+                      return {.OnTick = [glow]() { glow->Refresh(); }, .OnStop = [glow]() { glow->Destroy(); }};
                   }};
 }
 

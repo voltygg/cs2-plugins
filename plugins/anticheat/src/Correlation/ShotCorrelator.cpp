@@ -37,7 +37,7 @@ static bool IsAirborne(const VoltMod::Pawn& pawn)
            pawn.ActualMoveTypeRaw() == static_cast<VoltMod::Schema::MoveType_t>(VoltMod::MoveType::Walk);
 }
 
-static CmdSample BuildSample(const VoltMod::UserCmdView& cmd)
+static CmdSample BuildSample(const VoltMod::PlayerInput& cmd)
 {
     CmdSample sample;
     sample.CmdNum = cmd.CommandNumber;
@@ -90,8 +90,8 @@ void ShotCorrelator::Initialize()
 
     auto& events = _rt.GameEvents;
 
-    _subscriptions.Add(_rt.Hooks.Movement.PreCmd +=
-                       [this](int slot, const VoltMod::UserCmdView& cmd) { OnCommand(slot, cmd); });
+    _subscriptions.Add(_rt.Hooks.Movement.Before +=
+                       [this](int slot, const VoltMod::PlayerInput& cmd) { OnCommand(slot, cmd); });
     _subscriptions.Add(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
     // The aim modules discount the frames after a teleport, so the stamps live here rather than in
@@ -113,7 +113,7 @@ void ShotCorrelator::Initialize()
     _subscriptions.Add(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) { OnPlayerDeath(e); }));
 }
 
-void ShotCorrelator::OnCommand(int slot, const VoltMod::UserCmdView& cmd)
+void ShotCorrelator::OnCommand(int slot, const VoltMod::PlayerInput& cmd)
 {
     if (!cmd.Valid || !_manager.DetectionsEnabled() || !_manager.IsEligible(slot))
         return;

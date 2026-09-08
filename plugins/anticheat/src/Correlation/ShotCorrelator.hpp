@@ -24,7 +24,7 @@ public:
     void Initialize();
 
 private:
-    void OnCommand(int slot, const VoltMod::UserCmdView& cmd);
+    void OnCommand(int slot, const VoltMod::PlayerInput& cmd);
     void OnFrame();
     void OnWeaponFire(const VoltMod::WeaponFire& fire);
     void OnBulletImpact(const VoltMod::BulletImpact& impact);

@@ -1,7 +1,7 @@
 #pragma once
 
 // Feeds InvalidCvarRules from two tiers: the userinfo copies the engine already holds, and the
-// network convar query for everything else. Without _rt.Hooks.ClientCvars the query tier is simply
+// network convar query for everything else. Without _rt.Hooks.ClientConVars the query tier is simply
 // absent, so a degraded load falls back to userinfo rather than going blind.
 //
 // An unanswered query produces no callback at all, so nothing here waits on a reply or reads
@@ -45,7 +45,7 @@ private:
 
     void Poll(int slot, SlotState& state);
     void ReadUserInfo(int slot);
-    void OnReply(int slot, VoltMod::ClientCvarStatus status, std::string_view name, std::string_view value);
+    void OnReply(int slot, VoltMod::ClientConVarStatus status, std::string_view name, std::string_view value);
     double NextDelaySec();
 
     AntiCheatManager& _manager;

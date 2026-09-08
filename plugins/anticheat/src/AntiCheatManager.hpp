@@ -88,7 +88,7 @@ private:
     void RegisterCommands();
     /** Push configs/detections.jsonc into the two table-driven modules. */
     void LoadDetectionData();
-    void DumpCommand(int slot, const VoltMod::UserCmdView& cmd);
+    void DumpCommand(int slot, const VoltMod::PlayerInput& cmd);
     void LogStatus() const;
     /** Update hostile-shot rules from `mp_teammates_are_enemies`. */
     void RefreshTeamRules();

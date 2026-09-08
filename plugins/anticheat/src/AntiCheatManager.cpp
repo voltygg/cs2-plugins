@@ -31,8 +31,8 @@ void AntiCheatManager::Initialize()
     _simulator.Initialize();
 
     // Aim modules share this movement hook.
-    _subs.Add(_rt.Hooks.Movement.PreCmd +=
-              [this](int slot, const VoltMod::UserCmdView& cmd) { DumpCommand(slot, cmd); });
+    _subs.Add(_rt.Hooks.Movement.Before +=
+              [this](int slot, const VoltMod::PlayerInput& cmd) { DumpCommand(slot, cmd); });
     _subs.Add(_rt.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
     _subs.Add(_rt.Players.FullyConnected += [this](VoltMod::Player& player) { OnPlayerFullyConnected(player); });
     _subs.Add(_rt.Players.SettingsChanged += [this](VoltMod::Player& player) { OnPlayerSettingsChanged(player); });
@@ -144,7 +144,7 @@ void AntiCheatManager::RegisterCommands()
         });
 }
 
-void AntiCheatManager::DumpCommand(int slot, const VoltMod::UserCmdView& cmd)
+void AntiCheatManager::DumpCommand(int slot, const VoltMod::PlayerInput& cmd)
 {
     if (!cmd.Valid || !IsValidSlot(slot))
         return;
@@ -202,7 +202,7 @@ std::string AntiCheatManager::StatusSnapshot() const
                  "modules",
                  modules,
                  "clientCvars",
-                 _rt.Capabilities.Has(VoltMod::Capability::ClientCvars) ? "available" : "degraded",
+                 _rt.Capabilities.Has(VoltMod::Capability::ClientConVars) ? "available" : "degraded",
                  "teleportTracker",
                  _rt.Capabilities.Has(VoltMod::Capability::Teleport),
                  "correlatorFrames",
@@ -246,7 +246,7 @@ void AntiCheatManager::LogStatus() const
             slot, player->Name(), player->SteamId(), PunishmentName(_response.Issued(slot)),
             _aimbot.IncidentCount(slot), _aimlock.IncidentCount(slot), _aimlock.IsTracking(slot) ? "/tracking" : "",
             _antiAim.Score(slot), _silentAim.Score(slot, now), _namechanger.ChangeCount(slot),
-            latched.empty() ? "-" : latched, _rt.Hooks.ClientCvars.PendingCount(slot),
+            latched.empty() ? "-" : latched, _rt.Hooks.ClientConVars.PendingCount(slot),
             _invalidCvarPoller.PollsIn(slot, now), _correlator.Shots(slot).size(), _correlator.CommandCount(slot),
             _correlator.Generation(slot));
     }

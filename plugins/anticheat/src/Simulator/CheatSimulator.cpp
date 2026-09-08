@@ -113,8 +113,8 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     // The filter rewrites live player commands, so it stays uninstalled until the first Arm. A
     // disabled simulator then costs nothing on the per-tick movement path.
     if (!_filter)
-        _filter = _rt.Hooks.Movement.FilterCmd +=
-            [this](int filtered, VoltMod::UserCmdView& cmd) { OnFilter(filtered, cmd); };
+        _filter = _rt.Hooks.Movement.Rewrite +=
+            [this](int filtered, VoltMod::PlayerInput& cmd) { OnFilter(filtered, cmd); };
 
     auto& state = _sim[slot];
     state = {};
@@ -124,7 +124,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     Log::Info("Simulating slot {} (param {:.1f}) for {:.0f}s.", slot, state.param, SimulationSeconds);
 }
 
-bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
+bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::PlayerInput& cmd)
 {
     const VoltMod::Pawn self = _rt.Entities.PawnOf(slot);
     if (!self)
@@ -168,7 +168,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd)
     return true;
 }
 
-void CheatSimulator::OnFilter(int slot, VoltMod::UserCmdView& cmd)
+void CheatSimulator::OnFilter(int slot, VoltMod::PlayerInput& cmd)
 {
     if (!Enabled() || !cmd.Valid || !IsValidSlot(slot))
         return;

@@ -82,7 +82,7 @@ double InvalidCvarDetector::NextDelaySec()
 void InvalidCvarDetector::Poll(int slot, SlotState& state)
 {
     ReadUserInfo(slot);
-    if (!_rt.Capabilities.Has(VoltMod::Capability::ClientCvars))
+    if (!_rt.Capabilities.Has(VoltMod::Capability::ClientConVars))
         return;
 
     const CvarRuleTable& rules = _manager.InvalidCvars().Rules();
@@ -94,8 +94,8 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
     // second one, so the batch never has to check what is pending.
     for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
     {
-        _rt.Hooks.ClientCvars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
-                                    [this](int replySlot, VoltMod::ClientCvarStatus status, std::string_view cvar,
+        _rt.Hooks.ClientConVars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
+                                    [this](int replySlot, VoltMod::ClientConVarStatus status, std::string_view cvar,
                                            std::string_view value) { OnReply(replySlot, status, cvar, value); });
     }
     state.Cursor = rules.PollCvarIndex(state.Cursor, CvarsPerPoll);
@@ -113,7 +113,7 @@ void InvalidCvarDetector::ReadUserInfo(int slot)
     }
 }
 
-void InvalidCvarDetector::OnReply(int slot, VoltMod::ClientCvarStatus status, std::string_view name,
+void InvalidCvarDetector::OnReply(int slot, VoltMod::ClientConVarStatus status, std::string_view name,
                                   std::string_view value)
 {
     if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::InvalidCvar) ||
@@ -123,7 +123,7 @@ void InvalidCvarDetector::OnReply(int slot, VoltMod::ClientCvarStatus status, st
     // Both strings borrow the decoded message. The rules core copies whatever becomes evidence.
     const bool enforce = _manager.EnforceCheatCvars();
     InvalidCvarRules& rules = _manager.InvalidCvars();
-    _manager.Report(slot, status == VoltMod::ClientCvarStatus::ValueIntact
+    _manager.Report(slot, status == VoltMod::ClientConVarStatus::Answered
                               ? rules.Observe(slot, name, value, enforce)
                               : rules.ObserveMissing(slot, name, VoltMod::Name(status), enforce));
 }

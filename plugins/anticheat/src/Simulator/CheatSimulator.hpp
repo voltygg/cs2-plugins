@@ -1,6 +1,6 @@
 #pragma once
 
-// Dev-only: synthesises cheat-shaped input by rewriting the decoded UserCmdView. The game still
+// Dev-only: synthesises cheat-shaped input by rewriting the decoded PlayerInput. The game still
 // runs the real command, so nothing here changes where the player's bullets go.
 // anticheat.debug.simulator decides whether the arming commands exist at all.
 //
@@ -55,10 +55,10 @@ private:
         double expireAt = 0.0;
     };
 
-    void OnFilter(int slot, VoltMod::UserCmdView& cmd);
+    void OnFilter(int slot, VoltMod::PlayerInput& cmd);
     void Arm(const CCommand& args, Kind kind, float defaultParam);
     /** Point the command at the nearest opponent's chest; false with nobody to lock onto. */
-    bool AimAtNearestOpponent(int slot, VoltMod::UserCmdView& cmd);
+    bool AimAtNearestOpponent(int slot, VoltMod::PlayerInput& cmd);
 
     int ResolveSlot(std::string_view arg);
 

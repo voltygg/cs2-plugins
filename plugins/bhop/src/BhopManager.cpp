@@ -69,8 +69,8 @@ void BhopManager::ApplySettings()
     // Only grant mode needs per-player movement hooks.
     if (_mode == Mode::Grants && _movementSubs.Empty())
     {
-        _movementSubs.Add(_rt.Hooks.Movement.Pre += [this](int slot) { OnRunCommandPre(slot); });
-        _movementSubs.Add(_rt.Hooks.Movement.Post += [this](int slot) { OnRunCommandPost(slot); });
+        _movementSubs.Add(_rt.Hooks.Movement.Before += [this](int slot, const VoltMod::PlayerInput&) { OnRunCommandPre(slot); });
+        _movementSubs.Add(_rt.Hooks.Movement.After += [this](int slot, const VoltMod::PlayerInput&) { OnRunCommandPost(slot); });
     }
     else if (_mode != Mode::Grants)
         _movementSubs.Clear();

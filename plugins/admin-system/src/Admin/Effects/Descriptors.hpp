@@ -20,7 +20,7 @@ using EffectScope = VoltMod::EffectScope;
 /** Cycle render colors until the effect expires. */
 Effect MakeDisco(VoltMod::Runtime& runtime);
 
-/** Hides the pawn, weapons, and wearables through transmit filtering. */
+/** Hides the pawn, weapons, and wearables through visibility filtering. */
 Effect MakeGhost(VoltMod::Runtime& runtime);
 
 /**

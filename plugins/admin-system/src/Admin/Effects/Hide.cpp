@@ -2,7 +2,7 @@
 
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Hooks/GlowVision.hpp>
-#include <VoltMod/Hooks/Transmit.hpp>
+#include <VoltMod/Hooks/Visibility.hpp>
 #include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Admin::Effects
@@ -16,10 +16,10 @@ using VoltMod::TeamSpectator;
 // Hide moves the player to the spectator team and stops transmitting their
 // controller, which removes their row from every other client's scoreboard.
 // While hidden the admin also gets glow vision - every live player rendered as
-// a team-colored glow through walls, transmit-filtered to the admin alone - so
+// a team-colored glow through walls, visibility-filtered to the admin alone - so
 // suspected wallhackers can be observed covertly. The toggle is deliberately
 // silent (empty On/Off keys): a public broadcast would defeat the stealth.
-// The name blanking stays as a fallback for when the transmit filter is inert
+// The name blanking stays as a fallback for when the visibility filter is inert
 // (missing gamedata offset after a CS2 update). Tradeoff the operator accepts:
 // when the admin was the last human on a playing team, CS2's bot manager
 // unloads bots until a human rejoins. Toggle off restores team, name and
@@ -32,7 +32,7 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                   .NameKey = "action.hide",
                   .OnKey = "",
                   .OffKey = "",
-                  .TickIntervalMs = GlowVision::ReconcileIntervalMs,
+                  .TickIntervalMs = GlowVision::RefreshIntervalMs,
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
                       int savedTeam = ctx.TargetPawn().Team();
                       std::string savedName(ctx.TargetCtrl.Name());
@@ -41,19 +41,19 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                       (void)ctx.TargetCtrl.ChangeTeam(TeamSpectator);
 
                       int slot = ctx.Target().Slot();
-                      auto& transmit = runtime.Hooks.Transmit;
-                      transmit.SetControllerHidden(slot, true);
+                      auto& visibility = runtime.Hooks.Visibility;
+                      visibility.SetControllerHidden(slot, true);
 
                       // Hide is persistent, so the reconcile tick rebuilds the glow clones after
                       // round restarts and tracks spawns/deaths/team changes across rounds.
                       auto glow = runtime.Hooks.Visibility.CreateGlow(slot);
-                      glow->Reconcile();
+                      glow->Refresh();
 
-                      return {.OnTick = [glow]() { glow->Reconcile(); },
+                      return {.OnTick = [glow]() { glow->Refresh(); },
                               .OnStop =
-                                  [&transmit, &entities = runtime.Entities, slot, savedTeam, savedName, glow]() {
+                                  [&visibility, &entities = runtime.Entities, slot, savedTeam, savedName, glow]() {
                                       glow->Destroy();
-                                      transmit.SetControllerHidden(slot, false);
+                                      visibility.SetControllerHidden(slot, false);
                                       Controller controller = entities.Controller(slot);
                                       if (!controller)
                                           return;

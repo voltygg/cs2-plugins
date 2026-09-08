@@ -229,13 +229,13 @@ crash, create false evidence, or silently disable detection.
 | `UserCmdPB` | Missing values silence aim modules; stale values can resemble valid angles |
 | `UserCmdNumber` | Command chains collapse, silently disabling aimbot and part of antiaim |
 | `Teleport` | Teleport grace stops suppressing discontinuities, so false positives appear |
-| `ProcessRespondCvarValue` | Load-time bounds checks turn `Capability::ClientCvars` off |
+| `ProcessRespondCvarValue` | Load-time bounds checks turn `Capability::ClientConVars` off |
 | `ServerSideClientSlot` | Same, which is what stops responses reaching the wrong player |
 
 The entries live in the framework's `gamedata/gamedata.jsonc`; its guide has the
 re-verification procedure. `anticheat_status` reads `Runtime::Capabilities`: it exposes
 `teleportTracker` from `Capability::Teleport` and reports client convars as `degraded` when
-`Capability::ClientCvars` is off. In that state, network polling stops and `invalid_cvar` uses
+`Capability::ClientConVars` is off. In that state, network polling stops and `invalid_cvar` uses
 userinfo only.
 
 ## Architecture
