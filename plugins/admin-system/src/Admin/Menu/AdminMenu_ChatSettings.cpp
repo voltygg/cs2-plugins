@@ -69,7 +69,7 @@ static std::vector<LabeledValue> BuildColorChoices(App& app, int viewerSlot)
     choices.push_back({tr.Get("color.groupDefault", viewerSlot), std::string{}});
 
     // The framework renders the palette; colors without a translation key fall back to their name.
-    auto palette = ::VoltMod::BuildPaletteChoices([&](std::string_view name) -> std::string {
+    auto palette = ChatColors::PaletteChoices([&](std::string_view name) -> std::string {
         if (auto it = keys.find(name); it != keys.end())
             return tr.Get(std::string(it->second), viewerSlot);
         return {};
@@ -194,8 +194,6 @@ std::shared_ptr<VoltMod::Menu> BuildChatSettingsMenu(AdminSystem::App& app, int 
 
     // Persist each row immediately; the menu has no Save action.
     builder.Add(ToggleRow{.Label = tr.Get("chat.displayPrefix", adminSlot),
-                          .On = tr.Get("effectState.on", adminSlot),
-                          .Off = tr.Get("effectState.off", adminSlot),
                           .Get =
                               [&app, steamId](int) {
                                   const auto* a = app.Admins.GetAdmin(steamId);

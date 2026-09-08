@@ -34,16 +34,4 @@ inline std::string ConfirmTitle(VoltMod::Translations& tr, std::string_view acti
     return std::format("{}: {}", tr.Get("punish.confirmTitle", slot), tr.Get(actionKey, slot));
 }
 
-/** The confirm button's label. A flow runs for one player, so it resolves once here. */
-inline std::string ConfirmLabel(VoltMod::Translations& tr, int slot)
-{
-    return tr.Get("punish.confirm", slot);
-}
-
-/** The cancel button's label, resolved for the one player the flow runs for. */
-inline std::string CancelLabel(VoltMod::Translations& tr, int slot)
-{
-    return tr.Get("punish.cancel", slot);
-}
-
 }  // namespace AdminSystem::Admin::Menu

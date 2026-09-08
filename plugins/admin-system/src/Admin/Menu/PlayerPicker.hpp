@@ -16,7 +16,7 @@ namespace AdminSystem::Admin::Menu
  *
  * The framework picker with this plugin's "nobody connected" label filled in; @p spec supplies
  * the title, what a pick does, and - optionally - which rows render disabled (e.g. to gray out
- * an already-picked player). The viewer is @p adminSlot, so `Pick` receives only the target.
+ * an already-picked player). The viewer is @p adminSlot, so a pick receives only the target.
  */
 std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker spec);
 

@@ -3,6 +3,7 @@
 #include "../../Core/App.hpp"
 #include "../AdminManager.hpp"
 #include "AdminMenu_Lift.hpp"
+#include "MenuAccess.hpp"
 #include "PlayerPicker.hpp"
 #include "PunishFlow.hpp"
 
@@ -38,50 +39,45 @@ std::shared_ptr<VoltMod::Menu> BuildPunishMenu(AdminSystem::App& app, int adminS
 
     builder.Add(SubmenuRow{.Label = tr.Get("action.unban", adminSlot),
                            .Build = [&app](int slot) { return BuildUnbanMenu(app, slot); },
-                           .Enabled = app.Access.HasPermission(admin->SteamId(), Permission::Unban)});
+                           .Enabled = Allows(app, Permission::Unban)});
 
     builder.Add(SubmenuRow{.Label = tr.Get("action.unmute", adminSlot),
                            .Build = [&app](int slot) { return BuildUnmuteMenu(app, slot); },
-                           .Enabled = app.Access.HasPermission(admin->SteamId(), Permission::Mute)});
+                           .Enabled = Allows(app, Permission::Mute)});
 
-    AppendPlayerRows(app, adminSlot, builder, {.Pick = [&app, adminSlot](int target) {
-                         auto actions = BuildPunishActionsMenu(app, adminSlot, target);
-                         if (actions)
-                             app.Runtime.Menus.Open(adminSlot, actions);
+    AppendPlayerRows(app, adminSlot, builder, {.Open = [&app, adminSlot](VoltMod::PlayerRef target) {
+                         return BuildPunishActionsMenu(app, adminSlot, target);
                      }});
 
     return builder.Build();
 }
 
-std::shared_ptr<VoltMod::Menu> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, int targetSlot)
+std::shared_ptr<VoltMod::Menu> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot,
+                                                      VoltMod::PlayerRef targetRef)
 {
     auto& tr = app.Runtime.Translations;
     auto& plrMgr = app.Runtime.Players;
 
-    auto* target = plrMgr.Get(targetSlot);
-    if (!target)
-        return nullptr;
-
-    if (!plrMgr.Get(adminSlot))
+    auto* target = plrMgr.Get(targetRef);
+    if (!target || !plrMgr.Get(adminSlot))
         return nullptr;
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.punish", adminSlot), target->Name()));
 
-    if (AnyTemplateUsable(app, adminSlot, target->Ref()))
+    if (AnyTemplateUsable(app, adminSlot, targetRef))
     {
-        builder.Submenu(tr.Get("punish.quickPunish", adminSlot), [&app, targetRef = target->Ref()](int slot) {
-            return BuildQuickPunishMenu(app, slot, targetRef);
-        });
+        builder.Submenu(tr.Get("punish.quickPunish", adminSlot),
+                        [&app, targetRef](int slot) { return BuildQuickPunishMenu(app, slot, targetRef); });
     }
 
     for (PunishType type :
          {PunishType::Kick, PunishType::Ban, PunishType::VoiceMute, PunishType::TextMute, PunishType::Warn})
     {
-        PendingPunishment pending{.Type = type, .Target = target->Ref()};
         builder.Add(ButtonRow{
             .Label = tr.Get(ActionTranslationKey(type), adminSlot),
-            .Activate = [&app, pending = std::move(pending)](int slot) { StartPunishFlow(app, slot, pending); },
-            .Enabled = CanStillPunish(app, adminSlot, target->Ref(), type)});
+            .Activate = [&app, pending = PendingPunishment{.Type = type, .Target = targetRef}](
+                            int slot) { StartPunishFlow(app, slot, pending); },
+            .Enabled = [&app, targetRef, type](int slot) { return CanStillPunish(app, slot, targetRef, type); }});
     }
 
     return builder.Build();

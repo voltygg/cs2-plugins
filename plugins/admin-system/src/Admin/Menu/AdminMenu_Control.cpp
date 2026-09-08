@@ -7,6 +7,7 @@
 #include "../Actions/Descriptors.hpp"
 #include "../AdminManager.hpp"
 #include "../Effects/Descriptors.hpp"
+#include "MenuAccess.hpp"
 #include "PlayerPicker.hpp"
 #include "PresetSubmenu.hpp"
 
@@ -65,34 +66,24 @@ static void ReportWeaponOutcome(AdminSystem::App& app, int adminSlot, Weapons::W
 std::shared_ptr<VoltMod::Menu> BuildControlMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& tr = app.Runtime.Translations;
-    auto& access = app.Access;
 
     auto* admin = app.Runtime.Players.Get(adminSlot);
     if (!admin)
         return nullptr;
 
     const VoltMod::PlayerRef adminRef = admin->Ref();
-    bool hasB = access.HasPermission(admin->SteamId(), Permission::Hide);
 
     MenuBuilder builder(tr.Get("category.control", adminSlot));
 
     // Self-only Hide toggle sits at the top of the Control list before player picks.
     builder.Add(ToggleRow{
         .Label = tr.Get("action.hide", adminSlot),
-        .On = tr.Get("effectState.on", adminSlot),
-        .Off = tr.Get("effectState.off", adminSlot),
         .Get = [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, app.EffectDescriptors.Hide.Id); },
         .Flip = [&app, adminRef](int) { app.PlayerEffects.Toggle(adminRef, adminRef, app.EffectDescriptors.Hide); },
-        .Enabled = hasB});
+        .Enabled = Allows(app, Permission::Hide)});
 
-    AppendPlayerRows(app, adminSlot, builder, {.Pick = [&app, adminSlot](int targetSlot) {
-                         // The target slot is current at press time, so this is where it
-                         // becomes a reference.
-                         auto& players = app.Runtime.Players;
-                         auto actions =
-                             BuildControlActionsMenu(app, players.RefFor(adminSlot), players.RefFor(targetSlot));
-                         if (actions)
-                             app.Runtime.Menus.Open(adminSlot, actions);
+    AppendPlayerRows(app, adminSlot, builder, {.Open = [&app, adminSlot](VoltMod::PlayerRef target) {
+                         return BuildControlActionsMenu(app, app.Runtime.Players.RefFor(adminSlot), target);
                      }});
 
     return builder.Build();
@@ -110,17 +101,19 @@ std::shared_ptr<VoltMod::Menu> BuildControlActionsMenu(AdminSystem::App& app, Vo
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("category.control", admin.Slot), targetPlayer->Name()));
     auto rows = app.MenuRows(admin, target);
-    bool hasS = rows.Allowed(Flag(Permission::Control));
+    VoltMod::Condition control = rows.Allows(Flag(Permission::Control));
 
     // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
     // (no broadcast / bool result), so they stay plain buttons rather than Actions descriptors.
-    const bool checkActive = app.CheatCheck.IsActive(target.Slot);
     builder.Add(ButtonRow{.Label = rows.Tr("action.callCheck"),
                           .Activate = [&app, admin, target](int) { Actions::CallCheck(app, admin, target); },
-                          .Enabled = hasS});
-    builder.Add(ButtonRow{.Label = rows.Tr("action.cancelCheck"),
-                          .Activate = [&app, admin, target](int) { Actions::CancelCheck(app, admin, target); },
-                          .Enabled = hasS && checkActive});
+                          .Enabled = control});
+    builder.Add(
+        ButtonRow{.Label = rows.Tr("action.cancelCheck"),
+                  .Activate = [&app, admin, target](int) { Actions::CancelCheck(app, admin, target); },
+                  // The flag may go, and so may the check it cancels.
+                  .Enabled = [&app, control, slot = target.Slot](
+                                 int adminSlot) { return control(adminSlot) && app.CheatCheck.IsActive(slot); }});
 
     builder.Add(rows.Action("action.kill", Actions::Kill))
         .Add(rows.Action("action.bring", Actions::Bring))
@@ -149,11 +142,11 @@ std::shared_ptr<VoltMod::Menu> BuildControlActionsMenu(AdminSystem::App& app, Vo
 
     builder.Add(SubmenuRow{.Label = rows.Tr("action.changeTeam"),
                            .Build = [&app, admin, target](int) { return BuildTeamPickerMenu(app, admin, target); },
-                           .Enabled = hasS});
+                           .Enabled = control});
 
     builder.Add(SubmenuRow{.Label = rows.Tr("action.giveWeapon"),
                            .Build = [&app, admin, target](int) { return BuildWeaponMenu(app, admin, target); },
-                           .Enabled = rows.Allowed(Flag(Permission::Weapon))});
+                           .Enabled = rows.Allows(Flag(Permission::Weapon))});
 
     return builder.Build();
 }
@@ -170,6 +163,7 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponMenu(AdminSystem::App& app, VoltMod::P
     MenuBuilder builder(std::format("{}: {}", tr.Get("action.giveWeapon", admin.Slot), targetPlayer->Name()));
 
     const auto& menu = app.Settings.GetWeaponMenu();
+    builder.EmptyText(tr.Get("action.noWeapons", admin.Slot));
     for (const auto& weapon : menu)
     {
         builder.Button(weapon.Label(), [&app, admin, target, item = weapon.Item](int slot) {
@@ -187,11 +181,6 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponMenu(AdminSystem::App& app, VoltMod::P
                 app, slot, Weapons::GiveWeapon(app, admin, target, weapons[VoltMod::RandomIndex(weapons.size())].Item),
                 "cmd.weaponGiveFailed");
         });
-    }
-    else
-    {
-        // Never show a dead-end empty page.
-        builder.Text(tr.Get("action.noWeapons", admin.Slot));
     }
 
     builder.Button(tr.Get("action.strip", admin.Slot), [&app, admin, target](int slot) {

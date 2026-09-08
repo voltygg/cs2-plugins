@@ -75,9 +75,9 @@ static void Submit(App& app, int reporterSlot, PendingReport& pending)
                        });
 }
 
-static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
+static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targetRef)
 {
-    auto* target = app.Runtime.Players.Get(targetSlot);
+    auto* target = app.Runtime.Players.Get(targetRef);
     if (!target)
         return;
 
@@ -88,7 +88,7 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
     for (const auto& reason : app.Settings.GetReports().reasons)
         reasons.emplace_back(ReasonLabel(app, reason, reporterSlot), reason.code);
 
-    ReportFlowT::Create(app.Runtime.Menus, reporterSlot, PendingReport{.Target = target->Ref()})
+    ReportFlowT::Create(app.Runtime.Menus, reporterSlot, PendingReport{.Target = targetRef})
         ->Validate([&app, reporterSlot](const PendingReport& p) { return ValidatePending(app, reporterSlot, p); })
         ->AddOptionsStep({.Title = tr.Get("report.selectReason", reporterSlot),
                           .Options = std::move(reasons),
@@ -104,16 +104,15 @@ static void StartReportFlow(App& app, int reporterSlot, int targetSlot)
                           .CustomValue = CustomReasonCode})
         ->Confirm({.Title = tr.Get("report.confirmTitle", reporterSlot),
                    .Summary =
-                       [&app, reporterSlot](const PendingReport& pending) {
+                       [&app, reporterSlot](const PendingReport& pending, VoltMod::SummaryRows& rows) {
                            auto& translations = app.Runtime.Translations;
-                           std::vector<std::pair<std::string, std::string>> rows;
                            auto* targetPlayer = app.Runtime.Players.Get(pending.Target);
-                           rows.emplace_back(translations.Get("report.target", reporterSlot),
-                                             targetPlayer ? targetPlayer->Name() : std::string());
-                           rows.emplace_back(translations.Get("report.reason", reporterSlot),
-                                             Strings::TruncateUtf8(pending.ReasonText, 40));
-                           return rows;
+                           rows.Add(translations.Get("report.target", reporterSlot),
+                                    targetPlayer ? targetPlayer->Name() : std::string())
+                               .Add(translations.Get("report.reason", reporterSlot),
+                                    Strings::TruncateUtf8(pending.ReasonText, 40));
                        },
+                   // Its own wording rather than the framework's "Confirm".
                    .ConfirmLabel = tr.Get("report.confirm", reporterSlot),
                    .CancelLabel = tr.Get("report.cancel", reporterSlot)})
         ->Finish([&app, reporterSlot](PendingReport& p) { Submit(app, reporterSlot, p); })
@@ -130,14 +129,14 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
     auto menu = Admin::Menu::BuildPlayerPicker(
         app, reporterSlot,
         {.Title = app.Runtime.Translations.Get("report.selectTarget", reporterSlot),
-         .Pick = [&app, reporterSlot](int targetSlot) { StartReportFlow(app, reporterSlot, targetSlot); },
+         .Pick = [&app, reporterSlot](VoltMod::PlayerRef target) { StartReportFlow(app, reporterSlot, target); },
          // The framework picker lists every connected player, so ineligible targets are greyed out here
          // rather than filtered out of the roster.
          .Enabled =
-             [&app, reporterSlot, reporterSteamId](int targetSlot) {
-                 if (targetSlot == reporterSlot)
+             [&app, reporterSlot, reporterSteamId](VoltMod::PlayerRef targetRef) {
+                 if (targetRef.Slot == reporterSlot)
                      return false;
-                 auto* target = app.Runtime.Players.Get(targetSlot);
+                 auto* target = app.Runtime.Players.Get(targetRef);
                  if (!target || target->IsBot())
                      return false;
                  return app.Reports.CanReport(reporterSteamId, target->SteamId());

@@ -59,10 +59,6 @@
     "noWeapons": "No weapons configured",
     "drunk": "Drunk"
   },
-  "effectState": {
-    "on": "ON",
-    "off": "OFF"
-  },
   "broadcast": {
     "ghostOn": "ghosted",
     "ghostOff": "un-ghosted",
@@ -145,8 +141,6 @@
     "target": "Target",
     "duration": "Duration",
     "reason": "Reason",
-    "confirm": "Confirm",
-    "cancel": "Cancel",
     "issued": "{action}: {name} - done.",
     "failed": "Failed to issue {action} (database error).",
     "targetLost": "Target left the server; action cancelled.",
@@ -327,8 +321,12 @@
     "ru": "Русский"
   },
   "menu": {
-    "promptHint": "Answer in chat",
-    "empty": "Nothing here"
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "empty": "Nothing here",
+    "off": "OFF",
+    "on": "ON",
+    "promptHint": "Answer in chat"
   },
   "nav": {
     "navigate": "Navigate",

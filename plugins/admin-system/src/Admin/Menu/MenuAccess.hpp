@@ -1,14 +1,12 @@
 #pragma once
 
-// Re-checking a menu row per click is the same question the row asked when it was rendered, and
-// both go to VoltMod::Policy::Authorize. This spells it for the menu files so no plugin file
-// repeats the permission/immunity rules.
-
 #include "../../Core/App.hpp"
 #include "../../Core/Permissions.hpp"
 
+#include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <optional>
+#include <string>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -19,6 +17,13 @@ inline bool MayUse(App& app, int slot, Permission permission)
 {
     auto& players = app.Runtime.Players;
     return app.Runtime.Policy.Authorize(players.RefFor(slot), std::nullopt, Flag(permission)).has_value();
+}
+
+/** @ref MayUse as a row's condition: asked on every redraw, and it refuses the press itself, so
+ *  no handler repeats the check. */
+inline VoltMod::Condition Allows(App& app, Permission permission)
+{
+    return VoltMod::Condition([&app, permission](int slot) { return MayUse(app, slot, permission); });
 }
 
 /** Flow validator that re-checks @p permission on @p slot, the one player the flow runs for: a

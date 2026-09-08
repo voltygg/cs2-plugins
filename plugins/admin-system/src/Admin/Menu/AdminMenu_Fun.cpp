@@ -24,37 +24,26 @@ std::shared_ptr<VoltMod::Menu> BuildFunMenu(AdminSystem::App& app, int adminSlot
 {
     auto& tr = app.Runtime.Translations;
 
-    auto* admin = app.Runtime.Players.Get(adminSlot);
-    if (!admin)
+    if (!app.Runtime.Players.Get(adminSlot))
         return nullptr;
 
-    bool allowed = app.Access.HasPermission(admin->SteamId(), Permission::FunMode);
+    const VoltMod::Condition allowed = Allows(app, Permission::FunMode);
 
     MenuBuilder builder(tr.Get("category.fun", adminSlot));
 
     for (const auto& info : Fun::Toggles)
     {
-        builder.Add(ToggleRow{
-            .Label = tr.Get(std::string(info.NameKey), adminSlot),
-            .On = tr.Get("effectState.on", adminSlot),
-            .Off = tr.Get("effectState.off", adminSlot),
-            .Get = [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
-            .Flip =
-                [&app, id = info.Id, onKey = std::string(info.OnKey), offKey = std::string(info.OffKey)](int slot) {
-                    // Re-check per click: the menu may have been open across an !admin_reload.
-                    if (!MayUse(app, slot, Permission::FunMode))
-                        return;
-                    bool on = app.FunMode.Flip(id);
-                    app.Chat.BroadcastKey(on ? onKey : offKey);
-                },
-            .Enabled = allowed});
+        builder.Add(
+            ToggleRow{.Label = tr.Get(std::string(info.NameKey), adminSlot),
+                      .Get = [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
+                      .Flip = [&app, id = info.Id, onKey = std::string(info.OnKey), offKey = std::string(info.OffKey)](
+                                  int) { app.Chat.BroadcastKey(app.FunMode.Flip(id) ? onKey : offKey); },
+                      .Enabled = allowed});
     }
 
     builder.Add(ButtonRow{.Label = tr.Get("fun.clearAll", adminSlot),
                           .Activate =
-                              [&app](int slot) {
-                                  if (!MayUse(app, slot, Permission::FunMode))
-                                      return;
+                              [&app](int) {
                                   app.FunMode.ClearAll();
                                   app.Chat.BroadcastKey("broadcast.funCleared");
                               },

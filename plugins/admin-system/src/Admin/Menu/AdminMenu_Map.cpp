@@ -25,9 +25,6 @@ using AdminSystem::Maps::MapEntry;
 using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 
-// Rows are re-checked per click through MayUse: changing and queuing a map need the map flag,
-// starting and cancelling a vote the vote flag - the same split the commands had.
-
 /** Taking the server away from everyone confirms rather than firing on a single click. */
 static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
 {
@@ -37,13 +34,9 @@ static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
         ->Validate(RequirePermission(app, Permission::Map, adminSlot))
         ->Confirm({.Title = ConfirmTitle(tr, "action.changeMap", adminSlot),
                    .Summary =
-                       [&app, adminSlot](const MapEntry& m) {
-                           std::vector<std::pair<std::string, std::string>> rows;
-                           rows.emplace_back(app.Runtime.Translations.Get("map.name", adminSlot), m.Label());
-                           return rows;
-                       },
-                   .ConfirmLabel = ConfirmLabel(tr, adminSlot),
-                   .CancelLabel = CancelLabel(tr, adminSlot)})
+                       [&app, adminSlot](const MapEntry& m, VoltMod::SummaryRows& rows) {
+                           rows.Add(app.Runtime.Translations.Get("map.name", adminSlot), m.Label());
+                       }})
         ->Finish([&app](MapEntry& m) {
             app.Chat.BroadcastKey("broadcast.mapChanging", {{"map", m.Label()}});
             app.MapCycle.ChangeAfter(m);
@@ -56,8 +49,8 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlo
 {
     auto& tr = app.Runtime.Translations;
 
-    const bool mayMap = MayUse(app, adminSlot, Permission::Map);
-    const bool mayVote = MayUse(app, adminSlot, Permission::Vote);
+    const VoltMod::Condition mayMap = Allows(app, Permission::Map);
+    const VoltMod::Condition mayVote = Allows(app, Permission::Vote);
 
     return MenuBuilder(map.Label())
         .Add(ButtonRow{.Label = tr.Get("action.changeMap", adminSlot),
@@ -66,9 +59,7 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlo
         // Queuing and voting only take effect later, so neither needs a confirmation step.
         .Add(ButtonRow{.Label = tr.Get("action.setNextMap", adminSlot),
                        .Activate =
-                           [&app, map](int slot) {
-                               if (!MayUse(app, slot, Permission::Map))
-                                   return;
+                           [&app, map](int) {
                                app.MapCycle.SetNext(map);
                                app.Chat.BroadcastKey("broadcast.nextMapSet", {{"map", map.Label()}});
                            },
@@ -76,8 +67,6 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlo
         .Add(ButtonRow{.Label = tr.Get("action.voteMap", adminSlot),
                        .Activate =
                            [&app, map](int slot) {
-                               if (!MayUse(app, slot, Permission::Vote))
-                                   return;
                                if (!app.Votes.StartMapVote(map, slot))
                                    app.Chat.Reply(slot, app.Runtime.Translations.Get("cmd.voteInProgress", slot));
                            },
@@ -95,7 +84,7 @@ std::shared_ptr<VoltMod::Menu> BuildMapMenu(AdminSystem::App& app, int adminSlot
     for (const auto& map : cycle)
         builder.Submenu(map.Label(), [&app, map](int slot) { return BuildMapActionsMenu(app, slot, map); });
 
-    // Never show a dead-end empty page.
+    // Not EmptyText: the cancel-vote row below is added either way, so the menu is never empty.
     if (cycle.empty())
         builder.Text(tr.Get("map.noMaps", adminSlot));
 
@@ -103,13 +92,11 @@ std::shared_ptr<VoltMod::Menu> BuildMapMenu(AdminSystem::App& app, int adminSlot
         .Label = tr.Get("action.cancelVote", adminSlot),
         .Activate =
             [&app](int slot) {
-                if (!MayUse(app, slot, Permission::Vote))
-                    return;
                 auto& translations = app.Runtime.Translations;
                 app.Chat.Reply(
                     slot, translations.Get(app.Votes.CancelVote() ? "cmd.voteCancelled" : "cmd.noVoteRunning", slot));
             },
-        .Enabled = MayUse(app, adminSlot, Permission::Vote)});
+        .Enabled = Allows(app, Permission::Vote)});
 
     return builder.Build();
 }

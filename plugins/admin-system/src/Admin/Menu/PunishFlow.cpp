@@ -83,21 +83,15 @@ static PunishFlowT::Ptr MakeBaseFlow(App& app, int adminSlot, PendingPunishment 
         ->Validate([&app, adminSlot](const PendingPunishment& p) { return ValidatePending(app, adminSlot, p); })
         ->Confirm({.Title = ConfirmTitle(tr, ActionTranslationKey(type), adminSlot),
                    .Summary =
-                       [&app, adminSlot](const PendingPunishment& p) {
+                       [&app, adminSlot](const PendingPunishment& p, VoltMod::SummaryRows& rows) {
                            auto& translations = app.Runtime.Translations;
                            auto* target = app.Runtime.Players.Get(p.Target);
-                           std::vector<std::pair<std::string, std::string>> rows;
-                           rows.emplace_back(translations.Get("punish.target", adminSlot),
-                                             target ? target->Name() : std::string());
-                           if (IsTimed(p.Type))
-                               rows.emplace_back(translations.Get("punish.duration", adminSlot),
-                                                 DurationLabel(translations, p.DurationSec, adminSlot));
-                           rows.emplace_back(translations.Get("punish.reason", adminSlot),
-                                             Strings::TruncateUtf8(p.Reason, 40));
-                           return rows;
-                       },
-                   .ConfirmLabel = ConfirmLabel(tr, adminSlot),
-                   .CancelLabel = CancelLabel(tr, adminSlot)})
+                           rows.Add(translations.Get("punish.target", adminSlot),
+                                    target ? target->Name() : std::string())
+                               .AddIf(IsTimed(p.Type), translations.Get("punish.duration", adminSlot),
+                                      DurationLabel(translations, p.DurationSec, adminSlot))
+                               .Add(translations.Get("punish.reason", adminSlot), Strings::TruncateUtf8(p.Reason, 40));
+                       }})
         ->Finish([&app, adminSlot](PendingPunishment& p) { Issue(app, adminSlot, p); });
 }
 
@@ -153,7 +147,8 @@ std::shared_ptr<VoltMod::Menu> BuildQuickPunishMenu(AdminSystem::App& app, int a
 
     MenuBuilder builder(std::format("{}: {}", tr.Get("punish.quickPunish", adminSlot), targetPlayer->Name()));
 
-    int rows = 0;
+    builder.EmptyText(tr.Get("punish.noTemplates", adminSlot));
+
     for (const auto& tmpl : app.Settings.GetPunishmentTemplates())
     {
         if (!CanStillPunish(app, adminSlot, target, tmpl.Type))
@@ -168,13 +163,9 @@ std::shared_ptr<VoltMod::Menu> BuildQuickPunishMenu(AdminSystem::App& app, int a
         // Duration and reason are preset by the template, so the flow jumps straight to confirm.
         builder.Button(std::format("{} - {}", tmpl.Name, DurationLabel(tr, tmpl.DurationSec, adminSlot)),
                        [&app, pending](int slot) { MakeBaseFlow(app, slot, pending)->Start(); });
-        ++rows;
     }
 
-    // Permissions can change between the actions menu and here; never show a dead-end empty page.
-    if (rows == 0)
-        builder.Text(tr.Get("punish.noTemplates", adminSlot));
-
+    // Permissions can change between the actions menu and here, so every template may filter out.
     return builder.Build();
 }
 
