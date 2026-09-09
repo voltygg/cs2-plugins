@@ -4,7 +4,6 @@
 #include "Commands.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Runtime.hpp>
 
 using VoltMod::Caller;

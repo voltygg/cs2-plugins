@@ -116,12 +116,6 @@ private:
     void InstallStatusReporting();
     void RegisterCommands();
 
-    /** Pick the menu driver from settings and capabilities, and say which one and why. */
-    void SelectMenuDriver();
-
-    /** Held only when a workshop addon carries the layout; dropping it drops the requirement. */
-    VoltMod::Subscription _menuAddon;
-
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */
     VoltMod::SubscriptionScope _subs;

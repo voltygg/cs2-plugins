@@ -5,7 +5,6 @@
 #include "CheatCheckSettings.hpp"
 #include "DatabaseSettings.hpp"
 #include "MapSettings.hpp"
-#include "MenuSettings.hpp"
 #include "PunishmentSettings.hpp"
 #include "ReportSettings.hpp"
 #include "ServerSettings.hpp"
@@ -34,7 +33,6 @@ struct Settings
     CheatCheckSettings cheatCheck;
     MapSettings maps;
     WeaponSettings weapons;
-    MenuSettings menu;
 };
 
 }  // namespace AdminSystem::Config

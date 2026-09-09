@@ -210,10 +210,9 @@ bool App::Start()
     report.Run("Policy", [this] {
         InstallPolicy();
         RegisterPlayerLifecycle();
-        SelectMenuDriver();
-        // Freeze the player while an admin menu is open. Center HTML needs it so WASD navigation
-        // doesn't also walk them around; the Panorama menu needs it because a cursor takes
-        // mouse-look and being shoved around while clicking is worse, not better.
+        Runtime.Menus.UsePanorama({.Rows = 8, .Nav = 6});
+        // Freeze the player while an admin menu is open: a cursor takes mouse-look, and being
+        // shoved around while clicking is worse, not better.
         Runtime.Menus.FreezeWhileOpen(true);
         return StageResult::Ok();
     });
@@ -249,38 +248,6 @@ bool App::Start()
 
     InstallStatusReporting();
     return true;
-}
-
-void App::SelectMenuDriver()
-{
-    const auto& menu = Settings.GetMenu();
-
-    // Worth saying out loud either way: a server configured for the styled menu and silently
-    // serving the plain one otherwise looks like the setting was ignored.
-    if (Settings.GetMenuStyle() == Config::MenuStyle::CenterHtml)
-    {
-        VoltMod::Log::Info("Menus: center HTML, as configured.");
-        return;
-    }
-
-    if (auto chosen = Runtime.Menus.UsePanorama(menu.layout); !chosen)
-    {
-        VoltMod::Log::Info("Menus: center HTML - {}.", chosen.error().Detail);
-        return;
-    }
-
-    // A workshop addon is how the layout reaches players who did not copy it in by hand. The
-    // requirement lasts exactly as long as this lease, so it goes when the plugin does.
-    if (menu.addonId != 0)
-    {
-        if (auto lease = Runtime.Addons.Require(menu.addonId))
-            _menuAddon = std::move(*lease);
-        else
-            VoltMod::Log::Warn("Menu addon {} not required ({}); players without the layout see nothing.", menu.addonId,
-                               lease.error().Detail);
-    }
-
-    VoltMod::Log::Info("Menus: Panorama, layout '{}'.", menu.layout);
 }
 
 }  // namespace AdminSystem

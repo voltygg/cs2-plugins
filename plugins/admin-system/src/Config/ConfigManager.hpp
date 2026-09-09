@@ -48,12 +48,6 @@ public:
     /** Menu duration-picker rows in seconds (0 = permanent), parsed from `punishments.menuDurations`. */
     const std::vector<int>& GetMenuDurations() const { return _snapshot.MenuDurationSecs; }
 
-    /** Which menu host to open menus on, and the layout behind it. */
-    const MenuSettings& GetMenu() const { return _snapshot.Values.menu; }
-
-    /** `menu.style` parsed once at load; an unrecognized value has already warned and reads Auto. */
-    MenuStyle GetMenuStyle() const { return _snapshot.Style; }
-
     /** Offerable maps. Invalid entries are logged and skipped. */
     const std::vector<Maps::MapEntry>& GetMapCycle() const { return _snapshot.Maps; }
 
@@ -64,7 +58,6 @@ private:
     struct ConfigSnapshot
     {
         Settings Values;
-        MenuStyle Style = MenuStyle::Auto;
         std::vector<ResolvedTemplate> Templates;
         std::vector<int> MenuDurationSecs;
         std::vector<Maps::MapEntry> Maps;

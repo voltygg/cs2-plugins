@@ -108,11 +108,6 @@ ConfigManager::ConfigSnapshot ConfigManager::BuildSnapshot(Settings raw)
     reports.cooldownSec = std::max(reports.cooldownSec, 0);
     reports.duplicateWindowSec = std::max(reports.duplicateWindowSec, 0);
 
-    if (auto style = VoltMod::Parse<MenuStyle>(settings.menu.style))
-        snapshot.Style = *style;
-    else
-        VoltMod::Log::Warn("menu.style '{}' is not auto/panorama/centerHtml; using auto.", settings.menu.style);
-
     snapshot.Maps = ResolveList<Maps::MapEntry>(
         settings.maps.cycle, MapSettings{}.cycle,
         [](const MapConfigEntry& e) {
