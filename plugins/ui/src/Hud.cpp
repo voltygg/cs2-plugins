@@ -20,22 +20,11 @@ namespace Ui
 
 namespace Screen = Cs2Ui::Hud;
 
-/** Contracts::HudAccent, lowercase and in enumerator order: what the screen's Accent classes
- *  must spell. A reorder on either side fails this at compile time. */
-static constexpr std::array<std::string_view, 11> ExpectedAccentNames{
-    "success", "warning", "info", "error", "common", "uncommon", "rare", "mythical", "legendary", "ancient", "contraband",
-};
-
-static constexpr bool AccentNamesMatch()
-{
-    if (Screen::AccentNames.size() != ExpectedAccentNames.size())
-        return false;
-    for (std::size_t i = 0; i < ExpectedAccentNames.size(); ++i)
-        if (Screen::AccentNames[i] != ExpectedAccentNames[i])
-            return false;
-    return true;
-}
-static_assert(AccentNamesMatch(), "cs2_hud's Accent classes must match Contracts::HudAccent");
+// Contracts::HudAccent, lowercase and in enumerator order. A reorder on either side fails here.
+static_assert(Screen::AccentNames == std::array<std::string_view, 11>{"success", "warning", "info", "error", "common",
+                                                                     "uncommon", "rare", "mythical", "legendary",
+                                                                     "ancient", "contraband"},
+              "cs2_hud's Accent classes must match Contracts::HudAccent");
 
 /** One card of the screen: which panel each writer touches, and which variable it reads. */
 struct CardIds
@@ -119,23 +108,10 @@ void Hud::Unpublish()
     _rt.Exchange.Unpublish<Contracts::IUiHud>();
 }
 
-bool Hud::Show(int slot)
-{
-    if (slot == VoltMod::UiPanel::Everyone)
-    {
-        if (!_shownEveryone)
-            _shownEveryone = _screen.Show(slot);
-        return _shownEveryone;
-    }
-    if (!VoltMod::IsValidSlot(slot))
-        return false;
-    return _screen.Shown(slot) || _screen.Show(slot);
-}
-
 void Hud::SetCard(HudCard card, int slot, const CardView& view)
 {
     const int index = static_cast<int>(card);
-    if (index < 0 || index >= static_cast<int>(HudCard::Count) || !Show(slot))
+    if (index < 0 || index >= static_cast<int>(HudCard::Count) || !_screen.Show(slot))
         return;
 
     const CardIds& row = CardRows[index];
@@ -153,14 +129,14 @@ void Hud::SetCard(HudCard card, int slot, const CardView& view)
 void Hud::HideCard(HudCard card, int slot)
 {
     const int index = static_cast<int>(card);
-    if (index < 0 || index >= static_cast<int>(HudCard::Count) || !Show(slot))
+    if (index < 0 || index >= static_cast<int>(HudCard::Count) || !_screen.Show(slot))
         return;
     CardRows[index].Hidden.Write(_screen.Panel(), slot, true);
 }
 
 void Hud::Toast(int slot, const ToastView& view)
 {
-    if (!Show(slot))
+    if (!_screen.Show(slot))
         return;
 
     VoltMod::UiPanel& panel = _screen.Panel();
@@ -180,6 +156,12 @@ VoltMod::Subscription& Hud::ToastTimer(int slot)
 }
 
 void Hud::DrawServerCard()
+{
+    // Re-arming replaces the pending one, so a whole roster readying at once redraws once.
+    _serverCardRedraw = _rt.Scheduler.NextTick([this] { WriteServerCard(); });
+}
+
+void Hud::WriteServerCard()
 {
     int online = 0;
     for (const VoltMod::Player* player : _rt.Players.All())

@@ -37,20 +37,20 @@ public:
     void Toast(int slot, const Contracts::ToastView& view) override;
 
 private:
-    /** Put the layout on @p slot's screen if it is not up yet. False when it cannot be. */
-    bool Show(int slot);
+    /** Ask for a Server card redraw. Coalesced onto the next tick: a map change readies the whole
+     *  roster one slot at a time, and one redraw covers all of them. */
+    void DrawServerCard();
 
     /** Title and live player count of the Server card, for everyone. */
-    void DrawServerCard();
+    void WriteServerCard();
 
     /** The one-shot that hides @p slot's toast; re-arming it replaces the running one. */
     VoltMod::Subscription& ToastTimer(int slot);
 
     VoltMod::Runtime& _rt;
     const ConfigManager& _config;
-    VoltMod::Screen _screen{_rt.Ui, _rt.Slots, Cs2Ui::Hud::Layout, Cs2Ui::Hud::RootId};
-    /** Screen::Shown only tracks real slots, so the global state needs its own flag. */
-    bool _shownEveryone = false;
+    VoltMod::Screen _screen{_rt.Ui, Cs2Ui::Hud::Layout, Cs2Ui::Hud::RootId};
+    VoltMod::Subscription _serverCardRedraw;
     VoltMod::PerSlot<VoltMod::Subscription> _toastTimers;
     VoltMod::Subscription _everyoneToast;
     VoltMod::SubscriptionScope _subs;
