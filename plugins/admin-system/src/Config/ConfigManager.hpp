@@ -37,6 +37,7 @@ public:
     const PunishmentSettings& GetPunishments() const { return _snapshot.Values.punishments; }
     const AppealSettings& GetAppeal() const { return _snapshot.Values.punishments.appeal; }
     const MapSettings& GetMaps() const { return _snapshot.Values.maps; }
+    const MenuSettings& GetMenu() const { return _snapshot.Values.menu; }
     const AbuseProtectionSettings& GetAbuseProtection() const { return _snapshot.Values.abuseProtection; }
     const ChatSettings& GetChat() const { return _snapshot.Values.chat; }
     const ReportSettings& GetReports() const { return _snapshot.Values.reports; }

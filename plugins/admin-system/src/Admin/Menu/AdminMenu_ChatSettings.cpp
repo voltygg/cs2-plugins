@@ -175,7 +175,7 @@ static void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, i
                                                // Rebuild so the baked labels re-render in the new language. Use the
                                                // by-value menuSlot (not a capture): Close frees this row and its
                                                // captures, so nothing read after it may live in the lambda's closure.
-                                               auto& mgr = app.Runtime.Menus;
+                                               auto& mgr = app.MenuFor(menuSlot);
                                                mgr.Close(menuSlot);
                                                mgr.Open(menuSlot, BuildChatSettingsMenu(app, menuSlot));
                                            },

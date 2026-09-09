@@ -156,6 +156,12 @@
       "durationSec": 20
     }
   },
+  "menu": {
+    // Workshop addon carrying the compiled admin_menu layout. 0 draws the plain center-HTML
+    // menu, which needs nothing on the client; set it and admins who have downloaded the addon
+    // get the clickable Panorama menu instead.
+    "addonId": 0
+  },
   "weapons": {
     // Offered by !give and Control > Give weapon. `item` is the entity classname; anything not
     // starting with `weapon_` is skipped. Omit the list and these same twelve apply.

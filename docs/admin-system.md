@@ -175,10 +175,27 @@ Immunity is separate from flags: an admin cannot act on a target whose immunity
 is higher than their own. `!admin` needs no flag, but the caller must be a
 registered admin, and each menu category is still gated individually.
 
-The admin menu is drawn through the framework's menu manager as center HTML, so
-it needs no setup of its own and nothing on the client. Navigation is W/S/A/D/E/R;
-the player is frozen while a menu is open so browsing does not also walk them
-around.
+The admin menu draws on either of two surfaces, decided per player when the menu
+opens. Rows, flows and callbacks are the same on both.
+
+Center HTML is the default. It needs nothing on the client, and is read with
+W/S/A/D/E/R. Set `menu.addonId` in `configs/settings.jsonc` to the workshop addon
+carrying this plugin's compiled `admin_menu` layout, and an admin who has
+downloaded it gets the clickable Panorama menu instead: eight rows a page, a tab
+strip over the top-level categories, a pager, toggle switches, value steppers and
+a chat-prompt panel. Anyone still downloading, or on a server where the id is
+unset, keeps center HTML.
+
+The layout is this plugin's own, under `panorama/screens/admin_menu.*`, built from
+the framework's block library and coloured from meat.gg's palette. Publish it with
+the rest of the addon content:
+
+```bash
+uv run --project vendor/voltmod voltmod panorama publish build/workshop/cs2ui
+```
+
+The player is frozen while a menu is open either way, so browsing does not also
+walk them around.
 
 ## Database
 

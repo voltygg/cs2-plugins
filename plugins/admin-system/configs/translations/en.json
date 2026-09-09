@@ -326,7 +326,8 @@
     "empty": "Nothing here",
     "off": "OFF",
     "on": "ON",
-    "promptHint": "Answer in chat"
+    "promptHint": "Answer in chat",
+    "pending": "Applying..."
   },
   "nav": {
     "navigate": "Navigate",
@@ -335,7 +336,8 @@
     "change": "Change",
     "page": "Page",
     "back": "Back",
-    "close": "Close"
+    "close": "Close",
+    "root": "Main"
   },
   "map": {
     "name": "Map",

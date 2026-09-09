@@ -350,6 +350,19 @@
         }
       }
     },
+    "menu": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How the admin menu is drawn.",
+      "properties": {
+        "addonId": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Workshop addon carrying the compiled admin_menu layout. 0 draws the center-HTML menu, which needs nothing on the client."
+        }
+      }
+    },
     "weapons": {
       "type": "object",
       "additionalProperties": false,

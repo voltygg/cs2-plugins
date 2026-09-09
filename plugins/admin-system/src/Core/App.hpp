@@ -10,6 +10,7 @@
 #include "../Database/Repositories/PlayerRepository.hpp"
 #include "../Fun/FunMode.hpp"
 #include "../Maps/MapCycleState.hpp"
+#include "../Menu/PanoramaMenu.hpp"
 #include "../Maps/VoteState.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "../Reports/ReportManager.hpp"
@@ -62,13 +63,28 @@ struct App
                                     .Translations = Runtime.Translations,
                                     .Players = Runtime.Players,
                                     .Entities = Runtime.Entities,
-                                    .Menus = Runtime.Menus,
+                                    .Menus = MenuFor(admin.Slot),
                                     .Effects = &Effects},
                                    admin, std::move(target));
     }
 
+    /**
+     * Where @p slot's menu is drawn: this plugin's Panorama screen when the player can see one,
+     * the framework's center HTML otherwise.
+     *
+     * Asked while rows are built as well as when a menu opens, and answers the same either way,
+     * so a row's callbacks and the session they run against never disagree.
+     */
+    [[nodiscard]] VoltMod::MenuSession& MenuFor(int slot)
+    {
+        return Panorama.Available(slot) ? static_cast<VoltMod::MenuSession&>(Panorama) : Runtime.Menus;
+    }
+
     VoltMod::Runtime& Runtime;
     const std::string Version;
+
+    /** The admin menu's own Panorama surface. Declared early: menus are built against it. */
+    Menus::PanoramaMenu Panorama{Runtime};
 
     Config::ConfigManager Settings;
     /** Runs the action descriptors through Runtime::Policy: permissions, targeting and broadcasts. */

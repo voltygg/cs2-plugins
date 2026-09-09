@@ -57,5 +57,7 @@ workshop addon carries.
 2. Upload that content directory with the CS2 Workshop Tools.
 3. Put the published id in `plugins/ui/configs/settings.jsonc` as `ui.addonId`.
 
-The addon carries this plugin's HUD screen only. admin-system draws its menu as
-center HTML and needs nothing from it.
+`panorama publish` copies every plugin's rendered tree into the same directory, so
+one addon can carry this plugin's HUD and admin-system's menu screen together. Each
+plugin names the published id in its own settings: `ui.addonId` here,
+`menu.addonId` in admin-system.

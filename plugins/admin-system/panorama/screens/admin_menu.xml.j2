@@ -1,0 +1,44 @@
+{# namespace: AdminUi::Menu #}
+{% import "dialog.xml.j2" as shell %}
+{% import "listrow.xml.j2" as list %}
+{% import "tabs.xml.j2" as strip %}
+{% import "pager.xml.j2" as paging %}
+{% import "button.xml.j2" as controls %}
+
+{%- set ROWS = 8 %}
+{%- set TABS = 6 %}
+{%- set GLYPHS = [("submenu", "&#9654;"), ("input", "&#8230;"), ("button", "&#8226;"), ("text", "&#8211;")] %}
+
+<root>
+  <styles>
+    <include src="file://{resources}/styles/custom_game/{{screen}}.css" />
+  </styles>
+
+  <Panel class="Layer" hittest="false">
+    <Panel id="{{screen}}" class="Screen Hidden" hittest="true">
+      {%- call shell.dialog("panel") %}
+      {{ strip.tabs("tab", TABS) }}
+
+      <Panel class="Rows" hittest="true">
+        {%- for row in range(ROWS) %}
+        {{ list.listrow("row" ~ row, glyphs=GLYPHS, switch=true, hint=true, steppers=true, accent=true) | indent(8) }}
+        {%- endfor %}
+        <Label id="{{screen}}_empty" class="Empty Hidden" text="{s:empty}" hittest="false" />
+      </Panel>
+
+      {{ paging.pager("page") }}
+
+      <Panel id="{{screen}}_prompt" class="Prompt Hidden" hittest="true">
+        <Label class="Prompt-text" text="{s:prompt_text}" hittest="false" />
+        <Label class="Prompt-hint" text="{s:prompt_hint}" hittest="false" />
+        {{ controls.button("cancel", "{s:cancel}", variant="ghost") | indent(8) }}
+      </Panel>
+
+      <Panel class="Foot" hittest="true">
+        {{ controls.button("back", "{s:back}", variant="ghost") | indent(8) }}
+        {{ controls.button("close", "{s:close}", variant="danger") | indent(8) }}
+      </Panel>
+      {%- endcall %}
+    </Panel>
+  </Panel>
+</root>
