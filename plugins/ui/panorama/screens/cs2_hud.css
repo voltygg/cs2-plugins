@@ -9,6 +9,7 @@
 {% include "icons.css" %}
 {% import "bar.css" as bar %}
 {% import "icons.css" as icons %}
+{% import "accent.css" as accent %}
 
 .Layer {
   width: 100%;
@@ -115,47 +116,4 @@
 {{ bar.fill_rules("Bar-fill", 20) }}
 {{ icons.show_rules("weapons") }}
 
-/* The eleven accents, in Contracts::HudAccent order. */
-.Accent.Accent--success {
-  background-color: #4ade80;
-}
-
-.Accent.Accent--warning {
-  background-color: #fbbf24;
-}
-
-.Accent.Accent--info {
-  background-color: #38bdf8;
-}
-
-.Accent.Accent--error {
-  background-color: #ef4444;
-}
-
-.Accent.Accent--common {
-  background-color: #b0c3d9;
-}
-
-.Accent.Accent--uncommon {
-  background-color: #5e98d9;
-}
-
-.Accent.Accent--rare {
-  background-color: #4b69ff;
-}
-
-.Accent.Accent--mythical {
-  background-color: #8847ff;
-}
-
-.Accent.Accent--legendary {
-  background-color: #d32ce6;
-}
-
-.Accent.Accent--ancient {
-  background-color: #eb4b4b;
-}
-
-.Accent.Accent--contraband {
-  background-color: #e4ae39;
-}
+{{ accent.palette() }}
