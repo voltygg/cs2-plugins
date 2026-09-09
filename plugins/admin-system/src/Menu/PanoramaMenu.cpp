@@ -18,35 +18,42 @@ PanoramaMenu::PanoramaMenu(VoltMod::Runtime& runtime) : _rt(runtime) {}
 
 PanoramaMenu::~PanoramaMenu() = default;
 
-void PanoramaMenu::Start(uint64_t addonId)
+void PanoramaMenu::Start(bool enabled, uint64_t addonId)
 {
     _panels.BindReset(_rt.Slots);
     _sessions.BindReset(_rt.Slots);
 
-    if (addonId == 0)
+    if (!enabled)
     {
-        VoltMod::Log::Info("Admin menu: center HTML (menu.addonId is unset).");
+        VoltMod::Log::Info("Admin menu: center HTML, as configured.");
         return;
     }
 
-    // A client has the layout only once it has the addon, so the requirement is what makes the
-    // Panorama surface safe to use at all.
-    auto lease = _rt.Addons.Require(addonId);
-    if (!lease)
+    // The addon is how the layout reaches players who did not compile it into their own client.
+    // Without one nothing is required, so a hand-compiled client is drawn to and everyone else
+    // sees an empty panel: said out loud here rather than left as a silent blank menu.
+    if (addonId != 0)
     {
-        VoltMod::Log::Warn("Admin menu: center HTML - addon {} not required ({}).", addonId, lease.error().Detail);
-        return;
+        if (auto lease = _rt.Addons.Require(addonId))
+            _addon = std::move(*lease);
+        else
+            VoltMod::Log::Warn("Admin menu: addon {} not required ({}); clients without the layout "
+                               "will see nothing.",
+                               addonId, lease.error().Detail);
+    }
+    else
+    {
+        VoltMod::Log::Warn("Admin menu: Panorama with no addon required. Only a client you "
+                           "compiled the layout into can see it.");
     }
 
-    _addon = std::move(*lease);
-    _addonId = addonId;
+    _enabled = true;
     _subs.Add(_rt.Ui.Clicked += [this](const UiClick& click) { OnClick(click); });
-    VoltMod::Log::Info("Admin menu: Panorama for clients carrying addon {}.", addonId);
 }
 
 bool PanoramaMenu::Available(int slot)
 {
-    if (_addonId == 0 || !VoltMod::IsValidSlot(slot))
+    if (!_enabled || !VoltMod::IsValidSlot(slot))
         return false;
 
     for (Capability capability : {Capability::CustomUi, Capability::UiClicks})

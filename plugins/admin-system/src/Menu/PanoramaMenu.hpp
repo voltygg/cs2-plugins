@@ -39,9 +39,9 @@ public:
     explicit PanoramaMenu(VoltMod::Runtime& runtime);
     ~PanoramaMenu() override;
 
-    /** Arm click handling, and require @p addonId of connecting clients so they have the layout.
-     *  A zero id leaves this surface off: every admin then gets the framework's center HTML. */
-    void Start(uint64_t addonId);
+    /** Arm click handling when @p enabled, and require @p addonId of connecting clients so they
+     *  have the layout. A zero id requires nothing, for a client compiled into by hand. */
+    void Start(bool enabled, uint64_t addonId);
 
     /** Whether a session opened now for @p slot would be drawn here.
      *
@@ -116,8 +116,8 @@ private:
     [[nodiscard]] std::string Breadcrumb(int slot) const;
 
     VoltMod::Runtime& _rt;
-    /** Zero until Start, and while the addon is unset: the surface is off either way. */
-    uint64_t _addonId = 0;
+    /** False until Start turns the surface on. */
+    bool _enabled = false;
     /** The addon requirement, held for as long as this plugin is loaded. */
     VoltMod::Subscription _addon;
     VoltMod::PerSlot<VoltMod::UiPanel> _panels;

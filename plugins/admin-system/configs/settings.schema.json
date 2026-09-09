@@ -355,11 +355,16 @@
       "additionalProperties": false,
       "description": "How the admin menu is drawn.",
       "properties": {
+        "panorama": {
+          "type": "boolean",
+          "default": false,
+          "description": "Draw the clickable Panorama menu instead of center HTML. The client needs the compiled admin_menu layout."
+        },
         "addonId": {
           "type": "integer",
           "minimum": 0,
           "default": 0,
-          "description": "Workshop addon carrying the compiled admin_menu layout. 0 draws the center-HTML menu, which needs nothing on the client."
+          "description": "Workshop addon carrying the compiled admin_menu layout, required of every connecting client. 0 requires nothing."
         }
       }
     },

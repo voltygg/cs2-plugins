@@ -157,9 +157,12 @@
     }
   },
   "menu": {
-    // Workshop addon carrying the compiled admin_menu layout. 0 draws the plain center-HTML
-    // menu, which needs nothing on the client; set it and admins who have downloaded the addon
-    // get the clickable Panorama menu instead.
+    // Draw the clickable Panorama menu instead of center HTML. The client needs the compiled
+    // admin_menu layout: `uv run poe panorama` installs it into your own client for testing,
+    // and addonId ships it to everyone else.
+    "panorama": false,
+    // Workshop addon carrying that layout, required of every connecting client. 0 requires
+    // nothing, which is what you want against a client you compiled into by hand.
     "addonId": 0
   },
   "weapons": {

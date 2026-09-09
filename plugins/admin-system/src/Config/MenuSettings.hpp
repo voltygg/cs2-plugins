@@ -9,12 +9,20 @@ namespace AdminSystem::Config
 struct MenuSettings
 {
     /**
-     * Workshop addon carrying the compiled admin_menu layout.
+     * Draw the clickable Panorama menu instead of center HTML.
      *
-     * 0 draws every admin the center-HTML menu, which needs nothing on the client. Set it and a
-     * player who has finished downloading the addon gets the clickable Panorama menu instead;
-     * without a required addon there is no way to know the client has the layout, and drawing
-     * into one it does not have shows nothing at all.
+     * Needs the compiled `admin_menu` layout on the client, which arrives one of two ways:
+     * `voltmod panorama compile` installs it into your own client for testing, and @ref addonId
+     * ships it to everyone else. Drawing into a layout a client does not have shows nothing.
+     */
+    bool panorama = false;
+
+    /**
+     * Workshop addon carrying the compiled layout, required of every connecting client.
+     *
+     * 0 requires nothing, which is what you want while testing against a client you compiled
+     * into by hand. On a live server leaving it 0 means anyone who has not copied the files in
+     * sees an empty menu, so set it before turning @ref panorama on for real players.
      */
     uint64_t addonId = 0;
 };

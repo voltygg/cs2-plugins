@@ -179,12 +179,27 @@ The admin menu draws on either of two surfaces, decided per player when the menu
 opens. Rows, flows and callbacks are the same on both.
 
 Center HTML is the default. It needs nothing on the client, and is read with
-W/S/A/D/E/R. Set `menu.addonId` in `configs/settings.jsonc` to the workshop addon
-carrying this plugin's compiled `admin_menu` layout, and an admin who has
-downloaded it gets the clickable Panorama menu instead: eight rows a page, a tab
-strip over the top-level categories, a pager, toggle switches, value steppers and
-a chat-prompt panel. Anyone still downloading, or on a server where the id is
-unset, keeps center HTML.
+W/S/A/D/E/R. Turn on `menu.panorama` in `configs/settings.jsonc` and admins get the
+clickable Panorama menu instead: eight rows a page, a tab strip over the top-level
+categories, a pager, toggle switches, value steppers and a chat-prompt panel.
+
+Either way the client needs the compiled `admin_menu` layout on disk, and there are
+two ways to get it there.
+
+**Testing against your own client.** Leave `menu.addonId` at 0 and compile the
+layout into your client by hand. Nothing is downloaded and nobody else can see the
+menu, which is why the plugin says so in the server log at load.
+
+```bash
+uv run poe panorama                              # render, compile, install into your client
+uv run poe build --install admin-system --start  # then set menu.panorama in the server's copy
+```
+
+Reconnect after compiling; the client reads the layout at load.
+
+**Serving it to everyone.** Publish the addon and put its id in `menu.addonId`. The
+plugin then requires it of every connecting client, and an admin still downloading
+keeps center HTML until it lands.
 
 The layout is this plugin's own, under `panorama/screens/admin_menu.*`, built from
 the framework's block library and coloured from meat.gg's palette. Publish it with
