@@ -147,8 +147,7 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
 
     // Reporters may press !report mid-round, where being held still would get them killed. The
     // rest of the flow pushes onto this session, so it stays unfrozen throughout.
-    if (!app.Panorama.Begin(reporterSlot, menu))
-        app.Runtime.Menus.Open(reporterSlot, menu, {.FreezeMovement = false});
+    app.OpenMenu(reporterSlot, std::move(menu), {.FreezeMovement = false});
 }
 
 }  // namespace AdminSystem::Reports

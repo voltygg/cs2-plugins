@@ -25,6 +25,7 @@
 #include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Players/ActionDispatcher.hpp>
 #include <VoltMod/Players/EffectDispatcher.hpp>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -78,6 +79,14 @@ struct App
     [[nodiscard]] VoltMod::MenuSession& MenuFor(int slot)
     {
         return Panorama.Available(slot) ? static_cast<VoltMod::MenuSession&>(Panorama) : Runtime.Menus;
+    }
+
+    /** Open @p menu for @p slot wherever MenuFor would put it. The one place the two surfaces are
+     *  chosen between, so neither can be given options the other was not. */
+    void OpenMenu(int slot, std::shared_ptr<VoltMod::Menu> menu, VoltMod::MenuOptions options = {})
+    {
+        if (!Panorama.Begin(slot, menu, options))
+            Runtime.Menus.Open(slot, std::move(menu), options);
     }
 
     VoltMod::Runtime& Runtime;

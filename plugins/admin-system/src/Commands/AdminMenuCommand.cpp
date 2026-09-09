@@ -5,6 +5,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <utility>
 
 using VoltMod::Caller;
 using VoltMod::Reply;
@@ -31,9 +32,7 @@ void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app)
             if (!menu)
                 return c.Fail("cmd.menuFailed");
 
-            // Panorama first; Begin refuses a player who cannot see it and center HTML takes over.
-            if (!app.Panorama.Begin(c.Slot, menu))
-                app.Runtime.Menus.Open(c.Slot, menu, {});
+            app.OpenMenu(c.Slot, std::move(menu));
             return Reply::Silent();  // the menu is the feedback
         });
 }
