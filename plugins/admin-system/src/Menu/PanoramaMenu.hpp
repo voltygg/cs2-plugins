@@ -6,10 +6,11 @@
 #include <VoltMod/Core/PerSlot.hpp>
 #include <VoltMod/Core/Subscription.hpp>
 #include <VoltMod/Core/SubscriptionScope.hpp>
-#include <VoltMod/Entities/EntityRef.hpp>
-#include <VoltMod/Engine/EngineTypes.hpp>
+#include <VoltMod/Entities/MovementFreeze.hpp>
 #include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Menu/MenuState.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <VoltMod/Ui/Screen.hpp>
 #include <VoltMod/Ui/UiClick.hpp>
 #include <VoltMod/Ui/UiPanel.hpp>
 #include <cstdint>
@@ -51,7 +52,7 @@ public:
 
     /** Start a session for @p slot showing @p menu, replacing any it has open.
      *  False when the panel could not be shown, so the caller can use center HTML instead. */
-    bool Begin(int slot, std::shared_ptr<VoltMod::Menu> menu);
+    bool Begin(int slot, std::shared_ptr<VoltMod::Menu> menu, VoltMod::MenuOptions options = {});
 
     [[nodiscard]] bool IsOpen(int slot) const;
 
@@ -66,25 +67,29 @@ private:
     /** How long a stepped value waits before it is applied, so a burst of presses is one action. */
     static constexpr int CommitDelayMs = 400;
 
+    /** One tab of the strip: which root item it opens, and the label that item described itself
+     *  with when the session started. */
+    struct Tab
+    {
+        int Item;
+        std::string Label;
+    };
+
     /** One player's open menus and where they are in them. */
     struct Session
     {
         std::vector<std::shared_ptr<VoltMod::Menu>> Stack;
-        /** Item indexes of the root menu's submenu rows, in tab order. */
-        std::vector<int> Tabs;
+        /** The root menu's submenu rows, in tab order. */
+        std::vector<Tab> Tabs;
         /** Which tab the open branch was entered through, or -1. */
         int OpenTab = -1;
         int Page = 0;
         /** Item index of the row holding a stepped value that has not been applied yet, or -1. */
         int PendingItem = -1;
         VoltMod::Subscription CommitTimer;
-        /** The pawn held frozen, or unset. Only this pawn is given @ref PrevMove back. */
-        VoltMod::EntityRef FrozenPawn;
-        VoltMod::MoveType PrevMove = VoltMod::MoveType::Walk;
+        /** The pawn this session is holding still, if any. */
+        VoltMod::MovementFreeze Freeze;
     };
-
-    /** @p slot's own panel, made on first use. Empty when it could not be spawned. */
-    VoltMod::UiPanel& PanelFor(int slot);
 
     [[nodiscard]] VoltMod::Menu* Current(int slot);
     [[nodiscard]] int ItemIndex(int slot, int row) const;
@@ -120,7 +125,8 @@ private:
     bool _enabled = false;
     /** The addon requirement, held for as long as this plugin is loaded. */
     VoltMod::Subscription _addon;
-    VoltMod::PerSlot<VoltMod::UiPanel> _panels;
+    /** One panel per player: a spectating admin must see their own menu, not the pawn's. */
+    VoltMod::Screen _screen{_rt.Ui, _rt.Slots, AdminUi::Menu::Layout, AdminUi::Menu::RootId};
     VoltMod::PerSlot<Session> _sessions;
     /** Declared last: click delivery drops before the state it touches. */
     VoltMod::SubscriptionScope _subs;

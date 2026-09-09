@@ -3,7 +3,6 @@
 #include <VoltMod/Core/Slot.hpp>
 #include <algorithm>
 #include <array>
-#include <cstddef>
 #include <format>
 #include <string_view>
 
@@ -15,22 +14,10 @@ using VoltMod::UiPanel;
 namespace AdminSystem::Menus
 {
 
-/** VoltMod::MenuRowKind, lowercase and in enumerator order: what the screen's Kind classes must
- *  spell, so casting a kind to a class index is safe. */
-static constexpr std::array<std::string_view, 6> ExpectedKindNames{
-    "text", "button", "submenu", "toggle", "choice", "input",
-};
-
-static constexpr bool KindNamesMatch()
-{
-    if (AdminUi::Menu::KindNames.size() != ExpectedKindNames.size())
-        return false;
-    for (std::size_t i = 0; i < ExpectedKindNames.size(); ++i)
-        if (AdminUi::Menu::KindNames[i] != ExpectedKindNames[i])
-            return false;
-    return true;
-}
-static_assert(KindNamesMatch(), "admin_menu's Kind classes must match VoltMod::MenuRowKind");
+// VoltMod::MenuRowKind, lowercase and in enumerator order, so casting a kind to a class is safe.
+static_assert(AdminUi::Menu::KindNames == std::array<std::string_view, 6>{"text", "button", "submenu", "toggle",
+                                                                         "choice", "input"},
+              "admin_menu's Kind classes must match VoltMod::MenuRowKind");
 
 /** The accent a row kind carries, as an index into `AdminUi::Menu::AccentClasses`. */
 static int AccentFor(const MenuRow& row)
@@ -72,7 +59,7 @@ std::string PanoramaMenu::Breadcrumb(int slot) const
 void PanoramaMenu::Draw(int slot)
 {
     Menu* menu = Current(slot);
-    UiPanel& panel = _panels[slot];
+    UiPanel& panel = _screen.Panel(slot);
     if (!menu || !panel)
         return;
 
@@ -90,7 +77,7 @@ void PanoramaMenu::Draw(int slot)
 
 void PanoramaMenu::DrawHeader(int slot, const Menu& menu)
 {
-    UiPanel& panel = _panels[slot];
+    UiPanel& panel = _screen.Panel(slot);
     Chrome.Title.Write(panel, slot, menu.Title);
     Chrome.Crumb.Write(panel, slot, Breadcrumb(slot));
     Chrome.Subtitle.Write(panel, slot, menu.Subtitle);
@@ -99,9 +86,8 @@ void PanoramaMenu::DrawHeader(int slot, const Menu& menu)
 
 void PanoramaMenu::DrawTabs(int slot)
 {
-    UiPanel& panel = _panels[slot];
+    UiPanel& panel = _screen.Panel(slot);
     const Session& session = _sessions[slot];
-    const Menu& root = *session.Stack.front();
 
     for (int tab = 0; tab < TabCount; ++tab)
     {
@@ -110,15 +96,14 @@ void PanoramaMenu::DrawTabs(int slot)
         if (!used)
             continue;
 
-        const auto& describe = root.Items[session.Tabs[tab]].Describe;
-        Tabs[tab].Label.Write(panel, slot, describe ? describe(slot).Label : std::string{});
+        Tabs[tab].Label.Write(panel, slot, session.Tabs[tab].Label);
         Tabs[tab].Selected.Write(panel, slot, tab == session.OpenTab);
     }
 }
 
 void PanoramaMenu::DrawRows(int slot, Menu& menu)
 {
-    UiPanel& panel = _panels[slot];
+    UiPanel& panel = _screen.Panel(slot);
     Session& session = _sessions[slot];
 
     const int count = static_cast<int>(menu.Items.size());
@@ -147,7 +132,7 @@ void PanoramaMenu::DrawRows(int slot, Menu& menu)
 
 void PanoramaMenu::DrawRow(int slot, int row, int item, const MenuRow& described)
 {
-    UiPanel& panel = _panels[slot];
+    UiPanel& panel = _screen.Panel(slot);
     const RowIds& ids = Rows[row];
     const bool pending = _sessions[slot].PendingItem == item;
 
@@ -172,7 +157,7 @@ void PanoramaMenu::DrawRow(int slot, int row, int item, const MenuRow& described
 
 void PanoramaMenu::DrawPrompt(int slot)
 {
-    UiPanel& panel = _panels[slot];
+    UiPanel& panel = _screen.Panel(slot);
     const auto prompt = _rt.Hooks.ChatInput.GetPrompt(slot);
 
     Chrome.PromptHidden.Write(panel, slot, !prompt.has_value());

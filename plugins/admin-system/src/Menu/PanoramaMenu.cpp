@@ -7,7 +7,6 @@
 
 using VoltMod::Capability;
 using VoltMod::Menu;
-using VoltMod::MoveType;
 using VoltMod::UiClick;
 using VoltMod::UiPanel;
 
@@ -20,7 +19,6 @@ PanoramaMenu::~PanoramaMenu() = default;
 
 void PanoramaMenu::Start(bool enabled, uint64_t addonId)
 {
-    _panels.BindReset(_rt.Slots);
     _sessions.BindReset(_rt.Slots);
 
     if (!enabled)
@@ -63,29 +61,14 @@ bool PanoramaMenu::Available(int slot)
     }
 
     // A client still fetching the addon has no layout to draw the panel on yet.
-    if (!_rt.Addons.Pending(slot).empty())
+    if (_rt.Addons.HasPending(slot))
         return false;
 
-    UiPanel& panel = PanelFor(slot);
+    UiPanel& panel = _screen.Panel(slot);
     return panel && panel.Ensure(slot);
 }
 
-UiPanel& PanoramaMenu::PanelFor(int slot)
-{
-    UiPanel& panel = _panels[slot];
-    if (panel)
-        return panel;
-
-    // Private to the viewer: a spectating admin must see their own menu, not the pawn's.
-    if (auto made = _rt.Ui.Panel(AdminUi::Menu::Layout, slot))
-        panel = std::move(*made);
-    else
-        VoltMod::Log::Warn("Admin menu: no panel for slot {} ({})", slot, made.error().Detail);
-
-    return panel;
-}
-
-bool PanoramaMenu::Begin(int slot, std::shared_ptr<Menu> menu)
+bool PanoramaMenu::Begin(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptions options)
 {
     if (!menu || !Available(slot))
         return false;
@@ -98,21 +81,23 @@ bool PanoramaMenu::Begin(int slot, std::shared_ptr<Menu> menu)
     session.OpenTab = -1;
     session.Tabs.clear();
 
-    // The tab strip stands for the root menu's submenus, so it is read once per session.
+    // The tab strip stands for the root menu's submenus, so it is read once per session: the
+    // labels come back with the kinds rather than costing a Describe per tab per draw.
     Menu& root = *session.Stack.front();
     for (int index = 0; index < static_cast<int>(root.Items.size()); ++index)
     {
         if (static_cast<int>(session.Tabs.size()) >= TabCount)
             break;
         const auto& describe = root.Items[index].Describe;
-        if (describe && describe(slot).Kind == VoltMod::MenuRowKind::Submenu)
-            session.Tabs.push_back(index);
+        if (!describe)
+            continue;
+        if (VoltMod::MenuRow described = describe(slot); described.Kind == VoltMod::MenuRowKind::Submenu)
+            session.Tabs.push_back({.Item = index, .Label = std::move(described.Label)});
     }
 
-    Freeze(slot, true);
-    UiPanel& panel = _panels[slot];
-    panel.Class(slot, AdminUi::Menu::RootId, "Hidden", false);
-    panel.InputCapture(slot, true);
+    if (options.FreezeMovement)
+        session.Freeze.Hold(_rt.Entities.PawnOf(slot));
+    _screen.Show(slot, /*capture=*/true);
     Draw(slot);
     return true;
 }
@@ -271,7 +256,8 @@ void PanoramaMenu::Activate(int slot, int index)
     Session& session = _sessions[slot];
     if (session.Stack.size() == 1)
     {
-        const auto found = std::find(session.Tabs.begin(), session.Tabs.end(), index);
+        const auto found = std::find_if(session.Tabs.begin(), session.Tabs.end(),
+                                        [index](const Tab& tab) { return tab.Item == index; });
         session.OpenTab = found == session.Tabs.end() ? -1 : static_cast<int>(found - session.Tabs.begin());
     }
 
@@ -335,7 +321,7 @@ void PanoramaMenu::OpenTab(int slot, int tab)
     RunPending(slot);
     session.Stack.resize(1);
     session.Page = 0;
-    Activate(slot, session.Tabs[tab]);
+    Activate(slot, session.Tabs[tab].Item);
 }
 
 void PanoramaMenu::TurnPage(int slot, int delta)
@@ -360,34 +346,8 @@ void PanoramaMenu::Dismiss(int slot)
     session.CommitTimer.Reset();
 
     _rt.Hooks.ChatInput.CancelCapture(slot);
-    Freeze(slot, false);
-
-    if (UiPanel& panel = _panels[slot])
-    {
-        panel.InputCapture(slot, false);
-        panel.Class(slot, AdminUi::Menu::RootId, "Hidden", true);
-    }
-}
-
-void PanoramaMenu::Freeze(int slot, bool on)
-{
-    Session& session = _sessions[slot];
-    const VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot);
-
-    if (on)
-    {
-        if (session.FrozenPawn || !pawn || !pawn.IsAlive())
-            return;
-        session.PrevMove = pawn.Move();
-        session.FrozenPawn = pawn.Ref();
-        pawn.SetMove(MoveType::None);
-        return;
-    }
-
-    // Only the pawn that was frozen is restored: a respawn must not inherit a dead body's type.
-    if (pawn && pawn.Ref() == session.FrozenPawn)
-        pawn.SetMove(session.PrevMove);
-    session.FrozenPawn = {};
+    session.Freeze.Release(_rt.Entities.PawnOf(slot));
+    _screen.Hide(slot);
 }
 
 }  // namespace AdminSystem::Menus
