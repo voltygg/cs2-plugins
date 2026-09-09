@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ui settings.jsonc",
+  "description": "Runtime configuration for the ui plugin. Extend alongside the Settings struct in src/Config.hpp - missing keys fall back to their C++ defaults.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "locale": {
+          "type": "string",
+          "default": "en",
+          "description": "Translation language; matches a file in configs/translations."
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "addonId": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Workshop addon carrying the compiled HUD layout; 0 requires nothing of connecting clients."
+        },
+        "serverName": {
+          "type": "string",
+          "default": "meat.gg",
+          "description": "Title of the server card."
+        },
+        "toastDurationMs": {
+          "type": "integer",
+          "minimum": 100,
+          "default": 4000,
+          "description": "How long a toast stays up when the caller passes 0."
+        }
+      }
+    }
+  }
+}

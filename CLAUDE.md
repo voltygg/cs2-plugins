@@ -21,9 +21,9 @@ uv run poe doctor                            # check toolchain, Conan, optional 
 uv run poe bootstrap                         # first-time: install VoltMod profiles and remote
 uv run poe build                             # compile (windows-msvc-release)
 uv run poe test                              # compile, then CTest
-uv run poe lint                              # ruff + voltmod modgraph
+uv run poe lint                              # ruff + modgraph + panorama check
 uv run poe build --install <plugin> --start  # copy to CS2_SERVER_PATH and launch
-uv run poe panorama                          # compile panorama/ UI into the client (Windows)
+uv run poe panorama                          # render, compile and install the Panorama screens into your client (Windows)
 uv run poe new-plugin <name>
 ```
 
@@ -45,6 +45,7 @@ plugins/admin-system/  Admins, punishments, menus, reports, PostgreSQL
 plugins/anticheat/     Detection cores, engine adapters, responses
 plugins/bhop/          Bunnyhop modes
 plugins/contracts/     Interfaces shared between plugins
+plugins/ui/            Panorama HUD, published as Contracts::IUiHud
 deploy/                Docker deployment CLI
 docs/                  Development and deployment notes
 ```

@@ -29,7 +29,7 @@ doctor = "voltmod doctor"
 new-plugin = "voltmod new-plugin"
 install = "voltmod install"
 start-server = "voltmod serve"
-panorama = "voltmod panorama"
+panorama = "voltmod panorama compile"
 format = "voltmod format plugins"
 deploy-package = "python -m deploy.tools.cli package"
 deploy-render = "python -m deploy.tools.cli render"
@@ -45,6 +45,7 @@ help = "Lint the build tooling and check the plugin source conventions"
 sequence = [
     { cmd = "ruff check ." },
     { cmd = "voltmod modgraph --plugins ." },
+    { cmd = "voltmod panorama check" },
 ]
 
 [tool.ruff]

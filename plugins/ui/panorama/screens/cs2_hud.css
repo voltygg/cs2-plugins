@@ -1,0 +1,161 @@
+{#-
+  The server HUD, in the meat.gg look: near-black raised cards, warm hairlines, red primary
+  for bars and accents. No theme file any more - every colour below is literal.
+-#}
+{% include "card.css" %}
+{% include "toast.css" %}
+{% include "accent.css" %}
+{% include "bar.css" %}
+{% include "icons.css" %}
+{% import "bar.css" as bar %}
+{% import "icons.css" as icons %}
+
+.Layer {
+  width: 100%;
+  height: 100%;
+}
+
+.Screen {
+  width: 100%;
+  height: 100%;
+  color: #f7f4ee;
+}
+
+.Screen.Hidden {
+  visibility: collapse;
+}
+
+.Region-top-left {
+  width: 280px;
+  height: fit-children;
+  flow-children: down;
+  horizontal-align: left;
+  vertical-align: top;
+  margin: 16px 0px 0px 16px;
+}
+
+.Region-bottom {
+  width: fit-children;
+  height: fit-children;
+  horizontal-align: center;
+  vertical-align: bottom;
+  margin-bottom: 96px;
+}
+
+/* Cards: near-black surface over the framework's default, rounded, with a drop shadow. */
+.Card {
+  border-radius: 12px;
+  background-color: #101015;
+  border: 1px solid rgba(240, 221, 180, 0.09);
+  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.5);
+}
+
+.Icons {
+  width: 40px;
+  height: 40px;
+  vertical-align: center;
+  margin-left: 8px;
+}
+
+.Card-body {
+  padding: 8px 10px;
+}
+
+.Card-title {
+  font-weight: medium;
+  color: #f7f4ee;
+}
+
+.Card-subtitle {
+  margin-top: 1px;
+  color: #9a9aa4;
+}
+
+.Card-value {
+  margin-right: 10px;
+  font-weight: bold;
+  color: #e0a040;
+}
+
+.Bar {
+  background-color: rgba(240, 221, 180, 0.05);
+}
+
+.Bar-fill {
+  background-color: #e1273c;
+}
+
+/* The stripe rounds with the card corner it sits against. */
+.Accent {
+  border-radius: 12px 0px 0px 12px;
+  background-color: rgba(240, 221, 180, 0.14);
+}
+
+.Toast {
+  background-color: #12121a;
+  border: 1px solid rgba(240, 221, 180, 0.12);
+  border-radius: 14px;
+  box-shadow: 0px 4px 16px 0px rgba(0, 0, 0, 0.6);
+}
+
+.Toast-title {
+  color: #f7f4ee;
+}
+
+.Toast-text {
+  color: #9a9aa4;
+}
+
+/* The toast's stripe sits on its trailing edge, opposite a card's. */
+.Toast .Accent {
+  width: 3px;
+  border-radius: 0px 14px 14px 0px;
+}
+
+{{ bar.fill_rules("Bar-fill", 20) }}
+{{ icons.show_rules("weapons") }}
+
+/* The eleven accents, in Contracts::HudAccent order. */
+.Accent.Accent--success {
+  background-color: #4ade80;
+}
+
+.Accent.Accent--warning {
+  background-color: #fbbf24;
+}
+
+.Accent.Accent--info {
+  background-color: #38bdf8;
+}
+
+.Accent.Accent--error {
+  background-color: #ef4444;
+}
+
+.Accent.Accent--common {
+  background-color: #b0c3d9;
+}
+
+.Accent.Accent--uncommon {
+  background-color: #5e98d9;
+}
+
+.Accent.Accent--rare {
+  background-color: #4b69ff;
+}
+
+.Accent.Accent--mythical {
+  background-color: #8847ff;
+}
+
+.Accent.Accent--legendary {
+  background-color: #d32ce6;
+}
+
+.Accent.Accent--ancient {
+  background-color: #eb4b4b;
+}
+
+.Accent.Accent--contraband {
+  background-color: #e4ae39;
+}

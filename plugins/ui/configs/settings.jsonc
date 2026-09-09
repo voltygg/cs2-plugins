@@ -1,0 +1,16 @@
+{
+  "$schema": "./settings.schema.json",
+  "plugin": {
+    "locale": "en"
+  },
+
+  "ui": {
+    // Workshop addon carrying the compiled HUD layout. 0 asks nothing of connecting clients,
+    // which is what you want while copying the files into your own client by hand.
+    "addonId": 0,
+    // Title of the server card.
+    "serverName": "meat.gg",
+    // How long a toast stays up when the caller does not say.
+    "toastDurationMs": 4000
+  }
+}

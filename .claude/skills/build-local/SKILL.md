@@ -81,7 +81,7 @@ uv run poe start-server                        # launch alone
 seeds `configs/settings.jsonc` once and preserves later edits. A running server
 holds the DLL open and the copy fails with `WinError 32`: stop `cs2.exe` first.
 
-A custom Panorama UI also needs the layouts compiled into your own client:
+A custom Panorama UI also needs the screens rendered and compiled into your own client:
 `uv run poe panorama` (Windows, needs the CS2 Workshop Tools; the client is found
 through Steam unless `CS2_CLIENT_PATH` is set). Without it the server writes to a
 layout the client does not have and shows nothing.

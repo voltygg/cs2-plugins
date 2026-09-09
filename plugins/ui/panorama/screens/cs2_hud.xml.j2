@@ -1,0 +1,21 @@
+{# namespace: Cs2Ui::Hud #}
+{% import "card.xml.j2" as blocks %}
+{% import "toast.xml.j2" as toasts %}
+<root>
+  <styles>
+    <include src="file://{resources}/styles/custom_game/{{screen}}.css" />
+  </styles>
+
+  <Panel class="Layer" hittest="false">
+    <Panel id="{{screen}}" class="Screen Hidden" hittest="false">
+      <Panel class="Region Region-top-left" hittest="false">
+        {%- for i in range(3) %}
+        {{ blocks.card("card" ~ i, icon_set="weapons", bar=true, accent=true) }}
+        {%- endfor %}
+      </Panel>
+      <Panel class="Region Region-bottom" hittest="false">
+        {{ toasts.toast("toast") }}
+      </Panel>
+    </Panel>
+  </Panel>
+</root>
