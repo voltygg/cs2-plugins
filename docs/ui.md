@@ -11,7 +11,6 @@ own the workshop addon list.
 | `plugins/<name>/panorama/screens/*.xml.j2` | One screen layout, Jinja over the framework's block library |
 | `plugins/<name>/panorama/screens/*.css` | That screen's own stylesheet, also Jinja |
 | `plugins/<name>/panorama/images/custom_game/<set>/*.png` | Icon sets the screen's blocks reference |
-| `panorama/skin/<screen>.css` | This project's plain-CSS additions to a framework screen (e.g. `voltmod_menu.css`) |
 | `build/panorama/<owner>/` | Rendered layout, stylesheet and icons - not committed |
 | `build/panorama/ui/include/Ui/Cs2Hud.hpp` | The HUD's derived C++ binding - not committed |
 
@@ -58,5 +57,5 @@ workshop addon carries.
 2. Upload that content directory with the CS2 Workshop Tools.
 3. Put the published id in `plugins/ui/configs/settings.jsonc` as `ui.addonId`.
 
-admin-system draws its menu on the same addon: players who have it get the clickable
-Panorama menu, everyone else gets center HTML.
+The addon carries this plugin's HUD screen only. admin-system draws its menu as
+center HTML and needs nothing from it.

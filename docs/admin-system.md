@@ -175,11 +175,10 @@ Immunity is separate from flags: an admin cannot act on a target whose immunity
 is higher than their own. `!admin` needs no flag, but the caller must be a
 registered admin, and each menu category is still gated individually.
 
-The admin menu is drawn through the framework's menu manager, so it needs no
-setup of its own: a player with the `ui` plugin's Panorama layout gets a
-clickable panel, and everyone else gets center HTML. The `ui` plugin must be
-loaded and require its workshop addon for the Panorama surface to reach
-clients - see [Server UI](ui.md).
+The admin menu is drawn through the framework's menu manager as center HTML, so
+it needs no setup of its own and nothing on the client. Navigation is W/S/A/D/E/R;
+the player is frozen while a menu is open so browsing does not also walk them
+around.
 
 ## Database
 

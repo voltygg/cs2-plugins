@@ -210,9 +210,8 @@ bool App::Start()
     report.Run("Policy", [this] {
         InstallPolicy();
         RegisterPlayerLifecycle();
-        Runtime.Menus.UsePanorama({.Rows = 8, .Nav = 6});
-        // Freeze the player while an admin menu is open: a cursor takes mouse-look, and being
-        // shoved around while clicking is worse, not better.
+        // Freeze the player while an admin menu is open, so W/S navigation does not also walk
+        // them around while they read it.
         Runtime.Menus.FreezeWhileOpen(true);
         return StageResult::Ok();
     });
