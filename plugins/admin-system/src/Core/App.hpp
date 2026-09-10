@@ -78,7 +78,7 @@ struct App
      */
     [[nodiscard]] VoltMod::MenuSurface& MenuFor(int slot)
     {
-        return Panorama.Available(slot) ? static_cast<VoltMod::MenuSurface&>(Panorama) : Runtime.Menus;
+        return Panorama.CanDraw(slot) ? static_cast<VoltMod::MenuSurface&>(Panorama) : Runtime.Menus;
     }
 
     /** Open @p menu for @p slot wherever MenuFor would put it. The one place the two surfaces are

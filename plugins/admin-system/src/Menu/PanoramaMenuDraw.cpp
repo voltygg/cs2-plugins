@@ -3,10 +3,12 @@
 #include <VoltMod/Core/Slot.hpp>
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <format>
 #include <string>
 #include <string_view>
 
+using VoltMod::ClassChoice;
 using VoltMod::Menu;
 using VoltMod::MenuRow;
 using VoltMod::MenuRowKind;
@@ -24,7 +26,7 @@ static_assert(AdminUi::Menu::KindNames == std::array<std::string_view, 6>{"text"
 static int AccentFor(const MenuRow& row)
 {
     if (!row.Enabled)
-        return VoltMod::ClassChoice::None;
+        return ClassChoice::None;
     switch (row.Kind)
     {
     case MenuRowKind::Submenu:
@@ -37,7 +39,7 @@ static int AccentFor(const MenuRow& row)
     case MenuRowKind::Input:
         return static_cast<int>(AdminUi::Menu::Accent::Rare);
     case MenuRowKind::Text:
-        return VoltMod::ClassChoice::None;
+        return ClassChoice::None;
     case MenuRowKind::Button:
         break;
     }
@@ -51,47 +53,47 @@ void PanoramaMenu::Draw(int slot)
     if (!menu || !panel)
         return;
 
-    DrawHeader(slot, *menu);
-    DrawTabs(slot);
-    DrawRows(slot, *menu);
-    DrawPrompt(slot);
+    const PanelWriter w{panel, slot};
+    DrawHeader(w, *menu);
+    DrawTabs(w);
+    DrawRows(w, *menu);
+    DrawPrompt(w);
 
     // The two footer buttons say what they do: a submenu goes back, a root menu closes.
     const bool deep = _stack.Depth(slot) > 1;
-    Shell.Back.Write(panel, slot, Translate(slot, deep ? "nav.back" : "nav.root", deep ? "Back" : "Main"));
-    Shell.Close.Write(panel, slot, Translate(slot, "nav.close", "Close"));
-    Shell.Cancel.Write(panel, slot, Translate(slot, "menu.cancel", "Cancel"));
+    w.Set(Shell.Back, Translate(slot, deep ? "nav.back" : "nav.root", deep ? "Back" : "Main"));
+    w.Set(Shell.Close, Translate(slot, "nav.close", "Close"));
+    w.Set(Shell.Cancel, Translate(slot, "menu.cancel", "Cancel"));
 }
 
-void PanoramaMenu::DrawHeader(int slot, const Menu& menu)
+void PanoramaMenu::DrawHeader(const PanelWriter& w, const Menu& menu)
 {
-    UiPanel& panel = _screen.Panel(slot);
-    Shell.Title.Write(panel, slot, menu.Title);
-    Shell.Breadcrumb.Write(panel, slot, _stack.Breadcrumb(slot));
-    Shell.Subtitle.Write(panel, slot, menu.Subtitle);
-    Shell.SubtitleHidden.Write(panel, slot, menu.Subtitle.empty());
+    w.Set(Shell.Title, menu.Title);
+    w.Set(Shell.Breadcrumb, _stack.Breadcrumb(w.Slot()));
+    w.Set(Shell.Subtitle, menu.Subtitle);
+    w.Set(Shell.SubtitleHidden, menu.Subtitle.empty());
 }
 
-void PanoramaMenu::DrawTabs(int slot)
+void PanoramaMenu::DrawTabs(const PanelWriter& w)
 {
-    UiPanel& panel = _screen.Panel(slot);
-    const Session& session = _sessions[slot];
+    const Session& session = _sessions[w.Slot()];
 
     for (int tab = 0; tab < TabCount; ++tab)
     {
+        const TabWriters& ids = Tabs[static_cast<std::size_t>(tab)];
         const bool used = tab < static_cast<int>(session.Tabs.size());
-        Tabs[tab].Hidden.Write(panel, slot, !used);
+        w.Set(ids.Hidden, !used);
         if (!used)
             continue;
 
-        Tabs[tab].Label.Write(panel, slot, session.Tabs[tab].Label);
-        Tabs[tab].Selected.Write(panel, slot, tab == session.OpenTab);
+        w.Set(ids.Label, session.Tabs[static_cast<std::size_t>(tab)].Label);
+        w.Set(ids.Selected, tab == session.SelectedTab);
     }
 }
 
-void PanoramaMenu::DrawRows(int slot, const Menu& menu)
+void PanoramaMenu::DrawRows(const PanelWriter& w, const Menu& menu)
 {
-    UiPanel& panel = _screen.Panel(slot);
+    const int slot = w.Slot();
     Session& session = _sessions[slot];
 
     const int count = static_cast<int>(menu.Items.size());
@@ -100,60 +102,58 @@ void PanoramaMenu::DrawRows(int slot, const Menu& menu)
 
     for (int row = 0; row < RowsPerPage; ++row)
     {
-        const int item = ItemIndex(slot, row);
+        const int item = ItemAt(slot, row);
         if (item >= count)
         {
-            Rows[row].Hidden.Write(panel, slot, true);
+            w.Set(Rows[static_cast<std::size_t>(row)].Hidden, true);
             continue;
         }
-        DrawRow(slot, row, _stack.Describe(slot, item));
+        DrawRow(w, row, _stack.Describe(slot, item));
     }
 
-    Shell.EmptyHidden.Write(panel, slot, count != 0);
+    w.Set(Shell.EmptyHidden, count != 0);
     if (count == 0)
-        Shell.Empty.Write(panel, slot, Translate(slot, "menu.empty", "Nothing here"));
+        w.Set(Shell.Empty, Translate(slot, "menu.empty", "Nothing here"));
 
-    Shell.PagerHidden.Write(panel, slot, pages <= 1);
+    w.Set(Shell.PagerHidden, pages <= 1);
     if (pages > 1)
-        Shell.Page.Write(panel, slot, std::format("{} / {}", session.Page + 1, pages));
+        w.Set(Shell.Page, std::format("{} / {}", session.Page + 1, pages));
 }
 
-void PanoramaMenu::DrawRow(int slot, int row, const MenuRow& described)
+void PanoramaMenu::DrawRow(const PanelWriter& w, int row, const MenuRow& described)
 {
-    UiPanel& panel = _screen.Panel(slot);
-    const RowWriters& ids = Rows[row];
+    const RowWriters& ids = Rows[static_cast<std::size_t>(row)];
 
-    ids.Hidden.Write(panel, slot, false);
-    ids.Label.Write(panel, slot, described.Label);
-    ids.Value.Write(panel, slot, described.Value);
-    ids.HasValue.Write(panel, slot, !described.Value.empty());
-    ids.Disabled.Write(panel, slot, !described.Enabled);
-    ids.On.Write(panel, slot, described.State.value_or(false));
-    ids.Kind.Write(panel, slot, static_cast<int>(described.Kind));
-    ids.Accent.Write(panel, slot, AccentFor(described));
+    w.Set(ids.Hidden, false);
+    w.Set(ids.Label, described.Label);
+    w.Set(ids.Value, described.Value);
+    w.Set(ids.HasValue, !described.Value.empty());
+    w.Set(ids.Disabled, !described.Enabled);
+    w.Set(ids.On, described.State.value_or(false));
+    w.Set(ids.Kind, static_cast<int>(described.Kind));
+    w.Set(ids.Accent, AccentFor(described));
 
     // Steppers only where A/D would have done something, and only while the row is live.
-    ids.HasSteppers.Write(panel, slot, described.Steppable && described.Enabled);
+    w.Set(ids.HasSteppers, described.Steppable && described.Enabled);
 
     // The hint line doubles as the "not applied yet" note, which is also what Changed pulses on.
-    ids.HasHint.Write(panel, slot, described.Pending);
-    ids.Changed.Write(panel, slot, described.Pending);
+    w.Set(ids.HasHint, described.Pending);
+    w.Set(ids.Changed, described.Pending);
     if (described.Pending)
-        ids.Hint.Write(panel, slot, Translate(slot, "menu.pending", "Applying..."));
+        w.Set(ids.Hint, Translate(w.Slot(), "menu.pending", "Applying..."));
 }
 
-void PanoramaMenu::DrawPrompt(int slot)
+void PanoramaMenu::DrawPrompt(const PanelWriter& w)
 {
-    UiPanel& panel = _screen.Panel(slot);
-    const auto prompt = _rt.Hooks.ChatInput.GetPrompt(slot);
+    const auto prompt = _rt.Hooks.ChatInput.GetPrompt(w.Slot());
 
-    Shell.PromptHidden.Write(panel, slot, !prompt.has_value());
-    Shell.Prompting.Write(panel, slot, prompt.has_value());
+    w.Set(Shell.PromptHidden, !prompt.has_value());
+    w.Set(Shell.Prompting, prompt.has_value());
     if (!prompt)
         return;
 
-    Shell.PromptText.Write(panel, slot, *prompt);
-    Shell.PromptHint.Write(panel, slot, Translate(slot, "menu.promptHint", "Type your answer in chat"));
+    w.Set(Shell.PromptText, *prompt);
+    w.Set(Shell.PromptHint, Translate(w.Slot(), "menu.promptHint", "Type your answer in chat"));
 }
 
 }  // namespace AdminSystem::Menus

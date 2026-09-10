@@ -3,6 +3,8 @@
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Slot.hpp>
 #include <algorithm>
+#include <array>
+#include <cstddef>
 #include <utility>
 
 using VoltMod::Capability;
@@ -12,6 +14,50 @@ using VoltMod::UiPanel;
 
 namespace AdminSystem::Menus
 {
+
+/** What a Button on the screen does when pressed. */
+enum class Click
+{
+    Cancel,
+    Back,
+    Close,
+    PagePrev,
+    PageNext,
+    Tab,
+    Press,
+    StepDown,
+    StepUp,
+};
+
+/** One Button id and what it stands for; @ref Index is the tab or row for the pooled ones. */
+struct ClickTarget
+{
+    std::string_view Id;
+    Click Kind;
+    int Index = 0;
+};
+
+/** Every Button the layout ships, built once from the generated ids. */
+static constexpr auto ClickTargets = [] {
+    namespace Screen = AdminUi::Menu;
+    std::array<ClickTarget, 5 + TabCount + 3 * RowsPerPage> targets{};
+    std::size_t n = 0;
+    targets[n++] = {Screen::Cancel, Click::Cancel};
+    targets[n++] = {Screen::Back, Click::Back};
+    targets[n++] = {Screen::Close, Click::Close};
+    targets[n++] = {Screen::PagePrev, Click::PagePrev};
+    targets[n++] = {Screen::PageNext, Click::PageNext};
+    for (int tab = 0; tab < TabCount; ++tab)
+        targets[n++] = {Screen::Tabs[static_cast<std::size_t>(tab)].Id, Click::Tab, tab};
+    for (int row = 0; row < RowsPerPage; ++row)
+    {
+        const Screen::Row& ids = Screen::Rows[static_cast<std::size_t>(row)];
+        targets[n++] = {ids.Btn, Click::Press, row};
+        targets[n++] = {ids.Dec, Click::StepDown, row};
+        targets[n++] = {ids.Inc, Click::StepUp, row};
+    }
+    return targets;
+}();
 
 PanoramaMenu::PanoramaMenu(VoltMod::Runtime& runtime)
     : _rt(runtime), _stack(*this, runtime.Translations, runtime.Scheduler)
@@ -59,7 +105,7 @@ void PanoramaMenu::Start(bool enabled, uint64_t addonId)
     });
 }
 
-bool PanoramaMenu::Available(int slot)
+bool PanoramaMenu::CanDraw(int slot)
 {
     if (!_enabled || !VoltMod::IsValidSlot(slot))
         return false;
@@ -80,7 +126,7 @@ bool PanoramaMenu::Available(int slot)
 
 bool PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptions options)
 {
-    if (!menu || !Available(slot))
+    if (!menu || !CanDraw(slot))
         return false;
 
     CloseAll(slot);
@@ -88,7 +134,7 @@ bool PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptio
 
     Session& session = _sessions[slot];
     session.Page = 0;
-    session.OpenTab = -1;
+    session.SelectedTab = -1;
     session.Tabs.clear();
 
     // The tab strip stands for the root menu's submenus, so it is read once per session: the
@@ -100,7 +146,7 @@ bool PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptio
             break;
         if (VoltMod::MenuRow described = _stack.Describe(slot, index);
             described.Kind == VoltMod::MenuRowKind::Submenu)
-            session.Tabs.push_back({.Item = index, .Label = std::move(described.Label)});
+            session.Tabs.push_back({.RootIndex = index, .Label = std::move(described.Label)});
     }
 
     if (options.FreezeMovement)
@@ -116,7 +162,7 @@ bool PanoramaMenu::IsOpen(int slot) const
     return _stack.IsOpen(slot);
 }
 
-int PanoramaMenu::ItemIndex(int slot, int row) const
+int PanoramaMenu::ItemAt(int slot, int row) const
 {
     return _sessions[slot].Page * RowsPerPage + row;
 }
@@ -146,14 +192,14 @@ void PanoramaMenu::Close(int slot)
     _stack.Pop(slot);
     if (!IsOpen(slot))
     {
-        Dismiss(slot);
+        Hide(slot);
         return;
     }
 
     Session& session = _sessions[slot];
     session.Page = 0;
     if (_stack.Depth(slot) <= 1)
-        session.OpenTab = -1;
+        session.SelectedTab = -1;
     Draw(slot);
 }
 
@@ -163,7 +209,7 @@ void PanoramaMenu::CloseAll(int slot)
         return;
 
     _stack.Clear(slot);
-    Dismiss(slot);
+    Hide(slot);
 }
 
 void PanoramaMenu::CloseAll(int slot, std::string_view replyKey)
@@ -178,7 +224,7 @@ void PanoramaMenu::CloseAll(int slot, std::string_view replyKey)
 void PanoramaMenu::Prompt(int slot, std::string prompt, std::function<bool(int, std::string_view)> callback)
 {
     _rt.Hooks.ChatInput.BeginCapture(slot, std::move(prompt), std::move(callback));
-    DrawPrompt(slot);
+    DrawPrompt(PanelWriter{_screen.Panel(slot), slot});
 }
 
 std::string PanoramaMenu::Translate(int slot, std::string_view key, std::string_view fallback) const
@@ -192,40 +238,40 @@ void PanoramaMenu::OnClick(const UiClick& click)
     if (!IsOpen(slot))
         return;
 
+    const auto target = std::ranges::find(ClickTargets, click.ButtonId, &ClickTarget::Id);
+    if (target == ClickTargets.end())
+        return;
+
     // A prompt owns every press but its own Cancel: answering it is a chat line, not a click.
-    const bool prompting = _rt.Hooks.ChatInput.IsCapturing(slot);
-    if (click.ButtonId == AdminUi::Menu::Cancel)
+    if (target->Kind == Click::Cancel)
     {
         _rt.Hooks.ChatInput.CancelCapture(slot);
         Draw(slot);
         return;
     }
-    if (prompting)
+    if (_rt.Hooks.ChatInput.IsCapturing(slot))
         return;
 
-    if (click.ButtonId == AdminUi::Menu::Back)
+    switch (target->Kind)
+    {
+    case Click::Back:
         return Close(slot);
-    if (click.ButtonId == AdminUi::Menu::Close)
+    case Click::Close:
         return CloseAll(slot);
-    if (click.ButtonId == AdminUi::Menu::PagePrev)
+    case Click::PagePrev:
         return TurnPage(slot, -1);
-    if (click.ButtonId == AdminUi::Menu::PageNext)
+    case Click::PageNext:
         return TurnPage(slot, +1);
-
-    for (int tab = 0; tab < TabCount; ++tab)
-    {
-        if (click.ButtonId == AdminUi::Menu::Tabs[tab].Id)
-            return OpenTab(slot, tab);
-    }
-
-    for (int row = 0; row < RowsPerPage; ++row)
-    {
-        if (click.ButtonId == AdminUi::Menu::Rows[row].Btn)
-            return Activate(slot, ItemIndex(slot, row));
-        if (click.ButtonId == AdminUi::Menu::Rows[row].Dec)
-            return Nudge(slot, row, -1);
-        if (click.ButtonId == AdminUi::Menu::Rows[row].Inc)
-            return Nudge(slot, row, +1);
+    case Click::Tab:
+        return OpenTab(slot, target->Index);
+    case Click::Press:
+        return Activate(slot, ItemAt(slot, target->Index));
+    case Click::StepDown:
+        return StepRow(slot, target->Index, -1);
+    case Click::StepUp:
+        return StepRow(slot, target->Index, +1);
+    case Click::Cancel:
+        break;
     }
 }
 
@@ -235,9 +281,8 @@ void PanoramaMenu::Activate(int slot, int index)
     Session& session = _sessions[slot];
     if (_stack.Depth(slot) == 1)
     {
-        const auto found = std::find_if(session.Tabs.begin(), session.Tabs.end(),
-                                        [index](const Tab& tab) { return tab.Item == index; });
-        session.OpenTab = found == session.Tabs.end() ? -1 : static_cast<int>(found - session.Tabs.begin());
+        const auto found = std::ranges::find(session.Tabs, index, &Tab::RootIndex);
+        session.SelectedTab = found == session.Tabs.end() ? -1 : static_cast<int>(found - session.Tabs.begin());
     }
 
     _stack.Activate(slot, index);
@@ -247,9 +292,9 @@ void PanoramaMenu::Activate(int slot, int index)
         Draw(slot);
 }
 
-void PanoramaMenu::Nudge(int slot, int row, int direction)
+void PanoramaMenu::StepRow(int slot, int row, int direction)
 {
-    if (_stack.Step(slot, ItemIndex(slot, row), direction))
+    if (_stack.Step(slot, ItemAt(slot, row), direction))
         Draw(slot);
 }
 
@@ -259,10 +304,10 @@ void PanoramaMenu::OpenTab(int slot, int tab)
     if (tab < 0 || tab >= static_cast<int>(session.Tabs.size()))
         return;
 
-    // A tab is a jump, not a push: unwind to the root before entering the branch it stands for.
+    // A tab is a jump, not a push: back to the root before entering the branch it stands for.
     _stack.PopToRoot(slot);
     session.Page = 0;
-    Activate(slot, session.Tabs[tab].Item);
+    Activate(slot, session.Tabs[static_cast<std::size_t>(tab)].RootIndex);
 }
 
 void PanoramaMenu::TurnPage(int slot, int delta)
@@ -278,11 +323,11 @@ void PanoramaMenu::TurnPage(int slot, int delta)
     Draw(slot);
 }
 
-void PanoramaMenu::Dismiss(int slot)
+void PanoramaMenu::Hide(int slot)
 {
     Session& session = _sessions[slot];
     session.Tabs.clear();
-    session.OpenTab = -1;
+    session.SelectedTab = -1;
     session.Page = 0;
 
     _rt.Hooks.ChatInput.CancelCapture(slot);

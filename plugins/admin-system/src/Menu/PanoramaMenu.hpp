@@ -13,6 +13,7 @@
 #include <VoltMod/Ui/Screen.hpp>
 #include <VoltMod/Ui/UiClick.hpp>
 #include <VoltMod/Ui/UiPanel.hpp>
+#include <VoltMod/Ui/Writers.hpp>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -33,8 +34,8 @@ namespace AdminSystem::Menus
  * submenus, a fixed page of rows, and the click ids that address them.
  *
  * Each player gets a private panel, so a spectator sees their own menu rather than the one
- * belonging to the pawn they are watching. A player who cannot be drawn to is refused by
- * the three-argument @ref Open, which is the caller's cue to fall back to center HTML.
+ * belonging to the pawn they are watching. A player who cannot be drawn to is refused by the
+ * three-argument @ref Open, which is the caller's cue to fall back to center HTML.
  */
 class PanoramaMenu final : public VoltMod::MenuSurface
 {
@@ -48,9 +49,9 @@ public:
 
     /** Whether a session opened now for @p slot would be drawn here.
      *
-     *  Spawns the player's panel to find out, so a caller that builds rows against this host
+     *  Spawns the player's panel to find out, so a caller that builds rows against this surface
      *  before opening gets the same answer the open will. Cheap after the first call. */
-    [[nodiscard]] bool Available(int slot);
+    [[nodiscard]] bool CanDraw(int slot);
 
     /** Start a session for @p slot showing @p menu, replacing any it has open. What a command
      *  calls. False when the panel could not be shown, so the caller can use center HTML instead. */
@@ -66,11 +67,13 @@ public:
     [[nodiscard]] std::string Translate(int slot, std::string_view key, std::string_view fallback) const override;
 
 private:
-    /** One tab of the strip: which root item it opens, and the label that item described itself
+    using PanelWriter = VoltMod::PanelWriter<VoltMod::UiPanel>;
+
+    /** One tab of the strip: which root row it opens, and the label that row described itself
      *  with when the session started. */
     struct Tab
     {
-        int Item;
+        int RootIndex;
         std::string Label;
     };
 
@@ -79,37 +82,38 @@ private:
     {
         /** The root menu's submenu rows, in tab order. */
         std::vector<Tab> Tabs;
-        /** Which tab the open branch was entered through, or -1. */
-        int OpenTab = -1;
+        /** The tab the open branch was entered through, or -1. */
+        int SelectedTab = -1;
         int Page = 0;
         /** The pawn this session is holding still, if any. */
         VoltMod::MovementFreeze Freeze;
     };
 
-    [[nodiscard]] int ItemIndex(int slot, int row) const;
+    /** The menu item shown on @p row of the page @p slot is on. */
+    [[nodiscard]] int ItemAt(int slot, int row) const;
 
     void Draw(int slot);
-    void DrawHeader(int slot, const VoltMod::Menu& menu);
-    void DrawRows(int slot, const VoltMod::Menu& menu);
-    void DrawRow(int slot, int row, const VoltMod::MenuRow& described);
-    void DrawTabs(int slot);
-    void DrawPrompt(int slot);
+    void DrawHeader(const PanelWriter& w, const VoltMod::Menu& menu);
+    void DrawTabs(const PanelWriter& w);
+    void DrawRows(const PanelWriter& w, const VoltMod::Menu& menu);
+    void DrawRow(const PanelWriter& w, int row, const VoltMod::MenuRow& described);
+    void DrawPrompt(const PanelWriter& w);
 
     void OnClick(const VoltMod::UiClick& click);
 
     /** Run item @p index of the open menu, remembering which tab it belongs to. */
     void Activate(int slot, int index);
-    void Nudge(int slot, int row, int direction);
+    void StepRow(int slot, int row, int direction);
     void OpenTab(int slot, int tab);
     void TurnPage(int slot, int delta);
 
     /** Take the menu off @p slot's screen, cancel its prompt, and let its pawn go. */
-    void Dismiss(int slot);
+    void Hide(int slot);
 
     VoltMod::Runtime& _rt;
     /** False until Start turns the surface on. */
     bool _enabled = false;
-    /** The addon requirement, held for as long as this plugin is loaded. */
+    /** The addon requirement, kept for as long as this plugin is loaded. */
     VoltMod::Subscription _addon;
     /** The half every menu surface shares: stack, breadcrumb, Describe, Activate and Step. */
     VoltMod::MenuStack _stack;
