@@ -23,11 +23,11 @@ bool App::Start()
     const uint64_t addonId = Config.Get().ui.addonId;
     if (addonId != 0)
     {
-        if (auto lease = Runtime.Addons.Require(addonId))
-            _addon = std::move(*lease);
+        if (auto required = Runtime.Addons.Require(addonId))
+            _addon = std::move(*required);
         else
             Log::Warn("HUD addon {} not required ({}); players without the layout see nothing.", addonId,
-                      lease.error().Detail);
+                      required.error().Detail);
     }
 
     ServerHud.Start();

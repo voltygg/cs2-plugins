@@ -49,16 +49,16 @@ static std::string_view TagKey(PunishType kind)
 /** Lift the punishment; false when another server already did. */
 static bool Lift(App& app, const LiftRow& row, int64_t adminSteamId)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
     auto& punishments = app.Punishments;
     switch (row.Kind)
     {
     case PunishType::Ban:
-        return punishments.RemoveBan(row.Id, adminSteamId, tr.Get("reason.unbannedByAdmin"));
+        return punishments.RemoveBan(row.Id, adminSteamId, translations.Get("reason.unbannedByAdmin"));
     case PunishType::VoiceMute:
-        return punishments.RemoveVoiceMute(row.Id, adminSteamId, tr.Get("reason.voiceUnmutedByAdmin"));
+        return punishments.RemoveVoiceMute(row.Id, adminSteamId, translations.Get("reason.voiceUnmutedByAdmin"));
     case PunishType::TextMute:
-        return punishments.RemoveTextMute(row.Id, adminSteamId, tr.Get("reason.textUnmutedByAdmin"));
+        return punishments.RemoveTextMute(row.Id, adminSteamId, translations.Get("reason.textUnmutedByAdmin"));
     case PunishType::Kick:
     case PunishType::Warn:
         break;  // Not liftable: no row is ever built for these.
@@ -74,11 +74,11 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
     const std::string_view done = ban ? "unban.done" : "unmute.done";
     const std::string_view gone = ban ? "unban.gone" : "unmute.gone";
 
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
 
     VoltMod::Flow<LiftRow>::Create(app.MenuFor(adminSlot), adminSlot, std::move(row))
         ->Validate(RequirePermission(app, permission, adminSlot))
-        ->Confirm({.Title = ConfirmTitle(tr, action, adminSlot),
+        ->Confirm({.Title = ConfirmTitle(translations, action, adminSlot),
                    .Summary =
                        [&app, adminSlot](const LiftRow& r, VoltMod::SummaryRows& rows) {
                            auto& translations = app.Runtime.Translations;
@@ -108,7 +108,7 @@ template <typename TPunishment>
 static void AppendRows(App& app, MenuBuilder& builder, const std::vector<TPunishment>& punishments, PunishType kind,
                        int adminSlot)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
     for (const auto& punishment : punishments)
     {
         LiftRow row{.Kind = kind,
@@ -118,18 +118,18 @@ static void AppendRows(App& app, MenuBuilder& builder, const std::vector<TPunish
                     .Reason = punishment.Reason};
 
         const auto tag = TagKey(kind);
-        const std::string prefix = tag.empty() ? "" : std::format("[{}] ", tr.Get(tag, adminSlot));
-        auto label = std::format("{}{} - {}", prefix, row.Name, ExpiryLabel(tr, row.ExpiresAt, adminSlot));
+        const std::string prefix = tag.empty() ? "" : std::format("[{}] ", translations.Get(tag, adminSlot));
+        auto label = std::format("{}{} - {}", prefix, row.Name, ExpiryLabel(translations, row.ExpiresAt, adminSlot));
         builder.Button(label, [&app, row = std::move(row)](int slot) { StartLiftConfirm(app, slot, row); });
     }
 }
 
 std::shared_ptr<VoltMod::Menu> BuildUnbanMenu(AdminSystem::App& app, int adminSlot)
 {
-    auto& tr = app.Runtime.Translations;
-    MenuBuilder builder(tr.Get("unban.title", adminSlot));
+    auto& translations = app.Runtime.Translations;
+    MenuBuilder builder(translations.Get("unban.title", adminSlot));
 
-    builder.EmptyText(tr.Get("unban.noBans", adminSlot));
+    builder.EmptyText(translations.Get("unban.noBans", adminSlot));
     AppendRows(app, builder, app.Punishments.GetActiveBans(), PunishType::Ban, adminSlot);
 
     return builder.Build();
@@ -137,10 +137,10 @@ std::shared_ptr<VoltMod::Menu> BuildUnbanMenu(AdminSystem::App& app, int adminSl
 
 std::shared_ptr<VoltMod::Menu> BuildUnmuteMenu(AdminSystem::App& app, int adminSlot)
 {
-    auto& tr = app.Runtime.Translations;
-    MenuBuilder builder(tr.Get("unmute.title", adminSlot));
+    auto& translations = app.Runtime.Translations;
+    MenuBuilder builder(translations.Get("unmute.title", adminSlot));
 
-    builder.EmptyText(tr.Get("unmute.noMutes", adminSlot));
+    builder.EmptyText(translations.Get("unmute.noMutes", adminSlot));
     AppendRows(app, builder, app.Punishments.GetActiveVoiceMutes(), PunishType::VoiceMute, adminSlot);
     AppendRows(app, builder, app.Punishments.GetActiveTextMutes(), PunishType::TextMute, adminSlot);
 

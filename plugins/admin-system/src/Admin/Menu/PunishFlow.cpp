@@ -54,7 +54,7 @@ static std::optional<std::string> ValidatePending(App& app, int slot, const Pend
 
 static void Issue(App& app, int adminSlot, PendingPunishment& pending)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
     auto* admin = app.Runtime.Players.Get(adminSlot);
     auto* target = app.Runtime.Players.Get(pending.Target);
     if (!admin || !target)
@@ -62,14 +62,14 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
 
     if (!IssuePunishment(app, *admin, *target, pending.Type, pending.Reason, pending.DurationSec))
     {
-        app.Chat.Reply(adminSlot, tr.Get("punish.failed", adminSlot,
-                                         {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)}}));
+        app.Chat.Reply(adminSlot, translations.Get("punish.failed", adminSlot,
+                                         {{"action", translations.Get(ActionTranslationKey(pending.Type), adminSlot)}}));
     }
     else if (!app.Settings.GetChat().broadcastPunishments)
     {
         // With broadcasts on, the admin already sees the server-wide line; avoid double messaging.
-        app.Chat.Reply(adminSlot, tr.Get("punish.issued", adminSlot,
-                                         {{"action", tr.Get(ActionTranslationKey(pending.Type), adminSlot)},
+        app.Chat.Reply(adminSlot, translations.Get("punish.issued", adminSlot,
+                                         {{"action", translations.Get(ActionTranslationKey(pending.Type), adminSlot)},
                                           {"name", target->Name()}}));
     }
 }
@@ -77,11 +77,11 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
 /** The validated confirm -> issue tail every punish path shares, for the one admin @p adminSlot. */
 static PunishFlowT::Ptr MakeBaseFlow(App& app, int adminSlot, PendingPunishment pending)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
     auto type = pending.Type;
     return PunishFlowT::Create(app.MenuFor(adminSlot), adminSlot, std::move(pending))
         ->Validate([&app, adminSlot](const PendingPunishment& p) { return ValidatePending(app, adminSlot, p); })
-        ->Confirm({.Title = ConfirmTitle(tr, ActionTranslationKey(type), adminSlot),
+        ->Confirm({.Title = ConfirmTitle(translations, ActionTranslationKey(type), adminSlot),
                    .Summary =
                        [&app, adminSlot](const PendingPunishment& p, VoltMod::SummaryRows& rows) {
                            auto& translations = app.Runtime.Translations;
@@ -97,16 +97,16 @@ static PunishFlowT::Ptr MakeBaseFlow(App& app, int adminSlot, PendingPunishment 
 
 void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pending)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
     auto type = pending.Type;
     // The flow runs for one admin, so every step string resolves in their language here.
-    auto stepTitle = [&tr, type, adminSlot](std::string_view suffixKey) {
-        return std::format("{}: {}", tr.Get(ActionTranslationKey(type), adminSlot), tr.Get(suffixKey, adminSlot));
+    auto stepTitle = [&translations, type, adminSlot](std::string_view suffixKey) {
+        return std::format("{}: {}", translations.Get(ActionTranslationKey(type), adminSlot), translations.Get(suffixKey, adminSlot));
     };
 
     std::vector<std::pair<std::string, int>> durations;
     for (int seconds : app.Settings.GetMenuDurations())
-        durations.emplace_back(DurationLabel(tr, seconds, adminSlot), seconds);
+        durations.emplace_back(DurationLabel(translations, seconds, adminSlot), seconds);
 
     std::vector<std::pair<std::string, std::string>> reasons;
     for (const auto& reason : app.Settings.GetPunishments().reasonPresets)
@@ -116,15 +116,15 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
         ->AddDurationStep({.Title = stepTitle("panel.selectDuration"),
                            .Presets = std::move(durations),
                            .Set = [](PendingPunishment& p, int seconds) { p.DurationSec = seconds; },
-                           .CustomLabel = tr.Get("duration.custom", adminSlot),
-                           .CustomPrompt = tr.Get("duration.customPrompt", adminSlot),
+                           .CustomLabel = translations.Get("duration.custom", adminSlot),
+                           .CustomPrompt = translations.Get("duration.customPrompt", adminSlot),
                            .Applies = [](const PendingPunishment& p) { return IsTimed(p.Type); }})
         ->AddOptionsStep(
             {.Title = stepTitle("punish.selectReason"),
              .Options = std::move(reasons),
              .Set = [](PendingPunishment& p, const std::string& label, const std::string&) { p.Reason = label; },
-             .CustomLabel = tr.Get("punish.customReason", adminSlot),
-             .CustomPrompt = tr.Get("punish.customReasonPrompt", adminSlot)})
+             .CustomLabel = translations.Get("punish.customReason", adminSlot),
+             .CustomPrompt = translations.Get("punish.customReasonPrompt", adminSlot)})
         ->Start();
 }
 
@@ -140,14 +140,14 @@ bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef 
 
 std::shared_ptr<VoltMod::Menu> BuildQuickPunishMenu(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
     auto* targetPlayer = app.Runtime.Players.Get(target);
     if (!targetPlayer)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("punish.quickPunish", adminSlot), targetPlayer->Name()));
+    MenuBuilder builder(std::format("{}: {}", translations.Get("punish.quickPunish", adminSlot), targetPlayer->Name()));
 
-    builder.EmptyText(tr.Get("punish.noTemplates", adminSlot));
+    builder.EmptyText(translations.Get("punish.noTemplates", adminSlot));
 
     for (const auto& tmpl : app.Settings.GetPunishmentTemplates())
     {
@@ -161,7 +161,7 @@ std::shared_ptr<VoltMod::Menu> BuildQuickPunishMenu(AdminSystem::App& app, int a
             .Reason = tmpl.Reason,
         };
         // Duration and reason are preset by the template, so the flow jumps straight to confirm.
-        builder.Button(std::format("{} - {}", tmpl.Name, DurationLabel(tr, tmpl.DurationSec, adminSlot)),
+        builder.Button(std::format("{} - {}", tmpl.Name, DurationLabel(translations, tmpl.DurationSec, adminSlot)),
                        [&app, pending](int slot) { MakeBaseFlow(app, slot, pending)->Start(); });
     }
 

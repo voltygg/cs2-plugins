@@ -14,11 +14,7 @@ namespace AdminSystem::Menus
 {
 
 PanoramaMenu::PanoramaMenu(VoltMod::Runtime& runtime)
-    : _rt(runtime),
-      _stack(*this, runtime.Translations,
-             [&scheduler = runtime.Scheduler](int64_t delayMs, std::function<void()> callback) {
-                 return scheduler.Delay(delayMs, std::move(callback));
-             })
+    : _rt(runtime), _stack(*this, runtime.Translations, runtime.Scheduler)
 {}
 
 PanoramaMenu::~PanoramaMenu() = default;
@@ -39,12 +35,12 @@ void PanoramaMenu::Start(bool enabled, uint64_t addonId)
     // sees an empty panel: said out loud here rather than left as a silent blank menu.
     if (addonId != 0)
     {
-        if (auto lease = _rt.Addons.Require(addonId))
-            _addon = std::move(*lease);
+        if (auto required = _rt.Addons.Require(addonId))
+            _addon = std::move(*required);
         else
             VoltMod::Log::Warn("Admin menu: addon {} not required ({}); clients without the layout "
                                "will see nothing.",
-                               addonId, lease.error().Detail);
+                               addonId, required.error().Detail);
     }
     else
     {
@@ -79,10 +75,10 @@ bool PanoramaMenu::Available(int slot)
         return false;
 
     UiPanel& panel = _screen.Panel(slot);
-    return panel && panel.Ensure(slot);
+    return panel && panel.Prepare(slot);
 }
 
-bool PanoramaMenu::Begin(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptions options)
+bool PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptions options)
 {
     if (!menu || !Available(slot))
         return false;
@@ -131,7 +127,7 @@ void PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu)
         return;
     if (!IsOpen(slot))
     {
-        Begin(slot, std::move(menu));
+        Open(slot, std::move(menu), {});
         return;
     }
 
@@ -147,7 +143,8 @@ void PanoramaMenu::Close(int slot)
 
     _rt.Hooks.ChatInput.CancelCapture(slot);
 
-    if (_stack.Pop(slot))
+    _stack.Pop(slot);
+    if (!IsOpen(slot))
     {
         Dismiss(slot);
         return;
@@ -217,17 +214,17 @@ void PanoramaMenu::OnClick(const UiClick& click)
 
     for (int tab = 0; tab < TabCount; ++tab)
     {
-        if (click.ButtonId == Tabs[tab].Press)
+        if (click.ButtonId == AdminUi::Menu::Tabs[tab].Id)
             return OpenTab(slot, tab);
     }
 
     for (int row = 0; row < RowsPerPage; ++row)
     {
-        if (click.ButtonId == Rows[row].Press)
+        if (click.ButtonId == AdminUi::Menu::Rows[row].Btn)
             return Activate(slot, ItemIndex(slot, row));
-        if (click.ButtonId == Rows[row].Dec)
+        if (click.ButtonId == AdminUi::Menu::Rows[row].Dec)
             return Nudge(slot, row, -1);
-        if (click.ButtonId == Rows[row].Inc)
+        if (click.ButtonId == AdminUi::Menu::Rows[row].Inc)
             return Nudge(slot, row, +1);
     }
 }
@@ -263,7 +260,7 @@ void PanoramaMenu::OpenTab(int slot, int tab)
         return;
 
     // A tab is a jump, not a push: unwind to the root before entering the branch it stands for.
-    _stack.Rewind(slot);
+    _stack.PopToRoot(slot);
     session.Page = 0;
     Activate(slot, session.Tabs[tab].Item);
 }
@@ -274,7 +271,7 @@ void PanoramaMenu::TurnPage(int slot, int delta)
     if (!menu)
         return;
 
-    _stack.RunPending(slot);
+    _stack.ApplyPending(slot);
     Session& session = _sessions[slot];
     const int pages = VoltMod::PageCount(static_cast<int>(menu->Items.size()), RowsPerPage);
     session.Page = VoltMod::WrapIndex(session.Page + delta, pages);

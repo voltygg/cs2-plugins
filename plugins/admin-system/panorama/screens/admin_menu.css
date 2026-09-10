@@ -174,21 +174,21 @@
 
 /* --- Row kinds --- */
 
-.Glyph {
+.Mark {
   color: #5e5e68;
 }
 
 /* Declared in VoltMod::MenuRowKind order: Hud-style, the C++ side casts the kind to an index
    and static-asserts these names, so the two cannot drift. */
-.Kind--text .Glyph-text {
+.Kind--text .Mark-text {
   visibility: visible;
 }
 
-.Kind--button .Glyph-button {
+.Kind--button .Mark-button {
   visibility: visible;
 }
 
-.Kind--submenu .Glyph-submenu {
+.Kind--submenu .Mark-submenu {
   visibility: visible;
 }
 
@@ -197,11 +197,11 @@
   visibility: visible;
 }
 
-.Kind--choice .Glyph-button {
+.Kind--choice .Mark-button {
   visibility: visible;
 }
 
-.Kind--input .Glyph-input {
+.Kind--input .Mark-input {
   visibility: visible;
 }
 

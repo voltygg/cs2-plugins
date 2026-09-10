@@ -81,7 +81,7 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
     if (!target)
         return;
 
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
 
     // The flow runs for one reporter, so every step string resolves in their language here.
     std::vector<std::pair<std::string, std::string>> reasons;
@@ -90,7 +90,7 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
 
     ReportFlowT::Create(app.MenuFor(reporterSlot), reporterSlot, PendingReport{.Target = targetRef})
         ->Validate([&app, reporterSlot](const PendingReport& p) { return ValidatePending(app, reporterSlot, p); })
-        ->AddOptionsStep({.Title = tr.Get("report.selectReason", reporterSlot),
+        ->AddOptionsStep({.Title = translations.Get("report.selectReason", reporterSlot),
                           .Options = std::move(reasons),
                           .Set =
                               [](PendingReport& p, const std::string& label, const std::string& code) {
@@ -98,11 +98,11 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
                                   p.ReasonCode = code;
                               },
                           .CustomLabel = app.Settings.GetReports().allowCustomReason
-                                             ? tr.Get("report.customReason", reporterSlot)
+                                             ? translations.Get("report.customReason", reporterSlot)
                                              : std::string(),
-                          .CustomPrompt = tr.Get("report.customReasonPrompt", reporterSlot),
+                          .CustomPrompt = translations.Get("report.customReasonPrompt", reporterSlot),
                           .CustomValue = CustomReasonCode})
-        ->Confirm({.Title = tr.Get("report.confirmTitle", reporterSlot),
+        ->Confirm({.Title = translations.Get("report.confirmTitle", reporterSlot),
                    .Summary =
                        [&app, reporterSlot](const PendingReport& pending, VoltMod::SummaryRows& rows) {
                            auto& translations = app.Runtime.Translations;
@@ -113,8 +113,8 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
                                     Strings::TruncateUtf8(pending.ReasonText, 40));
                        },
                    // Its own wording rather than the framework's "Confirm".
-                   .ConfirmLabel = tr.Get("report.confirm", reporterSlot),
-                   .CancelLabel = tr.Get("report.cancel", reporterSlot)})
+                   .ConfirmLabel = translations.Get("report.confirm", reporterSlot),
+                   .CancelLabel = translations.Get("report.cancel", reporterSlot)})
         ->Finish([&app, reporterSlot](PendingReport& p) { Submit(app, reporterSlot, p); })
         ->Start();
 }

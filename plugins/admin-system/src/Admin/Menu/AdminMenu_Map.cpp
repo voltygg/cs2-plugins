@@ -28,11 +28,11 @@ using VoltMod::MenuBuilder;
 /** Taking the server away from everyone confirms rather than firing on a single click. */
 static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
 
     VoltMod::Flow<MapEntry>::Create(app.MenuFor(adminSlot), adminSlot, std::move(map))
         ->Validate(RequirePermission(app, Permission::Map, adminSlot))
-        ->Confirm({.Title = ConfirmTitle(tr, "action.changeMap", adminSlot),
+        ->Confirm({.Title = ConfirmTitle(translations, "action.changeMap", adminSlot),
                    .Summary =
                        [&app, adminSlot](const MapEntry& m, VoltMod::SummaryRows& rows) {
                            rows.Add(app.Runtime.Translations.Get("map.name", adminSlot), m.Label());
@@ -47,24 +47,24 @@ static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
 /** What an admin can do with one map: switch now, queue it, or put it to the players. */
 static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlot, const MapEntry& map)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
 
     const VoltMod::EnabledCondition mayMap = Allows(app, Permission::Map);
     const VoltMod::EnabledCondition mayVote = Allows(app, Permission::Vote);
 
     return MenuBuilder(map.Label())
-        .Add(ButtonRow{.Label = tr.Get("action.changeMap", adminSlot),
+        .Add(ButtonRow{.Label = translations.Get("action.changeMap", adminSlot),
                        .Activate = [&app, map](int slot) { ConfirmMapChange(app, slot, map); },
                        .Enabled = mayMap})
         // Queuing and voting only take effect later, so neither needs a confirmation step.
-        .Add(ButtonRow{.Label = tr.Get("action.setNextMap", adminSlot),
+        .Add(ButtonRow{.Label = translations.Get("action.setNextMap", adminSlot),
                        .Activate =
                            [&app, map](int) {
                                app.MapCycle.SetNext(map);
                                app.Chat.BroadcastKey("broadcast.nextMapSet", {{"map", map.Label()}});
                            },
                        .Enabled = mayMap})
-        .Add(ButtonRow{.Label = tr.Get("action.voteMap", adminSlot),
+        .Add(ButtonRow{.Label = translations.Get("action.voteMap", adminSlot),
                        .Activate =
                            [&app, map](int slot) {
                                if (!app.Votes.StartMapVote(map, slot))
@@ -76,9 +76,9 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlo
 
 std::shared_ptr<VoltMod::Menu> BuildMapMenu(AdminSystem::App& app, int adminSlot)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
 
-    MenuBuilder builder(tr.Get("category.map", adminSlot));
+    MenuBuilder builder(translations.Get("category.map", adminSlot));
 
     const auto& cycle = app.MapCycle.Cycle();
     for (const auto& map : cycle)
@@ -86,10 +86,10 @@ std::shared_ptr<VoltMod::Menu> BuildMapMenu(AdminSystem::App& app, int adminSlot
 
     // Not EmptyText: the cancel-vote row below is added either way, so the menu is never empty.
     if (cycle.empty())
-        builder.Text(tr.Get("map.noMaps", adminSlot));
+        builder.Text(translations.Get("map.noMaps", adminSlot));
 
     builder.Add(ButtonRow{
-        .Label = tr.Get("action.cancelVote", adminSlot),
+        .Label = translations.Get("action.cancelVote", adminSlot),
         .Activate =
             [&app](int slot) {
                 auto& translations = app.Runtime.Translations;

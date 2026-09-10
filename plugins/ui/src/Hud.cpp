@@ -3,7 +3,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Slot.hpp>
 #include <VoltMod/Ui/UiPanel.hpp>
-#include <VoltMod/Ui/Widgets.hpp>
+#include <VoltMod/Ui/Writers.hpp>
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -27,51 +27,43 @@ static_assert(Screen::AccentNames == std::array<std::string_view, 11>{"success",
               "cs2_hud's Accent classes must match Contracts::HudAccent");
 
 /** One card of the screen: which panel each writer touches, and which variable it reads. */
-struct CardIds
+struct CardWriters
 {
-    VoltMod::Text Title;
-    VoltMod::Text Subtitle;
-    VoltMod::Text Value;
-    VoltMod::Choice Icon;
-    VoltMod::Choice Bar;
-    VoltMod::Choice Accent;
-    VoltMod::Flag Hidden;
+    VoltMod::TextVar Title;
+    VoltMod::TextVar Subtitle;
+    VoltMod::TextVar Value;
+    VoltMod::ClassChoice Icon;
+    VoltMod::ClassChoice Bar;
+    VoltMod::ClassChoice Accent;
+    VoltMod::ClassFlag Hidden;
 };
 
-static constexpr CardIds MakeCard(std::string_view panel, std::string_view icon, std::string_view bar,
-                                  std::string_view accent, std::string_view title, std::string_view subtitle,
-                                  std::string_view value)
+static constexpr CardWriters MakeCard(const Screen::Card& card)
 {
     return {
-        .Title = {Screen::RootId, title},
-        .Subtitle = {Screen::RootId, subtitle},
-        .Value = {Screen::RootId, value},
-        .Icon = {icon, Screen::IconClasses},
-        .Bar = {bar, Screen::StepClasses},
-        .Accent = {accent, Screen::AccentClasses},
-        .Hidden = {panel, "Hidden"},
+        .Title = {Screen::RootId, card.TitleVar},
+        .Subtitle = {Screen::RootId, card.SubtitleVar},
+        .Value = {Screen::RootId, card.ValueVar},
+        .Icon = {card.Icon, Screen::IconClasses},
+        .Bar = {card.Bar, Screen::StepClasses},
+        .Accent = {card.Accent, Screen::AccentClasses},
+        .Hidden = {card.Id, "Hidden"},
     };
 }
 
-static constexpr std::array<CardIds, static_cast<std::size_t>(HudCard::Count)> CardRows{
-    MakeCard(Screen::Card0, Screen::Card0Icon, Screen::Card0Bar, Screen::Card0Accent, Screen::Card0TitleVar,
-             Screen::Card0SubtitleVar, Screen::Card0ValueVar),
-    MakeCard(Screen::Card1, Screen::Card1Icon, Screen::Card1Bar, Screen::Card1Accent, Screen::Card1TitleVar,
-             Screen::Card1SubtitleVar, Screen::Card1ValueVar),
-    MakeCard(Screen::Card2, Screen::Card2Icon, Screen::Card2Bar, Screen::Card2Accent, Screen::Card2TitleVar,
-             Screen::Card2SubtitleVar, Screen::Card2ValueVar),
-};
+static constexpr auto Cards = VoltMod::MakeWriters(Screen::Cards, MakeCard);
+static_assert(Cards.size() == static_cast<std::size_t>(HudCard::Count), "cs2_hud ships one card per HudCard");
 
 /** The toast. Named apart from Hud::Toast so a call site inside it needs no qualification. */
-struct ToastIds
+struct ToastWriters
 {
-    VoltMod::Text Title;
-    VoltMod::Text Description;
-    VoltMod::Choice Accent;
-    VoltMod::Flag Show;
+    VoltMod::TextVar Title;
+    VoltMod::TextVar Description;
+    VoltMod::ClassChoice Accent;
+    VoltMod::ClassFlag Show;
 };
 
-static constexpr ToastIds ToastRow{
+static constexpr ToastWriters ToastPanel{
     .Title = {Screen::RootId, Screen::ToastTitleVar},
     .Description = {Screen::RootId, Screen::ToastDescriptionVar},
     .Accent = {Screen::ToastAccent, Screen::AccentClasses},
@@ -114,12 +106,12 @@ void Hud::SetCard(HudCard card, int slot, const CardView& view)
     if (index < 0 || index >= static_cast<int>(HudCard::Count) || !_screen.Show(slot))
         return;
 
-    const CardIds& row = CardRows[index];
+    const CardWriters& row = Cards[index];
     VoltMod::UiPanel& panel = _screen.Panel();
     row.Title.Write(panel, slot, view.Title);
     row.Subtitle.Write(panel, slot, view.Subtitle);
     row.Value.Write(panel, slot, view.Value);
-    row.Icon.Write(panel, slot, view.Icon.empty() ? -1 : row.Icon.Find(view.Icon));
+    row.Icon.Write(panel, slot, view.Icon.empty() ? VoltMod::ClassChoice::None : row.Icon.Find(view.Icon));
     // The card block has no separate bar flag, so an empty bar is step 0.
     row.Bar.Write(panel, slot, std::clamp(view.BarStep, 0, row.Bar.Count() - 1));
     row.Accent.Write(panel, slot, static_cast<int>(view.Accent));
@@ -131,7 +123,7 @@ void Hud::HideCard(HudCard card, int slot)
     const int index = static_cast<int>(card);
     if (index < 0 || index >= static_cast<int>(HudCard::Count) || !_screen.Show(slot))
         return;
-    CardRows[index].Hidden.Write(_screen.Panel(), slot, true);
+    Cards[index].Hidden.Write(_screen.Panel(), slot, true);
 }
 
 void Hud::Toast(int slot, const ToastView& view)
@@ -140,14 +132,14 @@ void Hud::Toast(int slot, const ToastView& view)
         return;
 
     VoltMod::UiPanel& panel = _screen.Panel();
-    ToastRow.Title.Write(panel, slot, view.Title);
-    ToastRow.Description.Write(panel, slot, view.Description);
-    ToastRow.Accent.Write(panel, slot, static_cast<int>(view.Accent));
-    ToastRow.Show.Write(panel, slot, true);
+    ToastPanel.Title.Write(panel, slot, view.Title);
+    ToastPanel.Description.Write(panel, slot, view.Description);
+    ToastPanel.Accent.Write(panel, slot, static_cast<int>(view.Accent));
+    ToastPanel.Show.Write(panel, slot, true);
 
     const int duration = view.DurationMs > 0 ? view.DurationMs : _config.Get().ui.toastDurationMs;
     ToastTimer(slot) =
-        _rt.Scheduler.Delay(duration, [this, slot] { ToastRow.Show.Write(_screen.Panel(), slot, false); });
+        _rt.Scheduler.Delay(duration, [this, slot] { ToastPanel.Show.Write(_screen.Panel(), slot, false); });
 }
 
 VoltMod::Subscription& Hud::ToastTimer(int slot)
@@ -171,7 +163,7 @@ void Hud::WriteServerCard()
     const std::string subtitle =
         _rt.Translations.Get("hud.online", std::map<std::string, std::string>{{"count", std::to_string(online)}});
 
-    SetCard(HudCard::Server, VoltMod::UiPanel::Everyone,
+    SetCard(HudCard::Server, VoltMod::EveryoneSlot,
             {.Title = _config.Get().ui.serverName, .Subtitle = subtitle, .Accent = Contracts::HudAccent::Info});
 }
 

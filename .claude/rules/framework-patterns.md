@@ -49,7 +49,7 @@ commands.Add("slap")
 - `Pawn` is the body (health, armor, movement, aim); `Controller` is the identity (name, money, team). Get them from `runtime.Entities.PawnOf(slot)` and `.Controller(slot)`.
 - Both are frame-local. Store an `EntityRef` or `PlayerRef` and resolve again where used. `explicit operator bool()` is the only validity check.
 - Schema fields are generated pairs: `pawn.Health()` reads, `pawn.SetHealth(100)` writes and replicates. Offsets are baked by `voltmod schemagen`; the load aborts if they no longer match the engine.
-- `runtime.Ui.Panel(name)` returns a move-only `UiPanel` whose destructor removes the entity; hold it as a member. `runtime.Addons.Require(id)` is a lease that lasts as long as you hold it.
+- `runtime.Ui.Panel(name)` returns a move-only `UiPanel` whose destructor removes the entity; hold it as a member. `runtime.Addons.Require(id)` returns a `Subscription`; the requirement lasts as long as you hold it.
 
 ## Errors and messages
 
@@ -59,6 +59,7 @@ commands.Add("slap")
 ## Menus and effects
 
 - `MenuBuilder(title).Add(ButtonRow{...})` for rows, `ActionRows` for rows acting on an admin/target pair, `Flow<TState>::Create(menus, slot, state)` for multi-step actions.
+- Open menus through `App::OpenMenu`; build rows against `App::MenuFor(slot)`, the `VoltMod::MenuSurface` that is the Panorama screen when the player can see it and `runtime.Menus` (center HTML) otherwise.
 - Admin effects are `EffectDescriptor` values; menu order comes from the explicit `MenuEffects` table.
 
 ## Configuration

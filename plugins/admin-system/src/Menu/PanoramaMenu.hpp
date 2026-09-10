@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MenuIds.hpp"
+#include "MenuWriters.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/PerSlot.hpp>
@@ -9,7 +9,6 @@
 #include <VoltMod/Entities/MovementFreeze.hpp>
 #include <VoltMod/Menu/Menu.hpp>
 #include <VoltMod/Menu/MenuStack.hpp>
-#include <VoltMod/Menu/MenuState.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <VoltMod/Ui/Screen.hpp>
 #include <VoltMod/Ui/UiClick.hpp>
@@ -27,7 +26,7 @@ namespace AdminSystem::Menus
 /**
  * @brief The admin menu drawn on this plugin's own Panorama screen, clicked rather than typed.
  *
- * A @ref VoltMod::MenuSession like the framework's, so the same MenuBuilder rows, ActionRows and
+ * A @ref VoltMod::MenuSurface like the framework's, so the same MenuBuilder rows, ActionRows and
  * Flow steps run against it unchanged. The stack, the breadcrumb, how a row describes itself and
  * how a stepped value is held back are the framework's @ref VoltMod::MenuStack, shared with the
  * center-HTML menu. What is this plugin's own is the shape: a tab strip over the root menu's
@@ -35,15 +34,15 @@ namespace AdminSystem::Menus
  *
  * Each player gets a private panel, so a spectator sees their own menu rather than the one
  * belonging to the pawn they are watching. A player who cannot be drawn to is refused by
- * @ref Begin, which is the caller's cue to fall back to the framework's center-HTML menu.
+ * the three-argument @ref Open, which is the caller's cue to fall back to center HTML.
  */
-class PanoramaMenu final : public VoltMod::MenuSession
+class PanoramaMenu final : public VoltMod::MenuSurface
 {
 public:
     explicit PanoramaMenu(VoltMod::Runtime& runtime);
     ~PanoramaMenu() override;
 
-    /** Arm click handling when @p enabled, and require @p addonId of connecting clients so they
+    /** Turn click handling on when @p enabled, and require @p addonId of connecting clients so they
      *  have the layout. A zero id requires nothing, for a client compiled into by hand. */
     void Start(bool enabled, uint64_t addonId);
 
@@ -53,9 +52,9 @@ public:
      *  before opening gets the same answer the open will. Cheap after the first call. */
     [[nodiscard]] bool Available(int slot);
 
-    /** Start a session for @p slot showing @p menu, replacing any it has open.
-     *  False when the panel could not be shown, so the caller can use center HTML instead. */
-    bool Begin(int slot, std::shared_ptr<VoltMod::Menu> menu, VoltMod::MenuOptions options = {});
+    /** Start a session for @p slot showing @p menu, replacing any it has open. What a command
+     *  calls. False when the panel could not be shown, so the caller can use center HTML instead. */
+    bool Open(int slot, std::shared_ptr<VoltMod::Menu> menu, VoltMod::MenuOptions options);
 
     [[nodiscard]] bool IsOpen(int slot) const;
 

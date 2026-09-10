@@ -8,7 +8,6 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Menu/MenuManager.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <format>
@@ -22,10 +21,10 @@ using VoltMod::SubmenuRow;
 
 std::shared_ptr<VoltMod::Menu> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
     return BuildPlayerPicker(
         app, adminSlot,
-        {.Title = tr.Get("category.effects", adminSlot), .Open = [&app, adminSlot](VoltMod::PlayerRef target) {
+        {.Title = translations.Get("category.effects", adminSlot), .Open = [&app, adminSlot](VoltMod::PlayerRef target) {
              return BuildEffectsActionsMenu(app, app.Runtime.Players.RefFor(adminSlot), target);
          }});
 }
@@ -33,14 +32,14 @@ std::shared_ptr<VoltMod::Menu> BuildEffectsMenu(AdminSystem::App& app, int admin
 std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
                                                        VoltMod::PlayerRef target)
 {
-    auto& tr = app.Runtime.Translations;
+    auto& translations = app.Runtime.Translations;
 
     auto* adminPlayer = app.Runtime.Players.Get(admin);
     auto* targetPlayer = app.Runtime.Players.Get(target);
     if (!targetPlayer || !adminPlayer)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", tr.Get("category.effects", admin.Slot), targetPlayer->Name()));
+    MenuBuilder builder(std::format("{}: {}", translations.Get("category.effects", admin.Slot), targetPlayer->Name()));
     auto rows = app.MenuRows(admin, target);
 
     for (const EffectDescriptor* effect : app.EffectDescriptors.MenuEffects)
@@ -56,7 +55,7 @@ std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, Vo
 
     // Swap opens a second player picker as a submenu, then runs the dual-target Swap.
     builder.Add(
-        SubmenuRow{.Label = rows.Tr("action.swap"),
+        SubmenuRow{.Label = rows.Translate("action.swap"),
                    .Build =
                        [&app, admin, target](int) {
                            return BuildPlayerPicker(

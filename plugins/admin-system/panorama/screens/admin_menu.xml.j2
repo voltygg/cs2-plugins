@@ -7,7 +7,7 @@
 
 {%- set ROWS = 8 %}
 {%- set TABS = 6 %}
-{%- set GLYPHS = [("submenu", "&#9654;"), ("input", "&#8230;"), ("button", "&#8226;"), ("text", "&#8211;")] %}
+{%- set MARKS = [("submenu", "&#9654;"), ("input", "&#8230;"), ("button", "&#8226;"), ("text", "&#8211;")] %}
 
 <root>
   <styles>
@@ -21,7 +21,7 @@
 
       <Panel class="Rows" hittest="true">
         {%- for row in range(ROWS) %}
-        {{ list.listrow("row" ~ row, glyphs=GLYPHS, switch=true, hint=true, steppers=true, accent=true) | indent(8) }}
+        {{ list.listrow("row" ~ row, marks=MARKS, switch=true, hint=true, steppers=true, accent=true) | indent(8) }}
         {%- endfor %}
         <Label id="{{screen}}_empty" class="Empty Hidden" text="{s:empty}" hittest="false" />
       </Panel>

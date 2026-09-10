@@ -113,7 +113,7 @@
   border-radius: 0px 14px 14px 0px;
 }
 
-{{ bar.fill_rules("Bar-fill", 20) }}
+{{ bar.fill_rules("Bar", 20) }}
 {{ icons.show_rules("weapons") }}
 
 {{ accent.palette() }}

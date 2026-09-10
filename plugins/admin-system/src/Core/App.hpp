@@ -76,16 +76,16 @@ struct App
      * Asked while rows are built as well as when a menu opens, and answers the same either way,
      * so a row's callbacks and the session they run against never disagree.
      */
-    [[nodiscard]] VoltMod::MenuSession& MenuFor(int slot)
+    [[nodiscard]] VoltMod::MenuSurface& MenuFor(int slot)
     {
-        return Panorama.Available(slot) ? static_cast<VoltMod::MenuSession&>(Panorama) : Runtime.Menus;
+        return Panorama.Available(slot) ? static_cast<VoltMod::MenuSurface&>(Panorama) : Runtime.Menus;
     }
 
     /** Open @p menu for @p slot wherever MenuFor would put it. The one place the two surfaces are
      *  chosen between, so neither can be given options the other was not. */
     void OpenMenu(int slot, std::shared_ptr<VoltMod::Menu> menu, VoltMod::MenuOptions options = {})
     {
-        if (!Panorama.Begin(slot, menu, options))
+        if (!Panorama.Open(slot, menu, options))
             Runtime.Menus.Open(slot, std::move(menu), options);
     }
 
