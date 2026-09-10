@@ -212,7 +212,7 @@ bool App::Start()
         RegisterPlayerLifecycle();
         // Freeze the player while an admin menu is open, so navigating does not also walk them
         // around. The Panorama surface freezes its own sessions the same way.
-        Runtime.Menus.FreezeWhileOpen(true);
+        Runtime.Freeze.Enable(true);
         Panorama.Start(Settings.GetMenu().panorama, Settings.GetMenu().addonId);
         return StageResult::Ok();
     });

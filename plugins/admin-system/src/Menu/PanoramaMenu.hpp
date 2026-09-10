@@ -6,7 +6,6 @@
 #include <VoltMod/Core/PerSlot.hpp>
 #include <VoltMod/Core/Subscription.hpp>
 #include <VoltMod/Core/SubscriptionScope.hpp>
-#include <VoltMod/Entities/MovementFreeze.hpp>
 #include <VoltMod/Menu/Menu.hpp>
 #include <VoltMod/Menu/MenuStack.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -83,8 +82,6 @@ private:
         /** The tab the open branch was entered through, or -1. */
         int SelectedTab = -1;
         int Page = 0;
-        /** The pawn this session is holding still, if any. */
-        VoltMod::MovementFreeze Freeze;
     };
 
     /** The menu item shown on @p row of the page @p slot is on. */

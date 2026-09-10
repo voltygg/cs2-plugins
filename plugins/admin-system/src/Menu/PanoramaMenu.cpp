@@ -149,8 +149,7 @@ bool PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptio
             session.Tabs.push_back({.RootIndex = index, .Label = std::move(described.Label)});
     }
 
-    if (options.FreezeMovement)
-        session.Freeze.Hold(_rt.Entities.PawnOf(slot));
+    _rt.Freeze.Open(slot, options.FreezeMovement);
 
     _screen.Show(slot, /*capture=*/true);
     Draw(slot);
@@ -331,7 +330,7 @@ void PanoramaMenu::Hide(int slot)
     session.Page = 0;
 
     _rt.Hooks.ChatInput.CancelCapture(slot);
-    session.Freeze.Release(_rt.Entities.PawnOf(slot));
+    _rt.Freeze.Close(slot);
     _screen.Hide(slot);
 }
 
