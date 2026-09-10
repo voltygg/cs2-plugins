@@ -12,9 +12,9 @@ namespace Args = VoltMod::Args;
 namespace Ui
 {
 
-// The two cards the demo fills. Any card past Contracts::ServerCard is free for a plugin to take.
-static constexpr int WheelCard = 1;
-static constexpr int DropCard = 2;
+// The two cards the demo fills. Any card but Contracts::ServerCard is free for a plugin to take.
+static constexpr Contracts::HudCard WheelCard = Contracts::HudCard::Second;
+static constexpr Contracts::HudCard DropCard = Contracts::HudCard::Third;
 
 // Server console only: this fills the cards with sample content so a layout change can be seen
 // without the plugin that would normally drive them.

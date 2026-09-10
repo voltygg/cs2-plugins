@@ -36,14 +36,16 @@ client (found through Steam, or `CS2_CLIENT_PATH`).
 #include <Contracts/IUiHud.hpp>
 
 if (auto* hud = runtime.Exchange.Get<Contracts::IUiHud>())
-    hud->SetCard(2, slot,
+    hud->SetCard(Contracts::HudCard::Third, slot,
                  {.Title = "UMP-45 | Crimson", .Subtitle = "Winston", .Value = "358 P",
                   .Icon = "ump45", .Accent = Contracts::HudAccent::Rare});
 ```
 
-Cards are numbered 0 to `Contracts::HudCardCount - 1`; card 0 is the ui plugin's own Server
-card. `slot` `Contracts::Everyone` (-1) means everyone. Strings are copied before the call
-returns. `ui_hud_demo <slot>` on the server console fills cards 1 and 2 with sample content.
+`Contracts::HudCard` names the cards; `Contracts::ServerCard` is the one the ui plugin draws
+itself, and a plugin takes one of the others. Two plugins on the same card overwrite each
+other, so pick one and say so. `SetCard` returns false when nothing could be drawn. `slot`
+`Contracts::Everyone` (-1) means everyone. Strings are copied before the call returns.
+`ui_hud_demo <slot>` on the server console fills the other two cards with sample content.
 
 `Contracts::HudAccent`'s order is checked at compile time in `Hud.cpp` against the
 screen's own `Cs2Ui::Hud::AccentNames`, so reordering one without the other fails the

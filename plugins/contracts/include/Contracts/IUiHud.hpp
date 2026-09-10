@@ -9,12 +9,20 @@ namespace Contracts
  *  rather than taken from VoltMod::EveryoneSlot so contracts stays dependency-free. */
 inline constexpr int Everyone = -1;
 
-/** How many cards the HUD stacks top-left. Card 0 is drawn by the ui plugin itself; the rest
- *  are free for other plugins. */
+/** Which of the cards the HUD stacks top-left a write lands on. */
+enum class HudCard : int
+{
+    First,
+    Second,
+    Third,
+};
+
+/** How many cards @ref HudCard names, for a screen that has to carry one panel per card. */
 inline constexpr int HudCardCount = 3;
 
-/** The card the ui plugin draws itself: the server name over a live player count. */
-inline constexpr int ServerCard = 0;
+/** The card the ui plugin draws itself: the server name over a live player count. A plugin takes
+ *  one of the others, and two plugins on the same card overwrite each other. */
+inline constexpr HudCard ServerCard = HudCard::First;
 
 /** Colour of a card's edge or a toast's stripe. The order is checked against the ui plugin's
  *  screen (`Cs2Ui::Hud::AccentNames`, from `panorama/screens/cs2_hud.css`) at compile time in
@@ -70,13 +78,14 @@ struct ToastView
  */
 struct IUiHud
 {
-    static constexpr std::string_view InterfaceName = "cs2plugins.IUiHud/2";
+    static constexpr std::string_view InterfaceName = "cs2plugins.IUiHud/3";
 
-    /** Draw @p view on card @p card (0 to @ref HudCardCount - 1) for @p slot, or @ref Everyone. */
-    virtual void SetCard(int card, int slot, const CardView& view) = 0;
+    /** Draw @p view on @p card for @p slot, or @ref Everyone. False when nothing could be drawn:
+     *  a card the screen does not have, or a screen that could not be spawned. */
+    virtual bool SetCard(HudCard card, int slot, const CardView& view) = 0;
 
-    /** Take card @p card off screen for @p slot, or @ref Everyone. */
-    virtual void HideCard(int card, int slot) = 0;
+    /** Take @p card off screen for @p slot, or @ref Everyone. False for the same reasons. */
+    virtual bool HideCard(HudCard card, int slot) = 0;
 
     /** Show a toast to @p slot, or @ref Everyone, replacing whatever it is already showing. */
     virtual void Toast(int slot, const ToastView& view) = 0;

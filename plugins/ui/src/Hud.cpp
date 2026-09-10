@@ -12,6 +12,7 @@
 #include <string_view>
 
 using Contracts::CardView;
+using Contracts::HudCard;
 using Contracts::ToastView;
 using VoltMod::ClassChoice;
 
@@ -57,11 +58,12 @@ static constexpr auto Cards = VoltMod::MakeWriters(Screen::Cards, MakeCard);
 static_assert(Cards.size() == static_cast<std::size_t>(Contracts::HudCardCount), "cs2_hud ships HudCardCount cards");
 
 /** The writers for @p card, or null for a card the screen does not have. */
-static const CardWriters* CardAt(int card)
+static const CardWriters* CardAt(HudCard card)
 {
-    if (card < 0 || card >= static_cast<int>(Cards.size()))
+    const auto index = static_cast<std::size_t>(card);
+    if (index >= Cards.size())
         return nullptr;
-    return &Cards[static_cast<std::size_t>(card)];
+    return &Cards[index];
 }
 
 /** The toast. Named apart from Hud::Toast so a call site inside it needs no qualification. */
@@ -110,11 +112,11 @@ void Hud::Unpublish()
     _rt.Exchange.Unpublish<Contracts::IUiHud>();
 }
 
-void Hud::SetCard(int card, int slot, const CardView& view)
+bool Hud::SetCard(HudCard card, int slot, const CardView& view)
 {
     const CardWriters* writers = CardAt(card);
     if (!writers || !_screen.Show(slot))
-        return;
+        return false;
 
     const VoltMod::UiPanelWriter w{_screen.Panel(), slot};
     w.Set(writers->Title, view.Title);
@@ -126,15 +128,17 @@ void Hud::SetCard(int card, int slot, const CardView& view)
         w.Set(writers->Bar, std::clamp(view.BarStep, 0, writers->Bar.Count() - 1));
     w.Set(writers->Accent, static_cast<int>(view.Accent));
     w.Set(writers->Hidden, false);
+    return true;
 }
 
-void Hud::HideCard(int card, int slot)
+bool Hud::HideCard(HudCard card, int slot)
 {
     const CardWriters* writers = CardAt(card);
     if (!writers || !_screen.Show(slot))
-        return;
+        return false;
 
     VoltMod::UiPanelWriter{_screen.Panel(), slot}.Set(writers->Hidden, true);
+    return true;
 }
 
 void Hud::Toast(int slot, const ToastView& view)
