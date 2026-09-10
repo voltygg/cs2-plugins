@@ -5,18 +5,19 @@
 namespace Contracts
 {
 
-/** The fixed HUD cards the ui plugin draws, in the order they are stacked on screen. */
-enum class HudCard : int
-{
-    Server = 0,
-    Wheel,
-    Drop,
-    Count,
-};
+/** The slot value meaning everyone: what is drawn for it is seen by every player. */
+inline constexpr int Everyone = -1;
+
+/** How many cards the HUD stacks top-left. Card 0 is drawn by the ui plugin itself; the rest
+ *  are free for other plugins. */
+inline constexpr int HudCardCount = 3;
+
+/** The card the ui plugin draws itself: the server name over a live player count. */
+inline constexpr int ServerCard = 0;
 
 /** Colour of a card's edge or a toast's stripe. The order is checked against the ui plugin's
  *  screen (`Cs2Ui::Hud::AccentNames`, from `panorama/screens/cs2_hud.css`) at compile time in
- *  Hud.cpp, so the two must be reordered together. No theme file names these any more. */
+ *  Hud.cpp, so the two must be reordered together. */
 enum class HudAccent : int
 {
     None = -1,
@@ -41,7 +42,7 @@ struct CardView
     std::string_view Value;
     /** Icon-set name, e.g. "ump45"; empty draws no icon. */
     std::string_view Icon;
-    /** 0..20 fills the bar; -1 hides it. */
+    /** 0..20 fills the bar; a negative value hides it. */
     int BarStep = -1;
     HudAccent Accent = HudAccent::None;
 };
@@ -68,15 +69,15 @@ struct ToastView
  */
 struct IUiHud
 {
-    static constexpr std::string_view InterfaceName = "cs2plugins.IUiHud/1";
+    static constexpr std::string_view InterfaceName = "cs2plugins.IUiHud/2";
 
-    /** Draw @p view on @p card. @p slot -1 means everyone. */
-    virtual void SetCard(HudCard card, int slot, const CardView& view) = 0;
+    /** Draw @p view on card @p card (0 to @ref HudCardCount - 1) for @p slot, or @ref Everyone. */
+    virtual void SetCard(int card, int slot, const CardView& view) = 0;
 
-    /** Take @p card off screen for @p slot, -1 being everyone. */
-    virtual void HideCard(HudCard card, int slot) = 0;
+    /** Take card @p card off screen for @p slot, or @ref Everyone. */
+    virtual void HideCard(int card, int slot) = 0;
 
-    /** Show a toast to @p slot, -1 being everyone, replacing whatever it is already showing. */
+    /** Show a toast to @p slot, or @ref Everyone, replacing whatever it is already showing. */
     virtual void Toast(int slot, const ToastView& view) = 0;
 
 protected:

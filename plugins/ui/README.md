@@ -4,8 +4,8 @@ The server HUD. It owns the Panorama screen (`panorama/screens/cs2_hud.xml.j2`),
 workshop addon every client downloads, and publishes `Contracts::IUiHud` so other
 plugins draw on it instead of spawning panels of their own.
 
-Three cards top-left - Server, Wheel, Drop - and a toast at the bottom. The Server card is
-the plugin's own: the configured name over a live player count. admin-system draws its
+Three cards top-left and a toast at the bottom. Card 0 is the plugin's own Server card,
+the configured name over a live player count; cards 1 and 2 are for other plugins. admin-system draws its
 menu on the same addon, so this plugin must be loaded for `!admin` to open anything.
 
 ## Configuration
@@ -20,7 +20,7 @@ menu on the same addon, so this plugin must be loaded for `!admin` to open anyth
 
 ## Commands
 
-`ui_hud_demo <slot>` (server console, -1 for everyone) fills the Wheel and Drop cards with
+`ui_hud_demo <slot>` (server console, -1 for everyone) fills cards 1 and 2 with
 sample content and fires a toast, so a layout change can be seen without the plugin that
 would normally drive them.
 

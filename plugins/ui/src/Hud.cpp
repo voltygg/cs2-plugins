@@ -12,7 +12,6 @@
 #include <string_view>
 
 using Contracts::CardView;
-using Contracts::HudCard;
 using Contracts::ToastView;
 using VoltMod::ClassChoice;
 
@@ -37,6 +36,7 @@ struct CardWriters
     VoltMod::ClassChoice Bar;
     VoltMod::ClassChoice Accent;
     VoltMod::ClassFlag Hidden;
+    VoltMod::ClassFlag BarHidden;
 };
 
 static constexpr CardWriters MakeCard(const Screen::Card& card)
@@ -49,19 +49,19 @@ static constexpr CardWriters MakeCard(const Screen::Card& card)
         .Bar = {card.Bar, Screen::StepClasses},
         .Accent = {card.Accent, Screen::AccentClasses},
         .Hidden = {card.Id, "Hidden"},
+        .BarHidden = {card.Bar, "Hidden"},
     };
 }
 
 static constexpr auto Cards = VoltMod::MakeWriters(Screen::Cards, MakeCard);
-static_assert(Cards.size() == static_cast<std::size_t>(HudCard::Count), "cs2_hud ships one card per HudCard");
+static_assert(Cards.size() == static_cast<std::size_t>(Contracts::HudCardCount), "cs2_hud ships HudCardCount cards");
 
 /** The writers for @p card, or null for a card the screen does not have. */
-static const CardWriters* CardAt(HudCard card)
+static const CardWriters* CardAt(int card)
 {
-    const int index = static_cast<int>(card);
-    if (index < 0 || index >= static_cast<int>(Cards.size()))
+    if (card < 0 || card >= static_cast<int>(Cards.size()))
         return nullptr;
-    return &Cards[static_cast<std::size_t>(index)];
+    return &Cards[static_cast<std::size_t>(card)];
 }
 
 /** The toast. Named apart from Hud::Toast so a call site inside it needs no qualification. */
@@ -110,7 +110,7 @@ void Hud::Unpublish()
     _rt.Exchange.Unpublish<Contracts::IUiHud>();
 }
 
-void Hud::SetCard(HudCard card, int slot, const CardView& view)
+void Hud::SetCard(int card, int slot, const CardView& view)
 {
     const CardWriters* writers = CardAt(card);
     if (!writers || !_screen.Show(slot))
@@ -121,13 +121,13 @@ void Hud::SetCard(HudCard card, int slot, const CardView& view)
     w.Set(writers->Subtitle, view.Subtitle);
     w.Set(writers->Value, view.Value);
     w.Set(writers->Icon, view.Icon.empty() ? ClassChoice::None : writers->Icon.Find(view.Icon));
-    // The card block has no separate bar flag, so an empty bar is step 0.
+    w.Set(writers->BarHidden, view.BarStep < 0);
     w.Set(writers->Bar, std::clamp(view.BarStep, 0, writers->Bar.Count() - 1));
     w.Set(writers->Accent, static_cast<int>(view.Accent));
     w.Set(writers->Hidden, false);
 }
 
-void Hud::HideCard(HudCard card, int slot)
+void Hud::HideCard(int card, int slot)
 {
     const CardWriters* writers = CardAt(card);
     if (!writers || !_screen.Show(slot))
@@ -173,7 +173,7 @@ void Hud::WriteServerCard()
     const std::string subtitle =
         _rt.Translations.Get("hud.online", std::map<std::string, std::string>{{"count", std::to_string(online)}});
 
-    SetCard(HudCard::Server, VoltMod::EveryoneSlot,
+    SetCard(Contracts::ServerCard, Contracts::Everyone,
             {.Title = _config.Get().ui.serverName, .Subtitle = subtitle, .Accent = Contracts::HudAccent::Info});
 }
 

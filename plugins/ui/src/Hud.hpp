@@ -34,8 +34,8 @@ public:
     /** Called before the runtime services this holds go away. */
     void Unpublish();
 
-    void SetCard(Contracts::HudCard card, int slot, const Contracts::CardView& view) override;
-    void HideCard(Contracts::HudCard card, int slot) override;
+    void SetCard(int card, int slot, const Contracts::CardView& view) override;
+    void HideCard(int card, int slot) override;
     void Toast(int slot, const Contracts::ToastView& view) override;
 
 private:

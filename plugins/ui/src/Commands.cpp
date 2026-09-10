@@ -17,16 +17,16 @@ namespace Ui
 void RegisterCommands(VoltMod::CommandManager& commands, App& app)
 {
     commands.Add("ui_hud_demo")
-        .Describe("Fill the HUD cards and fire a toast for one slot (-1 = everyone).")
+        .Describe("Fill cards 1 and 2 and fire a toast for one slot (-1 = everyone).")
         .ConsoleOnly()
         .Run([&app](Caller, Args::Int slot) -> Result<Reply> {
             const int target = slot.Value;
-            app.Hud.SetCard(Contracts::HudCard::Wheel, target,
+            app.Hud.SetCard(1, target,
                                   {.Title = "Wheel of fortune",
                                    .Value = "12:00",
                                    .BarStep = 8,
                                    .Accent = Contracts::HudAccent::Info});
-            app.Hud.SetCard(Contracts::HudCard::Drop, target,
+            app.Hud.SetCard(2, target,
                                   {.Title = "UMP-45 | Crimson",
                                    .Subtitle = "Winston",
                                    .Value = "358 ₽",
