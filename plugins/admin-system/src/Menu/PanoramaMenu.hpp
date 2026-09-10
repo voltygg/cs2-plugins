@@ -8,6 +8,7 @@
 #include <VoltMod/Core/SubscriptionScope.hpp>
 #include <VoltMod/Entities/MovementFreeze.hpp>
 #include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Menu/MenuStack.hpp>
 #include <VoltMod/Menu/MenuState.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <VoltMod/Ui/Screen.hpp>
@@ -27,8 +28,10 @@ namespace AdminSystem::Menus
  * @brief The admin menu drawn on this plugin's own Panorama screen, clicked rather than typed.
  *
  * A @ref VoltMod::MenuSession like the framework's, so the same MenuBuilder rows, ActionRows and
- * Flow steps run against it unchanged. It keeps its own stack because it needs neither cursor nor
- * keys: every press names the row it came from.
+ * Flow steps run against it unchanged. The stack, the breadcrumb, how a row describes itself and
+ * how a stepped value is held back are the framework's @ref VoltMod::MenuStack, shared with the
+ * center-HTML menu. What is this plugin's own is the shape: a tab strip over the root menu's
+ * submenus, a fixed page of rows, and the click ids that address them.
  *
  * Each player gets a private panel, so a spectator sees their own menu rather than the one
  * belonging to the pawn they are watching. A player who cannot be drawn to is refused by
@@ -64,9 +67,6 @@ public:
     [[nodiscard]] std::string Translate(int slot, std::string_view key, std::string_view fallback) const override;
 
 private:
-    /** How long a stepped value waits before it is applied, so a burst of presses is one action. */
-    static constexpr int CommitDelayMs = 400;
-
     /** One tab of the strip: which root item it opens, and the label that item described itself
      *  with when the session started. */
     struct Tab
@@ -75,56 +75,45 @@ private:
         std::string Label;
     };
 
-    /** One player's open menus and where they are in them. */
+    /** What this surface adds on top of the shared stack: where the player is on screen. */
     struct Session
     {
-        std::vector<std::shared_ptr<VoltMod::Menu>> Stack;
         /** The root menu's submenu rows, in tab order. */
         std::vector<Tab> Tabs;
         /** Which tab the open branch was entered through, or -1. */
         int OpenTab = -1;
         int Page = 0;
-        /** Item index of the row holding a stepped value that has not been applied yet, or -1. */
-        int PendingItem = -1;
-        VoltMod::Subscription CommitTimer;
         /** The pawn this session is holding still, if any. */
         VoltMod::MovementFreeze Freeze;
     };
 
-    [[nodiscard]] VoltMod::Menu* Current(int slot);
     [[nodiscard]] int ItemIndex(int slot, int row) const;
 
     void Draw(int slot);
     void DrawHeader(int slot, const VoltMod::Menu& menu);
-    void DrawRows(int slot, VoltMod::Menu& menu);
-    void DrawRow(int slot, int row, int item, const VoltMod::MenuRow& described);
+    void DrawRows(int slot, const VoltMod::Menu& menu);
+    void DrawRow(int slot, int row, const VoltMod::MenuRow& described);
     void DrawTabs(int slot);
     void DrawPrompt(int slot);
 
     void OnClick(const VoltMod::UiClick& click);
-    void Press(int slot, int row);
 
-    /** Run item @p index of the open menu, wherever it sits on the page. */
+    /** Run item @p index of the open menu, remembering which tab it belongs to. */
     void Activate(int slot, int index);
     void Nudge(int slot, int row, int direction);
     void OpenTab(int slot, int tab);
     void TurnPage(int slot, int delta);
 
-    /** Apply whatever a stepped row was left showing, and forget it. */
-    void RunPending(int slot);
-
     /** Take the menu off @p slot's screen, cancel its prompt, and let its pawn go. */
     void Dismiss(int slot);
-    void Freeze(int slot, bool on);
-
-    /** The titles under the top menu, joined; empty at the root. */
-    [[nodiscard]] std::string Breadcrumb(int slot) const;
 
     VoltMod::Runtime& _rt;
     /** False until Start turns the surface on. */
     bool _enabled = false;
     /** The addon requirement, held for as long as this plugin is loaded. */
     VoltMod::Subscription _addon;
+    /** The half every menu surface shares: stack, breadcrumb, Describe, Activate and Step. */
+    VoltMod::MenuStack _stack;
     /** One panel per player: a spectating admin must see their own menu, not the pawn's. */
     VoltMod::Screen _screen{_rt.Ui, _rt.Slots, AdminUi::Menu::Layout, AdminUi::Menu::RootId};
     VoltMod::PerSlot<Session> _sessions;

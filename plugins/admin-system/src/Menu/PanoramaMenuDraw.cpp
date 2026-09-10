@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <format>
+#include <string>
 #include <string_view>
 
 using VoltMod::Menu;
@@ -43,22 +44,9 @@ static int AccentFor(const MenuRow& row)
     return static_cast<int>(AdminUi::Menu::Accent::Contraband);
 }
 
-std::string PanoramaMenu::Breadcrumb(int slot) const
-{
-    const Session& session = _sessions[slot];
-    std::string crumb;
-    for (std::size_t depth = 0; depth + 1 < session.Stack.size(); ++depth)
-    {
-        if (!crumb.empty())
-            crumb += " / ";
-        crumb += session.Stack[depth]->Title;
-    }
-    return crumb;
-}
-
 void PanoramaMenu::Draw(int slot)
 {
-    Menu* menu = Current(slot);
+    const Menu* menu = _stack.Current(slot);
     UiPanel& panel = _screen.Panel(slot);
     if (!menu || !panel)
         return;
@@ -69,7 +57,7 @@ void PanoramaMenu::Draw(int slot)
     DrawPrompt(slot);
 
     // The two footer buttons say what they do: a submenu goes back, a root menu closes.
-    const bool deep = _sessions[slot].Stack.size() > 1;
+    const bool deep = _stack.Depth(slot) > 1;
     Chrome.Back.Write(panel, slot, Translate(slot, deep ? "nav.back" : "nav.root", deep ? "Back" : "Main"));
     Chrome.Close.Write(panel, slot, Translate(slot, "nav.close", "Close"));
     Chrome.Cancel.Write(panel, slot, Translate(slot, "menu.cancel", "Cancel"));
@@ -79,7 +67,7 @@ void PanoramaMenu::DrawHeader(int slot, const Menu& menu)
 {
     UiPanel& panel = _screen.Panel(slot);
     Chrome.Title.Write(panel, slot, menu.Title);
-    Chrome.Crumb.Write(panel, slot, Breadcrumb(slot));
+    Chrome.Crumb.Write(panel, slot, _stack.Breadcrumb(slot));
     Chrome.Subtitle.Write(panel, slot, menu.Subtitle);
     Chrome.SubtitleHidden.Write(panel, slot, menu.Subtitle.empty());
 }
@@ -101,7 +89,7 @@ void PanoramaMenu::DrawTabs(int slot)
     }
 }
 
-void PanoramaMenu::DrawRows(int slot, Menu& menu)
+void PanoramaMenu::DrawRows(int slot, const Menu& menu)
 {
     UiPanel& panel = _screen.Panel(slot);
     Session& session = _sessions[slot];
@@ -113,12 +101,12 @@ void PanoramaMenu::DrawRows(int slot, Menu& menu)
     for (int row = 0; row < RowsPerPage; ++row)
     {
         const int item = ItemIndex(slot, row);
-        if (item >= count || !menu.Items[item].Describe)
+        if (item >= count)
         {
             Rows[row].Hidden.Write(panel, slot, true);
             continue;
         }
-        DrawRow(slot, row, item, menu.Items[item].Describe(slot));
+        DrawRow(slot, row, _stack.Describe(slot, item));
     }
 
     Chrome.EmptyHidden.Write(panel, slot, count != 0);
@@ -130,11 +118,10 @@ void PanoramaMenu::DrawRows(int slot, Menu& menu)
         Chrome.Page.Write(panel, slot, std::format("{} / {}", session.Page + 1, pages));
 }
 
-void PanoramaMenu::DrawRow(int slot, int row, int item, const MenuRow& described)
+void PanoramaMenu::DrawRow(int slot, int row, const MenuRow& described)
 {
     UiPanel& panel = _screen.Panel(slot);
     const RowIds& ids = Rows[row];
-    const bool pending = _sessions[slot].PendingItem == item;
 
     ids.Hidden.Write(panel, slot, false);
     ids.Label.Write(panel, slot, described.Label);
@@ -149,9 +136,9 @@ void PanoramaMenu::DrawRow(int slot, int row, int item, const MenuRow& described
     ids.HasSteppers.Write(panel, slot, described.Steppable && described.Enabled);
 
     // The hint line doubles as the "not applied yet" note, which is also what Changed pulses on.
-    ids.HasHint.Write(panel, slot, pending);
-    ids.Changed.Write(panel, slot, pending);
-    if (pending)
+    ids.HasHint.Write(panel, slot, described.Pending);
+    ids.Changed.Write(panel, slot, described.Pending);
+    if (described.Pending)
         ids.Hint.Write(panel, slot, Translate(slot, "menu.pending", "Applying..."));
 }
 

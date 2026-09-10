@@ -13,12 +13,19 @@ using VoltMod::UiPanel;
 namespace AdminSystem::Menus
 {
 
-PanoramaMenu::PanoramaMenu(VoltMod::Runtime& runtime) : _rt(runtime) {}
+PanoramaMenu::PanoramaMenu(VoltMod::Runtime& runtime)
+    : _rt(runtime),
+      _stack(*this, runtime.Translations,
+             [&scheduler = runtime.Scheduler](int64_t delayMs, std::function<void()> callback) {
+                 return scheduler.Delay(delayMs, std::move(callback));
+             })
+{}
 
 PanoramaMenu::~PanoramaMenu() = default;
 
 void PanoramaMenu::Start(bool enabled, uint64_t addonId)
 {
+    _stack.BindReset(_rt.Slots);
     _sessions.BindReset(_rt.Slots);
 
     if (!enabled)
@@ -47,6 +54,13 @@ void PanoramaMenu::Start(bool enabled, uint64_t addonId)
 
     _enabled = true;
     _subs.Add(_rt.Ui.Clicked += [this](const UiClick& click) { OnClick(click); });
+
+    // A held commit lands on a timer rather than on a press, and this surface only draws when
+    // something asks it to.
+    _subs.Add(_stack.Committed += [this](int slot) {
+        if (IsOpen(slot))
+            Draw(slot);
+    });
 }
 
 bool PanoramaMenu::Available(int slot)
@@ -74,29 +88,28 @@ bool PanoramaMenu::Begin(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOpti
         return false;
 
     CloseAll(slot);
+    _stack.Push(slot, std::move(menu));
 
     Session& session = _sessions[slot];
-    session.Stack.push_back(std::move(menu));
     session.Page = 0;
     session.OpenTab = -1;
     session.Tabs.clear();
 
     // The tab strip stands for the root menu's submenus, so it is read once per session: the
     // labels come back with the kinds rather than costing a Describe per tab per draw.
-    Menu& root = *session.Stack.front();
-    for (int index = 0; index < static_cast<int>(root.Items.size()); ++index)
+    const Menu* root = _stack.Root(slot);
+    for (int index = 0; root && index < static_cast<int>(root->Items.size()); ++index)
     {
         if (static_cast<int>(session.Tabs.size()) >= TabCount)
             break;
-        const auto& describe = root.Items[index].Describe;
-        if (!describe)
-            continue;
-        if (VoltMod::MenuRow described = describe(slot); described.Kind == VoltMod::MenuRowKind::Submenu)
+        if (VoltMod::MenuRow described = _stack.Describe(slot, index);
+            described.Kind == VoltMod::MenuRowKind::Submenu)
             session.Tabs.push_back({.Item = index, .Label = std::move(described.Label)});
     }
 
     if (options.FreezeMovement)
         session.Freeze.Hold(_rt.Entities.PawnOf(slot));
+
     _screen.Show(slot, /*capture=*/true);
     Draw(slot);
     return true;
@@ -104,14 +117,7 @@ bool PanoramaMenu::Begin(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOpti
 
 bool PanoramaMenu::IsOpen(int slot) const
 {
-    return VoltMod::IsValidSlot(slot) && !_sessions[slot].Stack.empty();
-}
-
-Menu* PanoramaMenu::Current(int slot)
-{
-    if (!IsOpen(slot))
-        return nullptr;
-    return _sessions[slot].Stack.back().get();
+    return _stack.IsOpen(slot);
 }
 
 int PanoramaMenu::ItemIndex(int slot, int row) const
@@ -129,10 +135,8 @@ void PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu)
         return;
     }
 
-    RunPending(slot);
-    Session& session = _sessions[slot];
-    session.Stack.push_back(std::move(menu));
-    session.Page = 0;
+    _stack.Push(slot, std::move(menu));
+    _sessions[slot].Page = 0;
     Draw(slot);
 }
 
@@ -141,20 +145,18 @@ void PanoramaMenu::Close(int slot)
     if (!IsOpen(slot))
         return;
 
-    RunPending(slot);
     _rt.Hooks.ChatInput.CancelCapture(slot);
 
-    Session& session = _sessions[slot];
-    session.Stack.pop_back();
-    session.Page = 0;
-    if (session.Stack.size() <= 1)
-        session.OpenTab = -1;
-
-    if (session.Stack.empty())
+    if (_stack.Pop(slot))
     {
         Dismiss(slot);
         return;
     }
+
+    Session& session = _sessions[slot];
+    session.Page = 0;
+    if (_stack.Depth(slot) <= 1)
+        session.OpenTab = -1;
     Draw(slot);
 }
 
@@ -163,8 +165,7 @@ void PanoramaMenu::CloseAll(int slot)
     if (!IsOpen(slot))
         return;
 
-    RunPending(slot);
-    _sessions[slot].Stack.clear();
+    _stack.Clear(slot);
     Dismiss(slot);
 }
 
@@ -223,7 +224,7 @@ void PanoramaMenu::OnClick(const UiClick& click)
     for (int row = 0; row < RowsPerPage; ++row)
     {
         if (click.ButtonId == Rows[row].Press)
-            return Press(slot, row);
+            return Activate(slot, ItemIndex(slot, row));
         if (click.ButtonId == Rows[row].Dec)
             return Nudge(slot, row, -1);
         if (click.ButtonId == Rows[row].Inc)
@@ -231,37 +232,18 @@ void PanoramaMenu::OnClick(const UiClick& click)
     }
 }
 
-void PanoramaMenu::Press(int slot, int row)
-{
-    Activate(slot, ItemIndex(slot, row));
-}
-
 void PanoramaMenu::Activate(int slot, int index)
 {
-    Menu* menu = Current(slot);
-    if (!menu || index < 0 || index >= static_cast<int>(menu->Items.size()))
-        return;
-
-    const VoltMod::MenuItem& item = menu->Items[index];
-    if (!item.Describe || !item.Describe(slot).Enabled || !item.Activate)
-        return;
-
-    // A row whose activation is its own commit would otherwise apply the value twice.
-    if (_sessions[slot].PendingItem == index)
-        _sessions[slot].PendingItem = -1;
-    _sessions[slot].CommitTimer.Reset();
-    RunPending(slot);
-
     // Entering a branch from the root records which tab it belongs to, so the strip stays lit.
     Session& session = _sessions[slot];
-    if (session.Stack.size() == 1)
+    if (_stack.Depth(slot) == 1)
     {
         const auto found = std::find_if(session.Tabs.begin(), session.Tabs.end(),
                                         [index](const Tab& tab) { return tab.Item == index; });
         session.OpenTab = found == session.Tabs.end() ? -1 : static_cast<int>(found - session.Tabs.begin());
     }
 
-    item.Activate(slot, *this);
+    _stack.Activate(slot, index);
 
     // Activation may have opened, replaced or closed the session; only redraw one still here.
     if (IsOpen(slot))
@@ -270,45 +252,8 @@ void PanoramaMenu::Activate(int slot, int index)
 
 void PanoramaMenu::Nudge(int slot, int row, int direction)
 {
-    Menu* menu = Current(slot);
-    const int index = ItemIndex(slot, row);
-    if (!menu || index >= static_cast<int>(menu->Items.size()))
-        return;
-
-    const VoltMod::MenuItem& item = menu->Items[index];
-    if (!item.Step || !item.Describe || !item.Describe(slot).Enabled)
-        return;
-    if (!item.Step(slot, direction))
-        return;
-
-    Session& session = _sessions[slot];
-    if (session.PendingItem != index)
-        RunPending(slot);
-
-    // Held rather than applied: a burst of presses is one action and one broadcast.
-    if (item.Commit)
-    {
-        session.PendingItem = index;
-        session.CommitTimer = _rt.Scheduler.Delay(CommitDelayMs, [this, slot] {
-            RunPending(slot);
-            if (IsOpen(slot))
-                Draw(slot);
-        });
-    }
-    Draw(slot);
-}
-
-void PanoramaMenu::RunPending(int slot)
-{
-    Session& session = _sessions[slot];
-    const int index = std::exchange(session.PendingItem, -1);
-    session.CommitTimer.Reset();
-    if (index < 0)
-        return;
-
-    Menu* menu = Current(slot);
-    if (menu && index < static_cast<int>(menu->Items.size()) && menu->Items[index].Commit)
-        menu->Items[index].Commit(slot);
+    if (_stack.Step(slot, ItemIndex(slot, row), direction))
+        Draw(slot);
 }
 
 void PanoramaMenu::OpenTab(int slot, int tab)
@@ -318,32 +263,30 @@ void PanoramaMenu::OpenTab(int slot, int tab)
         return;
 
     // A tab is a jump, not a push: unwind to the root before entering the branch it stands for.
-    RunPending(slot);
-    session.Stack.resize(1);
+    _stack.Rewind(slot);
     session.Page = 0;
     Activate(slot, session.Tabs[tab].Item);
 }
 
 void PanoramaMenu::TurnPage(int slot, int delta)
 {
-    Menu* menu = Current(slot);
+    const Menu* menu = _stack.Current(slot);
     if (!menu)
         return;
 
-    RunPending(slot);
+    _stack.RunPending(slot);
+    Session& session = _sessions[slot];
     const int pages = VoltMod::PageCount(static_cast<int>(menu->Items.size()), RowsPerPage);
-    _sessions[slot].Page = VoltMod::WrapIndex(_sessions[slot].Page + delta, pages);
+    session.Page = VoltMod::WrapIndex(session.Page + delta, pages);
     Draw(slot);
 }
 
 void PanoramaMenu::Dismiss(int slot)
 {
     Session& session = _sessions[slot];
-    session.Stack.clear();
     session.Tabs.clear();
     session.OpenTab = -1;
-    session.PendingItem = -1;
-    session.CommitTimer.Reset();
+    session.Page = 0;
 
     _rt.Hooks.ChatInput.CancelCapture(slot);
     session.Freeze.Release(_rt.Entities.PawnOf(slot));
