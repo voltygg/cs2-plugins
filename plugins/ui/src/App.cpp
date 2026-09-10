@@ -12,7 +12,7 @@ void RegisterCommands(VoltMod::CommandManager& commands, App& app);
 App::~App()
 {
     // Stop answering other plugins' MetaFactory queries before the screen it draws on goes.
-    ServerHud.Unpublish();
+    Hud.Unpublish();
 }
 
 bool App::Start()
@@ -30,8 +30,8 @@ bool App::Start()
                       required.error().Detail);
     }
 
-    ServerHud.Start();
-    ServerHud.Publish();
+    Hud.Start();
+    Hud.Publish();
     RegisterCommands(Runtime.Commands, *this);
     return true;
 }

@@ -12,7 +12,7 @@ namespace Ui
 inline constexpr std::string_view AddonName = "ui";
 
 /** The `ui` object in settings.jsonc. */
-struct HudSettings
+struct UiSettings
 {
     /** Workshop addon carrying the compiled layout. 0 requires nothing of connecting clients,
      *  which is what you want while copying the files into your own client by hand. */
@@ -25,7 +25,7 @@ struct HudSettings
 struct Settings
 {
     VoltMod::StandardPluginSettings plugin;
-    HudSettings ui;
+    UiSettings ui;
 };
 
 using ConfigManager = VoltMod::JsonConfig<Settings>;

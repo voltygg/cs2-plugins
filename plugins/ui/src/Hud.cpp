@@ -14,6 +14,7 @@
 using Contracts::CardView;
 using Contracts::HudCard;
 using Contracts::ToastView;
+using VoltMod::ClassChoice;
 
 namespace Ui
 {
@@ -53,6 +54,15 @@ static constexpr CardWriters MakeCard(const Screen::Card& card)
 
 static constexpr auto Cards = VoltMod::MakeWriters(Screen::Cards, MakeCard);
 static_assert(Cards.size() == static_cast<std::size_t>(HudCard::Count), "cs2_hud ships one card per HudCard");
+
+/** The writers for @p card, or null for a card the screen does not have. */
+static const CardWriters* CardAt(HudCard card)
+{
+    const int index = static_cast<int>(card);
+    if (index < 0 || index >= static_cast<int>(Cards.size()))
+        return nullptr;
+    return &Cards[static_cast<std::size_t>(index)];
+}
 
 /** The toast. Named apart from Hud::Toast so a call site inside it needs no qualification. */
 struct ToastWriters
@@ -102,28 +112,28 @@ void Hud::Unpublish()
 
 void Hud::SetCard(HudCard card, int slot, const CardView& view)
 {
-    const int index = static_cast<int>(card);
-    if (index < 0 || index >= static_cast<int>(HudCard::Count) || !_screen.Show(slot))
+    const CardWriters* writers = CardAt(card);
+    if (!writers || !_screen.Show(slot))
         return;
 
-    const CardWriters& row = Cards[index];
-    VoltMod::UiPanel& panel = _screen.Panel();
-    row.Title.Write(panel, slot, view.Title);
-    row.Subtitle.Write(panel, slot, view.Subtitle);
-    row.Value.Write(panel, slot, view.Value);
-    row.Icon.Write(panel, slot, view.Icon.empty() ? VoltMod::ClassChoice::None : row.Icon.Find(view.Icon));
+    const PanelWriter w{_screen.Panel(), slot};
+    w.Set(writers->Title, view.Title);
+    w.Set(writers->Subtitle, view.Subtitle);
+    w.Set(writers->Value, view.Value);
+    w.Set(writers->Icon, view.Icon.empty() ? ClassChoice::None : writers->Icon.Find(view.Icon));
     // The card block has no separate bar flag, so an empty bar is step 0.
-    row.Bar.Write(panel, slot, std::clamp(view.BarStep, 0, row.Bar.Count() - 1));
-    row.Accent.Write(panel, slot, static_cast<int>(view.Accent));
-    row.Hidden.Write(panel, slot, false);
+    w.Set(writers->Bar, std::clamp(view.BarStep, 0, writers->Bar.Count() - 1));
+    w.Set(writers->Accent, static_cast<int>(view.Accent));
+    w.Set(writers->Hidden, false);
 }
 
 void Hud::HideCard(HudCard card, int slot)
 {
-    const int index = static_cast<int>(card);
-    if (index < 0 || index >= static_cast<int>(HudCard::Count) || !_screen.Show(slot))
+    const CardWriters* writers = CardAt(card);
+    if (!writers || !_screen.Show(slot))
         return;
-    Cards[index].Hidden.Write(_screen.Panel(), slot, true);
+
+    PanelWriter{_screen.Panel(), slot}.Set(writers->Hidden, true);
 }
 
 void Hud::Toast(int slot, const ToastView& view)
@@ -131,15 +141,15 @@ void Hud::Toast(int slot, const ToastView& view)
     if (!_screen.Show(slot))
         return;
 
-    VoltMod::UiPanel& panel = _screen.Panel();
-    ToastPanel.Title.Write(panel, slot, view.Title);
-    ToastPanel.Description.Write(panel, slot, view.Description);
-    ToastPanel.Accent.Write(panel, slot, static_cast<int>(view.Accent));
-    ToastPanel.Show.Write(panel, slot, true);
+    const PanelWriter w{_screen.Panel(), slot};
+    w.Set(ToastPanel.Title, view.Title);
+    w.Set(ToastPanel.Description, view.Description);
+    w.Set(ToastPanel.Accent, static_cast<int>(view.Accent));
+    w.Set(ToastPanel.Show, true);
 
     const int duration = view.DurationMs > 0 ? view.DurationMs : _config.Get().ui.toastDurationMs;
     ToastTimer(slot) =
-        _rt.Scheduler.Delay(duration, [this, slot] { ToastPanel.Show.Write(_screen.Panel(), slot, false); });
+        _rt.Scheduler.Delay(duration, [this, slot] { PanelWriter{_screen.Panel(), slot}.Set(ToastPanel.Show, false); });
 }
 
 VoltMod::Subscription& Hud::ToastTimer(int slot)
@@ -149,7 +159,7 @@ VoltMod::Subscription& Hud::ToastTimer(int slot)
 
 void Hud::DrawServerCard()
 {
-    // Re-arming replaces the pending one, so a whole roster readying at once redraws once.
+    // Starting the tick again replaces the one waiting, so a whole roster readying at once redraws once.
     _serverCardRedraw = _rt.Scheduler.NextTick([this] { WriteServerCard(); });
 }
 

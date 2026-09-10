@@ -8,6 +8,8 @@
 #include <VoltMod/Core/PerSlot.hpp>
 #include <VoltMod/Core/SubscriptionScope.hpp>
 #include <VoltMod/Ui/Screen.hpp>
+#include <VoltMod/Ui/UiPanel.hpp>
+#include <VoltMod/Ui/Writers.hpp>
 
 namespace Ui
 {
@@ -37,14 +39,16 @@ public:
     void Toast(int slot, const Contracts::ToastView& view) override;
 
 private:
-    /** Ask for a Server card redraw. Coalesced onto the next tick: a map change readies the whole
-     *  roster one slot at a time, and one redraw covers all of them. */
+    using PanelWriter = VoltMod::PanelWriter<VoltMod::UiPanel>;
+
+    /** Ask for a Server card redraw on the next tick. A map change readies the whole roster one
+     *  slot at a time, and one redraw covers all of them. */
     void DrawServerCard();
 
     /** Title and live player count of the Server card, for everyone. */
     void WriteServerCard();
 
-    /** The one-shot that hides @p slot's toast; re-arming it replaces the running one. */
+    /** The one-shot that hides @p slot's toast; starting it again replaces the running one. */
     VoltMod::Subscription& ToastTimer(int slot);
 
     VoltMod::Runtime& _rt;

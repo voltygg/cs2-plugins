@@ -28,7 +28,7 @@ struct App
 
     VoltMod::Runtime& Runtime;
     ConfigManager Config;
-    Hud ServerHud{Runtime, Config};
+    Hud Hud{Runtime, Config};
 
 private:
     /** The workshop addon carrying the compiled layout; dropping it drops the requirement. */
