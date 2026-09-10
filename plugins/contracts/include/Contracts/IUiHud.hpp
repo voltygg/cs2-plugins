@@ -5,7 +5,8 @@
 namespace Contracts
 {
 
-/** The slot value meaning everyone: what is drawn for it is seen by every player. */
+/** The slot value meaning everyone: what is drawn for it is seen by every player. Spelled here
+ *  rather than taken from VoltMod::EveryoneSlot so contracts stays dependency-free. */
 inline constexpr int Everyone = -1;
 
 /** How many cards the HUD stacks top-left. Card 0 is drawn by the ui plugin itself; the rest
