@@ -67,8 +67,6 @@ public:
     [[nodiscard]] std::string Translate(int slot, std::string_view key, std::string_view fallback) const override;
 
 private:
-    using PanelWriter = VoltMod::PanelWriter<VoltMod::UiPanel>;
-
     /** One tab of the strip: which root row it opens, and the label that row described itself
      *  with when the session started. */
     struct Tab
@@ -93,11 +91,11 @@ private:
     [[nodiscard]] int ItemAt(int slot, int row) const;
 
     void Draw(int slot);
-    void DrawHeader(const PanelWriter& w, const VoltMod::Menu& menu);
-    void DrawTabs(const PanelWriter& w);
-    void DrawRows(const PanelWriter& w, const VoltMod::Menu& menu);
-    void DrawRow(const PanelWriter& w, int row, const VoltMod::MenuRow& described);
-    void DrawPrompt(const PanelWriter& w);
+    void DrawHeader(const VoltMod::UiPanelWriter& w, const VoltMod::Menu& menu);
+    void DrawTabs(const VoltMod::UiPanelWriter& w);
+    void DrawRows(const VoltMod::UiPanelWriter& w, const VoltMod::Menu& menu);
+    void DrawRow(const VoltMod::UiPanelWriter& w, int row, const VoltMod::MenuRow& described);
+    void DrawPrompt(const VoltMod::UiPanelWriter& w);
 
     void OnClick(const VoltMod::UiClick& click);
 

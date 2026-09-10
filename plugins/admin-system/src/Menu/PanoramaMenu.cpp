@@ -224,7 +224,7 @@ void PanoramaMenu::CloseAll(int slot, std::string_view replyKey)
 void PanoramaMenu::Prompt(int slot, std::string prompt, std::function<bool(int, std::string_view)> callback)
 {
     _rt.Hooks.ChatInput.BeginCapture(slot, std::move(prompt), std::move(callback));
-    DrawPrompt(PanelWriter{_screen.Panel(slot), slot});
+    DrawPrompt(VoltMod::UiPanelWriter{_screen.Panel(slot), slot});
 }
 
 std::string PanoramaMenu::Translate(int slot, std::string_view key, std::string_view fallback) const

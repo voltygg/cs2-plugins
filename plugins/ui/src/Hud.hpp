@@ -39,8 +39,6 @@ public:
     void Toast(int slot, const Contracts::ToastView& view) override;
 
 private:
-    using PanelWriter = VoltMod::PanelWriter<VoltMod::UiPanel>;
-
     /** Ask for a Server card redraw on the next tick. A map change readies the whole roster one
      *  slot at a time, and one redraw covers all of them. */
     void DrawServerCard();

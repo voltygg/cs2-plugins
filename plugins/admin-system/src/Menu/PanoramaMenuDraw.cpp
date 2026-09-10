@@ -53,7 +53,7 @@ void PanoramaMenu::Draw(int slot)
     if (!menu || !panel)
         return;
 
-    const PanelWriter w{panel, slot};
+    const VoltMod::UiPanelWriter w{panel, slot};
     DrawHeader(w, *menu);
     DrawTabs(w);
     DrawRows(w, *menu);
@@ -66,7 +66,7 @@ void PanoramaMenu::Draw(int slot)
     w.Set(Shell.Cancel, Translate(slot, "menu.cancel", "Cancel"));
 }
 
-void PanoramaMenu::DrawHeader(const PanelWriter& w, const Menu& menu)
+void PanoramaMenu::DrawHeader(const VoltMod::UiPanelWriter& w, const Menu& menu)
 {
     w.Set(Shell.Title, menu.Title);
     w.Set(Shell.Breadcrumb, _stack.Breadcrumb(w.Slot()));
@@ -74,7 +74,7 @@ void PanoramaMenu::DrawHeader(const PanelWriter& w, const Menu& menu)
     w.Set(Shell.SubtitleHidden, menu.Subtitle.empty());
 }
 
-void PanoramaMenu::DrawTabs(const PanelWriter& w)
+void PanoramaMenu::DrawTabs(const VoltMod::UiPanelWriter& w)
 {
     const Session& session = _sessions[w.Slot()];
 
@@ -91,7 +91,7 @@ void PanoramaMenu::DrawTabs(const PanelWriter& w)
     }
 }
 
-void PanoramaMenu::DrawRows(const PanelWriter& w, const Menu& menu)
+void PanoramaMenu::DrawRows(const VoltMod::UiPanelWriter& w, const Menu& menu)
 {
     const int slot = w.Slot();
     Session& session = _sessions[slot];
@@ -120,7 +120,7 @@ void PanoramaMenu::DrawRows(const PanelWriter& w, const Menu& menu)
         w.Set(Shell.Page, std::format("{} / {}", session.Page + 1, pages));
 }
 
-void PanoramaMenu::DrawRow(const PanelWriter& w, int row, const MenuRow& described)
+void PanoramaMenu::DrawRow(const VoltMod::UiPanelWriter& w, int row, const MenuRow& described)
 {
     const RowWriters& ids = Rows[static_cast<std::size_t>(row)];
 
@@ -143,7 +143,7 @@ void PanoramaMenu::DrawRow(const PanelWriter& w, int row, const MenuRow& describ
         w.Set(ids.Hint, Translate(w.Slot(), "menu.pending", "Applying..."));
 }
 
-void PanoramaMenu::DrawPrompt(const PanelWriter& w)
+void PanoramaMenu::DrawPrompt(const VoltMod::UiPanelWriter& w)
 {
     const auto prompt = _rt.Hooks.ChatInput.GetPrompt(w.Slot());
 

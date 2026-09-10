@@ -116,13 +116,14 @@ void Hud::SetCard(int card, int slot, const CardView& view)
     if (!writers || !_screen.Show(slot))
         return;
 
-    const PanelWriter w{_screen.Panel(), slot};
+    const VoltMod::UiPanelWriter w{_screen.Panel(), slot};
     w.Set(writers->Title, view.Title);
     w.Set(writers->Subtitle, view.Subtitle);
     w.Set(writers->Value, view.Value);
     w.Set(writers->Icon, view.Icon.empty() ? ClassChoice::None : writers->Icon.Find(view.Icon));
     w.Set(writers->BarHidden, view.BarStep < 0);
-    w.Set(writers->Bar, std::clamp(view.BarStep, 0, writers->Bar.Count() - 1));
+    if (view.BarStep >= 0)
+        w.Set(writers->Bar, std::clamp(view.BarStep, 0, writers->Bar.Count() - 1));
     w.Set(writers->Accent, static_cast<int>(view.Accent));
     w.Set(writers->Hidden, false);
 }
@@ -133,7 +134,7 @@ void Hud::HideCard(int card, int slot)
     if (!writers || !_screen.Show(slot))
         return;
 
-    PanelWriter{_screen.Panel(), slot}.Set(writers->Hidden, true);
+    VoltMod::UiPanelWriter{_screen.Panel(), slot}.Set(writers->Hidden, true);
 }
 
 void Hud::Toast(int slot, const ToastView& view)
@@ -141,15 +142,16 @@ void Hud::Toast(int slot, const ToastView& view)
     if (!_screen.Show(slot))
         return;
 
-    const PanelWriter w{_screen.Panel(), slot};
+    const VoltMod::UiPanelWriter w{_screen.Panel(), slot};
     w.Set(ToastPanel.Title, view.Title);
     w.Set(ToastPanel.Description, view.Description);
     w.Set(ToastPanel.Accent, static_cast<int>(view.Accent));
     w.Set(ToastPanel.Show, true);
 
     const int duration = view.DurationMs > 0 ? view.DurationMs : _config.Get().ui.toastDurationMs;
-    ToastTimer(slot) =
-        _rt.Scheduler.Delay(duration, [this, slot] { PanelWriter{_screen.Panel(), slot}.Set(ToastPanel.Show, false); });
+    ToastTimer(slot) = _rt.Scheduler.Delay(duration, [this, slot] {
+        VoltMod::UiPanelWriter{_screen.Panel(), slot}.Set(ToastPanel.Show, false);
+    });
 }
 
 VoltMod::Subscription& Hud::ToastTimer(int slot)
