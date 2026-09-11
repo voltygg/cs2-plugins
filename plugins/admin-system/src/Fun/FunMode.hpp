@@ -4,7 +4,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/SubscriptionScope.hpp>
-#include <VoltMod/Engine/ConVarOverrides.hpp>
+#include <VoltMod/Engine/ConVars/ConVarOverrides.hpp>
 #include <array>
 #include <string_view>
 #include <variant>
