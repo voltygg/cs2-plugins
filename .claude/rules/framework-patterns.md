@@ -42,7 +42,7 @@ commands.Add("slap")
 - Every subscription returns a `Subscription`. Keep it in a `SubscriptionScope` beside the state its handler captures: `_subs.Add(event += handler)`.
 - Dropping a subscription unsubscribes, and cancels a `Scheduler` timer, so a fire-and-forget deferral still needs an owner.
 - Hook services arm on the first subscription and disarm on the last. There is no `Install()`/`Enable()`. A leaked subscription leaves a live vtable hook after reload.
-- For an engine vfunc the framework does not cover: `VOLTMOD_VHOOK*` at file scope plus a `VtableHook` member, one vfunc per TU. Never call SourceHook `SH_*` macros directly.
+- For an engine vfunc the framework does not cover: `HookInterface`, `HookVTable` or `HookInstance` from `<VoltMod/Unsafe/Hook.hpp>`, keeping the `Subscription` each returns. A handler takes the hooked object first and returns `KHook::Return`.
 
 ## Entities
 

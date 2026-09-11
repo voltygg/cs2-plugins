@@ -23,7 +23,8 @@ protected:
 public:
     // Engine asks per (receiver, sender) whether the receiver should hear the sender; we drop
     // the channel when the sender is voice-muted.
-    bool Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen);
+    KHook::Return<bool> Hook_SetClientListening(IVEngineServer2* engine, CPlayerSlot iReceiver,
+                                                CPlayerSlot iSender, bool bListen);
 
 private:
     std::optional<AdminSystem::App> _app;

@@ -5,7 +5,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/App/PluginInfoStamp.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <VoltMod/Unsafe/HookMacros.hpp>
+#include <VoltMod/Unsafe/Hook.hpp>
 #include <string>
 
 using VoltMod::Player;
@@ -13,8 +13,6 @@ using VoltMod::PluginInfo;
 namespace Log = VoltMod::Log;
 
 VOLTMOD_PLUGIN(AdminSystemPlugin);
-
-SH_DECL_HOOK3(IVEngineServer2, SetClientListening, SH_NOATTRIB, 0, bool, CPlayerSlot, CPlayerSlot, bool);
 
 PluginInfo AdminSystemPlugin::Info() const
 {
@@ -36,8 +34,8 @@ bool AdminSystemPlugin::OnLoad(VoltMod::Runtime& runtime)
 
 void AdminSystemPlugin::OnRegisterHooks(VoltMod::Runtime& runtime, VoltMod::SubscriptionScope& hooks)
 {
-    hooks.Add(VOLTMOD_SCOPED_HOOK(IVEngineServer2, SetClientListening, runtime.Unsafe.Interfaces.Engine,
-                                  SH_MEMBER(this, &AdminSystemPlugin::Hook_SetClientListening), false));
+    hooks.Add(VoltMod::HookInterface(&IVEngineServer2::SetClientListening, runtime.Unsafe.Interfaces.Engine, this,
+                                     &AdminSystemPlugin::Hook_SetClientListening, nullptr));
 }
 
 bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, bool teamChat)
@@ -45,7 +43,8 @@ bool AdminSystemPlugin::OnPlayerChat(Player* player, std::string_view message, b
     return _app->PlayerChat.HandleSay(player, message, teamChat);
 }
 
-bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen)
+KHook::Return<bool> AdminSystemPlugin::Hook_SetClientListening(IVEngineServer2* engine, CPlayerSlot iReceiver,
+                                                               CPlayerSlot iSender, bool bListen)
 {
     if (bListen)
     {
@@ -56,10 +55,11 @@ bool AdminSystemPlugin::Hook_SetClientListening(CPlayerSlot iReceiver, CPlayerSl
                 // Tell the muted player they're being suppressed; ChatService rate-limits this
                 // so the per-receiver explosion of hook calls collapses to one chat line.
                 _app->PlayerChat.NotifyVoiceMuted(sender);
-                RETURN_META_VALUE_NEWPARAMS(MRES_HANDLED, false, &IVEngineServer2::SetClientListening,
-                                            (iReceiver, iSender, false));
+                // Run the engine's own handler with listening off instead of the caller's value.
+                KHook::CallOriginal(&IVEngineServer2::SetClientListening, engine, iReceiver, iSender, false);
+                return {KHook::Action::Supersede, false};
             }
         }
     }
-    RETURN_META_VALUE(MRES_IGNORED, true);
+    return {KHook::Action::Ignore, true};
 }
