@@ -27,7 +27,10 @@ $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 uv run poe build
 ```
 
-A `'vswhere.exe' is not recognized` line printed by the launcher itself is benign.
+A `'vswhere.exe' is not recognized` line means the VS Installer directory is missing
+from `PATH`. `VsDevCmd.bat` calls `vswhere.exe` bare from its own directory, which
+only resolves when `NoDefaultCurrentDirectoryInExePath` is unset. Put
+`C:\Program Files (x86)\Microsoft Visual Studio\Installer` on `PATH` to silence it.
 
 ## 2. Consuming the framework
 
