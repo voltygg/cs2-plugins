@@ -55,3 +55,7 @@ extend-exclude = ["vendor", "references"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
+
+[[tool.mypy.overrides]]
+module = ["conan.*", "yaml"]
+ignore_missing_imports = true
