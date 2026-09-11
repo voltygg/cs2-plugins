@@ -81,19 +81,16 @@ TEST_CASE("IsBallisticWeapon accepts hitscan weapons and rejects grenades and th
     CHECK_FALSE(IsBallisticWeapon("c4"));
 }
 
-TEST_CASE("A deviation the weapon can explain scores nothing")
+TEST_CASE("A deviation scores only when the weapon cannot explain it")
 {
-    SilentAimCore core;
-    // 5.71 degrees is well inside a rifle's 12.5 degree ceiling.
-    CHECK_FALSE(Land(core, Shot("ak47", ModerateImpact)).has_value());
-    CHECK(core.Score(Slot, Now) == 0);
-}
+    // 5.71 degrees is well inside a rifle's 12.5 degree ceiling and far outside an AWP's 2.5.
+    SilentAimCore rifle;
+    CHECK_FALSE(Land(rifle, Shot("ak47", ModerateImpact)).has_value());
+    CHECK(rifle.Score(Slot, Now) == 0);
 
-TEST_CASE("The same deviation on a sniper rifle is beyond explanation and scores")
-{
-    SilentAimCore core;
-    CHECK_FALSE(Land(core, Shot("awp", ModerateImpact)).has_value());
-    CHECK(core.Score(Slot, Now) == 2);
+    SilentAimCore sniper;
+    CHECK_FALSE(Land(sniper, Shot("awp", ModerateImpact)).has_value());
+    CHECK(sniper.Score(Slot, Now) == 2);
 }
 
 TEST_CASE("An impact closer than a hundred units or beyond ten thousand is not measured")
@@ -123,10 +120,7 @@ TEST_CASE("A shot is only finalized into evidence when it both hurt someone and 
 
 TEST_CASE("The points formula weighs blatant deviation airborne shots headshots and wallbangs")
 {
-    SilentAimCore grounded;
-    Land(grounded, Shot("awp", ModerateImpact));
-    CHECK(grounded.Score(Slot, Now) == 2);
-
+    // The plain moderate-deviation shot above is worth 2; each modifier moves it from there.
     SilentAimCore airborne;
     Land(airborne, Shot("awp", ModerateImpact, true, true));
     CHECK(airborne.Score(Slot, Now) == 1);

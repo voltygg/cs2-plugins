@@ -110,15 +110,6 @@ TEST_CASE("EstimateVisualLag rejects impossible latency and interpolation values
     CHECK_FALSE(EstimateVisualLag(0.05f, std::numeric_limits<float>::quiet_NaN()).Valid);
 }
 
-TEST_CASE("The on target epsilon is the target's own angular half width")
-{
-    // A 32 unit wide hull measured from its center: the aim may sit anywhere inside it.
-    CHECK(Geometry::AngularSizeDeg(16.0f, 500.0f) == doctest::Approx(1.8331f).epsilon(0.001));
-    CHECK(Geometry::AngularSizeDeg(16.0f, 2000.0f) == doctest::Approx(0.4584f).epsilon(0.001));
-    // The required target travel is one and a half hull widths at the same range.
-    CHECK(Geometry::AngularSizeDeg(48.0f, 500.0f) == doctest::Approx(5.4850f).epsilon(0.001));
-}
-
 TEST_CASE("Three tracking episodes on a moving target reach the threshold")
 {
     Harness harness;

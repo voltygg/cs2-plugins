@@ -59,25 +59,30 @@ struct Incident
     float VictimX = 500.0f;
     bool Teleported = false;
     int32_t OlderClientTickOffset = 1;  // 2 breaks the strict adjacency the rule requires
+    bool VictimIsTeammate = false;
+    double At = Now;
 };
 
 static std::optional<Finding> Run(ShotCorrelatorCore& correlator, AimbotCore& aimbot, const Incident& incident)
 {
-    correlator.CaptureFrame(incident.Tick - 1, Frame(incident.VictimX, incident.Teleported));
-    correlator.CaptureFrame(incident.Tick, Frame(incident.VictimX, incident.Teleported));
+    auto players = Frame(incident.VictimX, incident.Teleported);
+    if (incident.VictimIsTeammate)
+        players[Victim].Team = TeamT;
+    correlator.CaptureFrame(incident.Tick - 1, players);
+    correlator.CaptureFrame(incident.Tick, players);
 
     aimbot.OnCommand(Attacker,
                      AimCmd(incident.Base, incident.Tick - incident.OlderClientTickOffset, incident.YawOlder));
     aimbot.OnCommand(Attacker, AimCmd(incident.Base + 1, incident.Tick, incident.YawShot));
-    aimbot.OnSimulated(Attacker, incident.Base, incident.Tick - 1, Eye, Now);
-    aimbot.OnSimulated(Attacker, incident.Base + 1, incident.Tick, Eye, Now);
+    aimbot.OnSimulated(Attacker, incident.Base, incident.Tick - 1, Eye, incident.At);
+    aimbot.OnSimulated(Attacker, incident.Base + 1, incident.Tick, Eye, incident.At);
 
     ShotView shot;
     shot.Slot = Attacker;
     shot.CmdNum = incident.Base + 1;
     shot.ServerTick = incident.Tick;
     shot.FireTick = incident.Tick;
-    return aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);
+    return aimbot.OnPlayerHurt(Attacker, Victim, shot, incident.At);
 }
 
 TEST_CASE("The wide convergence branch counts at a snap over 10 degrees collapsing below a fifth of the error")
@@ -153,20 +158,7 @@ TEST_CASE("A shot against a teammate never counts")
 {
     ShotCorrelatorCore correlator;
     AimbotCore aimbot(correlator);
-    auto players = Frame();
-    players[Victim].Team = TeamT;
-    correlator.CaptureFrame(99, players);
-    correlator.CaptureFrame(100, players);
-    aimbot.OnCommand(Attacker, AimCmd(100, 99, 12.0f));
-    aimbot.OnCommand(Attacker, AimCmd(101, 100, 1.9f));
-    aimbot.OnSimulated(Attacker, 100, 99, Eye, Now);
-    aimbot.OnSimulated(Attacker, 101, 100, Eye, Now);
-    ShotView shot;
-    shot.Slot = Attacker;
-    shot.CmdNum = 101;
-    shot.ServerTick = 100;
-    shot.FireTick = 100;
-    aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);
+    Run(correlator, aimbot, {.VictimIsTeammate = true});
     CHECK(aimbot.IncidentCount(Attacker) == 0);
 }
 
@@ -197,34 +189,12 @@ TEST_CASE("Incidents outside the ten minute window fall out before the threshold
     for (int i = 0; i < 3; ++i)
     {
         const int32_t base = 100 + 10 * i;
-        correlator.CaptureFrame(base - 1, Frame());
-        correlator.CaptureFrame(base, Frame());
-        aimbot.OnCommand(Attacker, AimCmd(base, base - 1, 12.0f));
-        aimbot.OnCommand(Attacker, AimCmd(base + 1, base, 1.9f));
-        aimbot.OnSimulated(Attacker, base, base - 1, Eye, Now);
-        aimbot.OnSimulated(Attacker, base + 1, base, Eye, Now);
-        ShotView shot;
-        shot.Slot = Attacker;
-        shot.CmdNum = base + 1;
-        shot.ServerTick = base;
-        shot.FireTick = base;
-        aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);
+        Run(correlator, aimbot, {.Base = base, .Tick = base});
     }
     CHECK(aimbot.IncidentCount(Attacker) == 3);
 
     // Eleven minutes later the earlier three no longer support a detection.
-    correlator.CaptureFrame(129, Frame());
-    correlator.CaptureFrame(130, Frame());
-    aimbot.OnCommand(Attacker, AimCmd(130, 129, 12.0f));
-    aimbot.OnCommand(Attacker, AimCmd(131, 130, 1.9f));
-    aimbot.OnSimulated(Attacker, 130, 129, Eye, Now + 660.0);
-    aimbot.OnSimulated(Attacker, 131, 130, Eye, Now + 660.0);
-    ShotView shot;
-    shot.Slot = Attacker;
-    shot.CmdNum = 131;
-    shot.ServerTick = 130;
-    shot.FireTick = 130;
-    CHECK_FALSE(aimbot.OnPlayerHurt(Attacker, Victim, shot, Now + 660.0).has_value());
+    CHECK_FALSE(Run(correlator, aimbot, {.Base = 130, .Tick = 130, .At = Now + 660.0}).has_value());
     CHECK(aimbot.IncidentCount(Attacker) == 1);
 }
 
@@ -283,19 +253,13 @@ TEST_CASE("One shot never funds two incidents")
 {
     ShotCorrelatorCore correlator;
     AimbotCore aimbot(correlator);
-    correlator.CaptureFrame(99, Frame());
-    correlator.CaptureFrame(100, Frame());
-    aimbot.OnCommand(Attacker, AimCmd(100, 99, 12.0f));
-    aimbot.OnCommand(Attacker, AimCmd(101, 100, 1.9f));
-    aimbot.OnSimulated(Attacker, 100, 99, Eye, Now);
-    aimbot.OnSimulated(Attacker, 101, 100, Eye, Now);
+    Run(correlator, aimbot, {});
 
     ShotView shot;
     shot.Slot = Attacker;
     shot.CmdNum = 101;
     shot.ServerTick = 100;
     shot.FireTick = 100;
-    aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);
     aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);  // the shot is already consumed
     CHECK(aimbot.IncidentCount(Attacker) == 1);
 }

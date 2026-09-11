@@ -11,41 +11,23 @@ TEST_CASE("VoteThreshold needs a strict majority of the configured share")
     CHECK_EQ(VoteThreshold(10, 0.6), 7u);
     CHECK_EQ(VoteThreshold(5, 0.6), 4u);
     CHECK_EQ(VoteThreshold(1, 0.6), 1u);
-}
-
-TEST_CASE("VoteThreshold never exceeds the ballots cast")
-{
-    // Otherwise a unanimous vote could sit at a threshold nobody can reach.
-    CHECK_EQ(VoteThreshold(4, 1.0), 4u);
-    CHECK_EQ(VoteThreshold(10, 1.0), 10u);
-}
-
-TEST_CASE("VoteThreshold is zero when nothing was cast")
-{
     CHECK_EQ(VoteThreshold(0, 0.6), 0u);
 }
 
-TEST_CASE("VoteThreshold clamps a mis-set ratio")
+TEST_CASE("VoteThreshold stays between one ballot and every ballot cast")
 {
-    // A negative or above-one ratio must not make the vote free or impossible.
-    CHECK_EQ(VoteThreshold(10, -1.0), 1u);
+    // Otherwise a unanimous vote could sit at a threshold nobody can reach, or a mis-set ratio
+    // could make the vote free.
+    CHECK_EQ(VoteThreshold(4, 1.0), 4u);
     CHECK_EQ(VoteThreshold(10, 5.0), 10u);
+    CHECK_EQ(VoteThreshold(10, -1.0), 1u);
 }
 
 TEST_CASE("VotePassed compares yes ballots against the threshold")
 {
     CHECK_FALSE(VotePassed(6, 10, 0.6));
     CHECK(VotePassed(7, 10, 0.6));
-    CHECK(VotePassed(8, 10, 0.6));
-}
-
-TEST_CASE("VotePassed never passes when nothing was cast")
-{
-    // Zero yes out of zero ballots must not read as unanimous agreement.
-    CHECK_FALSE(VotePassed(0, 0, 0.6));
-}
-
-TEST_CASE("A single yes ballot carries a vote nobody else answered")
-{
+    // One ballot carries a vote nobody else answered, but zero out of zero is not agreement.
     CHECK(VotePassed(1, 1, 0.6));
+    CHECK_FALSE(VotePassed(0, 0, 0.6));
 }

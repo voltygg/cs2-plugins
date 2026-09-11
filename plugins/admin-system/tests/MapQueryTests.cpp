@@ -5,14 +5,10 @@
 using AdminSystem::Maps::MapEntry;
 using AdminSystem::Maps::ValidateMapEntry;
 
-TEST_CASE("ValidateMapEntry accepts a plain and a workshop entry")
+TEST_CASE("ValidateMapEntry accepts a plain and a workshop entry, and demands a name")
 {
     CHECK(ValidateMapEntry({.Name = "de_dust2"}).empty());
     CHECK(ValidateMapEntry({.Name = "my_map", .WorkshopId = 3070563536ull}).empty());
-}
-
-TEST_CASE("ValidateMapEntry rejects an entry with no name")
-{
     CHECK_FALSE(ValidateMapEntry({.Name = ""}).empty());
 }
 

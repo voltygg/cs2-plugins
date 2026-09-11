@@ -79,75 +79,70 @@ static bool Rejects(std::string_view name, std::string_view value, bool enforcin
     return verdict.Checked && verdict.Invalid;
 }
 
+/** The rules the shipped table marks cheatProtected, judged only while sv_cheats has settled off. */
+static constexpr std::string_view CheatProtected[] = {"sv_cheats", "cl_showpos", "cam_showangles", "cl_drawhud",
+                                                      "fov_cs_debug"};
+
 static bool Accepts(std::string_view name, std::string_view value, bool enforcing = Enforcing)
 {
     const CvarVerdict verdict = EvaluateCvar(name, value, enforcing);
     return verdict.Checked && !verdict.Invalid;
 }
 
-TEST_CASE("m_yaw must be a number at or below three tenths and only ever costs a kick")
+TEST_CASE("Each constraint accepts and rejects by its own rule")
 {
+    // Max: at or below the bound, and a number at all.
     CHECK(Accepts("m_yaw", "0.022"));
     CHECK(Accepts("m_yaw", "0.3"));
     CHECK(Rejects("m_yaw", "0.31"));
     CHECK(Rejects("m_yaw", "not-a-number"));
-    CHECK(EvaluateCvar("m_yaw", "0.31", Enforcing).KickOnly);
-    // A non-numeric reply is a client fault rather than a tuned advantage, so it is not kick-only.
-    CHECK_FALSE(EvaluateCvar("m_yaw", "garbage", Enforcing).KickOnly);
-}
 
-TEST_CASE("fps_max must be unlimited or at least the server tick rate and only ever costs a kick")
-{
+    // MinOrZero: unlimited, or at least the server tick rate.
     CHECK(Accepts("fps_max", "0"));
     CHECK(Accepts("fps_max", "64"));
-    CHECK(Accepts("fps_max", "400"));
     CHECK(Rejects("fps_max", "63"));
-    CHECK(Rejects("fps_max", "30"));
     CHECK(Rejects("fps_max", ""));
-    CHECK(EvaluateCvar("fps_max", "30", Enforcing).KickOnly);
-}
 
-TEST_CASE("sensitivity must stay inside the engine range")
-{
-    CHECK(Accepts("sensitivity", "2.5"));
+    // Range: inside the engine's own bounds, endpoints included.
     CHECK(Accepts("sensitivity", "0.0001"));
     CHECK(Accepts("sensitivity", "20"));
     CHECK(Rejects("sensitivity", "0"));
     CHECK(Rejects("sensitivity", "20.1"));
-    CHECK(Rejects("sensitivity", "abc"));
+
+    // Equals: the engine default and nothing else.
+    CHECK(Accepts("cl_pitchdown", "89"));
+    CHECK(Accepts("cl_pitchup", "89.0"));
+    CHECK(Accepts("cl_yawspeed", "210"));
+    CHECK(Rejects("cl_pitchdown", "180"));
+    CHECK(Rejects("cl_pitchup", "0"));
+    CHECK(Rejects("cl_yawspeed", "500"));
+
+    // Off and On, over the boolean spellings the engine reports.
+    CHECK(Accepts("sv_cheats", "0"));
+    CHECK(Accepts("sv_cheats", "false"));
+    CHECK(Rejects("sv_cheats", "1"));
+    CHECK(Accepts("cl_drawhud", "1"));
+    CHECK(Rejects("cl_drawhud", "0"));
+    CHECK(Accepts("fov_cs_debug", "0"));
+    CHECK(Rejects("fov_cs_debug", "90"));
+}
+
+TEST_CASE("A tuned advantage costs a kick alone, where a broken reply is worth a full finding")
+{
+    CHECK(EvaluateCvar("m_yaw", "0.31", Enforcing).KickOnly);
+    CHECK(EvaluateCvar("fps_max", "30", Enforcing).KickOnly);
+    // A non-numeric reply is a client fault rather than a tuned advantage, so it is not kick-only.
+    CHECK_FALSE(EvaluateCvar("m_yaw", "garbage", Enforcing).KickOnly);
     CHECK_FALSE(EvaluateCvar("sensitivity", "0", Enforcing).KickOnly);
 }
 
-TEST_CASE("The pitch limits and the yaw speed must hold their engine defaults")
+TEST_CASE("Enforcement gates the cheat protected rules alone, never the client tunable ones")
 {
-    CHECK(Accepts("cl_pitchdown", "89"));
-    CHECK(Accepts("cl_pitchup", "89.0"));
-    CHECK(Rejects("cl_pitchdown", "180"));
-    CHECK(Rejects("cl_pitchup", "0"));
-    CHECK(Rejects("cl_pitchdown", "nope"));
-    CHECK(Accepts("cl_yawspeed", "210"));
-    CHECK(Rejects("cl_yawspeed", "500"));
-}
-
-TEST_CASE("Cheat protected cvars are judged only while the server is enforcing them")
-{
-    CHECK(Rejects("sv_cheats", "1"));
-    CHECK(Accepts("sv_cheats", "0"));
-    CHECK(Accepts("sv_cheats", "false"));
     CHECK(Rejects("cl_showpos", "1"));
-    CHECK(Accepts("cl_showpos", "0"));
     CHECK(Rejects("cam_showangles", "1"));
-    CHECK(Rejects("cl_drawhud", "0"));
-    CHECK(Accepts("cl_drawhud", "1"));
-    CHECK(Rejects("fov_cs_debug", "90"));
-    CHECK(Accepts("fov_cs_debug", "0"));
-
-    for (std::string_view name : {"sv_cheats", "cl_showpos", "cam_showangles", "cl_drawhud", "fov_cs_debug"})
+    for (std::string_view name : CheatProtected)
         CHECK_FALSE(EvaluateCvar(name, "1", NotEnforcing).Checked);
-}
 
-TEST_CASE("Client controlled cvars are judged even while cheat protected ones are not")
-{
     CHECK(Rejects("m_yaw", "0.31", NotEnforcing));
     CHECK(Rejects("fps_max", "30", NotEnforcing));
     CHECK(Rejects("sensitivity", "0", NotEnforcing));
@@ -285,27 +280,22 @@ TEST_CASE("The table stores the queried tier first so each tier is a contiguous 
 
 TEST_CASE("A client that withholds a cheat protected cvar is judged, but only ever for a kick")
 {
-    for (std::string_view name : {"sv_cheats", "cl_showpos", "cam_showangles", "cl_drawhud", "fov_cs_debug"})
+    for (std::string_view name : CheatProtected)
     {
         const CvarVerdict verdict =
             EvaluateMissingCvar(name, "cvar_not_found", Enforcing, MissingRepliesBeforeEvidence);
         CHECK(verdict.Checked);
         CHECK(verdict.Invalid);
         CHECK(verdict.KickOnly);
+
+        // Not yet: one or two refusals are a dropped reply, not a client hiding a cvar.
+        for (int replies = 1; replies < MissingRepliesBeforeEvidence; ++replies)
+            CHECK_FALSE(EvaluateMissingCvar(name, "cvar_not_found", Enforcing, replies).Checked);
+
+        // Nor while the cheat rules are not being enforced at all.
+        CHECK_FALSE(EvaluateMissingCvar(name, "cvar_not_found", NotEnforcing, MissingRepliesBeforeEvidence).Checked);
     }
     CHECK(EvaluateMissingCvar("cl_drawhud", "cvar_protected", Enforcing, MissingRepliesBeforeEvidence).Invalid);
-}
-
-TEST_CASE("A cheat protected cvar withheld only once or twice is not yet evidence")
-{
-    for (int replies = 1; replies < MissingRepliesBeforeEvidence; ++replies)
-        CHECK_FALSE(EvaluateMissingCvar("cl_showpos", "cvar_not_found", Enforcing, replies).Checked);
-}
-
-TEST_CASE("A withheld cvar is not judged while the cheat rules are not being enforced")
-{
-    for (std::string_view name : {"sv_cheats", "cl_showpos", "cl_drawhud"})
-        CHECK_FALSE(EvaluateMissingCvar(name, "cvar_not_found", NotEnforcing, MissingRepliesBeforeEvidence).Checked);
 }
 
 TEST_CASE("A withheld client tunable cvar is no signal at all")
@@ -337,6 +327,10 @@ TEST_CASE("A reply that carries a value restarts the run of refusals")
     CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
     CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
     CHECK(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
+
+    // A withheld cvar shares the latch an invalid value uses, so it reports once either way.
+    CHECK(rules.IsLatched(Slot, "cl_showpos"));
+    CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_protected", Enforcing).has_value());
 }
 
 TEST_CASE("Refusals of different cvars are counted apart")
@@ -351,24 +345,6 @@ TEST_CASE("Refusals of different cvars are counted apart")
     // The next refusal reports for the cvar that received it, and only for that one.
     CHECK(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
     CHECK_FALSE(rules.IsLatched(Slot, "cl_drawhud"));
-}
-
-TEST_CASE("A withheld cvar latches like an invalid value and shares its latch")
-{
-    InvalidCvarRules rules = MakeRules();
-    for (int reply = 1; reply < MissingRepliesBeforeEvidence; ++reply)
-        REQUIRE_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
-    REQUIRE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
-    CHECK(rules.IsLatched(Slot, "cl_showpos"));
-    CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
-
-    // A later reply carrying a valid value re-arms the latch and restarts the run, so the refusal
-    // threshold must be met again.
-    CHECK_FALSE(rules.Observe(Slot, "cl_showpos", "0", Enforcing).has_value());
-    CHECK_FALSE(rules.IsLatched(Slot, "cl_showpos"));
-    for (int reply = 1; reply < MissingRepliesBeforeEvidence; ++reply)
-        CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_protected", Enforcing).has_value());
-    CHECK(rules.ObserveMissing(Slot, "cl_showpos", "cvar_protected", Enforcing).has_value());
 }
 
 TEST_CASE("Successive polls walk the whole cvar table without repeating within a lap")

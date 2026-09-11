@@ -113,7 +113,7 @@ TEST_CASE("Ban mode bans a normal finding and only kicks a kick-only one")
     CHECK(kicked.Apply == PunishmentLevel::Kick);
 }
 
-TEST_CASE("A punishment already issued is never repeated at the same level")
+TEST_CASE("A punishment already issued is never repeated or downgraded, but may be raised")
 {
     const FunnelDecision kick = Decide(Input(Mode::Ban, true, PunishmentLevel::Kick));
     CHECK(kick.Outcome == FunnelOutcome::AlreadyPunished);
@@ -122,10 +122,8 @@ TEST_CASE("A punishment already issued is never repeated at the same level")
     const FunnelDecision ban = Decide(Input(Mode::Ban, false, PunishmentLevel::Ban));
     CHECK(ban.Outcome == FunnelOutcome::AlreadyPunished);
     CHECK(ban.Apply == PunishmentLevel::None);
-}
 
-TEST_CASE("A banned player is never downgraded to a kick but a kicked one can still be banned")
-{
+    // A kick-only finding against an already-banned player must not walk the ban back.
     const FunnelDecision downgrade = Decide(Input(Mode::Ban, true, PunishmentLevel::Ban));
     CHECK(downgrade.Outcome == FunnelOutcome::AlreadyPunished);
     CHECK(downgrade.Apply == PunishmentLevel::None);
