@@ -1,6 +1,6 @@
 # Admin system
 
-A PostgreSQL-backed administration plugin for CS2 servers. It provides
+A database-backed administration plugin for CS2 servers. It provides
 moderation commands, WASD menus, permissions, effects, player reports,
 multi-server grants, abuse protection, and cheat-check workflows.
 
@@ -28,7 +28,7 @@ multi-server grants, abuse protection, and cheat-check workflows.
 
 - CS2 dedicated server
 - [Metamod:Source 2.0](https://www.sourcemm.net/)
-- PostgreSQL 18 or newer
+- PostgreSQL 13+, MariaDB 10.5+, or SQLite (bundled, no server needed)
 
 ## Install
 
@@ -36,17 +36,19 @@ multi-server grants, abuse protection, and cheat-check workflows.
 2. Configure `addons/admin-system/configs/settings.jsonc`.
 3. Give every server sharing the database a unique, stable `server.tag`.
 4. Start the server and let the plugin apply its migrations.
-5. Put your SteamID64 in [`database/seed-admin.sql`](database/seed-admin.sql),
-   then run:
+5. Put your SteamID64 in the seed file for your `database.driver`
+   ([`database/`](database/)), then run it:
 
    ```bash
-   psql -d admin_system -f database/seed-admin.sql
+   psql -d admin_system -f database/seed-admin.postgres.sql
+   mariadb admin_system < database/seed-admin.mariadb.sql
+   sqlite3 admin-system.sqlite < database/seed-admin.sqlite.sql
    ```
 
 6. Restart the server or run `!admin_reload`.
 
-To apply migrations manually, run the SQL files in
-[`configs/migrations/`](configs/migrations/) in filename order.
+To apply migrations manually, run the SQL files under
+[`configs/migrations/<driver>/`](configs/migrations/) in filename order.
 
 ## Permission flags
 

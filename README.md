@@ -17,7 +17,7 @@ Native C++23 plugins for Counter-Strike 2, built on the
 
 | Plugin | What it provides | Runtime dependency |
 | --- | --- | --- |
-| [Admin system](plugins/admin-system/README.md) | Permissions, moderation, reports, effects, and cheat checks | PostgreSQL |
+| [Admin system](plugins/admin-system/README.md) | Permissions, moderation, reports, effects, and cheat checks | Postgres, MariaDB, or SQLite |
 | [Anticheat](plugins/anticheat/README.md) | Movement, aim, and client-integrity detection | Admin system for alerts and bans; detection still runs without it |
 | [Bhop](plugins/bhop/README.md) | Client-predicted autobhop and movement tuning | Admin system only in grants mode |
 
@@ -25,7 +25,7 @@ Native C++23 plugins for Counter-Strike 2, built on the
 
 You need a CS2 dedicated server and
 [Metamod:Source 2](https://www.sourcemm.net/downloads.php/?branch=master).
-The admin system also needs PostgreSQL.
+The admin system also needs a database: PostgreSQL, MariaDB, or SQLite.
 
 1. Download the required plugin archive from the repository releases.
 2. Extract it into the server's `game/csgo` directory.

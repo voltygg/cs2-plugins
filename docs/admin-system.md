@@ -20,7 +20,7 @@ built-in defaults.
 | --- | --- |
 | `plugin` | Translation file to use, without `.json` |
 | `server` | This server's `tag` and display `name` in the shared database |
-| `database` | PostgreSQL host, credentials, and libpq `sslMode` |
+| `database` | Backend `driver` (`postgres`, `mariadb`, `sqlite`), host, credentials, `sslMode` |
 | `punishments` | Ban defaults, warning threshold, appeal notice, presets |
 | `abuseProtection` | Sliding-window thresholds that auto-freeze an admin |
 | `chat` | Punishment broadcasts and admin chat tagging |
@@ -214,9 +214,38 @@ walk them around.
 
 ## Database
 
-The plugin owns its schema and applies the migrations in
-`configs/migrations/` in filename order at load. To apply them by hand, run the
-files in the same order with `psql`.
+`database.driver` in `settings.jsonc` picks the backend: `postgres` (default),
+`mariadb`, or `sqlite` (bundled, no server to run). See
+`configs/settings.schema.json` for the full key set, including `path` (the
+sqlite file) and `connectTimeoutSec`.
+
+The plugin owns its schema. `configs/migrations/<driver>/NNNN_name.sql` holds
+one folder per backend; at load, the plugin applies the files for the
+configured driver in filename order. To apply them by hand, run the files for
+your driver in the same order:
+
+```bash
+psql -d admin_system -f configs/migrations/postgres/0001_initial_schema.sql
+mariadb admin_system < configs/migrations/mariadb/0001_initial_schema.sql
+sqlite3 admin-system.sqlite < configs/migrations/sqlite/0001_initial_schema.sql
+```
+
+Seed the first admin the same way, using the seed file for your driver:
+
+```bash
+psql -d admin_system -f database/seed-admin.postgres.sql
+mariadb admin_system < database/seed-admin.mariadb.sql
+sqlite3 admin-system.sqlite < database/seed-admin.sqlite.sql
+```
+
+`admins.groups` and `admin_groups.inherits` hold a JSON array as text (for
+example `'["super_admin"]'`), not a native array column.
+
+Postgres migration `0004_json_groups.sql` converts `admins.groups` and
+`admin_groups.inherits` from `TEXT[]` to JSON-array text. **Back up the
+database (`pg_dump`) before applying it** on an existing deployment, and
+update anything else that reads those two columns directly (such as the
+website) to parse JSON instead of a Postgres array.
 
 | Table | Holds |
 | --- | --- |

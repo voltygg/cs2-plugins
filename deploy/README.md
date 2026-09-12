@@ -127,6 +127,10 @@ The private deployment key is separate: use `SSH_KEY` in GitHub or
 
 ## Prepare plugin databases
 
+Admin-system's `database.driver` defaults to `postgres` (it also supports
+`mariadb` and `sqlite`), but the deploy tooling and templates here provision
+PostgreSQL only.
+
 Create the application role and one database for each database-backed plugin:
 
 ```bash

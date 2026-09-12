@@ -71,5 +71,5 @@ commands.Add("slap")
 
 ## Database
 
-- Repositories use `Table`, `Key`, and `Columns()`. Keep handwritten SQL for specific UPDATE/WHERE clauses.
+- `VoltMod::Database::Run`/`RunBlocking` take a job callable over `auto& conn`, dispatched to whichever backend (Postgres, MariaDB, SQLite) is configured. Declare a table's columns with `VOLTMOD_COLUMN`; insert with `VoltMod::InsertReturningId` where the id is needed back.
 - admin-system settings: `configs/settings.jsonc`; migrations: `configs/migrations/`. Several servers may share one database and `server.tag` identifies each. Run `!admin_reload` after editing admin data by hand.

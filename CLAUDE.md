@@ -1,7 +1,7 @@
 # CS2 plugins
 
 C++23 Metamod:Source plugins for Counter-Strike 2 on the VoltMod framework
-(Conan package `voltmod/[~1.3]`).
+(Conan package `voltmod/[~1.4]`).
 
 - `vendor/voltmod` is a separate Git repo with its own `CLAUDE.md`. Check its status and diffs separately.
 - `references/` is read-only.
@@ -41,7 +41,7 @@ uv run poe build --relock                  # before committing; commit conan.loc
 ## Layout
 
 ```text
-plugins/admin-system/  Admins, punishments, menus, reports, PostgreSQL
+plugins/admin-system/  Admins, punishments, menus, reports, Postgres/MariaDB/SQLite
 plugins/anticheat/     Detection cores, engine adapters, responses
 plugins/bhop/          Bunnyhop modes
 plugins/contracts/     Interfaces shared between plugins

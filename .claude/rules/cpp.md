@@ -23,7 +23,7 @@ paths:
 
 - Game code runs on the main thread. No plugin threads or mutexes; VoltMod's DB and HTTP workers replay completions on the game thread.
 - Database calls are async during gameplay. Blocking is only for load-time work: migrations and explicit admin reloads.
-- Database TUs include `<VoltMod/Database/Api.hpp>`; the main `<VoltMod/Api.hpp>` deliberately leaves libpqxx out.
+- Database TUs include `<VoltMod/Database/Api.hpp>`; the main `<VoltMod/Api.hpp>` deliberately leaves sqlpp23 out.
 
 ## Dependencies
 
