@@ -15,6 +15,8 @@ dependencies = [
     "python-dotenv>=1.2.0",
     "typer>=0.27.1",
     "pyyaml>=6.0",
+    # sqlpp23 ships its table-spec generator as a script and leaves this to the consumer.
+    "pyparsing>=3.2",
 ]
 
 [tool.uv]
@@ -39,6 +41,7 @@ deploy-cleanup = "python -m deploy.tools.cli cleanup"
 deploy-dbs = "python -m deploy.tools.cli ensure-dbs"
 deploy-tunnel = "python -m deploy.tools.cli tunnel-db"
 rcon = "python -m deploy.tools.cli rcon"
+schema = "python -m tools.schema"
 
 [tool.poe.tasks.lint]
 help = "Lint the build tooling and check the plugin source conventions"
@@ -46,6 +49,7 @@ sequence = [
     { cmd = "ruff check ." },
     { cmd = "voltmod modgraph --plugins ." },
     { cmd = "voltmod panorama check" },
+    { cmd = "python -m tools.schema --check" },
 ]
 
 [tool.ruff]
