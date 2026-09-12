@@ -18,14 +18,13 @@ protected:
     bool OnLoad(VoltMod::Runtime& runtime) override;
     void OnUnload() override { _app.reset(); }
     bool OnPlayerChat(VoltMod::Player* player, std::string_view message, bool teamChat) override;
-    void OnRegisterHooks(VoltMod::Runtime& runtime, VoltMod::SubscriptionScope& hooks) override;
-
-public:
-    // Engine asks per (receiver, sender) whether the receiver should hear the sender; we drop
-    // the channel when the sender is voice-muted.
-    KHook::Return<bool> Hook_SetClientListening(IVEngineServer2* engine, CPlayerSlot iReceiver,
-                                                CPlayerSlot iSender, bool bListen);
+    void OnRegisterHooks(VoltMod::Runtime& runtime, VoltMod::Subscriptions& hooks) override;
 
 private:
+    // Engine asks per (receiver, sender) whether the receiver should hear the sender; we drop
+    // the channel when the sender is voice-muted.
+    VoltMod::HookResult<bool> OnSetClientListening(IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender,
+                                                   bool listen);
+
     std::optional<AdminSystem::App> _app;
 };
