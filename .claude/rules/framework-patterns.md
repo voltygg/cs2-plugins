@@ -71,5 +71,8 @@ commands.Add("slap")
 
 ## Database
 
-- `VoltMod::Database::Run`/`RunBlocking` take a job callable over `auto& conn`, dispatched to whichever backend (Postgres, MariaDB, SQLite) is configured. Declare a table's columns with `VOLTMOD_COLUMN`; insert with `VoltMod::InsertReturningId` where the id is needed back.
+- `VoltMod::Database::RunAsync`/`Run` take a job callable over `auto& conn`, dispatched to whichever backend (Postgres, MariaDB, SQLite) is configured. A bare name blocks and is load-time only; `Async` returns first. Both report failure as `Result<T>` over `Error`.
+- `VoltMod::Insert` returns the generated id; `VoltMod::Upsert` is the portable update-then-insert. Repository methods that return before the write lands end in `Async`.
+- Table specs are generated: edit `plugins/admin-system/schema/schema.sql.in`, then `uv run poe schema`. It renders the per-driver migrations and `src/Database/Tables/Schema.hpp`; `poe lint` fails if they drift. Never edit a rendered file.
+- Managers take `Database::Repositories&`, built once in `App`. Do not construct a repository at a call site.
 - admin-system settings: `configs/settings.jsonc`; migrations: `configs/migrations/`. Several servers may share one database and `server.tag` identifies each. Run `!admin_reload` after editing admin data by hand.
