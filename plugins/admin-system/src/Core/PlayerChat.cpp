@@ -31,8 +31,7 @@ static std::string MuteExpiryText(VoltMod::Translations& tr, int64_t expiresAt, 
                               tr.Get("muteNotice.expiresIn", slot));
 }
 
-template <class TMute>
-void PlayerChat::ReplyMuteNotice(int slot, std::string_view noticeKey, const std::optional<TMute>& mute)
+void PlayerChat::ReplyMuteNotice(int slot, std::string_view noticeKey, const std::optional<Database::Punishment>& mute)
 {
     auto& tr = _rt.Translations;
     if (!mute)

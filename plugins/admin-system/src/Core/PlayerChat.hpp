@@ -62,10 +62,8 @@ private:
     // dozens of say events, so unthrottled notices would out-spam the spam itself.
     static constexpr int64_t MuteNoticeIntervalSec = 60;
 
-    /** The red "you are muted" line plus its optional reason, for either mute kind. The two
-     *  entities share ExpiresAt/Reason, so the notice differs only in which key names it. */
-    template <class TMute>
-    void ReplyMuteNotice(int slot, std::string_view noticeKey, const std::optional<TMute>& mute);
+    /** The red "you are muted" line, plus the expiry and reason when the mute row is in hand. */
+    void ReplyMuteNotice(int slot, std::string_view noticeKey, const std::optional<Database::Punishment>& mute);
 
     VoltMod::Throttle<int> _voiceMuteNotice{MuteNoticeIntervalSec};
     VoltMod::Throttle<int> _textMuteNotice{MuteNoticeIntervalSec};

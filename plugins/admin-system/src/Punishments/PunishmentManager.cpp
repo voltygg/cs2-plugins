@@ -21,14 +21,13 @@ namespace AdminSystem::Punishments
 
 namespace Log = VoltMod::Log;
 
-// The caches are indexed by PunishType, so the array has to cover the whole enum.
-static_assert(static_cast<int>(PunishType::Warn) == 4, "PunishmentManager::_active has one slot per PunishType");
-
 /** The broadcast key for issuing @p kind. */
 static std::string_view IssuedKey(PunishType kind)
 {
     switch (kind)
     {
+    case PunishType::Kick:
+        return "kicked";
     case PunishType::Ban:
         return "banned";
     case PunishType::VoiceMute:
@@ -37,10 +36,8 @@ static std::string_view IssuedKey(PunishType kind)
         return "text-muted";
     case PunishType::Warn:
         return "warned";
-    case PunishType::Kick:
-        break;
     }
-    return "kicked";
+    return {};
 }
 
 /** The broadcast key for lifting @p kind. Only the cached kinds are ever lifted. */
@@ -48,16 +45,17 @@ static std::string_view LiftedKey(PunishType kind)
 {
     switch (kind)
     {
+    case PunishType::Ban:
+        return "unbanned";
     case PunishType::VoiceMute:
         return "voice-unmuted";
     case PunishType::TextMute:
         return "text-unmuted";
-    case PunishType::Ban:
-    case PunishType::Warn:
     case PunishType::Kick:
+    case PunishType::Warn:
         break;
     }
-    return "unbanned";
+    return {};
 }
 
 /** Fill in the times an admin did not give. */
@@ -175,7 +173,7 @@ bool PunishmentManager::Issue(Punishment& record)
         RefreshVoiceChannel(_rt, record.TargetSteamId, true);
     }
 
-    _chat.BroadcastPunishment(std::string(IssuedKey(record.Kind)), record.AdminName, record.TargetName, record.Reason,
+    _chat.BroadcastPunishment(IssuedKey(record.Kind), record.AdminName, record.TargetName, record.Reason,
                               record.Duration);
 
     if (record.Kind == PunishType::Warn)
@@ -185,24 +183,27 @@ bool PunishmentManager::Issue(Punishment& record)
 
 void PunishmentManager::EscalateWarning(const Punishment& warning)
 {
+    // Built now so the callback carries only what the ban needs; its reason is read when it fires.
+    Punishment autoBan{.Kind = PunishType::Ban,
+                       .TargetSteamId = warning.TargetSteamId,
+                       .TargetName = warning.TargetName,
+                       .AdminSteamId = warning.AdminSteamId,
+                       .AdminName = warning.AdminName,
+                       .Duration = 0};  // permanent escalation
+
     // FIFO: this count sees the insert Issue just enqueued, and lands on the game thread.
-    _repos.Punishments.CountActiveAsync(PunishType::Warn, warning.TargetSteamId, [this, w = warning](int active) {
-        const int threshold = _config.GetPunishments().warningThreshold;
-        if (threshold <= 0 || active < threshold)
-            return;
+    _repos.Punishments.CountActiveAsync(
+        PunishType::Warn, warning.TargetSteamId, [this, autoBan = std::move(autoBan)](int active) mutable {
+            const int threshold = _config.GetPunishments().warningThreshold;
+            if (threshold <= 0 || active < threshold)
+                return;
 
-        Log::Info("Warning threshold ({}) reached for {} -- escalating to ban.", threshold, w.TargetSteamId);
-        _repos.Punishments.ClearAsync(PunishType::Warn, w.TargetSteamId);
+            Log::Info("Warning threshold ({}) reached for {} -- escalating to ban.", threshold, autoBan.TargetSteamId);
+            _repos.Punishments.ClearAsync(PunishType::Warn, autoBan.TargetSteamId);
 
-        Punishment autoBan{.Kind = PunishType::Ban,
-                           .TargetSteamId = w.TargetSteamId,
-                           .TargetName = w.TargetName,
-                           .AdminSteamId = w.AdminSteamId,
-                           .AdminName = w.AdminName,
-                           .Reason = _config.GetPunishments().defaultBanReason,
-                           .Duration = 0};  // permanent escalation
-        Issue(autoBan);
-    });
+            autoBan.Reason = _config.GetPunishments().defaultBanReason;
+            Issue(autoBan);
+        });
 }
 
 bool PunishmentManager::Remove(PunishType kind, int64_t recordId, int64_t removedBy, const std::string& reason)
@@ -212,23 +213,32 @@ bool PunishmentManager::Remove(PunishType kind, int64_t recordId, int64_t remove
     if (it == cache.end())
         return false;  // already lifted, possibly by another server - nothing to remove
 
-    const int64_t steamId = it->first;
-    const std::string targetName = it->second.TargetName;
-    cache.erase(it);
-
-    _repos.Punishments.RemoveAsync(recordId, removedBy, reason);
-    if (kind == PunishType::VoiceMute)
-        RefreshVoiceChannel(_rt, steamId, false);
-    _chat.BroadcastPunishment(std::string(LiftedKey(kind)), "Admin", targetName, reason, 0);
+    RemoveCached(kind, it, removedBy, reason);
     return true;
 }
 
 bool PunishmentManager::RemoveBySteamId(PunishType kind, int64_t steamId, int64_t removedBy, const std::string& reason)
 {
     // The caches mirror every active row, so a miss needs no database lookup.
-    const Cache& cache = CacheFor(kind);
+    Cache& cache = CacheFor(kind);
     auto it = cache.find(steamId);
-    return it != cache.end() && Remove(kind, it->second.Id, removedBy, reason);
+    if (it == cache.end())
+        return false;
+
+    RemoveCached(kind, it, removedBy, reason);
+    return true;
+}
+
+void PunishmentManager::RemoveCached(PunishType kind, Cache::iterator it, int64_t removedBy, const std::string& reason)
+{
+    const int64_t steamId = it->first;
+    _repos.Punishments.RemoveAsync(it->second.Id, removedBy, reason);
+    _chat.BroadcastPunishment(LiftedKey(kind), "Admin", it->second.TargetName, reason, 0);
+
+    // Erased before the refresh, which re-reads the cache through the listening hook.
+    CacheFor(kind).erase(it);
+    if (kind == PunishType::VoiceMute)
+        RefreshVoiceChannel(_rt, steamId, false);
 }
 
 void PunishmentManager::KickDeferred(int slot, int64_t steamId, std::string reason)
@@ -257,8 +267,8 @@ void PunishmentManager::RefreshCachesAsync()
 
 void PunishmentManager::SwapCaches(std::vector<Punishment> rows)
 {
-    // Snapshot before the swap: voice mutes that expired this sweep still need a channel refresh.
-    const Cache previouslyVoiceMuted = CacheFor(PunishType::VoiceMute);
+    // Taken before the swap: voice mutes that expired this sweep still need a channel refresh.
+    const Cache previouslyVoiceMuted = std::exchange(CacheFor(PunishType::VoiceMute), {});
 
     for (Cache& cache : _active)
         cache.clear();

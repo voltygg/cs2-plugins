@@ -10,20 +10,29 @@ namespace AdminSystem::Database
 {
 
 using Punishments::AuditActionName;
+using Punishments::PunishType;
 using VoltMod::Time;
 
 // Names the COUNT column so the row reads as row.total.
 SQLPP_CREATE_NAME_TAG(total);
 
-/** The one read behind both the blocking load and the async refresh. */
+/** Rows still in force at @p now: active, and permanent or not yet expired. */
+static auto ActiveAt(const Tables::Punishments& t, int64_t now)
+{
+    return t.isActive == true and (t.expiresAt == 0 or t.expiresAt > now);
+}
+
+/** The one read behind both the blocking load and the async refresh. Warnings never expire and
+ *  are counted in the database, so the minute refresh would only discard them. */
 static auto ActiveQuery(int64_t now)
 {
     return [now](auto& conn) {
         const Tables::Punishments t;
         std::vector<Punishment> records;
-        for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t))
-                                        .from(t)
-                                        .where(t.isActive == true and (t.expiresAt == 0 or t.expiresAt > now))))
+        for (const auto& row :
+             conn(sqlpp::select(sqlpp::all_of(t))
+                      .from(t)
+                      .where(ActiveAt(t, now) and t.kind != AuditActionName(PunishType::Warn))))
         {
             auto kind = Punishments::ParseAuditAction(row.kind);
             if (!kind)  // a kind written by a newer build; leave it to that build
@@ -108,8 +117,7 @@ void PunishmentRepository::CountActiveAsync(PunishType kind, int64_t steamId, st
             for (const auto& row : conn(sqlpp::select(sqlpp::count(t.id).as(total))
                                             .from(t)
                                             .where(t.targetSteamId == steamId and t.kind == AuditActionName(kind) and
-                                                   t.isActive == true and
-                                                   (t.expiresAt == 0 or t.expiresAt > now))))
+                                                   ActiveAt(t, now))))
                 active = static_cast<int>(row.total);
             return active;
         },

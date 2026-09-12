@@ -58,15 +58,15 @@ public:
 private:
     using Cache = std::unordered_map<int64_t, Database::Punishment>;  ///< keyed by TargetSteamId
 
-    /** Whether @p kind is cached. A cache holds one row per player, which a warning breaks and a
-     *  kick has none of, so those two are counted in the database instead. */
-    static bool IsCached(PunishType kind)
-    {
-        return kind == PunishType::Ban || kind == PunishType::VoiceMute || kind == PunishType::TextMute;
-    }
+    /** Whether @p kind is cached: the timed kinds. A cache holds one row per player, which a warning
+     *  breaks and a kick has none of, so those two are counted in the database instead. */
+    static bool IsCached(PunishType kind) { return IsTimed(kind); }
 
-    Cache& CacheFor(PunishType kind) { return _active[static_cast<size_t>(kind)]; }
-    const Cache& CacheFor(PunishType kind) const { return _active[static_cast<size_t>(kind)]; }
+    Cache& CacheFor(PunishType kind) { return _active[VoltMod::EnumIndex(kind)]; }
+    const Cache& CacheFor(PunishType kind) const { return _active[VoltMod::EnumIndex(kind)]; }
+
+    /** Lift the cached entry @p it points at: persist, drop it, refresh voice, broadcast. */
+    void RemoveCached(PunishType kind, Cache::iterator it, int64_t removedBy, const std::string& reason);
 
     /** Re-query every active row off-thread and swap the caches when they arrive. */
     void RefreshCachesAsync();
@@ -81,7 +81,7 @@ private:
     VoltMod::PerSlot<VoltMod::Subscription> _pendingKick;
 
     /** Indexed by PunishType; the slots @ref IsCached rejects stay empty. */
-    std::array<Cache, 5> _active;
+    std::array<Cache, VoltMod::EnumCount<PunishType>> _active;
 };
 
 }  // namespace AdminSystem::Punishments

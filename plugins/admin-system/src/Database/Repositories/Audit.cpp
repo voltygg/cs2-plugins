@@ -10,6 +10,7 @@
 namespace AdminSystem::Database
 {
 
+using Punishments::PunishType;
 using VoltMod::Time;
 
 // Names the COUNT column so the row reads as row.total.

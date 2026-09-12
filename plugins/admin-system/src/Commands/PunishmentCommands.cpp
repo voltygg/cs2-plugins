@@ -61,7 +61,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Permission(Flag(Permission::Unban))
         .UsageKey("cmd.unbanUsage")
         .Run([&app](Caller c, Args::SteamId id, Args::Opt<Args::Rest> why) -> Result<Reply> {
-            const std::string reason = ReasonOr(c, why, "reason.unbannedByAdmin");
+            const std::string reason = ReasonOr(c, why, LiftReasonKey(PunishType::Ban));
             bool removed = app.Punishments.RemoveBySteamId(PunishType::Ban, id.Value, c.Player->SteamId(), reason);
             Tokens tokens{{"id", std::to_string(id.Value)}};
             return removed ? c.Ok("cmd.unbanSuccess", tokens) : c.Fail("cmd.unbanNoBan", tokens);
@@ -84,7 +84,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Permission(Flag(Permission::Mute))
         .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
             bool removed = app.Punishments.RemoveBySteamId(PunishType::VoiceMute, t.Value->SteamId(), c.Player->SteamId(),
-                                                           c.Tr.Get("reason.voiceUnmutedByAdmin"));
+                                                           c.Tr.Get(LiftReasonKey(PunishType::VoiceMute)));
             Tokens tokens{{"name", t.Value->Name()}};
             return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
         });
@@ -106,7 +106,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Permission(Flag(Permission::Mute))
         .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
             bool removed = app.Punishments.RemoveBySteamId(PunishType::TextMute, t.Value->SteamId(), c.Player->SteamId(),
-                                                           c.Tr.Get("reason.textUnmutedByAdmin"));
+                                                           c.Tr.Get(LiftReasonKey(PunishType::TextMute)));
             Tokens tokens{{"name", t.Value->Name()}};
             return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
         });

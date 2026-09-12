@@ -5,7 +5,6 @@
 #include <VoltMod/Core/EnumNames.hpp>
 #include <optional>
 #include <string_view>
-#include <initializer_list>
 
 namespace AdminSystem::Punishments
 {
@@ -68,13 +67,31 @@ inline std::string_view AuditActionName(PunishType type)
 /** Read one of those columns back; nullopt for a value this build does not know. */
 inline std::optional<PunishType> ParseAuditAction(std::string_view name)
 {
-    for (PunishType type : {PunishType::Kick, PunishType::Ban, PunishType::VoiceMute, PunishType::TextMute,
-                            PunishType::Warn})
+    for (PunishType type : VoltMod::EnumValues<PunishType>())
     {
         if (AuditActionName(type) == name)
             return type;
     }
     return std::nullopt;
+}
+
+/** Translation key of the default reason for lifting this punishment; empty for a kind that cannot
+ *  be lifted. */
+inline std::string_view LiftReasonKey(PunishType type)
+{
+    switch (type)
+    {
+    case PunishType::Ban:
+        return "reason.unbannedByAdmin";
+    case PunishType::VoiceMute:
+        return "reason.voiceUnmutedByAdmin";
+    case PunishType::TextMute:
+        return "reason.textUnmutedByAdmin";
+    case PunishType::Kick:
+    case PunishType::Warn:
+        break;
+    }
+    return {};
 }
 
 /** The admin flag required to issue this punishment. */

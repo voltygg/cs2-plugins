@@ -49,25 +49,11 @@ static std::string_view TagKey(PunishType kind)
 /** Lift the punishment; false when another server already did. */
 static bool Lift(App& app, const LiftRow& row, int64_t adminSteamId)
 {
-    std::string_view reasonKey;
-    switch (row.Kind)
-    {
-    case PunishType::Ban:
-        reasonKey = "reason.unbannedByAdmin";
-        break;
-    case PunishType::VoiceMute:
-        reasonKey = "reason.voiceUnmutedByAdmin";
-        break;
-    case PunishType::TextMute:
-        reasonKey = "reason.textUnmutedByAdmin";
-        break;
-    case PunishType::Kick:
-    case PunishType::Warn:
+    const std::string_view reasonKey = LiftReasonKey(row.Kind);
+    if (reasonKey.empty())
         return false;  // Not liftable: no row is ever built for these.
-    }
 
-    return app.Punishments.Remove(row.Kind, row.Id, adminSteamId,
-                                  app.Runtime.Translations.Get(std::string(reasonKey)));
+    return app.Punishments.Remove(row.Kind, row.Id, adminSteamId, app.Runtime.Translations.Get(reasonKey));
 }
 
 static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
@@ -109,18 +95,18 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
 
 /** One row per punishment. Bans carry no tag; mutes are tagged with their kind. */
 static void AppendRows(App& app, MenuBuilder& builder, const std::vector<Database::Punishment>& punishments,
-                       PunishType kind, int adminSlot)
+                       int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
     for (const auto& punishment : punishments)
     {
-        LiftRow row{.Kind = kind,
+        LiftRow row{.Kind = punishment.Kind,
                     .Id = punishment.Id,
                     .Name = Strings::DisplayNameOr(punishment.TargetSteamId, punishment.TargetName),
                     .ExpiresAt = punishment.ExpiresAt,
                     .Reason = punishment.Reason};
 
-        const auto tag = TagKey(kind);
+        const auto tag = TagKey(row.Kind);
         const std::string prefix = tag.empty() ? "" : std::format("[{}] ", translations.Get(tag, adminSlot));
         auto label = std::format("{}{} - {}", prefix, row.Name, ExpiryLabel(translations, row.ExpiresAt, adminSlot));
         builder.Button(label, [&app, row = std::move(row)](int slot) { StartLiftConfirm(app, slot, row); });
@@ -133,7 +119,7 @@ std::shared_ptr<VoltMod::Menu> BuildUnbanMenu(AdminSystem::App& app, int adminSl
     MenuBuilder builder(translations.Get("unban.title", adminSlot));
 
     builder.EmptyText(translations.Get("unban.noBans", adminSlot));
-    AppendRows(app, builder, app.Punishments.GetActive(PunishType::Ban), PunishType::Ban, adminSlot);
+    AppendRows(app, builder, app.Punishments.GetActive(PunishType::Ban), adminSlot);
 
     return builder.Build();
 }
@@ -144,8 +130,8 @@ std::shared_ptr<VoltMod::Menu> BuildUnmuteMenu(AdminSystem::App& app, int adminS
     MenuBuilder builder(translations.Get("unmute.title", adminSlot));
 
     builder.EmptyText(translations.Get("unmute.noMutes", adminSlot));
-    AppendRows(app, builder, app.Punishments.GetActive(PunishType::VoiceMute), PunishType::VoiceMute, adminSlot);
-    AppendRows(app, builder, app.Punishments.GetActive(PunishType::TextMute), PunishType::TextMute, adminSlot);
+    AppendRows(app, builder, app.Punishments.GetActive(PunishType::VoiceMute), adminSlot);
+    AppendRows(app, builder, app.Punishments.GetActive(PunishType::TextMute), adminSlot);
 
     return builder.Build();
 }

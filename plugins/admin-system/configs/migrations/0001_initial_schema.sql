@@ -132,7 +132,7 @@ CREATE INDEX IF NOT EXISTS idx_players_last_seen ON players(last_seen DESC);
 
 -- "is this player punished right now", then the load-time read and the expiry sweep.
 CREATE INDEX IF NOT EXISTS idx_punishments_target ON punishments(target_steam_id, kind, is_active, expires_at);
-CREATE INDEX IF NOT EXISTS idx_punishments_active ON punishments(kind, is_active, expires_at);
+CREATE INDEX IF NOT EXISTS idx_punishments_active ON punishments(is_active, expires_at);
 CREATE INDEX IF NOT EXISTS idx_punishments_target_ip ON punishments(target_ip);
 
 CREATE INDEX IF NOT EXISTS idx_admin_server_groups_lookup ON admin_server_groups(server_tag, admin_steam_id);

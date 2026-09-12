@@ -4,16 +4,11 @@
 
 #include <VoltMod/Core/Time.hpp>
 #include <cstdint>
-#include <optional>
 #include <string>
-#include <string_view>
 #include <vector>
 
 namespace AdminSystem::Database
 {
-
-/** The punishments module names the kinds; this layer only stores them. */
-using Punishments::PunishType;
 
 /** An administrator: the flags and groups they hold, plus their chat and panel preferences. */
 struct Admin
@@ -73,7 +68,7 @@ struct FrozenAdmin
 struct Punishment
 {
     int64_t Id = 0;
-    PunishType Kind = PunishType::Ban;
+    Punishments::PunishType Kind = Punishments::PunishType::Ban;
     int64_t TargetSteamId = 0;
     std::string TargetName;
     std::string TargetIp;
