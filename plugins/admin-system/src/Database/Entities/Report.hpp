@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Tables/PlayerTables.hpp"
+#include "../Tables/Schema.hpp"
 
 #include <cstdint>
 #include <string>

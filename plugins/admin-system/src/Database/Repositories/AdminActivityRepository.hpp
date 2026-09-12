@@ -18,21 +18,19 @@ struct ActivityCounts
     int Warnings = 0;
 };
 
-/**
- * Write side of the admin_activity audit trail (every admin action, including kicks which
- * have no punishment row) plus the network-wide counting query behind auto-freeze detection.
- * Both run on the database worker; the audit insert is fire-and-forget.
- */
+/** The admin_activity audit trail and the counts behind auto-freeze detection. Kicks live
+ *  only here, having no punishment row. Inserts are fire-and-forget. */
 class AdminActivityRepository
 {
 public:
     explicit AdminActivityRepository(VoltMod::Database& db) : _db(db) {}
 
-    void Record(int64_t adminSteamId, std::string_view adminName, std::string_view action, int64_t targetSteamId,
-                std::string_view targetName, std::string_view detail, std::string_view serverTag);
+    void RecordAsync(int64_t adminSteamId, std::string_view adminName, std::string_view action,
+                     int64_t targetSteamId, std::string_view targetName, std::string_view detail,
+                     std::string_view serverTag);
 
-    /** Per-type action counts for one admin since @p sinceEpoch, across all servers; delivered
-     *  on the game thread (FIFO after any audit insert enqueued before it). */
+    /** Counts for one admin across every server. Jobs are FIFO, so an audit insert enqueued
+     *  before this one is included. */
     void CountSinceAsync(int64_t adminSteamId, int64_t sinceEpoch, std::function<void(ActivityCounts)> onDone);
 
 private:

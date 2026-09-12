@@ -7,24 +7,17 @@
 namespace AdminSystem::Database
 {
 
-/** Repository for the `players` table - connection history and accumulated playtime.
- *  Both writes are fire-and-forget on the database worker. */
+/** Connection history and accumulated playtime. Both writes are fire-and-forget. */
 class PlayerRepository
 {
 public:
     explicit PlayerRepository(VoltMod::Database& db) : _db(db) {}
 
-    /**
-     * Upsert on connect: first connect inserts the row; reconnects refresh name/ip/last_seen
-     * and bump total_connections. No-op for bots (steamId <= 0).
-     */
-    void RecordConnect(int64_t steamId, const std::string& name, const std::string& ipAddress);
+    /** Inserts on first connect, refreshes and counts the visit after that. Bots have no row. */
+    void RecordConnectAsync(int64_t steamId, const std::string& name, const std::string& ipAddress);
 
-    /**
-     * Fold a finished session into the row: refresh name/last_seen and add the session's
-     * seconds to total_playtime. No-op for bots (steamId <= 0).
-     */
-    void RecordDisconnect(int64_t steamId, const std::string& name, int64_t sessionSeconds);
+    /** Adds the finished session to total_playtime. Bots have no row. */
+    void RecordDisconnectAsync(int64_t steamId, const std::string& name, int64_t sessionSeconds);
 
 private:
     VoltMod::Database& _db;

@@ -14,8 +14,7 @@ class ReportRepository
 public:
     explicit ReportRepository(VoltMod::Database& db) : _db(db) {}
 
-    /** @p onDone reports the write outcome on the game thread. Not fire-and-forget like the other
-     *  repositories, because the reporter is told whether their report landed. */
+    /** @p onDone gets the outcome on the game thread: the reporter is told whether it landed. */
     void CreateAsync(const Report& report, std::function<void(bool ok)> onDone = {});
 
 private:

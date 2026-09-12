@@ -1,6 +1,6 @@
 #include "AdminActivityRepository.hpp"
 
-#include "../Tables/AdminTables.hpp"
+#include "../Mapping.hpp"
 
 #include <VoltMod/Core/Time.hpp>
 #include <string>
@@ -11,13 +11,12 @@ namespace AdminSystem::Database
 
 using VoltMod::Time;
 
-void AdminActivityRepository::Record(int64_t adminSteamId, std::string_view adminName, std::string_view action,
+void AdminActivityRepository::RecordAsync(int64_t adminSteamId, std::string_view adminName, std::string_view action,
                                      int64_t targetSteamId, std::string_view targetName, std::string_view detail,
                                      std::string_view serverTag)
 {
-    // The insert runs on the database worker later, so every text value is copied here rather
-    // than left pointing at the caller's storage.
-    _db.Run("record_admin_activity", [adminSteamId, adminName = std::string(adminName), action = std::string(action),
+    // The job outlives this call, so every view is copied rather than captured.
+    _db.RunAsync("record_admin_activity", [adminSteamId, adminName = std::string(adminName), action = std::string(action),
                                       targetSteamId, targetName = std::string(targetName), detail = std::string(detail),
                                       serverTag = std::string(serverTag), now = Time::Now()](auto& conn) {
         const Tables::AdminActivity t;
@@ -30,34 +29,30 @@ void AdminActivityRepository::Record(int64_t adminSteamId, std::string_view admi
 void AdminActivityRepository::CountSinceAsync(int64_t adminSteamId, int64_t sinceEpoch,
                                               std::function<void(ActivityCounts)> onDone)
 {
-    _db.Run(
+    _db.RunAsync(
         "count_admin_activity",
         [adminSteamId, sinceEpoch](auto& conn) {
             const Tables::AdminActivity t;
             ActivityCounts counts;
-            for (const auto& row : conn(sqlpp::select(t.action, sqlpp::count(t.id).as(sqlpp::alias::count_))
+            for (const auto& row : conn(sqlpp::select(t.action, sqlpp::count(t.id).as(total))
                                             .from(t)
                                             .where(t.adminSteamId == adminSteamId and t.createdAt >= sinceEpoch)
                                             .group_by(t.action)))
             {
-                const auto total = static_cast<int>(row.count_);
+                const auto count = static_cast<int>(row.total);
                 const std::string_view action = row.action;
                 if (action == "ban")
-                    counts.Bans += total;
+                    counts.Bans += count;
                 else if (action == "kick")
-                    counts.Kicks += total;
+                    counts.Kicks += count;
                 else if (action == "voice_mute" || action == "text_mute")
-                    counts.Mutes += total;
+                    counts.Mutes += count;
                 else if (action == "warn")
-                    counts.Warnings += total;
+                    counts.Warnings += count;
             }
             return counts;
         },
-        [onDone = std::move(onDone)](VoltMod::DbResult<ActivityCounts> result) {
-            if (!result || !onDone)
-                return;
-            onDone(*result);
-        });
+        std::move(onDone));
 }
 
 }  // namespace AdminSystem::Database

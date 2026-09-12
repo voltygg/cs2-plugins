@@ -18,72 +18,47 @@ using Db::AdminRepository;
 
 bool AdminManager::LoadAdmins()
 {
-    try
+    auto admins = _repos.Admins.FindAll();
+
+    _admins.clear();
+    _resolvedFlags.clear();
+    _resolvedStyles.clear();
+
+    for (const auto& admin : admins)
+        _admins[admin.SteamId] = admin;
+
+    // Merge server grants into each admin's effective group list.
+    for (auto& [steamId, groupNames] : _repos.AdminServerGroups.FindByServerTag(_config.GetServer().tag))
     {
-        AdminRepository repo{_db};
-        auto admins = repo.FindAll();
-
-        _admins.clear();
-        _resolvedFlags.clear();
-        _resolvedStyles.clear();
-
-        for (const auto& admin : admins)
+        auto it = _admins.find(steamId);
+        if (it == _admins.end())
+            continue;
+        auto& groups = it->second.Groups;
+        for (auto& name : groupNames)
         {
-            _admins[admin.SteamId] = admin;
+            if (std::find(groups.begin(), groups.end(), name) == groups.end())
+                groups.push_back(std::move(name));
         }
-
-        // Merge server grants into each admin's effective group list.
-        Db::AdminServerGroupRepository serverGroupRepo{_db};
-        for (auto& [steamId, groupNames] : serverGroupRepo.FindByServerTag(_config.GetServer().tag))
-        {
-            auto it = _admins.find(steamId);
-            if (it == _admins.end())
-                continue;
-            auto& groups = it->second.Groups;
-            for (auto& name : groupNames)
-            {
-                if (std::find(groups.begin(), groups.end(), name) == groups.end())
-                    groups.push_back(std::move(name));
-            }
-        }
-
-        for (auto& [steamId, admin] : _admins)
-        {
-            _resolvedFlags[steamId] = ResolveFlags(admin);
-        }
-
-        Log::Info("Loaded {} admin(s) from database.", _admins.size());
-        return true;
     }
-    catch (const std::exception& ex)
-    {
-        Log::Error("LoadAdmins failed: {}", ex.what());
-        return false;
-    }
+
+    for (auto& [steamId, admin] : _admins)
+        _resolvedFlags[steamId] = ResolveFlags(admin);
+
+    Log::Info("Loaded {} admin(s) from database.", _admins.size());
+    return true;
 }
 
 bool AdminManager::LoadGroups()
 {
-    try
-    {
-        AdminGroupRepository repo{_db};
-        auto groups = repo.FindAll();
+    auto groups = _repos.AdminGroups.FindAll();
 
-        _groups.clear();
-        _resolvedStyles.clear();
-        for (const auto& group : groups)
-        {
-            _groups[group.Name] = group;
-        }
+    _groups.clear();
+    _resolvedStyles.clear();
+    for (const auto& group : groups)
+        _groups[group.Name] = group;
 
-        Log::Info("Loaded {} admin group(s) from database.", _groups.size());
-        return true;
-    }
-    catch (const std::exception& ex)
-    {
-        Log::Error("LoadGroups failed: {}", ex.what());
-        return false;
-    }
+    Log::Info("Loaded {} admin group(s) from database.", _groups.size());
+    return true;
 }
 
 bool AdminManager::Reload()
@@ -238,15 +213,15 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
     return style;
 }
 
-bool AdminManager::UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
-                                   const std::string& messageColor)
+void AdminManager::UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,
+                                        const std::string& messageColor)
 {
     auto it = _admins.find(steamId);
     if (it == _admins.end())
-        return false;
+        return;
 
     // Cache-first: the next chat line uses the new style immediately; the persist rides the worker.
-    Database::AdminRepository{_db}.UpdateChatStyle(steamId, displayPrefix, nameColor, messageColor);
+    _repos.Admins.UpdateChatStyleAsync(steamId, displayPrefix, nameColor, messageColor);
 
     auto& admin = it->second;
     admin.DisplayPrefix = displayPrefix;
@@ -254,18 +229,16 @@ bool AdminManager::UpdateChatStyle(int64_t steamId, bool displayPrefix, const st
     admin.MessageColor = messageColor;
 
     _resolvedStyles.erase(steamId);
-    return true;
 }
 
-bool AdminManager::UpdateLanguage(int64_t steamId, const std::string& lang)
+void AdminManager::UpdateLanguageAsync(int64_t steamId, const std::string& lang)
 {
     auto it = _admins.find(steamId);
     if (it == _admins.end())
-        return false;
+        return;
 
-    Database::AdminRepository{_db}.UpdateLanguage(steamId, lang);
+    _repos.Admins.UpdateLanguageAsync(steamId, lang);
     it->second.Language = lang;
-    return true;
 }
 
 uint32_t AdminManager::ResolveFlags(const Database::Admin& admin)

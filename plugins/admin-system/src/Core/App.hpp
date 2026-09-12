@@ -7,7 +7,7 @@
 #include "../Admin/Effects/Descriptors.hpp"
 #include "../Admin/FreezeManager.hpp"
 #include "../Config/ConfigManager.hpp"
-#include "../Database/Repositories/PlayerRepository.hpp"
+#include "../Database/Repositories.hpp"
 #include "../Fun/FunMode.hpp"
 #include "../Maps/MapCycleState.hpp"
 #include "../Menu/PanoramaMenu.hpp"
@@ -102,7 +102,7 @@ struct App
      *  SetSize), built from Runtime once here. */
     Admin::Actions::ActionDescriptors ActionDescriptors{Runtime};
     VoltMod::Database Db{Runtime.Scheduler};
-    Database::PlayerRepository PlayerRepo{Db};
+    Database::Repositories Repos{Db};
     Core::ChatService Chat{Runtime, Settings};
     /** Configured map list, the queued next map, and the level change itself. */
     Maps::MapCycleState MapCycle{Runtime, Settings};
@@ -110,13 +110,13 @@ struct App
     Fun::FunMode FunMode{Runtime};
     /** The yes/no map vote an admin opens from the Map menu. */
     Maps::VoteState Votes{Runtime, Settings, MapCycle};
-    Admin::AdminManager Admins{Db, Settings};
-    Admin::FreezeManager Freeze{Db, Settings, Runtime, Chat, Admins};
+    Admin::AdminManager Admins{Repos, Settings};
+    Admin::FreezeManager Freeze{Repos, Settings, Runtime, Chat, Admins};
     /** The permission gate: granted flags minus abuse-protection freezes. Ask this, not Admins. */
     Admin::Access Access{Admins, Freeze};
-    Punishments::PunishmentManager Punishments{Db, Settings, Runtime, Chat};
+    Punishments::PunishmentManager Punishments{Repos, Settings, Runtime, Chat};
     Core::PlayerChat PlayerChat{Runtime, Settings, Chat, Admins, Punishments};
-    Reports::ReportManager Reports{Db, Settings, Runtime};
+    Reports::ReportManager Reports{Repos, Settings, Runtime};
     VoltMod::EffectManager Effects{Runtime.Scheduler};
     /** Runs the effect descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
     VoltMod::EffectDispatcher PlayerEffects{Actions, Effects};

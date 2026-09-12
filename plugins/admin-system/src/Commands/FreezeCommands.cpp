@@ -48,9 +48,8 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
                 return c.Fail("cmd.freezeAlready", {{"name", targetName}});
 
             const std::string reason = ReasonOr(c, why, "reason.frozenByAdmin");
-            bool ok = app.Freeze.Freeze(who.SteamId, targetName, c.Player->SteamId(), c.Player->Name(), reason);
-            return ok ? c.Ok("cmd.freezeSuccess", {{"name", targetName}})
-                      : c.Fail("cmd.freezeFailed", {{"name", targetName}});
+            app.Freeze.Freeze(who.SteamId, targetName, c.Player->SteamId(), c.Player->Name(), reason);
+            return c.Ok("cmd.freezeSuccess", {{"name", targetName}});
         });
 
     commands.Add("unfreeze_admin")
@@ -90,9 +89,8 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
                 return c.Fail("cmd.freezeNoOutrank", {{"name", row->Name}});
 
             // Unfreeze erases the row; the name is ours because GetFrozen handed back a copy.
-            bool ok = app.Freeze.Unfreeze(targetSteamId, c.Player->SteamId(), c.Player->Name());
-            return ok ? c.Ok("cmd.unfreezeSuccess", {{"name", row->Name}})
-                      : c.Fail("cmd.freezeFailed", {{"name", row->Name}});
+            app.Freeze.Unfreeze(targetSteamId, c.Player->SteamId(), c.Player->Name());
+            return c.Ok("cmd.unfreezeSuccess", {{"name", row->Name}});
         });
 
     commands.Add("frozen_admins")

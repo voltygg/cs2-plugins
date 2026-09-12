@@ -5,7 +5,7 @@
 #include "../Database/Entities/Admin.hpp"
 #include "../Database/Entities/AdminGroup.hpp"
 
-#include <VoltMod/Database/Api.hpp>
+#include "../Database/Repositories.hpp"
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <string>
 #include <unordered_map>
@@ -39,7 +39,9 @@ struct AdminChatStyle
 class AdminManager
 {
 public:
-    AdminManager(VoltMod::Database& db, const Config::ConfigManager& config) : _db(db), _config(config) {}
+    AdminManager(Database::Repositories& repos, const Config::ConfigManager& config)
+        : _repos(repos), _config(config)
+    {}
 
     bool LoadAdmins();
     bool LoadGroups();
@@ -68,19 +70,13 @@ public:
      */
     AdminChatStyle GetChatStyle(int64_t steamId);
 
-    /**
-     * Persist + apply per-admin chat-style overrides. Empty color strings revert that slot
-     * back to the admin's group default. Returns false if the admin is unknown or the DB
-     * write failed; the in-memory cache is only updated on a successful write.
-     */
-    bool UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
-                         const std::string& messageColor);
+    /** Persist + apply per-admin chat-style overrides. Empty color strings revert that slot
+     *  back to the admin's group default. Unknown admins are ignored. */
+    void UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,
+                              const std::string& messageColor);
 
-    /**
-     * Persist + apply an admin's panel language. Returns false if the admin is unknown or the
-     * DB write failed; the in-memory row is only updated on a successful write.
-     */
-    bool UpdateLanguage(int64_t steamId, const std::string& lang);
+    /** Persist + apply an admin's panel language. Unknown admins are ignored. */
+    void UpdateLanguageAsync(int64_t steamId, const std::string& lang);
 
     /** Convert a single flag character ('a'-'z') to a bitmask bit. */
     static uint32_t FlagToBit(char flag)
@@ -93,7 +89,7 @@ public:
     }
 
 private:
-    VoltMod::Database& _db;
+    Database::Repositories& _repos;
     const Config::ConfigManager& _config;
 
     /** True if a resolved bitmask carries @p flag, or the root flag ('z') that grants everything. */

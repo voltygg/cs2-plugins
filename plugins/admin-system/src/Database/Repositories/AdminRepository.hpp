@@ -31,17 +31,17 @@ public:
     std::vector<Admin> FindAll();
 
     /** Persist the per-admin chat overrides set via the admin chat-settings menu. */
-    void UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
+    void UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                          const std::string& messageColor);
 
     /** Persist the per-admin panel language set via the admin chat-settings menu. */
-    void UpdateLanguage(int64_t steamId, const std::string& lang);
+    void UpdateLanguageAsync(int64_t steamId, const std::string& lang);
 
-    /** Freeze all of an admin's privileges network-wide. frozenBy 0 = automatic. Blocking. */
-    bool SetFrozen(int64_t steamId, int64_t frozenBy, const std::string& reason);
+    /** Freeze all of an admin's privileges network-wide. frozenBy 0 = automatic. */
+    void SetFrozenAsync(int64_t steamId, int64_t frozenBy, const std::string& reason);
 
-    /** Lift a freeze. Returns true even if the admin wasn't frozen (idempotent). Blocking. */
-    bool ClearFrozen(int64_t steamId);
+    /** Lift a freeze. Idempotent: an admin who was not frozen is left alone. */
+    void ClearFrozenAsync(int64_t steamId);
 
     /** Poll frozen admins for cross-server propagation. On DB failure, @p onDone is not called. */
     void FindFrozenAsync(std::function<void(std::vector<FrozenAdmin>)> onDone);

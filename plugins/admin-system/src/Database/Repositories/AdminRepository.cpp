@@ -1,7 +1,7 @@
 #include "AdminRepository.hpp"
 
 #include "../JsonList.hpp"
-#include "../Tables/AdminTables.hpp"
+#include "../Tables/Schema.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Time.hpp>
@@ -29,7 +29,7 @@ static std::vector<std::string> ReadGroupList(std::string_view text, std::string
 
 std::vector<Admin> AdminRepository::FindAll()
 {
-    auto result = _db.RunBlocking("find_all_admins", [](auto& conn) {
+    return _db.RunOr("find_all_admins", [](auto& conn) {
         const Tables::Admins t;
         std::vector<Admin> admins;
         for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t)).from(t)))
@@ -53,16 +53,12 @@ std::vector<Admin> AdminRepository::FindAll()
         }
         return admins;
     });
-
-    if (!result)
-        return {};
-    return std::move(*result);
 }
 
-void AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
+void AdminRepository::UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                                       const std::string& messageColor)
 {
-    _db.Run("update_admin_chat_style",
+    _db.RunAsync("update_admin_chat_style",
             [steamId, displayPrefix, nameColor, messageColor, now = Time::Now()](auto& conn) {
                 const Tables::Admins t;
                 conn(sqlpp::update(t)
@@ -72,40 +68,38 @@ void AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const
             });
 }
 
-void AdminRepository::UpdateLanguage(int64_t steamId, const std::string& lang)
+void AdminRepository::UpdateLanguageAsync(int64_t steamId, const std::string& lang)
 {
-    _db.Run("update_admin_language", [steamId, lang, now = Time::Now()](auto& conn) {
+    _db.RunAsync("update_admin_language", [steamId, lang, now = Time::Now()](auto& conn) {
         const Tables::Admins t;
         conn(sqlpp::update(t).set(t.language = lang, t.updatedAt = now).where(t.steamId == steamId));
     });
 }
 
-bool AdminRepository::SetFrozen(int64_t steamId, int64_t frozenBy, const std::string& reason)
+void AdminRepository::SetFrozenAsync(int64_t steamId, int64_t frozenBy, const std::string& reason)
 {
-    auto result = _db.RunBlocking("set_admin_frozen", [steamId, frozenBy, reason, now = Time::Now()](auto& conn) {
+    _db.RunAsync("set_admin_frozen", [steamId, frozenBy, reason, now = Time::Now()](auto& conn) {
         const Tables::Admins t;
         conn(sqlpp::update(t)
                  .set(t.isFrozen = true, t.frozenAt = now, t.frozenBy = frozenBy, t.freezeReason = reason,
                       t.updatedAt = now)
                  .where(t.steamId == steamId));
     });
-    return result.has_value();
 }
 
-bool AdminRepository::ClearFrozen(int64_t steamId)
+void AdminRepository::ClearFrozenAsync(int64_t steamId)
 {
-    auto result = _db.RunBlocking("clear_admin_frozen", [steamId, now = Time::Now()](auto& conn) {
+    _db.RunAsync("clear_admin_frozen", [steamId, now = Time::Now()](auto& conn) {
         const Tables::Admins t;
         conn(sqlpp::update(t)
                  .set(t.isFrozen = false, t.frozenAt = 0, t.frozenBy = 0, t.freezeReason = "", t.updatedAt = now)
                  .where(t.steamId == steamId));
     });
-    return result.has_value();
 }
 
 void AdminRepository::FindFrozenAsync(std::function<void(std::vector<FrozenAdmin>)> onDone)
 {
-    _db.Run(
+    _db.RunAsync(
         "find_frozen_admins",
         [](auto& conn) {
             const Tables::Admins t;
@@ -122,17 +116,14 @@ void AdminRepository::FindFrozenAsync(std::function<void(std::vector<FrozenAdmin
             }
             return frozen;
         },
-        [onDone = std::move(onDone)](VoltMod::DbResult<std::vector<FrozenAdmin>> result) {
-            if (!result || !onDone)
-                return;  // DB error already logged; keep the caller's cached set.
-            onDone(std::move(*result));
-        });
+        // On failure the callback never fires and the caller keeps its cached set.
+        std::move(onDone));
 }
 
 
 std::vector<AdminGroup> AdminGroupRepository::FindAll()
 {
-    auto result = _db.RunBlocking("find_all_admin_groups", [](auto& conn) {
+    return _db.RunOr("find_all_admin_groups", [](auto& conn) {
         const Tables::AdminGroups t;
         std::vector<AdminGroup> groups;
         for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t)).from(t)))
@@ -155,10 +146,6 @@ std::vector<AdminGroup> AdminGroupRepository::FindAll()
         }
         return groups;
     });
-
-    if (!result)
-        return {};
-    return std::move(*result);
 }
 
 }  // namespace AdminSystem::Database

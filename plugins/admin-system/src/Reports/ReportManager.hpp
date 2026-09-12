@@ -4,7 +4,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Throttle.hpp>
-#include <VoltMod/Database/Api.hpp>
+#include "../Database/Repositories.hpp"
 #include <VoltMod/Players/Player.hpp>
 #include <cstdint>
 #include <functional>
@@ -41,8 +41,8 @@ struct ReportGate
 class ReportManager
 {
 public:
-    ReportManager(VoltMod::Database& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime)
-        : _db(db), _config(config), _rt(runtime)
+    ReportManager(Database::Repositories& repos, const Config::ConfigManager& config, VoltMod::Runtime& runtime)
+        : _repos(repos), _config(config), _rt(runtime)
     {}
 
     /** Enabled/cooldown gate - the `!report` entry check, before a target is chosen. */
@@ -60,7 +60,7 @@ public:
                 const std::string& reasonText, std::function<void(bool ok)> onDone);
 
 private:
-    VoltMod::Database& _db;
+    Database::Repositories& _repos;
     const Config::ConfigManager& _config;
     VoltMod::Runtime& _rt;
 

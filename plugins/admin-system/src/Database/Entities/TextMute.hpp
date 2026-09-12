@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Tables/PunishmentTables.hpp"
+#include "../Tables/Schema.hpp"
 
 #include <VoltMod/Core/Time.hpp>
 #include <cstdint>

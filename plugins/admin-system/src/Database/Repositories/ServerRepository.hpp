@@ -19,7 +19,7 @@ public:
     bool Upsert(const std::string& tag, const std::string& name);
 
     /** Advance last_seen so operators can tell which registered servers are alive. Fire-and-forget. */
-    void Heartbeat(const std::string& tag);
+    void HeartbeatAsync(const std::string& tag);
 
 private:
     VoltMod::Database& _db;

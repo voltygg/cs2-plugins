@@ -25,9 +25,8 @@ using VoltMod::Time;
 
 void FreezeManager::RefreshFromDatabase()
 {
-    // Async poll; on DB failure the callback never runs and the cached set is kept, so
-    // nobody unfreezes by accident.
-    Db::AdminRepository{_db}.FindFrozenAsync([this](std::vector<Db::FrozenAdmin> rows) {
+    // On a database error the callback never runs, so an outage never unfreezes anyone.
+    _repos.Admins.FindFrozenAsync([this](std::vector<Db::FrozenAdmin> rows) {
         std::unordered_map<int64_t, Db::FrozenAdmin> fresh;
         for (auto& row : rows)
             fresh.emplace(row.SteamId, std::move(row));
@@ -50,25 +49,22 @@ std::optional<Db::FrozenAdmin> FreezeManager::GetFrozen(int64_t steamId) const
     return it->second;
 }
 
-bool FreezeManager::Freeze(int64_t targetSteamId, const std::string& targetName, int64_t bySteamId,
+void FreezeManager::Freeze(int64_t targetSteamId, const std::string& targetName, int64_t bySteamId,
                            const std::string& byName, const std::string& reason)
 {
-    if (!ApplyFreeze(targetSteamId, targetName, bySteamId, byName, reason))
-        return false;
+    ApplyFreeze(targetSteamId, targetName, bySteamId, byName, reason);
 
     Log::Warn("Admin {} ({}) frozen by {} ({}): {}", targetName, targetSteamId, byName, bySteamId, reason);
     _chat.BroadcastAction("broadcast.frozeAdmin", byName, targetName);
-    return true;
 }
 
-bool FreezeManager::Unfreeze(int64_t targetSteamId, int64_t bySteamId, const std::string& byName)
+void FreezeManager::Unfreeze(int64_t targetSteamId, int64_t bySteamId, const std::string& byName)
 {
     auto it = _frozen.find(targetSteamId);
     if (it == _frozen.end())
-        return false;
+        return;
 
-    if (!Db::AdminRepository{_db}.ClearFrozen(targetSteamId))
-        return false;
+    _repos.Admins.ClearFrozenAsync(targetSteamId);
 
     std::string targetName = it->second.Name;
     _frozen.erase(it);
@@ -76,7 +72,6 @@ bool FreezeManager::Unfreeze(int64_t targetSteamId, int64_t bySteamId, const std
     RecordAudit(bySteamId, byName, "unfreeze_admin", targetSteamId, targetName, "");
     Log::Info("Admin {} ({}) unfrozen by {} ({}).", targetName, targetSteamId, byName, bySteamId);
     _chat.BroadcastAction("broadcast.unfrozeAdmin", byName, targetName);
-    return true;
 }
 
 void FreezeManager::RecordPunishment(int64_t adminSteamId, std::string_view adminName, std::string_view action,
@@ -99,22 +94,20 @@ void FreezeManager::RecordPunishment(int64_t adminSteamId, std::string_view admi
 void FreezeManager::RecordAudit(int64_t adminSteamId, std::string_view adminName, std::string_view action,
                                 int64_t targetSteamId, std::string_view targetName, std::string_view detail)
 {
-    Db::AdminActivityRepository{_db}.Record(adminSteamId, adminName, action, targetSteamId, targetName, detail,
+    _repos.Activity.RecordAsync(adminSteamId, adminName, action, targetSteamId, targetName, detail,
                                             _config.GetServer().tag);
 }
 
-bool FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId, const std::string& byName,
-                                const std::string& reason)
+void FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId,
+                                const std::string& byName, const std::string& reason)
 {
-    if (!Db::AdminRepository{_db}.SetFrozen(steamId, bySteamId, reason))
-        return false;
+    _repos.Admins.SetFrozenAsync(steamId, bySteamId, reason);
 
     _frozen[steamId] = {
         .SteamId = steamId, .Name = name, .FrozenAt = Time::Now(), .FrozenBy = bySteamId, .Reason = reason};
 
     RecordAudit(bySteamId, byName, "freeze_admin", steamId, name, reason);
     NotifyFrozen(steamId);
-    return true;
 }
 
 void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, std::string_view adminName)
@@ -123,7 +116,7 @@ void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, std::string_view admin
     int64_t windowStart = Time::Now() - static_cast<int64_t>(cfg.windowMinutes) * 60;
 
     // FIFO on the worker: this count sees the audit insert that triggered the check.
-    Db::AdminActivityRepository{_db}.CountSinceAsync(
+    _repos.Activity.CountSinceAsync(
         // The name is copied: the completion runs on a later game frame, long after the caller's
         // view is gone.
         adminSteamId, windowStart, [this, adminSteamId, adminName = std::string(adminName)](Db::ActivityCounts counts) {
@@ -137,12 +130,7 @@ void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, std::string_view admin
 
             auto reason = std::format("Rate limit exceeded: {} bans, {} kicks, {} mutes, {} warnings in {} min",
                                       counts.Bans, counts.Kicks, counts.Mutes, counts.Warnings, limits.windowMinutes);
-            if (!ApplyFreeze(adminSteamId, adminName, 0, "", reason))
-            {
-                Log::Error("Auto-freeze of {} ({}) failed to persist: {}", adminName, adminSteamId, reason);
-                return;
-            }
-
+            ApplyFreeze(adminSteamId, adminName, 0, "", reason);
             Log::Warn("AUTO-FROZE admin {} ({}): {}", adminName, adminSteamId, reason);
             _chat.BroadcastAction("broadcast.autoFrozeAdmin", adminName, "");
         });

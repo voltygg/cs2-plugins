@@ -7,7 +7,7 @@
 #include "../Database/Entities/VoiceMute.hpp"
 #include "../Database/Entities/Warning.hpp"
 
-#include <VoltMod/Database/Api.hpp>
+#include "../Database/Repositories.hpp"
 #include <VoltMod/Runtime.hpp>
 #include <algorithm>
 #include <optional>
@@ -26,9 +26,9 @@ namespace AdminSystem::Punishments
 class PunishmentManager
 {
 public:
-    PunishmentManager(VoltMod::Database& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
+    PunishmentManager(Database::Repositories& repos, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
                       Core::ChatService& chat)
-        : _db(db), _config(config), _rt(runtime), _chat(chat)
+        : _repos(repos), _config(config), _rt(runtime), _chat(chat)
     {}
 
     bool LoadActivePunishments();
@@ -74,7 +74,7 @@ public:
     void KickDeferred(int slot, int64_t steamId, std::string reason);
 
 private:
-    VoltMod::Database& _db;
+    Database::Repositories& _repos;
     const Config::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;
@@ -102,13 +102,25 @@ private:
     using RemoveByIdFn = bool (PunishmentManager::*)(int64_t, int64_t, const std::string&);
 
     template <typename TEntity>
-    bool RemoveBySteamIdImpl(std::unordered_map<int64_t, TEntity>& cache, int64_t steamId, int64_t removedBy,
-                             const std::string& reason, RemoveByIdFn remove)
+    bool RemoveFromCache(std::unordered_map<int64_t, TEntity>& cache, int64_t steamId, int64_t removedBy,
+                         const std::string& reason, RemoveByIdFn remove)
     {
         auto it = cache.find(steamId);
         if (it != cache.end())
             return (this->*remove)(it->second.Id, removedBy, reason);
         return false;
+    }
+
+    /** Cache the record and persist it. Cache-first so the punishment bites this frame; the id
+     *  arrives later and lands only if nothing has replaced the entry. */
+    template <typename TEntity, typename TRepo>
+    void TrackAndPersist(std::unordered_map<int64_t, TEntity>& cache, TRepo& repo, const TEntity& record)
+    {
+        cache[record.TargetSteamId] = record;
+        repo.CreateAsync(record, [&cache, steamId = record.TargetSteamId](int64_t id) {
+            if (auto it = cache.find(steamId); it != cache.end() && it->second.Id == 0)
+                it->second.Id = id;
+        });
     }
 
     std::unordered_map<int64_t, Database::Ban> _activeBans;             /**< keyed by TargetSteamId */

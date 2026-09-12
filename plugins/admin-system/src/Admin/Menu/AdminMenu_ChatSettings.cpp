@@ -124,7 +124,7 @@ static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& ti
                                                    messageColor = value;
                                                    break;
                                                }
-                                               admins.UpdateChatStyle(steamId, admin->DisplayPrefix, nameColor,
+                                               admins.UpdateChatStyleAsync(steamId, admin->DisplayPrefix, nameColor,
                                                                    messageColor);
                                            },
                                        .Index = initialIndex});
@@ -169,7 +169,7 @@ static void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, i
                                        .Choices = std::move(choices),
                                        .Commit =
                                            [&app, steamId](int menuSlot, const std::string& lang) {
-                                               app.Admins.UpdateLanguage(steamId, lang);
+                                               app.Admins.UpdateLanguageAsync(steamId, lang);
                                                app.Runtime.Translations.SetPlayerLanguage(menuSlot, lang);
                                                // Rebuild so the baked labels re-render in the new language. Use the
                                                // by-value menuSlot (not a capture): Close frees this row and its
@@ -204,7 +204,7 @@ std::shared_ptr<VoltMod::Menu> BuildChatSettingsMenu(AdminSystem::App& app, int 
                                   const auto* a = admins.GetAdmin(steamId);
                                   if (!a)
                                       return;
-                                  admins.UpdateChatStyle(steamId, !a->DisplayPrefix, a->NameColor, a->MessageColor);
+                                  admins.UpdateChatStyleAsync(steamId, !a->DisplayPrefix, a->NameColor, a->MessageColor);
                               }});
 
     AddColorChoice(app, builder, translations.Get("chat.nameColor", adminSlot), steamId, ColorSlot::Name, adminSlot);

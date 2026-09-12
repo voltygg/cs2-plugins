@@ -63,12 +63,12 @@ static void StampTimes(auto& entity)
 bool PunishmentManager::LoadActivePunishments()
 {
     _activeBans.clear();
-    for (const auto& ban : PunishmentRepository<Ban>{_db}.FindAllActive())
+    for (const auto& ban : _repos.Bans.FindAllActive())
         _activeBans[ban.TargetSteamId] = ban;
 
     _activeVoiceMutes.clear();
     _voiceMutedPlayers.clear();
-    for (const auto& mute : PunishmentRepository<VoiceMute>{_db}.FindAllActive())
+    for (const auto& mute : _repos.VoiceMutes.FindAllActive())
     {
         _activeVoiceMutes[mute.TargetSteamId] = mute;
         _voiceMutedPlayers.insert(mute.TargetSteamId);
@@ -76,7 +76,7 @@ bool PunishmentManager::LoadActivePunishments()
 
     _activeTextMutes.clear();
     _textMutedPlayers.clear();
-    for (const auto& mute : PunishmentRepository<TextMute>{_db}.FindAllActive())
+    for (const auto& mute : _repos.TextMutes.FindAllActive())
     {
         _activeTextMutes[mute.TargetSteamId] = mute;
         _textMutedPlayers.insert(mute.TargetSteamId);
@@ -157,14 +157,7 @@ bool PunishmentManager::IsTextMuted(int64_t steamId)
 bool PunishmentManager::IssueBan(Ban& ban)
 {
     StampTimes(ban);
-    _activeBans[ban.TargetSteamId] = ban;
-
-    // The insert rides the worker; the generated row id lands in the cache when it returns
-    // (the unban menu snapshots the cache, so the id is there by the time a human clicks).
-    PunishmentRepository<Ban>{_db}.CreateAsync(ban, [this, steamId = ban.TargetSteamId](int64_t id) {
-        if (auto it = _activeBans.find(steamId); it != _activeBans.end() && it->second.Id == 0)
-            it->second.Id = id;
-    });
+    TrackAndPersist(_activeBans, _repos.Bans, ban);
 
     if (auto* player = _rt.Players.BySteamId(ban.TargetSteamId))
     {
@@ -182,14 +175,9 @@ bool PunishmentManager::IssueBan(Ban& ban)
 bool PunishmentManager::IssueVoiceMute(VoiceMute& mute)
 {
     StampTimes(mute);
-    _activeVoiceMutes[mute.TargetSteamId] = mute;
+    TrackAndPersist(_activeVoiceMutes, _repos.VoiceMutes, mute);
     _voiceMutedPlayers.insert(mute.TargetSteamId);
     RefreshVoiceChannel(_rt, mute.TargetSteamId, true);
-
-    PunishmentRepository<VoiceMute>{_db}.CreateAsync(mute, [this, steamId = mute.TargetSteamId](int64_t id) {
-        if (auto it = _activeVoiceMutes.find(steamId); it != _activeVoiceMutes.end() && it->second.Id == 0)
-            it->second.Id = id;
-    });
 
     _chat.BroadcastPunishment("voice-muted", mute.AdminName, mute.TargetName, mute.Reason, mute.Duration);
     return true;
@@ -198,13 +186,8 @@ bool PunishmentManager::IssueVoiceMute(VoiceMute& mute)
 bool PunishmentManager::IssueTextMute(TextMute& mute)
 {
     StampTimes(mute);
-    _activeTextMutes[mute.TargetSteamId] = mute;
+    TrackAndPersist(_activeTextMutes, _repos.TextMutes, mute);
     _textMutedPlayers.insert(mute.TargetSteamId);
-
-    PunishmentRepository<TextMute>{_db}.CreateAsync(mute, [this, steamId = mute.TargetSteamId](int64_t id) {
-        if (auto it = _activeTextMutes.find(steamId); it != _activeTextMutes.end() && it->second.Id == 0)
-            it->second.Id = id;
-    });
 
     _chat.BroadcastPunishment("text-muted", mute.AdminName, mute.TargetName, mute.Reason, mute.Duration);
     return true;
@@ -215,7 +198,7 @@ bool PunishmentManager::IssueWarning(Database::Warning& warning)
     if (warning.CreatedAt == 0)
         warning.CreatedAt = Time::Now();
 
-    WarningRepository repo{_db};
+    auto& repo = _repos.Warnings;
     repo.CreateAsync(warning);
     _chat.BroadcastPunishment("warned", warning.AdminName, warning.TargetName, warning.Reason, 0);
 
@@ -227,7 +210,7 @@ bool PunishmentManager::IssueWarning(Database::Warning& warning)
             return;
 
         Log::Info("Warning threshold ({}) reached for {} -- escalating to ban.", threshold, w.TargetSteamId);
-        WarningRepository{_db}.ClearAsync(w.TargetSteamId);
+        _repos.Warnings.ClearAsync(w.TargetSteamId);
 
         Ban autoBan;
         autoBan.TargetSteamId = w.TargetSteamId;
@@ -248,7 +231,7 @@ bool PunishmentManager::RemoveBan(int64_t banId, int64_t removedBy, const std::s
     {
         if (it->second.Id == banId)
         {
-            PunishmentRepository<Ban>{_db}.RemoveAsync(banId, removedBy, reason);
+            _repos.Bans.RemoveAsync(banId, removedBy, reason);
             _chat.BroadcastPunishment("unbanned", "Admin", it->second.TargetName, reason, 0);
             _activeBans.erase(it);
             return true;
@@ -265,7 +248,7 @@ bool PunishmentManager::RemoveVoiceMute(int64_t muteId, int64_t removedBy, const
         {
             int64_t target = it->first;
             std::string targetName = it->second.TargetName;
-            PunishmentRepository<VoiceMute>{_db}.RemoveAsync(muteId, removedBy, reason);
+            _repos.VoiceMutes.RemoveAsync(muteId, removedBy, reason);
             _voiceMutedPlayers.erase(target);
             _activeVoiceMutes.erase(it);
             RefreshVoiceChannel(_rt, target, false);
@@ -282,7 +265,7 @@ bool PunishmentManager::RemoveTextMute(int64_t muteId, int64_t removedBy, const 
     {
         if (it->second.Id == muteId)
         {
-            PunishmentRepository<TextMute>{_db}.RemoveAsync(muteId, removedBy, reason);
+            _repos.TextMutes.RemoveAsync(muteId, removedBy, reason);
             _textMutedPlayers.erase(it->first);
             _chat.BroadcastPunishment("text-unmuted", "Admin", it->second.TargetName, reason, 0);
             _activeTextMutes.erase(it);
@@ -294,17 +277,17 @@ bool PunishmentManager::RemoveTextMute(int64_t muteId, int64_t removedBy, const 
 
 bool PunishmentManager::RemoveBanBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    return RemoveBySteamIdImpl(_activeBans, steamId, removedBy, reason, &PunishmentManager::RemoveBan);
+    return RemoveFromCache(_activeBans, steamId, removedBy, reason, &PunishmentManager::RemoveBan);
 }
 
 bool PunishmentManager::RemoveVoiceMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    return RemoveBySteamIdImpl(_activeVoiceMutes, steamId, removedBy, reason, &PunishmentManager::RemoveVoiceMute);
+    return RemoveFromCache(_activeVoiceMutes, steamId, removedBy, reason, &PunishmentManager::RemoveVoiceMute);
 }
 
 bool PunishmentManager::RemoveTextMuteBySteamId(int64_t steamId, int64_t removedBy, const std::string& reason)
 {
-    return RemoveBySteamIdImpl(_activeTextMutes, steamId, removedBy, reason, &PunishmentManager::RemoveTextMute);
+    return RemoveFromCache(_activeTextMutes, steamId, removedBy, reason, &PunishmentManager::RemoveTextMute);
 }
 
 void PunishmentManager::KickDeferred(int slot, int64_t steamId, std::string reason)
@@ -322,9 +305,9 @@ void PunishmentManager::KickDeferred(int slot, int64_t steamId, std::string reas
 
 void PunishmentManager::ExpireOldPunishments()
 {
-    PunishmentRepository<Ban>{_db}.ExpireOldAsync();
-    PunishmentRepository<VoiceMute>{_db}.ExpireOldAsync();
-    PunishmentRepository<TextMute>{_db}.ExpireOldAsync();
+    _repos.Bans.ExpireOldAsync();
+    _repos.VoiceMutes.ExpireOldAsync();
+    _repos.TextMutes.ExpireOldAsync();
 
     // FIFO: these snapshots run after the expirations above have landed.
     RefreshCachesAsync();
@@ -332,13 +315,13 @@ void PunishmentManager::ExpireOldPunishments()
 
 void PunishmentManager::RefreshCachesAsync()
 {
-    PunishmentRepository<Ban>{_db}.FindAllActiveAsync([this](std::vector<Ban> bans) {
+    _repos.Bans.FindAllActiveAsync([this](std::vector<Ban> bans) {
         _activeBans.clear();
         for (auto& ban : bans)
             _activeBans[ban.TargetSteamId] = std::move(ban);
     });
 
-    PunishmentRepository<VoiceMute>{_db}.FindAllActiveAsync([this](std::vector<VoiceMute> mutes) {
+    _repos.VoiceMutes.FindAllActiveAsync([this](std::vector<VoiceMute> mutes) {
         // Snapshot the muted set before the swap so voice mutes that expired this sweep get
         // their voice channels refreshed.
         auto previouslyMuted = _voiceMutedPlayers;
@@ -358,7 +341,7 @@ void PunishmentManager::RefreshCachesAsync()
         }
     });
 
-    PunishmentRepository<TextMute>{_db}.FindAllActiveAsync([this](std::vector<TextMute> mutes) {
+    _repos.TextMutes.FindAllActiveAsync([this](std::vector<TextMute> mutes) {
         _activeTextMutes.clear();
         _textMutedPlayers.clear();
         for (auto& mute : mutes)

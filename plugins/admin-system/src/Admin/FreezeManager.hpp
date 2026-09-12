@@ -5,7 +5,7 @@
 #include "../Database/Repositories/AdminRepository.hpp"
 #include "AdminManager.hpp"
 
-#include <VoltMod/Database/Api.hpp>
+#include "../Database/Repositories.hpp"
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <optional>
@@ -27,9 +27,9 @@ namespace AdminSystem::Admin
 class FreezeManager
 {
 public:
-    FreezeManager(VoltMod::Database& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
+    FreezeManager(Database::Repositories& repos, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
                   Core::ChatService& chat, AdminManager& admins)
-        : _db(db), _config(config), _rt(runtime), _chat(chat), _admins(admins)
+        : _repos(repos), _config(config), _rt(runtime), _chat(chat), _admins(admins)
     {}
 
     /**
@@ -47,12 +47,13 @@ public:
     /** The live frozen set, keyed by admin steam ID (for the list/unfreeze commands). */
     const std::unordered_map<int64_t, Database::FrozenAdmin>& Frozen() const { return _frozen; }
 
-    /** Manual freeze. The command layer validates admin-ness, self-targeting, and immunity. */
-    bool Freeze(int64_t targetSteamId, const std::string& targetName, int64_t bySteamId, const std::string& byName,
+    /** Manual freeze. The command layer validates admin-ness, self-targeting, and immunity.
+     *  Cache-first: the freeze takes effect now and the row rides the database worker. */
+    void Freeze(int64_t targetSteamId, const std::string& targetName, int64_t bySteamId, const std::string& byName,
                 const std::string& reason);
 
-    /** Lift the freeze for @p targetSteamId. Returns false if not frozen or the DB write failed. */
-    bool Unfreeze(int64_t targetSteamId, int64_t bySteamId, const std::string& byName);
+    /** Lift the freeze for @p targetSteamId. A target that was not frozen is ignored. */
+    void Unfreeze(int64_t targetSteamId, int64_t bySteamId, const std::string& byName);
 
     /**
      * Entry point for the IssuePunishment choke point: writes the admin_activity audit row,
@@ -71,7 +72,7 @@ public:
     void NotifyFrozenSoon(int slot, int64_t steamId);
 
 private:
-    VoltMod::Database& _db;
+    Database::Repositories& _repos;
     const Config::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;
@@ -82,9 +83,9 @@ private:
     void RecordAudit(int64_t adminSteamId, std::string_view adminName, std::string_view action, int64_t targetSteamId,
                      std::string_view targetName, std::string_view detail);
 
-    /** Shared body of manual + automatic freezing: persist, cache, audit, notify. The differing
-     *  log line and broadcast stay at the call sites. */
-    bool ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId, const std::string& byName,
+    /** Shared body of manual and automatic freezing: cache, persist, audit, notify. The
+     *  differing log line and broadcast stay at the call sites. */
+    void ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId, const std::string& byName,
                      const std::string& reason);
 
     void CheckAutoFreeze(int64_t adminSteamId, std::string_view adminName);

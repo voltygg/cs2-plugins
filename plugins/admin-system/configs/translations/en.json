@@ -190,7 +190,6 @@
     "warnSuccess": "Warned {name}.",
     "warnFailed": "Failed to issue warning (database error).",
     "freezeSuccess": "Froze the admin privileges of {name}.",
-    "freezeFailed": "Failed to freeze (database error).",
     "freezeNotAdmin": "{name} is not an admin.",
     "freezeSelf": "You cannot freeze yourself.",
     "freezeNoOutrank": "You must outrank {name} to freeze them.",

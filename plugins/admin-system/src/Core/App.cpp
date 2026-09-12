@@ -3,7 +3,6 @@
 #include "../Admin/Effects/Model.hpp"
 #include "../Commands/Commands.hpp"
 #include "../Config/ConfigManager.hpp"
-#include "../Database/Repositories/ServerRepository.hpp"
 #include "../Punishments/KickNotice.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -65,7 +64,7 @@ void App::OnPlayerConnect(Player& player)
 {
     const int64_t steamId = player.SteamId();
     const int slot = player.Slot();
-    PlayerRepo.RecordConnect(steamId, player.Name(), std::string(player.Ip()));
+    Repos.Players.RecordConnectAsync(steamId, player.Name(), std::string(player.Ip()));
 
     // Register the admin's panel language up front so every slot-aware Translations::Get (menus,
     // cheat-check, mute notices) renders in their language without per-command setup.
@@ -91,7 +90,7 @@ void App::OnPlayerConnect(Player& player)
 
 void App::OnPlayerDisconnect(Player& player)
 {
-    PlayerRepo.RecordDisconnect(player.SteamId(), player.Name(), player.Playtime().count());
+    Repos.Players.RecordDisconnectAsync(player.SteamId(), player.Name(), player.Playtime().count());
     Effects.CancelAll(player.Slot());
     CheatCheck.CancelAllForSlot(player.Slot());
 }
@@ -102,12 +101,12 @@ StageResult App::ConnectDatabase()
         return StageResult::Degraded("unavailable; chat commands will reject all callers");
 
     Migration = VoltMod::RunMigrations(Db, VoltMod::AddonFile(Config::AddonName, "configs/migrations"),
-                                       {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
+                                       {.HistoryTable = "schema_migrations", .LockKey = 727274});
     if (!Migration)
         return StageResult::Degraded("migrations failed; not loading admins against an out-of-date schema");
 
     const auto& server = Settings.GetServer();
-    if (!Database::ServerRepository{Db}.Upsert(server.tag, server.name))
+    if (!Repos.Servers.Upsert(server.tag, server.name))
         Log::Warn("Failed to register server '{}' in the servers table.", server.tag);
 
     return StageResult::Ok();
@@ -132,7 +131,7 @@ StageResult App::StartPunishments()
     _subs.Add(Runtime.Scheduler.Repeat(60'000, [this] {
         Punishments.ExpireOldPunishments();
         Freeze.RefreshFromDatabase();
-        Database::ServerRepository{Db}.Heartbeat(Settings.GetServer().tag);
+        Repos.Servers.HeartbeatAsync(Settings.GetServer().tag);
     }));
 
     // Typed surface the anticheat plugin drives (bans need the DB, alerts need admin data).
