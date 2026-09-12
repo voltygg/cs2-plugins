@@ -49,21 +49,25 @@ static std::string_view TagKey(PunishType kind)
 /** Lift the punishment; false when another server already did. */
 static bool Lift(App& app, const LiftRow& row, int64_t adminSteamId)
 {
-    auto& translations = app.Runtime.Translations;
-    auto& punishments = app.Punishments;
+    std::string_view reasonKey;
     switch (row.Kind)
     {
     case PunishType::Ban:
-        return punishments.RemoveBan(row.Id, adminSteamId, translations.Get("reason.unbannedByAdmin"));
+        reasonKey = "reason.unbannedByAdmin";
+        break;
     case PunishType::VoiceMute:
-        return punishments.RemoveVoiceMute(row.Id, adminSteamId, translations.Get("reason.voiceUnmutedByAdmin"));
+        reasonKey = "reason.voiceUnmutedByAdmin";
+        break;
     case PunishType::TextMute:
-        return punishments.RemoveTextMute(row.Id, adminSteamId, translations.Get("reason.textUnmutedByAdmin"));
+        reasonKey = "reason.textUnmutedByAdmin";
+        break;
     case PunishType::Kick:
     case PunishType::Warn:
-        break;  // Not liftable: no row is ever built for these.
+        return false;  // Not liftable: no row is ever built for these.
     }
-    return false;
+
+    return app.Punishments.Remove(row.Kind, row.Id, adminSteamId,
+                                  app.Runtime.Translations.Get(std::string(reasonKey)));
 }
 
 static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
@@ -104,9 +108,8 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
 }
 
 /** One row per punishment. Bans carry no tag; mutes are tagged with their kind. */
-template <typename TPunishment>
-static void AppendRows(App& app, MenuBuilder& builder, const std::vector<TPunishment>& punishments, PunishType kind,
-                       int adminSlot)
+static void AppendRows(App& app, MenuBuilder& builder, const std::vector<Database::Punishment>& punishments,
+                       PunishType kind, int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
     for (const auto& punishment : punishments)
@@ -130,7 +133,7 @@ std::shared_ptr<VoltMod::Menu> BuildUnbanMenu(AdminSystem::App& app, int adminSl
     MenuBuilder builder(translations.Get("unban.title", adminSlot));
 
     builder.EmptyText(translations.Get("unban.noBans", adminSlot));
-    AppendRows(app, builder, app.Punishments.GetActiveBans(), PunishType::Ban, adminSlot);
+    AppendRows(app, builder, app.Punishments.GetActive(PunishType::Ban), PunishType::Ban, adminSlot);
 
     return builder.Build();
 }
@@ -141,8 +144,8 @@ std::shared_ptr<VoltMod::Menu> BuildUnmuteMenu(AdminSystem::App& app, int adminS
     MenuBuilder builder(translations.Get("unmute.title", adminSlot));
 
     builder.EmptyText(translations.Get("unmute.noMutes", adminSlot));
-    AppendRows(app, builder, app.Punishments.GetActiveVoiceMutes(), PunishType::VoiceMute, adminSlot);
-    AppendRows(app, builder, app.Punishments.GetActiveTextMutes(), PunishType::TextMute, adminSlot);
+    AppendRows(app, builder, app.Punishments.GetActive(PunishType::VoiceMute), PunishType::VoiceMute, adminSlot);
+    AppendRows(app, builder, app.Punishments.GetActive(PunishType::TextMute), PunishType::TextMute, adminSlot);
 
     return builder.Build();
 }

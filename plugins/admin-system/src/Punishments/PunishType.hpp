@@ -5,6 +5,7 @@
 #include <VoltMod/Core/EnumNames.hpp>
 #include <optional>
 #include <string_view>
+#include <initializer_list>
 
 namespace AdminSystem::Punishments
 {
@@ -45,7 +46,7 @@ inline std::string_view ActionTranslationKey(PunishType type)
     return "action.kick";
 }
 
-/** The admin_activity `action` value for this punishment (audit trail + rate detection). */
+/** The value stored in `admin_activity.action` and in `punishments.kind`. */
 inline std::string_view AuditActionName(PunishType type)
 {
     switch (type)
@@ -62,6 +63,18 @@ inline std::string_view AuditActionName(PunishType type)
         return "warn";
     }
     return "kick";
+}
+
+/** Read one of those columns back; nullopt for a value this build does not know. */
+inline std::optional<PunishType> ParseAuditAction(std::string_view name)
+{
+    for (PunishType type : {PunishType::Kick, PunishType::Ban, PunishType::VoiceMute, PunishType::TextMute,
+                            PunishType::Warn})
+    {
+        if (AuditActionName(type) == name)
+            return type;
+    }
+    return std::nullopt;
 }
 
 /** The admin flag required to issue this punishment. */

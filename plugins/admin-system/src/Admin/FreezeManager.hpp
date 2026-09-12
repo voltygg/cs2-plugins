@@ -2,7 +2,7 @@
 
 #include "../Config/ConfigManager.hpp"
 #include "../Core/ChatService.hpp"
-#include "../Database/Repositories/AdminRepository.hpp"
+#include "../Database/Repositories/Admins.hpp"
 #include "AdminManager.hpp"
 
 #include "../Database/Repositories.hpp"

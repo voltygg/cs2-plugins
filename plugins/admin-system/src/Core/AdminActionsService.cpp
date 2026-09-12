@@ -1,7 +1,7 @@
 #include "AdminActionsService.hpp"
 
 #include "../Admin/Access.hpp"
-#include "../Database/Entities/Ban.hpp"
+#include "../Database/Entities.hpp"
 #include "../Punishments/PunishmentManager.hpp"
 #include "Permissions.hpp"
 
@@ -34,19 +34,19 @@ BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::st
         return BanResult::InvalidSteamId;
     }
 
-    Database::Ban ban;
-    ban.TargetSteamId = steamId;
-    ban.AdminSteamId = 0;
-    ban.AdminName = "AntiCheat";
-    ban.Reason = std::string(reason);
-    ban.Duration = durationSec;
+    Database::Punishment ban{.Kind = Punishments::PunishType::Ban,
+                             .TargetSteamId = steamId,
+                             .AdminSteamId = 0,
+                             .AdminName = "AntiCheat",
+                             .Reason = std::string(reason),
+                             .Duration = durationSec};
     if (auto* target = _rt.Players.BySteamId(steamId))
     {
         ban.TargetName = target->Name();
         ban.TargetIp = target->Ip();
     }
 
-    if (!_punishments.IssueBan(ban))
+    if (!_punishments.Issue(ban))
     {
         Log::Warn("IAdminActions::Ban: failed to persist ban for {}.", steamId);
         return BanResult::PersistFailed;

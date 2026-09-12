@@ -53,7 +53,7 @@ VoltMod::HookResult<bool> AdminSystemPlugin::OnSetClientListening(IVEngineServer
     {
         if (auto* muted = _app->Runtime.Players.Get(sender.Get()))
         {
-            if (_app->Punishments.IsVoiceMuted(muted->SteamId()))
+            if (_app->Punishments.IsPunished(AdminSystem::Punishments::PunishType::VoiceMute, muted->SteamId()))
             {
                 // Tell the muted player they're being suppressed; ChatService rate-limits this
                 // so the per-receiver explosion of hook calls collapses to one chat line.

@@ -92,11 +92,11 @@ bool PlayerChat::HandleSay(Player* player, std::string_view message, bool isSayT
         return true;
 
     int64_t steamId = player->SteamId();
-    if (_punishments.IsTextMuted(steamId))
+    if (_punishments.IsPunished(Punishments::PunishType::TextMute, steamId))
     {
         int slot = player->Slot();
         if (_textMuteNotice.TryAcquire(slot, Time::Now()))
-            ReplyMuteNotice(slot, "muteNotice.text", _punishments.GetActiveTextMute(steamId));
+            ReplyMuteNotice(slot, "muteNotice.text", _punishments.GetActive(Punishments::PunishType::TextMute, steamId));
         return true;
     }
 
@@ -119,7 +119,8 @@ void PlayerChat::NotifyVoiceMuted(Player* player)
     if (!_voiceMuteNotice.TryAcquire(slot, Time::Now()))
         return;
 
-    ReplyMuteNotice(slot, "muteNotice.voice", _punishments.GetActiveVoiceMute(player->SteamId()));
+    ReplyMuteNotice(slot, "muteNotice.voice",
+                    _punishments.GetActive(Punishments::PunishType::VoiceMute, player->SteamId()));
 }
 
 }  // namespace AdminSystem::Core

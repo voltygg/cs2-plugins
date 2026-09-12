@@ -78,7 +78,7 @@ void App::OnPlayerConnect(Player& player)
     // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so
     // KickDeferred waits a frame -- the player is fully connected by then. Bots have no real
     // SteamID and never match an active ban.
-    if (auto ban = Punishments.GetActiveBan(steamId))
+    if (auto ban = Punishments.GetActive(AdminSystem::Punishments::PunishType::Ban, steamId))
     {
         // Built now, while the ban row is in hand, so the disconnect screen carries the expiry
         // and appeal link rather than the bare reason.

@@ -1,7 +1,7 @@
 #pragma once
 
 // clang-format off
-// Generated from schema/schema.sql.in by `poe schema`. Do not edit.
+// Generated from the plugin's migrations by `voltmod database tables`. Do not edit.
 
 #include <VoltMod/Database/Table.hpp>
 #include <optional>
@@ -207,7 +207,7 @@ namespace AdminSystem::Database::Tables
     };
     struct IpAddress {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(ip_address, ipAddress);
-      using data_type = std::optional<::sqlpp::text>;
+      using data_type = ::sqlpp::text;
       using has_default = std::true_type;
     };
     struct FirstSeen {
@@ -247,11 +247,16 @@ namespace AdminSystem::Database::Tables
   };
   using Players = ::sqlpp::table_t<Players_>;
 
-  struct Bans_ {
+  struct Punishments_ {
     struct Id {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(id, id);
       using data_type = ::sqlpp::integral;
       using has_default = std::true_type;
+    };
+    struct Kind {
+      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(kind, kind);
+      using data_type = ::sqlpp::text;
+      using has_default = std::false_type;
     };
     struct TargetSteamId {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(target_steam_id, targetSteamId);
@@ -265,7 +270,7 @@ namespace AdminSystem::Database::Tables
     };
     struct TargetIp {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(target_ip, targetIp);
-      using data_type = std::optional<::sqlpp::text>;
+      using data_type = ::sqlpp::text;
       using has_default = std::true_type;
     };
     struct AdminSteamId {
@@ -305,23 +310,24 @@ namespace AdminSystem::Database::Tables
     };
     struct RemovedAt {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(removed_at, removedAt);
-      using data_type = std::optional<::sqlpp::integral>;
+      using data_type = ::sqlpp::integral;
       using has_default = std::true_type;
     };
     struct RemovedBy {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(removed_by, removedBy);
-      using data_type = std::optional<::sqlpp::integral>;
+      using data_type = ::sqlpp::integral;
       using has_default = std::true_type;
     };
     struct RemovedReason {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(removed_reason, removedReason);
-      using data_type = std::optional<::sqlpp::text>;
+      using data_type = ::sqlpp::text;
       using has_default = std::true_type;
     };
-    SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(bans, bans);
+    SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(punishments, punishments);
     template<typename T>
     using _table_columns = sqlpp::table_columns<T,
                Id,
+               Kind,
                TargetSteamId,
                TargetName,
                TargetIp,
@@ -336,258 +342,13 @@ namespace AdminSystem::Database::Tables
                RemovedBy,
                RemovedReason>;
     using _required_insert_columns = sqlpp::detail::type_set<
-               sqlpp::column_t<sqlpp::table_t<Bans_>, TargetSteamId>,
-               sqlpp::column_t<sqlpp::table_t<Bans_>, TargetName>,
-               sqlpp::column_t<sqlpp::table_t<Bans_>, AdminName>,
-               sqlpp::column_t<sqlpp::table_t<Bans_>, Reason>>;
+               sqlpp::column_t<sqlpp::table_t<Punishments_>, Kind>,
+               sqlpp::column_t<sqlpp::table_t<Punishments_>, TargetSteamId>,
+               sqlpp::column_t<sqlpp::table_t<Punishments_>, TargetName>,
+               sqlpp::column_t<sqlpp::table_t<Punishments_>, AdminName>,
+               sqlpp::column_t<sqlpp::table_t<Punishments_>, Reason>>;
   };
-  using Bans = ::sqlpp::table_t<Bans_>;
-
-  struct VoiceMutes_ {
-    struct Id {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(id, id);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct TargetSteamId {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(target_steam_id, targetSteamId);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::false_type;
-    };
-    struct TargetName {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(target_name, targetName);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct AdminSteamId {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_steam_id, adminSteamId);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct AdminName {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_name, adminName);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct Reason {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(reason, reason);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct CreatedAt {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(created_at, createdAt);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct ExpiresAt {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(expires_at, expiresAt);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct Duration {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(duration, duration);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct IsActive {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(is_active, isActive);
-      using data_type = ::sqlpp::boolean;
-      using has_default = std::true_type;
-    };
-    struct RemovedAt {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(removed_at, removedAt);
-      using data_type = std::optional<::sqlpp::integral>;
-      using has_default = std::true_type;
-    };
-    struct RemovedBy {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(removed_by, removedBy);
-      using data_type = std::optional<::sqlpp::integral>;
-      using has_default = std::true_type;
-    };
-    struct RemovedReason {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(removed_reason, removedReason);
-      using data_type = std::optional<::sqlpp::text>;
-      using has_default = std::true_type;
-    };
-    SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(voice_mutes, voiceMutes);
-    template<typename T>
-    using _table_columns = sqlpp::table_columns<T,
-               Id,
-               TargetSteamId,
-               TargetName,
-               AdminSteamId,
-               AdminName,
-               Reason,
-               CreatedAt,
-               ExpiresAt,
-               Duration,
-               IsActive,
-               RemovedAt,
-               RemovedBy,
-               RemovedReason>;
-    using _required_insert_columns = sqlpp::detail::type_set<
-               sqlpp::column_t<sqlpp::table_t<VoiceMutes_>, TargetSteamId>,
-               sqlpp::column_t<sqlpp::table_t<VoiceMutes_>, TargetName>,
-               sqlpp::column_t<sqlpp::table_t<VoiceMutes_>, AdminName>,
-               sqlpp::column_t<sqlpp::table_t<VoiceMutes_>, Reason>>;
-  };
-  using VoiceMutes = ::sqlpp::table_t<VoiceMutes_>;
-
-  struct TextMutes_ {
-    struct Id {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(id, id);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct TargetSteamId {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(target_steam_id, targetSteamId);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::false_type;
-    };
-    struct TargetName {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(target_name, targetName);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct AdminSteamId {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_steam_id, adminSteamId);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct AdminName {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_name, adminName);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct Reason {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(reason, reason);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct CreatedAt {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(created_at, createdAt);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct ExpiresAt {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(expires_at, expiresAt);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct Duration {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(duration, duration);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct IsActive {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(is_active, isActive);
-      using data_type = ::sqlpp::boolean;
-      using has_default = std::true_type;
-    };
-    struct RemovedAt {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(removed_at, removedAt);
-      using data_type = std::optional<::sqlpp::integral>;
-      using has_default = std::true_type;
-    };
-    struct RemovedBy {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(removed_by, removedBy);
-      using data_type = std::optional<::sqlpp::integral>;
-      using has_default = std::true_type;
-    };
-    struct RemovedReason {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(removed_reason, removedReason);
-      using data_type = std::optional<::sqlpp::text>;
-      using has_default = std::true_type;
-    };
-    SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(text_mutes, textMutes);
-    template<typename T>
-    using _table_columns = sqlpp::table_columns<T,
-               Id,
-               TargetSteamId,
-               TargetName,
-               AdminSteamId,
-               AdminName,
-               Reason,
-               CreatedAt,
-               ExpiresAt,
-               Duration,
-               IsActive,
-               RemovedAt,
-               RemovedBy,
-               RemovedReason>;
-    using _required_insert_columns = sqlpp::detail::type_set<
-               sqlpp::column_t<sqlpp::table_t<TextMutes_>, TargetSteamId>,
-               sqlpp::column_t<sqlpp::table_t<TextMutes_>, TargetName>,
-               sqlpp::column_t<sqlpp::table_t<TextMutes_>, AdminName>,
-               sqlpp::column_t<sqlpp::table_t<TextMutes_>, Reason>>;
-  };
-  using TextMutes = ::sqlpp::table_t<TextMutes_>;
-
-  struct Warnings_ {
-    struct Id {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(id, id);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct TargetSteamId {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(target_steam_id, targetSteamId);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::false_type;
-    };
-    struct TargetName {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(target_name, targetName);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct AdminSteamId {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_steam_id, adminSteamId);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct AdminName {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_name, adminName);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct Reason {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(reason, reason);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct CreatedAt {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(created_at, createdAt);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct IsActive {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(is_active, isActive);
-      using data_type = ::sqlpp::boolean;
-      using has_default = std::true_type;
-    };
-    struct ExpiresAt {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(expires_at, expiresAt);
-      using data_type = std::optional<::sqlpp::integral>;
-      using has_default = std::true_type;
-    };
-    SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(warnings, warnings);
-    template<typename T>
-    using _table_columns = sqlpp::table_columns<T,
-               Id,
-               TargetSteamId,
-               TargetName,
-               AdminSteamId,
-               AdminName,
-               Reason,
-               CreatedAt,
-               IsActive,
-               ExpiresAt>;
-    using _required_insert_columns = sqlpp::detail::type_set<
-               sqlpp::column_t<sqlpp::table_t<Warnings_>, TargetSteamId>,
-               sqlpp::column_t<sqlpp::table_t<Warnings_>, TargetName>,
-               sqlpp::column_t<sqlpp::table_t<Warnings_>, AdminName>,
-               sqlpp::column_t<sqlpp::table_t<Warnings_>, Reason>>;
-  };
-  using Warnings = ::sqlpp::table_t<Warnings_>;
+  using Punishments = ::sqlpp::table_t<Punishments_>;
 
   struct Servers_ {
     struct Id {

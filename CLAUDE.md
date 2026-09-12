@@ -22,7 +22,7 @@ uv run poe bootstrap                         # first-time: install VoltMod profi
 uv run poe build                             # compile (windows-msvc-release)
 uv run poe test                              # compile, then CTest
 uv run poe lint                              # ruff + modgraph + panorama and schema checks
-uv run poe schema                            # render the admin-system migrations and table specs
+uv run poe schema                            # regenerate the admin-system table specs from its migrations
 uv run poe build --install <plugin> --start  # copy to CS2_SERVER_PATH and launch
 uv run poe panorama                          # render, compile and install the Panorama screens into your client (Windows)
 uv run poe new-plugin <name>

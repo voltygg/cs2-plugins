@@ -1,7 +1,7 @@
 #include "ReportManager.hpp"
 
 #include "../Config/ConfigManager.hpp"
-#include "../Database/Repositories/ReportRepository.hpp"
+#include "../Database/Repositories/Audit.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>

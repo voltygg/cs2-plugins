@@ -219,33 +219,27 @@ walk them around.
 `configs/settings.schema.json` for the full key set, including `path` (the
 sqlite file) and `connectTimeoutSec`.
 
-The plugin owns its schema. `configs/migrations/<driver>/NNNN_name.sql` holds
-one folder per backend; at load, the plugin applies the files for the
-configured driver in filename order. To apply them by hand, run the files for
-your driver in the same order:
+The plugin owns its schema. `configs/migrations/NNNN_name.sql` holds one
+dialect-free file per change, and the plugin applies them in filename order at
+load, substituting the handful of spellings the backends disagree on. To apply
+them by hand, render them for your driver first:
 
 ```bash
-psql -d admin_system -f configs/migrations/postgres/0001_initial_schema.sql
-mariadb admin_system < configs/migrations/mariadb/0001_initial_schema.sql
-sqlite3 admin-system.sqlite < configs/migrations/sqlite/0001_initial_schema.sql
+uv run voltmod database sql configs/migrations --driver postgres | psql -d admin_system
+uv run voltmod database sql configs/migrations --driver mariadb  | mariadb admin_system
+uv run voltmod database sql configs/migrations --driver sqlite   | sqlite3 admin-system.sqlite
 ```
 
-Seed the first admin the same way, using the seed file for your driver:
+Seed the first admin the same way, after putting your SteamID64 in the file:
 
 ```bash
-psql -d admin_system -f database/seed-admin.postgres.sql
-mariadb admin_system < database/seed-admin.mariadb.sql
-sqlite3 admin-system.sqlite < database/seed-admin.sqlite.sql
+uv run voltmod database sql database/seed-admin.sql --driver postgres | psql -d admin_system
 ```
 
 `admins.groups` and `admin_groups.inherits` hold a JSON array as text (for
-example `'["super_admin"]'`), not a native array column.
-
-Postgres migration `0004_json_groups.sql` converts `admins.groups` and
-`admin_groups.inherits` from `TEXT[]` to JSON-array text. **Back up the
-database (`pg_dump`) before applying it** on an existing deployment, and
-update anything else that reads those two columns directly (such as the
-website) to parse JSON instead of a Postgres array.
+example `'["super_admin"]'`) on every backend, not a native array column.
+Anything else reading those two columns directly, such as the website, has to
+parse JSON.
 
 | Table | Holds |
 | --- | --- |
@@ -254,10 +248,7 @@ website) to parse JSON instead of a Postgres array.
 | `admin_server_groups` | Which groups an admin holds on which server tag |
 | `admin_activity` | Audit trail of every punishment an admin issued |
 | `players` | Seen players, names, and IP addresses |
-| `bans` | Active and lifted bans |
-| `voice_mutes` | Active and lifted voice mutes |
-| `text_mutes` | Active and lifted text mutes |
-| `warnings` | Issued warnings feeding the escalation threshold |
+| `punishments` | Bans, voice mutes, text mutes and warnings, active and lifted, told apart by `kind` |
 | `servers` | Registered server tags and display names |
 | `player_reports` | Reports awaiting an external moderation service |
 

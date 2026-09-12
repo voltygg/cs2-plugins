@@ -36,19 +36,17 @@ multi-server grants, abuse protection, and cheat-check workflows.
 2. Configure `addons/admin-system/configs/settings.jsonc`.
 3. Give every server sharing the database a unique, stable `server.tag`.
 4. Start the server and let the plugin apply its migrations.
-5. Put your SteamID64 in the seed file for your `database.driver`
-   ([`database/`](database/)), then run it:
+5. Put your SteamID64 in [`database/seed-admin.sql`](database/seed-admin.sql),
+   render it for your driver and pipe it in:
 
    ```bash
-   psql -d admin_system -f database/seed-admin.postgres.sql
-   mariadb admin_system < database/seed-admin.mariadb.sql
-   sqlite3 admin-system.sqlite < database/seed-admin.sqlite.sql
+   uv run voltmod database sql database/seed-admin.sql --driver postgres | psql -d admin_system
    ```
 
 6. Restart the server or run `!admin_reload`.
 
-To apply migrations manually, run the SQL files under
-[`configs/migrations/<driver>/`](configs/migrations/) in filename order.
+To apply migrations manually, render
+[`configs/migrations/`](configs/migrations/) the same way.
 
 ## Permission flags
 

@@ -3,7 +3,7 @@
 #include "../Config/ConfigManager.hpp"
 #include "../Core/ChatService.hpp"
 #include "../Core/Permissions.hpp"
-#include "../Database/Repositories/AdminActivityRepository.hpp"
+#include "../Database/Repositories/Audit.hpp"
 #include "AdminManager.hpp"
 
 #include <VoltMod/Core/Log.hpp>

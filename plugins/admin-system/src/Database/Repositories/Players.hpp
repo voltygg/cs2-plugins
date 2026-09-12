@@ -23,4 +23,20 @@ private:
     VoltMod::Database& _db;
 };
 
+/** Registration and heartbeat for this server's row in the servers table. */
+class ServerRepository
+{
+public:
+    explicit ServerRepository(VoltMod::Database& db) : _db(db) {}
+
+    /** Insert or refresh this server's registry row. Blocking - called once at boot. */
+    bool Upsert(const std::string& tag, const std::string& name);
+
+    /** Advance last_seen so operators can tell which registered servers are alive. Fire-and-forget. */
+    void HeartbeatAsync(const std::string& tag);
+
+private:
+    VoltMod::Database& _db;
+};
+
 }  // namespace AdminSystem::Database

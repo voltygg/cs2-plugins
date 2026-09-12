@@ -2,8 +2,7 @@
 
 #include "../Config/ConfigManager.hpp"
 #include "../Core/Permissions.hpp"
-#include "../Database/Entities/Admin.hpp"
-#include "../Database/Entities/AdminGroup.hpp"
+#include "../Database/Entities.hpp"
 
 #include "../Database/Repositories.hpp"
 #include <VoltMod/Messaging/ChatColors.hpp>

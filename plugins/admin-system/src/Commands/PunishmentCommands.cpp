@@ -62,7 +62,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .UsageKey("cmd.unbanUsage")
         .Run([&app](Caller c, Args::SteamId id, Args::Opt<Args::Rest> why) -> Result<Reply> {
             const std::string reason = ReasonOr(c, why, "reason.unbannedByAdmin");
-            bool removed = app.Punishments.RemoveBanBySteamId(id.Value, c.Player->SteamId(), reason);
+            bool removed = app.Punishments.RemoveBySteamId(PunishType::Ban, id.Value, c.Player->SteamId(), reason);
             Tokens tokens{{"id", std::to_string(id.Value)}};
             return removed ? c.Ok("cmd.unbanSuccess", tokens) : c.Fail("cmd.unbanNoBan", tokens);
         });
@@ -83,8 +83,8 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Describe("Lift an active voice mute on the target.")
         .Permission(Flag(Permission::Mute))
         .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-            bool removed = app.Punishments.RemoveVoiceMuteBySteamId(t.Value->SteamId(), c.Player->SteamId(),
-                                                                    c.Tr.Get("reason.voiceUnmutedByAdmin"));
+            bool removed = app.Punishments.RemoveBySteamId(PunishType::VoiceMute, t.Value->SteamId(), c.Player->SteamId(),
+                                                           c.Tr.Get("reason.voiceUnmutedByAdmin"));
             Tokens tokens{{"name", t.Value->Name()}};
             return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
         });
@@ -105,8 +105,8 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Describe("Lift an active text mute on the target.")
         .Permission(Flag(Permission::Mute))
         .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-            bool removed = app.Punishments.RemoveTextMuteBySteamId(t.Value->SteamId(), c.Player->SteamId(),
-                                                                   c.Tr.Get("reason.textUnmutedByAdmin"));
+            bool removed = app.Punishments.RemoveBySteamId(PunishType::TextMute, t.Value->SteamId(), c.Player->SteamId(),
+                                                           c.Tr.Get("reason.textUnmutedByAdmin"));
             Tokens tokens{{"name", t.Value->Name()}};
             return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
         });

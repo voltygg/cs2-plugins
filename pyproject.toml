@@ -7,16 +7,12 @@ requires-python = ">=3.14"
 license = { text = "MIT" }
 
 dependencies = [
-    # Provides the tasks and tool pins below. Replace `main` with a release tag
-    # when builds must stop tracking framework changes.
-    "voltmod @ git+https://github.com/voltygg/voltmod.git@refactor/api-v2",
+    "voltmod @ git+https://github.com/voltygg/voltmod.git@main",
     "ruff>=0.14.0",
     "poethepoet>=0.47.0",
     "python-dotenv>=1.2.0",
     "typer>=0.27.1",
     "pyyaml>=6.0",
-    # sqlpp23 ships its table-spec generator as a script and leaves this to the consumer.
-    "pyparsing>=3.2",
 ]
 
 [tool.uv]
@@ -41,7 +37,7 @@ deploy-cleanup = "python -m deploy.tools.cli cleanup"
 deploy-dbs = "python -m deploy.tools.cli ensure-dbs"
 deploy-tunnel = "python -m deploy.tools.cli tunnel-db"
 rcon = "python -m deploy.tools.cli rcon"
-schema = "python -m tools.schema"
+schema = "voltmod database tables --migrations plugins/admin-system/configs/migrations --header plugins/admin-system/src/Database/Tables/Schema.hpp --namespace AdminSystem::Database::Tables"
 
 [tool.poe.tasks.lint]
 help = "Lint the build tooling and check the plugin source conventions"
@@ -49,7 +45,7 @@ sequence = [
     { cmd = "ruff check ." },
     { cmd = "voltmod modgraph --plugins ." },
     { cmd = "voltmod panorama check" },
-    { cmd = "python -m tools.schema --check" },
+    { ref = "schema --check" },
 ]
 
 [tool.ruff]
@@ -60,6 +56,14 @@ extend-exclude = ["vendor", "references"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
 
+[tool.mypy]
+exclude = ["^vendor/", "^references/"]
+mypy_path = "vendor/voltmod/cli"
+
 [[tool.mypy.overrides]]
 module = ["conan.*", "yaml"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pytest"]
 ignore_missing_imports = true

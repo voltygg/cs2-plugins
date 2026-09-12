@@ -1,4 +1,4 @@
-#include "AdminRepository.hpp"
+#include "Admins.hpp"
 
 #include "../JsonList.hpp"
 #include "../Tables/Schema.hpp"
@@ -7,7 +7,6 @@
 #include <VoltMod/Core/Time.hpp>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 namespace AdminSystem::Database
 {
@@ -34,38 +33,70 @@ std::vector<Admin> AdminRepository::FindAll()
         std::vector<Admin> admins;
         for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t)).from(t)))
         {
-            Admin admin;
-            admin.Id = row.id;
-            admin.SteamId = row.steamId;
-            admin.Name = row.name;
-            admin.Flags = row.flags;
-            admin.Immunity = static_cast<int32_t>(row.immunity);
-            admin.CreatedAt = row.createdAt;
-            admin.UpdatedAt = row.updatedAt;
-            admin.Groups = ReadGroupList(row.groups, "admins.groups", std::to_string(row.steamId));
-            admin.DisplayPrefix = row.displayPrefix;
-            admin.NameColor = row.nameColor;
-            admin.MessageColor = row.messageColor;
-            admin.Language = row.language;
-
-            admin.BuildFlagBits();
-            admins.push_back(std::move(admin));
+            admins.push_back(
+                Admin{.Id = row.id,
+                      .SteamId = row.steamId,
+                      .Name = std::string(row.name),
+                      .Groups = ReadGroupList(row.groups, "admins.groups", std::to_string(row.steamId)),
+                      .Flags = std::string(row.flags),
+                      .Immunity = static_cast<int32_t>(row.immunity),
+                      .DisplayPrefix = row.displayPrefix,
+                      .NameColor = std::string(row.nameColor),
+                      .MessageColor = std::string(row.messageColor),
+                      .Language = std::string(row.language),
+                      .CreatedAt = row.createdAt,
+                      .UpdatedAt = row.updatedAt});
         }
         return admins;
     });
 }
 
+std::vector<AdminGroup> AdminRepository::FindAllGroups()
+{
+    return _db.RunOr("find_all_admin_groups", [](auto& conn) {
+        const Tables::AdminGroups t;
+        std::vector<AdminGroup> groups;
+        for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t)).from(t)))
+        {
+            groups.push_back(
+                AdminGroup{.Id = row.id,
+                           .Name = std::string(row.name),
+                           .Flags = std::string(row.flags),
+                           .Immunity = static_cast<int32_t>(row.immunity),
+                           .Inherits = ReadGroupList(row.inherits, "admin_groups.inherits", row.name),
+                           .ChatPrefix = std::string(row.chatPrefix),
+                           .PrefixColor = std::string(row.prefixColor),
+                           .NameColor = std::string(row.nameColor),
+                           .MessageColor = std::string(row.messageColor),
+                           .CreatedAt = row.createdAt,
+                           .UpdatedAt = row.updatedAt});
+        }
+        return groups;
+    });
+}
+
+std::unordered_map<int64_t, std::vector<std::string>> AdminRepository::FindGroupsForServer(const std::string& serverTag)
+{
+    return _db.RunOr("find_server_groups", [serverTag](auto& conn) {
+        const Tables::AdminServerGroups t;
+        std::unordered_map<int64_t, std::vector<std::string>> grants;
+        for (const auto& row : conn(sqlpp::select(t.adminSteamId, t.groupName).from(t).where(t.serverTag == serverTag)))
+            grants[row.adminSteamId].emplace_back(row.groupName);
+        return grants;
+    });
+}
+
 void AdminRepository::UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,
-                                      const std::string& messageColor)
+                                           const std::string& messageColor)
 {
     _db.RunAsync("update_admin_chat_style",
-            [steamId, displayPrefix, nameColor, messageColor, now = Time::Now()](auto& conn) {
-                const Tables::Admins t;
-                conn(sqlpp::update(t)
-                         .set(t.displayPrefix = displayPrefix, t.nameColor = nameColor, t.messageColor = messageColor,
-                              t.updatedAt = now)
-                         .where(t.steamId == steamId));
-            });
+                 [steamId, displayPrefix, nameColor, messageColor, now = Time::Now()](auto& conn) {
+                     const Tables::Admins t;
+                     conn(sqlpp::update(t)
+                              .set(t.displayPrefix = displayPrefix, t.nameColor = nameColor,
+                                   t.messageColor = messageColor, t.updatedAt = now)
+                              .where(t.steamId == steamId));
+                 });
 }
 
 void AdminRepository::UpdateLanguageAsync(int64_t steamId, const std::string& lang)
@@ -118,34 +149,6 @@ void AdminRepository::FindFrozenAsync(std::function<void(std::vector<FrozenAdmin
         },
         // On failure the callback never fires and the caller keeps its cached set.
         std::move(onDone));
-}
-
-
-std::vector<AdminGroup> AdminGroupRepository::FindAll()
-{
-    return _db.RunOr("find_all_admin_groups", [](auto& conn) {
-        const Tables::AdminGroups t;
-        std::vector<AdminGroup> groups;
-        for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t)).from(t)))
-        {
-            AdminGroup group;
-            group.Id = row.id;
-            group.Name = row.name;
-            group.Flags = row.flags;
-            group.Immunity = static_cast<int32_t>(row.immunity);
-            group.CreatedAt = row.createdAt;
-            group.UpdatedAt = row.updatedAt;
-            group.Inherits = ReadGroupList(row.inherits, "admin_groups.inherits", group.Name);
-            group.ChatPrefix = row.chatPrefix;
-            group.PrefixColor = row.prefixColor;
-            group.NameColor = row.nameColor;
-            group.MessageColor = row.messageColor;
-
-            group.BuildFlagBits();
-            groups.push_back(std::move(group));
-        }
-        return groups;
-    });
 }
 
 }  // namespace AdminSystem::Database

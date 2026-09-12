@@ -1,8 +1,7 @@
 #include "AdminManager.hpp"
 
 #include "../Config/ConfigManager.hpp"
-#include "../Database/Repositories/AdminRepository.hpp"
-#include "../Database/Repositories/ServerRepository.hpp"
+#include "../Database/Repositories/Admins.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <algorithm>
@@ -13,7 +12,6 @@ namespace AdminSystem::Admin
 
 namespace Db = AdminSystem::Database;
 namespace Log = VoltMod::Log;
-using Db::AdminGroupRepository;
 using Db::AdminRepository;
 
 bool AdminManager::LoadAdmins()
@@ -28,7 +26,7 @@ bool AdminManager::LoadAdmins()
         _admins[admin.SteamId] = admin;
 
     // Merge server grants into each admin's effective group list.
-    for (auto& [steamId, groupNames] : _repos.AdminServerGroups.FindByServerTag(_config.GetServer().tag))
+    for (auto& [steamId, groupNames] : _repos.Admins.FindGroupsForServer(_config.GetServer().tag))
     {
         auto it = _admins.find(steamId);
         if (it == _admins.end())
@@ -50,7 +48,7 @@ bool AdminManager::LoadAdmins()
 
 bool AdminManager::LoadGroups()
 {
-    auto groups = _repos.AdminGroups.FindAll();
+    auto groups = _repos.Admins.FindAllGroups();
 
     _groups.clear();
     _resolvedStyles.clear();
