@@ -27,12 +27,11 @@ namespace AdminSystem::Commands
 /** Shared body of the kick/ban/mute/warn handlers: issue via the common entry point and
  *  reply in the caller's language. */
 static Result<Reply> Punish(App& app, const Caller& c, Player& target, PunishType type, const std::string& reason,
-                            std::chrono::seconds duration, std::string_view successKey, std::string_view failedKey)
+                            std::chrono::seconds duration, std::string_view successKey)
 {
     // Captured before issuing: bans and kicks can drop the target immediately.
     std::string targetName = target.Name();
-    if (!IssuePunishment(app, *c.Player, target, type, reason, duration.count()))
-        return c.Fail(failedKey);
+    IssuePunishment(app, *c.Player, target, type, reason, duration.count());
     return c.Ok(successKey, {{"name", targetName}});
 }
 
@@ -41,10 +40,9 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
     commands.Add("kick")
         .Describe("Kick a player.")
         .Permission(Flag(Permission::Kick))
-        // Kick has no DB write, so IssuePunishment cannot fail and the failure key is never read.
         .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) -> Result<Reply> {
             return Punish(app, c, *t.Value, PunishType::Kick, ReasonOr(c, why, "reason.kickedByAdmin"),
-                          std::chrono::seconds{0}, "cmd.kickSuccess", "cmd.kickSuccess");
+                          std::chrono::seconds{0}, "cmd.kickSuccess");
         });
 
     commands.Add("ban")
@@ -53,7 +51,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
             // The default ban reason is a config string, not a translation key.
             std::string reason = why.Value ? why.Value->Value : app.Settings.GetPunishments().defaultBanReason;
-            return Punish(app, c, *t.Value, PunishType::Ban, reason, d.Value, "cmd.banSuccess", "cmd.banFailed");
+            return Punish(app, c, *t.Value, PunishType::Ban, reason, d.Value, "cmd.banSuccess");
         });
 
     commands.Add("unban")
@@ -74,7 +72,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Permission(Flag(Permission::Mute))
         .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
             return Punish(app, c, *t.Value, PunishType::VoiceMute, ReasonOr(c, why, "reason.voiceMutedByAdmin"),
-                          d.Value, "cmd.voiceMuteSuccess", "cmd.voiceMuteFailed");
+                          d.Value, "cmd.voiceMuteSuccess");
         });
 
     commands.Add("voice_unmute")
@@ -96,7 +94,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Permission(Flag(Permission::Mute))
         .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
             return Punish(app, c, *t.Value, PunishType::TextMute, ReasonOr(c, why, "reason.textMutedByAdmin"), d.Value,
-                          "cmd.textMuteSuccess", "cmd.textMuteFailed");
+                          "cmd.textMuteSuccess");
         });
 
     commands.Add("text_unmute")
@@ -116,7 +114,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Permission(Flag(Permission::Mute))
         .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) -> Result<Reply> {
             return Punish(app, c, *t.Value, PunishType::Warn, ReasonOr(c, why, "reason.warnedByAdmin"),
-                          std::chrono::seconds{0}, "cmd.warnSuccess", "cmd.warnFailed");
+                          std::chrono::seconds{0}, "cmd.warnSuccess");
         });
 }
 

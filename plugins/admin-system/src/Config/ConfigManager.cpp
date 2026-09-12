@@ -73,7 +73,7 @@ ConfigManager::ConfigSnapshot ConfigManager::BuildSnapshot(Settings raw)
         punishments.templates,
         [](const PunishmentTemplate& t, std::size_t) -> std::optional<std::string> {
             auto type = Punishments::ParsePunishType(t.type);
-            if (!type || !Punishments::IsTimed(*type))
+            if (!type || !Punishments::InfoFor(*type).Timed)
                 return std::format("type must be ban/voiceMute/textMute, got '{}'", t.type);
             if (ParseDuration(t.duration) < 0)
                 return std::format("bad duration '{}'", t.duration);

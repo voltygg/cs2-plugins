@@ -21,9 +21,8 @@
 #include <utility>
 #include <vector>
 
+using AdminSystem::Punishments::InfoFor;
 using AdminSystem::Punishments::IssuePunishment;
-using AdminSystem::Punishments::IsTimed;
-using AdminSystem::Punishments::PermissionFor;
 using AdminSystem::Punishments::PunishType;
 
 namespace AdminSystem::Admin::Menu
@@ -38,7 +37,7 @@ using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishType type)
 {
     auto& players = app.Runtime.Players;
-    return app.Runtime.Policy.Authorize(players.RefFor(adminSlot), target, Flag(PermissionFor(type))).has_value();
+    return app.Runtime.Policy.Authorize(players.RefFor(adminSlot), target, Flag(InfoFor(type).RequiredPermission)).has_value();
 }
 
 /** Flow validation: the target may have left (or the slot rehosts another player) and the
@@ -60,17 +59,16 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
     if (!admin || !target)
         return;
 
-    if (!IssuePunishment(app, *admin, *target, pending.Type, pending.Reason, pending.DurationSec))
+    // Captured before issuing: bans and kicks can drop the target immediately.
+    const std::string targetName = target->Name();
+    IssuePunishment(app, *admin, *target, pending.Type, pending.Reason, pending.DurationSec);
+
+    // With broadcasts on, the admin already sees the server-wide line; avoid double messaging.
+    if (!app.Settings.GetChat().broadcastPunishments)
     {
-        app.Chat.Reply(adminSlot, translations.Get("punish.failed", adminSlot,
-                                         {{"action", translations.Get(ActionTranslationKey(pending.Type), adminSlot)}}));
-    }
-    else if (!app.Settings.GetChat().broadcastPunishments)
-    {
-        // With broadcasts on, the admin already sees the server-wide line; avoid double messaging.
         app.Chat.Reply(adminSlot, translations.Get("punish.issued", adminSlot,
-                                         {{"action", translations.Get(ActionTranslationKey(pending.Type), adminSlot)},
-                                          {"name", target->Name()}}));
+                                                   {{"action", translations.Get(ActionTranslationKey(pending.Type), adminSlot)},
+                                                    {"name", targetName}}));
     }
 }
 
@@ -88,7 +86,7 @@ static PunishFlowT::Ptr MakeBaseFlow(App& app, int adminSlot, PendingPunishment 
                            auto* target = app.Runtime.Players.Get(p.Target);
                            rows.Add(translations.Get("punish.target", adminSlot),
                                     target ? target->Name() : std::string())
-                               .AddIf(IsTimed(p.Type), translations.Get("punish.duration", adminSlot),
+                               .AddIf(InfoFor(p.Type).Timed, translations.Get("punish.duration", adminSlot),
                                       DurationLabel(translations, p.DurationSec, adminSlot))
                                .Add(translations.Get("punish.reason", adminSlot), Strings::TruncateUtf8(p.Reason, 40));
                        }})
@@ -118,7 +116,7 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
                            .Set = [](PendingPunishment& p, int seconds) { p.DurationSec = seconds; },
                            .CustomLabel = translations.Get("duration.custom", adminSlot),
                            .CustomPrompt = translations.Get("duration.customPrompt", adminSlot),
-                           .Applies = [](const PendingPunishment& p) { return IsTimed(p.Type); }})
+                           .Applies = [](const PendingPunishment& p) { return InfoFor(p.Type).Timed; }})
         ->AddOptionsStep(
             {.Title = stepTitle("punish.selectReason"),
              .Options = std::move(reasons),

@@ -4,6 +4,7 @@
 #include "Repositories/Audit.hpp"
 #include "Repositories/Players.hpp"
 #include "Repositories/Punishments.hpp"
+#include "Repositories/Reports.hpp"
 
 namespace AdminSystem::Database
 {

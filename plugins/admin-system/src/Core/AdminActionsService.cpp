@@ -46,12 +46,7 @@ BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::st
         ban.TargetIp = target->Ip();
     }
 
-    if (!_punishments.Issue(ban))
-    {
-        Log::Warn("IAdminActions::Ban: failed to persist ban for {}.", steamId);
-        return BanResult::PersistFailed;
-    }
-
+    _punishments.Issue(ban);
     Log::Info("IAdminActions::Ban: banned {} ({}s): {}", steamId, durationSec, ban.Reason);
     return BanResult::Ok;
 }

@@ -18,6 +18,8 @@
 #include <utility>
 
 using AdminSystem::Punishments::PunishType;
+using AdminSystem::Punishments::PunishTypeInfo;
+using AdminSystem::Punishments::PunishTypes;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -69,9 +71,9 @@ std::shared_ptr<VoltMod::Menu> BuildPunishActionsMenu(AdminSystem::App& app, int
                         [&app, targetRef](int slot) { return BuildQuickPunishMenu(app, slot, targetRef); });
     }
 
-    for (PunishType type :
-         {PunishType::Kick, PunishType::Ban, PunishType::VoiceMute, PunishType::TextMute, PunishType::Warn})
+    for (const PunishTypeInfo& info : PunishTypes)
     {
+        const PunishType type = info.Type;
         builder.Add(ButtonRow{
             .Label = translations.Get(ActionTranslationKey(type), adminSlot),
             .Activate = [&app, pending = PendingPunishment{.Type = type, .Target = targetRef}](

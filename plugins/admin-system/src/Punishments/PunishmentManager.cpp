@@ -21,43 +21,6 @@ namespace AdminSystem::Punishments
 
 namespace Log = VoltMod::Log;
 
-/** The broadcast key for issuing @p kind. */
-static std::string_view IssuedKey(PunishType kind)
-{
-    switch (kind)
-    {
-    case PunishType::Kick:
-        return "kicked";
-    case PunishType::Ban:
-        return "banned";
-    case PunishType::VoiceMute:
-        return "voice-muted";
-    case PunishType::TextMute:
-        return "text-muted";
-    case PunishType::Warn:
-        return "warned";
-    }
-    return {};
-}
-
-/** The broadcast key for lifting @p kind. Only the cached kinds are ever lifted. */
-static std::string_view LiftedKey(PunishType kind)
-{
-    switch (kind)
-    {
-    case PunishType::Ban:
-        return "unbanned";
-    case PunishType::VoiceMute:
-        return "voice-unmuted";
-    case PunishType::TextMute:
-        return "text-unmuted";
-    case PunishType::Kick:
-    case PunishType::Warn:
-        break;
-    }
-    return {};
-}
-
 /** Fill in the times an admin did not give. */
 static void StampTimes(Punishment& record)
 {
@@ -135,10 +98,10 @@ bool PunishmentManager::IsPunished(PunishType kind, int64_t steamId) const
     return CacheFor(kind).contains(steamId);
 }
 
-bool PunishmentManager::Issue(Punishment& record)
+void PunishmentManager::Issue(Punishment& record)
 {
     if (record.Kind == PunishType::Kick)
-        return false;  // a kick stores no row; IssuePunishment applies and broadcasts it directly
+        return;  // a kick stores no row; IssuePunishment applies and broadcasts it directly
 
     StampTimes(record);
 
@@ -173,12 +136,11 @@ bool PunishmentManager::Issue(Punishment& record)
         RefreshVoiceChannel(_rt, record.TargetSteamId, true);
     }
 
-    _chat.BroadcastPunishment(IssuedKey(record.Kind), record.AdminName, record.TargetName, record.Reason,
+    _chat.BroadcastPunishment(InfoFor(record.Kind).IssuedBroadcast, record.AdminName, record.TargetName, record.Reason,
                               record.Duration);
 
     if (record.Kind == PunishType::Warn)
         EscalateWarning(record);
-    return true;
 }
 
 void PunishmentManager::EscalateWarning(const Punishment& warning)
@@ -233,7 +195,7 @@ void PunishmentManager::RemoveCached(PunishType kind, Cache::iterator it, int64_
 {
     const int64_t steamId = it->first;
     _repos.Punishments.RemoveAsync(it->second.Id, removedBy, reason);
-    _chat.BroadcastPunishment(LiftedKey(kind), "Admin", it->second.TargetName, reason, 0);
+    _chat.BroadcastPunishment(InfoFor(kind).LiftedBroadcast, "Admin", it->second.TargetName, reason, 0);
 
     // Erased before the refresh, which re-reads the cache through the listening hook.
     CacheFor(kind).erase(it);

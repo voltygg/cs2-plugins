@@ -39,8 +39,9 @@ public:
     bool IsPunished(PunishType kind, int64_t steamId) const;
 
     /** Persist and apply @p record: cache, broadcast, kick a banned player, escalate a warning
-     *  past the threshold. False for a Kick, which stores no row. */
-    bool Issue(Database::Punishment& record);
+     *  past the threshold. A Kick stores no row and is ignored; the write is async and logs its
+     *  own failure. */
+    void Issue(Database::Punishment& record);
 
     /** Lift by row id. False when it was already gone, possibly lifted on another server. */
     bool Remove(PunishType kind, int64_t recordId, int64_t removedBy, const std::string& reason);
@@ -60,7 +61,7 @@ private:
 
     /** Whether @p kind is cached: the timed kinds. A cache holds one row per player, which a warning
      *  breaks and a kick has none of, so those two are counted in the database instead. */
-    static bool IsCached(PunishType kind) { return IsTimed(kind); }
+    static bool IsCached(PunishType kind) { return InfoFor(kind).Timed; }
 
     Cache& CacheFor(PunishType kind) { return _active[VoltMod::EnumIndex(kind)]; }
     const Cache& CacheFor(PunishType kind) const { return _active[VoltMod::EnumIndex(kind)]; }
