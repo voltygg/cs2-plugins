@@ -94,7 +94,7 @@ Verify the load with `meta list` on the server console (see `rcon-debug`).
 ## Common failures
 
 - **`Library 'voltmod-database' not found in package`** - the framework package was
-  built without PostgreSQL. `voltmod package build kit` includes it; a hand-run
+  built without PostgreSQL. `voltmod package build framework` includes it; a hand-run
   `poe build` in `vendor/voltmod` needs `-o "voltmod/*:with_database=True"`.
 - **Missing SDK binaries in the Conan cache** - `uv run voltmod package build sdk`
   from `vendor/voltmod`, in the dev shell. They are excluded from `--build=missing`.

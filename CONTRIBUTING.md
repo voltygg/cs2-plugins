@@ -60,7 +60,7 @@ Remove an old `voltmod` editable registration once with
 
 ```powershell
 cd vendor/voltmod
-uv run voltmod package build kit
+uv run voltmod package build framework
 cd ../..
 uv run conan lock create . --profile:all vendor/voltmod/conan/profiles/windows-msvc.txt -s build_type=Release -s compiler.runtime_type=Release --lockfile=conan.lock --lockfile-out=conan.lock --update="voltmod/*" --no-remote
 uv run poe build
