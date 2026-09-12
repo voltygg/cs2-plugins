@@ -101,7 +101,7 @@ struct App
     /** Action descriptors whose body needs an engine service beyond ActionContext (Slap, Smite,
      *  SetSize), built from Runtime once here. */
     Admin::Actions::ActionDescriptors ActionDescriptors{Runtime};
-    VoltMod::PostgresDatabase Db{Runtime.Scheduler};
+    VoltMod::Database Db{Runtime.Scheduler};
     Database::PlayerRepository PlayerRepo{Db};
     Core::ChatService Chat{Runtime, Settings};
     /** Configured map list, the queued next map, and the level change itself. */

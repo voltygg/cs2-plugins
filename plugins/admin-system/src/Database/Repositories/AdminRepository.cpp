@@ -1,156 +1,164 @@
 #include "AdminRepository.hpp"
 
-#include <VoltMod/Api.hpp>
-#include <VoltMod/Database/Api.hpp>
-#include <pqxx/array>
+#include "../JsonList.hpp"
+#include "../Tables/AdminTables.hpp"
+
+#include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/Time.hpp>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 namespace AdminSystem::Database
 {
 
-/** Parse a libpqxx text array. Null fields return an empty vector. */
-static std::vector<std::string> ParseTextArray(const pqxx::field& field)
+namespace Log = VoltMod::Log;
+using VoltMod::Time;
+
+/** Malformed list text is a bad row, not a bad database: name it and treat it as empty. */
+static std::vector<std::string> ReadGroupList(std::string_view text, std::string_view column, std::string_view row)
 {
-    std::vector<std::string> out;
-    if (field.is_null())
-        return out;
-
-    pqxx::array_parser parser(field.c_str());
-    while (true)
+    auto list = ReadJsonList(text);
+    if (!list)
     {
-        auto [type, value] = parser.get_next();
-        if (type == pqxx::array_parser::juncture::done)
-            break;
-        if (type == pqxx::array_parser::juncture::string_value)
-            out.push_back(std::move(value));
+        Log::Warn("Ignoring malformed {} for {}.", column, row);
+        return {};
     }
-    return out;
+    return std::move(*list);
 }
-
-// AdminRepository implementation
 
 std::vector<Admin> AdminRepository::FindAll()
 {
-    auto result = _db.QueryBlocking("find_all_admins", "SELECT * FROM admins");
+    auto result = _db.RunBlocking("find_all_admins", [](auto& conn) {
+        const Tables::Admins t;
+        std::vector<Admin> admins;
+        for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t)).from(t)))
+        {
+            Admin admin;
+            admin.Id = row.id;
+            admin.SteamId = row.steamId;
+            admin.Name = row.name;
+            admin.Flags = row.flags;
+            admin.Immunity = static_cast<int32_t>(row.immunity);
+            admin.CreatedAt = row.createdAt;
+            admin.UpdatedAt = row.updatedAt;
+            admin.Groups = ReadGroupList(row.groups, "admins.groups", std::to_string(row.steamId));
+            admin.DisplayPrefix = row.displayPrefix;
+            admin.NameColor = row.nameColor;
+            admin.MessageColor = row.messageColor;
+            admin.Language = row.language;
+
+            admin.BuildFlagBits();
+            admins.push_back(std::move(admin));
+        }
+        return admins;
+    });
+
     if (!result)
         return {};
-
-    std::vector<Admin> admins;
-    for (const auto& row : *result)
-        admins.push_back(ParseRow(row));
-    return admins;
+    return std::move(*result);
 }
 
 void AdminRepository::UpdateChatStyle(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                                       const std::string& messageColor)
 {
-    _db.Exec("update_admin_chat_style",
-             "UPDATE admins SET display_prefix = $2, name_color = $3, message_color = $4, "
-             "updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE steam_id = $1",
-             pqxx::params{steamId, displayPrefix, nameColor, messageColor});
+    _db.Run("update_admin_chat_style",
+            [steamId, displayPrefix, nameColor, messageColor, now = Time::Now()](auto& conn) {
+                const Tables::Admins t;
+                conn(sqlpp::update(t)
+                         .set(t.displayPrefix = displayPrefix, t.nameColor = nameColor, t.messageColor = messageColor,
+                              t.updatedAt = now)
+                         .where(t.steamId == steamId));
+            });
 }
 
 void AdminRepository::UpdateLanguage(int64_t steamId, const std::string& lang)
 {
-    _db.Exec("update_admin_language",
-             "UPDATE admins SET language = $2, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
-             "WHERE steam_id = $1",
-             pqxx::params{steamId, lang});
+    _db.Run("update_admin_language", [steamId, lang, now = Time::Now()](auto& conn) {
+        const Tables::Admins t;
+        conn(sqlpp::update(t).set(t.language = lang, t.updatedAt = now).where(t.steamId == steamId));
+    });
 }
 
 bool AdminRepository::SetFrozen(int64_t steamId, int64_t frozenBy, const std::string& reason)
 {
-    auto result = _db.QueryBlocking("set_admin_frozen",
-                                    "UPDATE admins SET is_frozen = TRUE, "
-                                    "frozen_at = EXTRACT(EPOCH FROM NOW())::BIGINT, frozen_by = $2, "
-                                    "freeze_reason = $3, updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
-                                    "WHERE steam_id = $1",
-                                    pqxx::params{steamId, frozenBy, reason});
+    auto result = _db.RunBlocking("set_admin_frozen", [steamId, frozenBy, reason, now = Time::Now()](auto& conn) {
+        const Tables::Admins t;
+        conn(sqlpp::update(t)
+                 .set(t.isFrozen = true, t.frozenAt = now, t.frozenBy = frozenBy, t.freezeReason = reason,
+                      t.updatedAt = now)
+                 .where(t.steamId == steamId));
+    });
     return result.has_value();
 }
 
 bool AdminRepository::ClearFrozen(int64_t steamId)
 {
-    auto result = _db.QueryBlocking("clear_admin_frozen",
-                                    "UPDATE admins SET is_frozen = FALSE, frozen_at = 0, frozen_by = 0, "
-                                    "freeze_reason = '', updated_at = EXTRACT(EPOCH FROM NOW())::BIGINT "
-                                    "WHERE steam_id = $1",
-                                    pqxx::params{steamId});
+    auto result = _db.RunBlocking("clear_admin_frozen", [steamId, now = Time::Now()](auto& conn) {
+        const Tables::Admins t;
+        conn(sqlpp::update(t)
+                 .set(t.isFrozen = false, t.frozenAt = 0, t.frozenBy = 0, t.freezeReason = "", t.updatedAt = now)
+                 .where(t.steamId == steamId));
+    });
     return result.has_value();
 }
 
 void AdminRepository::FindFrozenAsync(std::function<void(std::vector<FrozenAdmin>)> onDone)
 {
-    _db.Query("find_frozen_admins",
-              "SELECT steam_id, name, frozen_at, frozen_by, freeze_reason FROM admins WHERE is_frozen = TRUE", {},
-              [onDone = std::move(onDone)](VoltMod::DbResult<pqxx::result> result) {
-                  if (!result || !onDone)
-                      return;  // DB error already logged; keep the caller's cached set.
-
-                  std::vector<FrozenAdmin> frozen;
-                  for (const auto& row : *result)
-                  {
-                      frozen.push_back({.SteamId = row["steam_id"].as<int64_t>(),
-                                        .Name = row["name"].c_str(),
-                                        .FrozenAt = row["frozen_at"].as<int64_t>(),
-                                        .FrozenBy = row["frozen_by"].as<int64_t>(),
-                                        .Reason = row["freeze_reason"].c_str()});
-                  }
-                  onDone(std::move(frozen));
-              });
+    _db.Run(
+        "find_frozen_admins",
+        [](auto& conn) {
+            const Tables::Admins t;
+            std::vector<FrozenAdmin> frozen;
+            for (const auto& row : conn(sqlpp::select(t.steamId, t.name, t.frozenAt, t.frozenBy, t.freezeReason)
+                                            .from(t)
+                                            .where(t.isFrozen == true)))
+            {
+                frozen.push_back({.SteamId = row.steamId,
+                                  .Name = std::string(row.name),
+                                  .FrozenAt = row.frozenAt,
+                                  .FrozenBy = row.frozenBy,
+                                  .Reason = std::string(row.freezeReason)});
+            }
+            return frozen;
+        },
+        [onDone = std::move(onDone)](VoltMod::DbResult<std::vector<FrozenAdmin>> result) {
+            if (!result || !onDone)
+                return;  // DB error already logged; keep the caller's cached set.
+            onDone(std::move(*result));
+        });
 }
 
-Admin AdminRepository::ParseRow(const pqxx::row& row)
-{
-    Admin admin;
-    admin.Id = row["id"].as<int64_t>();
-    admin.SteamId = row["steam_id"].as<int64_t>();
-    admin.Name = row["name"].c_str();
-    admin.Flags = row["flags"].c_str();
-    admin.Immunity = row["immunity"].as<int32_t>();
-    admin.CreatedAt = row["created_at"].as<int64_t>();
-    admin.UpdatedAt = row["updated_at"].as<int64_t>();
-    admin.Groups = ParseTextArray(row["groups"]);
-    admin.DisplayPrefix = row["display_prefix"].as<bool>(true);
-    admin.NameColor = row["name_color"].c_str();
-    admin.MessageColor = row["message_color"].c_str();
-    admin.Language = row["language"].c_str();
-
-    admin.BuildFlagBits();
-    return admin;
-}
-
-// AdminGroupRepository implementation
 
 std::vector<AdminGroup> AdminGroupRepository::FindAll()
 {
-    auto result = _db.QueryBlocking("find_all_admin_groups", "SELECT * FROM admin_groups");
+    auto result = _db.RunBlocking("find_all_admin_groups", [](auto& conn) {
+        const Tables::AdminGroups t;
+        std::vector<AdminGroup> groups;
+        for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t)).from(t)))
+        {
+            AdminGroup group;
+            group.Id = row.id;
+            group.Name = row.name;
+            group.Flags = row.flags;
+            group.Immunity = static_cast<int32_t>(row.immunity);
+            group.CreatedAt = row.createdAt;
+            group.UpdatedAt = row.updatedAt;
+            group.Inherits = ReadGroupList(row.inherits, "admin_groups.inherits", group.Name);
+            group.ChatPrefix = row.chatPrefix;
+            group.PrefixColor = row.prefixColor;
+            group.NameColor = row.nameColor;
+            group.MessageColor = row.messageColor;
+
+            group.BuildFlagBits();
+            groups.push_back(std::move(group));
+        }
+        return groups;
+    });
+
     if (!result)
         return {};
-
-    std::vector<AdminGroup> groups;
-    for (const auto& row : *result)
-        groups.push_back(ParseRow(row));
-    return groups;
-}
-
-AdminGroup AdminGroupRepository::ParseRow(const pqxx::row& row)
-{
-    AdminGroup group;
-    group.Id = row["id"].as<int64_t>();
-    group.Name = row["name"].c_str();
-    group.Flags = row["flags"].c_str();
-    group.Immunity = row["immunity"].as<int32_t>();
-    group.CreatedAt = row["created_at"].as<int64_t>();
-    group.UpdatedAt = row["updated_at"].as<int64_t>();
-    group.Inherits = ParseTextArray(row["inherits"]);
-    group.ChatPrefix = row["chat_prefix"].c_str();
-    group.PrefixColor = row["prefix_color"].c_str();
-    group.NameColor = row["name_color"].c_str();
-    group.MessageColor = row["message_color"].c_str();
-
-    group.BuildFlagBits();
-    return group;
+    return std::move(*result);
 }
 
 }  // namespace AdminSystem::Database

@@ -12,7 +12,7 @@ namespace AdminSystem::Database
 class PlayerRepository
 {
 public:
-    explicit PlayerRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
+    explicit PlayerRepository(VoltMod::Database& db) : _db(db) {}
 
     /**
      * Upsert on connect: first connect inserts the row; reconnects refresh name/ip/last_seen
@@ -27,7 +27,7 @@ public:
     void RecordDisconnect(int64_t steamId, const std::string& name, int64_t sessionSeconds);
 
 private:
-    VoltMod::PostgresDatabase& _db;
+    VoltMod::Database& _db;
 };
 
 }  // namespace AdminSystem::Database

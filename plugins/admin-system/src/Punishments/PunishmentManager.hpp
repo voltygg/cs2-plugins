@@ -7,7 +7,7 @@
 #include "../Database/Entities/VoiceMute.hpp"
 #include "../Database/Entities/Warning.hpp"
 
-#include <VoltMod/Database/PostgresDatabase.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <algorithm>
 #include <optional>
@@ -26,7 +26,7 @@ namespace AdminSystem::Punishments
 class PunishmentManager
 {
 public:
-    PunishmentManager(VoltMod::PostgresDatabase& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
+    PunishmentManager(VoltMod::Database& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
                       Core::ChatService& chat)
         : _db(db), _config(config), _rt(runtime), _chat(chat)
     {}
@@ -74,7 +74,7 @@ public:
     void KickDeferred(int slot, int64_t steamId, std::string reason);
 
 private:
-    VoltMod::PostgresDatabase& _db;
+    VoltMod::Database& _db;
     const Config::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;

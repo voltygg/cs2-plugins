@@ -167,7 +167,8 @@ void App::InstallStatusReporting()
     status.RegisterSection("db", [this] {
         // Live worker state, not the load-time stage result: a database that died (or recovered)
         // after load must show as such.
-        return VoltMod::Json::Write(glz::obj{"connected", Db.IsConnected(), "migrationVersion",
+        return VoltMod::Json::Write(glz::obj{"connected", Db.IsConnected(), "driver",
+                                             VoltMod::DriverName(Db.GetDriver()), "migrationVersion",
                                              Migration.CurrentVersion, "migrationsApplied", Migration.Applied});
     });
 

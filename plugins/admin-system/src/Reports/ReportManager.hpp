@@ -4,7 +4,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Throttle.hpp>
-#include <VoltMod/Database/PostgresDatabase.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <cstdint>
 #include <functional>
@@ -41,7 +41,7 @@ struct ReportGate
 class ReportManager
 {
 public:
-    ReportManager(VoltMod::PostgresDatabase& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime)
+    ReportManager(VoltMod::Database& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime)
         : _db(db), _config(config), _rt(runtime)
     {}
 
@@ -60,7 +60,7 @@ public:
                 const std::string& reasonText, std::function<void(bool ok)> onDone);
 
 private:
-    VoltMod::PostgresDatabase& _db;
+    VoltMod::Database& _db;
     const Config::ConfigManager& _config;
     VoltMod::Runtime& _rt;
 

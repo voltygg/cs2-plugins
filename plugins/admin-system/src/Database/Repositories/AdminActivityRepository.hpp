@@ -26,7 +26,7 @@ struct ActivityCounts
 class AdminActivityRepository
 {
 public:
-    explicit AdminActivityRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
+    explicit AdminActivityRepository(VoltMod::Database& db) : _db(db) {}
 
     void Record(int64_t adminSteamId, std::string_view adminName, std::string_view action, int64_t targetSteamId,
                 std::string_view targetName, std::string_view detail, std::string_view serverTag);
@@ -36,7 +36,7 @@ public:
     void CountSinceAsync(int64_t adminSteamId, int64_t sinceEpoch, std::function<void(ActivityCounts)> onDone);
 
 private:
-    VoltMod::PostgresDatabase& _db;
+    VoltMod::Database& _db;
 };
 
 }  // namespace AdminSystem::Database

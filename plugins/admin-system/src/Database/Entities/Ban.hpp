@@ -1,12 +1,11 @@
 #pragma once
 
+#include "../Tables/PunishmentTables.hpp"
+
 #include <VoltMod/Core/Time.hpp>
-#include <VoltMod/Database/Column.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <string_view>
-#include <tuple>
 
 namespace AdminSystem::Database
 {
@@ -14,6 +13,8 @@ namespace AdminSystem::Database
 /** Database entity for a player ban. Supports permanent and timed bans with removal tracking. */
 struct Ban
 {
+    using Table = Tables::Bans;
+
     int64_t Id = 0;
     int64_t TargetSteamId = 0;
     std::string TargetName;
@@ -31,29 +32,6 @@ struct Ban
 
     bool IsPermanent() const { return ExpiresAt == 0; }
     bool IsExpired() const { return !IsPermanent() && VoltMod::Time::IsExpired(ExpiresAt); }
-
-    static constexpr std::string_view Table = "bans";
-    static constexpr std::string_view Key = "id";
-    static constexpr auto Columns()
-    {
-        using VoltMod::Column;
-        return std::tuple{
-            Column{"id", &Ban::Id},
-            Column{"target_steam_id", &Ban::TargetSteamId},
-            Column{"target_name", &Ban::TargetName},
-            Column{"target_ip", &Ban::TargetIp},
-            Column{"admin_steam_id", &Ban::AdminSteamId},
-            Column{"admin_name", &Ban::AdminName},
-            Column{"reason", &Ban::Reason},
-            Column{"created_at", &Ban::CreatedAt},
-            Column{"expires_at", &Ban::ExpiresAt},
-            Column{"duration", &Ban::Duration},
-            Column{"is_active", &Ban::IsActive},
-            Column{"removed_at", &Ban::RemovedAt},
-            Column{"removed_by", &Ban::RemovedBy},
-            Column{"removed_reason", &Ban::RemovedReason},
-        };
-    }
 };
 
 }  // namespace AdminSystem::Database

@@ -33,7 +33,7 @@ public:
 
     const PluginSettings& GetPlugin() const { return _snapshot.Values.plugin; }
     const ServerSettings& GetServer() const { return _snapshot.Values.server; }
-    const DatabaseConfig& GetDatabase() const { return _snapshot.Values.database; }
+    const VoltMod::DatabaseConfig& GetDatabase() const { return _snapshot.Values.database; }
     const PunishmentSettings& GetPunishments() const { return _snapshot.Values.punishments; }
     const AppealSettings& GetAppeal() const { return _snapshot.Values.punishments.appeal; }
     const MapSettings& GetMaps() const { return _snapshot.Values.maps; }

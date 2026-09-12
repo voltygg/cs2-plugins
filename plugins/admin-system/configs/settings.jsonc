@@ -11,13 +11,19 @@
     "name": "CS2 Server"
   },
   "database": {
+    "driver": "postgres",
     "host": "localhost",
     "port": 5432,
     "database": "admin_system",
     "username": "postgres",
     "password": "Test12345#",
-    // libpq SSL mode: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full".
-    "sslMode": "prefer"
+    // Postgres-only SSL mode: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full".
+    // MariaDB turns TLS on for "require" and the verify modes; sqlite ignores it.
+    "sslMode": "prefer",
+    "connectTimeoutSec": 5
+    // Sqlite example:
+    // "driver": "sqlite",
+    // "path": "addons/admin-system/data/admin-system.sqlite"
   },
   "punishments": {
     // Recorded when an admin bans without giving a reason.

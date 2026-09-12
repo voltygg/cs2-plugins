@@ -6,7 +6,6 @@
 #include <VoltMod/Database/Api.hpp>
 #include <cstdint>
 #include <functional>
-#include <pqxx/pqxx>
 #include <string>
 #include <vector>
 
@@ -27,7 +26,7 @@ struct FrozenAdmin
 class AdminRepository
 {
 public:
-    explicit AdminRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
+    explicit AdminRepository(VoltMod::Database& db) : _db(db) {}
 
     std::vector<Admin> FindAll();
 
@@ -48,25 +47,19 @@ public:
     void FindFrozenAsync(std::function<void(std::vector<FrozenAdmin>)> onDone);
 
 private:
-    Admin ParseRow(const pqxx::row& row);
-
-private:
-    VoltMod::PostgresDatabase& _db;
+    VoltMod::Database& _db;
 };
 
 /** Repository for the admin_groups table. Load-time only. */
 class AdminGroupRepository
 {
 public:
-    explicit AdminGroupRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
+    explicit AdminGroupRepository(VoltMod::Database& db) : _db(db) {}
 
     std::vector<AdminGroup> FindAll();
 
 private:
-    AdminGroup ParseRow(const pqxx::row& row);
-
-private:
-    VoltMod::PostgresDatabase& _db;
+    VoltMod::Database& _db;
 };
 
 }  // namespace AdminSystem::Database

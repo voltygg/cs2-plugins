@@ -15,14 +15,14 @@ namespace AdminSystem::Database
 class WarningRepository
 {
 public:
-    explicit WarningRepository(VoltMod::PostgresDatabase& db) : _db(db) {}
+    explicit WarningRepository(VoltMod::Database& db) : _db(db) {}
 
     void CreateAsync(const Warning& warning);
     void CountActiveAsync(int64_t steamId, std::function<void(int count)> onDone);
     void ClearAsync(int64_t steamId);
 
 private:
-    VoltMod::PostgresDatabase& _db;
+    VoltMod::Database& _db;
 };
 
 }  // namespace AdminSystem::Database

@@ -10,15 +10,15 @@ from conan.tools.cmake import CMakeDeps, CMakeToolchain
 class CS2PluginsConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
 
-    # VoltMod supplies cpr, glaze, libpqxx, HL2SDK, and Metamod transitively.
-    requires = ("voltmod/[~1.3]",)
+    # VoltMod supplies cpr, glaze, sqlpp23 and its connectors, HL2SDK, and Metamod transitively.
+    requires = ("voltmod/[~1.4]",)
 
     default_options = {
         "*:shared": False,
         "openssl/*:no_apps": True,
         "openssl/*:no_fips": True,
-        # admin-system and anticheat both use the Database module.
-        "voltmod/*:with_postgres": True,
+        # admin-system uses the Database module.
+        "voltmod/*:with_database": True,
     }
 
     def build_requirements(self):

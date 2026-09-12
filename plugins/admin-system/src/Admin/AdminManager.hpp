@@ -5,7 +5,7 @@
 #include "../Database/Entities/Admin.hpp"
 #include "../Database/Entities/AdminGroup.hpp"
 
-#include <VoltMod/Database/PostgresDatabase.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <string>
 #include <unordered_map>
@@ -39,7 +39,7 @@ struct AdminChatStyle
 class AdminManager
 {
 public:
-    AdminManager(VoltMod::PostgresDatabase& db, const Config::ConfigManager& config) : _db(db), _config(config) {}
+    AdminManager(VoltMod::Database& db, const Config::ConfigManager& config) : _db(db), _config(config) {}
 
     bool LoadAdmins();
     bool LoadGroups();
@@ -93,7 +93,7 @@ public:
     }
 
 private:
-    VoltMod::PostgresDatabase& _db;
+    VoltMod::Database& _db;
     const Config::ConfigManager& _config;
 
     /** True if a resolved bitmask carries @p flag, or the root flag ('z') that grants everything. */

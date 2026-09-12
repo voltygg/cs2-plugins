@@ -1,7 +1,9 @@
 #include "PlayerRepository.hpp"
 
-#include <VoltMod/Api.hpp>
+#include "../Tables/PlayerTables.hpp"
+
 #include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Database/Api.hpp>
 
 namespace AdminSystem::Database
 {
@@ -14,13 +16,18 @@ void PlayerRepository::RecordConnect(int64_t steamId, const std::string& name, c
     if (steamId <= 0)
         return;
 
-    _db.Exec("player_record_connect",
-             "INSERT INTO players (steam_id, name, ip_address, first_seen, last_seen, total_connections) "
-             "VALUES ($1, $2, $3, $4, $4, 1) "
-             "ON CONFLICT (steam_id) DO UPDATE SET "
-             "name = EXCLUDED.name, ip_address = EXCLUDED.ip_address, last_seen = EXCLUDED.last_seen, "
-             "total_connections = players.total_connections + 1",
-             pqxx::params{steamId, name, ipAddress, Time::Now()});
+    _db.Run("player_record_connect", [steamId, name, ipAddress, now = Time::Now()](auto& conn) {
+        const Tables::Players t;
+        const auto updated = conn(sqlpp::update(t)
+                                      .set(t.name = name, t.ipAddress = ipAddress, t.lastSeen = now,
+                                           t.totalConnections = t.totalConnections + 1)
+                                      .where(t.steamId == steamId));
+        if (updated.affected_rows == 0)
+        {
+            conn(sqlpp::insert_into(t).set(t.steamId = steamId, t.name = name, t.ipAddress = ipAddress,
+                                           t.firstSeen = now, t.lastSeen = now, t.totalConnections = 1));
+        }
+    });
 }
 
 void PlayerRepository::RecordDisconnect(int64_t steamId, const std::string& name, int64_t sessionSeconds)
@@ -28,10 +35,13 @@ void PlayerRepository::RecordDisconnect(int64_t steamId, const std::string& name
     if (steamId <= 0)
         return;
 
-    _db.Exec("player_record_disconnect",
-             "UPDATE players SET name = $2, last_seen = $3, total_playtime = total_playtime + $4 "
-             "WHERE steam_id = $1",
-             pqxx::params{steamId, name, Time::Now(), sessionSeconds > 0 ? sessionSeconds : int64_t{0}});
+    _db.Run("player_record_disconnect",
+            [steamId, name, now = Time::Now(), seconds = sessionSeconds > 0 ? sessionSeconds : int64_t{0}](auto& conn) {
+                const Tables::Players t;
+                conn(sqlpp::update(t)
+                         .set(t.name = name, t.lastSeen = now, t.totalPlaytime = t.totalPlaytime + seconds)
+                         .where(t.steamId == steamId));
+            });
 }
 
 }  // namespace AdminSystem::Database

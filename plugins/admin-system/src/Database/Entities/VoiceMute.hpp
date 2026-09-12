@@ -1,12 +1,11 @@
 #pragma once
 
+#include "../Tables/PunishmentTables.hpp"
+
 #include <VoltMod/Core/Time.hpp>
-#include <VoltMod/Database/Column.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <string_view>
-#include <tuple>
 
 namespace AdminSystem::Database
 {
@@ -14,6 +13,8 @@ namespace AdminSystem::Database
 /** Database entity for a voice-chat mute. Supports permanent and timed mutes. */
 struct VoiceMute
 {
+    using Table = Tables::VoiceMutes;
+
     int64_t Id = 0;
     int64_t TargetSteamId = 0;
     std::string TargetName;
@@ -30,28 +31,6 @@ struct VoiceMute
 
     bool IsPermanent() const { return ExpiresAt == 0; }
     bool IsExpired() const { return !IsPermanent() && VoltMod::Time::IsExpired(ExpiresAt); }
-
-    static constexpr std::string_view Table = "voice_mutes";
-    static constexpr std::string_view Key = "id";
-    static constexpr auto Columns()
-    {
-        using VoltMod::Column;
-        return std::tuple{
-            Column{"id", &VoiceMute::Id},
-            Column{"target_steam_id", &VoiceMute::TargetSteamId},
-            Column{"target_name", &VoiceMute::TargetName},
-            Column{"admin_steam_id", &VoiceMute::AdminSteamId},
-            Column{"admin_name", &VoiceMute::AdminName},
-            Column{"reason", &VoiceMute::Reason},
-            Column{"created_at", &VoiceMute::CreatedAt},
-            Column{"expires_at", &VoiceMute::ExpiresAt},
-            Column{"duration", &VoiceMute::Duration},
-            Column{"is_active", &VoiceMute::IsActive},
-            Column{"removed_at", &VoiceMute::RemovedAt},
-            Column{"removed_by", &VoiceMute::RemovedBy},
-            Column{"removed_reason", &VoiceMute::RemovedReason},
-        };
-    }
 };
 
 }  // namespace AdminSystem::Database

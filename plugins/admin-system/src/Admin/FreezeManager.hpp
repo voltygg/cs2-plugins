@@ -5,7 +5,7 @@
 #include "../Database/Repositories/AdminRepository.hpp"
 #include "AdminManager.hpp"
 
-#include <VoltMod/Database/PostgresDatabase.hpp>
+#include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <optional>
@@ -27,7 +27,7 @@ namespace AdminSystem::Admin
 class FreezeManager
 {
 public:
-    FreezeManager(VoltMod::PostgresDatabase& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
+    FreezeManager(VoltMod::Database& db, const Config::ConfigManager& config, VoltMod::Runtime& runtime,
                   Core::ChatService& chat, AdminManager& admins)
         : _db(db), _config(config), _rt(runtime), _chat(chat), _admins(admins)
     {}
@@ -71,7 +71,7 @@ public:
     void NotifyFrozenSoon(int slot, int64_t steamId);
 
 private:
-    VoltMod::PostgresDatabase& _db;
+    VoltMod::Database& _db;
     const Config::ConfigManager& _config;
     VoltMod::Runtime& _rt;
     Core::ChatService& _chat;

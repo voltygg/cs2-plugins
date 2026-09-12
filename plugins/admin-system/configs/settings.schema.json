@@ -37,8 +37,13 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "host": { "type": "string", "default": "localhost", "description": "PostgreSQL host." },
-        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "default": 5432 },
+        "driver": {
+          "type": "string",
+          "enum": ["postgres", "mariadb", "sqlite"],
+          "default": "postgres"
+        },
+        "host": { "type": "string", "default": "localhost", "description": "PostgreSQL or MariaDB host." },
+        "port": { "type": "integer", "minimum": 0, "maximum": 65535, "default": 5432, "description": "0 = driver default." },
         "database": { "type": "string", "default": "admin_system" },
         "username": { "type": "string", "default": "postgres" },
         "password": { "type": "string" },
@@ -46,8 +51,10 @@
           "type": "string",
           "enum": ["disable", "allow", "prefer", "require", "verify-ca", "verify-full"],
           "default": "prefer",
-          "description": "libpq SSL mode."
-        }
+          "description": "SSL mode. Postgres-only; MariaDB turns TLS on for require and the verify modes; sqlite ignores it."
+        },
+        "connectTimeoutSec": { "type": "integer", "minimum": 1, "default": 5 },
+        "path": { "type": "string", "description": "Sqlite database file, relative to the game dir." }
       }
     },
     "punishments": {

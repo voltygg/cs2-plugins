@@ -3,7 +3,6 @@
 #include "AbuseProtectionSettings.hpp"
 #include "ChatSettings.hpp"
 #include "CheatCheckSettings.hpp"
-#include "DatabaseSettings.hpp"
 #include "MapSettings.hpp"
 #include "MenuSettings.hpp"
 #include "PunishmentSettings.hpp"
@@ -12,6 +11,7 @@
 #include "WeaponSettings.hpp"
 
 #include <VoltMod/App/Config.hpp>
+#include <VoltMod/Database/DatabaseConfig.hpp>
 #include <string_view>
 
 namespace AdminSystem::Config
@@ -26,7 +26,7 @@ struct Settings
 {
     PluginSettings plugin;
     ServerSettings server;
-    DatabaseConfig database;
+    VoltMod::DatabaseConfig database;
     PunishmentSettings punishments;
     AbuseProtectionSettings abuseProtection;
     ChatSettings chat;
