@@ -6,7 +6,7 @@
 #include <Contracts/IUiHud.hpp>
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/PerSlot.hpp>
-#include <VoltMod/Core/SubscriptionScope.hpp>
+#include <VoltMod/Core/Subscriptions.hpp>
 #include <VoltMod/Ui/Screen.hpp>
 #include <VoltMod/Ui/UiPanel.hpp>
 #include <VoltMod/Ui/Writers.hpp>
@@ -55,7 +55,7 @@ private:
     VoltMod::Subscription _serverCardRedraw;
     VoltMod::PerSlot<VoltMod::Subscription> _toastTimers;
     VoltMod::Subscription _everyoneToast;
-    VoltMod::SubscriptionScope _subs;
+    VoltMod::Subscriptions _subs;
 };
 
 }  // namespace Ui

@@ -5,7 +5,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/PerSlot.hpp>
 #include <VoltMod/Core/Subscription.hpp>
-#include <VoltMod/Core/SubscriptionScope.hpp>
+#include <VoltMod/Core/Subscriptions.hpp>
 #include <VoltMod/Menu/Menu.hpp>
 #include <VoltMod/Menu/MenuStack.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -116,7 +116,7 @@ private:
     VoltMod::Screen _screen{_rt.Ui, _rt.Slots, AdminUi::Menu::Layout, AdminUi::Menu::RootId};
     VoltMod::PerSlot<Session> _sessions;
     /** Declared last: click delivery drops before the state it touches. */
-    VoltMod::SubscriptionScope _subs;
+    VoltMod::Subscriptions _subs;
 };
 
 }  // namespace AdminSystem::Menus
