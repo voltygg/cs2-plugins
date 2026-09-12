@@ -1,0 +1,10 @@
+# Conan hashes the bytes of the checked-out recipe, so a CRLF checkout on Windows
+# produces a different recipe revision than Linux for the same commit.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.lib binary
+*.dll binary
+*.so binary
