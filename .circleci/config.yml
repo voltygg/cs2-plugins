@@ -161,10 +161,15 @@ jobs:
           name: Install deploy deps
           command: |
             sudo apt-get update -qq && sudo apt-get install -y -qq rsync
-            pip install --quiet pyyaml python-dotenv
+            pip install --quiet pyyaml python-dotenv typer
       - run:
           name: Configure SSH
           command: |
+            FILTER="<< pipeline.parameters.server >>"
+            if [ -z "$(python3 -m deploy.tools.cli matrix --kind docker --format plain ${FILTER:+--server "$FILTER"})" ]; then
+              echo "No Docker servers to deploy; skipping SSH setup"
+              exit 0
+            fi
             [ -n "$SSH_KEY_B64" ] || { echo "ERROR: SSH_KEY_B64 is empty (cs2-deploy context)" >&2; exit 1; }
             mkdir -p ~/.ssh && chmod 700 ~/.ssh
             echo "$SSH_KEY_B64" | base64 -d > "$SSH_KEY_FILE"

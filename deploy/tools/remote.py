@@ -155,7 +155,13 @@ def tunnel_db(
     if not host:
         die("VPS host is required (use --server <id> or --host <ip>)")
 
-    endpoint = {"host": host, "ssh_user": ssh_user, "ssh_port": ssh_port}
+    endpoint = {
+        "id": server["id"] if server else host,
+        "kind": server["kind"] if server else "docker",
+        "host": host,
+        "ssh_user": ssh_user,
+        "ssh_port": ssh_port,
+    }
     ssh_args = forward_args(
         endpoint,
         local_port,
@@ -178,6 +184,9 @@ def tunnel_db(
 
 def ssh_options(server: dict[str, Any], *, identity: str | None = None) -> list[str]:
     """Return common ssh options for a resolved inventory server."""
+    kind = server.get("kind", "docker")
+    if kind != "docker":
+        die(f"server '{server.get('id')}' is a {kind} server with no SSH access")
     options = [
         "-p",
         str(server["ssh_port"]),

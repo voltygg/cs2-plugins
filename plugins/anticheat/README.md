@@ -132,8 +132,9 @@ Punishment state clears on disconnect, map change, and reload.
 
 ### Operator settings
 
-[`configs/settings.jsonc`](configs/settings.jsonc) is rendered per server from
-the [deployment template](../../deploy/templates/plugins/anticheat/settings.jsonc).
+[`configs/settings.jsonc`](configs/settings.jsonc) ships with the plugin. A
+deployment overrides individual keys under `plugins.anticheat.settings` in
+[`deploy/inventory.yml`](../../deploy/inventory.yml).
 
 | Setting | Default | Purpose |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # CS2 dedicated server instance "${INSTANCE_NAME}". One container per instance.
 # Rendered per instance by deploy/tools/render.py and assembled under `services:`.
-${SERVICE_NAME}:
+${INSTANCE_NAME}:
   image: ${RUNTIME_IMAGE}
   container_name: ${CONTAINER_NAME}
   restart: unless-stopped

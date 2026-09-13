@@ -119,13 +119,19 @@ def run_commands(
     """Execute commands sequentially against one instance, printing each response."""
 
     server, rcon_port, password = _resolve_target(server_id, instance_name)
-    tunnel, local_port = open_tunnel(server, "127.0.0.1", rcon_port)
+    # Panel hosts expose the game port publicly; our Docker hosts only allow it over SSH.
+    tunnel = None
+    host, port = str(server["host"]), rcon_port
+    if server["kind"] == "docker":
+        tunnel, port = open_tunnel(server, "127.0.0.1", rcon_port)
+        host = "127.0.0.1"
     try:
-        with closing(RconClient("127.0.0.1", local_port, password)) as client:
+        with closing(RconClient(host, port, password)) as client:
             for command in commands:
                 response = client.execute(command)
                 print(f"### {command}")
                 if response:
                     print(response)
     finally:
-        tunnel.terminate()
+        if tunnel:
+            tunnel.terminate()

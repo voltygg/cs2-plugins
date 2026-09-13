@@ -29,20 +29,27 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       servers: ${{ steps.resolve.outputs.servers }}
+      docker_servers: ${{ steps.resolve.outputs.docker_servers }}
       runtime_image: ${{ steps.resolve.outputs.runtime_image }}
     steps:
       - uses: actions/checkout@v7
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
       - name: Install inventory deps
-        run: sudo apt-get update && sudo apt-get install -y python3-yaml
+        run: pip install pyyaml python-dotenv typer
 
       - name: Resolve inventory
         id: resolve
         run: |
           FILTER='${{ github.event.inputs.server }}'
           SERVERS=$(python3 -m deploy.tools.cli matrix ${FILTER:+--server "$FILTER"})
+          DOCKER_SERVERS=$(python3 -m deploy.tools.cli matrix --kind docker ${FILTER:+--server "$FILTER"})
           RUNTIME_IMAGE=$(python3 -m deploy.tools.cli runtime-image)
           echo "servers=$SERVERS" >> "$GITHUB_OUTPUT"
+          echo "docker_servers=$DOCKER_SERVERS" >> "$GITHUB_OUTPUT"
           echo "runtime_image=$RUNTIME_IMAGE" >> "$GITHUB_OUTPUT"
           echo "Servers: $SERVERS"
           echo "Runtime image: $RUNTIME_IMAGE"
@@ -98,6 +105,7 @@ jobs:
   runtime-image:
     name: Build + publish server runtime image
     needs: prepare
+    if: ${{ needs.prepare.outputs.docker_servers != '[]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -126,7 +134,11 @@ jobs:
     name: Deploy ${{ matrix.server.id }}
     needs: [prepare, build, runtime-image]
     runs-on: ubuntu-latest
-    if: ${{ needs.prepare.outputs.servers != '[]' }}
+    # A skipped runtime-image job must not skip the deploy.
+    if: >-
+      ${{ !cancelled() && needs.build.result == 'success'
+      && contains(fromJSON('["success","skipped"]'), needs.runtime-image.result)
+      && needs.prepare.outputs.servers != '[]' }}
     environment: ${{ matrix.server.environment }}
     concurrency:
       group: deploy-${{ matrix.server.id }}
@@ -144,10 +156,19 @@ jobs:
           name: bundles
           path: package
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
       - name: Install deploy deps
-        run: sudo apt-get update && sudo apt-get install -y python3-yaml python3-dotenv rsync
+        run: pip install pyyaml python-dotenv typer
+
+      - name: Install rsync
+        if: ${{ matrix.server.kind == 'docker' }}
+        run: sudo apt-get update && sudo apt-get install -y rsync
 
       - name: Configure SSH
+        if: ${{ matrix.server.kind == 'docker' }}
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "${{ secrets.SSH_KEY }}" > ~/.ssh/id_deploy

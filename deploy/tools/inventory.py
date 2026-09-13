@@ -13,6 +13,7 @@ from .common import DEPLOY, die
 
 INVENTORY_PATH = Path(os.environ.get("INVENTORY_PATH", DEPLOY / "inventory.yml"))
 _INHERITED = ("ssh_user", "ssh_port", "cs2_root", "deploy_root", "runtime_image")
+SERVER_KINDS = ("docker", "pterodactyl")
 
 
 def load(path: Path | str | None = None) -> dict[str, Any]:
@@ -46,10 +47,21 @@ def resolve_server(data: dict[str, Any], server: dict[str, Any]) -> dict[str, An
     defaults = data.get("defaults", {})
     resolved = {"id": server.get("id"), "host": server.get("host")}
     resolved.update({key: server.get(key, defaults.get(key)) for key in _INHERITED})
+    resolved["kind"] = server.get("kind", "docker")
+    if resolved["kind"] not in SERVER_KINDS:
+        die(f"server '{resolved['id']}' has unknown kind '{resolved['kind']}'")
+    if resolved["kind"] == "pterodactyl":
+        resolved["panel_url"] = server.get("panel_url")
+        resolved["panel_server"] = server.get("panel_server")
+        resolved["game_dir"] = server.get("game_dir", "/game/csgo")
     resolved["environment"] = server.get("environment")
     resolved["enabled"] = bool(server.get("enabled", True))
     resolved["plugins"] = list(server.get("plugins", []))
-    resolved["instances"] = list(server.get("instances", []))
+    instances = list(server.get("instances", []))
+    for instance in instances:
+        if not instance.get("name") or not instance.get("port"):
+            die(f"server '{resolved['id']}' has an instance without name/port")
+    resolved["instances"] = instances
     return resolved
 
 
@@ -75,15 +87,10 @@ def plugin_db(data: dict[str, Any], plugin: str) -> str:
     return str(plugin_cfg.get("database") or "")
 
 
-def db_conn(data: dict[str, Any]) -> dict[str, Any]:
-    """Return shared database connection fields as DB_* names."""
-    db = data.get("database", {})
-    return {
-        "DB_HOST": db.get("host", ""),
-        "DB_PORT": db.get("port", ""),
-        "DB_USER": db.get("user", ""),
-        "DB_SSLMODE": db.get("sslMode", "prefer"),
-    }
+def plugin_settings(data: dict[str, Any], plugin: str) -> dict[str, Any]:
+    """Return the settings a plugin's inventory entry overrides in its settings.jsonc."""
+    plugin_cfg = data.get("plugins", {}).get(plugin) or {}
+    return dict(plugin_cfg.get("settings") or {})
 
 
 def runtime_image(data: dict[str, Any]) -> str:

@@ -17,7 +17,7 @@ deploy/
   docker-compose.build.yml        Linux build container
   scripts/bootstrap-host.sh       One-time Ubuntu host setup
   secrets/servers/<id>/           Gitignored local environment files
-  templates/                      Compose, pre-hook, and plugin templates
+  templates/                      Compose and pre-hook templates
   tools/                          Python deployment CLI
 ```
 
@@ -88,13 +88,29 @@ servers:
 An instance-level `plugins` list replaces the server default; it does not
 extend it. Every referenced plugin must also exist in the inventory's top-level
 `plugins` map so CI packages it. A plugin without a `database` key, such as
-`bhop: {}`, does not require database variables and is skipped by
-`deploy-dbs`.
+`bhop: {}`, does not require database variables.
 
-The renderer sets the admin system's `server.tag` to
-`<server-id>-<instance-name>` and `server.name` to the instance hostname.
-Because per-server admin grants reference this tag, server IDs and instance
-names must remain stable.
+## Plugin settings
+
+Each deployed `settings.jsonc` starts from the plugin's own
+`plugins/<name>/configs/settings.jsonc`. The inventory changes only what differs
+in production:
+
+```yaml
+plugins:
+  bhop:
+    settings:
+      plugin: { locale: ru }
+      bhop: { mode: grants }
+```
+
+`settings` is deep-merged into the plugin file, and a list replaces the whole
+list. A key the plugin's `settings.schema.json` does not define fails the
+render. `${NAME}` in a string is filled from the server env, plus
+`${SERVER_TAG}` (`<server-id>-<instance-name>`) and `${SERVER_NAME}` (the
+instance hostname). Per-server admin grants reference the tag, so server IDs and
+instance names must stay stable. A plugin with a `database` gets its
+`database` section from the inventory, `DB_HOST` and `DB_PASSWORD`.
 
 ## Configure secrets
 
@@ -102,7 +118,7 @@ Inventory owns hosts, ports, paths, image names, plugins, instances, and
 database names. Environment files own values such as:
 
 - `SSH_KEY_FILE`
-- `DB_PASSWORD` and `PGPASSWORD`
+- `DB_HOST` and `DB_PASSWORD`
 - `GSLT_*` and `RCON_*`
 - `CHEAT_API_KEY`
 
@@ -125,23 +141,14 @@ The private deployment key is separate: use `SSH_KEY` in GitHub or
 `SSH_KEY_B64` in CircleCI. Local files should point to a key with
 `SSH_KEY_FILE` and must not embed `SSH_KEY`.
 
-## Prepare plugin databases
+## Plugin databases
 
-Admin-system's `database.driver` defaults to `postgres` (it also supports
-`mariadb` and `sqlite`), but the deploy tooling and templates here provision
-PostgreSQL only.
+Deploy does not create databases. Before the first deploy, create the
+`database.user` role with `DB_PASSWORD` and one database per database-backed
+plugin, named as in the inventory. Plugins apply their own schema migrations
+when they load.
 
-Create the application role and one database for each database-backed plugin:
-
-```bash
-DB_PASSWORD='<app-role-password>' PGPASSWORD='<postgres-password>' \
-  uv run poe deploy-dbs --server box-a --admin-user postgres
-```
-
-The command reads local inventory and executes the DDL over SSH. Plugins apply
-their own schema migrations when loaded.
-
-To reach PostgreSQL through SSH:
+To reach a PostgreSQL server on a Docker host through SSH:
 
 ```bash
 uv run poe deploy-tunnel --server box-a
@@ -182,6 +189,38 @@ uv run poe deploy-server --server box-a
 
 Use `uv run poe deploy-server --server box-a --dry-run` to render and preview
 the synchronization without changing containers.
+
+## Pterodactyl panel servers
+
+A server with `kind: pterodactyl` is deployed through the panel's client API
+instead of SSH, so it needs no runtime image, Docker or SSH key:
+
+```yaml
+- id: panel-a
+  kind: pterodactyl
+  environment: prod-panel-a
+  panel_url: https://panel.example.com
+  panel_server: abc12345      # from the panel URL: /server/<id>
+  host: 203.0.113.20          # game address; RCON uses TCP on the instance port
+  plugins: [admin-system, bhop]
+  instances:
+    - { name: main, port: 27015, hostname: "CS2 Main" }
+```
+
+It has exactly one instance, and `game_dir` defaults to `/game/csgo`. Its env
+file holds `PANEL_API_KEY` (panel → Account → API Credentials), the database
+password and `RCON_main`. The map, GSLT, hostname and RCON password belong in
+the panel's Startup tab.
+
+`deploy-server --server panel-a` stops the server, installs or refreshes
+Metamod, uploads the plugins, removes inventory plugins not assigned to the
+server, patches `gameinfo.gi`, starts the server, and waits until `meta list`
+over RCON shows every plugin loaded. `--dry-run` only reads from the panel.
+`deploy-update` restarts the server so the egg runs its SteamCMD update.
+
+Turn off the egg's validate-on-start option if it has one: validation restores
+`gameinfo.gi` and Metamod stops loading. `deploy-cleanup` and `deploy-tunnel`
+need SSH, so they refuse panel servers.
 
 ## Update CS2
 

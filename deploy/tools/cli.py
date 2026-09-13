@@ -1,4 +1,4 @@
-"""Fleet deployment CLI for CS2 plugin servers (Docker/VPS).
+"""Fleet deployment CLI for CS2 plugin servers (Docker hosts and Pterodactyl panels).
 
 Run as a module from the repo root: python -m deploy.tools.cli <subcommand>
 
@@ -50,6 +50,10 @@ def matrix(
         str | None,
         typer.Option("--server", help="Filter to one server id and fail if missing"),
     ] = None,
+    kind: Annotated[
+        str | None,
+        typer.Option("--kind", help="Only servers of this kind (docker, pterodactyl)"),
+    ] = None,
     format_: Annotated[
         OutputFormat,
         typer.Option("--format", help="Output format"),
@@ -63,6 +67,8 @@ def matrix(
         servers = [item for item in servers if item.get("id") == server]
         if not servers:
             raise SystemExit(f"ERROR: server '{server}' not found in active inventory servers")
+    if kind:
+        servers = [item for item in servers if item["kind"] == kind]
     if format_ is OutputFormat.PLAIN:
         print("\n".join(item["id"] for item in servers))
     else:
@@ -149,8 +155,8 @@ def deploy(
     ] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
 ) -> None:
-    """Render and deploy servers over SSH."""
-    from . import inventory, remote
+    """Deploy servers over SSH (docker) or the panel API (pterodactyl)."""
+    from . import inventory, panel, remote
 
     data = inventory.load()
     if all_:
@@ -163,7 +169,10 @@ def deploy(
     image = runtime_image or inventory.runtime_image(data)
     for server_id in servers:
         materialize_server_env(server_id)
-        remote.deploy_server(server_id, package_dir, image, dry_run=dry_run)
+        if inventory.find_server(data, server_id)["kind"] == "pterodactyl":
+            panel.deploy_server(server_id, package_dir, dry_run=dry_run)
+        else:
+            remote.deploy_server(server_id, package_dir, image, dry_run=dry_run)
 
 
 @app.command()
@@ -172,9 +181,12 @@ def update(
     dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
 ) -> None:
     """Restart instances to pull the latest CS2 build."""
-    from . import remote
+    from . import inventory, panel, remote
 
-    remote.update_server(server, dry_run=dry_run)
+    if inventory.find_server(inventory.load(), server)["kind"] == "pterodactyl":
+        panel.update_server(server, dry_run=dry_run)
+    else:
+        remote.update_server(server, dry_run=dry_run)
 
 
 @app.command()
@@ -190,18 +202,6 @@ def cleanup(
     from . import remote
 
     remote.cleanup_server(server, yes=yes, dry_run=dry_run)
-
-
-@app.command("ensure-dbs")
-def ensure_dbs(
-    admin_user: Annotated[str, typer.Option("--admin-user")] = "postgres",
-    server: Annotated[str | None, typer.Option("--server")] = None,
-    dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
-) -> None:
-    """Ensure the shared Postgres role and databases."""
-    from . import database
-
-    database.ensure_databases(server, admin_user, dry_run=dry_run)
 
 
 @app.command()

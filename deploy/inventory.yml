@@ -1,4 +1,4 @@
-# Non-secret Docker host topology. Keep secrets in per-server env files or CI.
+# Non-secret deploy topology. Keep secrets in per-server env files or CI.
 
 defaults:
   ssh_user: steam
@@ -8,33 +8,66 @@ defaults:
   runtime_image: ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:latest
 
 database:
-  # Host PostgreSQL as reached from bridge containers.
-  host: host.docker.internal
   port: 5432
   user: cs2_app
-  sslMode: prefer
+  sslMode: require
 
 plugins:
   admin-system:
     database: admin_system
-  # Omitting `database` makes a plugin database-free.
-  bhop: {}
-  # anticheat: {}  # Enable after the observation rollout.
+    settings:
+      plugin: { locale: ru }
+      server: { tag: "${SERVER_TAG}", name: "${SERVER_NAME}" }
+      punishments:
+        templates:
+          - { name: "Читы", type: ban, duration: perm, reason: "Читы" }
+          - { name: "Гриферство", type: ban, duration: 1d, reason: "Урон по своим / гриферство" }
+          - { name: "Спам в микрофон", type: voiceMute, duration: 30m, reason: "Спам в микрофон" }
+          - { name: "Токсичный войс", type: voiceMute, duration: 2h, reason: "Токсичное поведение в голосовом чате" }
+          - { name: "Спам в чат", type: textMute, duration: 30m, reason: "Спам в чате" }
+          - { name: "Токсичный чат", type: textMute, duration: 2h, reason: "Токсичное поведение в чате" }
+        reasonPresets:
+          - "Читы"
+          - "Токсичное поведение"
+          - "Спам в микрофон"
+          - "Урон по своим / гриферство"
+          - "Неприемлемый никнейм"
+      cheatCheck:
+        mode: websiteAutoRoom
+        fixedLink: { url: "https://discord.gg/meatgg" }
+        websiteAutoRoom:
+          apiKey: "${CHEAT_API_KEY}"
+          createRoomUrl: "https://meat.gg/api/rooms"
+          playerUrlTemplate: "https://meat.gg/rooms/{value}"
+          checkerUrlTemplate: "https://meat.gg/rooms/{value}"
+          presenceUrl: "https://meat.gg/api/rooms/{code}/presence?steamId={steamId}"
+  bhop:
+    settings:
+      plugin: { locale: ru }
+      bhop: { mode: grants }
+  anticheat: {}
 
 servers:
-  - id: box-a
-    host: 207.180.234.215
-    environment: prod-box-a
-    deploy_root: /home/steam/cs2/deploy
-    # Default plugins for this box.
+  - id: panel-a
+    kind: pterodactyl
+    environment: prod-panel-a
+    panel_url: https://panel.example.com
+    panel_server: c913d656
+    host: 37.230.228.94
     plugins:
       - admin-system
       - bhop
-      # - anticheat
+      - anticheat
+    instances:
+      - { name: main, port: 27030, hostname: "CS2 Main" }
+
+  - id: box-a
+    enabled: false
+    host: 207.180.234.215
+    environment: prod-box-a
+    deploy_root: /home/steam/cs2/deploy
+    plugins:
+      - admin-system
+      - bhop
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main", insecure: true }
-      # `insecure: true` launches with -insecure (VAC off) for cheat testing;
-      # clients must connect with -insecure too. Leave off for live play.
-      # - { name: test, port: 27016, map: de_dust2, hostname: "CS2 Test", insecure: true }
-
-# An instance-level `plugins` list replaces the server default.
