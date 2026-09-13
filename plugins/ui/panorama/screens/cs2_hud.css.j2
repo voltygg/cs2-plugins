@@ -1,15 +1,10 @@
-{#-
-  The server HUD, in the meat.gg look: near-black raised cards, warm hairlines, red primary
-  for bars and accents. No theme file any more - every colour below is literal.
--#}
+{#- The server HUD in the meat.gg look: near-black raised cards, red bars. -#}
 {% include "card.css.j2" %}
 {% include "toast.css.j2" %}
-{% include "accent.css.j2" %}
 {% include "bar.css.j2" %}
 {% include "icons.css.j2" %}
 {% import "bar.css.j2" as bar %}
 {% import "icons.css.j2" as icons %}
-{% import "accent.css.j2" as accent %}
 
 .Layer {
   width: 100%;
@@ -58,8 +53,12 @@
   margin-left: 8px;
 }
 
+.Card-main {
+  height: 54px;
+}
+
 .Card-body {
-  padding: 8px 10px;
+  padding: 0px 14px;
 }
 
 .Card-title {
@@ -78,18 +77,15 @@
   color: #e0a040;
 }
 
-.Bar {
+/* Along the card's bottom edge, rounded into its corners. */
+.Card .Bar {
+  height: 3px;
   background-color: rgba(240, 221, 180, 0.05);
+  border-radius: 0px 0px 12px 12px;
 }
 
 .Bar-fill {
   background-color: #e1273c;
-}
-
-/* The stripe rounds with the card corner it sits against. */
-.Accent {
-  border-radius: 12px 0px 0px 12px;
-  background-color: rgba(240, 221, 180, 0.14);
 }
 
 .Toast {
@@ -107,13 +103,5 @@
   color: #9a9aa4;
 }
 
-/* The toast's stripe sits on its trailing edge, opposite a card's. */
-.Toast .Accent {
-  width: 3px;
-  border-radius: 0px 14px 14px 0px;
-}
-
 {{ bar.fill_rules("Bar", 20) }}
 {{ icons.show_rules("weapons") }}
-
-{{ accent.palette() }}

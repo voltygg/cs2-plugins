@@ -24,25 +24,6 @@ inline constexpr int HudCardCount = 3;
  *  one of the others, and two plugins on the same card overwrite each other. */
 inline constexpr HudCard ServerCard = HudCard::First;
 
-/** Colour of a card's edge or a toast's stripe. The order is checked against the ui plugin's
- *  screen (`Cs2Ui::Hud::AccentNames`, from `panorama/screens/cs2_hud.css.j2`) at compile time in
- *  Hud.cpp, so the two must be reordered together. */
-enum class HudAccent : int
-{
-    None = -1,
-    Success,
-    Warning,
-    Info,
-    Error,
-    Common,
-    Uncommon,
-    Rare,
-    Mythical,
-    Legendary,
-    Ancient,
-    Contraband,
-};
-
 /** What one card shows. Empty text hides that line. */
 struct CardView
 {
@@ -53,7 +34,6 @@ struct CardView
     std::string_view Icon;
     /** 0..20 fills the bar; a negative value hides it. */
     int BarStep = -1;
-    HudAccent Accent = HudAccent::None;
 };
 
 /** A transient notice that fades itself out. */
@@ -61,7 +41,6 @@ struct ToastView
 {
     std::string_view Title;
     std::string_view Description;
-    HudAccent Accent = HudAccent::None;
     /** 0 uses the ui plugin's `toastDurationMs` setting. */
     int DurationMs = 0;
 };
@@ -78,7 +57,7 @@ struct ToastView
  */
 struct IUiHud
 {
-    static constexpr std::string_view InterfaceName = "cs2plugins.IUiHud/3";
+    static constexpr std::string_view InterfaceName = "cs2plugins.IUiHud/4";
 
     /** Draw @p view on @p card for @p slot, or @ref Everyone. False when nothing could be drawn:
      *  a card the screen does not have, or a screen that could not be spawned. */

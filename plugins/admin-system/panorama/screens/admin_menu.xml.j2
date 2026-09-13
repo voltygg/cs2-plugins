@@ -1,13 +1,9 @@
 {# namespace: AdminUi::Menu #}
-{% import "dialog.xml.j2" as shell %}
-{% import "listrow.xml.j2" as list %}
-{% import "tabs.xml.j2" as strip %}
-{% import "pager.xml.j2" as paging %}
 {% import "button.xml.j2" as controls %}
+{% from "admin_menu/icons.j2" import ICONS %}
 
 {%- set ROWS = 8 %}
-{%- set TABS = 6 %}
-{%- set MARKS = [("submenu", "&#9654;"), ("input", "&#8230;"), ("button", "&#8226;"), ("text", "&#8211;")] %}
+{%- set TABS = 8 %}
 
 <root>
   <styles>
@@ -16,29 +12,88 @@
 
   <Panel class="Layer" hittest="false">
     <Panel id="{{screen}}" class="Screen Hidden" hittest="true">
-      {%- call shell.dialog("panel") %}
-      {{ strip.tabs("tab", TABS) }}
+      <Panel class="Window" hittest="true">
 
-      <Panel class="Rows" hittest="true">
-        {%- for row in range(ROWS) %}
-        {{ list.listrow("row" ~ row, marks=MARKS, switch=true, hint=true, steppers=true, accent=true) | indent(8) }}
-        {%- endfor %}
-        <Label id="{{screen}}_empty" class="Empty Hidden" text="{s:empty}" hittest="false" />
+        <Panel class="Sidebar" hittest="true">
+          <Panel class="Brand" hittest="false">
+            <Label class="Brand-title" text="{s:brand}" hittest="false" />
+            <Label class="Brand-subtitle" text="{s:brand_sub}" hittest="false" />
+          </Panel>
+          <Panel class="Nav" hittest="true">
+            {%- for index in range(TABS) %}
+            <Button id="{{screen}}_tab{{index}}" class="Tab Hidden">
+              <Panel id="{{screen}}_tab{{index}}_icon" class="Tab-icon" hittest="false">
+                {%- for name, game_icon in ICONS %}
+                <Image class="Icon--{{name}}" src="s2r://panorama/images/icons/ui/{{game_icon}}.vsvg" textureheight="32" hittest="false" />
+                {%- endfor %}
+              </Panel>
+              <Label class="Tab-label" text="{s:tab{{index}}}" hittest="false" />
+            </Button>
+            {%- endfor %}
+          </Panel>
+        </Panel>
+
+        <Panel class="Content" hittest="true">
+          <Panel class="Head" hittest="true">
+            <Panel class="Head-text" hittest="false">
+              <Label class="Crumb" text="{s:crumb}" hittest="false" />
+              <Label class="Title" text="{s:title}" hittest="false" />
+              <Label id="{{screen}}_subtitle" class="Subtitle" text="{s:subtitle}" hittest="false" />
+            </Panel>
+            <Button id="{{screen}}_close" class="IconBtn">
+              <Image class="IconBtn-image" src="s2r://panorama/images/icons/ui/cancel.vsvg" textureheight="32" hittest="false" />
+              <Label class="IconBtn-label" text="{s:close}" hittest="false" />
+            </Button>
+          </Panel>
+
+          <Panel class="Rows" hittest="true">
+            {%- for row in range(ROWS) %}
+            <Panel id="{{screen}}_row{{row}}" class="Row Hidden" hittest="true">
+              <Button id="{{screen}}_row{{row}}_btn" class="Row-hit">
+                <Panel class="Row-body" hittest="false">
+                  <Label class="Row-label" text="{s:row{{row}}_label}" hittest="false" />
+                  <Label class="Row-hint" text="{s:row{{row}}_hint}" hittest="false" />
+                </Panel>
+                <Label class="Row-value" text="{s:row{{row}}_value}" hittest="false" />
+                <Panel class="Switch" hittest="false">
+                  <Panel class="Switch-knob" hittest="false" />
+                </Panel>
+                <Label class="Row-chevron" text="&#8250;" hittest="false" />
+              </Button>
+              <Panel class="Steppers" hittest="true">
+                <Button id="{{screen}}_row{{row}}_dec" class="Stepper">
+                  <Label class="Stepper-glyph" text="&#9664;" hittest="false" />
+                </Button>
+                <Button id="{{screen}}_row{{row}}_inc" class="Stepper">
+                  <Label class="Stepper-glyph" text="&#9654;" hittest="false" />
+                </Button>
+              </Panel>
+            </Panel>
+            {%- endfor %}
+            <Label id="{{screen}}_empty" class="Empty Hidden" text="{s:empty}" hittest="false" />
+          </Panel>
+
+          <Panel id="{{screen}}_prompt" class="Prompt Hidden" hittest="true">
+            <Label class="Prompt-text" text="{s:prompt_text}" hittest="false" />
+            <Label class="Prompt-hint" text="{s:prompt_hint}" hittest="false" />
+            {{ controls.button("cancel", "{s:cancel}") | indent(12) }}
+          </Panel>
+
+          <Panel class="Foot" hittest="true">
+            {{ controls.button("back", "{s:back}") | indent(12) }}
+            <Panel id="{{screen}}_page" class="Pager Hidden" hittest="true">
+              <Label class="Pager-label" text="{s:page}" hittest="false" />
+              <Button id="{{screen}}_page_prev" class="Pager-arrow">
+                <Label class="Pager-glyph" text="&#9664;" hittest="false" />
+              </Button>
+              <Button id="{{screen}}_page_next" class="Pager-arrow">
+                <Label class="Pager-glyph" text="&#9654;" hittest="false" />
+              </Button>
+            </Panel>
+          </Panel>
+        </Panel>
+
       </Panel>
-
-      {{ paging.pager("page") }}
-
-      <Panel id="{{screen}}_prompt" class="Prompt Hidden" hittest="true">
-        <Label class="Prompt-text" text="{s:prompt_text}" hittest="false" />
-        <Label class="Prompt-hint" text="{s:prompt_hint}" hittest="false" />
-        {{ controls.button("cancel", "{s:cancel}", variant="ghost") | indent(8) }}
-      </Panel>
-
-      <Panel class="Foot" hittest="true">
-        {{ controls.button("back", "{s:back}", variant="ghost") | indent(8) }}
-        {{ controls.button("close", "{s:close}", variant="danger") | indent(8) }}
-      </Panel>
-      {%- endcall %}
     </Panel>
   </Panel>
 </root>

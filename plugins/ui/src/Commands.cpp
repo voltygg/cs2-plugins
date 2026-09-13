@@ -26,19 +26,10 @@ void RegisterCommands(VoltMod::CommandManager& commands, App& app)
         .Run([&app](Caller, Args::Int slot) -> Result<Reply> {
             const int target = slot.Value;
             app.Hud.SetCard(WheelCard, target,
-                            {.Title = "Wheel of fortune",
-                             .Value = "12:00",
-                             .BarStep = 8,
-                             .Accent = Contracts::HudAccent::Info});
+                            {.Title = "Wheel of fortune", .Value = "12:00", .BarStep = 8});
             app.Hud.SetCard(DropCard, target,
-                            {.Title = "UMP-45 | Crimson",
-                             .Subtitle = "Winston",
-                             .Value = "358 ₽",
-                             .Icon = "ump45",
-                             .Accent = Contracts::HudAccent::Rare});
-            app.Hud.Toast(target, {.Title = "Prosthesis",
-                                   .Description = "Immune to arm and leg hits",
-                                   .Accent = Contracts::HudAccent::Success});
+                            {.Title = "UMP-45 | Crimson", .Subtitle = "Winston", .Value = "358 ₽", .Icon = "ump45"});
+            app.Hud.Toast(target, {.Title = "Prosthesis", .Description = "Immune to arm and leg hits"});
             return Reply{std::format("ui_hud_demo: drew the demo cards for {}.", target)};
         });
 }

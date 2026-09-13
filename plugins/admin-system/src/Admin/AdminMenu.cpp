@@ -34,15 +34,17 @@ struct Category
     std::shared_ptr<VoltMod::Menu> (*Build)(AdminSystem::App& app, int adminSlot);
     /** Permission letters, any one of which opens the category; empty means any admin. */
     std::string_view Flags;
+    /** The tab icon, one of the names in panorama/screens/admin_menu/icons.j2. */
+    std::string_view Icon;
 };
 
 static constexpr std::array<Category, 6> Categories{{
-    {"category.punish", &Menu::BuildPunishMenu, "cdoe"},
-    {"category.control", &Menu::BuildControlMenu, "bskz"},
-    {"category.effects", &Menu::BuildEffectsMenu, "fjz"},
-    {"category.fun", &Menu::BuildFunMenu, "gz"},
-    {"category.map", &Menu::BuildMapMenu, "mvz"},
-    {"category.chatSettings", &Menu::BuildChatSettingsMenu, ""},
+    {"category.punish", &Menu::BuildPunishMenu, "cdoe", "punish"},
+    {"category.control", &Menu::BuildControlMenu, "bskz", "control"},
+    {"category.effects", &Menu::BuildEffectsMenu, "fjz", "effects"},
+    {"category.fun", &Menu::BuildFunMenu, "gz", "fun"},
+    {"category.map", &Menu::BuildMapMenu, "mvz", "map"},
+    {"category.chatSettings", &Menu::BuildChatSettingsMenu, "", "chat"},
 }};
 
 std::shared_ptr<VoltMod::Menu> BuildAdminMainMenu(AdminSystem::App& app, int adminSlot)
@@ -65,7 +67,8 @@ std::shared_ptr<VoltMod::Menu> BuildAdminMainMenu(AdminSystem::App& app, int adm
                                                     : app.Access.HasAnyPermission(adminSteamId, std::string(category.Flags));
         builder.Add(SubmenuRow{.Label = translations.Get(category.LabelKey, adminSlot),
                                .Build = [&app, adminSlot, build = category.Build](int) { return build(app, adminSlot); },
-                               .Enabled = allowed});
+                               .Enabled = allowed,
+                               .Icon = std::string(category.Icon)});
     }
 
     return builder.Build();

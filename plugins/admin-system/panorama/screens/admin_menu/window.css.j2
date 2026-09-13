@@ -1,0 +1,125 @@
+.Layer {
+  width: 100%;
+  height: 100%;
+}
+
+.Screen {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition-property: opacity;
+  transition-duration: 0.12s;
+  transition-timing-function: ease-out;
+}
+
+/* Collapse as well as fade: a transparent panel still takes clicks. */
+.Screen.Hidden {
+  visibility: collapse;
+  opacity: 0;
+}
+
+.Tab.Hidden,
+.Row.Hidden,
+.Empty.Hidden,
+.Pager.Hidden,
+.Prompt.Hidden,
+.Subtitle.Hidden {
+  visibility: collapse;
+}
+
+.Window {
+  width: 920px;
+  height: 640px;
+  horizontal-align: center;
+  vertical-align: center;
+  flow-children: right;
+  background-color: #111116;
+  border-radius: 16px;
+  color: #f5f5f7;
+  transform: translateY(0px);
+  transition-property: transform;
+  transition-duration: 0.12s;
+  transition-timing-function: ease-out;
+}
+
+.Screen.Hidden .Window {
+  transform: translateY(10px);
+}
+
+.Content {
+  width: fill-parent-flow(1);
+  height: 100%;
+  flow-children: down;
+  padding: 22px 26px 20px 26px;
+}
+
+.Head {
+  width: 100%;
+  height: fit-children;
+  flow-children: right;
+  margin-bottom: 16px;
+}
+
+.Head-text {
+  width: fill-parent-flow(1);
+  height: fit-children;
+  flow-children: down;
+}
+
+/* Fixed height: empty at the root, and CSS cannot test that. */
+.Crumb {
+  width: 100%;
+  height: 16px;
+  font-size: 12px;
+  color: #6a6a74;
+  text-overflow: ellipsis;
+}
+
+.Title {
+  width: 100%;
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  text-overflow: ellipsis;
+}
+
+.Subtitle {
+  width: 100%;
+  font-size: 13px;
+  color: #8a8a94;
+  text-overflow: ellipsis;
+}
+
+.IconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: #1c1c23;
+  transition-property: pre-transform-scale2d;
+  transition-duration: 0.12s;
+}
+
+.IconBtn:hover {
+  background-color: #e1273c;
+}
+
+.IconBtn:active {
+  pre-transform-scale2d: 0.94;
+}
+
+.IconBtn-image {
+  width: 14px;
+  height: 14px;
+  horizontal-align: center;
+  vertical-align: center;
+  wash-color: #b4b4be;
+}
+
+.IconBtn:hover .IconBtn-image {
+  wash-color: #ffffff;
+}
+
+/* The driver writes the word for center HTML; here the icon says it. */
+.IconBtn-label {
+  visibility: collapse;
+}

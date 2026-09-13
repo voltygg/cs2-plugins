@@ -75,9 +75,7 @@ void PanoramaMenu::Start(bool enabled, uint64_t addonId)
         return;
     }
 
-    // The addon is how the layout reaches players who did not compile it into their own client.
-    // Without one nothing is required, so a hand-compiled client is drawn to and everyone else
-    // sees an empty panel: said out loud here rather than left as a silent blank menu.
+    // Without an addon only a hand-compiled client has the layout; say so rather than draw blanks.
     if (addonId != 0)
     {
         if (auto required = _rt.Addons.Require(addonId))
@@ -98,8 +96,7 @@ void PanoramaMenu::Start(bool enabled, uint64_t addonId)
     _enabled = true;
     _subs.Add(_rt.Ui.Clicked += [this](const UiClick& click) { OnClick(click); });
 
-    // A held commit lands on a timer rather than on a press, and this surface only draws when
-    // something asks it to.
+    // A held commit lands on a timer, not a press, so nothing else would redraw it.
     _subs.Add(_stack.Committed += [this](int slot) {
         if (IsOpen(slot))
             Draw(slot);
@@ -137,15 +134,15 @@ bool PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptio
     session.SelectedTab = -1;
     session.Tabs.clear();
 
-    // The tab strip stands for the root menu's submenus, so it is read once per session: the
-    // labels come back with the kinds rather than costing a Describe per tab per draw.
+    // Tabs are the root's submenus, read once per session rather than described on every draw.
     const Menu* root = _stack.Root(slot);
     for (int index = 0; root && index < static_cast<int>(root->Items.size()); ++index)
     {
         if (static_cast<int>(session.Tabs.size()) >= TabCount)
             break;
         if (VoltMod::MenuRow described = _stack.Describe(slot, index); described.Kind == VoltMod::MenuRowKind::Submenu)
-            session.Tabs.push_back({.RootIndex = index, .Label = std::move(described.Label)});
+            session.Tabs.push_back(
+                {.RootIndex = index, .Label = std::move(described.Label), .Icon = std::move(described.Icon)});
     }
 
     _rt.Freeze.Open(slot, options.FreezeMovement);

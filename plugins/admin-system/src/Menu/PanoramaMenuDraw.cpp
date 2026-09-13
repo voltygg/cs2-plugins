@@ -17,34 +17,8 @@ using VoltMod::UiPanel;
 namespace AdminSystem::Menus
 {
 
-// VoltMod::MenuRowKind, lowercase and in enumerator order, so casting a kind to a class is safe.
-static_assert(AdminUi::Menu::KindNames == std::array<std::string_view, 6>{"text", "button", "submenu", "toggle",
-                                                                         "choice", "input"},
-              "admin_menu's Kind classes must match VoltMod::MenuRowKind");
-
-/** The accent a row kind carries, as an index into `AdminUi::Menu::AccentClasses`, or none. */
-static int AccentFor(const MenuRow& row)
-{
-    if (!row.Enabled)
-        return ClassChoice::None;
-    switch (row.Kind)
-    {
-    case MenuRowKind::Submenu:
-        return static_cast<int>(AdminUi::Menu::Accent::Info);
-    case MenuRowKind::Toggle:
-        return static_cast<int>(row.State.value_or(false) ? AdminUi::Menu::Accent::Success
-                                                          : AdminUi::Menu::Accent::Common);
-    case MenuRowKind::Choice:
-        return static_cast<int>(AdminUi::Menu::Accent::Warning);
-    case MenuRowKind::Input:
-        return static_cast<int>(AdminUi::Menu::Accent::Rare);
-    case MenuRowKind::Text:
-        return ClassChoice::None;
-    case MenuRowKind::Button:
-        break;
-    }
-    return static_cast<int>(AdminUi::Menu::Accent::Contraband);
-}
+/** VoltMod::MenuRowKind, indexed by enumerator, as the stylesheet's `Kind--<name>` classes spell it. */
+static constexpr std::array<std::string_view, 6> KindNames{"text", "button", "submenu", "toggle", "choice", "input"};
 
 void PanoramaMenu::Draw(int slot)
 {
@@ -68,10 +42,17 @@ void PanoramaMenu::Draw(int slot)
 
 void PanoramaMenu::DrawHeader(const VoltMod::UiPanelWriter& w, const Menu& menu)
 {
+    const Menu* root = _stack.Root(w.Slot());
+    const Menu& brand = root ? *root : menu;
+    w.Set(Shell.Brand, brand.Title);
+    w.Set(Shell.BrandSubtitle, brand.Subtitle);
+
     w.Set(Shell.Title, menu.Title);
     w.Set(Shell.Breadcrumb, _stack.Breadcrumb(w.Slot()));
+    // The root's subtitle is already under the brand.
+    const bool subtitle = !menu.Subtitle.empty() && &menu != &brand;
     w.Set(Shell.Subtitle, menu.Subtitle);
-    w.Set(Shell.SubtitleHidden, menu.Subtitle.empty());
+    w.Set(Shell.SubtitleHidden, !subtitle);
 }
 
 void PanoramaMenu::DrawTabs(const VoltMod::UiPanelWriter& w)
@@ -86,7 +67,9 @@ void PanoramaMenu::DrawTabs(const VoltMod::UiPanelWriter& w)
         if (!used)
             continue;
 
-        w.Set(ids.Label, session.Tabs[static_cast<std::size_t>(tab)].Label);
+        const Tab& shown = session.Tabs[static_cast<std::size_t>(tab)];
+        w.Set(ids.Label, shown.Label);
+        w.Set(ids.Icon, shown.Icon.empty() ? ClassChoice::None : ids.Icon.Find(shown.Icon));
         w.Set(ids.Selected, tab == session.SelectedTab);
     }
 }
@@ -130,13 +113,13 @@ void PanoramaMenu::DrawRow(const VoltMod::UiPanelWriter& w, int row, const MenuR
     w.Set(ids.HasValue, !described.Value.empty());
     w.Set(ids.Disabled, !described.Enabled);
     w.Set(ids.On, described.State.value_or(false));
-    w.Set(ids.Kind, static_cast<int>(described.Kind));
-    w.Set(ids.Accent, AccentFor(described));
+    w.Set(ids.Kind, ids.Kind.Find(KindNames[static_cast<std::size_t>(described.Kind)]));
 
-    // Steppers only where A/D would have done something, and only while the row is live.
-    w.Set(ids.HasSteppers, described.Steppable && described.Enabled);
+    // A toggle flips on a click, so its switch is the whole control.
+    w.Set(ids.HasSteppers,
+          described.Steppable && described.Enabled && described.Kind != MenuRowKind::Toggle);
 
-    // The hint line doubles as the "not applied yet" note, which is also what Changed pulses on.
+    // The hint line doubles as the "not applied yet" note.
     w.Set(ids.HasHint, described.Pending);
     w.Set(ids.Changed, described.Pending);
     if (described.Pending)

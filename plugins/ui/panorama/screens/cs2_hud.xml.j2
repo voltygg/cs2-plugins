@@ -10,7 +10,7 @@
     <Panel id="{{screen}}" class="Screen Hidden" hittest="false">
       <Panel class="Region Region-top-left" hittest="false">
         {%- for i in range(3) %}
-        {{ blocks.card("card" ~ i, icon_set="weapons", bar=true, accent=true) }}
+        {{ blocks.card("card" ~ i, icon_set="weapons", bar=true) }}
         {%- endfor %}
       </Panel>
       <Panel class="Region Region-bottom" hittest="false">

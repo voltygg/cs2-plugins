@@ -12,7 +12,7 @@ namespace AdminSystem::Menus
 inline constexpr int RowsPerPage = static_cast<int>(AdminUi::Menu::Rows.size());
 inline constexpr int TabCount = static_cast<int>(AdminUi::Menu::Tabs.size());
 
-/** Every writer one row needs. The ids its buttons press are read from AdminUi::Menu::Rows. */
+/** Every writer one row needs. */
 struct RowWriters
 {
     VoltMod::TextVar Label;
@@ -26,7 +26,6 @@ struct RowWriters
     VoltMod::ClassFlag On;
     VoltMod::ClassFlag Changed;
     VoltMod::ClassChoice Kind;
-    VoltMod::ClassChoice Accent;
 };
 
 constexpr RowWriters MakeRow(const AdminUi::Menu::Row& row)
@@ -44,16 +43,15 @@ constexpr RowWriters MakeRow(const AdminUi::Menu::Row& row)
         .On = {row.Id, "On"},
         .Changed = {row.Id, "Changed"},
         .Kind = {row.Id, Screen::KindClasses},
-        .Accent = {row.Accent, Screen::AccentClasses},
     };
 }
 
 inline constexpr auto Rows = VoltMod::MakeWriters(AdminUi::Menu::Rows, MakeRow);
 
-/** One tab: its label, whether it is shown, and whether it is the open one. */
 struct TabWriters
 {
     VoltMod::TextVar Label;
+    VoltMod::ClassChoice Icon;
     VoltMod::ClassFlag Hidden;
     VoltMod::ClassFlag Selected;
 };
@@ -62,6 +60,7 @@ constexpr TabWriters MakeTab(const AdminUi::Menu::Tab& tab)
 {
     return {
         .Label = {AdminUi::Menu::RootId, tab.Var},
+        .Icon = {tab.Icon, AdminUi::Menu::IconClasses},
         .Hidden = {tab.Id, "Hidden"},
         .Selected = {tab.Id, "Selected"},
     };
@@ -69,12 +68,14 @@ constexpr TabWriters MakeTab(const AdminUi::Menu::Tab& tab)
 
 inline constexpr auto Tabs = VoltMod::MakeWriters(AdminUi::Menu::Tabs, MakeTab);
 
-/** Everything outside the row and tab pools: the header, the pager, the prompt, the footer. */
+/** Everything outside the row and tab pools. */
 struct ShellWriters
 {
-    VoltMod::TextVar Breadcrumb{AdminUi::Menu::RootId, AdminUi::Menu::PanelCrumbVar};
-    VoltMod::TextVar Title{AdminUi::Menu::RootId, AdminUi::Menu::PanelTitleVar};
-    VoltMod::TextVar Subtitle{AdminUi::Menu::RootId, AdminUi::Menu::PanelSubtitleVar};
+    VoltMod::TextVar Brand{AdminUi::Menu::RootId, AdminUi::Menu::BrandVar};
+    VoltMod::TextVar BrandSubtitle{AdminUi::Menu::RootId, AdminUi::Menu::BrandSubVar};
+    VoltMod::TextVar Breadcrumb{AdminUi::Menu::RootId, AdminUi::Menu::CrumbVar};
+    VoltMod::TextVar Title{AdminUi::Menu::RootId, AdminUi::Menu::TitleVar};
+    VoltMod::TextVar Subtitle{AdminUi::Menu::RootId, AdminUi::Menu::SubtitleVar};
     VoltMod::TextVar Page{AdminUi::Menu::RootId, AdminUi::Menu::PageVar};
     VoltMod::TextVar Empty{AdminUi::Menu::RootId, AdminUi::Menu::EmptyVar};
     VoltMod::TextVar PromptText{AdminUi::Menu::RootId, AdminUi::Menu::PromptTextVar};
@@ -83,7 +84,7 @@ struct ShellWriters
     VoltMod::TextVar Close{AdminUi::Menu::RootId, AdminUi::Menu::CloseVar};
     VoltMod::TextVar Cancel{AdminUi::Menu::RootId, AdminUi::Menu::CancelVar};
 
-    VoltMod::ClassFlag SubtitleHidden{AdminUi::Menu::PanelSubtitle, "Hidden"};
+    VoltMod::ClassFlag SubtitleHidden{AdminUi::Menu::Subtitle, "Hidden"};
     VoltMod::ClassFlag EmptyHidden{AdminUi::Menu::Empty, "Hidden"};
     VoltMod::ClassFlag PagerHidden{AdminUi::Menu::Page, "Hidden"};
     VoltMod::ClassFlag PromptHidden{AdminUi::Menu::Prompt, "Hidden"};

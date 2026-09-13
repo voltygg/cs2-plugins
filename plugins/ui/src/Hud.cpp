@@ -21,12 +21,6 @@ namespace Ui
 
 namespace Screen = Cs2Ui::Hud;
 
-// Contracts::HudAccent, lowercase and in enumerator order. A reorder on either side fails here.
-static_assert(Screen::AccentNames == std::array<std::string_view, 11>{"success", "warning", "info", "error", "common",
-                                                                     "uncommon", "rare", "mythical", "legendary",
-                                                                     "ancient", "contraband"},
-              "cs2_hud's Accent classes must match Contracts::HudAccent");
-
 /** One card of the screen: which panel each writer touches, and which variable it reads. */
 struct CardWriters
 {
@@ -35,8 +29,8 @@ struct CardWriters
     VoltMod::TextVar Value;
     VoltMod::ClassChoice Icon;
     VoltMod::ClassChoice Bar;
-    VoltMod::ClassChoice Accent;
     VoltMod::ClassFlag Hidden;
+    VoltMod::ClassFlag HasIcon;
     VoltMod::ClassFlag BarHidden;
 };
 
@@ -48,8 +42,8 @@ static constexpr CardWriters MakeCard(const Screen::Card& card)
         .Value = {Screen::RootId, card.ValueVar},
         .Icon = {card.Icon, Screen::IconClasses},
         .Bar = {card.Bar, Screen::StepClasses},
-        .Accent = {card.Accent, Screen::AccentClasses},
         .Hidden = {card.Id, "Hidden"},
+        .HasIcon = {card.Id, "HasIcon"},
         .BarHidden = {card.Bar, "Hidden"},
     };
 }
@@ -71,14 +65,12 @@ struct ToastWriters
 {
     VoltMod::TextVar Title;
     VoltMod::TextVar Description;
-    VoltMod::ClassChoice Accent;
     VoltMod::ClassFlag Show;
 };
 
 static constexpr ToastWriters ToastPanel{
     .Title = {Screen::RootId, Screen::ToastTitleVar},
     .Description = {Screen::RootId, Screen::ToastDescriptionVar},
-    .Accent = {Screen::ToastAccent, Screen::AccentClasses},
     .Show = {Screen::Toast, "Show"},
 };
 
@@ -123,10 +115,10 @@ bool Hud::SetCard(HudCard card, int slot, const CardView& view)
     w.Set(writers->Subtitle, view.Subtitle);
     w.Set(writers->Value, view.Value);
     w.Set(writers->Icon, view.Icon.empty() ? ClassChoice::None : writers->Icon.Find(view.Icon));
+    w.Set(writers->HasIcon, !view.Icon.empty());
     w.Set(writers->BarHidden, view.BarStep < 0);
     if (view.BarStep >= 0)
         w.Set(writers->Bar, std::clamp(view.BarStep, 0, writers->Bar.Count() - 1));
-    w.Set(writers->Accent, static_cast<int>(view.Accent));
     w.Set(writers->Hidden, false);
     return true;
 }
@@ -149,7 +141,6 @@ void Hud::Toast(int slot, const ToastView& view)
     const VoltMod::UiPanelWriter w{_screen.Panel(), slot};
     w.Set(ToastPanel.Title, view.Title);
     w.Set(ToastPanel.Description, view.Description);
-    w.Set(ToastPanel.Accent, static_cast<int>(view.Accent));
     w.Set(ToastPanel.Show, true);
 
     const int duration = view.DurationMs > 0 ? view.DurationMs : _config.Get().ui.toastDurationMs;
@@ -180,7 +171,7 @@ void Hud::WriteServerCard()
         _rt.Translations.Get("hud.online", std::map<std::string, std::string>{{"count", std::to_string(online)}});
 
     SetCard(Contracts::ServerCard, Contracts::Everyone,
-            {.Title = _config.Get().ui.serverName, .Subtitle = subtitle, .Accent = Contracts::HudAccent::Info});
+            {.Title = _config.Get().ui.serverName, .Subtitle = subtitle});
 }
 
 }  // namespace Ui

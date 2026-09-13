@@ -24,17 +24,10 @@ namespace AdminSystem::Menus
 {
 
 /**
- * @brief The admin menu drawn on this plugin's own Panorama screen, clicked rather than typed.
+ * @brief The admin menu on this plugin's Panorama screen, clicked rather than typed.
  *
- * A @ref VoltMod::MenuSurface like the framework's, so the same MenuBuilder rows, ActionRows and
- * Flow steps run against it unchanged. The stack, the breadcrumb, how a row describes itself and
- * how a stepped value is held back are the framework's @ref VoltMod::MenuStack, shared with the
- * center-HTML menu. What is this plugin's own is the shape: a tab strip over the root menu's
- * submenus, a fixed page of rows, and the click ids that address them.
- *
- * Each player gets a private panel, so a spectator sees their own menu rather than the one
- * belonging to the pawn they are watching. A player who cannot be drawn to is refused by the
- * three-argument @ref Open, which is the caller's cue to fall back to center HTML.
+ * A @ref VoltMod::MenuSurface over the shared @ref VoltMod::MenuStack, so the same rows run on it
+ * and on center HTML. Each player gets a private panel, so a spectator sees their own menu.
  */
 class PanoramaMenu final : public VoltMod::MenuSurface
 {
@@ -46,14 +39,10 @@ public:
      *  have the layout. A zero id requires nothing, for a client compiled into by hand. */
     void Start(bool enabled, uint64_t addonId);
 
-    /** Whether a session opened now for @p slot would be drawn here.
-     *
-     *  Spawns the player's panel to find out, so a caller that builds rows against this surface
-     *  before opening gets the same answer the open will. Cheap after the first call. */
+    /** Whether a session opened now for @p slot would be drawn here. Spawns the panel to find out. */
     [[nodiscard]] bool CanDraw(int slot);
 
-    /** Start a session for @p slot showing @p menu, replacing any it has open. What a command
-     *  calls. False when the panel could not be shown, so the caller can use center HTML instead. */
+    /** Start a session for @p slot showing @p menu. False means fall back to center HTML. */
     bool Open(int slot, std::shared_ptr<VoltMod::Menu> menu, VoltMod::MenuOptions options);
 
     [[nodiscard]] bool IsOpen(int slot) const;
@@ -66,25 +55,22 @@ public:
     [[nodiscard]] std::string Translate(int slot, std::string_view key, std::string_view fallback) const override;
 
 private:
-    /** One tab of the strip: which root row it opens, and the label that row described itself
-     *  with when the session started. */
+    /** A sidebar tab and the root row it opens, read once when the session starts. */
     struct Tab
     {
         int RootIndex;
         std::string Label;
+        std::string Icon;
     };
 
-    /** What this surface adds on top of the shared stack: where the player is on screen. */
     struct Session
     {
-        /** The root menu's submenu rows, in tab order. */
         std::vector<Tab> Tabs;
         /** The tab the open branch was entered through, or -1. */
         int SelectedTab = -1;
         int Page = 0;
     };
 
-    /** The menu item shown on @p row of the page @p slot is on. */
     [[nodiscard]] int ItemAt(int slot, int row) const;
 
     void Draw(int slot);
@@ -106,13 +92,10 @@ private:
     void Hide(int slot);
 
     VoltMod::Runtime& _rt;
-    /** False until Start turns the surface on. */
     bool _enabled = false;
-    /** The addon requirement, kept for as long as this plugin is loaded. */
+    /** The addon requirement, held while the plugin is loaded. */
     VoltMod::Subscription _addon;
-    /** The half every menu surface shares: stack, breadcrumb, Describe, Activate and Step. */
     VoltMod::MenuStack _stack;
-    /** One panel per player: a spectating admin must see their own menu, not the pawn's. */
     VoltMod::Screen _screen{_rt.Ui, _rt.Slots, AdminUi::Menu::Layout, AdminUi::Menu::RootId};
     VoltMod::PerSlot<Session> _sessions;
     /** Declared last: click delivery drops before the state it touches. */
