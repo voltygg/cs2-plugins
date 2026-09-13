@@ -11,8 +11,9 @@
     // JSON and CSS
     "esbenp.prettier-vscode",
 
-    // Panorama XML layouts
+    // Panorama XML layouts and their Jinja templates
     "redhat.vscode-xml",
+    "samuelcolvin.jinjahtml",
 
     // Database
     "mtxr.sqltools"

@@ -4,12 +4,12 @@
 
     Block CSS is included first and carries layout only; everything below is colour, size and
     state. Panorama CSS is flat: no nesting, no flexbox, `flow-children` for layout. -#}
-{% include "dialog.css" %}
-{% include "listrow.css" %}
-{% include "tabs.css" %}
-{% include "pager.css" %}
-{% include "button.css" %}
-{% import "accent.css" as accent %}
+{% include "dialog.css.j2" %}
+{% include "listrow.css.j2" %}
+{% include "tabs.css.j2" %}
+{% include "pager.css.j2" %}
+{% include "button.css.j2" %}
+{% import "accent.css.j2" as accent %}
 
 .Layer {
   width: 100%;

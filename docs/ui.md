@@ -9,7 +9,7 @@ own the workshop addon list.
 | Path | What |
 | --- | --- |
 | `plugins/<name>/panorama/screens/*.xml.j2` | One screen layout, Jinja over the framework's block library |
-| `plugins/<name>/panorama/screens/*.css` | That screen's own stylesheet, also Jinja |
+| `plugins/<name>/panorama/screens/*.css.j2` | That screen's own stylesheet, also Jinja |
 | `plugins/<name>/panorama/images/custom_game/<set>/*.png` | Icon sets the screen's blocks reference |
 | `build/panorama/<owner>/` | Rendered layout, stylesheet and icons - not committed |
 | `build/panorama/ui/include/Ui/Cs2Hud.hpp` | The HUD's derived C++ binding - not committed |

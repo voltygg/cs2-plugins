@@ -25,7 +25,7 @@ inline constexpr int HudCardCount = 3;
 inline constexpr HudCard ServerCard = HudCard::First;
 
 /** Colour of a card's edge or a toast's stripe. The order is checked against the ui plugin's
- *  screen (`Cs2Ui::Hud::AccentNames`, from `panorama/screens/cs2_hud.css`) at compile time in
+ *  screen (`Cs2Ui::Hud::AccentNames`, from `panorama/screens/cs2_hud.css.j2`) at compile time in
  *  Hud.cpp, so the two must be reordered together. */
 enum class HudAccent : int
 {
