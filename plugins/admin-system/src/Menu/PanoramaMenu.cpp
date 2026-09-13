@@ -10,7 +10,6 @@
 using VoltMod::Capability;
 using VoltMod::Menu;
 using VoltMod::UiClick;
-using VoltMod::UiPanel;
 
 namespace AdminSystem::Menus
 {
@@ -84,14 +83,16 @@ void PanoramaMenu::Start(bool enabled, uint64_t addonId)
         if (auto required = _rt.Addons.Require(addonId))
             _addon = std::move(*required);
         else
-            VoltMod::Log::Warn("Admin menu: addon {} not required ({}); clients without the layout "
-                               "will see nothing.",
-                               addonId, required.error().Detail);
+            VoltMod::Log::Warn(
+                "Admin menu: addon {} not required ({}); clients without the layout "
+                "will see nothing.",
+                addonId, required.error().Detail);
     }
     else
     {
-        VoltMod::Log::Warn("Admin menu: Panorama with no addon required. Only a client you "
-                           "compiled the layout into can see it.");
+        VoltMod::Log::Warn(
+            "Admin menu: Panorama with no addon required. Only a client you "
+            "compiled the layout into can see it.");
     }
 
     _enabled = true;
@@ -120,8 +121,7 @@ bool PanoramaMenu::CanDraw(int slot)
     if (_rt.Addons.HasPending(slot))
         return false;
 
-    UiPanel& panel = _screen.Panel(slot);
-    return panel && panel.Prepare(slot);
+    return _screen.Panel(slot).Prepare(slot);
 }
 
 bool PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptions options)
@@ -144,8 +144,7 @@ bool PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptio
     {
         if (static_cast<int>(session.Tabs.size()) >= TabCount)
             break;
-        if (VoltMod::MenuRow described = _stack.Describe(slot, index);
-            described.Kind == VoltMod::MenuRowKind::Submenu)
+        if (VoltMod::MenuRow described = _stack.Describe(slot, index); described.Kind == VoltMod::MenuRowKind::Submenu)
             session.Tabs.push_back({.RootIndex = index, .Label = std::move(described.Label)});
     }
 
