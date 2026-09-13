@@ -5,6 +5,7 @@
 
 #include <VoltMod/Core/Scheduler.hpp>
 #include <VoltMod/Database/Api.hpp>
+#include <cstdint>
 #include <doctest/doctest.h>
 #include <filesystem>
 #include <string>
@@ -97,7 +98,7 @@ TEST_CASE("An insert that supplies only the required columns is accepted")
         auto id = db.Run("minimal-punishment", [](auto& conn) {
             const Tables::Punishments t;
             return VoltMod::Insert(conn,
-                                   sqlpp::insert_into(t).set(t.kind = "ban", t.targetSteamId = 76561198000000000LL,
+                                   sqlpp::insert_into(t).set(t.kind = "ban", t.targetSteamId = int64_t{76561198000000000},
                                                              t.targetName = "someone", t.adminName = "console",
                                                              t.reason = "testing"),
                                    "punishments");
