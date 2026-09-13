@@ -478,7 +478,7 @@ wheels = [
 [[package]]
 name = "voltmod"
 version = "1.3.0"
-source = { git = "https://github.com/voltygg/voltmod.git?rev=main#79c3f4ff4f928c4bff369184eb9f64c8bbc8f46b" }
+source = { git = "https://github.com/voltygg/voltmod.git?rev=main#5fbd5b58e6c94c8aa3a6335c1a2014d6397de29d" }
 dependencies = [
     { name = "clang-format" },
     { name = "cmake" },
@@ -486,6 +486,6 @@ dependencies = [
     { name = "jinja2" },
     { name = "ninja" },
     { name = "pyparsing" },
-    { name = "pyyaml" },
+    { name = "python-dotenv" },
     { name = "typer" },
 ]
