@@ -1,3 +1,4 @@
+{% import "icons.css.j2" as icons %}
 {% from "admin_menu/icons.j2" import ICONS %}
 
 .Sidebar {
@@ -47,8 +48,6 @@
   flow-children: right;
   border-radius: 10px;
   background-color: rgba(255, 255, 255, 0);
-  transition-property: pre-transform-scale2d;
-  transition-duration: 0.12s;
 }
 
 .Tab:hover {
@@ -63,34 +62,26 @@
   background-color: gradient(linear, 0% 0%, 100% 0%, from(#e1273c), to(#8f1a29));
 }
 
-.Tab-icon {
+.Tab .Icons {
   width: 20px;
   height: 20px;
   vertical-align: center;
   margin-right: 12px;
 }
 
-.Tab-icon Image {
-  width: 100%;
-  height: 100%;
+.Tab .Icons Image {
   wash-color: #74747e;
-  visibility: collapse;
 }
 
-.Tab:hover .Tab-icon Image {
+.Tab:hover .Icons Image {
   wash-color: #e6e6ea;
 }
 
-.Tab.Selected .Tab-icon Image {
+.Tab.Selected .Icons Image {
   wash-color: #ffffff;
 }
 
-/* The driver writes Icon--<name> on the holder, which uncovers the matching image. */
-{% for name, _ in ICONS %}
-.Icon--{{name}} .Icon--{{name}} {
-  visibility: visible;
-}
-{% endfor %}
+{{ icons.show_rules(ICONS) }}
 
 .Tab-label {
   width: fill-parent-flow(1);

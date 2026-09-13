@@ -1,9 +1,11 @@
 {# namespace: AdminUi::Menu #}
 {% import "button.xml.j2" as controls %}
+{% import "icons.xml.j2" as icons %}
+{% import "listrow.xml.j2" as list %}
 {% from "admin_menu/icons.j2" import ICONS %}
 
 {%- set ROWS = 8 %}
-{%- set TABS = 8 %}
+{%- set TABS = 6 %}
 
 <root>
   <styles>
@@ -22,11 +24,7 @@
           <Panel class="Nav" hittest="true">
             {%- for index in range(TABS) %}
             <Button id="{{screen}}_tab{{index}}" class="Tab Hidden">
-              <Panel id="{{screen}}_tab{{index}}_icon" class="Tab-icon" hittest="false">
-                {%- for name, game_icon in ICONS %}
-                <Image class="Icon--{{name}}" src="s2r://panorama/images/icons/ui/{{game_icon}}.vsvg" textureheight="32" hittest="false" />
-                {%- endfor %}
-              </Panel>
+              {{ icons.icons("tab" ~ index ~ "_icon", ICONS) | indent(14) }}
               <Label class="Tab-label" text="{s:tab{{index}}}" hittest="false" />
             </Button>
             {%- endfor %}
@@ -42,33 +40,12 @@
             </Panel>
             <Button id="{{screen}}_close" class="IconBtn">
               <Image class="IconBtn-image" src="s2r://panorama/images/icons/ui/cancel.vsvg" textureheight="32" hittest="false" />
-              <Label class="IconBtn-label" text="{s:close}" hittest="false" />
             </Button>
           </Panel>
 
           <Panel class="Rows" hittest="true">
             {%- for row in range(ROWS) %}
-            <Panel id="{{screen}}_row{{row}}" class="Row Hidden" hittest="true">
-              <Button id="{{screen}}_row{{row}}_btn" class="Row-hit">
-                <Panel class="Row-body" hittest="false">
-                  <Label class="Row-label" text="{s:row{{row}}_label}" hittest="false" />
-                  <Label class="Row-hint" text="{s:row{{row}}_hint}" hittest="false" />
-                </Panel>
-                <Label class="Row-value" text="{s:row{{row}}_value}" hittest="false" />
-                <Panel class="Switch" hittest="false">
-                  <Panel class="Switch-knob" hittest="false" />
-                </Panel>
-                <Label class="Row-chevron" text="&#8250;" hittest="false" />
-              </Button>
-              <Panel class="Steppers" hittest="true">
-                <Button id="{{screen}}_row{{row}}_dec" class="Stepper">
-                  <Label class="Stepper-glyph" text="&#9664;" hittest="false" />
-                </Button>
-                <Button id="{{screen}}_row{{row}}_inc" class="Stepper">
-                  <Label class="Stepper-glyph" text="&#9654;" hittest="false" />
-                </Button>
-              </Panel>
-            </Panel>
+            {{ list.listrow("row" ~ row, switch=true, hint=true, steppers=true, chevron=true) | indent(12) }}
             {%- endfor %}
             <Label id="{{screen}}_empty" class="Empty Hidden" text="{s:empty}" hittest="false" />
           </Panel>

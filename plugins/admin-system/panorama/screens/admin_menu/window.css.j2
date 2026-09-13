@@ -12,19 +12,24 @@
   transition-timing-function: ease-out;
 }
 
+.Hidden {
+  visibility: collapse;
+}
+
 /* Collapse as well as fade: a transparent panel still takes clicks. */
 .Screen.Hidden {
-  visibility: collapse;
   opacity: 0;
 }
 
-.Tab.Hidden,
-.Row.Hidden,
-.Empty.Hidden,
-.Pager.Hidden,
-.Prompt.Hidden,
-.Subtitle.Hidden {
-  visibility: collapse;
+/* Pressed buttons shrink a touch; each sets its own scale on :active. */
+.Btn,
+.Tab,
+.IconBtn,
+.Row-hit,
+.Stepper,
+.Pager-arrow {
+  transition-property: pre-transform-scale2d;
+  transition-duration: 0.12s;
 }
 
 .Window {
@@ -95,8 +100,6 @@
   height: 36px;
   border-radius: 10px;
   background-color: #1c1c23;
-  transition-property: pre-transform-scale2d;
-  transition-duration: 0.12s;
 }
 
 .IconBtn:hover {
@@ -117,9 +120,4 @@
 
 .IconBtn:hover .IconBtn-image {
   wash-color: #ffffff;
-}
-
-/* The driver writes the word for center HTML; here the icon says it. */
-.IconBtn-label {
-  visibility: collapse;
 }

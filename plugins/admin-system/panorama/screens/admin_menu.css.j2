@@ -1,4 +1,8 @@
-{#- The admin menu in meat.gg's colours: flat dark surfaces, ignite red for hover and selection. -#}
+{#- The admin menu in meat.gg's colours: flat dark surfaces, red for hover and selection.
+    Framework blocks come first and set only layout; the partials after them set size and colour. -#}
+{% include "button.css.j2" %}
+{% include "icons.css.j2" %}
+{% include "listrow.css.j2" %}
 {% include "admin_menu/window.css.j2" %}
 {% include "admin_menu/sidebar.css.j2" %}
 {% include "admin_menu/rows.css.j2" %}

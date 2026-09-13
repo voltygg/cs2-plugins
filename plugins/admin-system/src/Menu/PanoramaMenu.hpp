@@ -60,7 +60,8 @@ private:
     {
         int RootIndex;
         std::string Label;
-        std::string Icon;
+        /** An index into AdminUi::Menu::IconClasses, or ClassChoice::None. */
+        int Icon;
     };
 
     struct Session

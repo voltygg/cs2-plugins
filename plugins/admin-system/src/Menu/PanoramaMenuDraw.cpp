@@ -2,13 +2,11 @@
 
 #include <VoltMod/Core/Slot.hpp>
 #include <algorithm>
-#include <array>
 #include <cstddef>
 #include <format>
 #include <string>
 #include <string_view>
 
-using VoltMod::ClassChoice;
 using VoltMod::Menu;
 using VoltMod::MenuRow;
 using VoltMod::MenuRowKind;
@@ -16,9 +14,6 @@ using VoltMod::UiPanel;
 
 namespace AdminSystem::Menus
 {
-
-/** VoltMod::MenuRowKind, indexed by enumerator, as the stylesheet's `Kind--<name>` classes spell it. */
-static constexpr std::array<std::string_view, 6> KindNames{"text", "button", "submenu", "toggle", "choice", "input"};
 
 void PanoramaMenu::Draw(int slot)
 {
@@ -33,10 +28,8 @@ void PanoramaMenu::Draw(int slot)
     DrawRows(w, *menu);
     DrawPrompt(w);
 
-    // The two footer buttons say what they do: a submenu goes back, a root menu closes.
     const bool deep = _stack.Depth(slot) > 1;
     w.Set(Shell.Back, Translate(slot, deep ? "nav.back" : "nav.root", deep ? "Back" : "Main"));
-    w.Set(Shell.Close, Translate(slot, "nav.close", "Close"));
     w.Set(Shell.Cancel, Translate(slot, "menu.cancel", "Cancel"));
 }
 
@@ -69,7 +62,7 @@ void PanoramaMenu::DrawTabs(const VoltMod::UiPanelWriter& w)
 
         const Tab& shown = session.Tabs[static_cast<std::size_t>(tab)];
         w.Set(ids.Label, shown.Label);
-        w.Set(ids.Icon, shown.Icon.empty() ? ClassChoice::None : ids.Icon.Find(shown.Icon));
+        w.Set(ids.Icon, shown.Icon);
         w.Set(ids.Selected, tab == session.SelectedTab);
     }
 }
@@ -106,6 +99,7 @@ void PanoramaMenu::DrawRows(const VoltMod::UiPanelWriter& w, const Menu& menu)
 void PanoramaMenu::DrawRow(const VoltMod::UiPanelWriter& w, int row, const MenuRow& described)
 {
     const RowWriters& ids = Rows[static_cast<std::size_t>(row)];
+    const bool toggle = described.Kind == MenuRowKind::Toggle;
 
     w.Set(ids.Hidden, false);
     w.Set(ids.Label, described.Label);
@@ -113,11 +107,11 @@ void PanoramaMenu::DrawRow(const VoltMod::UiPanelWriter& w, int row, const MenuR
     w.Set(ids.HasValue, !described.Value.empty());
     w.Set(ids.Disabled, !described.Enabled);
     w.Set(ids.On, described.State.value_or(false));
-    w.Set(ids.Kind, ids.Kind.Find(KindNames[static_cast<std::size_t>(described.Kind)]));
+    w.Set(ids.Toggle, toggle);
+    w.Set(ids.HasChevron, described.Kind == MenuRowKind::Submenu || described.Kind == MenuRowKind::Input);
 
     // A toggle flips on a click, so its switch is the whole control.
-    w.Set(ids.HasSteppers,
-          described.Steppable && described.Enabled && described.Kind != MenuRowKind::Toggle);
+    w.Set(ids.HasSteppers, described.Steppable && described.Enabled && !toggle);
 
     // The hint line doubles as the "not applied yet" note.
     w.Set(ids.HasHint, described.Pending);

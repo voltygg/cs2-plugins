@@ -138,11 +138,13 @@ bool PanoramaMenu::Open(int slot, std::shared_ptr<Menu> menu, VoltMod::MenuOptio
     const Menu* root = _stack.Root(slot);
     for (int index = 0; root && index < static_cast<int>(root->Items.size()); ++index)
     {
-        if (static_cast<int>(session.Tabs.size()) >= TabCount)
+        const auto tab = session.Tabs.size();
+        if (static_cast<int>(tab) >= TabCount)
             break;
         if (VoltMod::MenuRow described = _stack.Describe(slot, index); described.Kind == VoltMod::MenuRowKind::Submenu)
-            session.Tabs.push_back(
-                {.RootIndex = index, .Label = std::move(described.Label), .Icon = std::move(described.Icon)});
+            session.Tabs.push_back({.RootIndex = index,
+                                    .Label = std::move(described.Label),
+                                    .Icon = Tabs[tab].Icon.Find(described.Icon)});
     }
 
     _rt.Freeze.Open(slot, options.FreezeMovement);

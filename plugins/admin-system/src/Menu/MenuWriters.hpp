@@ -25,7 +25,8 @@ struct RowWriters
     VoltMod::ClassFlag HasSteppers;
     VoltMod::ClassFlag On;
     VoltMod::ClassFlag Changed;
-    VoltMod::ClassChoice Kind;
+    VoltMod::ClassFlag Toggle;
+    VoltMod::ClassFlag HasChevron;
 };
 
 constexpr RowWriters MakeRow(const AdminUi::Menu::Row& row)
@@ -42,7 +43,8 @@ constexpr RowWriters MakeRow(const AdminUi::Menu::Row& row)
         .HasSteppers = {row.Id, "HasSteppers"},
         .On = {row.Id, "On"},
         .Changed = {row.Id, "Changed"},
-        .Kind = {row.Id, Screen::KindClasses},
+        .Toggle = {row.Id, "Toggle"},
+        .HasChevron = {row.Id, "HasChevron"},
     };
 }
 
@@ -81,7 +83,6 @@ struct ShellWriters
     VoltMod::TextVar PromptText{AdminUi::Menu::RootId, AdminUi::Menu::PromptTextVar};
     VoltMod::TextVar PromptHint{AdminUi::Menu::RootId, AdminUi::Menu::PromptHintVar};
     VoltMod::TextVar Back{AdminUi::Menu::RootId, AdminUi::Menu::BackVar};
-    VoltMod::TextVar Close{AdminUi::Menu::RootId, AdminUi::Menu::CloseVar};
     VoltMod::TextVar Cancel{AdminUi::Menu::RootId, AdminUi::Menu::CancelVar};
 
     VoltMod::ClassFlag SubtitleHidden{AdminUi::Menu::Subtitle, "Hidden"};

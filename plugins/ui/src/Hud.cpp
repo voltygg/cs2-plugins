@@ -14,7 +14,6 @@
 using Contracts::CardView;
 using Contracts::HudCard;
 using Contracts::ToastView;
-using VoltMod::ClassChoice;
 
 namespace Ui
 {
@@ -114,7 +113,7 @@ bool Hud::SetCard(HudCard card, int slot, const CardView& view)
     w.Set(writers->Title, view.Title);
     w.Set(writers->Subtitle, view.Subtitle);
     w.Set(writers->Value, view.Value);
-    w.Set(writers->Icon, view.Icon.empty() ? ClassChoice::None : writers->Icon.Find(view.Icon));
+    w.Set(writers->Icon, writers->Icon.Find(view.Icon));
     w.Set(writers->HasIcon, !view.Icon.empty());
     w.Set(writers->BarHidden, view.BarStep < 0);
     if (view.BarStep >= 0)
