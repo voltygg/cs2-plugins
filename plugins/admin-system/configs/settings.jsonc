@@ -40,12 +40,42 @@
     // Quick Punish presets; invalid entries are logged and skipped.
     // duration: "perm"/"0" for permanent, else <n>s / <n>m / <n>h / <n>d (bare = seconds).
     "templates": [
-      { "name": "Cheating", "type": "ban", "duration": "perm", "reason": "Cheating" },
-      { "name": "Griefing", "type": "ban", "duration": "1d", "reason": "Team damage / griefing" },
-      { "name": "Mic spam", "type": "voiceMute", "duration": "30m", "reason": "Mic spam" },
-      { "name": "Toxic voice", "type": "voiceMute", "duration": "2h", "reason": "Toxic behavior in voice" },
-      { "name": "Chat spam", "type": "textMute", "duration": "30m", "reason": "Chat spam" },
-      { "name": "Toxic chat", "type": "textMute", "duration": "2h", "reason": "Toxic behavior in chat" }
+      {
+        "name": "Cheating",
+        "type": "ban",
+        "duration": "perm",
+        "reason": "Cheating"
+      },
+      {
+        "name": "Griefing",
+        "type": "ban",
+        "duration": "1d",
+        "reason": "Team damage / griefing"
+      },
+      {
+        "name": "Mic spam",
+        "type": "voiceMute",
+        "duration": "30m",
+        "reason": "Mic spam"
+      },
+      {
+        "name": "Toxic voice",
+        "type": "voiceMute",
+        "duration": "2h",
+        "reason": "Toxic behavior in voice"
+      },
+      {
+        "name": "Chat spam",
+        "type": "textMute",
+        "duration": "30m",
+        "reason": "Chat spam"
+      },
+      {
+        "name": "Toxic chat",
+        "type": "textMute",
+        "duration": "2h",
+        "reason": "Toxic behavior in chat"
+      }
     ],
     // Manual-flow presets; the menu also adds `Custom...`.
     "reasonPresets": [
@@ -169,7 +199,7 @@
     "panorama": false,
     // Workshop addon carrying that layout, required of every connecting client. 0 requires
     // nothing, which is what you want against a client you compiled into by hand.
-    "addonId": 0
+    "addonId": 3801580041
   },
   "weapons": {
     // Offered by !give and Control > Give weapon. `item` is the entity classname; anything not
