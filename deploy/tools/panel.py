@@ -12,19 +12,15 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from contextlib import closing
 from typing import Any
 
 from . import inventory, render
 from .common import DEPLOY, die, load_server_env, repo_path
-from .rcon import RconClient
 
 MMS_BASE = os.environ.get("MMS_BASE", "https://mms.alliedmods.net/mmsdrop/2.0")
 # Cloudflare in front of many panels rejects urllib's default agent.
 USER_AGENT = "cs2-plugins-deploy"
 GAME_CSGO_LINE = re.compile(r"^([ \t]*)Game[ \t]+csgo[ \t]*(\r?)$", re.MULTILINE)
-RUNNING_PLUGIN_LINE = re.compile(r"^\s*\[\d+\]\s+(?!<)", re.MULTILINE)
-BROKEN_PLUGIN_STATUS = re.compile(r"<(ERROR|FAILED|REFUSED)>", re.IGNORECASE)
 SERVER_PAGE_PATH = re.compile(r"/server/([^/]+)/?")
 # Copied from an up-to-date dedicated server; refresh it when a CS2 update changes gameinfo.gi.
 GAMEINFO_TEMPLATE = DEPLOY / "templates" / "gameinfo.gi"
@@ -203,7 +199,6 @@ def deploy_server(server_id: str, package_dir: str, *, dry_run: bool) -> None:
     if removed := client.delete(f"{game_dir}/addons", unassigned + vdfs):
         print(f"    removed unassigned plugins: {' '.join(removed)}")
     _start(client)
-    _verify_plugins(server, instance, len(plugins))
     print(f"=== Deploy to {server_id} complete ===")
 
 
@@ -215,10 +210,9 @@ def update_server(server_id: str, *, dry_run: bool) -> None:
         print(f"DRY: restart {server_id} through {server['panel_url']}")
         return
     client = PanelClient(server)
-    instance = _only_instance(server)
+    _only_instance(server)
     _stop(client)
     _start(client)
-    _verify_plugins(server, instance, len(inventory.instance_plugins(server, instance)))
     print(f"=== Update for {server_id} complete ===")
 
 
@@ -251,34 +245,6 @@ def _start(client: PanelClient) -> None:
     print("    starting server")
     if not client.power("start", "running", 600):
         die("server did not reach `running` within 10 minutes; check the panel console")
-
-
-def _verify_plugins(
-    server: dict[str, Any], instance: dict[str, Any], expected: int, timeout: float = 300
-) -> None:
-    password = os.environ.get("RCON_PASSWORD")
-    if not password:
-        print("WARNING: RCON_PASSWORD is not set; skipping the plugin load check")
-        return
-    host, port = str(server["host"]), int(instance["port"])
-    listing = ""
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        try:
-            with closing(RconClient(host, port, password)) as rcon:
-                listing = rcon.execute("meta list")
-        except OSError:
-            listing = ""
-        if BROKEN_PLUGIN_STATUS.search(listing):
-            die(f"a plugin failed to load:\n{listing}")
-        if len(RUNNING_PLUGIN_LINE.findall(listing)) >= expected:
-            print(listing)
-            return
-        time.sleep(10)
-    die(
-        f"{expected} plugins did not load within {int(timeout)}s (RCON {host}:{port}); "
-        f"a CS2 update may have reset gameinfo.gi. Last `meta list`:\n{listing or '<none>'}"
-    )
 
 
 def _latest_metamod_url() -> str:

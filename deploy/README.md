@@ -210,8 +210,8 @@ instead of SSH, so it needs no runtime image, Docker or SSH key:
 
 It has exactly one instance, and `game_dir` defaults to `/game/csgo`. Its env
 file holds `PANEL_API_KEY` (panel → Account → API Credentials), the database
-password and `RCON_PASSWORD`. The map, GSLT, hostname and RCON password belong in
-the panel's Startup tab.
+password and, for `poe rcon` only, `RCON_PASSWORD`. The map, GSLT, hostname and
+RCON password belong in the panel's Startup tab.
 
 Some hosts link every server to one shared CS2 install, and the panel refuses to
 read those links. On such a server the deploy replaces `gameinfo.gi` with a
@@ -221,8 +221,9 @@ updated dedicated server into the template and deploy again.
 
 `deploy-server --server panel-a` stops the server, installs or refreshes
 Metamod, uploads the plugins, removes inventory plugins not assigned to the
-server, patches `gameinfo.gi`, starts the server, and waits until `meta list`
-over RCON shows every plugin loaded. `--dry-run` only reads from the panel.
+server, patches `gameinfo.gi`, and starts the server. It does not check that the
+plugins loaded; run `uv run poe rcon "meta list"` for that. `--dry-run` only
+reads from the panel.
 `deploy-update` restarts the server so the egg runs its SteamCMD update.
 
 Turn off the egg's validate-on-start option if it has one: validation restores
