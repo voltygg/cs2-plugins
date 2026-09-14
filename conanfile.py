@@ -17,8 +17,6 @@ class CS2PluginsConan(ConanFile):
         "*:shared": False,
         "openssl/*:no_apps": True,
         "openssl/*:no_fips": True,
-        # admin-system uses the Database module.
-        "voltmod/*:with_database": True,
     }
 
     def build_requirements(self):

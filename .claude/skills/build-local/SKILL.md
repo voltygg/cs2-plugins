@@ -93,9 +93,6 @@ Verify the load with `meta list` on the server console (see `rcon-debug`).
 
 ## Common failures
 
-- **`Library 'voltmod-database' not found in package`** - the framework package was
-  built without PostgreSQL. `uv run poe release build framework` includes it; a hand-run
-  `poe build` in `vendor/voltmod` needs `-o "voltmod/*:with_database=True"`.
 - **Missing SDK binaries in the Conan cache** - `uv run poe release build sdk`
   from `vendor/voltmod`, in the dev shell. They are excluded from `--build=missing`.
 - **Lock names a recipe revision that no longer exists** (`nasm not in lockfile`,
