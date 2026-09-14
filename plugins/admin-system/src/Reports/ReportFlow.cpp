@@ -88,7 +88,7 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
     for (const auto& reason : app.Settings.GetReports().reasons)
         reasons.emplace_back(ReasonLabel(app, reason, reporterSlot), reason.code);
 
-    ReportFlowT::Create(app.Menus, reporterSlot, PendingReport{.Target = targetRef})
+    ReportFlowT::Create(app.Runtime.Menus, reporterSlot, PendingReport{.Target = targetRef})
         ->Validate([&app, reporterSlot](const PendingReport& p) { return ValidatePending(app, reporterSlot, p); })
         ->AddOptionsStep({.Title = translations.Get("report.selectReason", reporterSlot),
                           .Options = std::move(reasons),
@@ -149,7 +149,7 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
 
     // Reporters may press !report mid-round, where being held still would get them killed. The
     // rest of the flow pushes onto this session, so it stays unfrozen throughout.
-    app.Menus.Open(reporterSlot, std::move(menu), {.FreezeMovement = false});
+    app.Runtime.Menus.Start(reporterSlot, std::move(menu), {.FreezeMovement = false});
 }
 
 }  // namespace AdminSystem::Reports

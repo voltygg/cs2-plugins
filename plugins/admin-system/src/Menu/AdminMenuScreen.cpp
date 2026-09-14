@@ -1,142 +1,133 @@
 #include "Menu/AdminMenuScreen.hpp"
 
-#include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/Slot.hpp>
 #include <cstddef>
-#include <utility>
+#include <string>
 
+using VoltMod::MenuButton;
+using VoltMod::MenuButtonKind;
+using VoltMod::MenuHeader;
 using VoltMod::MenuRow;
 using VoltMod::MenuRowKind;
+using VoltMod::MenuTab;
 using VoltMod::Screen;
 
 namespace AdminSystem::Menus
 {
 
-/** The prefix every class in the generated IconClasses family carries. */
-static constexpr std::string_view IconClassPrefix = "Icon--";
-
-AdminMenuScreen::AdminMenuScreen(VoltMod::ScreenManager& screens) : _manager(screens) {}
+AdminMenuScreen::AdminMenuScreen(VoltMod::ScreenManager& screens)
+    : _screens(screens, std::string(AdminMenuLayout::Layout))
+{}
 
 bool AdminMenuScreen::Show(int slot)
 {
-    Screen& screen = ScreenFor(slot);
+    Screen& screen = _screens.For(slot);
     if (!screen.EnsureSpawned(slot))
         return false;
 
-    screen.SetClass(slot, AdminMenuLayout::RootId, "Hidden", false);
+    screen.SetHidden(slot, AdminMenuLayout::RootId, false);
     screen.ShowCursor(slot, true);
     return true;
 }
 
 void AdminMenuScreen::Hide(int slot)
 {
-    if (!VoltMod::IsValidSlot(slot) || !_screens[slot] || !*_screens[slot])
+    Screen* screen = _screens.Find(slot);
+    if (!screen || !*screen)
         return;
 
-    Screen& screen = *_screens[slot];
-    screen.ShowCursor(slot, false);
-    screen.SetClass(slot, AdminMenuLayout::RootId, "Hidden", true);
+    screen->ShowCursor(slot, false);
+    screen->SetHidden(slot, AdminMenuLayout::RootId, true);
 }
 
 void AdminMenuScreen::SetHeader(int slot, const MenuHeader& header)
 {
-    Screen& screen = ScreenFor(slot);
+    Screen& screen = _screens.For(slot);
     screen.SetText(slot, AdminMenuLayout::BrandVar, header.Brand);
     screen.SetText(slot, AdminMenuLayout::BrandSubtitleVar, header.BrandSubtitle);
     screen.SetText(slot, AdminMenuLayout::BreadcrumbVar, header.Breadcrumb);
     screen.SetText(slot, AdminMenuLayout::TitleVar, header.Title);
     screen.SetText(slot, AdminMenuLayout::SubtitleVar, header.Subtitle);
-    screen.SetClass(slot, AdminMenuLayout::Subtitle, "Hidden", header.Subtitle.empty());
+    screen.SetHidden(slot, AdminMenuLayout::Subtitle, header.Subtitle.empty());
 }
 
 void AdminMenuScreen::SetSidebarVisible(int slot, bool visible)
 {
-    ScreenFor(slot).SetClass(slot, AdminMenuLayout::RootId, "NoSidebar", !visible);
+    _screens.For(slot).SetClass(slot, AdminMenuLayout::RootId, "NoSidebar", !visible);
 }
 
-void AdminMenuScreen::SetTab(int slot, int index, std::string_view label, std::string_view icon, bool selected)
+void AdminMenuScreen::SetTab(int slot, int index, const MenuTab* tab)
 {
-    const AdminMenuLayout::Tab& tab = AdminMenuLayout::Tabs[static_cast<std::size_t>(index)];
-    Screen& screen = ScreenFor(slot);
+    const AdminMenuLayout::Tab& ids = AdminMenuLayout::Tabs[static_cast<std::size_t>(index)];
+    Screen& screen = _screens.For(slot);
 
-    screen.SetClass(slot, tab.Id, "Hidden", false);
-    screen.SetText(slot, tab.Var, label);
-    screen.SetClass(slot, tab.Id, "Selected", selected);
+    screen.SetHidden(slot, ids.Id, !tab);
+    if (!tab)
+        return;
+
+    screen.SetText(slot, ids.Var, tab->Label);
+    screen.SetClass(slot, ids.Id, "Selected", tab->Selected);
 
     // Every icon class is written, so the one a previous tab showed turns off.
-    for (std::string_view iconClass : AdminMenuLayout::IconClasses)
-        screen.SetClass(slot, tab.Icon, iconClass, iconClass.substr(IconClassPrefix.size()) == icon);
+    for (std::size_t icon = 0; icon < AdminMenuLayout::IconClasses.size(); ++icon)
+        screen.SetClass(slot, ids.Icon, AdminMenuLayout::IconClasses[icon],
+                        AdminMenuLayout::IconNames[icon] == tab->Icon);
 }
 
-void AdminMenuScreen::HideTab(int slot, int index)
-{
-    ScreenFor(slot).SetClass(slot, AdminMenuLayout::Tabs[static_cast<std::size_t>(index)].Id, "Hidden", true);
-}
-
-void AdminMenuScreen::SetRow(int slot, int index, const MenuRow& row, std::string_view pendingHint)
+void AdminMenuScreen::SetRow(int slot, int index, const MenuRow* row, std::string_view pendingHint)
 {
     const AdminMenuLayout::Row& ids = AdminMenuLayout::Rows[static_cast<std::size_t>(index)];
-    Screen& screen = ScreenFor(slot);
-    const bool toggle = row.Kind == MenuRowKind::Toggle;
+    Screen& screen = _screens.For(slot);
 
-    screen.SetClass(slot, ids.Id, "Hidden", false);
-    screen.SetText(slot, ids.LabelVar, row.Label);
-    screen.SetText(slot, ids.ValueVar, row.Value);
-    screen.SetClass(slot, ids.Id, "HasValue", !row.Value.empty());
-    screen.SetClass(slot, ids.Id, "Disabled", !row.Enabled);
-    screen.SetClass(slot, ids.Id, "On", row.State.value_or(false));
+    screen.SetHidden(slot, ids.Id, !row);
+    if (!row)
+        return;
+
+    const bool toggle = row->Kind == MenuRowKind::Toggle;
+    screen.SetText(slot, ids.LabelVar, row->Label);
+    screen.SetText(slot, ids.ValueVar, row->Value);
+    screen.SetClass(slot, ids.Id, "HasValue", !row->Value.empty());
+    screen.SetClass(slot, ids.Id, "Disabled", !row->Enabled);
+    screen.SetClass(slot, ids.Id, "On", row->State.value_or(false));
     screen.SetClass(slot, ids.Id, "Toggle", toggle);
-    screen.SetClass(slot, ids.Id, "HasChevron", row.Kind == MenuRowKind::Submenu || row.Kind == MenuRowKind::Input);
+    screen.SetClass(slot, ids.Id, "HasChevron", row->Kind == MenuRowKind::Submenu || row->Kind == MenuRowKind::Input);
     // A toggle flips on a press, so its switch is the whole control.
-    screen.SetClass(slot, ids.Id, "HasSteppers", row.Steppable && row.Enabled && !toggle);
-    screen.SetClass(slot, ids.Id, "Pending", row.Pending);
-    if (row.Pending)
+    screen.SetClass(slot, ids.Id, "HasSteppers", row->Steppable && row->Enabled && !toggle);
+    screen.SetClass(slot, ids.Id, "Pending", row->Pending);
+    if (row->Pending)
         screen.SetText(slot, ids.HintVar, pendingHint);
-}
-
-void AdminMenuScreen::HideRow(int slot, int index)
-{
-    ScreenFor(slot).SetClass(slot, AdminMenuLayout::Rows[static_cast<std::size_t>(index)].Id, "Hidden", true);
 }
 
 void AdminMenuScreen::SetEmpty(int slot, std::string_view text)
 {
-    Screen& screen = ScreenFor(slot);
+    Screen& screen = _screens.For(slot);
     screen.SetText(slot, AdminMenuLayout::EmptyVar, text);
-    screen.SetClass(slot, AdminMenuLayout::Empty, "Hidden", text.empty());
+    screen.SetHidden(slot, AdminMenuLayout::Empty, text.empty());
 }
 
 void AdminMenuScreen::SetPager(int slot, std::string_view text)
 {
-    Screen& screen = ScreenFor(slot);
+    Screen& screen = _screens.For(slot);
     screen.SetText(slot, AdminMenuLayout::PageVar, text);
-    screen.SetClass(slot, AdminMenuLayout::Page, "Hidden", text.empty());
+    screen.SetHidden(slot, AdminMenuLayout::Page, text.empty());
 }
 
-void AdminMenuScreen::ShowPrompt(int slot, std::string_view text, std::string_view hint)
+void AdminMenuScreen::SetPrompt(int slot, std::string_view text, std::string_view hint)
 {
-    Screen& screen = ScreenFor(slot);
+    Screen& screen = _screens.For(slot);
     screen.SetText(slot, AdminMenuLayout::PromptTextVar, text);
     screen.SetText(slot, AdminMenuLayout::PromptHintVar, hint);
-    screen.SetClass(slot, AdminMenuLayout::Prompt, "Hidden", false);
-    screen.SetClass(slot, AdminMenuLayout::RootId, "Prompting", true);
-}
-
-void AdminMenuScreen::HidePrompt(int slot)
-{
-    Screen& screen = ScreenFor(slot);
-    screen.SetClass(slot, AdminMenuLayout::Prompt, "Hidden", true);
-    screen.SetClass(slot, AdminMenuLayout::RootId, "Prompting", false);
+    screen.SetHidden(slot, AdminMenuLayout::Prompt, text.empty());
+    screen.SetClass(slot, AdminMenuLayout::RootId, "Prompting", !text.empty());
 }
 
 void AdminMenuScreen::SetFooter(int slot, std::string_view back, std::string_view cancel)
 {
-    Screen& screen = ScreenFor(slot);
+    Screen& screen = _screens.For(slot);
     screen.SetText(slot, AdminMenuLayout::BackVar, back);
     screen.SetText(slot, AdminMenuLayout::CancelVar, cancel);
 }
 
-std::optional<MenuButton> AdminMenuScreen::ButtonFor(std::string_view id)
+std::optional<MenuButton> AdminMenuScreen::ButtonFor(std::string_view id) const
 {
     if (id == AdminMenuLayout::Cancel)
         return MenuButton{MenuButtonKind::Cancel};
@@ -149,13 +140,13 @@ std::optional<MenuButton> AdminMenuScreen::ButtonFor(std::string_view id)
     if (id == AdminMenuLayout::PageNext)
         return MenuButton{MenuButtonKind::NextPage};
 
-    for (int index = 0; index < TabCount; ++index)
+    for (int index = 0; index < TabCount(); ++index)
     {
         if (id == AdminMenuLayout::Tabs[static_cast<std::size_t>(index)].Id)
             return MenuButton{MenuButtonKind::Tab, index};
     }
 
-    for (int index = 0; index < RowCount; ++index)
+    for (int index = 0; index < RowCount(); ++index)
     {
         const AdminMenuLayout::Row& row = AdminMenuLayout::Rows[static_cast<std::size_t>(index)];
         if (id == row.Button)
@@ -167,25 +158,6 @@ std::optional<MenuButton> AdminMenuScreen::ButtonFor(std::string_view id)
     }
 
     return std::nullopt;
-}
-
-Screen& AdminMenuScreen::ScreenFor(int slot)
-{
-    if (!VoltMod::IsValidSlot(slot))
-        return _empty;
-
-    std::optional<Screen>& screen = _screens[slot];
-    if (!screen)
-    {
-        auto created = _manager.ForPlayer(AdminMenuLayout::Layout, slot);
-        if (!created)
-        {
-            VoltMod::Log::Warn("Admin menu: no screen for slot {} ({}).", slot, created.error().Detail);
-            return _empty;
-        }
-        screen.emplace(std::move(*created));
-    }
-    return *screen;
 }
 
 }  // namespace AdminSystem::Menus

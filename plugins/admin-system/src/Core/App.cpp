@@ -213,7 +213,20 @@ bool App::Start()
         // Freeze the player while an admin menu is open, so navigating does not also walk them
         // around. The Panorama surface freezes its own sessions the same way.
         Runtime.Freeze.Enable(true);
-        Panorama.Start(Settings.GetMenu().panorama, Settings.GetMenu().addonId);
+        if (const auto& menu = Settings.GetMenu(); menu.panorama)
+        {
+            Panorama.emplace(VoltMod::PanoramaMenu::Services{.Scheduler = Runtime.Scheduler,
+                                                             .Slots = Runtime.Slots,
+                                                             .Freeze = Runtime.Freeze,
+                                                             .ChatInput = Runtime.Hooks.ChatInput,
+                                                             .Translations = Runtime.Translations,
+                                                             .Policy = Runtime.Policy,
+                                                             .Screens = Runtime.Screens,
+                                                             .Addons = Runtime.Addons,
+                                                             .Capabilities = Runtime.Capabilities},
+                             MenuScreen, menu.addonId);
+            PreferPanorama = Runtime.Menus.Prefer(*Panorama);
+        }
         return StageResult::Ok();
     });
 

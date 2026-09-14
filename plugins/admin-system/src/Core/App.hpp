@@ -14,16 +14,17 @@
 #include "Fun/FunMode.hpp"
 #include "Maps/MapCycleState.hpp"
 #include "Maps/VoteState.hpp"
-#include "Menu/MenuRouter.hpp"
-#include "Menu/PanoramaMenu.hpp"
+#include "Menu/AdminMenuScreen.hpp"
 #include "Punishments/PunishmentManager.hpp"
 #include "Reports/ReportManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/EffectManager.hpp>
+#include <VoltMod/Core/Subscription.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Menu/ActionRows.hpp>
+#include <VoltMod/Menu/PanoramaMenu.hpp>
 #include <VoltMod/Players/ActionDispatcher.hpp>
 #include <VoltMod/Players/EffectDispatcher.hpp>
 #include <memory>
@@ -65,7 +66,7 @@ struct App
                                     .Translations = Runtime.Translations,
                                     .Players = Runtime.Players,
                                     .Entities = Runtime.Entities,
-                                    .Menus = Menus,
+                                    .Menus = Runtime.Menus,
                                     .Effects = &Effects},
                                    admin, std::move(target));
     }
@@ -73,11 +74,11 @@ struct App
     VoltMod::Runtime& Runtime;
     const std::string Version;
 
-    /** The admin menu drawn on this plugin's Panorama layout. */
-    AdminSystem::Menus::PanoramaMenu Panorama{Runtime};
-    /** Where every menu opens and every row callback reaches: Panorama or center text, per session.
-     *  Declared early: menus are built against it. */
-    AdminSystem::Menus::MenuRouter Menus{Panorama, Runtime.Menus};
+    /** The admin menu layout, and the clickable menu drawn on it when settings turn Panorama on. */
+    Menus::AdminMenuScreen MenuScreen{Runtime.Screens};
+    std::optional<VoltMod::PanoramaMenu> Panorama;
+    /** Starts sessions on Panorama while held. Declared after it, so it lets go first. */
+    VoltMod::Subscription PreferPanorama;
 
     Config::ConfigManager Settings;
     /** Runs the action descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
