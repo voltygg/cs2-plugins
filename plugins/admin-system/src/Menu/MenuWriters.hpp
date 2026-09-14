@@ -90,6 +90,7 @@ struct ShellWriters
     VoltMod::ClassFlag PagerHidden{AdminUi::Menu::Page, "Hidden"};
     VoltMod::ClassFlag PromptHidden{AdminUi::Menu::Prompt, "Hidden"};
     VoltMod::ClassFlag Prompting{AdminUi::Menu::RootId, "Prompting"};
+    VoltMod::ClassFlag NoSidebar{AdminUi::Menu::RootId, "NoSidebar"};
 };
 
 inline constexpr ShellWriters Shell{};

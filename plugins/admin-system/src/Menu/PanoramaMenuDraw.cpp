@@ -52,6 +52,9 @@ void PanoramaMenu::DrawTabs(const VoltMod::UiPanelWriter& w)
 {
     const Session& session = _sessions[w.Slot()];
 
+    // Without tabs the sidebar would hold only a copy of the title.
+    w.Set(Shell.NoSidebar, session.Tabs.empty());
+
     for (int tab = 0; tab < TabCount; ++tab)
     {
         const TabWriters& ids = Tabs[static_cast<std::size_t>(tab)];

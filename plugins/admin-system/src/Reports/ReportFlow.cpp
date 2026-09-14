@@ -1,6 +1,5 @@
 #include "Reports/ReportFlow.hpp"
 
-#include "Admin/Menu/PlayerPicker.hpp"
 #include "Config/ReportSettings.hpp"
 #include "Core/App.hpp"
 #include "Reports/ReportManager.hpp"
@@ -9,6 +8,7 @@
 #include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -125,25 +125,27 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
     if (!reporter)
         return;
 
-    const int64_t reporterSteamId = reporter->SteamId();
-    auto menu = Admin::Menu::BuildPlayerPicker(
-        app, reporterSlot,
-        {.Title = app.Runtime.Translations.Get("report.selectTarget", reporterSlot),
-         .Pick = [&app, reporterSlot](VoltMod::PlayerRef target) { StartReportFlow(app, reporterSlot, target); },
-         // The framework picker lists every connected player, so ineligible targets are greyed out here
-         // rather than filtered out of the roster.
-         .Enabled =
-             [&app, reporterSlot, reporterSteamId](VoltMod::PlayerRef targetRef) {
-                 if (targetRef.Slot == reporterSlot)
-                     return false;
-                 auto* target = app.Runtime.Players.Get(targetRef);
-                 if (!target || target->IsBot())
-                     return false;
-                 return app.Reports.CanReport(reporterSteamId, target->SteamId());
-             }});
+    auto& translations = app.Runtime.Translations;
+    VoltMod::MenuBuilder builder(translations.Get("report.selectTarget", reporterSlot));
 
-    if (!menu)
-        return;
+    // Only reportable players are listed: a greyed-out row gives no reason when pressed.
+    int listed = 0;
+    for (auto* target : app.Runtime.Players.All())
+    {
+        if (target->Slot() == reporterSlot || target->IsBot() ||
+            !app.Reports.CanReport(reporter->SteamId(), target->SteamId()))
+            continue;
+
+        builder.Add(VoltMod::ButtonRow{
+            .Label = target->Name(),
+            .Activate = [&app, reporterSlot, ref = target->Ref()](int) { StartReportFlow(app, reporterSlot, ref); }});
+        ++listed;
+    }
+
+    if (listed == 0)
+        builder.Text(translations.Get("common.noPlayers", reporterSlot));
+
+    auto menu = builder.Build();
 
     // Reporters may press !report mid-round, where being held still would get them killed. The
     // rest of the flow pushes onto this session, so it stays unfrozen throughout.

@@ -10,6 +10,15 @@
   border-radius: 16px 0px 0px 16px;
 }
 
+/* A menu without tabs, such as the report picker, drops the sidebar and keeps the content width. */
+.Screen.NoSidebar .Sidebar {
+  visibility: collapse;
+}
+
+.Screen.NoSidebar .Window {
+  width: 684px;
+}
+
 .Brand {
   width: 100%;
   height: fit-children;
