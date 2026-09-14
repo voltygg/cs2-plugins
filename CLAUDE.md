@@ -46,7 +46,6 @@ plugins/admin-system/  Admins, punishments, menus, reports, Postgres/MariaDB/SQL
 plugins/anticheat/     Detection cores, engine adapters, responses
 plugins/bhop/          Bunnyhop modes
 plugins/contracts/     Interfaces shared between plugins
-plugins/ui/            Panorama HUD, published as Contracts::IUiHud
 deploy/                Docker deployment CLI
 docs/                  Development and deployment notes
 ```

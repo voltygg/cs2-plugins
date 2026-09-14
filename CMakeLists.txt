@@ -8,7 +8,6 @@ find_package(voltmod CONFIG REQUIRED)
 
 add_subdirectory(plugins/contracts)
 
-add_subdirectory(plugins/ui)
 add_subdirectory(plugins/admin-system)
 add_subdirectory(plugins/bhop)
 add_subdirectory(plugins/anticheat)
