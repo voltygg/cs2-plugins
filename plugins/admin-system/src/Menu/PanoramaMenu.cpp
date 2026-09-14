@@ -115,7 +115,7 @@ bool PanoramaMenu::CanDraw(int slot)
     }
 
     // A client still fetching the addon has no layout to draw the panel on yet.
-    if (_rt.Addons.HasPending(slot))
+    if (_rt.Addons.HasMissing(slot))
         return false;
 
     return _screen.Panel(slot).Prepare(slot);

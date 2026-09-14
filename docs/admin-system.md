@@ -202,12 +202,17 @@ plugin then requires it of every connecting client, and an admin still downloadi
 keeps center HTML until it lands.
 
 The layout is this plugin's own, under `panorama/screens/admin_menu.*`, built from
-the framework's block library and coloured from meat.gg's palette. Publish it with
-the rest of the addon content:
+the framework's block library and coloured from meat.gg's palette. To publish it:
 
-```bash
-uv run --project vendor/voltmod voltmod panorama publish build/workshop/cs2ui
-```
+1. Compile it into a Workshop Tools addon without touching your client:
+   `uv run poe panorama admin-system --addon meatgg_ui --no-deploy`
+2. Open that addon in the CS2 Workshop Tools, then the Workshop Manager, and submit it
+   as Public or Unlisted. A private item does not download for anyone else.
+3. Put the published id in `menu.addonId`. For prod that is
+   `plugins.admin-system.settings.menu` in `deploy/inventory.yml`.
+
+Before testing the download, delete the loose files `uv run poe panorama` copied
+into your client's `game/csgo/panorama/*/custom_game/`, or the client keeps using them.
 
 The player is frozen while a menu is open either way, so browsing does not also
 walk them around.
