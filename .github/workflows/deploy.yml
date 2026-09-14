@@ -65,9 +65,6 @@ jobs:
 
       # The action owns the Conan and compiler caches.
       - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
-        with:
-          voltmod-source: "@action"
-          conan-source: "@action"
 
       - name: Build Linux plugins
         run: voltmod build linux-steamrt-release
