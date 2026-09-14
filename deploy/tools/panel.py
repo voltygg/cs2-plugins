@@ -26,6 +26,8 @@ GAME_CSGO_LINE = re.compile(r"^([ \t]*)Game[ \t]+csgo[ \t]*(\r?)$", re.MULTILINE
 RUNNING_PLUGIN_LINE = re.compile(r"^\s*\[\d+\]\s+(?!<)", re.MULTILINE)
 BROKEN_PLUGIN_STATUS = re.compile(r"<(ERROR|FAILED|REFUSED)>", re.IGNORECASE)
 SERVER_PAGE_PATH = re.compile(r"/server/([^/]+)/?")
+# Copied from an up-to-date dedicated server; refresh it when a CS2 update changes gameinfo.gi.
+GAMEINFO_TEMPLATE = DEPLOY / "templates" / "gameinfo.gi"
 
 
 class PanelClient:
@@ -97,11 +99,20 @@ class PanelClient:
         self._call("POST", "/files/decompress", {"root": directory, "file": name})
         self._call("POST", "/files/delete", {"root": directory, "files": [name]})
 
+    def is_link(self, path: str) -> bool:
+        entry = self._entry(path)
+        return bool(entry and entry["is_symlink"])
+
     def _exists(self, path: str) -> bool:
+        return self._entry(path) is not None
+
+    def _entry(self, path: str) -> dict[str, Any] | None:
         directory, _, name = path.rpartition("/")
         listing = self._call("GET", "/files/list", query={"directory": directory}, missing_ok=True)
         entries = json.loads(listing)["data"] if listing else []
-        return any(entry["attributes"]["name"] == name for entry in entries)
+        return next(
+            (entry["attributes"] for entry in entries if entry["attributes"]["name"] == name), None
+        )
 
     def _call(
         self,
@@ -140,10 +151,16 @@ def deploy_server(server_id: str, package_dir: str, *, dry_run: bool) -> None:
         tar.add(render_dir / "addons", arcname="addons")
 
     gameinfo_path = f"{game_dir}/gameinfo.gi"
-    gameinfo = client.read(gameinfo_path)
-    if not gameinfo:
-        die(f"{gameinfo_path} not found on {server_id}; is CS2 installed and game_dir right?")
-    patched_gameinfo = add_metamod_search_path(gameinfo)
+    # Hosts that link every server to one shared CS2 install refuse to read those links.
+    linked_install = client.is_link(f"{game_dir}/steam.inf")
+    if linked_install:
+        gameinfo = ""
+        patched_gameinfo = add_metamod_search_path(GAMEINFO_TEMPLATE.read_bytes().decode())
+    else:
+        gameinfo = client.read(gameinfo_path)
+        if not gameinfo:
+            die(f"{gameinfo_path} not found on {server_id}; is CS2 installed and game_dir right?")
+        patched_gameinfo = add_metamod_search_path(gameinfo)
 
     metamod_stamp = f"{game_dir}/addons/metamod/.mms-build"
     installed_metamod = client.read(metamod_stamp).strip()
@@ -154,11 +171,19 @@ def deploy_server(server_id: str, package_dir: str, *, dry_run: bool) -> None:
     print(f"=== Deploying to {server_id} ({server['panel_url']}, state: {client.state()}) ===")
     print(f"    plugins:  {' '.join(plugins) or '<none>'} ({len(archive.getvalue()) // 1024} KiB)")
     print(f"    metamod:  {metamod}")
-    print(f"    gameinfo: {'patch' if patched_gameinfo != gameinfo else 'ok'}")
+    if linked_install:
+        print("    gameinfo: template")
+    else:
+        print(f"    gameinfo: {'patch' if patched_gameinfo != gameinfo else 'ok'}")
     if dry_run:
         print("=== Dry run complete; the server was not changed ===")
         return
 
+    # CS2 reads gameinfo.gi only at startup, so a failure here leaves the running server as it was.
+    if linked_install:
+        client.delete(game_dir, ["gameinfo.gi"])
+    if patched_gameinfo != gameinfo:
+        client.write(gameinfo_path, patched_gameinfo)
     _stop(client)
     if metamod != installed_metamod:
         print(f"    installing Metamod: {metamod}")
@@ -170,8 +195,6 @@ def deploy_server(server_id: str, package_dir: str, *, dry_run: bool) -> None:
     vdfs = [f"metamod/{name}.vdf" for name in unassigned]
     if removed := client.delete(f"{game_dir}/addons", unassigned + vdfs):
         print(f"    removed unassigned plugins: {' '.join(removed)}")
-    if patched_gameinfo != gameinfo:
-        client.write(gameinfo_path, patched_gameinfo)
     _start(client)
     _verify_plugins(server, instance, len(plugins))
     print(f"=== Deploy to {server_id} complete ===")

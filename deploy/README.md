@@ -211,6 +211,12 @@ file holds `PANEL_API_KEY` (panel → Account → API Credentials), the database
 password and `RCON_main`. The map, GSLT, hostname and RCON password belong in
 the panel's Startup tab.
 
+Some hosts link every server to one shared CS2 install, and the panel refuses to
+read those links. On such a server the deploy replaces `gameinfo.gi` with a
+patched copy of `deploy/templates/gameinfo.gi`, so it does not follow CS2
+updates on its own. When an update changes `gameinfo.gi`, copy the file from an
+updated dedicated server into the template and deploy again.
+
 `deploy-server --server panel-a` stops the server, installs or refreshes
 Metamod, uploads the plugins, removes inventory plugins not assigned to the
 server, patches `gameinfo.gi`, starts the server, and waits until `meta list`
