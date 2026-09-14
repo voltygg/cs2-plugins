@@ -1,6 +1,6 @@
-#include "Players.hpp"
+#include "Database/Repositories/Players.hpp"
 
-#include "../Tables/Schema.hpp"
+#include "Database/Tables/Schema.hpp"
 
 #include <VoltMod/Core/Time.hpp>
 

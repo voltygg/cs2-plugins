@@ -1,9 +1,9 @@
-#include "IssuePunishment.hpp"
+#include "Punishments/IssuePunishment.hpp"
 
-#include "../Admin/FreezeManager.hpp"
-#include "../Core/App.hpp"
-#include "../Core/ChatService.hpp"
-#include "PunishmentManager.hpp"
+#include "Admin/FreezeManager.hpp"
+#include "Core/App.hpp"
+#include "Core/ChatService.hpp"
+#include "Punishments/PunishmentManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <format>

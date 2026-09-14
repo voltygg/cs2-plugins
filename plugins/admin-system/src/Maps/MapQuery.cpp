@@ -1,4 +1,4 @@
-#include "MapQuery.hpp"
+#include "Maps/MapQuery.hpp"
 
 namespace AdminSystem::Maps
 {

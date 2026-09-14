@@ -1,4 +1,4 @@
-#include "InvalidCvarDetector.hpp"
+#include "Detectors/InvalidCvarDetector.hpp"
 
 #include "AntiCheatManager.hpp"
 

@@ -1,14 +1,14 @@
-#include "AdminMenu.hpp"
+#include "Admin/AdminMenu.hpp"
 
-#include "../Core/App.hpp"
-#include "../Plugin.hpp"
-#include "AdminManager.hpp"
-#include "Menu/AdminMenu_ChatSettings.hpp"
-#include "Menu/AdminMenu_Control.hpp"
-#include "Menu/AdminMenu_Effects.hpp"
-#include "Menu/AdminMenu_Fun.hpp"
-#include "Menu/AdminMenu_Map.hpp"
-#include "Menu/AdminMenu_Punish.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Admin/Menu/AdminMenu_ChatSettings.hpp"
+#include "Admin/Menu/AdminMenu_Control.hpp"
+#include "Admin/Menu/AdminMenu_Effects.hpp"
+#include "Admin/Menu/AdminMenu_Fun.hpp"
+#include "Admin/Menu/AdminMenu_Map.hpp"
+#include "Admin/Menu/AdminMenu_Punish.hpp"
+#include "Core/App.hpp"
+#include "Plugin.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>

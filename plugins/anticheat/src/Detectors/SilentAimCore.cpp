@@ -1,4 +1,4 @@
-#include "SilentAimCore.hpp"
+#include "Detectors/SilentAimCore.hpp"
 
 #include "Core/Geometry.hpp"
 #include "Core/WeaponClass.hpp"

@@ -1,7 +1,7 @@
-#include "AdminManager.hpp"
+#include "Admin/AdminManager.hpp"
 
-#include "../Config/ConfigManager.hpp"
-#include "../Database/Repositories/Admins.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Database/Repositories/Admins.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <algorithm>

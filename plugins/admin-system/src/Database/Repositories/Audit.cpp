@@ -1,6 +1,6 @@
-#include "Audit.hpp"
+#include "Database/Repositories/Audit.hpp"
 
-#include "../Tables/Schema.hpp"
+#include "Database/Tables/Schema.hpp"
 
 #include <VoltMod/Core/Time.hpp>
 #include <string>

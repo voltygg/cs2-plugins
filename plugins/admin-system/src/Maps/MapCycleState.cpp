@@ -1,6 +1,6 @@
-#include "MapCycleState.hpp"
+#include "Maps/MapCycleState.hpp"
 
-#include "../Config/ConfigManager.hpp"
+#include "Config/ConfigManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>

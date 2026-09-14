@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Actions/ActionContext.hpp"
-#include "EffectId.hpp"
+#include "Admin/Actions/ActionContext.hpp"
+#include "Admin/Effects/EffectId.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <array>

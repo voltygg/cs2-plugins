@@ -1,8 +1,8 @@
-#include "../Admin/Actions/Descriptors.hpp"
-#include "../Admin/CheatCheck/CheatCheckManager.hpp"
-#include "../Core/App.hpp"
-#include "../Core/Permissions.hpp"
-#include "Commands.hpp"
+#include "Admin/Actions/Descriptors.hpp"
+#include "Admin/CheatCheck/CheatCheckManager.hpp"
+#include "Commands/Commands.hpp"
+#include "Core/App.hpp"
+#include "Core/Permissions.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>

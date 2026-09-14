@@ -1,6 +1,6 @@
-#include "KickNotice.hpp"
+#include "Punishments/KickNotice.hpp"
 
-#include "../Config/PunishmentSettings.hpp"
+#include "Config/PunishmentSettings.hpp"
 
 #include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Time.hpp>

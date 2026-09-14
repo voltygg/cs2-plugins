@@ -1,4 +1,4 @@
-#include "DiscordReporter.hpp"
+#include "Response/DiscordReporter.hpp"
 
 #include "App.hpp"
 

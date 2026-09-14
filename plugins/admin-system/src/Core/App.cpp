@@ -1,9 +1,9 @@
-#include "App.hpp"
+#include "Core/App.hpp"
 
-#include "../Admin/Effects/Model.hpp"
-#include "../Commands/Commands.hpp"
-#include "../Config/ConfigManager.hpp"
-#include "../Punishments/KickNotice.hpp"
+#include "Admin/Effects/Model.hpp"
+#include "Commands/Commands.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Punishments/KickNotice.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Database/Api.hpp>

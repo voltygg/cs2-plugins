@@ -1,4 +1,4 @@
-#include "VoteMath.hpp"
+#include "Maps/VoteMath.hpp"
 
 #include <algorithm>
 

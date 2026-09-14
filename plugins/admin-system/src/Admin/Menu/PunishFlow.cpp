@@ -1,11 +1,11 @@
-#include "PunishFlow.hpp"
+#include "Admin/Menu/PunishFlow.hpp"
 
-#include "../../Config/ConfigManager.hpp"
-#include "../../Core/App.hpp"
-#include "../../Core/ChatService.hpp"
-#include "../../Punishments/IssuePunishment.hpp"
-#include "../AdminManager.hpp"
-#include "Labels.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Admin/Menu/Labels.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Core/App.hpp"
+#include "Core/ChatService.hpp"
+#include "Punishments/IssuePunishment.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Strings.hpp>

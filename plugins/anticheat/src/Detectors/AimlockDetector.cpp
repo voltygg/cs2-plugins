@@ -1,4 +1,4 @@
-#include "AimlockDetector.hpp"
+#include "Detectors/AimlockDetector.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Slot.hpp>

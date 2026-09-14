@@ -1,4 +1,4 @@
-#include "Descriptors.hpp"
+#include "Admin/Actions/Descriptors.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Scheduler.hpp>

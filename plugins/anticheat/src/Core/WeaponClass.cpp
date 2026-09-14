@@ -1,4 +1,4 @@
-#include "WeaponClass.hpp"
+#include "Core/WeaponClass.hpp"
 
 #include <algorithm>
 #include <array>

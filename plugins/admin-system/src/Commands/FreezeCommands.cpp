@@ -1,8 +1,8 @@
-#include "../Admin/AdminManager.hpp"
-#include "../Admin/FreezeManager.hpp"
-#include "../Core/App.hpp"
-#include "../Core/Permissions.hpp"
-#include "Commands.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Admin/FreezeManager.hpp"
+#include "Commands/Commands.hpp"
+#include "Core/App.hpp"
+#include "Core/Permissions.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Strings.hpp>

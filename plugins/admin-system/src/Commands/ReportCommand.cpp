@@ -1,7 +1,7 @@
-#include "../Core/App.hpp"
-#include "../Reports/ReportFlow.hpp"
-#include "../Reports/ReportManager.hpp"
-#include "Commands.hpp"
+#include "Commands/Commands.hpp"
+#include "Core/App.hpp"
+#include "Reports/ReportFlow.hpp"
+#include "Reports/ReportManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <string>

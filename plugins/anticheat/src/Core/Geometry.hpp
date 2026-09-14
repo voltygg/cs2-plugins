@@ -3,7 +3,7 @@
 // Aim detectors need great-circle distance, not the framework's Euclidean
 // pitch/yaw error.
 
-#include "Samples.hpp"
+#include "Core/Samples.hpp"
 
 #include <algorithm>
 #include <cmath>

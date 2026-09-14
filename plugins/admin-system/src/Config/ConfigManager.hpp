@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Maps/MapQuery.hpp"
-#include "../Weapons/WeaponCatalog.hpp"
-#include "Settings.hpp"
+#include "Config/Settings.hpp"
+#include "Maps/MapQuery.hpp"
+#include "Weapons/WeaponCatalog.hpp"
 
 #include <VoltMod/App/Config.hpp>
 #include <VoltMod/Core/Result.hpp>

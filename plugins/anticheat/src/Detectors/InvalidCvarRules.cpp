@@ -1,4 +1,4 @@
-#include "InvalidCvarRules.hpp"
+#include "Detectors/InvalidCvarRules.hpp"
 
 #include <algorithm>
 #include <cctype>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Core/App.hpp"
-#include "PunishType.hpp"
+#include "Core/App.hpp"
+#include "Punishments/PunishType.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Players/Player.hpp>

@@ -1,15 +1,15 @@
-#include "AdminMenu_Control.hpp"
+#include "Admin/Menu/AdminMenu_Control.hpp"
 
-#include "../../Core/App.hpp"
-#include "../../Core/ChatService.hpp"
-#include "../../Weapons/WeaponActions.hpp"
-#include "../../Weapons/WeaponCatalog.hpp"
-#include "../Actions/Descriptors.hpp"
-#include "../AdminManager.hpp"
-#include "../Effects/Descriptors.hpp"
-#include "MenuAccess.hpp"
-#include "PlayerPicker.hpp"
-#include "PresetSubmenu.hpp"
+#include "Admin/Actions/Descriptors.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Admin/Effects/Descriptors.hpp"
+#include "Admin/Menu/MenuAccess.hpp"
+#include "Admin/Menu/PlayerPicker.hpp"
+#include "Admin/Menu/PresetSubmenu.hpp"
+#include "Core/App.hpp"
+#include "Core/ChatService.hpp"
+#include "Weapons/WeaponActions.hpp"
+#include "Weapons/WeaponCatalog.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Random.hpp>

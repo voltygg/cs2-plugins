@@ -2,7 +2,7 @@
 
 // Converts usercmd, frame, and shot-event feeds into samples for the aim modules.
 
-#include "../AnticheatTypes.hpp"
+#include "AnticheatTypes.hpp"
 #include "Core/Samples.hpp"
 
 #include <VoltMod/Api.hpp>

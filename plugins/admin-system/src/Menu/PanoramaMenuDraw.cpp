@@ -1,4 +1,4 @@
-#include "PanoramaMenu.hpp"
+#include "Menu/PanoramaMenu.hpp"
 
 #include <VoltMod/Core/Slot.hpp>
 #include <algorithm>

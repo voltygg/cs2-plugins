@@ -1,4 +1,4 @@
-#include "WeaponCatalog.hpp"
+#include "Weapons/WeaponCatalog.hpp"
 
 #include <string_view>
 

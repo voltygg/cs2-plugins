@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MenuWriters.hpp"
+#include "Menu/MenuWriters.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/PerSlot.hpp>

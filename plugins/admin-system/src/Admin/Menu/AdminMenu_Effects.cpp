@@ -1,10 +1,10 @@
-#include "AdminMenu_Effects.hpp"
+#include "Admin/Menu/AdminMenu_Effects.hpp"
 
-#include "../../Core/App.hpp"
-#include "../Actions/Descriptors.hpp"
-#include "../AdminManager.hpp"
-#include "../Effects/Descriptors.hpp"
-#include "PlayerPicker.hpp"
+#include "Admin/Actions/Descriptors.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Admin/Effects/Descriptors.hpp"
+#include "Admin/Menu/PlayerPicker.hpp"
+#include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Admin/Access.hpp"
-#include "../Punishments/PunishmentManager.hpp"
+#include "Admin/Access.hpp"
+#include "Punishments/PunishmentManager.hpp"
 
 #include <Contracts/IAdminActions.hpp>
 #include <VoltMod/Runtime.hpp>

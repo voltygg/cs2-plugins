@@ -1,4 +1,4 @@
-#include "DllInjectionDetector.hpp"
+#include "Detectors/DllInjectionDetector.hpp"
 
 #include "AntiCheatManager.hpp"
 #include "App.hpp"

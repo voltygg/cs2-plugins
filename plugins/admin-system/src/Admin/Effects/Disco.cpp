@@ -1,4 +1,4 @@
-#include "Descriptors.hpp"
+#include "Admin/Effects/Descriptors.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>

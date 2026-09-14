@@ -1,6 +1,6 @@
-#include "../../Core/App.hpp"
-#include "../CheatCheck/CheatCheckManager.hpp"
-#include "Descriptors.hpp"
+#include "Admin/Actions/Descriptors.hpp"
+#include "Admin/CheatCheck/CheatCheckManager.hpp"
+#include "Core/App.hpp"
 
 namespace AdminSystem::Admin::Actions
 {

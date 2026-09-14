@@ -16,7 +16,8 @@ paths:
 ## Names and includes
 
 - Framework names are `VoltMod::Thing`. Qualify them, or name what a .cpp uses with `using VoltMod::Player;`. Never `using namespace`; never a using-declaration in a header.
-- Include the defining header. No forward declarations in headers, except a mutually owning pair declared in the plugin's single `*Types.hpp` with a comment saying why. `modgraph` exempts that filename and fails the rest.
+- Include the defining header.
+- `<...>` for the standard library, the SDK and `<VoltMod/...>`. `"..."` for the plugin's own headers, rooted at its `src/` or `tests/`: `"Admin/AdminMenu.hpp"`, never `"../Admin/AdminMenu.hpp"` or a bare same-folder name. No forward declarations in headers, except a mutually owning pair declared in the plugin's single `*Types.hpp` with a comment saying why. `modgraph` exempts that filename and fails the rest.
 - No anonymous namespaces. A file-local helper is a `static` function or constant at the top of the .cpp, or a private static member when it needs class state.
 
 ## Threading and blocking

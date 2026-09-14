@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../Core/Types.hpp"
-#include "ActionContext.hpp"
+#include "Admin/Actions/ActionContext.hpp"
+#include "Core/Types.hpp"
 
 #include <VoltMod/Api.hpp>
 

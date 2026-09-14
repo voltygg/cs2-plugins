@@ -1,9 +1,9 @@
-#include "AdminActionsService.hpp"
+#include "Core/AdminActionsService.hpp"
 
-#include "../Admin/Access.hpp"
-#include "../Database/Entities.hpp"
-#include "../Punishments/PunishmentManager.hpp"
-#include "Permissions.hpp"
+#include "Admin/Access.hpp"
+#include "Core/Permissions.hpp"
+#include "Database/Entities.hpp"
+#include "Punishments/PunishmentManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>

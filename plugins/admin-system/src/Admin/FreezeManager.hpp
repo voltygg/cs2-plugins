@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Config/ConfigManager.hpp"
-#include "../Core/ChatService.hpp"
-#include "../Database/Repositories/Admins.hpp"
-#include "AdminManager.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Core/ChatService.hpp"
+#include "Database/Repositories.hpp"
+#include "Database/Repositories/Admins.hpp"
 
-#include "../Database/Repositories.hpp"
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <optional>

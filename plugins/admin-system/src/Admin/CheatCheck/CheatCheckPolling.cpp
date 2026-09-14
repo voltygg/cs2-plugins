@@ -1,7 +1,7 @@
-#include "../../Config/ConfigManager.hpp"
-#include "CheatCheckManager.hpp"
-#include "CheatCheckRoomApi.hpp"
-#include "CheatCheckView.hpp"
+#include "Admin/CheatCheck/CheatCheckManager.hpp"
+#include "Admin/CheatCheck/CheatCheckRoomApi.hpp"
+#include "Admin/CheatCheck/CheatCheckView.hpp"
+#include "Config/ConfigManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>

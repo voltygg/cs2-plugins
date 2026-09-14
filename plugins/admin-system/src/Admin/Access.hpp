@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Core/Permissions.hpp"
-#include "AdminManager.hpp"
-#include "FreezeManager.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Admin/FreezeManager.hpp"
+#include "Core/Permissions.hpp"
 
 #include <cstdint>
 #include <string>

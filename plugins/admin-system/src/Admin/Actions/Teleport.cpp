@@ -1,6 +1,6 @@
 ﻿#include "../../Core/App.hpp"
-#include "../../Core/ChatService.hpp"
-#include "Descriptors.hpp"
+#include "Admin/Actions/Descriptors.hpp"
+#include "Core/ChatService.hpp"
 
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <mathlib/vector.h>

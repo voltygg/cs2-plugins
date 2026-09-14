@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CheatCheckMode.hpp"
+#include "Admin/CheatCheck/CheatCheckMode.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/MoveType.hpp>

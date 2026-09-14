@@ -3,7 +3,7 @@
 // Drives NamechangerCore from the two lifecycle points the engine gives us: the name a player
 // arrives with, and every replicated settings change afterwards.
 
-#include "../AnticheatTypes.hpp"
+#include "AnticheatTypes.hpp"
 
 #include <VoltMod/Api.hpp>
 

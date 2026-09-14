@@ -1,11 +1,11 @@
-#include "AdminMenu_Punish.hpp"
+#include "Admin/Menu/AdminMenu_Punish.hpp"
 
-#include "../../Core/App.hpp"
-#include "../AdminManager.hpp"
-#include "AdminMenu_Lift.hpp"
-#include "MenuAccess.hpp"
-#include "PlayerPicker.hpp"
-#include "PunishFlow.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Admin/Menu/AdminMenu_Lift.hpp"
+#include "Admin/Menu/MenuAccess.hpp"
+#include "Admin/Menu/PlayerPicker.hpp"
+#include "Admin/Menu/PunishFlow.hpp"
+#include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>

@@ -1,4 +1,4 @@
-#include "NamechangerCore.hpp"
+#include "Detectors/NamechangerCore.hpp"
 
 #include <format>
 

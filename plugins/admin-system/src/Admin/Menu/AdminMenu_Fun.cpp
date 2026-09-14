@@ -1,10 +1,10 @@
-#include "AdminMenu_Fun.hpp"
+#include "Admin/Menu/AdminMenu_Fun.hpp"
 
-#include "../../Core/App.hpp"
-#include "../../Core/ChatService.hpp"
-#include "../../Core/Permissions.hpp"
-#include "../../Fun/FunMode.hpp"
-#include "MenuAccess.hpp"
+#include "Admin/Menu/MenuAccess.hpp"
+#include "Core/App.hpp"
+#include "Core/ChatService.hpp"
+#include "Core/Permissions.hpp"
+#include "Fun/FunMode.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>

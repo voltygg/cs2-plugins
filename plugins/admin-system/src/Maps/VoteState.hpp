@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Config/ConfigManager.hpp"
-#include "MapCycleState.hpp"
-#include "MapQuery.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Maps/MapCycleState.hpp"
+#include "Maps/MapQuery.hpp"
 
 #include <VoltMod/Runtime.hpp>
 

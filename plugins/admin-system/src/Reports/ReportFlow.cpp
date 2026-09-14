@@ -1,9 +1,9 @@
-#include "ReportFlow.hpp"
+#include "Reports/ReportFlow.hpp"
 
-#include "../Admin/Menu/PlayerPicker.hpp"
-#include "../Config/ReportSettings.hpp"
-#include "../Core/App.hpp"
-#include "ReportManager.hpp"
+#include "Admin/Menu/PlayerPicker.hpp"
+#include "Config/ReportSettings.hpp"
+#include "Core/App.hpp"
+#include "Reports/ReportManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Strings.hpp>

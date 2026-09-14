@@ -1,9 +1,9 @@
-#include "PlayerChat.hpp"
+#include "Core/PlayerChat.hpp"
 
-#include "../Admin/AdminManager.hpp"
-#include "../Config/ConfigManager.hpp"
-#include "../Punishments/PunishmentManager.hpp"
-#include "ChatService.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Core/ChatService.hpp"
+#include "Punishments/PunishmentManager.hpp"
 
 #include <VoltMod/Commands/CommandManager.hpp>
 #include <VoltMod/Core/Time.hpp>

@@ -1,6 +1,6 @@
-#include "Reports.hpp"
+#include "Database/Repositories/Reports.hpp"
 
-#include "../Tables/Schema.hpp"
+#include "Database/Tables/Schema.hpp"
 
 #include <utility>
 

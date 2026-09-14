@@ -1,8 +1,8 @@
-#include "PresetSubmenu.hpp"
+#include "Admin/Menu/PresetSubmenu.hpp"
 
-#include "../../Core/App.hpp"
-#include "../Actions/ActionContext.hpp"
-#include "../Actions/Descriptors.hpp"
+#include "Admin/Actions/ActionContext.hpp"
+#include "Admin/Actions/Descriptors.hpp"
+#include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>

@@ -1,4 +1,4 @@
-#include "ConfigManager.hpp"
+#include "Config/ConfigManager.hpp"
 
 #include <VoltMod/Core/EnumNames.hpp>
 #include <VoltMod/Core/Validation.hpp>

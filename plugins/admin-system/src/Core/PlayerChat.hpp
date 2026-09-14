@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Admin/AdminManager.hpp"
-#include "../Config/ConfigManager.hpp"
-#include "../Punishments/PunishmentManager.hpp"
-#include "ChatService.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Core/ChatService.hpp"
+#include "Punishments/PunishmentManager.hpp"
 
 #include <VoltMod/Core/Throttle.hpp>
 #include <VoltMod/Players/Player.hpp>

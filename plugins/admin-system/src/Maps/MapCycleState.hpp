@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Config/ConfigManager.hpp"
-#include "MapQuery.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Maps/MapQuery.hpp"
 
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>

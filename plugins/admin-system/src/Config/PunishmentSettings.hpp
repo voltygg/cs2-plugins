@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Punishments/PunishType.hpp"
+#include "Punishments/PunishType.hpp"
 
 #include <string>
 #include <vector>

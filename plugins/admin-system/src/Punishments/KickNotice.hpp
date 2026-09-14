@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Config/PunishmentSettings.hpp"
+#include "Config/PunishmentSettings.hpp"
 
 #include <VoltMod/Core/Translations.hpp>
 #include <cstdint>

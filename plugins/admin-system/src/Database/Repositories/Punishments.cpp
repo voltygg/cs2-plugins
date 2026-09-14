@@ -1,6 +1,6 @@
-#include "Punishments.hpp"
+#include "Database/Repositories/Punishments.hpp"
 
-#include "../Tables/Schema.hpp"
+#include "Database/Tables/Schema.hpp"
 
 #include <VoltMod/Core/Time.hpp>
 #include <string>

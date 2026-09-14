@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Config/CheatCheckSettings.hpp"
+#include "Config/CheatCheckSettings.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Http/HttpClient.hpp>

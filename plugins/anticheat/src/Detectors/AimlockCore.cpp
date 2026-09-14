@@ -1,4 +1,4 @@
-#include "AimlockCore.hpp"
+#include "Detectors/AimlockCore.hpp"
 
 #include "Core/Geometry.hpp"
 

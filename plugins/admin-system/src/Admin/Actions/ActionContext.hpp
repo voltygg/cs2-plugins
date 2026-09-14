@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Core/Permissions.hpp"
+#include "Core/Permissions.hpp"
 
 #include <VoltMod/Players/ActionDispatcher.hpp>
 

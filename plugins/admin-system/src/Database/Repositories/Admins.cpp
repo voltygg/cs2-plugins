@@ -1,7 +1,7 @@
-#include "Admins.hpp"
+#include "Database/Repositories/Admins.hpp"
 
-#include "../JsonList.hpp"
-#include "../Tables/Schema.hpp"
+#include "Database/JsonList.hpp"
+#include "Database/Tables/Schema.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Time.hpp>

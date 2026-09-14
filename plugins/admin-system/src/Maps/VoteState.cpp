@@ -1,8 +1,8 @@
-#include "VoteState.hpp"
+#include "Maps/VoteState.hpp"
 
-#include "../Config/ConfigManager.hpp"
-#include "MapCycleState.hpp"
-#include "VoteMath.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Maps/MapCycleState.hpp"
+#include "Maps/VoteMath.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>

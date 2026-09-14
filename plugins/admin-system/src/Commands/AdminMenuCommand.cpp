@@ -1,7 +1,7 @@
-#include "../Admin/AdminManager.hpp"
-#include "../Admin/AdminMenu.hpp"
-#include "../Core/App.hpp"
-#include "Commands.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Admin/AdminMenu.hpp"
+#include "Commands/Commands.hpp"
+#include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>

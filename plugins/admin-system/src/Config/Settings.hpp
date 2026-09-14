@@ -1,14 +1,14 @@
 #pragma once
 
-#include "AbuseProtectionSettings.hpp"
-#include "ChatSettings.hpp"
-#include "CheatCheckSettings.hpp"
-#include "MapSettings.hpp"
-#include "MenuSettings.hpp"
-#include "PunishmentSettings.hpp"
-#include "ReportSettings.hpp"
-#include "ServerSettings.hpp"
-#include "WeaponSettings.hpp"
+#include "Config/AbuseProtectionSettings.hpp"
+#include "Config/ChatSettings.hpp"
+#include "Config/CheatCheckSettings.hpp"
+#include "Config/MapSettings.hpp"
+#include "Config/MenuSettings.hpp"
+#include "Config/PunishmentSettings.hpp"
+#include "Config/ReportSettings.hpp"
+#include "Config/ServerSettings.hpp"
+#include "Config/WeaponSettings.hpp"
 
 #include <VoltMod/App/Config.hpp>
 #include <VoltMod/Database/DatabaseConfig.hpp>

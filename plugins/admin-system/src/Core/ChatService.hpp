@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Config/ConfigManager.hpp"
+#include "Config/ConfigManager.hpp"
 
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Repositories/Admins.hpp"
-#include "Repositories/Audit.hpp"
-#include "Repositories/Players.hpp"
-#include "Repositories/Punishments.hpp"
-#include "Repositories/Reports.hpp"
+#include "Database/Repositories/Admins.hpp"
+#include "Database/Repositories/Audit.hpp"
+#include "Database/Repositories/Players.hpp"
+#include "Database/Repositories/Punishments.hpp"
+#include "Database/Repositories/Reports.hpp"
 
 namespace AdminSystem::Database
 {

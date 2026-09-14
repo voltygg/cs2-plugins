@@ -1,4 +1,4 @@
-#include "ShotCorrelatorCore.hpp"
+#include "Correlation/ShotCorrelatorCore.hpp"
 
 #include "Core/Geometry.hpp"
 #include "Core/WeaponClass.hpp"

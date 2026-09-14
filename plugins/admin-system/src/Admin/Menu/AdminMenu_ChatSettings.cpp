@@ -1,7 +1,7 @@
-#include "AdminMenu_ChatSettings.hpp"
+#include "Admin/Menu/AdminMenu_ChatSettings.hpp"
 
-#include "../../Core/App.hpp"
-#include "../AdminManager.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>

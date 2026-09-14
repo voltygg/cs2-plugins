@@ -1,7 +1,7 @@
-#include "../Admin/Effects/Descriptors.hpp"
-#include "../Core/App.hpp"
-#include "../Core/Permissions.hpp"
-#include "Commands.hpp"
+#include "Admin/Effects/Descriptors.hpp"
+#include "Commands/Commands.hpp"
+#include "Core/App.hpp"
+#include "Core/Permissions.hpp"
 
 #include <VoltMod/Api.hpp>
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../Core/App.hpp"
-#include "../../Core/Permissions.hpp"
+#include "Core/App.hpp"
+#include "Core/Permissions.hpp"
 
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>

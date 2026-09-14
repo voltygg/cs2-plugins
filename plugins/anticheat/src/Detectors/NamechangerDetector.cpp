@@ -1,4 +1,4 @@
-#include "NamechangerDetector.hpp"
+#include "Detectors/NamechangerDetector.hpp"
 
 #include "AntiCheatManager.hpp"
 

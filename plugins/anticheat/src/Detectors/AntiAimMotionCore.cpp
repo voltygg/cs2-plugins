@@ -1,8 +1,8 @@
 // Spin and jitter analysis for AntiAimCore, split out purely to keep both TUs readable. The tuned
 // constants live in AntiAimCore.hpp.
 
-#include "AntiAimCore.hpp"
 #include "Core/Geometry.hpp"
+#include "Detectors/AntiAimCore.hpp"
 
 #include <algorithm>
 #include <array>

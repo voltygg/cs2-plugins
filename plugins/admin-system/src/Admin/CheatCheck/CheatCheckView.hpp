@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../Config/ConfigManager.hpp"
-#include "../../Core/ChatService.hpp"
-#include "PendingCheck.hpp"
+#include "Admin/CheatCheck/PendingCheck.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Core/ChatService.hpp"
 
 #include <VoltMod/Runtime.hpp>
 #include <string>

@@ -1,10 +1,10 @@
-#include "FreezeManager.hpp"
+#include "Admin/FreezeManager.hpp"
 
-#include "../Config/ConfigManager.hpp"
-#include "../Core/ChatService.hpp"
-#include "../Core/Permissions.hpp"
-#include "../Database/Repositories/Audit.hpp"
-#include "AdminManager.hpp"
+#include "Admin/AdminManager.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Core/ChatService.hpp"
+#include "Core/Permissions.hpp"
+#include "Database/Repositories/Audit.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Time.hpp>

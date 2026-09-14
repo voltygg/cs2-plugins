@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FunToggles.hpp"
+#include "Fun/FunToggles.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>

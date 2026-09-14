@@ -1,4 +1,4 @@
-#include "Descriptors.hpp"
+#include "Admin/Effects/Descriptors.hpp"
 
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Hooks/GlowVision.hpp>

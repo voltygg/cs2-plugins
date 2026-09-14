@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Entities.hpp"
+#include "Database/Entities.hpp"
 
 #include <VoltMod/Database/Api.hpp>
 #include <functional>

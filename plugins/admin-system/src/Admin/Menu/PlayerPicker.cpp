@@ -1,6 +1,6 @@
-#include "PlayerPicker.hpp"
+#include "Admin/Menu/PlayerPicker.hpp"
 
-#include "../../Core/App.hpp"
+#include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>

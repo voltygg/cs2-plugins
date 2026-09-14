@@ -1,6 +1,6 @@
-#include "CheatCheckRoomApi.hpp"
+#include "Admin/CheatCheck/CheatCheckRoomApi.hpp"
 
-#include "../../Config/CheatCheckSettings.hpp"
+#include "Config/CheatCheckSettings.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Json.hpp>

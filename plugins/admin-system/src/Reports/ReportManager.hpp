@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Config/ConfigManager.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Database/Repositories.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Throttle.hpp>
-#include "../Database/Repositories.hpp"
 #include <VoltMod/Players/Player.hpp>
 #include <cstdint>
 #include <functional>

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Config/ConfigManager.hpp"
-#include "../Core/ChatService.hpp"
-#include "../Database/Repositories.hpp"
-#include "PunishType.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Core/ChatService.hpp"
+#include "Database/Repositories.hpp"
+#include "Punishments/PunishType.hpp"
 
 #include <VoltMod/Runtime.hpp>
 #include <array>

@@ -1,11 +1,11 @@
-#include "AdminMenu_Lift.hpp"
+#include "Admin/Menu/AdminMenu_Lift.hpp"
 
-#include "../../Core/App.hpp"
-#include "../../Core/ChatService.hpp"
-#include "../../Core/Permissions.hpp"
-#include "../../Punishments/PunishType.hpp"
-#include "Labels.hpp"
-#include "MenuAccess.hpp"
+#include "Admin/Menu/Labels.hpp"
+#include "Admin/Menu/MenuAccess.hpp"
+#include "Core/App.hpp"
+#include "Core/ChatService.hpp"
+#include "Core/Permissions.hpp"
+#include "Punishments/PunishType.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Strings.hpp>

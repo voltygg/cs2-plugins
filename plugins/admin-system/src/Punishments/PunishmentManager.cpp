@@ -1,8 +1,8 @@
-#include "PunishmentManager.hpp"
+#include "Punishments/PunishmentManager.hpp"
 
-#include "../Config/ConfigManager.hpp"
-#include "../Core/ChatService.hpp"
-#include "KickNotice.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Core/ChatService.hpp"
+#include "Punishments/KickNotice.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>

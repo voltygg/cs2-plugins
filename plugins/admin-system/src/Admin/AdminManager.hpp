@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Config/ConfigManager.hpp"
-#include "../Core/Permissions.hpp"
-#include "../Database/Entities.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Core/Permissions.hpp"
+#include "Database/Entities.hpp"
+#include "Database/Repositories.hpp"
 
-#include "../Database/Repositories.hpp"
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <string>
 #include <unordered_map>

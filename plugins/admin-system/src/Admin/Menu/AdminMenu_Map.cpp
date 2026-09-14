@@ -1,12 +1,12 @@
-#include "AdminMenu_Map.hpp"
+#include "Admin/Menu/AdminMenu_Map.hpp"
 
-#include "../../Core/App.hpp"
-#include "../../Core/ChatService.hpp"
-#include "../../Core/Permissions.hpp"
-#include "../../Maps/MapCycleState.hpp"
-#include "../../Maps/VoteState.hpp"
-#include "Labels.hpp"
-#include "MenuAccess.hpp"
+#include "Admin/Menu/Labels.hpp"
+#include "Admin/Menu/MenuAccess.hpp"
+#include "Core/App.hpp"
+#include "Core/ChatService.hpp"
+#include "Core/Permissions.hpp"
+#include "Maps/MapCycleState.hpp"
+#include "Maps/VoteState.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Translations.hpp>
