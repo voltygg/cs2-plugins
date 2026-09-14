@@ -107,7 +107,7 @@ jobs:
             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
       - run:
           name: Ruff check (build tooling)
-          command: uv run poe lint
+          command: uv run poe lint-ci
 
   build-package:
     executor: toolchain

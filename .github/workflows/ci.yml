@@ -40,4 +40,4 @@ jobs:
         uses: astral-sh/setup-uv@v10.1.0
 
       - name: Ruff check (build tooling)
-        run: uv run poe lint
+        run: uv run poe lint-ci

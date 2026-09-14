@@ -40,11 +40,14 @@ schema = "voltmod database tables --migrations plugins/admin-system/configs/migr
 
 [tool.poe.tasks.lint]
 help = "Lint the build tooling and check the plugin source conventions"
+sequence = [{ ref = "lint-ci" }, { ref = "schema --check" }]
+
+[tool.poe.tasks.lint-ci]
+help = "Lint checks that run without Conan packages"
 sequence = [
     { cmd = "ruff check ." },
     { cmd = "voltmod modgraph --plugins ." },
     { cmd = "voltmod panorama check" },
-    { ref = "schema --check" },
 ]
 
 [tool.ruff]
