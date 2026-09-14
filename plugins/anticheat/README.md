@@ -226,12 +226,12 @@ crash, create false evidence, or silently disable detection.
 
 | Entry | Failure mode |
 | --- | --- |
-| `RunCommand` | Crash on the first movement tick, unless the vtable slot check catches it |
-| `UserCmdPB` | Missing values silence aim modules; stale values can resemble valid angles |
-| `UserCmdNumber` | Command chains collapse, silently disabling aimbot and part of antiaim |
-| `Teleport` | Teleport grace stops suppressing discontinuities, so false positives appear |
-| `ProcessRespondCvarValue` | Load-time bounds checks turn `Capability::ClientConVars` off |
-| `ServerSideClientSlot` | Same, which is what stops responses reaching the wrong player |
+| `CPlayer_MovementServices::RunCommand` | Crash on the first movement tick, unless the vtable slot check catches it |
+| `CUserCmd::CSGOUserCmdPB` | Missing values silence aim modules; stale values can resemble valid angles |
+| `CUserCmdBase::cmdNum` | Command chains collapse, silently disabling aimbot and part of antiaim |
+| `CBaseEntity::Teleport` | Teleport grace stops suppressing discontinuities, so false positives appear |
+| `CServerSideClient::ProcessRespondCvarValue` | Load-time bounds checks turn `Capability::ClientConVars` off |
+| `CServerSideClientBase::m_nClientSlot` | Same, which is what stops responses reaching the wrong player |
 
 The entries live in the framework's `gamedata/gamedata.jsonc`; its guide has the
 re-verification procedure. `anticheat_status` reads `Runtime::Capabilities`: it exposes
