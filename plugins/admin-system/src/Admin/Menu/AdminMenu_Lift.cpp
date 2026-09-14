@@ -66,7 +66,7 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
 
     auto& translations = app.Runtime.Translations;
 
-    VoltMod::Flow<LiftRow>::Create(app.MenuFor(adminSlot), adminSlot, std::move(row))
+    VoltMod::Flow<LiftRow>::Create(app.Menus, adminSlot, std::move(row))
         ->Validate(RequirePermission(app, permission, adminSlot))
         ->Confirm({.Title = ConfirmTitle(translations, action, adminSlot),
                    .Summary =

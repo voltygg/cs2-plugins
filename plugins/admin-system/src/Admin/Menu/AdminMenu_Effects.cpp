@@ -64,7 +64,7 @@ std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, Vo
                                 .Pick =
                                     [&app, viewerSlot = admin.Slot, first = target](VoltMod::PlayerRef second) {
                                         Actions::Swap(app, app.Runtime.Players.RefFor(viewerSlot), first, second);
-                                        app.MenuFor(viewerSlot).CloseAll(viewerSlot);
+                                        app.Menus.CloseAll(viewerSlot);
                                     },
                                 .Enabled =
                                     [&entities = app.Runtime.Entities, first = target](VoltMod::PlayerRef candidate) {

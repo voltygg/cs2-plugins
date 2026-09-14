@@ -30,7 +30,7 @@ static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
 {
     auto& translations = app.Runtime.Translations;
 
-    VoltMod::Flow<MapEntry>::Create(app.MenuFor(adminSlot), adminSlot, std::move(map))
+    VoltMod::Flow<MapEntry>::Create(app.Menus, adminSlot, std::move(map))
         ->Validate(RequirePermission(app, Permission::Map, adminSlot))
         ->Confirm({.Title = ConfirmTitle(translations, "action.changeMap", adminSlot),
                    .Summary =

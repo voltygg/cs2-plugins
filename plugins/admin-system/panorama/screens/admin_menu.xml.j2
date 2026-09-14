@@ -1,4 +1,4 @@
-{# namespace: AdminUi::Menu #}
+{# namespace: AdminMenuLayout #}
 {% import "button.xml.j2" as controls %}
 {% import "icons.xml.j2" as icons %}
 {% import "listrow.xml.j2" as list %}
@@ -19,7 +19,7 @@
         <Panel class="Sidebar" hittest="true">
           <Panel class="Brand" hittest="false">
             <Label class="Brand-title" text="{s:brand}" hittest="false" />
-            <Label class="Brand-subtitle" text="{s:brand_sub}" hittest="false" />
+            <Label class="Brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
           </Panel>
           <Panel class="Nav" hittest="true">
             {%- for index in range(TABS) %}
@@ -32,14 +32,14 @@
         </Panel>
 
         <Panel class="Content" hittest="true">
-          <Panel class="Head" hittest="true">
-            <Panel class="Head-text" hittest="false">
-              <Label class="Crumb" text="{s:crumb}" hittest="false" />
+          <Panel class="Header" hittest="true">
+            <Panel class="Header-text" hittest="false">
+              <Label class="Breadcrumb" text="{s:breadcrumb}" hittest="false" />
               <Label class="Title" text="{s:title}" hittest="false" />
               <Label id="{{screen}}_subtitle" class="Subtitle" text="{s:subtitle}" hittest="false" />
             </Panel>
-            <Button id="{{screen}}_close" class="IconBtn">
-              <Image class="IconBtn-image" src="s2r://panorama/images/icons/ui/cancel.vsvg" textureheight="32" hittest="false" />
+            <Button id="{{screen}}_close" class="IconButton">
+              <Image class="IconButton-image" src="s2r://panorama/images/icons/ui/cancel.vsvg" textureheight="32" hittest="false" />
             </Button>
           </Panel>
 
@@ -56,11 +56,11 @@
             {{ controls.button("cancel", "{s:cancel}") | indent(12) }}
           </Panel>
 
-          <Panel class="Foot" hittest="true">
+          <Panel class="Footer" hittest="true">
             {{ controls.button("back", "{s:back}") | indent(12) }}
             <Panel id="{{screen}}_page" class="Pager Hidden" hittest="true">
               <Label class="Pager-label" text="{s:page}" hittest="false" />
-              <Button id="{{screen}}_page_prev" class="Pager-arrow">
+              <Button id="{{screen}}_page_previous" class="Pager-arrow">
                 <Label class="Pager-glyph" text="&#9664;" hittest="false" />
               </Button>
               <Button id="{{screen}}_page_next" class="Pager-arrow">

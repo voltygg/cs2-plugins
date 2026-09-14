@@ -25,25 +25,25 @@
   opacity: 0.4;
 }
 
-/* The driver clears Changed after ~150 ms; the transition is the pulse fading out. */
-.Row.Changed {
+/* A stepped value waiting to apply; the transition fades it out once it has. */
+.Row.Pending {
   background-color: rgba(225, 39, 60, 0.22);
 }
 
-.Row-hit {
+.Row-button {
   padding: 0px 16px 0px 18px;
   border-radius: 12px;
 }
 
-.Row-hit:hover {
+.Row-button:hover {
   background-color: gradient(linear, 0% 0%, 100% 0%, from(rgba(225, 39, 60, 0.16)), to(rgba(225, 39, 60, 0.02)));
 }
 
-.Row-hit:active {
+.Row-button:active {
   pre-transform-scale2d: 0.99;
 }
 
-.Row.Disabled .Row-hit:hover {
+.Row.Disabled .Row-button:hover {
   background-color: rgba(0, 0, 0, 0);
 }
 
@@ -52,7 +52,7 @@
   color: #e8e8ec;
 }
 
-.Row-hit:hover .Row-label {
+.Row-button:hover .Row-label {
   color: #ffffff;
 }
 
@@ -61,7 +61,7 @@
   visibility: collapse;
 }
 
-.Row.HasHint .Row-hint {
+.Row.Pending .Row-hint {
   visibility: visible;
 }
 
@@ -93,7 +93,7 @@
   visibility: visible;
 }
 
-.Row-hit:hover .Row-chevron {
+.Row-button:hover .Row-chevron {
   color: #e1273c;
 }
 
@@ -109,7 +109,7 @@
   visibility: visible;
 }
 
-.Row-hit:hover .Switch {
+.Row-button:hover .Switch {
   background-color: #3a3a44;
 }
 
@@ -125,7 +125,7 @@
   background-color: #e1273c;
 }
 
-.Row.On .Row-hit:hover .Switch {
+.Row.On .Row-button:hover .Switch {
   background-color: #f0384d;
 }
 

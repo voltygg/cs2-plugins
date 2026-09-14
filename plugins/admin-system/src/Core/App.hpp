@@ -14,6 +14,7 @@
 #include "Fun/FunMode.hpp"
 #include "Maps/MapCycleState.hpp"
 #include "Maps/VoteState.hpp"
+#include "Menu/MenuRouter.hpp"
 #include "Menu/PanoramaMenu.hpp"
 #include "Punishments/PunishmentManager.hpp"
 #include "Reports/ReportManager.hpp"
@@ -64,36 +65,19 @@ struct App
                                     .Translations = Runtime.Translations,
                                     .Players = Runtime.Players,
                                     .Entities = Runtime.Entities,
-                                    .Menus = MenuFor(admin.Slot),
+                                    .Menus = Menus,
                                     .Effects = &Effects},
                                    admin, std::move(target));
-    }
-
-    /**
-     * Where @p slot's menu is drawn: this plugin's Panorama screen when the player can see one,
-     * the framework's center HTML otherwise.
-     *
-     * Asked while rows are built as well as when a menu opens, and answers the same either way,
-     * so a row's callbacks and the session they run against never disagree.
-     */
-    [[nodiscard]] VoltMod::MenuSurface& MenuFor(int slot)
-    {
-        return Panorama.CanDraw(slot) ? static_cast<VoltMod::MenuSurface&>(Panorama) : Runtime.Menus;
-    }
-
-    /** Open @p menu for @p slot wherever MenuFor would put it. The one place the two surfaces are
-     *  chosen between, so neither can be given options the other was not. */
-    void OpenMenu(int slot, std::shared_ptr<VoltMod::Menu> menu, VoltMod::MenuOptions options = {})
-    {
-        if (!Panorama.Open(slot, menu, options))
-            Runtime.Menus.Open(slot, std::move(menu), options);
     }
 
     VoltMod::Runtime& Runtime;
     const std::string Version;
 
-    /** The admin menu's own Panorama surface. Declared early: menus are built against it. */
-    Menus::PanoramaMenu Panorama{Runtime};
+    /** The admin menu drawn on this plugin's Panorama layout. */
+    AdminSystem::Menus::PanoramaMenu Panorama{Runtime};
+    /** Where every menu opens and every row callback reaches: Panorama or center text, per session.
+     *  Declared early: menus are built against it. */
+    AdminSystem::Menus::MenuRouter Menus{Panorama, Runtime.Menus};
 
     Config::ConfigManager Settings;
     /** Runs the action descriptors through Runtime::Policy: permissions, targeting and broadcasts. */
