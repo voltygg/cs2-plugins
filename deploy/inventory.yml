@@ -51,8 +51,7 @@ servers:
   - id: panel-a
     kind: pterodactyl
     environment: prod-panel-a
-    panel_url: https://panel.example.com
-    panel_server: c913d656
+    panel_url: https://cp.elect-host.com/server/c913d656
     host: 37.230.228.94
     plugins:
       - admin-system

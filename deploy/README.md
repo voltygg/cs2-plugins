@@ -199,8 +199,7 @@ instead of SSH, so it needs no runtime image, Docker or SSH key:
 - id: panel-a
   kind: pterodactyl
   environment: prod-panel-a
-  panel_url: https://panel.example.com
-  panel_server: abc12345      # from the panel URL: /server/<id>
+  panel_url: https://panel.example.com/server/abc12345  # the server's page in the panel
   host: 203.0.113.20          # game address; RCON uses TCP on the instance port
   plugins: [admin-system, bhop]
   instances:

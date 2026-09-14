@@ -25,20 +25,27 @@ USER_AGENT = "cs2-plugins-deploy"
 GAME_CSGO_LINE = re.compile(r"^([ \t]*)Game[ \t]+csgo[ \t]*(\r?)$", re.MULTILINE)
 RUNNING_PLUGIN_LINE = re.compile(r"^\s*\[\d+\]\s+(?!<)", re.MULTILINE)
 BROKEN_PLUGIN_STATUS = re.compile(r"<(ERROR|FAILED|REFUSED)>", re.IGNORECASE)
+SERVER_PAGE_PATH = re.compile(r"/server/([^/]+)/?")
 
 
 class PanelClient:
     """Client API calls for one inventory server."""
 
     def __init__(self, server: dict[str, Any]) -> None:
-        for key in ("panel_url", "panel_server", "host"):
+        for key in ("panel_url", "host"):
             if not server.get(key):
                 die(f"server '{server['id']}' needs `{key}` in inventory.yml")
+        panel = urllib.parse.urlsplit(str(server["panel_url"]))
+        page = SERVER_PAGE_PATH.fullmatch(panel.path)
+        if not panel.netloc or not page:
+            die(
+                f"server '{server['id']}' panel_url must be its panel page, "
+                "like https://panel.example.com/server/abc12345"
+            )
         api_key = os.environ.get("PANEL_API_KEY")
         if not api_key:
             die(f"PANEL_API_KEY is not set in the '{server['id']}' env")
-        panel_url = str(server["panel_url"]).rstrip("/")
-        self._base = f"{panel_url}/api/client/servers/{server['panel_server']}"
+        self._base = f"{panel.scheme}://{panel.netloc}/api/client/servers/{page[1]}"
         self._headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",

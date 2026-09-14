@@ -52,7 +52,6 @@ def resolve_server(data: dict[str, Any], server: dict[str, Any]) -> dict[str, An
         die(f"server '{resolved['id']}' has unknown kind '{resolved['kind']}'")
     if resolved["kind"] == "pterodactyl":
         resolved["panel_url"] = server.get("panel_url")
-        resolved["panel_server"] = server.get("panel_server")
         resolved["game_dir"] = server.get("game_dir", "/game/csgo")
     resolved["environment"] = server.get("environment")
     resolved["enabled"] = bool(server.get("enabled", True))
