@@ -58,7 +58,7 @@ class RconClient:
             if packet_type != _SERVERDATA_AUTH_RESPONSE:
                 continue
             if packet_id == _AUTH_FAILED_ID:
-                die("RCON authentication failed (check RCON_<instance> in the server .env)")
+                die("RCON authentication failed (check RCON_PASSWORD in the server .env)")
             return
 
     def execute(self, command: str) -> str:
@@ -106,9 +106,9 @@ def _resolve_target(
         die(f"multiple instances on '{server['id']}'; pass --instance")
 
     load_server_env(str(server["id"]), required=True)
-    password = os.environ.get(f"RCON_{target['name']}", "")
+    password = os.environ.get("RCON_PASSWORD", "")
     if not password:
-        die(f"RCON_{target['name']} not set in the '{server['id']}' .env")
+        die(f"RCON_PASSWORD not set in the '{server['id']}' .env")
 
     return server, int(target["port"]), password
 

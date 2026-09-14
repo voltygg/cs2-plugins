@@ -125,20 +125,14 @@ def database_settings(data: dict[str, Any], db_name: str, target: str) -> dict[s
     db = data.get("database", {})
     host = os.environ.get("DB_HOST") or db.get("host")
     password = os.environ.get("DB_PASSWORD")
-    required = {
-        "DB_HOST": host,
-        "database.port": db.get("port"),
-        "database.user": db.get("user"),
-        "DB_PASSWORD": password,
-    }
-    for name, value in required.items():
+    for name, value in {"DB_HOST": host, "DB_PASSWORD": password}.items():
         if not value:
             die(f"{name} is not set for {target}")
     return {
         "host": host,
-        "port": int(db["port"]),
+        "port": int(db.get("port", 5432)),
         "database": db_name,
-        "username": db["user"],
+        "username": db.get("user", "postgres"),
         "password": password,
         "sslMode": db.get("sslMode", "prefer"),
     }
@@ -177,7 +171,7 @@ def write_env_file(instance: dict[str, Any], out: Path) -> None:
         print(f"WARNING: GSLT_{name} is not set; instance '{name}' will start in LAN mode")
     env = {
         "SRCDS_TOKEN": token,
-        "CS2_RCONPW": os.environ.get(f"RCON_{name}", ""),
+        "CS2_RCONPW": os.environ.get("RCON_PASSWORD", ""),
         "CS2_PORT": str(instance["port"]),
         "CS2_STARTMAP": str(instance.get("map", "de_dust2")),
         "CS2_SERVERNAME": os.environ.get(

@@ -176,7 +176,7 @@ def tunnel_db(
         f"(via {ssh_user}@{host}:{ssh_port}) ==="
     )
     print(
-        f'    connect: psql "host=127.0.0.1 port={local_port} dbname=admin_system user=<db-user>"'
+        f'    connect: psql "host=127.0.0.1 port={local_port} dbname=admin_system user=postgres"'
     )
     print("    stop:    Ctrl-C")
     run(ssh_args)

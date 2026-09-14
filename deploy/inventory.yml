@@ -8,8 +8,6 @@ defaults:
   runtime_image: ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:latest
 
 database:
-  port: 5432
-  user: cs2_app
   sslMode: require
 
 plugins:

@@ -52,7 +52,7 @@ address.
 uv run poe rcon "<command>" ["<command>" ...] [--server <id>] [--instance <name>]
 ```
 
-Resolves host and port from `deploy/inventory.yml` and `RCON_<instance>` from
+Resolves host and port from `deploy/inventory.yml` and `RCON_PASSWORD` from
 `deploy/secrets/servers/<id>/.env`, tunnels over SSH (the RCON port is not
 exposed), and prints each response under a `### <command>` header. The flags are
 optional when the inventory has one server / one instance.

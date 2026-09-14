@@ -256,9 +256,9 @@ def _start(client: PanelClient) -> None:
 def _verify_plugins(
     server: dict[str, Any], instance: dict[str, Any], expected: int, timeout: float = 300
 ) -> None:
-    password = os.environ.get(f"RCON_{instance['name']}")
+    password = os.environ.get("RCON_PASSWORD")
     if not password:
-        print(f"WARNING: RCON_{instance['name']} is not set; skipping the plugin load check")
+        print("WARNING: RCON_PASSWORD is not set; skipping the plugin load check")
         return
     host, port = str(server["host"]), int(instance["port"])
     listing = ""

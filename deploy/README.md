@@ -119,7 +119,8 @@ database names. Environment files own values such as:
 
 - `SSH_KEY_FILE`
 - `DB_HOST` and `DB_PASSWORD`
-- `GSLT_*` and `RCON_*`
+- `RCON_PASSWORD`, shared by every instance
+- `GSLT_*`
 - `CHEAT_API_KEY`
 
 For local deployment, copy the server template and keep the resulting file
@@ -143,10 +144,11 @@ The private deployment key is separate: use `SSH_KEY` in GitHub or
 
 ## Plugin databases
 
-Deploy does not create databases. Before the first deploy, create the
-`database.user` role with `DB_PASSWORD` and one database per database-backed
-plugin, named as in the inventory. Plugins apply their own schema migrations
-when they load.
+Deploy does not create databases. Before the first deploy, create one database
+per database-backed plugin, named as in the inventory. Plugins connect as
+`postgres` on port 5432 with `DB_PASSWORD`; set `database.user` or
+`database.port` in the inventory to change that. Plugins apply their own schema
+migrations when they load.
 
 To reach a PostgreSQL server on a Docker host through SSH:
 
@@ -158,7 +160,7 @@ uv run poe deploy-tunnel --host 203.0.113.10 --identity ~/.ssh/id_deploy
 Connect from another shell:
 
 ```bash
-psql "host=127.0.0.1 port=5433 dbname=admin_system user=cs2_app"
+psql "host=127.0.0.1 port=5433 dbname=admin_system user=postgres"
 ```
 
 Press Ctrl-C to close the tunnel. Use `--local-port`, `--db-host`,
@@ -208,7 +210,7 @@ instead of SSH, so it needs no runtime image, Docker or SSH key:
 
 It has exactly one instance, and `game_dir` defaults to `/game/csgo`. Its env
 file holds `PANEL_API_KEY` (panel → Account → API Credentials), the database
-password and `RCON_main`. The map, GSLT, hostname and RCON password belong in
+password and `RCON_PASSWORD`. The map, GSLT, hostname and RCON password belong in
 the panel's Startup tab.
 
 Some hosts link every server to one shared CS2 install, and the panel refuses to
