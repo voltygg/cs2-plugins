@@ -69,6 +69,8 @@ class PanelClient:
 
     def read(self, path: str) -> str:
         """Return a file's text, or "" when it does not exist."""
+        if not self._exists(path):
+            return ""
         return self._call("GET", "/files/contents", query={"file": path}, missing_ok=True).decode()
 
     def write(self, path: str, text: str) -> None:
@@ -108,7 +110,12 @@ class PanelClient:
 
     def _entry(self, path: str) -> dict[str, Any] | None:
         directory, _, name = path.rpartition("/")
-        listing = self._call("GET", "/files/list", query={"directory": directory}, missing_ok=True)
+        # Some nodes answer a missing path with 500 instead of 404, so confirm the parent first.
+        if directory and not self._exists(directory):
+            return None
+        listing = self._call(
+            "GET", "/files/list", query={"directory": directory or "/"}, missing_ok=True
+        )
         entries = json.loads(listing)["data"] if listing else []
         return next(
             (entry["attributes"] for entry in entries if entry["attributes"]["name"] == name), None
