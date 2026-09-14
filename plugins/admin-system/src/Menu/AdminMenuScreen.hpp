@@ -2,7 +2,6 @@
 
 #include <Ui/AdminMenu.hpp>
 #include <VoltMod/Core/PerSlot.hpp>
-#include <VoltMod/Core/SlotEvents.hpp>
 #include <VoltMod/Menu/Menu.hpp>
 #include <VoltMod/Ui/Screen.hpp>
 #include <VoltMod/Ui/ScreenManager.hpp>
@@ -55,7 +54,7 @@ public:
     static constexpr int RowCount = static_cast<int>(AdminMenuLayout::Rows.size());
     static constexpr int TabCount = static_cast<int>(AdminMenuLayout::Tabs.size());
 
-    AdminMenuScreen(VoltMod::ScreenManager& screens, VoltMod::SlotEvents& slots);
+    explicit AdminMenuScreen(VoltMod::ScreenManager& screens);
 
     /** Spawn the screen if needed, unhide it and give the cursor. False when @p slot cannot be drawn to. */
     bool Show(int slot);
@@ -67,10 +66,9 @@ public:
     void HideTab(int slot, int index);
     void SetRow(int slot, int index, const VoltMod::MenuRow& row, std::string_view pendingHint);
     void HideRow(int slot, int index);
-    void ShowEmpty(int slot, std::string_view text);
-    void HideEmpty(int slot);
-    void ShowPager(int slot, std::string_view text);
-    void HidePager(int slot);
+    /** Empty text hides the line, as it does for the header subtitle. */
+    void SetEmpty(int slot, std::string_view text);
+    void SetPager(int slot, std::string_view text);
     void ShowPrompt(int slot, std::string_view text, std::string_view hint);
     void HidePrompt(int slot);
     void SetFooter(int slot, std::string_view back, std::string_view cancel);

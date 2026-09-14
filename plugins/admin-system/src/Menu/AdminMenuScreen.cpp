@@ -12,10 +12,10 @@ using VoltMod::Screen;
 namespace AdminSystem::Menus
 {
 
-AdminMenuScreen::AdminMenuScreen(VoltMod::ScreenManager& screens, VoltMod::SlotEvents& slots) : _manager(screens)
-{
-    _screens.BindReset(slots);
-}
+/** The prefix every class in the generated IconClasses family carries. */
+static constexpr std::string_view IconClassPrefix = "Icon--";
+
+AdminMenuScreen::AdminMenuScreen(VoltMod::ScreenManager& screens) : _manager(screens) {}
 
 bool AdminMenuScreen::Show(int slot)
 {
@@ -65,7 +65,7 @@ void AdminMenuScreen::SetTab(int slot, int index, std::string_view label, std::s
 
     // Every icon class is written, so the one a previous tab showed turns off.
     for (std::string_view iconClass : AdminMenuLayout::IconClasses)
-        screen.SetClass(slot, tab.Icon, iconClass, iconClass.substr(iconClass.find("--") + 2) == icon);
+        screen.SetClass(slot, tab.Icon, iconClass, iconClass.substr(IconClassPrefix.size()) == icon);
 }
 
 void AdminMenuScreen::HideTab(int slot, int index)
@@ -99,28 +99,18 @@ void AdminMenuScreen::HideRow(int slot, int index)
     ScreenFor(slot).SetClass(slot, AdminMenuLayout::Rows[static_cast<std::size_t>(index)].Id, "Hidden", true);
 }
 
-void AdminMenuScreen::ShowEmpty(int slot, std::string_view text)
+void AdminMenuScreen::SetEmpty(int slot, std::string_view text)
 {
     Screen& screen = ScreenFor(slot);
     screen.SetText(slot, AdminMenuLayout::EmptyVar, text);
-    screen.SetClass(slot, AdminMenuLayout::Empty, "Hidden", false);
+    screen.SetClass(slot, AdminMenuLayout::Empty, "Hidden", text.empty());
 }
 
-void AdminMenuScreen::HideEmpty(int slot)
-{
-    ScreenFor(slot).SetClass(slot, AdminMenuLayout::Empty, "Hidden", true);
-}
-
-void AdminMenuScreen::ShowPager(int slot, std::string_view text)
+void AdminMenuScreen::SetPager(int slot, std::string_view text)
 {
     Screen& screen = ScreenFor(slot);
     screen.SetText(slot, AdminMenuLayout::PageVar, text);
-    screen.SetClass(slot, AdminMenuLayout::Page, "Hidden", false);
-}
-
-void AdminMenuScreen::HidePager(int slot)
-{
-    ScreenFor(slot).SetClass(slot, AdminMenuLayout::Page, "Hidden", true);
+    screen.SetClass(slot, AdminMenuLayout::Page, "Hidden", text.empty());
 }
 
 void AdminMenuScreen::ShowPrompt(int slot, std::string_view text, std::string_view hint)

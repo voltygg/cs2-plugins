@@ -14,7 +14,7 @@ namespace AdminSystem::Menus
 {
 
 PanoramaMenu::PanoramaMenu(VoltMod::Runtime& runtime)
-    : _rt(runtime), _stack(*this, runtime.Translations, runtime.Scheduler), _screen(runtime.Screens, runtime.Slots)
+    : _rt(runtime), _stack(*this, runtime.Translations, runtime.Scheduler), _screen(runtime.Screens)
 {}
 
 PanoramaMenu::~PanoramaMenu() = default;
@@ -242,25 +242,24 @@ void PanoramaMenu::DrawRows(int slot, const Menu& menu)
     const int pages = VoltMod::PageCount(count, AdminMenuScreen::RowCount);
     session.Page = std::clamp(session.Page, 0, pages - 1);
 
-    const std::string pendingHint = Translate(slot, "menu.pending", "Applying...");
+    std::string pendingHint;
     for (int row = 0; row < AdminMenuScreen::RowCount; ++row)
     {
         const int item = ItemAt(slot, row);
         if (item >= count)
+        {
             _screen.HideRow(slot, row);
-        else
-            _screen.SetRow(slot, row, _stack.Describe(slot, item), pendingHint);
+            continue;
+        }
+
+        const VoltMod::MenuRow described = _stack.Describe(slot, item);
+        if (described.Pending && pendingHint.empty())
+            pendingHint = Translate(slot, "menu.pending", "Applying...");
+        _screen.SetRow(slot, row, described, pendingHint);
     }
 
-    if (count == 0)
-        _screen.ShowEmpty(slot, Translate(slot, "menu.empty", "Nothing here"));
-    else
-        _screen.HideEmpty(slot);
-
-    if (pages > 1)
-        _screen.ShowPager(slot, std::format("{} / {}", session.Page + 1, pages));
-    else
-        _screen.HidePager(slot);
+    _screen.SetEmpty(slot, count == 0 ? Translate(slot, "menu.empty", "Nothing here") : std::string{});
+    _screen.SetPager(slot, pages > 1 ? std::format("{} / {}", session.Page + 1, pages) : std::string{});
 }
 
 void PanoramaMenu::DrawPrompt(int slot)
