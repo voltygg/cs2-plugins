@@ -16,6 +16,7 @@ plugins:
     settings:
       plugin: { locale: ru }
       server: { tag: "${SERVER_TAG}", name: "${SERVER_NAME}" }
+      menu: { panorama: true, addonId: 3801580041 }
       punishments:
         templates:
           - { name: "Читы", type: ban, duration: perm, reason: "Читы" }
