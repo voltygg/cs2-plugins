@@ -9,7 +9,7 @@ paths:
 
 - Derive from `VoltMod::MetamodPlugin` and declare with `VOLTMOD_PLUGIN(Klass)` in `Plugin.cpp`.
 - Build the object graph in `OnLoad(Runtime&)` and release it in `OnUnload`. The base creates a fresh `Runtime` per load cycle, so nothing may survive `meta reload`.
-- Use `VoltMod::WithBuildInfo` for metadata and `VoltMod::LoadStandardConfig` for the config and translation load stages.
+- Use `VoltMod::WithBuildInfo` for metadata and `VoltMod::LoadStandardConfig` to load settings and translations.
 
 ## Commands
 

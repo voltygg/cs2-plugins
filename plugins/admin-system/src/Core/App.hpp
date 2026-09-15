@@ -119,9 +119,9 @@ private:
     void RegisterPlayerLifecycle();
     void OnPlayerConnect(VoltMod::Player& player);
     void OnPlayerDisconnect(VoltMod::Player& player);
-    VoltMod::StageResult ConnectDatabase();
-    VoltMod::StageResult LoadAdminData();
-    VoltMod::StageResult StartPunishments();
+    VoltMod::Status ConnectDatabase();
+    VoltMod::Status LoadAdminData();
+    VoltMod::Status StartPunishments();
     void RegisterGameEventListeners();
     void InstallStatusReporting();
     void RegisterCommands();

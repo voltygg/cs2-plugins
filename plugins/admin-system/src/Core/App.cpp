@@ -10,8 +10,9 @@
 #include <VoltMod/Events/EventTypes.hpp>
 #include <string>
 
+using VoltMod::Error;
 using VoltMod::Player;
-using VoltMod::StageResult;
+using VoltMod::Status;
 namespace Log = VoltMod::Log;
 
 namespace AdminSystem
@@ -95,34 +96,34 @@ void App::OnPlayerDisconnect(Player& player)
     CheatCheck.CancelAllForSlot(player.Slot());
 }
 
-StageResult App::ConnectDatabase()
+Status App::ConnectDatabase()
 {
     if (!Db.Start(Settings.GetDatabase()))
-        return StageResult::Degraded("unavailable; chat commands will reject all callers");
+        return std::unexpected(Error::Engine("unavailable; chat commands will reject all callers"));
 
     Migration = VoltMod::RunMigrations(Db, VoltMod::AddonFile(Config::AddonName, "configs/migrations"),
                                        {.HistoryTable = "schema_migrations", .LockKey = 727274});
     if (!Migration)
-        return StageResult::Degraded("migrations failed; not loading admins against an out-of-date schema");
+        return std::unexpected(Error::Failed("migrations failed; not loading admins against an out-of-date schema"));
 
     const auto& server = Settings.GetServer();
     if (!Repos.Servers.Upsert(server.tag, server.name))
         Log::Warn("Failed to register server '{}' in the servers table.", server.tag);
 
-    return StageResult::Ok();
+    return {};
 }
 
-StageResult App::LoadAdminData()
+Status App::LoadAdminData()
 {
     const bool groups = Admins.LoadGroups();
     const bool admins = Admins.LoadAdmins();
     Freeze.RefreshFromDatabase();
     if (!groups || !admins)
-        return StageResult::Degraded("failed to load groups/admins from DB");
-    return StageResult::Ok();
+        return std::unexpected(Error::Failed("failed to load groups/admins from DB"));
+    return {};
 }
 
-StageResult App::StartPunishments()
+Status App::StartPunishments()
 {
     const bool loaded = Punishments.LoadActivePunishments();
 
@@ -138,7 +139,9 @@ StageResult App::StartPunishments()
     // Published last in this stage so a peer never sees a half-initialised implementation.
     AdminActions.Publish();
 
-    return loaded ? StageResult::Ok() : StageResult::Degraded("failed to load active punishments");
+    if (!loaded)
+        return std::unexpected(Error::Failed("failed to load active punishments"));
+    return {};
 }
 
 void App::RegisterGameEventListeners()
@@ -202,62 +205,46 @@ void App::RegisterCommands()
 
 bool App::Start()
 {
-    auto& report = Runtime.LoadReport;
-
     if (!VoltMod::LoadStandardConfig(Runtime, Settings, {.Addon = Config::AddonName}))
         return false;
 
-    report.Run("Policy", [this] {
-        InstallPolicy();
-        RegisterPlayerLifecycle();
-        // Freeze the player while an admin menu is open, so navigating does not also walk them
-        // around. The Panorama surface freezes its own sessions the same way.
-        Runtime.Freeze.Enable(true);
-        if (const auto& menu = Settings.GetMenu(); menu.panorama)
-        {
-            Panorama.emplace(VoltMod::PanoramaMenu::Services{.Scheduler = Runtime.Scheduler,
-                                                             .Slots = Runtime.Slots,
-                                                             .Freeze = Runtime.Freeze,
-                                                             .ChatInput = Runtime.Hooks.ChatInput,
-                                                             .Translations = Runtime.Translations,
-                                                             .Policy = Runtime.Policy,
-                                                             .Screens = Runtime.Screens,
-                                                             .Addons = Runtime.Addons,
-                                                             .Capabilities = Runtime.Capabilities},
-                             MenuScreen, menu.addonId);
-            PreferPanorama = Runtime.Menus.Prefer(*Panorama);
-        }
-        return StageResult::Ok();
-    });
+    InstallPolicy();
+    RegisterPlayerLifecycle();
+    // Freeze the player while an admin menu is open, so navigating does not also walk them
+    // around. The Panorama surface freezes its own sessions the same way.
+    Runtime.Freeze.Enable(true);
+    if (const auto& menu = Settings.GetMenu(); menu.panorama)
+    {
+        Panorama.emplace(VoltMod::PanoramaMenu::Services{.Scheduler = Runtime.Scheduler,
+                                                         .Slots = Runtime.Slots,
+                                                         .Freeze = Runtime.Freeze,
+                                                         .ChatInput = Runtime.Hooks.ChatInput,
+                                                         .Translations = Runtime.Translations,
+                                                         .Policy = Runtime.Policy,
+                                                         .Screens = Runtime.Screens,
+                                                         .Addons = Runtime.Addons,
+                                                         .Capabilities = Runtime.Capabilities},
+                         MenuScreen, menu.addonId);
+        PreferPanorama = Runtime.Menus.Prefer(*Panorama);
+    }
 
-    report.Run("Database", [this] { return ConnectDatabase(); });
+    // Admins and punishments live in the database; without it their steps would only repeat its error.
+    auto& steps = Runtime.LoadSteps;
+    const bool database = steps.Optional("Database", [this] { return ConnectDatabase(); });
+    if (database)
+        steps.Optional("Admins", [this] { return LoadAdminData(); });
 
-    report.Run("Admins", [&] {
-        if (!report.IsOk("Database"))
-            return StageResult::Skipped("database unavailable");
-        return LoadAdminData();
-    });
+    RegisterCommands();
 
-    report.Run("Commands", [this] {
-        RegisterCommands();
-        return StageResult::Ok(std::format("{} chat commands", Runtime.Commands.Count()));
-    });
+    if (database)
+        steps.Optional("Punishments", [this] { return StartPunishments(); });
 
-    report.Run("Punishments", [&] {
-        if (!report.IsOk("Database"))
-            return StageResult::Skipped("database unavailable");
-        return StartPunishments();
-    });
-
-    report.Run("Events", [this] {
-        RegisterGameEventListeners();
-        // Queue fun-model assets; they replicate to clients from the next map load.
-        Admin::Effects::PrecacheModels(Runtime);
-        // Surface an unloadable configured map here rather than on the first !map.
-        MapCycle.VerifyAgainstEngine();
-        FunMode.Start();
-        return StageResult::Ok();
-    });
+    RegisterGameEventListeners();
+    // Queue fun-model assets; they replicate to clients from the next map load.
+    Admin::Effects::PrecacheModels(Runtime);
+    // Surface an unloadable configured map here rather than on the first !map.
+    MapCycle.VerifyAgainstEngine();
+    FunMode.Start();
 
     InstallStatusReporting();
     return true;
