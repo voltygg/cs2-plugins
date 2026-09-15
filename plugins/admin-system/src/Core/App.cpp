@@ -222,8 +222,7 @@ bool App::Start()
                                                          .Translations = Runtime.Translations,
                                                          .Policy = Runtime.Policy,
                                                          .Screens = Runtime.Screens,
-                                                         .Addons = Runtime.Addons,
-                                                         .Capabilities = Runtime.Capabilities},
+                                                         .Addons = Runtime.Addons},
                          MenuScreen, menu.addonId);
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);
     }

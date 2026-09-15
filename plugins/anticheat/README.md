@@ -230,14 +230,14 @@ crash, create false evidence, or silently disable detection.
 | `CUserCmd::CSGOUserCmdPB` | Missing values silence aim modules; stale values can resemble valid angles |
 | `CUserCmdBase::cmdNum` | Command chains collapse, silently disabling aimbot and part of antiaim |
 | `CBaseEntity::Teleport` | Teleport grace stops suppressing discontinuities, so false positives appear |
-| `CServerSideClient::ProcessRespondCvarValue` | Load-time bounds checks turn `Capability::ClientConVars` off |
+| `CServerSideClient::ProcessRespondCvarValue` | Load-time bounds checks make `Hooks.ClientConVars.Available()` fail |
 | `CServerSideClientBase::m_nClientSlot` | Same, which is what stops responses reaching the wrong player |
 
 The entries live in the framework's `gamedata/gamedata.jsonc`; its guide has the
-re-verification procedure. `anticheat_status` reads `Runtime::Capabilities`: it exposes
-`teleportTracker` from `Capability::Teleport` and reports client convars as `degraded` when
-`Capability::ClientConVars` is off. In that state, network polling stops and `invalid_cvar` uses
-userinfo only.
+re-verification procedure. `anticheat_status` exposes `teleportTracker` from
+`Hooks.Teleport.Available()` and reports client convars as `degraded` when
+`Hooks.ClientConVars.Available()` fails. In that state, network polling stops and `invalid_cvar`
+uses userinfo only.
 
 ## Architecture
 

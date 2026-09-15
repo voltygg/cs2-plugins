@@ -82,7 +82,7 @@ double InvalidCvarDetector::NextDelaySec()
 void InvalidCvarDetector::Poll(int slot, SlotState& state)
 {
     ReadUserInfo(slot);
-    if (!_rt.Capabilities.Has(VoltMod::Capability::ClientConVars))
+    if (!_rt.Hooks.ClientConVars.Available())
         return;
 
     const CvarRuleTable& rules = _manager.InvalidCvars().Rules();

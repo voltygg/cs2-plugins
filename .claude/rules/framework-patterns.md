@@ -67,7 +67,7 @@ commands.Add("slap")
 - A settings struct is a plain aggregate at namespace scope. The member name is the JSON key, a missing key keeps the initializer, unknown keys are ignored.
 - When settings need validation or derived values, wrap `Json::ReadFile` in a plugin `ConfigManager` that publishes a snapshot in one assignment (admin-system `Config/ConfigManager.*`). Do not subclass `JsonConfig`: a failed reload must not leave half-applied state.
 - Resolve `VoltMod::ConVar<T>` handles once at start, not by name per call.
-- Ask `runtime.Capabilities.Has(...)` before using anything that depends on gamedata or an engine interface.
+- Ask the service's `Available()` (`runtime.Hooks.Movement`, `runtime.Screens`, ...) before relying on anything that depends on gamedata.
 
 ## Database
 
