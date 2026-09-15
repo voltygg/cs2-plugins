@@ -1,11 +1,6 @@
 # Non-secret deploy topology. Keep secrets in per-server env files or CI.
 
-defaults:
-  ssh_user: steam
-  ssh_port: 22
-  cs2_root: /home/steam/cs2
-  deploy_root: /home/steam/cs2/deploy
-  runtime_image: ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:latest
+runtime_image: ghcr.io/voltygg/cs2-plugins/cs2-server-runtime
 
 database:
   sslMode: require
@@ -48,7 +43,7 @@ plugins:
 
 servers:
   - id: panel-a
-    kind: pterodactyl
+    kind: panel
     environment: prod-panel-a
     panel_url: https://cp.elect-host.com/server/c913d656
     host: 37.230.228.94
@@ -60,10 +55,10 @@ servers:
       - { name: main, port: 27030, hostname: "CS2 Main" }
 
   - id: box-a
+    kind: docker
     enabled: false
     host: 207.180.234.215
     environment: prod-box-a
-    deploy_root: /home/steam/cs2/deploy
     plugins:
       - admin-system
       - bhop

@@ -46,7 +46,7 @@ plugins/admin-system/  Admins, punishments, menus, reports, Postgres/MariaDB/SQL
 plugins/anticheat/     Detection cores, engine adapters, responses
 plugins/bhop/          Bunnyhop modes
 plugins/contracts/     Interfaces shared between plugins
-deploy/                Docker deployment CLI
+deploy/                Deploy CLI for panel servers and Docker hosts
 docs/                  Development and deployment notes
 ```
 

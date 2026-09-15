@@ -1,0 +1,83 @@
+"""deploy/inventory.yml: plugins, servers and the Docker runtime image repository."""
+
+from pathlib import Path
+from typing import Annotated, Any, ClassVar, Self
+
+import yaml
+from pydantic import Field, ValidationError, field_validator, model_validator
+
+from deploy.tools.config.servers import DockerServer, Instance, Model, PanelServer, Server
+from deploy.tools.errors import DeployError
+from deploy.tools.paths import DEPLOY
+
+
+class Plugin(Model):
+    """A deployable plugin: its database, if any, and the settings production changes."""
+
+    database: str | None = None
+    settings: dict[str, Any] = Field(default_factory=dict)
+
+
+class Database(Model):
+    """Connection settings every database-backed plugin shares."""
+
+    host: str | None = None
+    port: int = 5432
+    user: str = "postgres"
+    ssl_mode: str = Field(default="prefer", alias="sslMode")
+
+
+class Inventory(Model):
+    """deploy/inventory.yml: plugins, servers and the Docker runtime image repository."""
+
+    PATH: ClassVar[Path] = DEPLOY / "inventory.yml"
+
+    runtime_image: str
+    database: Database = Field(default_factory=Database)
+    plugins: dict[str, Plugin]
+    servers: list[Annotated[DockerServer | PanelServer, Field(discriminator="kind")]]
+
+    @classmethod
+    def load(cls) -> Self:
+        try:
+            return cls.model_validate(yaml.safe_load(cls.PATH.read_text(encoding="utf-8")))
+        except ValidationError as error:
+            raise DeployError(f"{cls.PATH.name} is invalid:\n{error}") from None
+
+    @field_validator("runtime_image")
+    @classmethod
+    def check_untagged(cls, image: str) -> str:
+        if ":" in image.rsplit("/", 1)[-1]:
+            raise ValueError("must be the repository without a tag; each deploy picks the tag")
+        return image
+
+    @model_validator(mode="after")
+    def check_servers(self) -> Self:
+        ids = [server.id for server in self.servers]
+        if len(ids) != len(set(ids)):
+            raise ValueError("two servers share an id")
+        for server in self.servers:
+            for instance in server.instances:
+                missing = [
+                    name for name in server.plugins_for(instance) if name not in self.plugins
+                ]
+                if missing:
+                    raise ValueError(f"server '{server.id}' uses undeclared plugins: {missing}")
+        return self
+
+    def server(self, server_id: str) -> DockerServer | PanelServer:
+        for server in self.servers:
+            if server.id == server_id:
+                return server
+        raise DeployError(f"server '{server_id}' not found in {self.PATH.name}")
+
+    def select(self, server_id: str | None) -> list[DockerServer | PanelServer]:
+        """The named server, or every enabled one."""
+        if server_id:
+            return [self.server(server_id)]
+        return [server for server in self.servers if server.enabled]
+
+    def unused_plugins(self, server: Server, instance: Instance) -> list[str]:
+        """Inventory plugins the instance does not run, which a deploy removes from the server."""
+        assigned = server.plugins_for(instance)
+        return [name for name in self.plugins if name not in assigned]

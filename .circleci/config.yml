@@ -1,13 +1,5 @@
-# CircleCI fallback for the GitHub Actions CI and deploy workflows.
+# CircleCI fallback for the GitHub Actions CI workflow. Deploys run only in GitHub Actions.
 version: 2.1
-
-parameters:
-  server:
-    type: string
-    default: ""
-  dry-run:
-    type: boolean
-    default: false
 
 executors:
   toolchain:
@@ -16,10 +8,6 @@ executors:
     resource_class: large
     environment:
       CCACHE_DIR: /ccache
-  machine-docker:
-    machine:
-      image: ubuntu-2604:current
-    resource_class: large
 
 commands:
   setup-toolchain:
@@ -27,6 +15,8 @@ commands:
       - run:
           name: Set up the Voltmod toolchain
           command: |
+            # Pinned to the voltmod release in conan.lock; bump the two together.
+            VOLTMOD_REF=v1.4.6
             echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contrib non-free' \
               > /etc/apt/sources.list.d/steamrt-beta.list
             apt-get update
@@ -36,63 +26,44 @@ commands:
             curl -LsSf https://astral.sh/uv/install.sh | sh
             "$HOME/.local/bin/uv" venv --python 3.14 "$HOME/.voltmod"
             "$HOME/.local/bin/uv" pip install --python "$HOME/.voltmod/bin/python" --no-cache \
-              "voltmod @ git+https://github.com/voltygg/voltmod.git@main"
+              "voltmod @ git+https://github.com/voltygg/voltmod.git@$VOLTMOD_REF"
             echo 'export PATH="$HOME/.voltmod/bin:$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
             echo 'export VIRTUAL_ENV="$HOME/.voltmod"' >> "$BASH_ENV"
             export PATH="$HOME/.voltmod/bin:$HOME/.local/bin:$PATH"
             export VIRTUAL_ENV="$HOME/.voltmod"
             conan profile detect --force >/dev/null 2>&1 || true
-            conan config install https://github.com/voltygg/voltmod.git -sf conan
-  restore-conan:
-    steps:
-      - restore_cache:
-          keys:
-            - &conan_key conan-sniper-gcc14-v1-{{ checksum "conan.lock" }}
-            - conan-sniper-gcc14-v1-
-  save-conan:
-    steps:
-      - save_cache:
-          key: *conan_key
-          paths:
-            - ~/.conan2
-  restore-ccache:
-    steps:
-      - restore_cache:
-          keys:
-            - &ccache_key ccache-sniper-gcc14-v1-{{ checksum "conan.lock" }}-{{ .Branch }}-{{ .Revision }}
-            - ccache-sniper-gcc14-v1-{{ checksum "conan.lock" }}-{{ .Branch }}-
-            - ccache-sniper-gcc14-v1-{{ checksum "conan.lock" }}-
-  save-ccache:
-    steps:
-      - save_cache:
-          key: *ccache_key
-          paths:
-            - /ccache
-  build-plugins:
-    steps:
-      - checkout
-      - restore-conan
-      - setup-toolchain
-      - restore-ccache
-      - run:
-          name: Build Linux plugins
-          command: mkdir -p /ccache && voltmod build linux-steamrt-release
-  ghcr-login:
-    steps:
-      - run:
-          name: Login to GHCR
-          command: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            conan config install https://github.com/voltygg/voltmod.git -sf conan \
+              --args "--branch $VOLTMOD_REF"
 
 jobs:
   build-test:
     executor: toolchain
     steps:
-      - build-plugins
+      - checkout
+      - restore_cache:
+          keys:
+            - &conan_key conan-sniper-gcc14-v1-{{ checksum "conan.lock" }}
+            - conan-sniper-gcc14-v1-
+      - setup-toolchain
+      - restore_cache:
+          keys:
+            - &ccache_key ccache-sniper-gcc14-v1-{{ checksum "conan.lock" }}-{{ .Branch }}-{{ .Revision }}
+            - ccache-sniper-gcc14-v1-{{ checksum "conan.lock" }}-{{ .Branch }}-
+            - ccache-sniper-gcc14-v1-{{ checksum "conan.lock" }}-
+      - run:
+          name: Build Linux plugins
+          command: mkdir -p /ccache && voltmod build linux-steamrt-release
       - run:
           name: Test
           command: voltmod test linux-steamrt-release
-      - save-conan
-      - save-ccache
+      - save_cache:
+          key: *conan_key
+          paths:
+            - ~/.conan2
+      - save_cache:
+          key: *ccache_key
+          paths:
+            - /ccache
 
   lint:
     docker:
@@ -109,98 +80,8 @@ jobs:
           name: Ruff check (build tooling)
           command: uv run poe lint-ci
 
-  build-package:
-    executor: toolchain
-    steps:
-      - build-plugins
-      - run:
-          name: Test
-          command: voltmod test linux-steamrt-release
-      - run:
-          name: Package every declared plugin
-          command: python3 -m deploy.tools.cli package --all linux
-      - save-conan
-      - save-ccache
-      - persist_to_workspace:
-          root: .
-          paths:
-            - package
-
-  runtime-image:
-    executor: machine-docker
-    resource_class: medium
-    steps:
-      - checkout
-      - ghcr-login
-      - run:
-          name: Build + push runtime image
-          command: |
-            sudo apt-get update -qq && sudo apt-get install -y -qq python3-yaml
-            RUNTIME_IMAGE=$(python3 -m deploy.tools.cli runtime-image)
-            docker buildx create --driver docker-container --use
-            docker buildx build \
-              --file deploy/Dockerfile \
-              --target runtime \
-              --push \
-              --tag "$RUNTIME_IMAGE" \
-              --cache-from "type=registry,ref=ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:buildcache" \
-              --cache-to "type=registry,ref=ghcr.io/voltygg/cs2-plugins/cs2-server-runtime:buildcache,mode=max" \
-              .
-
-  deploy:
-    docker:
-      - image: cimg/python:3.14
-    resource_class: medium
-    environment:
-      SSH_KEY_FILE: /home/circleci/.ssh/id_deploy
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - run:
-          name: Install deploy deps
-          command: |
-            sudo apt-get update -qq && sudo apt-get install -y -qq rsync
-            pip install --quiet pyyaml python-dotenv typer
-      - run:
-          name: Configure SSH
-          command: |
-            FILTER="<< pipeline.parameters.server >>"
-            if [ -z "$(python3 -m deploy.tools.cli matrix --kind docker --format plain ${FILTER:+--server "$FILTER"})" ]; then
-              echo "No Docker servers to deploy; skipping SSH setup"
-              exit 0
-            fi
-            [ -n "$SSH_KEY_B64" ] || { echo "ERROR: SSH_KEY_B64 is empty (cs2-deploy context)" >&2; exit 1; }
-            mkdir -p ~/.ssh && chmod 700 ~/.ssh
-            echo "$SSH_KEY_B64" | base64 -d > "$SSH_KEY_FILE"
-            chmod 600 "$SSH_KEY_FILE"
-      - run:
-          name: Deploy the active servers
-          command: |
-            FILTER="<< pipeline.parameters.server >>"
-            ARGS=(deploy)
-            if [ -n "$FILTER" ]; then ARGS+=(--server "$FILTER"); else ARGS+=(--all); fi
-            if [ "<< pipeline.parameters.dry-run >>" = "true" ]; then ARGS+=(--dry-run); fi
-            python3 -m deploy.tools.cli "${ARGS[@]}"
-
 workflows:
   ci:
-    when:
-      not:
-        equal: [prod, << pipeline.git.branch >>]
     jobs:
       - build-test
       - lint
-
-  deploy:
-    when:
-      equal: [prod, << pipeline.git.branch >>]
-    jobs:
-      - build-package
-      - runtime-image:
-          context: ghcr
-      - deploy:
-          context: cs2-deploy
-          requires:
-            - build-package
-            - runtime-image

@@ -52,13 +52,16 @@ address.
 uv run poe rcon "<command>" ["<command>" ...] [--server <id>] [--instance <name>]
 ```
 
-Resolves host and port from `deploy/inventory.yml` and `RCON_PASSWORD` from
-`deploy/secrets/servers/<id>/.env`, tunnels over SSH (the RCON port is not
-exposed), and prints each response under a `### <command>` header. The flags are
-optional when the inventory has one server / one instance.
+Resolves the address from `deploy/inventory.yml` and `RCON_PASSWORD` from
+`deploy/secrets/servers/<id>/.env`, and prints each response under a
+`### <command>` header. A panel server is reached directly on its game port, a
+Docker host through an SSH tunnel. The flags are optional when one server is
+enabled and it has one instance.
 
-Logs and dumps need the box itself. The SSH host and `SSH_KEY_FILE` are in the
-same inventory and `.env`; containers are named `<server-id>-cs2-<instance>`:
+Logs: a panel server has no shell. Read its console in the panel, or files under
+`/game/logs` with `PanelApi.read` from `deploy/tools/panel/api.py`. On a Docker host,
+SSH in; the host and `SSH_KEY_FILE` are in the same inventory and `.env`, and
+containers are named `<server-id>-cs2-<instance>`:
 
 ```bash
 ssh -i <SSH_KEY_FILE> -o IdentitiesOnly=yes -o BatchMode=yes steam@<host>

@@ -1,0 +1,97 @@
+"""Deploys to Docker hosts."""
+
+import os
+from collections.abc import Generator
+from contextlib import contextmanager
+
+from deploy.tools.config.inventory import Inventory
+from deploy.tools.config.servers import DockerServer, Instance
+from deploy.tools.deployer import Deployer
+from deploy.tools.docker.compose import ComposeProject
+from deploy.tools.docker.host import DockerHost
+from deploy.tools.docker.ssh import Ssh
+from deploy.tools.paths import RENDER
+
+
+class DockerDeployer(Deployer[DockerServer]):
+    """Syncs a rendered Compose project to the host and recreates instances one at a time."""
+
+    def __init__(
+        self, inventory: Inventory, server: DockerServer, *, dry_run: bool = False
+    ) -> None:
+        super().__init__(inventory, server, dry_run=dry_run)
+        # CI names its key file in the process env, which beats a local path copied into the file.
+        identity = os.environ.get("SSH_KEY_FILE") or self.env.get("SSH_KEY_FILE")
+        self.ssh = Ssh(server, identity, dry_run=dry_run)
+        self.host = DockerHost(server, self.ssh)
+        self.project = ComposeProject(server, self.env, self.addons, self.image)
+
+    @property
+    def image(self) -> str:
+        """The runtime image at RUNTIME_IMAGE_TAG, which CI sets to the commit SHA."""
+        return f"{self.inventory.runtime_image}:{os.environ.get('RUNTIME_IMAGE_TAG', 'latest')}"
+
+    def deploy(self) -> None:
+        render_dir = RENDER / self.server.id
+        self.project.render(render_dir)
+        root = self.server.deploy_root
+        self._print_plan(f"Deploying to {self.ssh.target}:{root} for")
+
+        print(f"    image: {self.image}")
+        addons_dirs = [f"{self.server.instance_dir(item)}/addons" for item in self.server.instances]
+
+        # Bind-mount sources must exist first, or Docker creates them as root.
+        self.host.create_folders([root, self.server.game_install, *addons_dirs])
+        self.ssh.sync(render_dir, root)
+        instances = self.server.instances
+        self.host.remove([path for item in instances for path in self._unused_paths_on_host(item)])
+
+        if self.dry_run:
+            print("=== Dry run complete; no container changed ===")
+            return
+
+        self.host.pull()
+        for instance in self.server.instances:
+            self.host.recreate(instance)
+        self.host.check_running()
+        self.host.remove_old_images(self.inventory.runtime_image, keep=self.image)
+        print(f"=== Deploy to {self.server.id} complete ===")
+
+    def update(self) -> None:
+        self._print_plan("Updating CS2 on")
+        for instance in self.server.instances:
+            self.host.restart(instance)
+        if not self.dry_run:
+            self.host.check_running()
+        print(f"=== Update of {self.server.id} complete ===")
+
+    def cleanup(self) -> None:
+        print(f"=== Removing the deployment from {self.server.id} ({self.ssh.target}) ===")
+        self.host.remove_deployment(self.inventory.runtime_image)
+        print(f"=== Cleanup of {self.server.id} complete ===")
+
+    def tunnel_database(self, local_port: int, db_host: str, db_port: int) -> None:
+        with self.ssh.tunnel(db_host, db_port, local_port) as tunnel:
+            print(f"=== 127.0.0.1:{local_port} -> {db_host}:{db_port} on {self.ssh.target} ===")
+            print(f'    psql "host=127.0.0.1 port={local_port} dbname=<database> user=postgres"')
+            print("    Ctrl-C closes the tunnel")
+            tunnel.wait()
+
+    @contextmanager
+    def rcon_address(self, instance: Instance) -> Generator[tuple[str, int]]:
+        # The host firewall opens only the game's UDP port, so RCON goes through SSH.
+        with self.ssh.tunnel("127.0.0.1", instance.port) as tunnel:
+            yield "127.0.0.1", tunnel.local_port
+
+    def _print_plan(self, action: str) -> None:
+        print(f"=== {action} {self.server.id} ===")
+        for instance in self.server.instances:
+            plugins = " ".join(self.server.plugins_for(instance)) or "<none>"
+            print(f"    {instance.name} (port {instance.port}): {plugins}")
+
+    def _unused_paths_on_host(self, instance: Instance) -> list[str]:
+        """Unused plugins in the synced bundle and installed addons; sync and pre.sh only add."""
+        instance_dir = self.server.instance_dir(instance)
+        trees = ("bundles/addons", "addons")
+        unused = self.unused_plugin_paths(instance)
+        return [f"{instance_dir}/{tree}/{path}" for tree in trees for path in unused]

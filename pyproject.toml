@@ -10,13 +10,21 @@ dependencies = [
     "voltmod @ git+https://github.com/voltygg/voltmod.git@main",
     "ruff>=0.14.0",
     "poethepoet>=0.47.0",
+]
+
+# CI installs only this group to package and deploy: uv run --only-group deploy
+[dependency-groups]
+deploy = [
+    "httpx>=0.28.1",
+    "pydantic>=2.12.0",
     "python-dotenv>=1.2.0",
-    "typer>=0.27.1",
     "pyyaml>=6.0",
+    "typer>=0.27.1",
 ]
 
 [tool.uv]
 package = false
+default-groups = ["deploy"]
 
 [tool.poe.tasks]
 build = "voltmod build"
@@ -30,11 +38,10 @@ start-server = "voltmod serve"
 panorama = "voltmod panorama compile"
 format = "voltmod format plugins"
 deploy-package = "python -m deploy.tools.cli package"
-deploy-render = "python -m deploy.tools.cli render"
 deploy-server = "python -m deploy.tools.cli deploy"
 deploy-update = "python -m deploy.tools.cli update"
 deploy-cleanup = "python -m deploy.tools.cli cleanup"
-deploy-tunnel = "python -m deploy.tools.cli tunnel-db"
+deploy-tunnel = "python -m deploy.tools.cli tunnel"
 rcon = "python -m deploy.tools.cli rcon"
 schema = "voltmod database tables --migrations plugins/admin-system/configs/migrations --header plugins/admin-system/src/Database/Tables/Schema.hpp --namespace AdminSystem::Database::Tables"
 

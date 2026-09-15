@@ -1,137 +1,76 @@
-"""Run Source RCON commands through a short-lived SSH tunnel."""
+"""Source RCON over TCP."""
 
-from __future__ import annotations
-
-import os
 import socket
 import struct
 import time
-from contextlib import closing
-from typing import Any
+from typing import Self
 
-from . import inventory
-from .common import die, load_server_env
-from .remote import open_tunnel
-
-_SERVERDATA_AUTH = 3
-_SERVERDATA_AUTH_RESPONSE = 2
-_SERVERDATA_EXECCOMMAND = 2
-_SERVERDATA_RESPONSE_VALUE = 0
-_AUTH_FAILED_ID = -1
-
-
-def _send_packet(sock: socket.socket, packet_id: int, packet_type: int, body: str) -> None:
-    data = struct.pack("<ii", packet_id, packet_type) + body.encode() + b"\x00\x00"
-    sock.sendall(struct.pack("<i", len(data)) + data)
-
-
-def _recv_exact(sock: socket.socket, size: int) -> bytes:
-    data = b""
-    while len(data) < size:
-        chunk = sock.recv(size - len(data))
-        if not chunk:
-            raise ConnectionError("RCON connection closed by server")
-        data += chunk
-    return data
-
-
-def _recv_packet(sock: socket.socket) -> tuple[int, int, str]:
-    (size,) = struct.unpack("<i", _recv_exact(sock, 4))
-    data = _recv_exact(sock, size)
-    packet_id, packet_type = struct.unpack("<ii", data[:8])
-    return packet_id, packet_type, data[8:-2].decode(errors="replace")
+from deploy.tools.errors import DeployError
 
 
 class RconClient:
-    """Minimal Source RCON protocol client (TCP)."""
+    """Minimal Source RCON client."""
+
+    AUTH = 3
+    AUTH_RESPONSE = 2
+    EXEC_COMMAND = 2
+    RESPONSE_VALUE = 0
+    AUTH_FAILED_ID = -1
 
     def __init__(self, host: str, port: int, password: str, timeout: float = 10.0) -> None:
-        self._sock = socket.create_connection((host, port), timeout=timeout)
-        self._sock.settimeout(timeout)
+        self._socket = socket.create_connection((host, port), timeout=timeout)
         self._next_id = 10
-        self._auth(password)
+        self._authenticate(password)
 
-    def _auth(self, password: str) -> None:
-        _send_packet(self._sock, 1, _SERVERDATA_AUTH, password)
-        while True:
-            packet_id, packet_type, _ = _recv_packet(self._sock)
-            if packet_type != _SERVERDATA_AUTH_RESPONSE:
-                continue
-            if packet_id == _AUTH_FAILED_ID:
-                die("RCON authentication failed (check RCON_PASSWORD in the server .env)")
-            return
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.close()
 
     def execute(self, command: str) -> str:
-        """Run one command and return its full (possibly multi-packet) response."""
+        """Run one command and return its whole, possibly multi-packet, response."""
         command_id = self._next_id
         self._next_id += 2
-        _send_packet(self._sock, command_id, _SERVERDATA_EXECCOMMAND, command)
-        # Let CS2 flush command output before sending the end marker.
+        self._send(command_id, self.EXEC_COMMAND, command)
+        # Let CS2 flush the command output before the end marker.
         time.sleep(0.25)
-        _send_packet(self._sock, command_id + 1, _SERVERDATA_RESPONSE_VALUE, "")
-
+        self._send(command_id + 1, self.RESPONSE_VALUE, "")
         parts: list[str] = []
         while True:
-            packet_id, _, body = _recv_packet(self._sock)
+            packet_id, _, body = self._receive()
             if packet_id == command_id + 1:
                 return "".join(parts).strip()
             parts.append(body)
 
     def close(self) -> None:
-        self._sock.close()
+        self._socket.close()
 
+    def _authenticate(self, password: str) -> None:
+        self._send(1, self.AUTH, password)
+        while True:
+            packet_id, packet_type, _ = self._receive()
+            if packet_type != self.AUTH_RESPONSE:
+                continue
+            if packet_id == self.AUTH_FAILED_ID:
+                raise DeployError("RCON authentication failed; check RCON_PASSWORD")
+            return
 
-def _resolve_target(
-    server_id: str | None, instance_name: str | None
-) -> tuple[dict[str, Any], int, str]:
-    """Resolve (server, rcon port, password) for one inventory instance."""
-    data = inventory.load()
-    servers = inventory.active_servers(data)
-    if server_id:
-        server = inventory.find_server(data, server_id)
-    elif len(servers) == 1:
-        server = servers[0]
-    else:
-        die(f"multiple servers in inventory; pass --server ({', '.join(s['id'] for s in servers)})")
+    def _send(self, packet_id: int, packet_type: int, body: str) -> None:
+        data = struct.pack("<ii", packet_id, packet_type) + body.encode() + b"\x00\x00"
+        self._socket.sendall(struct.pack("<i", len(data)) + data)
 
-    instances: list[dict[str, Any]] = server.get("instances", [])
-    if instance_name:
-        matches = [item for item in instances if item.get("name") == instance_name]
-        if not matches:
-            die(f"instance '{instance_name}' not found on server '{server['id']}'")
-        target = matches[0]
-    elif len(instances) == 1:
-        target = instances[0]
-    else:
-        die(f"multiple instances on '{server['id']}'; pass --instance")
+    def _receive(self) -> tuple[int, int, str]:
+        (size,) = struct.unpack("<i", self._receive_exactly(4))
+        data = self._receive_exactly(size)
+        packet_id, packet_type = struct.unpack("<ii", data[:8])
+        return packet_id, packet_type, data[8:-2].decode(errors="replace")
 
-    load_server_env(str(server["id"]), required=True)
-    password = os.environ.get("RCON_PASSWORD", "")
-    if not password:
-        die(f"RCON_PASSWORD not set in the '{server['id']}' .env")
-
-    return server, int(target["port"]), password
-
-
-def run_commands(
-    commands: list[str], *, server_id: str | None = None, instance_name: str | None = None
-) -> None:
-    """Execute commands sequentially against one instance, printing each response."""
-
-    server, rcon_port, password = _resolve_target(server_id, instance_name)
-    # Panel hosts expose the game port publicly; our Docker hosts only allow it over SSH.
-    tunnel = None
-    host, port = str(server["host"]), rcon_port
-    if server["kind"] == "docker":
-        tunnel, port = open_tunnel(server, "127.0.0.1", rcon_port)
-        host = "127.0.0.1"
-    try:
-        with closing(RconClient(host, port, password)) as client:
-            for command in commands:
-                response = client.execute(command)
-                print(f"### {command}")
-                if response:
-                    print(response)
-    finally:
-        if tunnel:
-            tunnel.terminate()
+    def _receive_exactly(self, size: int) -> bytes:
+        data = b""
+        while len(data) < size:
+            chunk = self._socket.recv(size - len(data))
+            if not chunk:
+                raise ConnectionError("RCON connection closed by server")
+            data += chunk
+        return data

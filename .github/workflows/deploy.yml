@@ -6,65 +6,56 @@ on:
   workflow_dispatch:
     inputs:
       server:
-        description: "Deploy only this server id (blank = all active inventory servers)"
+        description: "Deploy only this server id (blank = every enabled server)"
         required: false
         default: ""
       dry_run:
-        description: "Preview rsync only; do not run docker compose"
+        description: "Show what would change without changing servers"
         type: boolean
-        required: false
         default: false
 
 permissions:
   contents: read
-  packages: write
 
 concurrency:
-  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  prepare:
-    name: Resolve deploy inputs
+  # Separate from build so the runtime image builds alongside the plugins.
+  plan:
+    name: Plan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
-      servers: ${{ steps.resolve.outputs.servers }}
-      docker_servers: ${{ steps.resolve.outputs.docker_servers }}
-      runtime_image: ${{ steps.resolve.outputs.runtime_image }}
+      servers: ${{ steps.plan.outputs.servers }}
+      docker: ${{ steps.plan.outputs.docker }}
+      runtime_image: ${{ steps.plan.outputs.runtime_image }}
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.14"
+      - uses: astral-sh/setup-uv@v10.1.0
 
-      - name: Install inventory deps
-        run: pip install pyyaml python-dotenv typer
-
-      - name: Resolve inventory
-        id: resolve
+      - name: Plan
+        id: plan
+        env:
+          SERVER: ${{ inputs.server }}
         run: |
-          FILTER='${{ github.event.inputs.server }}'
-          SERVERS=$(python3 -m deploy.tools.cli matrix ${FILTER:+--server "$FILTER"})
-          DOCKER_SERVERS=$(python3 -m deploy.tools.cli matrix --kind docker ${FILTER:+--server "$FILTER"})
-          RUNTIME_IMAGE=$(python3 -m deploy.tools.cli runtime-image)
-          echo "servers=$SERVERS" >> "$GITHUB_OUTPUT"
-          echo "docker_servers=$DOCKER_SERVERS" >> "$GITHUB_OUTPUT"
-          echo "runtime_image=$RUNTIME_IMAGE" >> "$GITHUB_OUTPUT"
-          echo "Servers: $SERVERS"
-          echo "Runtime image: $RUNTIME_IMAGE"
+          plan=$(uv run --locked --only-group deploy python -m deploy.tools.cli plan ${SERVER:+--server "$SERVER"})
+          echo "$plan" | tee -a "$GITHUB_OUTPUT"
 
   build:
     name: Build + package plugins
-    needs: prepare
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     container:
       image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
     steps:
       - uses: actions/checkout@v7
 
-      # The action owns the Conan and compiler caches.
-      - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
+      # Pinned to the voltmod release in conan.lock; bump the two together.
+      # The action installs uv and owns the Conan and compiler caches.
+      - uses: voltygg/voltmod/.github/actions/setup-toolchain@v1.4.6
 
       - name: Build Linux plugins
         run: voltmod build linux-steamrt-release
@@ -72,106 +63,93 @@ jobs:
       - name: Test
         run: voltmod test linux-steamrt-release
 
-      - name: Package every declared plugin
-        run: python3 -m deploy.tools.cli package --all linux
+      - name: Package plugins
+        run: uv run --locked --only-group deploy python -m deploy.tools.cli package
 
-      - name: Upload plugin bundles
-        uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7
         with:
-          name: bundles
+          name: package
           path: package/
           if-no-files-found: error
 
   runtime-image:
-    name: Build + publish server runtime image
-    needs: prepare
-    if: ${{ needs.prepare.outputs.docker_servers != '[]' }}
+    name: Build + publish runtime image
+    needs: plan
+    # A dry run publishes nothing.
+    if: needs.plan.outputs.docker == 'true' && !inputs.dry_run
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v7
 
       - uses: docker/setup-buildx-action@v4
 
-      - name: Login to GHCR
-        uses: docker/login-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build + push runtime image
-        uses: docker/build-push-action@v7
+      - uses: docker/build-push-action@v7
         with:
-          context: .
-          file: deploy/Dockerfile
-          target: runtime
+          context: deploy/docker
           push: true
-          tags: ${{ needs.prepare.outputs.runtime_image }}
+          tags: |
+            ${{ needs.plan.outputs.runtime_image }}:${{ github.sha }}
+            ${{ needs.plan.outputs.runtime_image }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
     name: Deploy ${{ matrix.server.id }}
-    needs: [prepare, build, runtime-image]
-    runs-on: ubuntu-latest
-    # A skipped runtime-image job must not skip the deploy.
+    needs: [plan, build, runtime-image]
+    # Also runs when the image job was skipped: no Docker host, or a dry run.
     if: >-
       ${{ !cancelled() && needs.build.result == 'success'
-      && contains(fromJSON('["success","skipped"]'), needs.runtime-image.result)
-      && needs.prepare.outputs.servers != '[]' }}
+      && needs.runtime-image.result != 'failure'
+      && needs.plan.outputs.servers != '[]' }}
+    runs-on: ubuntu-latest
+    # A Docker host's first start downloads the whole game.
+    timeout-minutes: 120
     environment: ${{ matrix.server.environment }}
-    concurrency:
-      group: deploy-${{ matrix.server.id }}
-      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
-        server: ${{ fromJSON(needs.prepare.outputs.servers) }}
+        server: ${{ fromJSON(needs.plan.outputs.servers) }}
     steps:
       - uses: actions/checkout@v7
 
-      - name: Download bundles
-        uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8
         with:
-          name: bundles
+          name: package
           path: package
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.14"
+      - uses: astral-sh/setup-uv@v10.1.0
 
-      - name: Install deploy deps
-        run: pip install pyyaml python-dotenv typer
-
-      - name: Install rsync
-        if: ${{ matrix.server.kind == 'docker' }}
-        run: sudo apt-get update && sudo apt-get install -y rsync
-
-      - name: Configure SSH
-        if: ${{ matrix.server.kind == 'docker' }}
-        run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.SSH_KEY }}" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
-          ssh-keyscan -p "${{ matrix.server.ssh_port }}" "${{ matrix.server.host }}" \
-            >> ~/.ssh/known_hosts 2>/dev/null
-
-      - name: Write server env from secret
+      - name: Write secrets
         env:
           SERVER_ENV: ${{ secrets.SERVER_ENV }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          ENV_FILE: deploy/secrets/servers/${{ matrix.server.id }}/.env
         run: |
           if [ -z "$SERVER_ENV" ]; then
-            echo "ERROR: SERVER_ENV secret is empty for environment '${{ matrix.server.environment }}'" >&2
+            echo "ERROR: the ${{ matrix.server.environment }} environment has no SERVER_ENV secret" >&2
             exit 1
           fi
-          dir="deploy/secrets/servers/${{ matrix.server.id }}"
-          mkdir -p "$dir"
-          printf '%s\n' "$SERVER_ENV" > "$dir/.env"
+          mkdir -p "$(dirname "$ENV_FILE")"
+          printf '%s\n' "$SERVER_ENV" > "$ENV_FILE"
+          if [ -n "$SSH_KEY" ]; then
+            printf '%s\n' "$SSH_KEY" > "$RUNNER_TEMP/id_deploy"
+            chmod 600 "$RUNNER_TEMP/id_deploy"
+          fi
 
       - name: Deploy
         env:
-          SSH_KEY_FILE: /home/runner/.ssh/id_deploy
-        run: |
-          ARGS=(deploy --server "${{ matrix.server.id }}" --runtime-image "${{ needs.prepare.outputs.runtime_image }}")
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
-          python3 -m deploy.tools.cli "${ARGS[@]}"
+          SSH_KEY_FILE: ${{ runner.temp }}/id_deploy
+          RUNTIME_IMAGE_TAG: ${{ github.sha }}
+        run: >-
+          uv run --locked --only-group deploy python -m deploy.tools.cli deploy
+          --server "${{ matrix.server.id }}" ${{ inputs.dry_run && '--dry-run' || '' }}

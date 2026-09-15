@@ -80,5 +80,5 @@ uv run poe test
 `build` compiles only, so the local loop stays fast; `test` is what runs the
 suite.
 
-GitHub Actions is the primary CI and deployment path. CircleCI is the fallback;
-do not let both deploy `prod` unless duplicate deployment is intentional.
+GitHub Actions runs CI and is the only deployment path. CircleCI is a CI-only
+fallback that builds, tests and lints.
