@@ -54,7 +54,7 @@ jobs:
 
       # Pinned to the voltmod release in conan.lock; bump the two together.
       # The action installs uv and owns the Conan and compiler caches.
-      - uses: voltygg/voltmod/.github/actions/setup-toolchain@v1.4.6
+      - uses: voltygg/voltmod/.github/actions/setup-toolchain@v1.4.7
 
       - name: Build Linux plugins
         run: voltmod build linux-steamrt-release
