@@ -22,22 +22,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Separate from build so the runtime image builds alongside the plugins.
-  plan:
-    name: Plan
+  targets:
+    name: Resolve deploy targets
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      servers: ${{ steps.plan.outputs.servers }}
-      docker: ${{ steps.plan.outputs.docker }}
-      runtime_image: ${{ steps.plan.outputs.runtime_image }}
+      servers: ${{ steps.resolve.outputs.servers }}
+      docker: ${{ steps.resolve.outputs.docker }}
+      runtime_image: ${{ steps.resolve.outputs.runtime_image }}
     steps:
       - uses: actions/checkout@v7
 
       - uses: astral-sh/setup-uv@v10.1.0
 
-      - name: Plan
-        id: plan
+      - name: Resolve the servers and runtime image
+        id: resolve
         env:
           SERVER: ${{ inputs.server }}
         run: |
@@ -74,9 +73,9 @@ jobs:
 
   runtime-image:
     name: Build + publish runtime image
-    needs: plan
+    needs: targets
     # A dry run publishes nothing.
-    if: needs.plan.outputs.docker == 'true' && !inputs.dry_run
+    if: needs.targets.outputs.docker == 'true' && !inputs.dry_run
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -98,19 +97,19 @@ jobs:
           context: deploy/docker
           push: true
           tags: |
-            ${{ needs.plan.outputs.runtime_image }}:${{ github.sha }}
-            ${{ needs.plan.outputs.runtime_image }}:latest
+            ${{ needs.targets.outputs.runtime_image }}:${{ github.sha }}
+            ${{ needs.targets.outputs.runtime_image }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
     name: Deploy ${{ matrix.server.id }}
-    needs: [plan, build, runtime-image]
+    needs: [targets, build, runtime-image]
     # Also runs when the image job was skipped: no Docker host, or a dry run.
     if: >-
       ${{ !cancelled() && needs.build.result == 'success'
       && needs.runtime-image.result != 'failure'
-      && needs.plan.outputs.servers != '[]' }}
+      && needs.targets.outputs.servers != '[]' }}
     runs-on: ubuntu-latest
     # A Docker host's first start downloads the whole game.
     timeout-minutes: 120
@@ -118,7 +117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        server: ${{ fromJSON(needs.plan.outputs.servers) }}
+        server: ${{ fromJSON(needs.targets.outputs.servers) }}
     steps:
       - uses: actions/checkout@v7
 
