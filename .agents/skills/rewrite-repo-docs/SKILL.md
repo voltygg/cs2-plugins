@@ -5,7 +5,7 @@ description: Rewrite and condense repository documentation or existing code comm
 
 # Rewrite repository prose
 
-Rewrite the documentation or comments within the user's requested scope. A full rewrite is allowed when it produces a cleaner result; do not limit the work to sentence-level edits. Clear is the goal. Shorter is better only when it preserves the facts, contracts, and reasons a reader needs.
+Rewrite the documentation or comments within the user's requested scope. Treat each passage as a complete explanation, not as wording to polish. Identify the facts, contracts, and reasons a reader needs, then write the passage again from that meaning. Do not preserve the original sentence structure by default or stop after substituting phrases. Clear is the goal. Shorter is better only when it preserves what the reader needs.
 
 Read [references/repository-style.md](references/repository-style.md) before editing.
 
@@ -61,6 +61,14 @@ Exclude generated output, caches, lockfiles, vendored dependency output, tempora
 - Do not change code behavior, public APIs, data, or configuration while editing prose. Report a required behavioral correction separately.
 - Do not replace established technical terms merely to make the writing sound casual.
 
+## Rewrite from the reader's needs
+
+- Decide what the reader must understand before drafting. For code comments, this is usually a contract, constraint, consequence, or reason. For documentation, it is usually a task, decision, or mental model.
+- Rewrite the passage as a unit. Reorder facts, merge repeated explanations, split unrelated ideas, or replace the original structure when that makes the result easier to understand.
+- Delete prose whose only purpose is to narrate nearby code, restate a heading, or sound explanatory. Do not paraphrase noise into shorter noise.
+- Reuse an original sentence only when it is already the clearest way to state a necessary fact. A pass that mostly swaps words while retaining the same clauses and order is not a rewrite.
+- Review the result without the original prose beside it: a developer should understand the point, its conditions, and its consequence without reconstructing the author's editing history.
+
 ## Write for the reader
 
 - Use plain English in every file. Prefer familiar words, direct sentences, and one consistent term for each concept.
@@ -93,9 +101,10 @@ For a targeted code-comment pass:
 
 1. Inventory existing comments and docstrings only in the requested scope.
 2. Classify each as keep, rewrite, delete, or protected before editing.
-3. Divide the files into non-overlapping Luna batches.
-4. Review each batch for lost rationale, altered contracts, directive damage, and non-comment changes.
-5. Check terminology and repeated explanations across the full requested scope.
+3. For each rewrite, extract the facts that must survive, then draft a new comment from those facts instead of editing the old sentences in place.
+4. Divide the files into non-overlapping Luna batches.
+5. Review each batch for sentence-level substitutions, lost rationale, altered contracts, directive damage, and non-comment changes.
+6. Check terminology and repeated explanations across the full requested scope.
 
 ## Validate
 

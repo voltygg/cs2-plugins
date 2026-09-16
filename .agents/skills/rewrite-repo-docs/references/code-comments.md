@@ -30,13 +30,15 @@ Treat a comment as functional when repository tooling or configuration recognize
 ## Rewrite for the code reader
 
 - Lead with the reason, constraint, or consequence. Do not begin by translating the code into prose.
-- Rewrite the whole comment when incremental edits would preserve a bloated structure or awkward framing.
+- Extract the useful facts first, then draft the whole comment again for the code reader. Do not preserve the old clauses, order, or framing merely because they are already present.
+- Treat phrase substitution as an incomplete pass. If the revised comment follows the same sentence skeleton, either keep the original because it was already clear or rewrite it from the underlying meaning.
 - Keep the explanation next to the smallest block whose behavior depends on it.
 - Prefer the current constraint over a story about how the code used to work. Preserve history only when it explains a compatibility requirement or prevents a likely regression.
 - Preserve negation, conditions, exception cases, and modal words such as `must`, `may`, and `can`.
 - Use the identifiers already present in the code when they make the comment precise. Do not rotate terminology for variety.
 - Condense repeated explanations to one authoritative location when a nearby reference remains clear.
 - Delete decorative banner comments that only label or divide sections. Repeated punctuation, boxed headings, and comments that restate the following declaration do not justify their diff noise.
+- Delete comments that merely sound explanatory after their useful fact is removed. Do not turn narration into shorter narration.
 - Do not add comments to uncommented code merely to make coverage look consistent. Add or relocate a comment only when needed to preserve important rationale or when the user asks for new documentation.
 - Follow established repository conventions for namespace closers, labeled blocks, Doxygen form, and docstring syntax.
 
