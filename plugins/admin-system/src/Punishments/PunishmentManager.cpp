@@ -136,8 +136,9 @@ void PunishmentManager::Issue(Punishment& record)
         RefreshVoiceChannel(_rt, record.TargetSteamId, true);
     }
 
-    _chat.BroadcastPunishment(InfoFor(record.Kind).IssuedBroadcast, record.AdminName, record.TargetName, record.Reason,
-                              InfoFor(record.Kind).Timed ? std::optional{record.Duration} : std::nullopt);
+    const PunishTypeInfo& info = InfoFor(record.Kind);
+    _chat.BroadcastPunishment(info.IssuedBroadcast, record.AdminName, record.TargetName, record.Reason,
+                              info.Timed ? std::optional{record.Duration} : std::nullopt);
 
     if (record.Kind == PunishType::Warn)
         EscalateWarning(record);
@@ -194,7 +195,7 @@ bool PunishmentManager::RemoveBySteamId(PunishType kind, int64_t steamId, int64_
 std::string PunishmentManager::AdminDisplayName(int64_t steamId) const
 {
     if (const VoltMod::Player* admin = _rt.Players.BySteamId(steamId))
-        return std::string(admin->Name());
+        return admin->Name();
     return _rt.Translations.Get("common.console");
 }
 

@@ -20,29 +20,23 @@ namespace AdminSystem
 
 App::~App()
 {
-    // Stop answering other plugins' MetaFactory queries before the managers it delegates to go.
+    // Unpublish before destroying the managers that answer MetaFactory queries.
     AdminActions.Unpublish();
     CheatCheck.CancelAll();
     Effects.CancelAll();
-    // Unload fires no disconnect hooks. Clear() raises Players.Disconnected for everyone still
-    // connected, and OnPlayerDisconnect is still subscribed here in the destructor body, so open
-    // sessions are folded through the one path rather than by a second sweep.
+    // Unload skips disconnect hooks; Clear() raises Players.Disconnected while its cleanup subscription is active.
     Runtime.Players.Clear();
-    // Drains queued writes (a ban issued just before unload must land) and drops undispatched
-    // completions before the managers they would touch are destroyed.
+    // Flush queued writes and discard undispatched completions before their managers are destroyed.
     Db.Stop();
 }
 
-// Install the shared command, action, reply, and broadcast policy.
 void App::InstallPolicy()
 {
     auto& policy = Runtime.Policy;
     policy.HasPermission = [this](int64_t steamId, std::string_view permission) {
         return Access.HasAnyPermission(steamId, std::string(permission));
     };
-    // Immunity only: Policy::Authorize has already dealt with the console (no caller) and with a
-    // caller targeting themselves before this is consulted. SteamIDs, so the same rule answers
-    // for an offline target through Policy::AuthorizeSteamId.
+    // Policy::Authorize handles console and self-targeting; Policy::AuthorizeSteamId uses this for offline targets.
     policy.CanTarget = [this](int64_t callerSteamId, int64_t targetSteamId) {
         return Access.CanTarget(callerSteamId, targetSteamId);
     };
@@ -50,14 +44,12 @@ void App::InstallPolicy()
     policy.Broadcast = [this](const VoltMod::Authorized& who, std::string_view key) {
         if (!who.Target)
             return;
-        // An admin acting on themselves reads as "Bob noclipped" rather than "Bob noclipped Bob".
-        const bool onSelf = who.Target->SteamId() == who.Caller.SteamId();
-        Chat.BroadcastAction(std::string(key), who.Caller.Name(), onSelf ? std::string_view{} : who.Target->Name());
+        // Shared roster references make self-targeting pointer identity and avoid "Bob noclipped Bob".
+        const bool onSelf = who.Target == &who.Caller;
+        Chat.BroadcastAction(key, who.Caller.Name(), onSelf ? std::string_view{} : who.Target->Name());
     };
 }
 
-// The connection lifecycle: one subscription per edge, kept in _subs so the handlers stop before
-// the managers they touch are destroyed.
 void App::RegisterPlayerLifecycle()
 {
     _subs.Add(Runtime.Players.Connected += [this](Player& player) { OnPlayerConnect(player); });
@@ -70,22 +62,18 @@ void App::OnPlayerConnect(Player& player)
     const int slot = player.Slot();
     Repos.Players.RecordConnectAsync(steamId, player.Name(), std::string(player.Ip()));
 
-    // Register the admin's panel language up front so every slot-aware Translations::Get (menus,
-    // cheat-check, mute notices) renders in their language without per-command setup.
+    // Register the language once so every slot-aware translation uses it.
     if (const auto* row = Admins.GetAdmin(steamId))
         Runtime.Translations.SetPlayerLanguage(slot, row->Language);
 
-    // A frozen admin gets told up front instead of discovering it on their first denied command.
+    // Notify frozen admins on connect instead of waiting for their first denied command.
     if (Freeze.IsFrozen(steamId))
         Freeze.NotifyFrozenSoon(slot, steamId);
 
-    // Reject banned players. Kicking inside the connect hook is unsafe in some builds, so
-    // KickDeferred waits a frame -- the player is fully connected by then. Bots have no real
-    // SteamID and never match an active ban.
+    // Defer kicks because some builds cannot kick safely inside the connect hook; bots never match SteamID bans.
     if (auto ban = Punishments.GetActive(AdminSystem::Punishments::PunishType::Ban, steamId))
     {
-        // Built now, while the ban row is in hand, so the disconnect screen carries the expiry
-        // and appeal link rather than the bare reason.
+        // Build the full notice before deferring because the ban row is only available here.
         Punishments.KickDeferred(slot, steamId,
                                  AdminSystem::Punishments::BuildBanNotice(Runtime.Translations, Settings.GetAppeal(),
                                                                           ban->Reason, ban->ExpiresAt, steamId, slot));
@@ -130,16 +118,14 @@ Status App::StartPunishments()
 {
     const bool loaded = Punishments.LoadActivePunishments();
 
-    // Every minute: sweep expired bans/mutes, pick up admin freezes issued on other servers
-    // sharing this database, and advance this server's registry heartbeat.
+    // Poll for cross-server freezes and keep this server's shared registry entry alive.
     _subs.Add(Runtime.Scheduler.Repeat(60'000, [this] {
         Punishments.ExpireOldPunishments();
         Freeze.RefreshFromDatabase();
         Repos.Servers.HeartbeatAsync(Settings.GetServer().tag);
     }));
 
-    // Typed surface the anticheat plugin drives (bans need the DB, alerts need admin data).
-    // Published last in this stage so a peer never sees a half-initialised implementation.
+    // Publish the anticheat surface only after its database and admin dependencies are ready.
     AdminActions.Publish();
 
     if (!loaded)
@@ -151,27 +137,24 @@ void App::RegisterGameEventListeners()
 {
     auto& events = Runtime.GameEvents;
     _subs.Add(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) {
-        // Clear per-life effects; EffectScope::Session grants (e.g. bhop) survive death.
+        // Only per-life effects end on death; EffectScope::Session grants survive.
         if (e.VictimSlot >= 0)
             Effects.CancelOnDeath(e.VictimSlot);
     }));
     _subs.Add(events.On<VoltMod::RoundEnd>([this](const VoltMod::RoundEnd&) {
         Effects.CancelRound();
-        // A map queued from the menu or by a passing vote lands here rather than mid-round,
-        // after a pause long enough to read the scoreboard. No-op when nothing is queued.
+        // Apply queued map changes after the round so players can read the scoreboard.
         MapCycle.ChangeToNext();
     }));
     _subs.Add(events.On<VoltMod::RoundPrestart>([this](const VoltMod::RoundPrestart&) { Effects.CancelRound(); }));
 }
 
-// Add plugin status sections and require a live database for overall health.
 void App::InstallStatusReporting()
 {
     auto& status = Runtime.Status;
 
     status.RegisterSection("db", [this] {
-        // Live worker state, not the load-time stage result: a database that died (or recovered)
-        // after load must show as such.
+        // Report current worker state so post-load failures and recoveries are visible.
         return VoltMod::Json::Write(glz::obj{"connected", Db.IsConnected(), "driver",
                                              VoltMod::DriverName(Db.GetDriver()), "migrationVersion",
                                              Migration.CurrentVersion, "migrationsApplied", Migration.Applied});
@@ -213,8 +196,7 @@ bool App::Start()
 
     InstallPolicy();
     RegisterPlayerLifecycle();
-    // Freeze the player while an admin menu is open, so navigating does not also walk them
-    // around. The Panorama surface freezes its own sessions the same way.
+    // Freeze players while menus are open so navigation input cannot also move them.
     Runtime.Freeze.Enable(true);
     if (const auto& menu = Settings.GetMenu(); menu.panorama)
     {
@@ -230,7 +212,7 @@ bool App::Start()
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);
     }
 
-    // Admins and punishments live in the database; without it their steps would only repeat its error.
+    // Skip database-dependent stages after a database failure.
     auto& steps = Runtime.LoadSteps;
     const bool database = steps.Optional("Database", [this] { return ConnectDatabase(); });
     if (database)
@@ -242,9 +224,9 @@ bool App::Start()
         steps.Optional("Punishments", [this] { return StartPunishments(); });
 
     RegisterGameEventListeners();
-    // Queue fun-model assets; they replicate to clients from the next map load.
+    // Queued model assets reach clients on the next map load.
     Admin::Effects::PrecacheModels(Runtime);
-    // Surface an unloadable configured map here rather than on the first !map.
+    // Report invalid configured maps at load instead of on the first !map.
     MapCycle.VerifyAgainstEngine();
     FunMode.Start();
 

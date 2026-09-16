@@ -45,24 +45,18 @@ public:
                              std::string_view reason, std::optional<int64_t> durationSec);
 
     /**
-     * Broadcast a translated server-wide notice with no admin or target name attached, e.g.
-     * "Map changing to Dust II". Rendered in the server language, since one line goes to
-     * everyone.
+     * Broadcast a translated admin action. An empty admin name leaves the line unattributed, for
+     * an event no one triggered; an empty target name represents a self-targeted or server-wide
+     * action. Rendered in the server language, since one line goes to everyone.
      */
-    void BroadcastKey(const std::string& translationKey, const std::map<std::string, std::string>& tokens = {});
-
-    /**
-     * Broadcast a translated admin action. An empty target name represents a
-     * self-targeted or server-wide action.
-     */
-    void BroadcastAction(const std::string& translationKey, std::string_view adminName, std::string_view targetName);
+    void BroadcastAction(std::string_view translationKey, std::string_view adminName, std::string_view targetName);
 
     /**
      * Token variant for multi-target actions, e.g. "[ADMIN] Bob swapped Alice and Carol".
      * The phrase at `translationKey` carries `{token}` placeholders matching @p nameTokens
      * keys; each name is substituted in with the same styling as the single-target layout.
      */
-    void BroadcastAction(const std::string& translationKey, std::string_view adminName,
+    void BroadcastAction(std::string_view translationKey, std::string_view adminName,
                          const std::map<std::string, std::string>& nameTokens);
 
 private:
@@ -70,7 +64,11 @@ private:
     const Config::ConfigManager& _config;
 
     /** Phrase at `translationKey`, or the key itself so a missing translation is obvious. */
-    std::string BroadcastPhrase(const std::string& translationKey) const;
+    std::string BroadcastPhrase(std::string_view translationKey) const;
 };
+
+/** The name to attribute a broadcast to. Empty when the slot has emptied, which broadcasts
+ *  unattributed. */
+std::string ActorName(VoltMod::Runtime& runtime, int slot);
 
 }  // namespace AdminSystem::Core

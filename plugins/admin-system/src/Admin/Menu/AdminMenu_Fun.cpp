@@ -38,9 +38,9 @@ std::shared_ptr<VoltMod::Menu> BuildFunMenu(AdminSystem::App& app, int adminSlot
             .Label = translations.Get(std::string(info.NameKey), adminSlot),
             .Get = [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
             .Flip =
-                [&app, id = info.Id, onKey = std::string(info.OnKey), offKey = std::string(info.OffKey)](int slot) {
-                    app.Chat.BroadcastAction(app.FunMode.Flip(id) ? onKey : offKey, ActorName(app, slot),
-                                             std::string_view{});
+                [&app, id = info.Id, onKey = info.OnKey, offKey = info.OffKey](int slot) {
+                    app.Chat.BroadcastAction(app.FunMode.Flip(id) ? onKey : offKey,
+                                             Core::ActorName(app.Runtime, slot), std::string_view{});
                 },
             .Enabled = allowed});
     }
@@ -49,8 +49,8 @@ std::shared_ptr<VoltMod::Menu> BuildFunMenu(AdminSystem::App& app, int adminSlot
                           .Activate =
                               [&app](int slot) {
                                   app.FunMode.ClearAll();
-                                  app.Chat.BroadcastAction("broadcast.funCleared", ActorName(app, slot),
-                                                           std::string_view{});
+                                  app.Chat.BroadcastAction("broadcast.funCleared",
+                                                           Core::ActorName(app.Runtime, slot), std::string_view{});
                               },
                           .Enabled = allowed});
 

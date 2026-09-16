@@ -38,7 +38,8 @@ static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
                            rows.Add(app.Runtime.Translations.Get("map.name", adminSlot), m.Label());
                        }})
         ->Finish([&app, adminSlot](MapEntry& m) {
-            app.Chat.BroadcastAction("broadcast.mapChanging", ActorName(app, adminSlot), {{"map", m.Label()}});
+            app.Chat.BroadcastAction("broadcast.mapChanging", Core::ActorName(app.Runtime, adminSlot),
+                                     {{"map", m.Label()}});
             app.MapCycle.ChangeAfter(m);
         })
         ->Start();
@@ -61,7 +62,8 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlo
                        .Activate =
                            [&app, map](int slot) {
                                app.MapCycle.SetNext(map);
-                               app.Chat.BroadcastAction("broadcast.nextMapSet", ActorName(app, slot),
+                               app.Chat.BroadcastAction("broadcast.nextMapSet",
+                                                        Core::ActorName(app.Runtime, slot),
                                                         {{"map", map.Label()}});
                            },
                        .Enabled = mayMap})

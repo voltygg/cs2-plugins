@@ -132,7 +132,7 @@ void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, std::string_view admin
                                       counts.Bans, counts.Kicks, counts.Mutes, counts.Warnings, limits.windowMinutes);
             ApplyFreeze(adminSteamId, adminName, 0, "", reason);
             Log::Warn("AUTO-FROZE admin {} ({}): {}", adminName, adminSteamId, reason);
-            _chat.BroadcastKey("broadcast.autoFrozeAdmin", {{"admin", adminName}});
+            _chat.BroadcastAction("broadcast.autoFrozeAdmin", {}, {{"admin", adminName}});
         });
 }
 

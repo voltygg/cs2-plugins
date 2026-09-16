@@ -285,8 +285,7 @@ bool CheatCheckManager::Cancel(int adminSlot, int targetSlot)
     ResetCheck(targetSlot);
     Unfreeze(targetSlot, restore, restoreTeam);
 
-    auto* admin = _rt.Players.Get(adminSlot);
-    _chat.BroadcastAction("broadcast.cheatCheckCleared", admin ? admin->Name() : std::string_view{}, targetName);
+    _chat.BroadcastAction("broadcast.cheatCheckCleared", Core::ActorName(_rt, adminSlot), targetName);
     return true;
 }
 
@@ -307,7 +306,7 @@ void CheatCheckManager::Expire(int targetSlot)
     else
         Unfreeze(targetSlot, restore, restoreTeam);
 
-    _chat.BroadcastKey("broadcast.cheatCheckTimedOut", {{"player", targetName}});
+    _chat.BroadcastAction("broadcast.cheatCheckTimedOut", {}, {{"player", targetName}});
 }
 
 void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int restoreTeam)

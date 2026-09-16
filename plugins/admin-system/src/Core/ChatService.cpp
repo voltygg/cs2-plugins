@@ -23,9 +23,9 @@ namespace ChatColors = VoltMod::ChatColors;
 struct AdminLineStyle
 {
     std::string Prefix;
-    std::string_view PrefixColor = ChatColors::Default;
-    std::string_view NameColor = ChatColors::Default;
-    std::string_view PhraseColor = ChatColors::Olive;
+    std::string_view PrefixColor;
+    std::string_view NameColor;
+    std::string_view PhraseColor;
 };
 
 /** "{prefix} {actor} {phrase}", e.g. "[ADMIN] Bob went stealth". An empty actor is left out. */
@@ -104,22 +104,14 @@ void ChatService::BroadcastPunishment(std::string_view actionKey, std::string_vi
 
     // The verb is what names the punishment, so it keeps its own colour.
     const std::string phrase =
-        std::format("{}{}{}", ChatColors::Red, BroadcastPhrase(std::string(actionKey)), style.PhraseColor);
+        std::format("{}{}{}", ChatColors::Red, BroadcastPhrase(actionKey), style.PhraseColor);
     const std::string reasonPart = _rt.Translations.Get("broadcast.punishReason", {{"reason", std::string(reason)}});
 
     _rt.Messages.Broadcast(std::format("{} {}{}{}", FormatAdminLine(style, adminName, phrase, targetName),
                                        style.PhraseColor, reasonPart, durationSuffix));
 }
 
-void ChatService::BroadcastKey(const std::string& translationKey, const std::map<std::string, std::string>& tokens)
-{
-    // Not gated on chat.broadcastPunishments: that setting is about naming admins and their
-    // targets, and these lines carry neither - they announce something happening to the server.
-    const AdminLineStyle style = StyleOf(_config.GetChat());
-    _rt.Messages.Broadcast(FormatAdminLine(style, {}, _rt.Translations.Get(translationKey, tokens)));
-}
-
-void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
+void ChatService::BroadcastAction(std::string_view translationKey, std::string_view adminName,
                                   std::string_view targetName)
 {
     if (!_config.GetChat().broadcastPunishments)
@@ -131,7 +123,7 @@ void ChatService::BroadcastAction(const std::string& translationKey, std::string
                                               : FormatAdminLine(style, adminName, phrase, targetName));
 }
 
-void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
+void ChatService::BroadcastAction(std::string_view translationKey, std::string_view adminName,
                                   const std::map<std::string, std::string>& nameTokens)
 {
     if (!_config.GetChat().broadcastPunishments)
@@ -141,10 +133,16 @@ void ChatService::BroadcastAction(const std::string& translationKey, std::string
         FormatAdminLine(StyleOf(_config.GetChat()), adminName, BroadcastPhrase(translationKey), nameTokens));
 }
 
-std::string ChatService::BroadcastPhrase(const std::string& translationKey) const
+std::string ChatService::BroadcastPhrase(std::string_view translationKey) const
 {
     auto phrase = _rt.Translations.Get(translationKey);
-    return phrase.empty() ? translationKey : phrase;  // Render a missing translation's key literally.
+    return phrase.empty() ? std::string(translationKey) : phrase;  // Render a missing translation's key literally.
+}
+
+std::string ActorName(VoltMod::Runtime& runtime, int slot)
+{
+    const VoltMod::Player* player = runtime.Players.Get(slot);
+    return player ? player->Name() : std::string();
 }
 
 }  // namespace AdminSystem::Core
