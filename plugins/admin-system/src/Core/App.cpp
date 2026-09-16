@@ -42,11 +42,9 @@ void App::InstallPolicy()
     };
     policy.Reply = [this](int slot, std::string_view message) { Chat.Reply(slot, message); };
     policy.Broadcast = [this](const VoltMod::Authorized& who, std::string_view key) {
-        if (!who.Target)
-            return;
-        // Shared roster references make self-targeting pointer identity and avoid "Bob noclipped Bob".
-        const bool onSelf = who.Target == &who.Caller;
-        Chat.BroadcastAction(key, who.Caller.Name(), onSelf ? std::string_view{} : who.Target->Name());
+        // Target-less and self-targeted both read as "Bob noclipped"; one roster makes self pointer identity.
+        const bool named = who.Target && who.Target != &who.Caller;
+        Chat.BroadcastAction(key, who.Caller.Name(), named ? who.Target->Name() : std::string_view{});
     };
 }
 
