@@ -17,28 +17,27 @@
     "database": "admin_system",
     "username": "postgres",
     "password": "Test12345#",
-    // Postgres-only SSL mode: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full".
-    // MariaDB turns TLS on for "require" and the verify modes; sqlite ignores it.
+    // PostgreSQL modes: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full".
+    // MariaDB enables TLS for "require" and verify modes; SQLite ignores this setting.
     "sslMode": "prefer",
     "connectTimeoutSec": 5
-    // Sqlite example:
+    // SQLite example:
     // "driver": "sqlite",
     // "path": "addons/admin-system/data/admin-system.sqlite"
   },
   "punishments": {
-    // Recorded when an admin bans without giving a reason.
+    // Used when an admin omits a ban reason.
     "defaultBanReason": "Banned by administrator",
     // Warnings before escalation triggers.
     "warningThreshold": 3,
-    // Shown to a banned player on the disconnect screen.
     "appeal": {
       // `{steamId}` is substituted; empty omits the appeal from the notice.
       "url": "",
-      // Append how long the ban still has to run.
+      // Include the remaining ban duration.
       "showExpiry": true
     },
-    // Quick Punish presets; invalid entries are logged and skipped.
-    // duration: "perm"/"0" for permanent, else <n>s / <n>m / <n>h / <n>d (bare = seconds).
+    // Quick Punish presets. Invalid entries are skipped after logging.
+    // Durations: "perm"/"0" or <n>s / <n>m / <n>h / <n>d; bare numbers are seconds.
     "templates": [
       {
         "name": "Cheating",
@@ -77,7 +76,7 @@
         "reason": "Toxic behavior in chat"
       }
     ],
-    // Manual-flow presets; the menu also adds `Custom...`.
+    // Reasons offered by manual punishment flows; the menu also includes `Custom...`.
     "reasonPresets": [
       "Cheating",
       "Toxic behavior",
@@ -85,7 +84,7 @@
       "Team damage / griefing",
       "Inappropriate nickname"
     ],
-    // Rows of the menu duration picker (same grammar as template durations).
+    // Duration-picker rows using the template duration grammar.
     "menuDurations": ["5m", "30m", "1h", "1d", "7d", "perm"]
   },
   "abuseProtection": {
@@ -93,28 +92,26 @@
     "enabled": true,
     // Network-wide sliding window in minutes.
     "windowMinutes": 10,
-    // Per-window thresholds; reaching one freezes the admin, 0 disables that counter. Root ('z')
-    // admins are exempt.
+    // Reaching a threshold freezes the admin; 0 disables it. Root ('z') admins are exempt.
     "maxBans": 5,
     "maxKicks": 10,
-    // Voice + text mutes combined.
+    // Combined voice and text mutes.
     "maxMutes": 15,
     "maxWarnings": 15
   },
   "chat": {
     "broadcastPunishments": true,
     "tagAdminChatMessages": true,
-    // Used when an admin has no group prefix. "fallbackNameColor" and "fallbackMessageColor" also
-    // exist, both defaulting to "default".
+    // Used without a group prefix. `fallbackNameColor` and `fallbackMessageColor` also default to "default".
     "fallbackPrefix": "[ADMIN]",
     "fallbackPrefixColor": "red"
   },
   "reports": {
     // Enables `!r` and `!report` for all players.
     "enabled": true,
-    // Both in seconds, 0 disables: delay between a player's reports, then before the same
-    // reporter can report the same target again.
+    // Seconds between reports from one player; 0 disables the limit.
     "cooldownSec": 120,
+    // Seconds before the same reporter can report the same target again; 0 disables the limit.
     "duplicateWindowSec": 1800,
     // Adds a 64-character `Other...` reason stored with code `other`.
     "allowCustomReason": true,
@@ -138,44 +135,42 @@
     "kickReason": "Failed to comply with cheat check",
     // Move the suspect to spectator as well as freezing them.
     "moveToSpectator": true,
-    // Optional https image atop the panel; empty for none. Sized by "bannerWidth"/"bannerHeight"
-    // (320x180 by default).
+    // Optional HTTPS panel image; empty disables it. `bannerWidth` and `bannerHeight` default to 320x180.
     "bannerImageUrl": "",
-    // "fixedLink" mode: the URL shown to the suspect. Also the websiteAutoRoom fallback.
+    // Suspect URL for "fixedLink" and fallback for "websiteAutoRoom".
     "fixedLink": {
       "url": "https://discord.gg/your-invite"
     },
-    // Prefilled for the meat-app API. Another API also needs "authHeader", "authScheme",
-    // "playerUrlField", "checkerUrlField" and "presenceField" - see the schema.
+    // Defaults for meat-app. Other APIs also need "authHeader", "authScheme", "playerUrlField",
+    // "checkerUrlField", and "presenceField"; see the schema.
     "websiteAutoRoom": {
       "createRoomUrl": "http://localhost:4000/api/rooms",
-      // meat-app keys are mk_... and need the JOIN_ROOM_AS_ADMIN permission.
+      // meat-app keys start with mk_ and need JOIN_ROOM_AS_ADMIN permission.
       "apiKey": "",
       // String values may use {steamId}, {playerName}, {adminSteamId} and {adminName}.
       "requestBody": {
         "purpose": "CHEAT_CHECK",
         "title": "Cheat check: {playerName}",
         "isLocked": false,
-        // Lets the backend make the calling admin the host.
+        // Lets the backend assign the calling admin as host.
         "adminSteamId": "{adminSteamId}",
         "metadata": {
           "reason": "Suspect {playerName} ({steamId}) - by {adminName}"
         }
       },
-      // Shown to the suspect, then relayed to the admin; {value} is the room code.
+      // Shown to the suspect and relayed to the admin; {value} is the room code.
       "playerUrlTemplate": "http://localhost:4001/rooms/{value}",
       "checkerUrlTemplate": "http://localhost:4001/rooms/{value}",
       // Polling pauses the countdown while the suspect is in the room. Empty disables it;
       // placeholders are {code} and {steamId}.
       "presenceUrl": "http://localhost:4000/api/rooms/{code}/presence?steamId={steamId}",
-      // Poll cadence, and so the worst-case delay before a join is noticed.
+      // Poll cadence and maximum delay before detecting a join.
       "pollIntervalSec": 5
     }
   },
   "maps": {
-    // Maps admins may switch to; the engine has no usable list of its own. A non-zero workshopId
-    // addresses a workshop map by published-file id instead of by name. Omit the list and these
-    // same six apply, so the Map menu is never empty.
+    // Admin map list; the engine exposes none. A nonzero `workshopId` selects a published-file ID.
+    // Omitting `cycle` uses these defaults, so the Map menu remains available.
     "cycle": [
       { "name": "de_dust2", "displayName": "Dust II" },
       { "name": "de_mirage", "displayName": "Mirage" },
@@ -184,7 +179,6 @@
       { "name": "de_ancient", "displayName": "Ancient" },
       { "name": "de_anubis", "displayName": "Anubis" }
     ],
-    // The yes/no vote an admin opens from Map > Put to vote.
     "vote": {
       // Share of the ballots cast that must be yes.
       "successRatio": 0.6,
@@ -193,17 +187,15 @@
     }
   },
   "menu": {
-    // Draw the clickable Panorama menu instead of center HTML. The client needs the compiled
-    // admin_menu layout: `uv run poe panorama` installs it into your own client for testing,
-    // and addonId ships it to everyone else.
+    // Use Panorama instead of center HTML. `uv run poe panorama` installs admin_menu locally;
+    // `addonId` distributes it to other clients.
     "panorama": false,
-    // Workshop addon carrying that layout, required of every connecting client. 0 requires
-    // nothing, which is what you want against a client you compiled into by hand.
+    // Workshop addon required for connecting clients; use 0 with a locally installed layout.
     "addonId": 3801580041
   },
   "weapons": {
-    // Offered by !give and Control > Give weapon. `item` is the entity classname; anything not
-    // starting with `weapon_` is skipped. Omit the list and these same thirteen apply.
+    // Offered by !give and Control > Give weapon. `item` is an entity classname; non-`weapon_` values are skipped.
+    // Omitting `menu` uses these defaults.
     "menu": [
       { "name": "AK-47", "item": "weapon_ak47" },
       { "name": "M4A4", "item": "weapon_m4a1" },
