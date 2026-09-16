@@ -21,6 +21,7 @@ struct WeaponSettings
         {"M4A4", "weapon_m4a1"},
         {"AWP", "weapon_awp"},
         {"Desert Eagle", "weapon_deagle"},
+        {"R8 Revolver", "weapon_revolver"},
         {"MP9", "weapon_mp9"},
         {"Nova", "weapon_nova"},
         {"Negev", "weapon_negev"},

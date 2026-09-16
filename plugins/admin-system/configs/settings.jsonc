@@ -203,12 +203,13 @@
   },
   "weapons": {
     // Offered by !give and Control > Give weapon. `item` is the entity classname; anything not
-    // starting with `weapon_` is skipped. Omit the list and these same twelve apply.
+    // starting with `weapon_` is skipped. Omit the list and these same thirteen apply.
     "menu": [
       { "name": "AK-47", "item": "weapon_ak47" },
       { "name": "M4A4", "item": "weapon_m4a1" },
       { "name": "AWP", "item": "weapon_awp" },
       { "name": "Desert Eagle", "item": "weapon_deagle" },
+      { "name": "R8 Revolver", "item": "weapon_revolver" },
       { "name": "MP9", "item": "weapon_mp9" },
       { "name": "Nova", "item": "weapon_nova" },
       { "name": "Negev", "item": "weapon_negev" },
