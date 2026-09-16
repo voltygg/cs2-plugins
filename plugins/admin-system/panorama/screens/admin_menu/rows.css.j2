@@ -49,7 +49,8 @@
   pre-transform-scale2d: 0.99;
 }
 
-.Row.Disabled .Row-button:hover {
+.Row.Disabled .Row-button:hover,
+.Row.Static .Row-button:hover {
   background-color: rgba(0, 0, 0, 0);
 }
 
@@ -57,10 +58,6 @@
 .Row.Static {
   background-color: rgba(0, 0, 0, 0);
   border: 0px solid rgba(0, 0, 0, 0);
-}
-
-.Row.Static .Row-button:hover {
-  background-color: rgba(0, 0, 0, 0);
 }
 
 .Row.Static .Row-button:active {
