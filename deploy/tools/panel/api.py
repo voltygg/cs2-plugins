@@ -68,11 +68,12 @@ class PanelApi:
     def extract(self, directory: str, name: str, archive: bytes) -> None:
         """Upload an archive, unpack it into directory, and remove it."""
         upload_url = self._request("GET", "/files/upload").json()["attributes"]["url"]
-        # The signed URL goes to the node, which needs no panel key.
+        # The signed URL goes to the node, which needs no panel key. Merge into its query: a
+        # params= argument would replace it, dropping the token the node authenticates with.
+        target = httpx.URL(upload_url).copy_merge_params({"directory": directory})
         try:
             response = web.post(
-                upload_url,
-                params={"directory": directory},
+                target,
                 files={"files": (name, archive, "application/octet-stream")},
             )
         except httpx.TransportError as error:
