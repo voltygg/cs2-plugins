@@ -5,6 +5,7 @@
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -36,11 +37,12 @@ public:
     void NoPermission(int slot);
 
     /**
-     * Broadcast an issued punishment, e.g. "[ADMIN] Bob banned Alice for cheating (1d)".
-     * Skipped when `chat.broadcastPunishments` is false.
+     * Broadcast an issued or lifted punishment, e.g. "[ADMIN] Bob banned Alice for cheating (1d)".
+     * A nullopt duration prints none; 0 prints "permanent". Skipped when
+     * `chat.broadcastPunishments` is false.
      */
-    void BroadcastPunishment(std::string_view action, std::string_view adminName, std::string_view targetName,
-                             std::string_view reason, int64_t durationSec);
+    void BroadcastPunishment(std::string_view actionKey, std::string_view adminName, std::string_view targetName,
+                             std::string_view reason, std::optional<int64_t> durationSec);
 
     /**
      * Broadcast a translated server-wide notice with no admin or target name attached, e.g.

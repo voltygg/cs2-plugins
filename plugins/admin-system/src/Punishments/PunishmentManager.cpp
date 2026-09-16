@@ -137,7 +137,7 @@ void PunishmentManager::Issue(Punishment& record)
     }
 
     _chat.BroadcastPunishment(InfoFor(record.Kind).IssuedBroadcast, record.AdminName, record.TargetName, record.Reason,
-                              record.Duration);
+                              InfoFor(record.Kind).Timed ? std::optional{record.Duration} : std::nullopt);
 
     if (record.Kind == PunishType::Warn)
         EscalateWarning(record);
@@ -191,11 +191,19 @@ bool PunishmentManager::RemoveBySteamId(PunishType kind, int64_t steamId, int64_
     return true;
 }
 
+std::string PunishmentManager::AdminDisplayName(int64_t steamId) const
+{
+    if (const VoltMod::Player* admin = _rt.Players.BySteamId(steamId))
+        return std::string(admin->Name());
+    return _rt.Translations.Get("common.console");
+}
+
 void PunishmentManager::RemoveCached(PunishType kind, Cache::iterator it, int64_t removedBy, const std::string& reason)
 {
     const int64_t steamId = it->first;
     _repos.Punishments.RemoveAsync(it->second.Id, removedBy, reason);
-    _chat.BroadcastPunishment(InfoFor(kind).LiftedBroadcast, "Admin", it->second.TargetName, reason, 0);
+    _chat.BroadcastPunishment(InfoFor(kind).LiftedBroadcast, AdminDisplayName(removedBy), it->second.TargetName, reason,
+                              std::nullopt);
 
     // Erased before the refresh, which re-reads the cache through the listening hook.
     CacheFor(kind).erase(it);

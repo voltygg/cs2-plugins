@@ -26,6 +26,13 @@ inline VoltMod::EnabledCondition Allows(App& app, Permission permission)
     return VoltMod::EnabledCondition([&app, permission](int slot) { return MayUse(app, slot, permission); });
 }
 
+/** The acting admin's name. Empty when the slot has emptied, which broadcasts unattributed. */
+inline std::string ActorName(App& app, int slot)
+{
+    const VoltMod::Player* player = app.Runtime.Players.Get(slot);
+    return player ? std::string(player->Name()) : std::string();
+}
+
 /** Flow validator that re-checks @p permission on @p slot, the one player the flow runs for: a
  *  flag may have been revoked (e.g. by !admin_reload) while the menu was open. */
 inline auto RequirePermission(App& app, Permission permission, int slot)

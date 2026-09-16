@@ -18,7 +18,7 @@ bool CancelCheck(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target)
     if (!app.Actions.Resolve(admin, target, Flag(Permission::Control)))
         return false;
 
-    return app.CheatCheck.Cancel(target.Slot);
+    return app.CheatCheck.Cancel(admin.Slot, target.Slot);
 }
 
 }  // namespace AdminSystem::Admin::Actions

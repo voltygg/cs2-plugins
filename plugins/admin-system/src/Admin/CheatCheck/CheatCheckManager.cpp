@@ -272,7 +272,7 @@ void CheatCheckManager::ResetCheck(int targetSlot)
     _checks[targetSlot] = PendingCheck{};  // move-assign drops the deadline timer
 }
 
-bool CheatCheckManager::Cancel(int targetSlot)
+bool CheatCheckManager::Cancel(int adminSlot, int targetSlot)
 {
     if (!ValidSlot(targetSlot) || !_checks[targetSlot].Active)
         return false;
@@ -285,7 +285,8 @@ bool CheatCheckManager::Cancel(int targetSlot)
     ResetCheck(targetSlot);
     Unfreeze(targetSlot, restore, restoreTeam);
 
-    _chat.BroadcastAction("broadcast.cheatCheckCleared", "", targetName);
+    auto* admin = _rt.Players.Get(adminSlot);
+    _chat.BroadcastAction("broadcast.cheatCheckCleared", admin ? admin->Name() : std::string_view{}, targetName);
     return true;
 }
 
@@ -306,7 +307,7 @@ void CheatCheckManager::Expire(int targetSlot)
     else
         Unfreeze(targetSlot, restore, restoreTeam);
 
-    _chat.BroadcastAction("broadcast.cheatCheckTimedOut", "", targetName);
+    _chat.BroadcastKey("broadcast.cheatCheckTimedOut", {{"player", targetName}});
 }
 
 void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int restoreTeam)

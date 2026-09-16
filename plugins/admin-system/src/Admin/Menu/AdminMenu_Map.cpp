@@ -37,8 +37,8 @@ static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
                        [&app, adminSlot](const MapEntry& m, VoltMod::SummaryRows& rows) {
                            rows.Add(app.Runtime.Translations.Get("map.name", adminSlot), m.Label());
                        }})
-        ->Finish([&app](MapEntry& m) {
-            app.Chat.BroadcastKey("broadcast.mapChanging", {{"map", m.Label()}});
+        ->Finish([&app, adminSlot](MapEntry& m) {
+            app.Chat.BroadcastAction("broadcast.mapChanging", ActorName(app, adminSlot), {{"map", m.Label()}});
             app.MapCycle.ChangeAfter(m);
         })
         ->Start();
@@ -59,9 +59,10 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlo
         // Queuing and voting only take effect later, so neither needs a confirmation step.
         .Add(ButtonRow{.Label = translations.Get("action.setNextMap", adminSlot),
                        .Activate =
-                           [&app, map](int) {
+                           [&app, map](int slot) {
                                app.MapCycle.SetNext(map);
-                               app.Chat.BroadcastKey("broadcast.nextMapSet", {{"map", map.Label()}});
+                               app.Chat.BroadcastAction("broadcast.nextMapSet", ActorName(app, slot),
+                                                        {{"map", map.Label()}});
                            },
                        .Enabled = mayMap})
         .Add(ButtonRow{.Label = translations.Get("action.voteMap", adminSlot),

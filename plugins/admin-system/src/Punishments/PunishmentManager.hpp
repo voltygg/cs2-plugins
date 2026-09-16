@@ -69,6 +69,9 @@ private:
     /** Lift the cached entry @p it points at: persist, drop it, refresh voice, broadcast. */
     void RemoveCached(PunishType kind, Cache::iterator it, int64_t removedBy, const std::string& reason);
 
+    /** The lifting admin's name; an offline admin falls back to a console label. */
+    std::string AdminDisplayName(int64_t steamId) const;
+
     /** Re-query every active row off-thread and swap the caches when they arrive. */
     void RefreshCachesAsync();
     void SwapCaches(std::vector<Database::Punishment> rows);

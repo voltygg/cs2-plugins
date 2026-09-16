@@ -95,11 +95,11 @@ void FreezeManager::RecordAudit(int64_t adminSteamId, std::string_view adminName
                                 int64_t targetSteamId, std::string_view targetName, std::string_view detail)
 {
     _repos.Activity.RecordAsync(adminSteamId, adminName, action, targetSteamId, targetName, detail,
-                                            _config.GetServer().tag);
+                                _config.GetServer().tag);
 }
 
-void FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId,
-                                const std::string& byName, const std::string& reason)
+void FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId, const std::string& byName,
+                                const std::string& reason)
 {
     _repos.Admins.SetFrozenAsync(steamId, bySteamId, reason);
 
@@ -132,7 +132,7 @@ void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, std::string_view admin
                                       counts.Bans, counts.Kicks, counts.Mutes, counts.Warnings, limits.windowMinutes);
             ApplyFreeze(adminSteamId, adminName, 0, "", reason);
             Log::Warn("AUTO-FROZE admin {} ({}): {}", adminName, adminSteamId, reason);
-            _chat.BroadcastAction("broadcast.autoFrozeAdmin", adminName, "");
+            _chat.BroadcastKey("broadcast.autoFrozeAdmin", {{"admin", adminName}});
         });
 }
 

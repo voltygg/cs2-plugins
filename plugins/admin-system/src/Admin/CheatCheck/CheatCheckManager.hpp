@@ -42,8 +42,9 @@ public:
     /** Start a check on `targetSlot` called by `adminSlot`. Re-call replaces any existing check. */
     bool StartCheck(int adminSlot, int targetSlot);
 
-    /** Cancel a check, unfreeze the suspect, clear its panel, and broadcast the result. Returns false if inactive. */
-    bool Cancel(int targetSlot);
+    /** Cancel a check, unfreeze the suspect, clear its panel, and broadcast who cleared it.
+     *  Returns false if inactive. */
+    bool Cancel(int adminSlot, int targetSlot);
 
     /** True while a check is pending on `slot` (drives menu enablement). */
     bool IsActive(int slot) const { return ValidSlot(slot) && _checks[slot].Active; }

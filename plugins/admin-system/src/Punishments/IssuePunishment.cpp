@@ -21,7 +21,7 @@ static void Issue(App& app, const Player& admin, const Player& target, PunishTyp
     if (type == PunishType::Kick)
     {
         (void)app.Runtime.Entities.Controller(target.Slot()).Kick(reason);
-        app.Chat.BroadcastPunishment(InfoFor(type).IssuedBroadcast, admin.Name(), target.Name(), reason, 0);
+        app.Chat.BroadcastPunishment(InfoFor(type).IssuedBroadcast, admin.Name(), target.Name(), reason, std::nullopt);
         return;
     }
 

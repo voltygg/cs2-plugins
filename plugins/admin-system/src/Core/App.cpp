@@ -48,8 +48,11 @@ void App::InstallPolicy()
     };
     policy.Reply = [this](int slot, std::string_view message) { Chat.Reply(slot, message); };
     policy.Broadcast = [this](const VoltMod::Authorized& who, std::string_view key) {
-        if (who.Target)
-            Chat.BroadcastAction(std::string(key), who.Caller.Name(), who.Target->Name());
+        if (!who.Target)
+            return;
+        // An admin acting on themselves reads as "Bob noclipped" rather than "Bob noclipped Bob".
+        const bool onSelf = who.Target->SteamId() == who.Caller.SteamId();
+        Chat.BroadcastAction(std::string(key), who.Caller.Name(), onSelf ? std::string_view{} : who.Target->Name());
     };
 }
 

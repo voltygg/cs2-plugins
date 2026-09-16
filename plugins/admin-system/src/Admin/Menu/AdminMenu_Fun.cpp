@@ -12,6 +12,7 @@
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <string>
+#include <string_view>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -33,19 +34,23 @@ std::shared_ptr<VoltMod::Menu> BuildFunMenu(AdminSystem::App& app, int adminSlot
 
     for (const auto& info : Fun::Toggles)
     {
-        builder.Add(
-            ToggleRow{.Label = translations.Get(std::string(info.NameKey), adminSlot),
-                      .Get = [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
-                      .Flip = [&app, id = info.Id, onKey = std::string(info.OnKey), offKey = std::string(info.OffKey)](
-                                  int) { app.Chat.BroadcastKey(app.FunMode.Flip(id) ? onKey : offKey); },
-                      .Enabled = allowed});
+        builder.Add(ToggleRow{
+            .Label = translations.Get(std::string(info.NameKey), adminSlot),
+            .Get = [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
+            .Flip =
+                [&app, id = info.Id, onKey = std::string(info.OnKey), offKey = std::string(info.OffKey)](int slot) {
+                    app.Chat.BroadcastAction(app.FunMode.Flip(id) ? onKey : offKey, ActorName(app, slot),
+                                             std::string_view{});
+                },
+            .Enabled = allowed});
     }
 
     builder.Add(ButtonRow{.Label = translations.Get("fun.clearAll", adminSlot),
                           .Activate =
-                              [&app](int) {
+                              [&app](int slot) {
                                   app.FunMode.ClearAll();
-                                  app.Chat.BroadcastKey("broadcast.funCleared");
+                                  app.Chat.BroadcastAction("broadcast.funCleared", ActorName(app, slot),
+                                                           std::string_view{});
                               },
                           .Enabled = allowed});
 

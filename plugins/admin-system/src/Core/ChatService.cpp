@@ -9,6 +9,7 @@
 #include <VoltMod/Messaging/Messages.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <format>
+#include <optional>
 
 using VoltMod::Strings;
 using VoltMod::Time;
@@ -22,15 +23,17 @@ namespace ChatColors = VoltMod::ChatColors;
 struct AdminLineStyle
 {
     std::string Prefix;
-    std::string_view PrefixColor = ChatColors::Green;
+    std::string_view PrefixColor = ChatColors::Default;
     std::string_view NameColor = ChatColors::Default;
     std::string_view PhraseColor = ChatColors::Olive;
 };
 
-/** "{prefix} {actor} {phrase}", e.g. "[ADMIN] Bob went stealth". */
+/** "{prefix} {actor} {phrase}", e.g. "[ADMIN] Bob went stealth". An empty actor is left out. */
 static std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase)
 {
-    // {PrefixColor}{prefix} {NameColor}{actor}{Default} {PhraseColor}{phrase}
+    if (actorName.empty())
+        return std::format("{}{} {}{}", style.PrefixColor, style.Prefix, style.PhraseColor, phrase);
+
     return std::format("{}{} {}{}{} {}{}", style.PrefixColor, style.Prefix, style.NameColor, actorName,
                        ChatColors::Default, style.PhraseColor, phrase);
 }
@@ -39,7 +42,7 @@ static std::string FormatAdminLine(const AdminLineStyle& style, std::string_view
 static std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase,
                                    std::string_view targetName)
 {
-    return std::format("{}{} {}", FormatAdminLine(style, actorName, phrase), ChatColors::Default, targetName);
+    return std::format("{}{} {}", FormatAdminLine(style, actorName, phrase), style.NameColor, targetName);
 }
 
 /** Token variant for multi-target phrases, e.g. "swapped {a} and {b}": each mapped name is
@@ -73,48 +76,56 @@ void ChatService::NoPermission(int slot)
     _rt.Messages.Reply(slot, msg);
 }
 
-void ChatService::BroadcastPunishment(std::string_view action, std::string_view adminName, std::string_view targetName,
-                                      std::string_view reason, int64_t durationSec)
+/** The colouring every broadcast shares, so no two lines disagree on the tag. */
+static AdminLineStyle StyleOf(const Config::ChatSettings& cfg)
 {
-    const auto& cfg = _config.GetChat();
-    if (!cfg.broadcastPunishments)
+    return {.Prefix = cfg.fallbackPrefix,
+            .PrefixColor = ChatColors::ParseNamed(cfg.fallbackPrefixColor),
+            .NameColor = ChatColors::ParseNamed(cfg.fallbackNameColor),
+            .PhraseColor = ChatColors::ParseNamed(cfg.fallbackMessageColor)};
+}
+
+void ChatService::BroadcastPunishment(std::string_view actionKey, std::string_view adminName,
+                                      std::string_view targetName, std::string_view reason,
+                                      std::optional<int64_t> durationSec)
+{
+    if (!_config.GetChat().broadcastPunishments)
         return;
 
-    // Only ban/voice-mute/text-mute carry a duration; kick/warn/un* are instantaneous.
-    bool isTimedAction = (action == "banned" || action == "voice-muted" || action == "text-muted");
+    const AdminLineStyle style = StyleOf(_config.GetChat());
+
     std::string durationSuffix;
-    if (isTimedAction)
+    if (durationSec)
     {
-        std::string duration = (durationSec > 0) ? Time::FormatDuration(durationSec) : "permanent";
+        std::string duration =
+            *durationSec > 0 ? Time::FormatDuration(*durationSec) : _rt.Translations.Get("broadcast.permanent");
         durationSuffix = std::format(" ({})", duration);
     }
 
-    // [ADMIN] {admin} {action} {target} for {reason}{durationSuffix}
-    auto line =
-        std::format("{}{} {}{}{} {}{}{} {} for {}{}{}{}", ChatColors::Green, cfg.fallbackPrefix, ChatColors::Default,
-                    adminName, ChatColors::Default, ChatColors::Red, action, ChatColors::Default, targetName,
-                    ChatColors::Olive, reason, ChatColors::Default, durationSuffix);
-    _rt.Messages.Broadcast(line);
+    // The verb is what names the punishment, so it keeps its own colour.
+    const std::string phrase =
+        std::format("{}{}{}", ChatColors::Red, BroadcastPhrase(std::string(actionKey)), style.PhraseColor);
+    const std::string reasonPart = _rt.Translations.Get("broadcast.punishReason", {{"reason", std::string(reason)}});
+
+    _rt.Messages.Broadcast(std::format("{} {}{}{}", FormatAdminLine(style, adminName, phrase, targetName),
+                                       style.PhraseColor, reasonPart, durationSuffix));
 }
 
 void ChatService::BroadcastKey(const std::string& translationKey, const std::map<std::string, std::string>& tokens)
 {
     // Not gated on chat.broadcastPunishments: that setting is about naming admins and their
     // targets, and these lines carry neither - they announce something happening to the server.
-    const auto& cfg = _config.GetChat();
-    auto line = _rt.Translations.Get(translationKey, tokens);
-    _rt.Messages.Broadcast(std::format("{}{} {}{}", ChatColors::ParseNamed(cfg.fallbackPrefixColor), cfg.fallbackPrefix,
-                                       ChatColors::Default, line));
+    const AdminLineStyle style = StyleOf(_config.GetChat());
+    _rt.Messages.Broadcast(FormatAdminLine(style, {}, _rt.Translations.Get(translationKey, tokens)));
 }
 
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
                                   std::string_view targetName)
 {
-    const auto& cfg = _config.GetChat();
-    if (!cfg.broadcastPunishments)
+    if (!_config.GetChat().broadcastPunishments)
         return;
 
-    AdminLineStyle style{.Prefix = cfg.fallbackPrefix};
+    const AdminLineStyle style = StyleOf(_config.GetChat());
     auto phrase = BroadcastPhrase(translationKey);
     _rt.Messages.Broadcast(targetName.empty() ? FormatAdminLine(style, adminName, phrase)
                                               : FormatAdminLine(style, adminName, phrase, targetName));
@@ -123,12 +134,11 @@ void ChatService::BroadcastAction(const std::string& translationKey, std::string
 void ChatService::BroadcastAction(const std::string& translationKey, std::string_view adminName,
                                   const std::map<std::string, std::string>& nameTokens)
 {
-    const auto& cfg = _config.GetChat();
-    if (!cfg.broadcastPunishments)
+    if (!_config.GetChat().broadcastPunishments)
         return;
 
-    _rt.Messages.Broadcast(FormatAdminLine(AdminLineStyle{.Prefix = cfg.fallbackPrefix}, adminName,
-                                           BroadcastPhrase(translationKey), nameTokens));
+    _rt.Messages.Broadcast(
+        FormatAdminLine(StyleOf(_config.GetChat()), adminName, BroadcastPhrase(translationKey), nameTokens));
 }
 
 std::string ChatService::BroadcastPhrase(const std::string& translationKey) const

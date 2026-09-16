@@ -26,19 +26,19 @@ struct PunishTypeInfo
 {
     PunishType Type;
     std::string_view AuditName;        ///< Stored in `admin_activity.action` and `punishments.kind`.
-    std::string_view IssuedBroadcast;  ///< ChatService action when issued.
-    std::string_view LiftedBroadcast;  ///< ChatService action when lifted; empty when it cannot be.
+    std::string_view IssuedBroadcast;  ///< Translation key of the broadcast verb when issued.
+    std::string_view LiftedBroadcast;  ///< Same when lifted; empty when the kind cannot be lifted.
     Permission RequiredPermission;     ///< The admin flag needed to issue it.
     bool Timed;                        ///< Carries a duration, and stays cached until it expires.
 };
 
 inline constexpr std::array<PunishTypeInfo, VoltMod::EnumCount<PunishType>> PunishTypes{{
     // Type, audit name, issued, lifted, permission, timed
-    {PunishType::Kick, "kick", "kicked", "", Permission::Kick, false},
-    {PunishType::Ban, "ban", "banned", "unbanned", Permission::Ban, true},
-    {PunishType::VoiceMute, "voice_mute", "voice-muted", "voice-unmuted", Permission::Mute, true},
-    {PunishType::TextMute, "text_mute", "text-muted", "text-unmuted", Permission::Mute, true},
-    {PunishType::Warn, "warn", "warned", "", Permission::Mute, false},
+    {PunishType::Kick, "kick", "broadcast.kicked", "", Permission::Kick, false},
+    {PunishType::Ban, "ban", "broadcast.banned", "broadcast.unbanned", Permission::Ban, true},
+    {PunishType::VoiceMute, "voice_mute", "broadcast.voiceMuted", "broadcast.voiceUnmuted", Permission::Mute, true},
+    {PunishType::TextMute, "text_mute", "broadcast.textMuted", "broadcast.textUnmuted", Permission::Mute, true},
+    {PunishType::Warn, "warn", "broadcast.warned", "", Permission::Mute, false},
 }};
 
 static_assert(
