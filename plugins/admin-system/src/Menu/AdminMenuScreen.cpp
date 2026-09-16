@@ -90,7 +90,8 @@ void AdminMenuScreen::SetRow(int slot, int index, const MenuRow* row, std::strin
     screen.SetClass(slot, ids.Id, "On", row->State.value_or(false));
     screen.SetClass(slot, ids.Id, "Toggle", toggle);
     screen.SetClass(slot, ids.Id, "HasChevron", row->Kind == MenuRowKind::Submenu || row->Kind == MenuRowKind::Input);
-    // A toggle flips on a press, so its switch is the whole control.
+    // A heading still ships a live button, so without this it hovers and clicks like any other row.
+    screen.SetClass(slot, ids.Id, "Static", row->Kind == MenuRowKind::Text);
     screen.SetClass(slot, ids.Id, "HasSteppers", row->Steppable && row->Enabled && !toggle);
     screen.SetClass(slot, ids.Id, "Pending", row->Pending);
     if (row->Pending)
