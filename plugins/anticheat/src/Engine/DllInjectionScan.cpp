@@ -1,5 +1,7 @@
 #include "Engine/DllInjectionScan.hpp"
 
+#include "Detect/Rules/DllInjection.hpp"
+
 #include <format>
 #include <string>
 #include <string_view>
@@ -45,14 +47,6 @@ void DllInjectionScan::Initialize()
             Scan(slot, state, now);
         }
     });
-}
-
-void DllInjectionScan::OnFullyConnected(int slot)
-{
-    if (!InSlotRange(slot))
-        return;
-    // The client's listener does not exist the instant it joins, so the first scan waits for it.
-    _slots[slot] = {.NextScan = Time::MonotonicSeconds() + DllInitialScanDelaySec};
 }
 
 void DllInjectionScan::OnSlotChanged(int slot)
@@ -102,15 +96,10 @@ void DllInjectionScan::Scan(int slot, SlotState& state, double nowSec)
         evidence += name;
     }
 
-    // A subscription no stock client makes is a confirmed fact, so it is a whole unit of evidence.
-    _detectors.Report(
-        slot, _detectors.Scores.Add(slot,
-                                    {.Kind = DetectionKind::DllInjection,
-                                     .Points = 1.0f,
-                                     .HalfLifeSec = FadesOverTheSession,
-                                     .Reason = std::format("{} blacklisted client event subscription{} found: {}.",
-                                                           matches.size(), matches.size() == 1 ? "" : "s", evidence)},
-                                    VoltMod::Time::MonotonicSeconds()));
+    const std::string reason = std::format("{} blacklisted client event subscription{} found: {}.",
+                                           matches.size(), matches.size() == 1 ? "" : "s", evidence);
+    _detectors.Report(slot, _detectors.Scores.Add(slot, Rules::DllInjectionEvidence(reason),
+                                                  VoltMod::Time::MonotonicSeconds()));
 }
 
 }  // namespace Anticheat

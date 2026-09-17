@@ -94,9 +94,8 @@ void App::OnSlotChanged(int slot)
 
 void App::OnPlayerFullyConnected(VoltMod::Player& player)
 {
+    // The polls seed themselves on their next tick; only the baseline has to be taken now.
     Names.OnFullyConnected(player);
-    DllScan.OnFullyConnected(player.Slot());
-    Cvars.OnFullyConnected(player.Slot());
 }
 
 }  // namespace Anticheat

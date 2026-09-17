@@ -3,6 +3,7 @@
 #include "Detect/DetectionData.hpp"
 #include "Detect/Finding.hpp"
 #include "Detect/Samples.hpp"
+#include "Detect/Suspicion.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -42,6 +43,19 @@ struct CvarVerdict
     bool KickOnly = false;  // recoverable rules: a kick, never a ban
     std::string Reason;
 };
+
+/** A value the client should not be able to hold is this rule confident on its own, and stays
+ *  true while they are connected. @p verdict must outlive the call. */
+constexpr Contribution CvarEvidence(const CvarVerdict& verdict)
+{
+    return {
+        .Kind = DetectionKind::InvalidCvar,
+        .Points = 1.0f,
+        .HalfLifeSec = FadesOverTheSession,
+        .KickOnly = verdict.KickOnly,
+        .Reason = verdict.Reason,
+    };
+}
 
 /** Loaded rules and stateless evaluation; queried rules precede userinfo ones so each tier is a
  *  span. An empty table judges nothing. */

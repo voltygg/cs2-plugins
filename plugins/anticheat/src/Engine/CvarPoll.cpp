@@ -52,12 +52,6 @@ void CvarPoll::Initialize()
     });
 }
 
-void CvarPoll::OnFullyConnected(int slot)
-{
-    if (InSlotRange(slot))
-        _slots[slot] = {.NextPoll = Time::MonotonicSeconds() + NextDelaySec()};
-}
-
 void CvarPoll::OnSlotChanged(int slot)
 {
     if (InSlotRange(slot))
@@ -85,13 +79,8 @@ void CvarPoll::ReportVerdict(int slot, const std::optional<Rules::CvarVerdict>& 
 {
     if (!verdict)
         return;
-    _detectors.Report(slot, _detectors.Scores.Add(slot,
-                                                 {.Kind = Rules::InvalidCvar::Kind,
-                                                  .Points = 1.0f,
-                                                  .HalfLifeSec = FadesOverTheSession,
-                                                  .KickOnly = verdict->KickOnly,
-                                                  .Reason = verdict->Reason},
-                                                 VoltMod::Time::MonotonicSeconds()));
+    _detectors.Report(
+        slot, _detectors.Scores.Add(slot, Rules::CvarEvidence(*verdict), VoltMod::Time::MonotonicSeconds()));
 }
 
 void CvarPoll::Poll(int slot, SlotState& state)

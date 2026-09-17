@@ -21,9 +21,6 @@ public:
     /** Start the repeating poll timer. Idempotent. */
     void Initialize();
 
-    /** A player is in the server: schedule their first poll. */
-    void OnFullyConnected(int slot);
-
     void OnSlotChanged(int slot);
     void Reset();
 

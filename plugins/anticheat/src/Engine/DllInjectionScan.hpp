@@ -21,9 +21,6 @@ public:
     /** Start the repeating scan timer. Idempotent. */
     void Initialize();
 
-    /** A player is in the server: schedule their first scan. */
-    void OnFullyConnected(int slot);
-
     void OnSlotChanged(int slot);
     void Reset();
 
