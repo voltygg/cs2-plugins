@@ -9,6 +9,7 @@
 #include "Engine/Detectors.hpp"
 #include "Engine/DllInjectionScan.hpp"
 #include "Engine/NamechangerPoll.hpp"
+#include "Engine/SuspicionSnapshot.hpp"
 #include "Response/DiscordReporter.hpp"
 #include "Response/ResponseManager.hpp"
 
@@ -35,8 +36,10 @@ struct App
 
     /** Push configs/detections.jsonc into the two table-driven rules. */
     void LoadDetectionData();
-    /** Clear evidence on map changes and configuration reloads. */
-    void ResetEvidence();
+    /** Drop in-flight detector state whose ticks and positions no longer mean anything. */
+    void ResetInFlight();
+    /** Also drop every player's accumulated suspicion, for the operator reload that asks for it. */
+    void ForgetEvidence();
     void OnMapStart();
 
     VoltMod::Runtime& Runtime;
@@ -52,6 +55,7 @@ struct App
     CvarPoll Cvars{Detection, Runtime};
     CheatSimulator Simulator{Detection, Runtime, Config};
     CommandDump Dump{Runtime};
+    SuspicionSnapshot Carried{Detection, Runtime};
 
 private:
     void OnSlotChanged(int slot);

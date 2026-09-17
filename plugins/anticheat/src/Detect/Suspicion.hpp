@@ -50,6 +50,14 @@ struct SuspicionBands
     float ReportAgainBelow = 0.75f;
 };
 
+/** One player's accumulated evidence, as carried across a reconnect. */
+struct PlayerEvidence
+{
+    std::array<VoltMod::DecayingScore, DetectionKindCount> Scores{};
+    Confidence Reported = Confidence::Suspect;
+    bool HasReported = false;
+};
+
 /**
  * One decaying score per player and rule, and the single place that decides whether the evidence
  * so far is worth reporting.
@@ -83,6 +91,11 @@ public:
     /** "aimbot 0.75, wallhack 0.83" - every rule with weight to speak of. */
     std::string Breakdown(int slot, double nowSec) const;
 
+    /** What @p slot has accumulated, so a disconnect need not throw it away. */
+    PlayerEvidence Save(int slot) const;
+    /** Hand a returning player back what they left with. */
+    void Restore(int slot, const PlayerEvidence& evidence);
+
     void OnSlotChanged(int slot);
     /** Map changes do not call this; only an operator reset does. */
     void Reset();
@@ -92,14 +105,7 @@ private:
     std::optional<Confidence> BandOf(float total) const;
     float Threshold(Confidence level) const;
 
-    struct SlotState
-    {
-        std::array<VoltMod::DecayingScore, DetectionKindCount> Scores{};
-        Confidence Reported = Confidence::Suspect;
-        bool HasReported = false;
-    };
-
-    std::array<SlotState, MaxSlots> _slots{};
+    std::array<PlayerEvidence, MaxSlots> _slots{};
     SuspicionBands _bands;
 };
 

@@ -32,13 +32,14 @@ bool App::Start()
     Detection.Initialize();
     Simulator.Initialize();
     Dump.Initialize();
+    Carried.Initialize();
 
     _subs.Add(Runtime.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
     _subs.Add(Runtime.Players.FullyConnected += [this](VoltMod::Player& player) { OnPlayerFullyConnected(player); });
     _subs.Add(Runtime.Players.SettingsChanged += [this](VoltMod::Player& player) { Names.OnSettingsChanged(player); });
     _subs.Add(Runtime.ConVars.Changed += [this](const VoltMod::ConVarChange& change) {
         if (Detection.OnConVarChanged(change))
-            ResetEvidence();
+            ResetInFlight();
     });
 
     LoadDetectionData();
@@ -70,16 +71,25 @@ void App::LoadDetectionData()
               data.dllEventBlacklist.size());
 }
 
-void App::ResetEvidence()
+void App::ResetInFlight()
 {
     std::apply([](auto&... modules) { (modules.Reset(), ...); }, Modules());
     Response.PruneThrottles();
 }
 
+void App::ForgetEvidence()
+{
+    ResetInFlight();
+    Detection.ForgetEvidence();
+    Carried.Reset();
+}
+
 void App::OnMapStart()
 {
     Detection.RefreshTeamRules();
-    ResetEvidence();
+    // In-flight tracking is keyed by ticks and positions the new map invalidates. What a player
+    // has already earned is not, so it rides the map change out.
+    ResetInFlight();
 }
 
 void App::OnSlotChanged(int slot)

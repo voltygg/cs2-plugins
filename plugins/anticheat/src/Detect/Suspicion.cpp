@@ -112,7 +112,7 @@ std::optional<Finding> Suspicion::Add(int slot, const Contribution& contribution
     if (!InSlotRange(slot) || contribution.Kind == DetectionKind::Count || !std::isfinite(contribution.Points))
         return std::nullopt;
 
-    SlotState& state = _slots[slot];
+    PlayerEvidence& state = _slots[slot];
 
     // Decay since the last contribution may have taken the score below the band it last reported.
     // Measured before this contribution lands, or fresh points would mask the very decay we want.
@@ -151,6 +151,17 @@ std::optional<Finding> Suspicion::Add(int slot, const Contribution& contribution
         .Suspicion = total,
         .Evidence = std::format("{} Suspicion {:.2f} ({}).", contribution.Reason, total, Breakdown(slot, nowSec)),
     };
+}
+
+PlayerEvidence Suspicion::Save(int slot) const
+{
+    return InSlotRange(slot) ? _slots[slot] : PlayerEvidence{};
+}
+
+void Suspicion::Restore(int slot, const PlayerEvidence& evidence)
+{
+    if (InSlotRange(slot))
+        _slots[slot] = evidence;
 }
 
 void Suspicion::OnSlotChanged(int slot)

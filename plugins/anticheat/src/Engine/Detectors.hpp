@@ -63,6 +63,9 @@ public:
     void Reset();
     void OnSlotChanged(int slot);
 
+    /** Drop every player's accumulated suspicion. A map change deliberately does not do this. */
+    void ForgetEvidence() { Scores.Reset(); }
+
     /** Every rule's evidence about every player, and the one place a report is decided. */
     Suspicion Scores;
     ShotHistory History;
@@ -78,11 +81,12 @@ public:
     Rules::InvalidCvar InvalidCvars;
 
 private:
-    /** Every rule holding per-player state of its own; one that holds none is left out. */
+    /** Every rule holding in-flight state of its own; one that holds none is left out. The score
+     *  is not here: it outlives a map the way the evidence it holds is meant to. */
     auto All()
     {
-        return std::tie(Scores, History, Aimbot, Aimlock, AntiAim, Triggerbot, Recoil, AimAssist, Wallhack,
-                        Namechanger, InvalidCvars);
+        return std::tie(History, Aimbot, Aimlock, AntiAim, Triggerbot, Recoil, AimAssist, Wallhack, Namechanger,
+                        InvalidCvars);
     }
 
     VoltMod::Runtime& _rt;

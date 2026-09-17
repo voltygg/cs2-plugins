@@ -170,6 +170,21 @@ TEST_CASE("Evidence stays with the slot until it changes hands")
     CHECK(suspicion.Value(Slot, DetectionKind::Aimbot, Now) == doctest::Approx(0.0f));
 }
 
+TEST_CASE("Evidence saved from one slot comes back whole in another")
+{
+    Suspicion suspicion = Configured();
+    REQUIRE(suspicion.Add(Slot, Share(DetectionKind::Aimbot, 1.0f), Now).has_value());
+    const Anticheat::PlayerEvidence held = suspicion.Save(Slot);
+    suspicion.OnSlotChanged(Slot);
+    REQUIRE(suspicion.Total(Slot, Now) == doctest::Approx(0.0f));
+
+    // A reconnect puts the player in whatever slot is free; the evidence has to follow them.
+    suspicion.Restore(Slot + 1, held);
+    CHECK(suspicion.Value(Slot + 1, DetectionKind::Aimbot, Now) == doctest::Approx(1.0f));
+    // The band they already reached comes with it, so returning does not re-report what it did.
+    CHECK_FALSE(suspicion.Add(Slot + 1, Share(DetectionKind::Aimbot, 0.05f), Now).has_value());
+}
+
 TEST_CASE("Out of range slots are ignored rather than indexed")
 {
     Suspicion suspicion = Configured();
