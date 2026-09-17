@@ -14,15 +14,12 @@ using Anticheat::Rules::AntiAimTuning::AttackReturnWeight;
 using Anticheat::Rules::AntiAimTuning::CommandHistorySize;
 using Anticheat::Rules::AntiAimTuning::CommandMismatchSpacing;
 using Anticheat::Rules::AntiAimTuning::CommandYawMismatchAngle;
-using Anticheat::Rules::AntiAimTuning::DetectionThreshold;
 using Anticheat::Rules::AntiAimTuning::HistoryMismatchWeight;
 using Anticheat::Rules::AntiAimTuning::InconsistentCommandWeight;
 using Anticheat::Rules::AntiAimTuning::InvalidAnglesWeight;
 using Anticheat::Rules::AntiAimTuning::InvalidPitch;
 using Anticheat::Rules::AntiAimTuning::InvalidRoll;
 using Anticheat::Rules::AntiAimTuning::MinimumAttackReturnAngle;
-using Anticheat::Rules::AntiAimTuning::MismatchScoreDecayPerSecond;
-using Anticheat::Rules::AntiAimTuning::ScoreDecayPerSecond;
 
 namespace Anticheat::Rules
 {
@@ -49,40 +46,19 @@ void AntiAim::ResetMotion(SlotData& data)
     data.JitterActive = false;
 }
 
-void AntiAim::ApplyDecay(SlotData& data, double nowSec)
-{
-    if (data.ScoreTime == 0.0)
-    {
-        data.ScoreTime = nowSec;
-        return;
-    }
-    const float elapsed = static_cast<float>(nowSec - data.ScoreTime);
-    data.ScoreTime = nowSec;
-    if (elapsed <= 0.0f || (data.Score <= 0.0f && data.MismatchScore <= 0.0f))
-        return;
-    data.Score = std::max(0.0f, data.Score - elapsed * ScoreDecayPerSecond);
-    data.MismatchScore = std::max(0.0f, data.MismatchScore - elapsed * MismatchScoreDecayPerSecond);
-}
-
-void AntiAim::AddEvidence(SlotData& data, float weight, std::string_view reason, bool continuous, bool mismatch,
-                              double nowSec, std::optional<Finding>& out)
+void AntiAim::AddEvidence(int slot, SlotData& data, float weight, std::string_view reason, bool continuous,
+                         double nowSec, std::optional<Finding>& out)
 {
     if (data.EpisodeReported)
         return;
-    ApplyDecay(data, nowSec);
-    (mismatch ? data.MismatchScore : data.Score) += weight;
 
-    const float total = data.Score + data.MismatchScore;
-    if (total < DetectionThreshold)
+    std::optional<Finding> finding = _suspicion.Add(
+        slot, {.Kind = Kind, .Points = weight, .Reason = std::format("Anti-aim: {}.", reason)}, nowSec);
+    if (!finding)
         return;
 
     if (!out)
-        out = Finding{.Kind = DetectionKind::AntiAim,
-                      .Evidence = std::format("{} added {:.1f} points and reached {:.1f}/{:.0f} evidence.", reason,
-                                              weight, total, DetectionThreshold)};
-    data.Score = 0.0f;
-    data.MismatchScore = 0.0f;
-    data.ScoreTime = nowSec;
+        out = std::move(finding);
     // A continuous episode (spin, jitter, a stuck invalid angle) must not re-fire every command.
     data.EpisodeReported = continuous;
 }
@@ -134,7 +110,6 @@ std::optional<Finding> AntiAim::OnSimulated(int slot, int32_t cmdNum, int32_t se
         return out;
     }
 
-    ApplyDecay(data, nowSec);
     Command* found = data.Commands.Find(cmdNum);
     if (!found)
     {
@@ -163,24 +138,24 @@ std::optional<Finding> AntiAim::OnSimulated(int slot, int32_t cmdNum, int32_t se
     data.InconsistencyActive = found->Inconsistent || historyMismatch;
     if (found->Inconsistent)
     {
-        AddEvidence(data, InconsistentCommandWeight, "an inconsistent angle command", true, false, nowSec, out);
+        AddEvidence(slot, data, InconsistentCommandWeight, "an inconsistent angle command", true, nowSec, out);
     }
     else if (historyMismatch &&
              (data.LastMismatchEvidenceCommand < 0 ||
               static_cast<int64_t>(found->CmdNum) - data.LastMismatchEvidenceCommand >= CommandMismatchSpacing))
     {
         data.LastMismatchEvidenceCommand = found->CmdNum;
-        AddEvidence(data, HistoryMismatchWeight, "a repeated base and input-history mismatch", true, true, nowSec, out);
+        AddEvidence(slot, data, HistoryMismatchWeight, "a repeated base and input-history mismatch", true, nowSec, out);
     }
 
     const bool wasInvalid = data.InvalidActive;
     data.InvalidActive = Geometry::IsFinite(found->Base) && std::isfinite(found->Roll) &&
                          (std::abs(found->Base.Pitch) > InvalidPitch || std::abs(found->Roll) > InvalidRoll);
     if (data.InvalidActive && (!wasInvalid || !data.EpisodeReported))
-        AddEvidence(data, InvalidAnglesWeight, "invalid pitch or roll", true, false, nowSec, out);
+        AddEvidence(slot, data, InvalidAnglesWeight, "invalid pitch or roll", true, nowSec, out);
 
-    EvaluateMotion(data, *found, nowSec, out);
-    EvaluatePendingShot(data, serverTick, nowSec, out);
+    EvaluateMotion(slot, data, *found, nowSec, out);
+    EvaluatePendingShot(slot, data, serverTick, nowSec, out);
 
     if (data.EpisodeReported && !data.InvalidActive && !data.InconsistencyActive && !data.SpinActive &&
         !data.JitterActive)
@@ -188,7 +163,8 @@ std::optional<Finding> AntiAim::OnSimulated(int slot, int32_t cmdNum, int32_t se
     return out;
 }
 
-void AntiAim::EvaluatePendingShot(SlotData& data, int32_t currentTick, double nowSec, std::optional<Finding>& out)
+void AntiAim::EvaluatePendingShot(int slot, SlotData& data, int32_t currentTick, double nowSec,
+                                 std::optional<Finding>& out)
 {
     if (data.PendingShot < 0)
         return;
@@ -227,7 +203,7 @@ void AntiAim::EvaluatePendingShot(SlotData& data, int32_t currentTick, double no
     const float snap = Geometry::AngularDistance(previous->Base, shot->Base);
     if (std::isfinite(surrounding) && std::isfinite(snap) && surrounding < AttackReturnSurroundingAngle &&
         snap > MinimumAttackReturnAngle && snap > surrounding * AttackReturnRatio)
-        AddEvidence(data, AttackReturnWeight, "one-command attack return", false, false, nowSec, out);
+        AddEvidence(slot, data, AttackReturnWeight, "one-command attack return", false, nowSec, out);
 }
 
 std::optional<Finding> AntiAim::OnWeaponFire(int slot, const ShotView& shot, double nowSec)
@@ -246,7 +222,7 @@ std::optional<Finding> AntiAim::OnWeaponFire(int slot, const ShotView& shot, dou
 
     data.PendingShot = shot.CmdNum;
     data.PendingShotTick = shot.ServerTick;
-    EvaluatePendingShot(data, shot.FireTick, nowSec, out);
+    EvaluatePendingShot(slot, data, shot.FireTick, nowSec, out);
     return out;
 }
 
@@ -265,15 +241,8 @@ std::optional<Finding> AntiAim::OnFrame(int slot, int32_t serverTick, bool eligi
         data.PendingShotTick = -1;
         return out;
     }
-    EvaluatePendingShot(data, serverTick, nowSec, out);
+    EvaluatePendingShot(slot, data, serverTick, nowSec, out);
     return out;
-}
-
-float AntiAim::Score(int slot) const
-{
-    if (!InSlotRange(slot))
-        return 0.0f;
-    return _slots[slot].Score + _slots[slot].MismatchScore;
 }
 
 }  // namespace Anticheat::Rules

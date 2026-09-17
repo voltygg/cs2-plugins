@@ -5,11 +5,26 @@
 
 using Anticheat::Rules::AntiAim;
 using Anticheat::CmdSample;
+using Anticheat::DefaultTuning;
+using Anticheat::DetectionKind;
 using Anticheat::Finding;
 using Anticheat::ShotView;
+using Anticheat::Suspicion;
 
 static constexpr int Slot = 0;
 static constexpr double Now = 100.0;
+
+/** The rule and the score it feeds, since a finding now comes out of the score. */
+struct AntiAimHarness
+{
+    AntiAimHarness() { Scores.Configure(DefaultTuning()); }
+
+    /** Evidence points this rule has on the slot, as of @p now. */
+    float Points(double now = Now) const { return Scores.Value(Slot, DetectionKind::AntiAim, now); }
+
+    Suspicion Scores;
+    AntiAim Rule{Scores};
+};
 
 static CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f, float pitch = 0.0f, float roll = 0.0f)
 {
@@ -22,11 +37,11 @@ static CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f, float pi
     return cmd;
 }
 
-static std::optional<Finding> Feed(AntiAim& rule, const CmdSample& cmd, int32_t serverTick, double now = Now,
+static std::optional<Finding> Feed(AntiAimHarness& h, const CmdSample& cmd, int32_t serverTick, double now = Now,
                                    bool teleported = false)
 {
-    rule.OnCommand(Slot, cmd);
-    return rule.OnSimulated(Slot, cmd.CmdNum, serverTick, true, teleported, now);
+    h.Rule.OnCommand(Slot, cmd);
+    return h.Rule.OnSimulated(Slot, cmd.CmdNum, serverTick, true, teleported, now);
 }
 
 /** A command whose base view angle disagrees with the angles it claims it fired along. */
@@ -39,10 +54,10 @@ static CmdSample MismatchCmd(int32_t num, int32_t tick)
 }
 
 /** Feeds @p count commands whose yaw follows @p yawAt, and returns the command number that fired. */
-static int RunPattern(AntiAim& rule, int count, float (*yawAt)(int))
+static int RunPattern(AntiAimHarness& h, int count, float (*yawAt)(int))
 {
     for (int i = 1; i <= count; ++i)
-        if (Feed(rule, Cmd(i, i, yawAt(i)), i))
+        if (Feed(h, Cmd(i, i, yawAt(i)), i))
             return i;
     return -1;
 }
@@ -64,99 +79,98 @@ static float TwoWayJitter(int i)
 
 TEST_CASE("A pitch past 89.01 degrees scores and 89.00 does not")
 {
-    AntiAim beyond;
+    AntiAimHarness beyond;
     Feed(beyond, Cmd(1, 1, 0.0f, 89.02f), 1);
-    CHECK(beyond.Score(Slot) == doctest::Approx(2.0f));
+    CHECK(beyond.Points() == doctest::Approx(2.0f));
 
-    AntiAim within;
+    AntiAimHarness within;
     Feed(within, Cmd(1, 1, 0.0f, 89.00f), 1);
-    CHECK(within.Score(Slot) == doctest::Approx(0.0f));
+    CHECK(within.Points() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A roll past 50.01 degrees scores and 50.00 does not")
 {
-    AntiAim beyond;
+    AntiAimHarness beyond;
     Feed(beyond, Cmd(1, 1, 0.0f, 0.0f, 50.02f), 1);
-    CHECK(beyond.Score(Slot) == doctest::Approx(2.0f));
+    CHECK(beyond.Points() == doctest::Approx(2.0f));
 
-    AntiAim within;
+    AntiAimHarness within;
     Feed(within, Cmd(1, 1, 0.0f, 0.0f, 50.00f), 1);
-    CHECK(within.Score(Slot) == doctest::Approx(0.0f));
+    CHECK(within.Points() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A negative pitch past the limit scores just like a positive one")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     Feed(rule, Cmd(1, 1, 0.0f, -89.5f), 1);
-    CHECK(rule.Score(Slot) == doctest::Approx(2.0f));
+    CHECK(rule.Points() == doctest::Approx(2.0f));
 }
 
 TEST_CASE("An inconsistent command scores whatever made it inconsistent")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     CmdSample cmd = Cmd(1, 1);
     cmd.AttackIndexInvalid = true;
     Feed(rule, cmd, 1);
-    CHECK(rule.Score(Slot) == doctest::Approx(1.0f));
+    CHECK(rule.Points() == doctest::Approx(1.0f));
 }
 
 TEST_CASE("Base and history yaw mismatches only score every fourth command")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     for (int32_t i = 1; i <= 5; ++i)
         Feed(rule, MismatchCmd(i, i), i);
-    // Commands 1 and 5 scored; 2, 3 and 4 fell inside the spacing.
-    CHECK(rule.Score(Slot) == doctest::Approx(2.0f));
+    // Commands 1 and 5 scored; 2, 3 and 4 fell inside the spacing. This rule is worth 0.4 a
+    // command, where it used to be worth 1 and then decay two and a half times faster.
+    CHECK(rule.Points() == doctest::Approx(0.8f));
 }
 
 TEST_CASE("A mismatch under 120 degrees is not evidence at all")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     for (int32_t i = 1; i <= 5; ++i)
     {
         CmdSample cmd = MismatchCmd(i, i);
         cmd.MaxHistoryYawDelta = 119.0f;
         Feed(rule, cmd, i);
     }
-    CHECK(rule.Score(Slot) == doctest::Approx(0.0f));
+    CHECK(rule.Points() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A command that started an attack is exempt from the mismatch rule")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     CmdSample cmd = MismatchCmd(1, 1);
     cmd.AttackStarted = true;
     Feed(rule, cmd, 1);
-    CHECK(rule.Score(Slot) == doctest::Approx(0.0f));
+    CHECK(rule.Points() == doctest::Approx(0.0f));
 }
 
-TEST_CASE("The score decays at two points a second")
+TEST_CASE("Anti-aim evidence fades on a half-life of thirty seconds")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     for (int32_t i = 1; i <= 3; ++i)
         Feed(rule, Cmd(i, i, 0.0f, 89.5f), i);
-    CHECK(rule.Score(Slot) == doctest::Approx(6.0f));
+    CHECK(rule.Points() == doctest::Approx(6.0f));
 
-    Feed(rule, Cmd(4, 4), 4, Now + 1.0);
-    CHECK(rule.Score(Slot) == doctest::Approx(4.0f));
-
-    Feed(rule, Cmd(5, 5), 5, Now + 3.0);
-    CHECK(rule.Score(Slot) == doctest::Approx(0.0f));
+    // This rule sees evidence at command rate, so it fades far faster than the shot-driven ones.
+    CHECK(rule.Points(Now + 30.0) == doctest::Approx(3.0f));
+    CHECK(rule.Points(Now + 60.0) == doctest::Approx(1.5f));
 }
 
 TEST_CASE("Nothing scores inside the five second spawn or teleport grace")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     Feed(rule, Cmd(1, 1, 0.0f, 89.5f), 1, Now, true);
-    CHECK(rule.Score(Slot) == doctest::Approx(0.0f));
+    CHECK(rule.Points() == doctest::Approx(0.0f));
 
     Feed(rule, Cmd(2, 2, 0.0f, 89.5f), 2, Now, false);
-    CHECK(rule.Score(Slot) == doctest::Approx(2.0f));
+    CHECK(rule.Points() == doctest::Approx(2.0f));
 }
 
 TEST_CASE("A one command excursion around a shot that returns to the surrounding angle scores")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     CmdSample shotCmd = Cmd(2, 2, 45.0f);
     shotCmd.AttackStarted = true;
     Feed(rule, Cmd(1, 1, 0.0f), 1);
@@ -168,13 +182,13 @@ TEST_CASE("A one command excursion around a shot that returns to the surrounding
     shot.CmdNum = 2;
     shot.ServerTick = 2;
     shot.FireTick = 2;
-    rule.OnWeaponFire(Slot, shot, Now);
-    CHECK(rule.Score(Slot) == doctest::Approx(5.0f));
+    rule.Rule.OnWeaponFire(Slot, shot, Now);
+    CHECK(rule.Points() == doctest::Approx(5.0f));
 }
 
 TEST_CASE("A shot excursion under thirty degrees is not an attack return")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     CmdSample shotCmd = Cmd(2, 2, 20.0f);
     shotCmd.AttackStarted = true;
     Feed(rule, Cmd(1, 1, 0.0f), 1);
@@ -186,13 +200,13 @@ TEST_CASE("A shot excursion under thirty degrees is not an attack return")
     shot.CmdNum = 2;
     shot.ServerTick = 2;
     shot.FireTick = 2;
-    rule.OnWeaponFire(Slot, shot, Now);
-    CHECK(rule.Score(Slot) == doctest::Approx(0.0f));
+    rule.Rule.OnWeaponFire(Slot, shot, Now);
+    CHECK(rule.Points() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A sustained one direction spin fires after ten seconds of the slow tier")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     // 6 degrees a tick is 384 degrees a second: above the 320 tier, below the 1000 one.
     const int fired = RunPattern(rule, 1200, SteadySpin);
     REQUIRE(fired > 0);
@@ -208,7 +222,7 @@ static float FastSpin(int i)
 
 TEST_CASE("A fast spin fires after three seconds")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     // 40 degrees a tick is 2560 degrees a second: the fast tier.
     const int fired = RunPattern(rule, 400, FastSpin);
     REQUIRE(fired > 0);
@@ -218,7 +232,7 @@ TEST_CASE("A fast spin fires after three seconds")
 
 TEST_CASE("A spin keeps accruing when the server simulates commands in uneven batches")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     // Two commands land on one server tick, none on the next: the client sequence is unbroken.
     int fired = -1;
     for (int i = 1; i <= 1200 && fired < 0; ++i)
@@ -230,13 +244,13 @@ TEST_CASE("A spin keeps accruing when the server simulates commands in uneven ba
 
 TEST_CASE("A yaw that reverses every tick never reaches the spin direction consistency")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     CHECK(RunPattern(rule, 1200, ReversingYaw) == -1);
 }
 
 TEST_CASE("A spin broken by more than a second of missing commands loses its progress")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     for (int32_t i = 1; i <= 400; ++i)
         REQUIRE_FALSE(Feed(rule, Cmd(i, i, SteadySpin(i)), i).has_value());
 
@@ -250,7 +264,7 @@ TEST_CASE("A spin broken by more than a second of missing commands loses its pro
 
 TEST_CASE("An exact two way yaw pattern fires after five seconds of jitter")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     const int fired = RunPattern(rule, 900, TwoWayJitter);
     REQUIRE(fired > 0);
     // Period 2 needs eight commands of history, so 320 ticks later is command 327.
@@ -260,26 +274,27 @@ TEST_CASE("An exact two way yaw pattern fires after five seconds of jitter")
 
 TEST_CASE("A two way yaw pattern spanning under ten degrees is not jitter")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     CHECK(RunPattern(rule, 900, ReversingYaw) == -1);
 }
 
 TEST_CASE("A slot change drops the slot's accumulated anti aim score")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     Feed(rule, Cmd(1, 1, 0.0f, 89.5f), 1);
-    CHECK(rule.Score(Slot) == doctest::Approx(2.0f));
-    rule.OnSlotChanged(Slot);
-    CHECK(rule.Score(Slot) == doctest::Approx(0.0f));
+    CHECK(rule.Points() == doctest::Approx(2.0f));
+    rule.Rule.OnSlotChanged(Slot);
+    rule.Scores.OnSlotChanged(Slot);
+    CHECK(rule.Points() == doctest::Approx(0.0f));
 }
 
-TEST_CASE("A player who is no longer eligible has their history and score dropped")
+TEST_CASE("A player who is no longer eligible starts a fresh episode when they return")
 {
-    AntiAim rule;
+    AntiAimHarness rule;
     Feed(rule, Cmd(1, 1, 0.0f, 89.5f), 1);
-    rule.OnCommand(Slot, Cmd(2, 2));
-    rule.OnSimulated(Slot, 2, 2, false, false, Now);
+    rule.Rule.OnCommand(Slot, Cmd(2, 2));
+    rule.Rule.OnSimulated(Slot, 2, 2, false, false, Now);
     // The next invalid command starts a fresh history rather than continuing an episode.
     Feed(rule, Cmd(3, 3, 0.0f, 89.5f), 3);
-    CHECK(rule.Score(Slot) == doctest::Approx(4.0f));
+    CHECK(rule.Points() == doctest::Approx(4.0f));
 }

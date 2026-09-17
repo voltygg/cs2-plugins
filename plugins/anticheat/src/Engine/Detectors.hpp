@@ -68,7 +68,7 @@ public:
     ShotHistory History;
     Rules::Aimbot Aimbot{History, Scores};
     Rules::Aimlock Aimlock{History, Scores};
-    Rules::AntiAim AntiAim;
+    Rules::AntiAim AntiAim{Scores};
     Rules::SilentAim SilentAim{Scores};
     Rules::Triggerbot Triggerbot{History, Scores};
     Rules::Recoil Recoil{Scores};

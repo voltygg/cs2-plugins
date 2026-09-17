@@ -6,7 +6,6 @@
 #include <cmath>
 
 using Anticheat::Rules::AntiAim;
-using Anticheat::Rules::AntiAimTuning::DetectionThreshold;
 using Anticheat::Rules::AntiAimTuning::FastSpinRate;
 using Anticheat::Rules::AntiAimTuning::FastSpinSeconds;
 using Anticheat::Rules::AntiAimTuning::JitterTolerance;
@@ -15,6 +14,7 @@ using Anticheat::Rules::AntiAimTuning::MediumSpinSeconds;
 using Anticheat::Rules::AntiAimTuning::MinimumJitterSpan;
 using Anticheat::Rules::AntiAimTuning::MinimumSpinRate;
 using Anticheat::Rules::AntiAimTuning::MotionHistorySize;
+using Anticheat::Rules::AntiAimTuning::MotionWeight;
 using Anticheat::Rules::AntiAimTuning::RequiredJitterSeconds;
 using Anticheat::Rules::AntiAimTuning::SlowSpinSeconds;
 using Anticheat::Rules::AntiAimTuning::SpinBreakAllowance;
@@ -31,7 +31,8 @@ static_assert(std::size(TierRates) == std::size(TierSeconds));
 /** Yaw periods a jitter bind cycles through; each needs four full repetitions to be believed. */
 static constexpr int JitterPeriods[] = {2, 3, 5};
 
-void AntiAim::EvaluateMotion(SlotData& data, const Command& command, double nowSec, std::optional<Finding>& out)
+void AntiAim::EvaluateMotion(int slot, SlotData& data, const Command& command, double nowSec,
+                             std::optional<Finding>& out)
 {
     if (command.CmdNum == data.LastMotionCmdNum)
         return;
@@ -112,7 +113,7 @@ void AntiAim::EvaluateMotion(SlotData& data, const Command& command, double nowS
     data.SpinActive = spinEpisodeActive;
     if (spinDetected && !data.EpisodeReported)
     {
-        AddEvidence(data, DetectionThreshold, "continuous spin", true, false, nowSec, out);
+        AddEvidence(slot, data, MotionWeight, "continuous spin", true, nowSec, out);
         data.SpinActive = true;
     }
 
@@ -166,7 +167,7 @@ void AntiAim::EvaluateMotion(SlotData& data, const Command& command, double nowS
     data.JitterActive = jitterEpisodeActive;
     if (data.JitterSeconds >= RequiredJitterSeconds && !data.EpisodeReported)
     {
-        AddEvidence(data, DetectionThreshold, "continuous repeating jitter", true, false, nowSec, out);
+        AddEvidence(slot, data, MotionWeight, "continuous repeating jitter", true, nowSec, out);
         data.JitterActive = true;
     }
 }

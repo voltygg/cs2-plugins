@@ -2,6 +2,7 @@
 
 #include "Detect/CommandHistory.hpp"
 #include "Detect/Finding.hpp"
+#include "Detect/Suspicion.hpp"
 #include "Detect/Samples.hpp"
 
 #include <array>
@@ -16,16 +17,16 @@ namespace Anticheat::Rules
 namespace AntiAimTuning
 {
 inline constexpr size_t CommandHistorySize = 96;
-inline constexpr float DetectionThreshold = 100.0f;
-inline constexpr float ScoreDecayPerSecond = 2.0f;
-inline constexpr float MismatchScoreDecayPerSecond = 5.0f;
+/** A sustained spin or jitter is enough on its own, so it carries a whole unit of evidence. */
+inline constexpr float MotionWeight = 100.0f;
 
 // Per-command rules.
 inline constexpr float InvalidPitch = 89.01f;
 inline constexpr float InvalidRoll = 50.01f;
 inline constexpr float InvalidAnglesWeight = 2.0f;
 inline constexpr float InconsistentCommandWeight = 1.0f;
-inline constexpr float HistoryMismatchWeight = 1.0f;
+/** Worth less than the other per-command rules: it used to be discounted by decaying faster. */
+inline constexpr float HistoryMismatchWeight = 0.4f;
 inline constexpr float CommandYawMismatchAngle = 120.0f;
 inline constexpr int CommandMismatchSpacing = 4;
 inline constexpr float AttackReturnWeight = 5.0f;
@@ -55,6 +56,8 @@ public:
     /** The settings toggle and catalog entry this rule reports under. */
     static constexpr DetectionKind Kind = DetectionKind::AntiAim;
 
+    explicit AntiAim(Suspicion& suspicion) : _suspicion(suspicion) {}
+
     void Reset();
     /** Also the spawn reset: a fresh pawn invalidates every in-flight command the same way. */
     void OnSlotChanged(int slot);
@@ -75,7 +78,6 @@ public:
     /** Resolves an attack-return that is still waiting for the command after the shot. */
     std::optional<Finding> OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec);
 
-    float Score(int slot) const;
 
 private:
     struct Command
@@ -98,9 +100,6 @@ private:
     {
         CommandHistory<Command, AntiAimTuning::CommandHistorySize> Commands;
 
-        float Score = 0.0f;
-        float MismatchScore = 0.0f;
-        double ScoreTime = 0.0;
         bool EpisodeReported = false;
 
         bool InvalidActive = false;
@@ -121,14 +120,14 @@ private:
     };
 
     static void ResetMotion(SlotData& data);
-    static void ApplyDecay(SlotData& data, double nowSec);
-    void AddEvidence(SlotData& data, float weight, std::string_view reason, bool continuous, bool mismatch,
-                     double nowSec, std::optional<Finding>& out);
+    void AddEvidence(int slot, SlotData& data, float weight, std::string_view reason, bool continuous, double nowSec,
+                     std::optional<Finding>& out);
     Command* Find(SlotData& data, int32_t cmdNum);
     /** Defined in AntiAimMotion.cpp. */
-    void EvaluateMotion(SlotData& data, const Command& command, double nowSec, std::optional<Finding>& out);
-    void EvaluatePendingShot(SlotData& data, int32_t currentTick, double nowSec, std::optional<Finding>& out);
+    void EvaluateMotion(int slot, SlotData& data, const Command& command, double nowSec, std::optional<Finding>& out);
+    void EvaluatePendingShot(int slot, SlotData& data, int32_t currentTick, double nowSec, std::optional<Finding>& out);
 
+    Suspicion& _suspicion;
     std::array<SlotData, MaxSlots> _slots{};
 };
 
