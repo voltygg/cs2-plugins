@@ -2,7 +2,7 @@
 
 #include "Config.hpp"
 #include "Core/Finding.hpp"
-#include "Response/FunnelPolicy.hpp"
+#include "Response/ResponsePolicy.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <cstdint>
@@ -21,7 +21,7 @@ public:
     DiscordReporter(VoltMod::Runtime& runtime, ConfigManager& config) : _rt(runtime), _config(config) {}
 
     void Report(int slot, const std::string& playerName, int64_t steamId, const Finding& finding,
-                FunnelOutcome outcome);
+                ResponseOutcome outcome);
 
 private:
     /** One embed per (steamId, detection) per window, so no detection can flood a channel. */

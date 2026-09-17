@@ -3,7 +3,7 @@
 #include "Config.hpp"
 #include "Core/Finding.hpp"
 #include "Response/DiscordReporter.hpp"
-#include "Response/FunnelPolicy.hpp"
+#include "Response/ResponsePolicy.hpp"
 
 #include <VoltMod/Api.hpp>
 
@@ -37,7 +37,7 @@ public:
     Mode CurrentMode() const;
 
     /** What has already been done to @p slot this map. */
-    PunishmentLevel Issued(int slot) const { return _latch.Level(slot); }
+    PunishmentLevel Issued(int slot) const { return _issued.Level(slot); }
 
 private:
     /** One admin alert per (steamId, detection) per window. */
@@ -48,7 +48,7 @@ private:
     VoltMod::Runtime& _rt;
     ConfigManager& _config;
     DiscordReporter& _reporter;
-    PunishmentLatch _latch;
+    IssuedPunishments _issued;
     VoltMod::PairThrottle<int64_t, int> _alertThrottle{AlertThrottleSec};
     /** Deferred kick per slot: a new one replaces whatever was pending, and unload cancels it. */
     VoltMod::PerSlot<VoltMod::Subscription> _pendingKick;

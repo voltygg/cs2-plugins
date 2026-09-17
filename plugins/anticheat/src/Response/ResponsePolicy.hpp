@@ -1,7 +1,5 @@
 #pragma once
 
-// SDK-free response decisions based on identity, configuration, and prior action.
-
 #include "Core/Samples.hpp"
 
 #include <VoltMod/Core/EnumNames.hpp>
@@ -63,7 +61,7 @@ constexpr std::string_view PunishmentName(PunishmentLevel level)
 }
 
 /** Outcome recorded in logs and webhook reports. */
-enum class FunnelOutcome
+enum class ResponseOutcome
 {
     NoIdentity,       // SteamID not resolved yet - reported, never punished
     Whitelisted,      // reported, never punished
@@ -74,68 +72,68 @@ enum class FunnelOutcome
     BanIssued,
 };
 
-constexpr std::string_view OutcomeName(FunnelOutcome outcome)
+constexpr std::string_view OutcomeName(ResponseOutcome outcome)
 {
     switch (outcome)
     {
-    case FunnelOutcome::NoIdentity:
+    case ResponseOutcome::NoIdentity:
         return "no identity";
-    case FunnelOutcome::Whitelisted:
+    case ResponseOutcome::Whitelisted:
         return "whitelisted";
-    case FunnelOutcome::Observed:
+    case ResponseOutcome::Observed:
         return "observed";
-    case FunnelOutcome::Alerted:
+    case ResponseOutcome::Alerted:
         return "alerted";
-    case FunnelOutcome::AlreadyPunished:
+    case ResponseOutcome::AlreadyPunished:
         return "already punished";
-    case FunnelOutcome::KickIssued:
+    case ResponseOutcome::KickIssued:
         return "kicked";
-    case FunnelOutcome::BanIssued:
+    case ResponseOutcome::BanIssued:
         return "banned";
     }
     return "observed";
 }
 
-struct FunnelInput
+struct ResponseInput
 {
     int64_t SteamId = 0;
     bool Whitelisted = false;
     Mode CurrentMode = Mode::Observe;
     bool KickOnly = false;                           // from the Finding
-    PunishmentLevel Issued = PunishmentLevel::None;  // this slot's latch
+    PunishmentLevel Issued = PunishmentLevel::None;  // what this slot already carries
 };
 
-struct FunnelDecision
+struct ResponseDecision
 {
-    FunnelOutcome Outcome = FunnelOutcome::Observed;
+    ResponseOutcome Outcome = ResponseOutcome::Observed;
     bool SendAlert = false;
     PunishmentLevel Apply = PunishmentLevel::None;  // None = nothing to issue
 };
 
 /** The caller logs and reports every detection regardless; this decides alert and punishment only. */
-constexpr FunnelDecision Decide(const FunnelInput& input)
+constexpr ResponseDecision Decide(const ResponseInput& input)
 {
     if (input.SteamId == 0)
-        return {.Outcome = FunnelOutcome::NoIdentity};
+        return {.Outcome = ResponseOutcome::NoIdentity};
     if (input.Whitelisted)
-        return {.Outcome = FunnelOutcome::Whitelisted};
+        return {.Outcome = ResponseOutcome::Whitelisted};
     if (input.CurrentMode == Mode::Observe)
-        return {.Outcome = FunnelOutcome::Observed};
+        return {.Outcome = ResponseOutcome::Observed};
 
     if (input.CurrentMode == Mode::Alert)
-        return {.Outcome = FunnelOutcome::Alerted, .SendAlert = true};
+        return {.Outcome = ResponseOutcome::Alerted, .SendAlert = true};
 
     const PunishmentLevel requested = input.KickOnly ? PunishmentLevel::Kick : PunishmentLevel::Ban;
     if (input.Issued >= requested)
-        return {.Outcome = FunnelOutcome::AlreadyPunished, .SendAlert = true};
+        return {.Outcome = ResponseOutcome::AlreadyPunished, .SendAlert = true};
 
-    return {.Outcome = requested == PunishmentLevel::Kick ? FunnelOutcome::KickIssued : FunnelOutcome::BanIssued,
+    return {.Outcome = requested == PunishmentLevel::Kick ? ResponseOutcome::KickIssued : ResponseOutcome::BanIssued,
             .SendAlert = true,
             .Apply = requested};
 }
 
-/** Per-slot no-downgrade record of what has already been done. */
-class PunishmentLatch
+/** The highest punishment each slot has already received; it never goes back down. */
+class IssuedPunishments
 {
 public:
     PunishmentLevel Level(int slot) const

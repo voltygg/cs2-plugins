@@ -17,7 +17,7 @@ static constexpr long RequestTimeoutMs = 5000;
 static constexpr int EmbedColor = 0xE04F4F;
 
 void DiscordReporter::Report(int slot, const std::string& playerName, int64_t steamId, const Finding& finding,
-                             FunnelOutcome outcome)
+                             ResponseOutcome outcome)
 {
     const auto& settings = _config.Get().anticheat;
     if (settings.webhook.url.empty())

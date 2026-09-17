@@ -29,17 +29,17 @@ static std::string TrimReason(std::string_view reason)
 
 void ResponseManager::Initialize()
 {
-    _latch.Reset();
+    _issued.Reset();
 }
 
 void ResponseManager::OnSlotChanged(int slot)
 {
-    _latch.Clear(slot);
+    _issued.Clear(slot);
 }
 
 void ResponseManager::Reset()
 {
-    _latch.Reset();
+    _issued.Reset();
     // Keyed by SteamID, so without this the map grows for the lifetime of the server.
     _alertThrottle.Prune(VoltMod::Time::Now(), AlertThrottleSec);
 }
@@ -61,12 +61,12 @@ void ResponseManager::Handle(int slot, const Finding& finding)
     const std::string name = player ? player->Name() : std::string("<unknown>");
     const int64_t steamId = player ? player->SteamId() : 0;
 
-    const FunnelDecision decision = Decide({
+    const ResponseDecision decision = Decide({
         .SteamId = steamId,
         .Whitelisted = IsWhitelisted(steamId),
         .CurrentMode = CurrentMode(),
         .KickOnly = finding.KickOnly,
-        .Issued = _latch.Level(slot),
+        .Issued = _issued.Level(slot),
     });
 
     Log::Warn("[AC] {} on {} ({}) -> {}: {}", DisplayName(finding.Kind), name, steamId, OutcomeName(decision.Outcome),
@@ -80,7 +80,7 @@ void ResponseManager::Handle(int slot, const Finding& finding)
             admin->AlertAdmins(steamId, TokenName(finding.Kind), 1);
     }
 
-    if (decision.Apply == PunishmentLevel::None || !_latch.Raise(slot, decision.Apply))
+    if (decision.Apply == PunishmentLevel::None || !_issued.Raise(slot, decision.Apply))
         return;
 
     const std::string reason =
