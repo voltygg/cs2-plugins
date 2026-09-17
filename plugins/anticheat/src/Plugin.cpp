@@ -25,5 +25,5 @@ bool AnticheatPlugin::OnLoad(VoltMod::Runtime& runtime)
 
 void AnticheatPlugin::OnServerStartup(std::string_view /*mapName*/)
 {
-    _app->AntiCheat.OnMapStart();
+    _app->OnMapStart();
 }
