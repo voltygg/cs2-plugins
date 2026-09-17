@@ -4,7 +4,7 @@
 // every replicated settings change, and a periodic read of the controller for the changes that
 // reach it without one (a clan tag pushed by a cheat, for instance).
 
-#include "AnticheatTypes.hpp"
+#include "Detectors.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscription.hpp>
@@ -15,7 +15,7 @@ namespace Anticheat
 class NamechangerDetector
 {
 public:
-    NamechangerDetector(AntiCheatManager& manager, VoltMod::Runtime& runtime) : _manager(manager), _rt(runtime) {}
+    NamechangerDetector(Detectors& detectors, VoltMod::Runtime& runtime) : _detectors(detectors), _rt(runtime) {}
 
     /** Install the periodic controller read. */
     void Initialize();
@@ -32,7 +32,7 @@ private:
     void CheckIdentity(int slot, double nowSec);
     void OnPoll();
 
-    AntiCheatManager& _manager;
+    Detectors& _detectors;
     VoltMod::Runtime& _rt;
     VoltMod::Subscription _pollTimer;
 };

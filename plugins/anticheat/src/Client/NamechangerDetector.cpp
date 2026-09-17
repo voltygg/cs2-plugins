@@ -1,6 +1,5 @@
-#include "Detectors/NamechangerDetector.hpp"
+#include "Client/NamechangerDetector.hpp"
 
-#include "AntiCheatManager.hpp"
 
 #include <VoltMod/Core/Slot.hpp>
 #include <VoltMod/Core/Time.hpp>
@@ -29,14 +28,14 @@ void NamechangerDetector::Initialize()
 // a change measured against a stale identity would be a false positive later.
 void NamechangerDetector::OnFullyConnected(VoltMod::Player& player)
 {
-    if (!_manager.ModuleEnabled(DetectionKind::Namechanger) || !_manager.IsEligible(player.Slot()))
+    if (!_detectors.ModuleEnabled(DetectionKind::Namechanger) || !_detectors.IsEligible(player.Slot()))
         return;
-    _manager.Namechanger().OnBaseline(player.Slot(), player.Name(), ClanOf(player.Ctrl()));
+    _detectors.Namechanger.OnBaseline(player.Slot(), player.Name(), ClanOf(player.Ctrl()));
 }
 
 bool NamechangerDetector::Enabled() const
 {
-    return _manager.DetectionsEnabled() && _manager.ModuleEnabled(DetectionKind::Namechanger);
+    return _detectors.Enabled() && _detectors.ModuleEnabled(DetectionKind::Namechanger);
 }
 
 void NamechangerDetector::OnSettingsChanged(VoltMod::Player& player)
@@ -61,7 +60,7 @@ void NamechangerDetector::OnPoll()
 
 void NamechangerDetector::CheckIdentity(int slot, double nowSec)
 {
-    if (!_manager.IsEligible(slot))
+    if (!_detectors.IsEligible(slot))
         return;
 
     // The controller carries the name and tag the scoreboard shows right now; NamechangerCore
@@ -69,7 +68,7 @@ void NamechangerDetector::CheckIdentity(int slot, double nowSec)
     const VoltMod::Controller controller = _rt.Entities.Controller(slot);
     if (!controller)
         return;
-    _manager.Report(slot, _manager.Namechanger().OnIdentity(slot, controller.Name(), ClanOf(controller), nowSec));
+    _detectors.Report(slot, _detectors.Namechanger.OnIdentity(slot, controller.Name(), ClanOf(controller), nowSec));
 }
 
 }  // namespace Anticheat

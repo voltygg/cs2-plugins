@@ -1,5 +1,5 @@
 #include "Core/WeaponClass.hpp"
-#include "Detectors/SilentAimCore.hpp"
+#include "Aim/SilentAimCore.hpp"
 
 #include <doctest/doctest.h>
 #include <string>

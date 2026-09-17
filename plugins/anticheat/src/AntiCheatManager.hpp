@@ -1,28 +1,20 @@
 #pragma once
 
+// Owns the core bundle, the engine adapters that feed it, and the operator commands.
+
+#include "Client/DllInjectionDetector.hpp"
+#include "Client/InvalidCvarDetector.hpp"
+#include "Client/NamechangerDetector.hpp"
 #include "Config.hpp"
 #include "Core/DetectionData.hpp"
-
-// Owns detector cores, engine adapters, global gates, and console commands.
-
 #include "Correlation/ShotCorrelator.hpp"
-#include "Correlation/ShotCorrelatorCore.hpp"
-#include "Detectors/AimbotCore.hpp"
-#include "Detectors/AimlockCore.hpp"
-#include "Detectors/AntiAimCore.hpp"
-#include "Detectors/DllInjectionDetector.hpp"
-#include "Detectors/InvalidCvarDetector.hpp"
-#include "Detectors/NamechangerCore.hpp"
-#include "Detectors/NamechangerDetector.hpp"
-#include "Detectors/SilentAimCore.hpp"
+#include "Detectors.hpp"
 #include "Response/ResponseManager.hpp"
 #include "Simulator/CheatSimulator.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>
-#include <optional>
 #include <string>
-#include <tuple>
 #include <vector>
 
 namespace Anticheat
@@ -33,99 +25,45 @@ class AntiCheatManager
 public:
     AntiCheatManager(VoltMod::Runtime& runtime, ConfigManager& config, DetectionDataManager& detections,
                      ResponseManager& response)
-        : _rt(runtime),
-          _config(config),
-          _detections(detections),
-          _response(response),
-          _simulator(*this, runtime, config)
+        : _rt(runtime), _config(config), _detections(detections), _response(response)
     {}
 
     void Initialize();
 
     /** Clear evidence on map changes and configuration reloads. */
     void ResetEvidence();
-    void OnSlotChanged(int slot);
-
     void OnMapStart();
-
-    void OnPlayerFullyConnected(VoltMod::Player& player);
-    void OnPlayerSettingsChanged(VoltMod::Player& player);
-
-    /**
-     * Disabled globally or while `sv_cheats` is enabled outside test mode.
-     */
-    bool DetectionsEnabled() const;
-
-    bool ModuleEnabled(DetectionKind kind) const;
-
-    /** True when @p slot is checked at all: a spawned human, or a bot while `debug.includeBots`
-     *  is on. */
-    bool IsEligible(int slot);
-
-    void Report(int slot, const std::optional<Finding>& finding);
-
-    /** Cheat-protected client values only mean something once a disabled sv_cheats has reached them. */
-    bool EnforceCheatCvars() const;
 
     /** This plugin's `status` section as compact JSON text. Text, not a document, so this
      *  header stays clear of the JSON library. */
     std::string StatusSnapshot() const;
 
-    ShotCorrelatorCore& Correlator() { return _correlator; }
-    AimbotCore& Aimbot() { return _aimbot; }
-    AimlockCore& Aimlock() { return _aimlock; }
-    AntiAimCore& AntiAim() { return _antiAim; }
-    SilentAimCore& SilentAim() { return _silentAim; }
-    NamechangerCore& Namechanger() { return _namechanger; }
-    InvalidCvarRules& InvalidCvars() { return _invalidCvars; }
-
 private:
-    /** Everything a reset or a slot change has to clear. Both fan out over this, so a new core is
-     *  wired into them here and nowhere else. */
-    auto ResettableModules()
-    {
-        return std::tie(_correlator, _aimbot, _aimlock, _antiAim, _silentAim, _namechanger, _invalidCvars,
-                        _dllInjection, _invalidCvarPoller, _response);
-    }
+    void OnSlotChanged(int slot);
+    void OnPlayerFullyConnected(VoltMod::Player& player);
 
+    /** Defined in AntiCheatCommands.cpp with the status report it prints. */
     void RegisterCommands();
     /** Push configs/detections.jsonc into the two table-driven modules. */
     void LoadDetectionData();
     void DumpCommand(int slot, const VoltMod::PlayerInput& cmd);
     /** The module state and per-player evidence, one line each. */
     std::vector<std::string> StatusReport() const;
-    bool IncludesBots() const;
-    /** Update hostile-shot rules from `mp_teammates_are_enemies`. */
-    void RefreshTeamRules();
 
     VoltMod::Runtime& _rt;
     ConfigManager& _config;
     DetectionDataManager& _detections;
     ResponseManager& _response;
 
-    ShotCorrelatorCore _correlator;
-    AimbotCore _aimbot{_correlator};
-    AimlockCore _aimlock{_correlator};
-    AntiAimCore _antiAim;
-    SilentAimCore _silentAim;
-    NamechangerCore _namechanger;
-    InvalidCvarRules _invalidCvars;
+    Detectors _cores{_rt, _config, _response};
 
-    ShotCorrelator _feed{*this, _rt};
-    NamechangerDetector _namechangerDetector{*this, _rt};
-    DllInjectionDetector _dllInjection{*this, _rt, _detections};
-    InvalidCvarDetector _invalidCvarPoller{*this, _rt};
-
-    // Stamped when sv_cheats goes off, so replicated client values get time to catch up.
-    double _cheatGraceUntil = 0.0;
-
-    /** Resolved once in Initialize: a registered convar's handle is stable for the load cycle,
-     *  and every detection path reads it. An unusable handle reads as invalid. */
-    VoltMod::ConVar<bool> _svCheats;
-    VoltMod::ConVar<bool> _teammatesAreEnemies;
+    ShotCorrelator _feed{_cores, _rt};
+    NamechangerDetector _namechangerDetector{_cores, _rt};
+    DllInjectionDetector _dllInjection{_cores, _rt, _detections};
+    InvalidCvarDetector _invalidCvarPoller{_cores, _rt};
 
     VoltMod::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
-    CheatSimulator _simulator;
+    CheatSimulator _simulator{_cores, _rt, _config};
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */

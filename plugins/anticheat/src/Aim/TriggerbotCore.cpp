@@ -1,0 +1,209 @@
+#include "Aim/TriggerbotCore.hpp"
+
+#include "Core/Geometry.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <format>
+
+namespace Anticheat
+{
+
+static constexpr size_t AimHistorySize = 48;
+static constexpr float PlayerHalfWidth = 16.0f;
+/** The hull is a box, so a crosshair a little outside its inscribed angle still rests on it. */
+static constexpr float HullSlack = 1.25f;
+static constexpr float MinimumDistance = 150.0f;
+/** A shot this soon after the previous one is part of a burst, not a reaction. */
+static constexpr int BurstGapTicks = 10;
+static constexpr int FastReactionTicks = 3;  // 47 ms
+static constexpr int SlowReactionTicks = 6;  // 94 ms
+static constexpr int FastPoints = 2;
+static constexpr int SlowPoints = 1;
+static constexpr int DetectionScore = 8;
+/** The crosshair must have been resting: the target walked in, the shooter did not flick. */
+static constexpr float StillAimDeg = 2.0f;
+static constexpr int StillLeadTicks = 4;
+
+void TriggerbotCore::SlotData::ClearRuns()
+{
+    for (auto& row : OnSince)
+        row.fill(-1);
+}
+
+void TriggerbotCore::Reset()
+{
+    _slots = {};
+    _incidents = {};
+}
+
+void TriggerbotCore::OnSlotChanged(int slot)
+{
+    if (!InSlotRange(slot))
+        return;
+    _slots[slot] = {};
+    _incidents[slot].Clear();
+    // Nobody can rest a crosshair on a seat that just changed hands.
+    for (auto& data : _slots)
+        data.OnSince[slot].fill(-1);
+}
+
+void TriggerbotCore::OnSimulated(int slot, int32_t serverTick, const AimAngles& angles, const Vec3& eyePos)
+{
+    if (!InSlotRange(slot))
+        return;
+    auto& data = _slots[slot];
+    data.Pending = {.ServerTick = serverTick, .Angles = angles};
+    data.PendingEye = eyePos;
+    data.PendingValid = Geometry::IsFinite(angles) && Geometry::IsFinite(eyePos);
+}
+
+bool TriggerbotCore::OnTarget(const Vec3& eye, const AimAngles& angles, const PositionSample& target)
+{
+    if ((target.Origin - eye).Length() < MinimumDistance)
+        return false;
+    const Vec3 forward = Geometry::AimForward(angles);
+    for (float height : Geometry::BodyHeights)
+    {
+        const Vec3 point{target.Origin.X, target.Origin.Y, target.Origin.Z + height};
+        const float distance = (point - eye).Length();
+        if (!std::isfinite(distance) || distance < 1e-3f)
+            continue;
+        const float error = Geometry::AimErrorDeg(eye, forward, point);
+        if (std::isfinite(error) && error <= Geometry::AngularSizeDeg(PlayerHalfWidth, distance) * HullSlack)
+            return true;
+    }
+    return false;
+}
+
+void TriggerbotCore::OnFrame(int slot, int32_t serverTick, bool aliveHuman, const LagEstimate& lag)
+{
+    if (!InSlotRange(slot))
+        return;
+    auto& data = _slots[slot];
+    const bool usable = aliveHuman && lag.Valid && data.PendingValid && data.Pending.ServerTick == serverTick;
+    data.PendingValid = false;
+    if (!usable)
+    {
+        data.ClearRuns();
+        if (!aliveHuman)
+            data.Aim.clear();
+        return;
+    }
+
+    data.Aim.push_back(data.Pending);
+    while (data.Aim.size() > AimHistorySize)
+        data.Aim.pop_front();
+
+    const PositionFrame* frame = _shots.FindFrame(serverTick);
+    const PositionSample* observer = frame ? &frame->Players[slot] : nullptr;
+    if (!observer || !observer->Valid || !observer->Alive || observer->Teleported)
+    {
+        data.ClearRuns();
+        return;
+    }
+
+    for (int target = 0; target < MaxSlots; ++target)
+    {
+        const PositionSample& current = frame->Players[target];
+        const bool eligible = target != slot && current.Valid && current.Alive && !current.Teleported &&
+                              _shots.AreOpponents(observer->Team, current.Team);
+        for (int index = 0; index < LagHypothesisCount; ++index)
+        {
+            int32_t& since = data.OnSince[target][index];
+            bool on = false;
+            if (eligible)
+            {
+                // What the client saw: the target where it stood that many ticks ago.
+                const PositionFrame* past = _shots.FindFrame(serverTick - LagHypothesis(lag, index));
+                const PositionSample* seen = past ? &past->Players[target] : nullptr;
+                on = seen && seen->Valid && seen->Alive && !seen->Teleported &&
+                     OnTarget(data.PendingEye, data.Pending.Angles, *seen);
+            }
+            since = on ? (since < 0 ? serverTick : since) : -1;
+        }
+    }
+}
+
+void TriggerbotCore::OnWeaponFire(int slot, int32_t fireTick)
+{
+    if (!InSlotRange(slot))
+        return;
+    auto& data = _slots[slot];
+    if (fireTick == data.LastFireTick)
+        return;
+    data.PreviousFireTick = data.LastFireTick;
+    data.LastFireTick = fireTick;
+}
+
+float TriggerbotCore::AimTravel(const SlotData& data, int32_t sinceTick, int32_t untilTick)
+{
+    const AimSample* rest = nullptr;
+    float travel = 0.0f;
+    for (const AimSample& sample : data.Aim)
+    {
+        if (sample.ServerTick < sinceTick || sample.ServerTick > untilTick)
+            continue;
+        if (!rest)
+        {
+            rest = &sample;
+            continue;
+        }
+        const float moved = Geometry::AngularDistance(rest->Angles, sample.Angles);
+        if (!std::isfinite(moved))
+            return 180.0f;
+        travel = std::max(travel, moved);
+    }
+    // No history means the rest cannot be confirmed, which reads as motion.
+    return rest ? travel : 180.0f;
+}
+
+std::optional<Finding> TriggerbotCore::OnPlayerHurt(int slot, const ShotView& shot, double nowSec)
+{
+    std::optional<Finding> out;
+    const int victim = shot.VictimSlot;
+    if (!InSlotRange(slot) || shot.Slot != slot || !shot.HurtSeen || !InSlotRange(victim) || victim == slot)
+        return out;
+
+    auto& data = _slots[slot];
+    const int32_t previousFire = data.LastFireTick == shot.FireTick ? data.PreviousFireTick : data.LastFireTick;
+    if (previousFire >= 0 && shot.FireTick - previousFire <= BurstGapTicks)
+        return out;
+
+    // The slowest reading across the lag hypotheses, so a wrong guess about the client's view of
+    // the world can only make the reaction look slower than it was.
+    int reaction = -1;
+    for (int index = 0; index < LagHypothesisCount; ++index)
+    {
+        const int32_t since = data.OnSince[victim][index];
+        if (since >= 0)
+            reaction = std::max(reaction, shot.FireTick - since);
+    }
+    if (reaction < 0)
+        return out;
+
+    const int points = reaction <= FastReactionTicks ? FastPoints : reaction <= SlowReactionTicks ? SlowPoints : 0;
+    if (points == 0)
+        return out;
+    if (AimTravel(data, shot.FireTick - reaction - StillLeadTicks, shot.FireTick) > StillAimDeg)
+        return out;
+
+    const int total = _incidents[slot].Add(nowSec, points);
+    if (total < DetectionScore)
+        return out;
+
+    out = Finding{.Kind = DetectionKind::Triggerbot,
+                  .Evidence = std::format("hit {} ticks (~{} ms) after the target walked into a resting crosshair; "
+                                          "the rolling score reached {}/{}.",
+                                          reaction, static_cast<int>(reaction * 1000.0f / TickRate), total,
+                                          DetectionScore)};
+    _incidents[slot].Clear();
+    return out;
+}
+
+int TriggerbotCore::Score(int slot, double nowSec) const
+{
+    return InSlotRange(slot) ? _incidents[slot].Value(nowSec) : 0;
+}
+
+}  // namespace Anticheat

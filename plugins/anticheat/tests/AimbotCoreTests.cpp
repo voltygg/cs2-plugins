@@ -1,4 +1,4 @@
-#include "Detectors/AimbotCore.hpp"
+#include "Aim/AimbotCore.hpp"
 
 #include <array>
 #include <doctest/doctest.h>

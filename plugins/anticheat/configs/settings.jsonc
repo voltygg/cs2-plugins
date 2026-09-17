@@ -22,6 +22,10 @@
       "aimlock": true,
       "antiAim": true,
       "silentAim": true,
+      "triggerbot": true,
+      "recoil": true,
+      "mouseMismatch": true,
+      "wallhack": true,
       "dllInjection": true,
       "invalidCvar": true,
       "namechanger": true

@@ -1,70 +1,36 @@
 #include "AntiCheatManager.hpp"
 
-#include "App.hpp"
-
 #include <VoltMod/Core/Json.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Slot.hpp>
 #include <format>
 #include <map>
-#include <optional>
 #include <string>
 
-using VoltMod::Caller;
 using VoltMod::IsValidSlot;
-using VoltMod::Reply;
-using VoltMod::Result;
-using VoltMod::Time;
 
-namespace Args = VoltMod::Args;
 namespace Log = VoltMod::Log;
 
 namespace Anticheat
 {
 
-static constexpr int DefaultDumpTicks = 64;
-static constexpr int MaxDumpTicks = 10000;
-
 void AntiCheatManager::Initialize()
 {
     _dumpTicks.BindReset(_rt.Slots);
+    _cores.Initialize();
     _simulator.Initialize();
 
-    // Aim modules share this movement hook.
     _subs.Add(_rt.Hooks.Movement.Before +=
               [this](int slot, const VoltMod::PlayerInput& cmd) { DumpCommand(slot, cmd); });
     _subs.Add(_rt.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
     _subs.Add(_rt.Players.FullyConnected += [this](VoltMod::Player& player) { OnPlayerFullyConnected(player); });
-    _subs.Add(_rt.Players.SettingsChanged += [this](VoltMod::Player& player) { OnPlayerSettingsChanged(player); });
-
-    // Allow client values to settle after sv_cheats is disabled.
+    _subs.Add(_rt.Players.SettingsChanged +=
+              [this](VoltMod::Player& player) { _namechangerDetector.OnSettingsChanged(player); });
     _subs.Add(_rt.ConVars.Changed += [this](const VoltMod::ConVarChange& change) {
-        if (change.Name == "mp_teammates_are_enemies")
-        {
-            RefreshTeamRules();
+        if (_cores.OnConVarChanged(change))
             ResetEvidence();
-            return;
-        }
-        if (change.Name != "sv_cheats")
-            return;
-        const bool enabled = !change.NewValue.empty() && change.NewValue != "0" && change.NewValue != "false";
-        if (!enabled)
-            _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
-        ResetEvidence();
     });
-    _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
-    // Cache convars used by detection paths.
-    if (auto cheats = _rt.ConVars.Find<bool>("sv_cheats"))
-        _svCheats = std::move(*cheats);
-    else
-        Log::Warn("sv_cheats unusable ({}); detections run as if it were off.", cheats.error().Detail);
-    if (auto freeForAll = _rt.ConVars.Find<bool>("mp_teammates_are_enemies"))
-        _teammatesAreEnemies = std::move(*freeForAll);
-    else
-        Log::Warn("mp_teammates_are_enemies unusable ({}); normal team rules apply.", freeForAll.error().Detail);
-
-    RefreshTeamRules();
     LoadDetectionData();
     _feed.Initialize();
     _namechangerDetector.Initialize();
@@ -76,15 +42,10 @@ void AntiCheatManager::Initialize()
     Log::Info("Detection cores ready (mode={}).", _config.Get().anticheat.mode);
 }
 
-void AntiCheatManager::RefreshTeamRules()
-{
-    _correlator.SetTeammatesAreEnemies(_teammatesAreEnemies && _teammatesAreEnemies.Get());
-}
-
 void AntiCheatManager::LoadDetectionData()
 {
     const DetectionData& data = _detections.Get();
-    const std::vector<std::string> rejected = _invalidCvars.LoadRules(data.cvarRules);
+    const std::vector<std::string> rejected = _cores.InvalidCvars.LoadRules(data.cvarRules);
 
     if (!rejected.empty())
     {
@@ -94,57 +55,8 @@ void AntiCheatManager::LoadDetectionData()
         Log::Warn("Ignoring duplicate cvar rule(s): {}.", names);
     }
 
-    Log::Info("Detection data: {} cvar rule(s), {} blacklisted event(s).", _invalidCvars.Rules().Size(),
+    Log::Info("Detection data: {} cvar rule(s), {} blacklisted event(s).", _cores.InvalidCvars.Rules().Size(),
               data.dllEventBlacklist.size());
-}
-
-void AntiCheatManager::RegisterCommands()
-{
-    auto& commands = _rt.Commands;
-
-    commands.Add("anticheat_reload")
-        .Describe("Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.")
-        .ConsoleOnly()
-        .Run([this](Caller) -> Result<Reply> {
-            // The reason names the offending key and its position, which is what an operator
-            // who just mistyped a setting needs to see.
-            if (auto loaded = _config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")); !loaded)
-                return Reply{std::format("Settings not reloaded: {}", loaded.error().Detail)};
-            // Keep valid rules active if the edited file cannot be parsed.
-            if (auto loaded = _detections.Load(DetectionDataPath); !loaded)
-                Log::Warn("{} could not be re-read ({}); keeping the tables already loaded.", DetectionDataPath,
-                          loaded.error().Detail);
-            else
-                LoadDetectionData();
-            RefreshTeamRules();
-            ResetEvidence();
-            return Reply{std::format("Settings reloaded (mode={}); evidence cleared.", _config.Get().anticheat.mode)};
-        });
-
-    commands.Add("anticheat_status")
-        .Describe("Print the module state and per-player detection evidence.")
-        .ConsoleOnly()
-        .Run([this](Caller caller) -> Result<Reply> {
-            // One line per call, so a remote console that keeps the first line still sees them all.
-            for (const std::string& line : StatusReport())
-                caller.SayRaw(line);
-            return Reply::Silent();
-        });
-
-    commands.Add("anticheat_dumpcmd")
-        .Describe("Log raw usercmds for a slot.")
-        .ConsoleOnly()
-        .Run([this](Caller, Args::Int slot, Args::Opt<Args::Int> requested) -> Result<Reply> {
-            if (!IsValidSlot(slot.Value))
-                return Reply{std::format("anticheat_dumpcmd: {} is not a valid slot.", slot.Value)};
-
-            const int ticks = requested.Value ? requested.Value->Value : DefaultDumpTicks;
-            if (ticks < 1 || ticks > MaxDumpTicks)
-                return Reply{std::format("anticheat_dumpcmd: ticks must be 1-{}.", MaxDumpTicks)};
-
-            _dumpTicks[slot.Value] = ticks;
-            return Reply{std::format("Dumping {} usercmds for slot {}.", ticks, slot.Value)};
-        });
 }
 
 void AntiCheatManager::DumpCommand(int slot, const VoltMod::PlayerInput& cmd)
@@ -178,12 +90,22 @@ void AntiCheatManager::DumpCommand(int slot, const VoltMod::PlayerInput& cmd)
         subtickYaw += cmd.SubtickMoves[i].YawDelta;
     }
 
+    std::string punch = "none";
+    if (const VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot))
+    {
+        if (const auto services = pawn.AimPunchServices())
+        {
+            const QAngle base = services.BaseAngle();
+            punch = std::format("({:.3f},{:.3f}) tick={}", base.x, base.y, services.BaseTick());
+        }
+    }
+
     Log::Info(
         "[AC dump s{}] cmd={} clientTick={} view=({:.2f},{:.2f},{:.2f}) mouse=({},{}) buttons={:#x}/{:#x} "
-        "subticks={} (dPitch={:.3f} dYaw={:.3f}) history={}/{} attack1={}",
+        "subticks={} (dPitch={:.3f} dYaw={:.3f}) history={}/{} attack1={} punch={}",
         slot, cmd.CommandNumber, cmd.ClientTick, cmd.ViewPitch, cmd.ViewYaw, cmd.ViewRoll, cmd.MouseDx, cmd.MouseDy,
         cmd.ButtonsHeld, cmd.ButtonsChanged, cmd.SubtickMoveCount, subtickPitch, subtickYaw,
-        cmd.InputHistorySampleCount, cmd.InputHistoryTotalCount, attack);
+        cmd.InputHistorySampleCount, cmd.InputHistoryTotalCount, attack, punch);
 }
 
 std::string AntiCheatManager::StatusSnapshot() const
@@ -191,27 +113,30 @@ std::string AntiCheatManager::StatusSnapshot() const
     const auto& settings = _config.Get().anticheat;
     std::map<std::string, bool> modules;
     for (const DetectionInfo& detection : DetectionCatalog)
-        modules.emplace(detection.Token, ModuleEnabled(detection.Kind));
+        modules.emplace(detection.Token, _cores.ModuleEnabled(detection.Kind));
 
+    const VoltMod::Status sight = _feed.SightAvailable();
     return VoltMod::Json::Write(
         glz::obj{"enabled",
                  settings.enabled,
                  "mode",
                  ModeName(_response.CurrentMode()),
                  "detecting",
-                 DetectionsEnabled(),
+                 _cores.Enabled(),
                  "enforcingCheatCvars",
-                 EnforceCheatCvars(),
+                 _cores.EnforceCheatCvars(),
                  "modules",
                  modules,
                  "clientCvars",
                  _rt.Hooks.ClientConVars.Available() ? "available" : "degraded",
                  "teleportTracker",
                  _rt.Hooks.Teleport.Available().has_value(),
+                 "sightLines",
+                 sight ? std::string("available") : sight.error().Detail,
                  "correlatorFrames",
-                 _correlator.FrameCount(),
+                 _cores.Correlator.FrameCount(),
                  "detectionData",
-                 glz::obj{"cvarRules", _invalidCvars.Rules().Size(), "blacklistedEvents",
+                 glz::obj{"cvarRules", _cores.InvalidCvars.Rules().Size(), "blacklistedEvents",
                           _detections.Get().dllEventBlacklist.size()},
                  "webhook",
                  !settings.webhook.url.empty(),
@@ -221,59 +146,26 @@ std::string AntiCheatManager::StatusSnapshot() const
                  settings.debug.includeBots});
 }
 
-std::vector<std::string> AntiCheatManager::StatusReport() const
-{
-    std::vector<std::string> report{std::format("[AC] {}", StatusSnapshot())};
-
-    const double now = Time::MonotonicSeconds();
-    bool any = false;
-    for (const VoltMod::Player* player : _rt.Players.All())
-    {
-        const int slot = player ? player->Slot() : -1;
-        if (!InSlotRange(slot) || (player->IsBot() && !IncludesBots()))
-            continue;
-        any = true;
-
-        std::string latched;
-        const std::span<const CvarRule> rules = _invalidCvars.Rules().All();
-        for (size_t index = 0; index < rules.size(); ++index)
-        {
-            if (!_invalidCvars.IsLatchedAt(slot, index))
-                continue;
-            if (!latched.empty())
-                latched += ",";
-            latched += rules[index].name;
-        }
-
-        report.push_back(std::format(
-            "[AC] s{} {} ({}) punished={} aimbot={} aimlock={}{} antiaim={:.1f} silentaim={} names={} "
-            "cvars=[{}] pending={} poll={:.1f}s shots={} cmds={} gen={}",
-            slot, player->Name(), player->SteamId(), PunishmentName(_response.Issued(slot)),
-            _aimbot.IncidentCount(slot), _aimlock.IncidentCount(slot), _aimlock.IsTracking(slot) ? "/tracking" : "",
-            _antiAim.Score(slot), _silentAim.Score(slot, now), _namechanger.ChangeCount(slot),
-            latched.empty() ? "-" : latched, _rt.Hooks.ClientConVars.PendingCount(slot),
-            _invalidCvarPoller.PollsIn(slot, now), _correlator.Shots(slot).size(), _correlator.CommandCount(slot),
-            _correlator.Generation(slot)));
-    }
-    if (!any)
-        report.push_back(IncludesBots() ? "[AC] no players connected." : "[AC] no human players connected.");
-    return report;
-}
-
 void AntiCheatManager::ResetEvidence()
 {
-    std::apply([](auto&... modules) { (modules.Reset(), ...); }, ResettableModules());
+    _cores.Reset();
+    _dllInjection.Reset();
+    _invalidCvarPoller.Reset();
+    _response.Reset();
 }
 
 void AntiCheatManager::OnMapStart()
 {
-    RefreshTeamRules();
+    _cores.RefreshTeamRules();
     ResetEvidence();
 }
 
 void AntiCheatManager::OnSlotChanged(int slot)
 {
-    std::apply([slot](auto&... modules) { (modules.OnSlotChanged(slot), ...); }, ResettableModules());
+    _cores.OnSlotChanged(slot);
+    _dllInjection.OnSlotChanged(slot);
+    _invalidCvarPoller.OnSlotChanged(slot);
+    _response.OnSlotChanged(slot);
 }
 
 void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Player& player)
@@ -281,59 +173,6 @@ void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Player& player)
     _namechangerDetector.OnFullyConnected(player);
     _dllInjection.OnFullyConnected(player.Slot());
     _invalidCvarPoller.OnFullyConnected(player.Slot());
-}
-
-void AntiCheatManager::OnPlayerSettingsChanged(VoltMod::Player& player)
-{
-    _namechangerDetector.OnSettingsChanged(player);
-}
-
-bool AntiCheatManager::DetectionsEnabled() const
-{
-    const auto& settings = _config.Get().anticheat;
-    if (!settings.enabled)
-        return false;
-    const VoltMod::ConVar<bool>& cheats = _svCheats;
-    if (!cheats)
-        return true;
-    return !cheats.Get() || settings.allowSvCheatsTesting;
-}
-
-bool AntiCheatManager::EnforceCheatCvars() const
-{
-    const VoltMod::ConVar<bool>& cheats = _svCheats;
-    return ShouldEnforceCheatCvars(cheats && cheats.Get(), Time::MonotonicSeconds(), _cheatGraceUntil);
-}
-
-bool AntiCheatManager::ModuleEnabled(DetectionKind kind) const
-{
-    return DetectionEnabled(_config.Get().anticheat.detections, kind);
-}
-
-bool AntiCheatManager::IsEligible(int slot)
-{
-    if (!IsValidSlot(slot))
-        return false;
-    const VoltMod::Player* player = _rt.Players.Get(slot);
-    if (!player)
-        return false;
-    // FL_FAKECLIENT lives on the pawn, so a slot that has not spawned yet cannot be cleared.
-    VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot);
-    if (!pawn)
-        return false;
-    const bool bot = player->IsBot() || (pawn.Flags() & VoltMod::FL_FAKECLIENT);
-    return !bot || IncludesBots();
-}
-
-bool AntiCheatManager::IncludesBots() const
-{
-    return _config.Get().anticheat.debug.includeBots;
-}
-
-void AntiCheatManager::Report(int slot, const std::optional<Finding>& finding)
-{
-    if (finding)
-        _response.Handle(slot, *finding);
 }
 
 }  // namespace Anticheat

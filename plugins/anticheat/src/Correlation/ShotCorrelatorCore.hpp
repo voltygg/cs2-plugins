@@ -49,11 +49,12 @@ public:
     void Prune(int32_t serverTick);
 
     /**
-     * weapon_fire for a ballistic weapon. Returns null when no unique command matches; ambiguous
-     * candidates are consumed so later events cannot select one arbitrarily.
+     * weapon_fire for a ballistic weapon. @p fireCmdNum is the command the pawn says fired (0 when
+     * unknown) and binds exactly; otherwise the unique simulated command in the window binds, and
+     * ambiguous candidates are consumed so later events cannot select one arbitrarily.
      */
     ShotView* OnWeaponFire(int slot, std::string_view weapon, int32_t serverTick, const AimAngles& visibleAngles,
-                           bool hasVisibleAngles);
+                           bool hasVisibleAngles, int32_t fireCmdNum = 0, int shotsFired = 0);
 
     ShotView* OnBulletImpact(int slot, const Vec3& impact, int32_t serverTick);
     ShotView* OnPlayerHurt(int attackerSlot, int victimSlot, bool headshot, int32_t serverTick);

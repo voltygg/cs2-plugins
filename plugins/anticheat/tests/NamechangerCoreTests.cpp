@@ -1,4 +1,4 @@
-#include "Detectors/NamechangerCore.hpp"
+#include "Client/NamechangerCore.hpp"
 
 #include <doctest/doctest.h>
 #include <format>

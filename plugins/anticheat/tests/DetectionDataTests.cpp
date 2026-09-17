@@ -5,7 +5,7 @@
 // is not below its value. Every case below would otherwise produce a working-looking table.
 
 #include "Core/DetectionData.hpp"
-#include "Detectors/InvalidCvarRules.hpp"
+#include "Client/InvalidCvarRules.hpp"
 
 #include <VoltMod/Core/Json.hpp>
 #include <doctest/doctest.h>

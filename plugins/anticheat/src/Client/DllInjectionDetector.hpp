@@ -2,7 +2,7 @@
 
 // Detect injected listeners that subscribe to events unused by the stock HUD.
 
-#include "AnticheatTypes.hpp"
+#include "Detectors.hpp"
 #include "Core/DetectionData.hpp"
 #include "Core/Samples.hpp"
 
@@ -16,8 +16,8 @@ namespace Anticheat
 class DllInjectionDetector
 {
 public:
-    DllInjectionDetector(AntiCheatManager& manager, VoltMod::Runtime& runtime, DetectionDataManager& detections)
-        : _manager(manager), _rt(runtime), _detections(detections)
+    DllInjectionDetector(Detectors& detectors, VoltMod::Runtime& runtime, DetectionDataManager& detections)
+        : _detectors(detectors), _rt(runtime), _detections(detections)
     {}
 
     /** Start the repeating scan timer. Idempotent. */
@@ -38,7 +38,7 @@ private:
 
     void Scan(int slot, SlotState& state, double nowSec);
 
-    AntiCheatManager& _manager;
+    Detectors& _detectors;
     VoltMod::Runtime& _rt;
     DetectionDataManager& _detections;
     std::array<SlotState, MaxSlots> _slots{};

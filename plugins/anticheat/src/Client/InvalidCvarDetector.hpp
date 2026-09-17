@@ -7,8 +7,8 @@
 // An unanswered query produces no callback at all, so nothing here waits on a reply or reads
 // silence as evidence.
 
-#include "AnticheatTypes.hpp"
-#include "Detectors/InvalidCvarRules.hpp"
+#include "Detectors.hpp"
+#include "Client/InvalidCvarRules.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <array>
@@ -22,7 +22,7 @@ namespace Anticheat
 class InvalidCvarDetector
 {
 public:
-    InvalidCvarDetector(AntiCheatManager& manager, VoltMod::Runtime& runtime) : _manager(manager), _rt(runtime) {}
+    InvalidCvarDetector(Detectors& detectors, VoltMod::Runtime& runtime) : _detectors(detectors), _rt(runtime) {}
 
     /** Start the repeating poll timer. Idempotent. */
     void Initialize();
@@ -48,7 +48,7 @@ private:
     void OnReply(int slot, VoltMod::ClientConVarStatus status, std::string_view name, std::string_view value);
     double NextDelaySec();
 
-    AntiCheatManager& _manager;
+    Detectors& _detectors;
     VoltMod::Runtime& _rt;
     std::array<SlotState, MaxSlots> _slots{};
     std::minstd_rand _random;

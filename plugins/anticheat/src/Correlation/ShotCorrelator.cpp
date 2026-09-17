@@ -1,8 +1,9 @@
-﻿#include "ShotCorrelator.hpp"
+#include "Correlation/ShotCorrelator.hpp"
 
-#include "AntiCheatManager.hpp"
 #include "Core/Geometry.hpp"
-#include "Detectors/AimlockDetector.hpp"
+#include "Core/WeaponClass.hpp"
+#include "Correlation/CommandSample.hpp"
+#include "Correlation/VisualLag.hpp"
 
 #include <VoltMod/Core/Slot.hpp>
 #include <VoltMod/Core/Time.hpp>
@@ -11,6 +12,7 @@
 #include <eiface.h>
 #include <mathlib/vector.h>
 #include <optional>
+#include <vector>
 
 using VoltMod::IsValidSlot;
 
@@ -21,68 +23,10 @@ using VoltMod::Time;
 
 /** Origin and view angles jump discontinuously around a teleport, so the whole window is unreadable. */
 static constexpr float TeleportGraceSec = 5.0f;
-/** A shot older than this has received every event it can, so SilentAim may score it. */
-static constexpr int SilentFinalizeAgeTicks = 2;
-
-static Vec3 ToVec3(const Vector& v)
-{
-    return {v.x, v.y, v.z};
-}
-
-static bool IsAirborne(const VoltMod::Pawn& pawn)
-{
-    const bool grounded = pawn.OnGroundLastTick() || ((pawn.Flags() & VoltMod::FL_ONGROUND) &&
-                                                      pawn.GroundEntity() != VoltMod::InvalidEntityHandle);
-    return !grounded && pawn.Move() == VoltMod::MoveType::Walk &&
-           pawn.ActualMoveTypeRaw() == static_cast<VoltMod::Schema::MoveType_t>(VoltMod::MoveType::Walk);
-}
-
-static CmdSample BuildSample(const VoltMod::PlayerInput& cmd)
-{
-    CmdSample sample;
-    sample.CmdNum = cmd.CommandNumber;
-    sample.ClientTick = cmd.ClientTick;
-    sample.ViewPitch = cmd.ViewPitch;
-    sample.ViewYaw = cmd.ViewYaw;
-    sample.ViewRoll = cmd.ViewRoll;
-    // A command that carried no viewangles leaves the fields at a perfectly ordinary-looking
-    // (0,0,0), so the angles have to be untrusted rather than merely finite.
-    sample.BaseAnglesFinite =
-        cmd.HasViewAngles && Geometry::IsFinite(sample.BaseAngles()) && std::isfinite(sample.ViewRoll);
-
-    for (int i = 0; i < cmd.SubtickMoveCount; ++i)
-    {
-        const VoltMod::SubtickMove& move = cmd.SubtickMoves[i];
-        sample.SubtickPitchDelta += move.PitchDelta;
-        sample.SubtickYawDelta += move.YawDelta;
-        sample.SubtickAnglesFinite =
-            sample.SubtickAnglesFinite && std::isfinite(move.PitchDelta) && std::isfinite(move.YawDelta);
-    }
-
-    const int attackIndex = cmd.Attack1StartHistoryIndex;
-    sample.AttackStarted = attackIndex >= 0;
-    // Only an index the client never sent is a fabrication. One the transport cap dropped is merely
-    // absent, and must never be clamped back into range - that reads another shot's angles.
-    sample.AttackIndexInvalid = attackIndex < -1 || attackIndex >= cmd.InputHistoryTotalCount;
-    if (auto attack = cmd.SampleAt(attackIndex); attack && attack->HasViewAngles)
-        sample.AttackAngles = AimAngles{attack->ViewPitch, attack->ViewYaw};
-
-    for (int i = 0; i < cmd.InputHistorySampleCount; ++i)
-    {
-        const VoltMod::InputHistorySample& entry = cmd.InputHistorySamples[i];
-        if (!entry.HasViewAngles)
-            continue;
-        sample.HasHistoryAngles = true;
-        if (!std::isfinite(entry.ViewPitch) || !std::isfinite(entry.ViewYaw))
-        {
-            sample.HistoryAnglesFinite = false;
-            continue;
-        }
-        sample.MaxHistoryYawDelta =
-            std::max(sample.MaxHistoryYawDelta, std::abs(Geometry::YawDelta(sample.ViewYaw, entry.ViewYaw)));
-    }
-    return sample;
-}
+/** A shot older than this has received every event it can, so the cores may judge it. */
+static constexpr int FinalizeAgeTicks = 2;
+/** How far back a teammate's sight of the victim still counts as shared information. */
+static constexpr int TeamSightMemoryTicks = 128;
 
 void ShotCorrelator::Initialize()
 {
@@ -94,7 +38,7 @@ void ShotCorrelator::Initialize()
                        [this](int slot, const VoltMod::PlayerInput& cmd) { OnCommand(slot, cmd); });
     _subscriptions.Add(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
-    // The aim modules discount the frames after a teleport, so the stamps live here rather than in
+    // The aim cores discount the frames after a teleport, so the stamps live here rather than in
     // the framework: subscribing is what arms the per-pawn hook, and the grace window is ours.
     _lastTeleport.BindReset(_rt.Slots);
     _subscriptions.Add(_rt.Hooks.Teleport.Teleported += [this](int slot) {
@@ -103,8 +47,8 @@ void ShotCorrelator::Initialize()
     });
 
     _subscriptions.Add(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
-        if (_manager.ModuleEnabled(DetectionKind::AntiAim))
-            _manager.AntiAim().OnSlotChanged(e.Slot);
+        if (_detectors.ModuleEnabled(DetectionKind::AntiAim))
+            _detectors.AntiAim.OnSlotChanged(e.Slot);
     }));
     _subscriptions.Add(events.On<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
     _subscriptions.Add(events.On<VoltMod::BulletImpact>([this](const VoltMod::BulletImpact& e) { OnBulletImpact(e); }));
@@ -115,42 +59,52 @@ void ShotCorrelator::Initialize()
 
 void ShotCorrelator::OnCommand(int slot, const VoltMod::PlayerInput& cmd)
 {
-    if (!cmd.Valid || !_manager.DetectionsEnabled() || !_manager.IsEligible(slot))
+    if (!cmd.Valid || !_detectors.Enabled() || !_detectors.IsEligible(slot))
         return;
 
     VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot);
     if (!pawn)
         return;
 
-    const Vec3 eye = ToVec3(pawn.EyePosition());
-    if (!Geometry::IsFinite(eye))
+    CmdSample sample = BuildSample(cmd);
+    StampPawnState(sample, pawn);
+    if (!Geometry::IsFinite(sample.EyePos))
         return;
 
-    CmdSample sample = BuildSample(cmd);
-    sample.EyePos = eye;
-    sample.Airborne = IsAirborne(pawn);
+    Detectors& d = _detectors;
+    const bool aimbot = d.ModuleEnabled(DetectionKind::Aimbot);
+    const bool aimlock = d.ModuleEnabled(DetectionKind::Aimlock);
+    const bool antiAim = d.ModuleEnabled(DetectionKind::AntiAim);
+    const bool triggerbot = d.ModuleEnabled(DetectionKind::Triggerbot);
+    const bool recoil = d.ModuleEnabled(DetectionKind::Recoil);
+    const bool mouse = d.ModuleEnabled(DetectionKind::MouseMismatch);
+    const bool wallhack = d.ModuleEnabled(DetectionKind::Wallhack);
 
-    const bool aimbot = _manager.ModuleEnabled(DetectionKind::Aimbot);
-    const bool aimlock = _manager.ModuleEnabled(DetectionKind::Aimlock);
-    const bool antiAim = _manager.ModuleEnabled(DetectionKind::AntiAim);
-
-    _manager.Correlator().OnCommand(slot, sample);
+    d.Correlator.OnCommand(slot, sample);
     if (aimbot)
-        _manager.Aimbot().OnCommand(slot, sample);
+        d.Aimbot.OnCommand(slot, sample);
     if (antiAim)
-        _manager.AntiAim().OnCommand(slot, sample);
+        d.AntiAim.OnCommand(slot, sample);
+    if (recoil)
+        d.Recoil.OnCommand(slot, sample);
 
     // This is the command the server is about to simulate, so ingest and stamp in the same pass.
     const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
     const double now = Time::MonotonicSeconds();
-    _manager.Correlator().OnSimulated(slot, sample.CmdNum, serverTick, eye, sample.Airborne);
+    const bool teleported = JustTeleported(slot);
+    d.Correlator.OnSimulated(slot, sample.CmdNum, serverTick, sample.EyePos, sample.Airborne);
     if (aimbot)
-        _manager.Report(slot, _manager.Aimbot().OnSimulated(slot, sample.CmdNum, serverTick, eye, now));
+        d.Report(slot, d.Aimbot.OnSimulated(slot, sample.CmdNum, serverTick, sample.EyePos, now));
     if (aimlock)
-        _manager.Aimlock().OnSimulated(slot, serverTick, sample.BaseAngles(), eye);
+        d.Aimlock.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
+    if (triggerbot)
+        d.Triggerbot.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
+    if (wallhack)
+        d.Wallhack.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
+    if (mouse)
+        d.Report(slot, d.Mouse.OnSimulated(slot, sample, serverTick, teleported, now));
     if (antiAim)
-        _manager.Report(
-            slot, _manager.AntiAim().OnSimulated(slot, sample.CmdNum, serverTick, true, JustTeleported(slot), now));
+        d.Report(slot, d.AntiAim.OnSimulated(slot, sample.CmdNum, serverTick, true, teleported, now));
 }
 
 bool ShotCorrelator::JustTeleported(int slot) const
@@ -164,7 +118,8 @@ bool ShotCorrelator::JustTeleported(int slot) const
     return stamp != 0.0f && now >= stamp && now - stamp <= TeleportGraceSec;
 }
 
-void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& players)
+void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& players,
+                                      std::array<AimAngles, MaxSlots>& aims, std::array<bool, MaxSlots>& viewers)
 {
     _userIds.fill(-1);
     IVEngineServer2* engine = _rt.Unsafe.Interfaces.Engine;
@@ -182,135 +137,221 @@ void ShotCorrelator::CollectPositions(std::array<PositionSample, MaxSlots>& play
         if (!pawn)
             continue;
 
-        players[slot] = {.Origin = ToVec3(pawn.Origin()),
-                         .EyePos = ToVec3(pawn.EyePosition()),
+        const Vector origin = pawn.Origin();
+        const Vector eye = pawn.EyePosition();
+        const QAngle angles = pawn.EyeAngles();
+        players[slot] = {.Origin = {origin.x, origin.y, origin.z},
+                         .EyePos = {eye.x, eye.y, eye.z},
                          .Team = pawn.Team(),
                          .Valid = true,
                          .Alive = pawn.IsAlive(),
                          .Teleported = JustTeleported(slot)};
+        aims[slot] = {angles.x, angles.y};
+        viewers[slot] = players[slot].Alive && _detectors.IsEligible(slot);
     }
 }
 
 void ShotCorrelator::OnFrame()
 {
-    if (!_manager.DetectionsEnabled())
+    Detectors& d = _detectors;
+    if (!d.Enabled())
         return;
 
     const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
     const double now = Time::MonotonicSeconds();
 
-    std::array<PositionSample, MaxSlots> players{};
-    CollectPositions(players);
-    _manager.Correlator().CaptureFrame(serverTick, players);
+    const bool aimbot = d.ModuleEnabled(DetectionKind::Aimbot);
+    const bool aimlock = d.ModuleEnabled(DetectionKind::Aimlock);
+    const bool antiAim = d.ModuleEnabled(DetectionKind::AntiAim);
+    const bool triggerbot = d.ModuleEnabled(DetectionKind::Triggerbot);
+    const bool recoil = d.ModuleEnabled(DetectionKind::Recoil);
+    const bool wallhack = d.ModuleEnabled(DetectionKind::Wallhack);
 
-    const bool aimbot = _manager.ModuleEnabled(DetectionKind::Aimbot);
-    const bool aimlock = _manager.ModuleEnabled(DetectionKind::Aimlock);
-    const bool antiAim = _manager.ModuleEnabled(DetectionKind::AntiAim);
-    const bool silentAim = _manager.ModuleEnabled(DetectionKind::SilentAim);
+    std::array<PositionSample, MaxSlots> players{};
+    std::array<AimAngles, MaxSlots> aims{};
+    std::array<bool, MaxSlots> viewers{};
+    CollectPositions(players, aims, viewers);
+    if (wallhack)
+        _sight.Stamp(players, aims, viewers, d.Correlator);
+    d.Correlator.CaptureFrame(serverTick, players);
 
     for (int slot = 0; slot < MaxSlots; ++slot)
     {
-        const bool eligible = _manager.IsEligible(slot);
+        const bool eligible = viewers[slot] || d.IsEligible(slot);
+        const bool aliveHuman = eligible && players[slot].Alive;
+        // Two engine reads and a parse per call, so only for the slots an estimate is used on.
+        const LagEstimate lag =
+            aliveHuman && (aimlock || triggerbot || wallhack) ? MeasureVisualLag(_rt, slot) : LagEstimate{};
+
         if (aimbot)
-            _manager.Report(slot, _manager.Aimbot().OnFrame(slot, serverTick, eligible, now));
+            d.Report(slot, d.Aimbot.OnFrame(slot, serverTick, eligible, now));
         if (aimlock)
-        {
-            // Two engine reads and a parse per call, so only for the slots the estimate is used on.
-            const bool aliveHuman = eligible && players[slot].Alive;
-            _manager.Report(slot,
-                            _manager.Aimlock().OnFrame(slot, serverTick, aliveHuman,
-                                                       aliveHuman ? MeasureVisualLag(_rt, slot) : LagEstimate{}, now));
-        }
+            d.Report(slot, d.Aimlock.OnFrame(slot, serverTick, aliveHuman, lag, now));
+        if (triggerbot)
+            d.Triggerbot.OnFrame(slot, serverTick, aliveHuman, lag);
+        if (wallhack)
+            d.Report(slot, d.Wallhack.OnFrame(slot, serverTick, aliveHuman, lag, now));
         if (antiAim)
-            _manager.Report(slot, _manager.AntiAim().OnFrame(slot, serverTick, eligible, now));
-        if (silentAim && eligible)
-            FinalizeSilentAim(slot, serverTick, now);
+            d.Report(slot, d.AntiAim.OnFrame(slot, serverTick, eligible, now));
+        if (recoil && eligible)
+            d.Report(slot, d.Recoil.OnFrame(slot, serverTick, now));
+        if (eligible)
+            FinalizeShots(slot, serverTick, now);
     }
 
-    _manager.Correlator().Prune(serverTick);
+    d.Correlator.Prune(serverTick);
 }
 
-void ShotCorrelator::FinalizeSilentAim(int slot, int32_t serverTick, double nowSec)
+bool ShotCorrelator::TeamSawVictim(int shooter, int victim, int32_t fireTick) const
 {
-    // Reporting can kick, which clears the slot's shots - so report only after the walk.
-    std::optional<Finding> finding;
-    for (ShotView& shot : _manager.Correlator().Shots(slot))
+    const ShotCorrelatorCore& frames = _detectors.Correlator;
+    const auto shooterSample = frames.FindPosition(fireTick, shooter);
+    if (!shooterSample)
+        return false;
+
+    uint64_t teammates = 0;
+    for (const VoltMod::Player* player : _rt.Players.All())
     {
-        if (shot.SilentConsumed || static_cast<int64_t>(serverTick) - shot.FireTick < SilentFinalizeAgeTicks)
+        const int mate = player ? player->Slot() : -1;
+        if (!IsValidSlot(mate) || mate == shooter || mate == victim)
             continue;
-        finding = _manager.SilentAim().Finalize(slot, shot, nowSec);
-        if (finding)
-            break;
+        const auto mateSample = frames.FindPosition(fireTick, mate);
+        if (mateSample && mateSample->Alive && mateSample->Team == shooterSample->Team)
+            teammates |= SlotBit(mate);
     }
-    _manager.Report(slot, finding);
+    if (teammates == 0)
+        return false;
+
+    // Recent frames may already hold the answer from a teammate's own crosshair.
+    uint64_t seenBy = 0;
+    for (int32_t tick = fireTick; tick > fireTick - TeamSightMemoryTicks; --tick)
+    {
+        const auto seen = frames.FindPosition(tick, victim);
+        if (seen)
+            seenBy |= seen->SeenBy;
+    }
+    if ((seenBy & teammates) != 0)
+        return true;
+
+    for (int mate = 0; mate < MaxSlots; ++mate)
+        if ((teammates & SlotBit(mate)) != 0 && _sight.CanSee(mate, victim).value_or(false))
+            return true;
+    return false;
+}
+
+void ShotCorrelator::FinalizeShots(int slot, int32_t serverTick, double nowSec)
+{
+    Detectors& d = _detectors;
+    const bool silentAim = d.ModuleEnabled(DetectionKind::SilentAim);
+    const bool wallhack = d.ModuleEnabled(DetectionKind::Wallhack);
+
+    // Reporting can kick, which clears the slot's shots - so report only after the walk.
+    std::vector<Finding> findings;
+    for (ShotView& shot : d.Correlator.Shots(slot))
+    {
+        if (shot.Finalized || static_cast<int64_t>(serverTick) - shot.FireTick < FinalizeAgeTicks)
+            continue;
+        shot.Finalized = true;
+
+        if (silentAim)
+            if (auto finding = d.SilentAim.Finalize(slot, shot, nowSec))
+                findings.push_back(std::move(*finding));
+        if (wallhack && shot.HurtSeen)
+        {
+            const WallhackShotContext context{.TeamSawVictim = TeamSawVictim(slot, shot.VictimSlot, shot.FireTick)};
+            if (auto finding = d.Wallhack.OnShot(slot, shot, context, nowSec))
+                findings.push_back(std::move(*finding));
+        }
+    }
+    for (const Finding& finding : findings)
+        d.Report(slot, finding);
 }
 
 void ShotCorrelator::OnWeaponFire(const VoltMod::WeaponFire& fire)
 {
-    if (!_manager.DetectionsEnabled() || !_manager.IsEligible(fire.Slot))
+    Detectors& d = _detectors;
+    if (!d.Enabled() || !d.IsEligible(fire.Slot) || !IsBallisticWeapon(fire.Weapon))
         return;
+
+    const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
+    const double now = Time::MonotonicSeconds();
+    if (d.ModuleEnabled(DetectionKind::Triggerbot))
+        d.Triggerbot.OnWeaponFire(fire.Slot, serverTick);
+    if (d.ModuleEnabled(DetectionKind::Wallhack))
+        d.Wallhack.OnWeaponFire(fire.Slot, serverTick);
 
     const VoltMod::Pawn pawn = _rt.Entities.PawnOf(fire.Slot);
     const QAngle eyeAngles = pawn.EyeAngles();
     const AimAngles visible{eyeAngles.x, eyeAngles.y};
-    // Without a pawn the field read fabricates a perfectly finite-looking (0,0).
+    // Without a pawn the field reads fabricate perfectly finite-looking zeros.
     const bool hasVisible = static_cast<bool>(pawn) && Geometry::IsFinite(visible);
+    const int32_t fireCmd = pawn ? pawn.LastWeaponFireCommand() : 0;
+    const int shotsFired = pawn ? pawn.ShotsFired() : 0;
 
-    ShotView* shot = _manager.Correlator().OnWeaponFire(fire.Slot, fire.Weapon, static_cast<int32_t>(_rt.Clock.Tick()),
-                                                        visible, hasVisible);
-    if (shot && _manager.ModuleEnabled(DetectionKind::AntiAim))
-        _manager.Report(fire.Slot, _manager.AntiAim().OnWeaponFire(fire.Slot, *shot, Time::MonotonicSeconds()));
+    ShotView* shot =
+        d.Correlator.OnWeaponFire(fire.Slot, fire.Weapon, serverTick, visible, hasVisible, fireCmd, shotsFired);
+    if (!shot)
+        return;
+    if (d.ModuleEnabled(DetectionKind::AntiAim))
+        d.Report(fire.Slot, d.AntiAim.OnWeaponFire(fire.Slot, *shot, now));
+    if (d.ModuleEnabled(DetectionKind::Recoil))
+        d.Report(fire.Slot, d.Recoil.OnShot(fire.Slot, *shot, now));
 }
 
 void ShotCorrelator::OnBulletImpact(const VoltMod::BulletImpact& impact)
 {
-    if (!_manager.DetectionsEnabled())
+    Detectors& d = _detectors;
+    if (!d.Enabled())
         return;
 
     const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
     // The event's userid is truncated to a byte, so only a slot whose in-window shot is unique
     // counts. Without a userid table the engine's own best-effort decode is all there is.
-    int slot = _manager.Correlator().ResolveImpactShooter(impact.TruncatedUserId, serverTick, _userIds);
+    int slot = d.Correlator.ResolveImpactShooter(impact.TruncatedUserId, serverTick, _userIds);
     if (slot < 0 && !_userIdsResolved)
         slot = impact.Slot;
-    if (!_manager.IsEligible(slot))
+    if (!d.IsEligible(slot))
         return;
 
-    ShotView* shot = _manager.Correlator().OnBulletImpact(slot, {impact.X, impact.Y, impact.Z}, serverTick);
-    if (shot && _manager.ModuleEnabled(DetectionKind::SilentAim))
-        _manager.SilentAim().OnShotUpdated(slot, *shot);
+    ShotView* shot = d.Correlator.OnBulletImpact(slot, {impact.X, impact.Y, impact.Z}, serverTick);
+    if (shot && d.ModuleEnabled(DetectionKind::SilentAim))
+        d.SilentAim.OnShotUpdated(slot, *shot);
 }
 
 void ShotCorrelator::OnPlayerHurt(const VoltMod::PlayerHurt& hurt)
 {
-    if (!_manager.DetectionsEnabled())
+    Detectors& d = _detectors;
+    if (!d.Enabled())
         return;
 
     const int attacker = hurt.AttackerSlot;
     const int victim = hurt.VictimSlot;
-    if (!_manager.IsEligible(attacker) || !IsValidSlot(victim))
+    if (!d.IsEligible(attacker) || !IsValidSlot(victim))
         return;
 
     const bool headshot = hurt.Hitbox == VoltMod::HitGroup::Head;
-    ShotView* shot =
-        _manager.Correlator().OnPlayerHurt(attacker, victim, headshot, static_cast<int32_t>(_rt.Clock.Tick()));
+    ShotView* shot = d.Correlator.OnPlayerHurt(attacker, victim, headshot, static_cast<int32_t>(_rt.Clock.Tick()));
     if (!shot)
         return;
 
-    if (_manager.ModuleEnabled(DetectionKind::SilentAim))
-        _manager.SilentAim().OnShotUpdated(attacker, *shot);
-    if (_manager.ModuleEnabled(DetectionKind::Aimbot))
-        _manager.Report(attacker, _manager.Aimbot().OnPlayerHurt(attacker, victim, *shot, Time::MonotonicSeconds()));
+    const double now = Time::MonotonicSeconds();
+    if (d.ModuleEnabled(DetectionKind::SilentAim))
+        d.SilentAim.OnShotUpdated(attacker, *shot);
+    // Judged now, while the crosshair runs still describe the tick the shot was fired on.
+    if (d.ModuleEnabled(DetectionKind::Triggerbot))
+        d.Report(attacker, d.Triggerbot.OnPlayerHurt(attacker, *shot, now));
+    if (d.ModuleEnabled(DetectionKind::Aimbot))
+        d.Report(attacker, d.Aimbot.OnPlayerHurt(attacker, victim, *shot, now));
 }
 
 void ShotCorrelator::OnPlayerDeath(const VoltMod::PlayerDeath& death)
 {
-    if (!_manager.DetectionsEnabled() || !_manager.IsEligible(death.AttackerSlot))
+    if (!_detectors.Enabled() || !_detectors.IsEligible(death.AttackerSlot))
         return;
 
     // Nothing consumes the death directly: it only lands the wallbang flag SilentAim reads when it
     // finalizes two ticks later.
-    _manager.Correlator().OnPlayerDeath(death.AttackerSlot, death.VictimSlot, death.Weapon, death.Penetrated > 0,
+    _detectors.Correlator.OnPlayerDeath(death.AttackerSlot, death.VictimSlot, death.Weapon, death.Penetrated > 0,
                                         static_cast<int32_t>(_rt.Clock.Tick()));
 }
 

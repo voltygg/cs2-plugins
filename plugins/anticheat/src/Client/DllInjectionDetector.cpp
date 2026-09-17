@@ -1,7 +1,5 @@
-#include "Detectors/DllInjectionDetector.hpp"
+#include "Client/DllInjectionDetector.hpp"
 
-#include "AntiCheatManager.hpp"
-#include "App.hpp"
 
 #include <format>
 #include <string>
@@ -28,14 +26,14 @@ void DllInjectionDetector::Initialize()
         return;
 
     _scanTimer = _rt.Scheduler.Repeat(ScanIntervalMs, [this] {
-        if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::DllInjection))
+        if (!_detectors.Enabled() || !_detectors.ModuleEnabled(DetectionKind::DllInjection))
             return;
 
         const double now = Time::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
             SlotState& state = _slots[slot];
-            if (!_manager.IsEligible(slot))
+            if (!_detectors.IsEligible(slot))
                 continue;
             // A map change clears every schedule, and players who ride it out never connect again.
             if (state.NextScan == 0.0)
@@ -105,7 +103,7 @@ void DllInjectionDetector::Scan(int slot, SlotState& state, double nowSec)
         evidence += name;
     }
 
-    _manager.Report(slot, Finding{.Kind = DetectionKind::DllInjection,
+    _detectors.Report(slot, Finding{.Kind = DetectionKind::DllInjection,
                                   .Evidence = std::format("{} blacklisted client event subscription{} found: {}.",
                                                           matches.size(), matches.size() == 1 ? "" : "s", evidence)});
 }

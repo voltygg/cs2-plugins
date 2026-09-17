@@ -1,4 +1,4 @@
-#include "Detectors/SilentAimCore.hpp"
+#include "Aim/SilentAimCore.hpp"
 
 #include "Core/Geometry.hpp"
 #include "Core/WeaponClass.hpp"
@@ -33,7 +33,7 @@ void SilentAimCore::OnSlotChanged(int slot)
 
 void SilentAimCore::OnShotUpdated(int slot, ShotView& shot)
 {
-    if (!InSlotRange(slot) || shot.Slot != slot || shot.SilentMeasured || shot.SilentConsumed ||
+    if (!InSlotRange(slot) || shot.Slot != slot || shot.SilentMeasured || shot.Finalized ||
         !shot.HasVisibleAngles || !shot.ImpactSeen || !Geometry::IsFinite(shot.EyePos) ||
         !Geometry::IsFinite(shot.ImpactPos) || !Geometry::IsFinite(shot.VisibleAngles))
         return;
@@ -53,7 +53,6 @@ void SilentAimCore::OnShotUpdated(int slot, ShotView& shot)
 std::optional<Finding> SilentAimCore::Finalize(int slot, ShotView& shot, double nowSec)
 {
     std::optional<Finding> out;
-    shot.SilentConsumed = true;
     if (!InSlotRange(slot) || !shot.HurtSeen || !shot.ImpactSeen)
         return out;
 

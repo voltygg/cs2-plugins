@@ -1,9 +1,10 @@
 #pragma once
 
-// Converts usercmd, frame, and shot-event feeds into samples for the aim modules.
+// Converts usercmd, frame, and shot-event feeds into samples for the aim cores.
 
-#include "AnticheatTypes.hpp"
 #include "Core/Samples.hpp"
+#include "Correlation/SightProbe.hpp"
+#include "Detectors.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>
@@ -18,10 +19,13 @@ namespace Anticheat
 class ShotCorrelator
 {
 public:
-    ShotCorrelator(AntiCheatManager& manager, VoltMod::Runtime& runtime) : _manager(manager), _rt(runtime) {}
+    ShotCorrelator(Detectors& detectors, VoltMod::Runtime& runtime) : _detectors(detectors), _rt(runtime) {}
 
     /** Install the usercmd, per-frame and game-event listeners. */
     void Initialize();
+
+    /** Why sight lines cannot be traced this map, when they cannot. */
+    VoltMod::Status SightAvailable() const { return _sight.Available(); }
 
 private:
     void OnCommand(int slot, const VoltMod::PlayerInput& cmd);
@@ -31,17 +35,22 @@ private:
     void OnPlayerHurt(const VoltMod::PlayerHurt& hurt);
     void OnPlayerDeath(const VoltMod::PlayerDeath& death);
 
-    /** Collect frame state and the userid table used to resolve impacts. */
-    void CollectPositions(std::array<PositionSample, MaxSlots>& players);
+    /** Collect frame state, each pawn's aim, and the userid table used to resolve impacts. */
+    void CollectPositions(std::array<PositionSample, MaxSlots>& players, std::array<AimAngles, MaxSlots>& aims,
+                          std::array<bool, MaxSlots>& viewers);
 
-    /** Score every shot old enough that all of its events have arrived. */
-    void FinalizeSilentAim(int slot, int32_t serverTick, double nowSec);
+    /** Judge every shot old enough that all of its events have arrived. */
+    void FinalizeShots(int slot, int32_t serverTick, double nowSec);
+
+    /** A teammate of @p shooter can see @p victim now, or could within the last frames. */
+    bool TeamSawVictim(int shooter, int victim, int32_t fireTick) const;
 
     /** True while post-teleport motion samples are invalid for @p slot. */
     bool JustTeleported(int slot) const;
 
-    AntiCheatManager& _manager;
+    Detectors& _detectors;
     VoltMod::Runtime& _rt;
+    SightProbe _sight{_rt};
     std::array<int32_t, MaxSlots> _userIds{};
     /** Server time of each slot's last teleport, or 0 when none. */
     VoltMod::PerSlot<float> _lastTeleport;

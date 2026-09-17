@@ -1,4 +1,4 @@
-#include "Detectors/InvalidCvarRules.hpp"
+#include "Client/InvalidCvarRules.hpp"
 
 #include <doctest/doctest.h>
 #include <vector>

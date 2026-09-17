@@ -1,7 +1,5 @@
 #include "CheatSimulator.hpp"
 
-#include "AntiCheatManager.hpp"
-#include "App.hpp"
 #include "Core/Geometry.hpp"
 #include "Core/Samples.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
@@ -58,6 +56,9 @@ void CheatSimulator::Initialize()
         "anticheat_sim_mismatch",
         "Sim input-history angles diverging from the view: anticheat_sim_mismatch <slot|steamid64> [deg=130]",
         [this](const CCommand& args) { Start(args, Kind::Mismatch, 130.0f); });
+    _cmdNoMouse.emplace("anticheat_sim_nomouse",
+                        "Sim view turns without mouse counts: anticheat_sim_nomouse <slot|steamid64>",
+                        [this](const CCommand& args) { Start(args, Kind::NoMouse, 0.0f); });
     _cmdNames.emplace("anticheat_sim_names", "Sim a name changer: anticheat_sim_names <slot|steamid64>",
                       [this](const CCommand& args) { Start(args, Kind::Names, 0.0f); });
     _cmdOff.emplace("anticheat_sim_off", "Stop simulating: anticheat_sim_off [slot|steamid64] (omit to clear all)",
@@ -143,7 +144,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::PlayerInput& cmd)
     const int team = self.Team();
     // The correlator's copy of the free-for-all rule is kept current by RefreshTeamRules, so the
     // simulation opposes exactly who the detectors do - and pays no name lookup per usercmd.
-    const ShotCorrelatorCore& correlator = _manager.Correlator();
+    const ShotCorrelatorCore& correlator = _detectors.Correlator;
 
     Vec3 best;
     float bestDistance = 0.0f;
@@ -229,6 +230,12 @@ void CheatSimulator::OnFilter(int slot, VoltMod::PlayerInput& cmd)
         cmd.InputHistorySamples[0] = {
             .HasViewAngles = true, .ViewPitch = cmd.ViewPitch, .ViewYaw = cmd.ViewYaw + state.param};
         cmd.Attack1StartHistoryIndex = (cmd.ButtonsHeld & VoltMod::IN_ATTACK) != 0 ? 0 : -1;
+        break;
+    case Kind::NoMouse:
+        // The view lands on the enemy while the counts say the mouse never moved.
+        AimAtNearestOpponent(slot, cmd);
+        cmd.MouseDx = 0;
+        cmd.MouseDy = 0;
         break;
     case Kind::Names:
         if (state.step % RenameEveryCommands == 0)

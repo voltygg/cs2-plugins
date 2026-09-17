@@ -1,4 +1,4 @@
-#include "Detectors/AntiAimCore.hpp"
+#include "Aim/AntiAimCore.hpp"
 
 #include <cmath>
 #include <doctest/doctest.h>

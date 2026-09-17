@@ -1,6 +1,5 @@
-#include "Detectors/InvalidCvarDetector.hpp"
+#include "Client/InvalidCvarDetector.hpp"
 
-#include "AntiCheatManager.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -28,13 +27,13 @@ void InvalidCvarDetector::Initialize()
 
     _random.seed(Seed());
     _pollTimer = _rt.Scheduler.Repeat(PollIntervalMs, [this] {
-        if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::InvalidCvar))
+        if (!_detectors.Enabled() || !_detectors.ModuleEnabled(DetectionKind::InvalidCvar))
             return;
         const double now = Time::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
             SlotState& state = _slots[slot];
-            if (!_manager.IsEligible(slot))
+            if (!_detectors.IsEligible(slot))
                 continue;
             // A map change clears every schedule, and players who ride it out never connect again.
             if (state.NextPoll == 0.0)
@@ -85,7 +84,7 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
     if (!_rt.Hooks.ClientConVars.Available())
         return;
 
-    const CvarRuleTable& rules = _manager.InvalidCvars().Rules();
+    const CvarRuleTable& rules = _detectors.InvalidCvars.Rules();
     const std::span<const CvarRule> queried = rules.Queried();
     if (queried.empty())
         return;
@@ -103,27 +102,27 @@ void InvalidCvarDetector::Poll(int slot, SlotState& state)
 
 void InvalidCvarDetector::ReadUserInfo(int slot)
 {
-    const bool enforce = _manager.EnforceCheatCvars();
-    for (const CvarRule& rule : _manager.InvalidCvars().Rules().UserInfo())
+    const bool enforce = _detectors.EnforceCheatCvars();
+    for (const CvarRule& rule : _detectors.InvalidCvars.Rules().UserInfo())
     {
         const std::string_view value = _rt.World.NetChannels.GetUserInfoCvar(slot, rule.name);
         if (value.empty())
             continue;
-        _manager.Report(slot, _manager.InvalidCvars().Observe(slot, rule.name, value, enforce));
+        _detectors.Report(slot, _detectors.InvalidCvars.Observe(slot, rule.name, value, enforce));
     }
 }
 
 void InvalidCvarDetector::OnReply(int slot, VoltMod::ClientConVarStatus status, std::string_view name,
                                   std::string_view value)
 {
-    if (!_manager.DetectionsEnabled() || !_manager.ModuleEnabled(DetectionKind::InvalidCvar) ||
-        !_manager.IsEligible(slot))
+    if (!_detectors.Enabled() || !_detectors.ModuleEnabled(DetectionKind::InvalidCvar) ||
+        !_detectors.IsEligible(slot))
         return;
 
     // Both strings borrow the decoded message. The rules core copies whatever becomes evidence.
-    const bool enforce = _manager.EnforceCheatCvars();
-    InvalidCvarRules& rules = _manager.InvalidCvars();
-    _manager.Report(slot, status == VoltMod::ClientConVarStatus::Answered
+    const bool enforce = _detectors.EnforceCheatCvars();
+    InvalidCvarRules& rules = _detectors.InvalidCvars;
+    _detectors.Report(slot, status == VoltMod::ClientConVarStatus::Answered
                               ? rules.Observe(slot, name, value, enforce)
                               : rules.ObserveMissing(slot, name, VoltMod::Name(status), enforce));
 }

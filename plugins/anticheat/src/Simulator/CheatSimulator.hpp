@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AnticheatTypes.hpp"
+#include "Detectors.hpp"
 #include "Config.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -15,14 +15,14 @@ namespace Anticheat
 class CheatSimulator
 {
 public:
-    CheatSimulator(AntiCheatManager& manager, VoltMod::Runtime& runtime, ConfigManager& config)
-        : _manager(manager), _rt(runtime), _config(config)
+    CheatSimulator(Detectors& detectors, VoltMod::Runtime& runtime, ConfigManager& config)
+        : _detectors(detectors), _rt(runtime), _config(config)
     {}
 
     void Initialize();
 
 private:
-    AntiCheatManager& _manager;
+    Detectors& _detectors;
     VoltMod::Runtime& _rt;
     ConfigManager& _config;
 
@@ -34,6 +34,7 @@ private:
         BadAngles,
         Aimlock,
         Mismatch,
+        NoMouse,
         Names,
     };
 
@@ -66,6 +67,7 @@ private:
     std::optional<VoltMod::ServerCommand> _cmdBadAngles;
     std::optional<VoltMod::ServerCommand> _cmdAimlock;
     std::optional<VoltMod::ServerCommand> _cmdMismatch;
+    std::optional<VoltMod::ServerCommand> _cmdNoMouse;
     std::optional<VoltMod::ServerCommand> _cmdNames;
     std::optional<VoltMod::ServerCommand> _cmdOff;
 };

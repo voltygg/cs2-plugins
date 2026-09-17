@@ -3,8 +3,6 @@
 #include <VoltMod/App/JsonConfig.hpp>
 
 // SDK-free so cores and their tests can include it: JsonConfig is header-only.
-// Detection thresholds are deliberately absent - every tuned constant is constexpr in its own core,
-// leaving only the operational surface below for an operator to reason about.
 #include "Core/Finding.hpp"
 
 #include <cstddef>
@@ -26,6 +24,10 @@ struct DetectionToggles
     bool aimlock = true;
     bool antiAim = true;
     bool silentAim = true;
+    bool triggerbot = true;
+    bool recoil = true;
+    bool mouseMismatch = true;
+    bool wallhack = true;
     bool dllInjection = true;
     bool invalidCvar = true;
     bool namechanger = true;
@@ -33,9 +35,10 @@ struct DetectionToggles
 
 /** Toggle per DetectionKind, in enum order - the only place the two lists have to agree. */
 inline constexpr bool DetectionToggles::* DetectionToggleTable[] = {
-    &DetectionToggles::aimbot,      &DetectionToggles::aimlock,      &DetectionToggles::antiAim,
-    &DetectionToggles::silentAim,   &DetectionToggles::dllInjection, &DetectionToggles::invalidCvar,
-    &DetectionToggles::namechanger,
+    &DetectionToggles::aimbot,     &DetectionToggles::aimlock,       &DetectionToggles::antiAim,
+    &DetectionToggles::silentAim,  &DetectionToggles::triggerbot,    &DetectionToggles::recoil,
+    &DetectionToggles::mouseMismatch, &DetectionToggles::wallhack,   &DetectionToggles::dllInjection,
+    &DetectionToggles::invalidCvar, &DetectionToggles::namechanger,
 };
 static_assert(std::size(DetectionToggleTable) == static_cast<size_t>(DetectionKind::Count));
 

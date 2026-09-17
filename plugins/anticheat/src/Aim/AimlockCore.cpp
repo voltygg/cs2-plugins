@@ -1,4 +1,4 @@
-#include "Detectors/AimlockCore.hpp"
+#include "Aim/AimlockCore.hpp"
 
 #include "Core/Geometry.hpp"
 
@@ -11,11 +11,9 @@ namespace Anticheat
 
 static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
 static constexpr int RearmTicks = static_cast<int>(TickRate * 0.5f);     // 32
-static constexpr int LagSearchRadius = 2;
 static constexpr float PlayerHalfWidth = 16.0f;  // the CS2 hull is 32 units wide, measured from its center
 static constexpr float MinimumDistance = 200.0f;
 static constexpr float MinimumTargetTravel = 48.0f;  // one and a half player widths, as degrees at that range
-static constexpr float MaximumInterpolationTicks = 19.0f;
 static constexpr int DetectionThreshold = 3;
 
 /** 95% of the episode's samples must have been inside the target's angular width. */
@@ -132,21 +130,6 @@ static Candidate FindCandidate(const ShotCorrelatorCore& shots, const AimAngles&
     }
     best.Valid = best.Valid && !ambiguous;
     return best;
-}
-
-LagEstimate EstimateVisualLag(float rttSeconds, float interpRatio)
-{
-    LagEstimate estimate;
-    if (!std::isfinite(rttSeconds) || rttSeconds < 0.0f || rttSeconds > 2.0f || !std::isfinite(interpRatio) ||
-        interpRatio < 0.0f || interpRatio > MaximumInterpolationTicks)
-        return estimate;
-
-    const float interpTicks = interpRatio == 0.0f ? 1.0f : interpRatio;
-    estimate.Ticks = std::max(0, static_cast<int>(std::lround(rttSeconds * TickRate + interpTicks)));
-    estimate.RoundTripMs = rttSeconds * 1000.0f;
-    estimate.InterpTicks = interpTicks;
-    estimate.Valid = true;
-    return estimate;
 }
 
 void AimlockCore::Reset()

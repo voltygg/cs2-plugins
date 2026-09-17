@@ -6,6 +6,7 @@
 
 #include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
+#include "Core/LagEstimate.hpp"
 #include "Core/Samples.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
 
@@ -14,22 +15,6 @@
 
 namespace Anticheat
 {
-
-/** How far in the past the world the client aimed at actually is, in server ticks. */
-struct LagEstimate
-{
-    int Ticks = 0;
-    float RoundTripMs = 0.0f;
-    float InterpTicks = 0.0f;
-    bool Valid = false;
-};
-
-/**
- * The snapshot travelled to the client before this command travelled back, so the round trip plus
- * the interpolation delay is the age of what the player saw. Invalid - and therefore never evidence
- * - for absurd RTT or cl_interp_ratio values.
- */
-LagEstimate EstimateVisualLag(float rttSeconds, float interpRatio);
 
 class AimlockCore
 {

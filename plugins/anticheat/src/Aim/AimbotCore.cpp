@@ -1,4 +1,4 @@
-#include "Detectors/AimbotCore.hpp"
+#include "Aim/AimbotCore.hpp"
 
 #include "Core/Geometry.hpp"
 

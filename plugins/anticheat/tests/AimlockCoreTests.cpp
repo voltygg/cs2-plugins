@@ -1,5 +1,5 @@
 #include "Core/Geometry.hpp"
-#include "Detectors/AimlockCore.hpp"
+#include "Aim/AimlockCore.hpp"
 
 #include <array>
 #include <cmath>
@@ -30,7 +30,7 @@ static constexpr float TargetSpeed = 20.0f;  // units a tick, enough to move the
  * from the enemy's position @p aimLag ticks in the past - what a client with that much visual
  * delay would produce.
  */
-struct Harness
+struct AimlockHarness
 {
     ShotCorrelatorCore Correlator;
     AimlockCore Aimlock{Correlator};
@@ -40,7 +40,7 @@ struct Harness
     int Findings = 0;
     int32_t FirstFinding = -1;
 
-    explicit Harness(bool moving = true) : Moving(moving)
+    explicit AimlockHarness(bool moving = true) : Moving(moving)
     {
         // Enough history for every lag hypothesis to have a frame to look back at.
         for (; Tick < 10; ++Tick)
@@ -112,7 +112,7 @@ TEST_CASE("EstimateVisualLag rejects impossible latency and interpolation values
 
 TEST_CASE("Three tracking episodes on a moving target reach the threshold")
 {
-    Harness harness;
+    AimlockHarness harness;
     harness.Run(400);
     CHECK(harness.Findings == 1);
     // Each episode is 96 ticks and the first starts on the first evaluated tick.
@@ -122,14 +122,14 @@ TEST_CASE("Three tracking episodes on a moving target reach the threshold")
 
 TEST_CASE("A target that never moves fails the travel gate no matter how precise the aim is")
 {
-    Harness harness(false);
+    AimlockHarness harness(false);
     harness.Run(400);
     CHECK(harness.Findings == 0);
 }
 
 TEST_CASE("An aim keyed to a delay outside the searched hypotheses produces no evidence")
 {
-    Harness harness;
+    AimlockHarness harness;
     // At this range five ticks of stale aim is far wider than the target, so no episode starts at all.
     harness.Run(50, 0, 8);
     CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
@@ -141,21 +141,21 @@ TEST_CASE("An aim keyed to a delay outside the searched hypotheses produces no e
 
 TEST_CASE("An episode with 93 of 97 samples on target still counts")
 {
-    Harness harness;
+    AimlockHarness harness;
     harness.Run(400, 24);  // four skewed samples per episode
     CHECK(harness.Findings == 1);
 }
 
 TEST_CASE("An episode with 92 of 97 samples on target falls under the coverage requirement")
 {
-    Harness harness;
+    AimlockHarness harness;
     harness.Run(400, 19);  // five skewed samples per episode
     CHECK(harness.Findings == 0);
 }
 
 TEST_CASE("After a detection the module stays quiet until the lock is broken for half a second")
 {
-    Harness harness;
+    AimlockHarness harness;
     harness.Run(400);
     REQUIRE(harness.Findings == 1);
     CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
@@ -176,7 +176,7 @@ TEST_CASE("After a detection the module stays quiet until the lock is broken for
 
 TEST_CASE("A dead or disconnected player drops the tracking state")
 {
-    Harness harness;
+    AimlockHarness harness;
     harness.Run(50);
     REQUIRE(harness.Aimlock.IsTracking(Observer));
     CHECK_FALSE(harness.Aimlock.OnFrame(Observer, harness.Tick, false, harness.Lag, Now).has_value());
@@ -185,7 +185,7 @@ TEST_CASE("A dead or disconnected player drops the tracking state")
 
 TEST_CASE("Episodes counted before a death still count after the respawn")
 {
-    Harness harness;
+    AimlockHarness harness;
     harness.Run(200);  // two full episodes, one short of the threshold
     REQUIRE(harness.Aimlock.IncidentCount(Observer) == 2);
     REQUIRE(harness.Findings == 0);
@@ -203,7 +203,7 @@ TEST_CASE("Episodes counted before a death still count after the respawn")
 
 TEST_CASE("An invalid lag estimate can never start an episode")
 {
-    Harness harness;
+    AimlockHarness harness;
     harness.Lag = EstimateVisualLag(5.0f, 2.0f);  // rejected, so no hypotheses exist
     harness.Run(200);
     CHECK(harness.Findings == 0);
@@ -212,7 +212,7 @@ TEST_CASE("An invalid lag estimate can never start an episode")
 
 TEST_CASE("A slot change drops the slot's aimlock evidence")
 {
-    Harness harness;
+    AimlockHarness harness;
     harness.Run(200);
     REQUIRE(harness.Aimlock.IncidentCount(Observer) > 0);
     harness.Aimlock.OnSlotChanged(Observer);

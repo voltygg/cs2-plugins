@@ -45,6 +45,10 @@
             "aimlock": { "type": "boolean", "default": true },
             "antiAim": { "type": "boolean", "default": true },
             "silentAim": { "type": "boolean", "default": true },
+            "triggerbot": { "type": "boolean", "default": true },
+            "recoil": { "type": "boolean", "default": true },
+            "mouseMismatch": { "type": "boolean", "default": true },
+            "wallhack": { "type": "boolean", "default": true },
             "dllInjection": { "type": "boolean", "default": true },
             "invalidCvar": { "type": "boolean", "default": true },
             "namechanger": { "type": "boolean", "default": true }

@@ -114,7 +114,8 @@ void ShotCorrelatorCore::Prune(int32_t serverTick)
 }
 
 ShotView* ShotCorrelatorCore::OnWeaponFire(int slot, std::string_view weapon, int32_t serverTick,
-                                           const AimAngles& visibleAngles, bool hasVisibleAngles)
+                                           const AimAngles& visibleAngles, bool hasVisibleAngles, int32_t fireCmdNum,
+                                           int shotsFired)
 {
     if (!InSlotRange(slot) || !IsBallisticWeapon(weapon))
         return nullptr;
@@ -122,12 +123,27 @@ ShotView* ShotCorrelatorCore::OnWeaponFire(int slot, std::string_view weapon, in
     auto& data = _slots[slot];
     PendingCommand* match = nullptr;
     int matches = 0;
+    // The pawn names the firing command outright; the window only has to contain it. A number
+    // the ring never saw falls back to the window rule rather than binding nothing.
     for (auto& entry : data.Commands)
     {
-        if (!entry.Simulated || entry.Consumed || !InWindow(serverTick, entry.Cmd.ServerTick))
-            continue;
-        match = &entry;
-        ++matches;
+        if (fireCmdNum != 0 && entry.Cmd.CmdNum == fireCmdNum && entry.Simulated && !entry.Consumed &&
+            InWindow(serverTick, entry.Cmd.ServerTick))
+        {
+            match = &entry;
+            matches = 1;
+            break;
+        }
+    }
+    if (!match)
+    {
+        for (auto& entry : data.Commands)
+        {
+            if (!entry.Simulated || entry.Consumed || !InWindow(serverTick, entry.Cmd.ServerTick))
+                continue;
+            match = &entry;
+            ++matches;
+        }
     }
     if (matches != 1)
     {
@@ -148,9 +164,12 @@ ShotView* ShotCorrelatorCore::OnWeaponFire(int slot, std::string_view weapon, in
     shot.FireTick = serverTick;
     shot.VisibleAngles = visibleAngles;
     shot.HasVisibleAngles = hasVisibleAngles && Geometry::IsFinite(visibleAngles);
+    shot.CmdAngles = match->Cmd.BaseAngles();
+    shot.HasCmdAngles = match->Cmd.BaseAnglesFinite && Geometry::IsFinite(shot.CmdAngles);
     shot.EyePos = match->Cmd.EyePos;
     shot.Weapon = NormalizeWeapon(weapon);
     shot.Airborne = match->Cmd.Airborne;
+    shot.ShotsFired = shotsFired;
 
     data.Shots.push_back(std::move(shot));
     while (data.Shots.size() > PendingShotLimit)
