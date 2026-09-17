@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Detect/Evidence.hpp"
 #include "Detect/Finding.hpp"
 #include "Detect/Samples.hpp"
 #include "Detect/ShotHistory.hpp"
+#include "Detect/Suspicion.hpp"
 
 #include <array>
 #include <deque>
@@ -18,7 +18,7 @@ public:
     /** The settings toggle and catalog entry this rule reports under. */
     static constexpr DetectionKind Kind = DetectionKind::MouseMismatch;
 
-    explicit MouseMismatch(const ShotHistory& shots) : _shots(shots) {}
+    MouseMismatch(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
     void OnSlotChanged(int slot);
@@ -29,7 +29,6 @@ public:
 
     /** True once the slot's mouse scale is known and its counts agree with its turns. */
     bool Calibrated(int slot) const;
-    int Score(int slot, double nowSec) const;
 
 private:
     /** Signed degrees per mouse count on one axis, learned from the player's own turns. */
@@ -56,8 +55,8 @@ private:
                                               const AimAngles& angles) const;
 
     const ShotHistory& _shots;
+    Suspicion& _suspicion;
     std::array<SlotData, MaxSlots> _slots{};
-    std::array<LongEvidenceWindow, MaxSlots> _incidents{};
 };
 
 }  // namespace Anticheat::Rules

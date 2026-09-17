@@ -8,10 +8,13 @@
 using Anticheat::AimAngles;
 using Anticheat::ButtonTurnRight;
 using Anticheat::CmdSample;
+using Anticheat::DefaultTuning;
+using Anticheat::DetectionKind;
 using Anticheat::MaxSlots;
 using Anticheat::Rules::MouseMismatch;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
+using Anticheat::Suspicion;
 using Anticheat::TeamCT;
 using Anticheat::TeamT;
 using Anticheat::Vec3;
@@ -27,8 +30,14 @@ static constexpr float Scale = -0.044f;
 
 struct MouseHarness
 {
+    MouseHarness() { Scores.Configure(DefaultTuning()); }
+
+    /** Unexplained turns this rule has counted on the observer. */
+    float Turns() const { return Scores.Value(Observer, DetectionKind::MouseMismatch, Now); }
+
+    Suspicion Scores;
     ShotHistory History;
-    MouseMismatch Rule{History};
+    MouseMismatch Rule{History, Scores};
     int32_t Tick = 0;
     int32_t Cmd = 1;
     float Yaw = 0.0f;
@@ -74,7 +83,7 @@ struct MouseHarness
     }
 };
 
-TEST_CASE("Turns the mouse counts cannot explain that land on an enemy add up to a finding")
+TEST_CASE("Turns the mouse counts cannot explain that land on an enemy are counted")
 {
     MouseHarness h;
     h.Calibrate();
@@ -86,7 +95,7 @@ TEST_CASE("Turns the mouse counts cannot explain that land on an enemy add up to
         h.Turn(114);         // back to zero by hand
     }
     CHECK(h.Findings == 0);
-    CHECK(h.Rule.Score(Observer, Now) == 5);
+    CHECK(h.Turns() == doctest::Approx(5.0f));
     h.Command(0, 5.0f);
     CHECK(h.Findings == 1);
 }
@@ -101,7 +110,7 @@ TEST_CASE("The same turn reported by the mouse is ordinary aim")
         h.Turn(114);
     }
     CHECK(h.Findings == 0);
-    CHECK(h.Rule.Score(Observer, Now) == 0);
+    CHECK(h.Turns() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("An unexplained turn away from every enemy is not evidence")
@@ -113,7 +122,7 @@ TEST_CASE("An unexplained turn away from every enemy is not evidence")
         h.Command(0, -5.0f);
         h.Turn(-114);
     }
-    CHECK(h.Rule.Score(Observer, Now) == 0);
+    CHECK(h.Turns() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A client whose counts never agree with its turns is never judged")
@@ -127,7 +136,7 @@ TEST_CASE("A client whose counts never agree with its turns is never judged")
         h.Command(0, 5.0f);
         h.Command(0, 0.0f);
     }
-    CHECK(h.Rule.Score(Observer, Now) == 0);
+    CHECK(h.Turns() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("Keyboard turning and scoped commands are skipped")
@@ -141,5 +150,5 @@ TEST_CASE("Keyboard turning and scoped commands are skipped")
         h.Command(0, 5.0f, 0, true);
         h.Turn(114);
     }
-    CHECK(h.Rule.Score(Observer, Now) == 0);
+    CHECK(h.Turns() == doctest::Approx(0.0f));
 }

@@ -72,7 +72,7 @@ public:
     Rules::SilentAim SilentAim{Scores};
     Rules::Triggerbot Triggerbot{History, Scores};
     Rules::Recoil Recoil{Scores};
-    Rules::MouseMismatch Mouse{History};
+    Rules::MouseMismatch Mouse{History, Scores};
     Rules::Wallhack Wallhack{History, Scores};
     Rules::Namechanger Namechanger{Scores};
     Rules::InvalidCvar InvalidCvars;

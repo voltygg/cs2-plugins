@@ -24,7 +24,6 @@ static constexpr float MinUnexplainedDeg = 1.0f;
 static constexpr float ConvergedDeg = 3.0f;
 static constexpr float ConvergenceShare = 0.5f;
 static constexpr float MinimumDistance = 100.0f;
-static constexpr int DetectionThreshold = 6;
 
 void MouseMismatch::Axis::Learn(float ratio)
 {
@@ -59,7 +58,6 @@ void MouseMismatch::Axis::Learn(float ratio)
 void MouseMismatch::Reset()
 {
     _slots = {};
-    _incidents = {};
 }
 
 void MouseMismatch::OnSlotChanged(int slot)
@@ -67,7 +65,6 @@ void MouseMismatch::OnSlotChanged(int slot)
     if (!InSlotRange(slot))
         return;
     _slots[slot] = {};
-    _incidents[slot].Clear();
 }
 
 std::optional<float> MouseMismatch::NearestOpponentError(int slot, int32_t serverTick, const Vec3& eye,
@@ -142,28 +139,20 @@ std::optional<Finding> MouseMismatch::OnSimulated(int slot, const CmdSample& cmd
     if (!before || !after || *after > ConvergedDeg || *before - *after < residual * ConvergenceShare)
         return out;
 
-    const int incidents = _incidents[slot].Add(nowSec);
-    if (incidents < DetectionThreshold)
-        return out;
-
-    out = Finding{.Kind = DetectionKind::MouseMismatch,
-                  .Evidence = std::format("{} turns the mouse could not explain landed on an enemy; the latest moved "
-                                          "{:.2f} degrees on {}/{} counts (scale {:.4f} deg/count) and closed the "
-                                          "aim from {:.2f} to {:.2f} degrees.",
-                                          incidents, std::hypot(yawTurn, pitchTurn), cmd.MouseDx, cmd.MouseDy,
-                                          data.Yaw.Scale, *before, *after)};
-    _incidents[slot].Clear();
-    return out;
+    return _suspicion.Add(
+        slot,
+        {.Kind = Kind,
+         .Points = 1.0f,
+         .Reason = std::format("A turn the mouse could not explain landed on an enemy: {:.2f} degrees on {}/{} "
+                               "counts (scale {:.4f} deg/count), closing the aim from {:.2f} to {:.2f} degrees.",
+                               std::hypot(yawTurn, pitchTurn), cmd.MouseDx, cmd.MouseDy, data.Yaw.Scale, *before,
+                               *after)},
+        nowSec);
 }
 
 bool MouseMismatch::Calibrated(int slot) const
 {
     return InSlotRange(slot) && _slots[slot].Yaw.Ready;
-}
-
-int MouseMismatch::Score(int slot, double nowSec) const
-{
-    return InSlotRange(slot) ? _incidents[slot].Value(nowSec) : 0;
 }
 
 }  // namespace Anticheat::Rules
