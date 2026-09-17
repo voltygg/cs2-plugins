@@ -5,7 +5,7 @@
 namespace Anticheat::Rules
 {
 
-static constexpr int DetectionThreshold = 5;
+static constexpr double BurstSeconds = 60.0;
 static constexpr double CooldownSec = 60.0;
 
 void Namechanger::Reset()
@@ -26,12 +26,10 @@ void Namechanger::OnBaseline(int slot, std::string_view name, std::string_view c
     _slots[slot] = {.LastName = std::string(name), .LastClan = std::string(clan), .Initialized = true};
 }
 
-std::optional<Finding> Namechanger::OnIdentity(int slot, std::string_view name, std::string_view clan,
-                                                   double nowSec)
+std::optional<Finding> Namechanger::OnIdentity(int slot, std::string_view name, std::string_view clan, double nowSec)
 {
-    std::optional<Finding> out;
     if (!InSlotRange(slot) || name.empty())
-        return out;
+        return std::nullopt;
 
     auto& data = _slots[slot];
     if (!data.Initialized)
@@ -40,34 +38,47 @@ std::optional<Finding> Namechanger::OnIdentity(int slot, std::string_view name, 
         data.LastName.assign(name);
         data.LastClan.assign(clan);
         data.Initialized = true;
-        return out;
+        return std::nullopt;
     }
 
     const bool nameChanged = data.LastName != name;
     const bool clanChanged = data.LastClan != clan;
     if (!nameChanged && !clanChanged)
-        return out;
+        return std::nullopt;
     data.LastName.assign(name);
     data.LastClan.assign(clan);
     if (nowSec < data.CooldownUntil)
-        return out;
+        return std::nullopt;
 
-    const int changes = data.Changes.Add(nowSec);
-    if (changes < DetectionThreshold)
-        return out;
+    data.Changes[data.Next] = nowSec;
+    data.Next = (data.Next + 1) % BurstChanges;
+    if (data.Held < BurstChanges)
+        ++data.Held;
 
-    out = Finding{.Kind = DetectionKind::Namechanger,
-                  .Evidence = std::format("{} visible name or clan tag changes occurred within one minute (last: "
-                                          "name '{}', tag '{}').",
-                                          changes, name, clan)};
-    data.Changes.Clear();
+    if (data.Held < BurstChanges || nowSec - data.Changes[data.Next] > BurstSeconds)
+        return std::nullopt;
+
     data.CooldownUntil = nowSec + CooldownSec;
-    return out;
+    return _suspicion.Add(slot,
+                          {.Kind = Kind,
+                           .Points = 1.0f,
+                           .Reason = std::format("{} visible name or clan tag changes occurred within one minute "
+                                                 "(last: name '{}', tag '{}').",
+                                                 BurstChanges, name, clan)},
+                          nowSec);
 }
 
-int Namechanger::ChangeCount(int slot) const
+int Namechanger::RecentChanges(int slot, double nowSec) const
 {
-    return InSlotRange(slot) ? static_cast<int>(_slots[slot].Changes.Count()) : 0;
+    if (!InSlotRange(slot))
+        return 0;
+
+    const auto& data = _slots[slot];
+    int recent = 0;
+    for (size_t i = 0; i < data.Held; ++i)
+        if (nowSec - data.Changes[i] <= BurstSeconds)
+            ++recent;
+    return recent;
 }
 
 }  // namespace Anticheat::Rules

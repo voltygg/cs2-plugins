@@ -14,6 +14,30 @@ static bool Usable(float value)
     return std::isfinite(value) && value > 0.0f;
 }
 
+SuspicionTuning DefaultTuning()
+{
+    SuspicionTuning tuning;
+    const auto set = [&tuning](DetectionKind kind, float confidentAlone, float halfLifeSec) {
+        tuning.Kinds[static_cast<size_t>(kind)] = {
+            .Enabled = true, .ConfidentAlone = confidentAlone, .HalfLifeSec = halfLifeSec};
+    };
+
+    set(DetectionKind::Aimbot, 4.0f, 600.0f);
+    set(DetectionKind::Aimlock, 3.0f, 600.0f);
+    // AntiAim evidence arrives at command rate, so its decay is a rate limiter, not a memory horizon.
+    set(DetectionKind::AntiAim, 100.0f, 30.0f);
+    set(DetectionKind::SilentAim, 12.0f, 600.0f);
+    set(DetectionKind::Triggerbot, 8.0f, 600.0f);
+    set(DetectionKind::Recoil, 3.0f, 600.0f);
+    set(DetectionKind::MouseMismatch, 6.0f, 600.0f);
+    set(DetectionKind::Wallhack, 6.0f, 600.0f);
+    // Client integrity is a single confirmed fact, and one that stays true for the session.
+    set(DetectionKind::DllInjection, 1.0f, 3600.0f);
+    set(DetectionKind::InvalidCvar, 1.0f, 3600.0f);
+    set(DetectionKind::Namechanger, 1.0f, 600.0f);
+    return tuning;
+}
+
 std::vector<std::string_view> Suspicion::Configure(const SuspicionTuning& tuning)
 {
     std::vector<std::string_view> rejected;

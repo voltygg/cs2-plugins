@@ -48,6 +48,46 @@ std::string StatusJson(const App& app)
                  settings.debug.includeBots});
 }
 
+/** An empty field reads as a dash, so the columns stay where the eye expects them. */
+static std::string OrDash(std::string text)
+{
+    return text.empty() ? "-" : std::move(text);
+}
+
+/** Episodes and calibration in progress right now - state a score cannot show. */
+static std::string InProgress(const Detectors& detectors, int slot)
+{
+    std::string flags;
+    const auto add = [&flags](bool active, std::string_view name) {
+        if (!active)
+            return;
+        if (!flags.empty())
+            flags += ",";
+        flags += name;
+    };
+    add(detectors.Aimlock.IsTracking(slot), "aimlock");
+    add(detectors.Wallhack.IsTracking(slot), "wallhack");
+    add(detectors.Recoil.InSpray(slot), "spray");
+    add(!detectors.Mouse.Calibrated(slot), "mouse-learning");
+    return OrDash(std::move(flags));
+}
+
+/** The cvars this player has already been reported for. */
+static std::string ReportedCvars(const Detectors& detectors, int slot)
+{
+    std::string names;
+    const std::span<const CvarRule> rules = detectors.InvalidCvars.Rules().All();
+    for (size_t index = 0; index < rules.size(); ++index)
+    {
+        if (!detectors.InvalidCvars.AlreadyReportedAt(slot, index))
+            continue;
+        if (!names.empty())
+            names += ",";
+        names += rules[index].name;
+    }
+    return OrDash(std::move(names));
+}
+
 std::vector<std::string> StatusLines(const App& app, double nowSec)
 {
     std::vector<std::string> report{std::format("[AC] {}", StatusJson(app))};
@@ -61,28 +101,12 @@ std::vector<std::string> StatusLines(const App& app, double nowSec)
             continue;
         any = true;
 
-        std::string reported;
-        const std::span<const CvarRule> rules = detectors.InvalidCvars.Rules().All();
-        for (size_t index = 0; index < rules.size(); ++index)
-        {
-            if (!detectors.InvalidCvars.AlreadyReportedAt(slot, index))
-                continue;
-            if (!reported.empty())
-                reported += ",";
-            reported += rules[index].name;
-        }
-
         report.push_back(std::format(
-            "[AC] s{} {} ({}) punished={} aimbot={} aimlock={}{} antiaim={:.1f} silentaim={} trigger={} recoil={}{} "
-            "mouse={}{} wallhack={}{} names={} cvars=[{}] pending={} poll={:.1f}s shots={} cmds={} gen={}",
+            "[AC] s{} {} ({}) punished={} suspicion={:.2f} ({}) active={} cvars=[{}] queries={} poll={:.1f}s "
+            "shots={} cmds={} gen={}",
             slot, player->Name(), player->SteamId(), PunishmentName(app.Response.Issued(player->SteamId())),
-            detectors.Aimbot.IncidentCount(slot), detectors.Aimlock.IncidentCount(slot),
-            detectors.Aimlock.IsTracking(slot) ? "/tracking" : "", detectors.AntiAim.Score(slot),
-            detectors.SilentAim.Score(slot, nowSec), detectors.Triggerbot.Score(slot, nowSec),
-            detectors.Recoil.Score(slot, nowSec), detectors.Recoil.InSpray(slot) ? "/spraying" : "",
-            detectors.Mouse.Score(slot, nowSec), detectors.Mouse.Calibrated(slot) ? "" : "/uncalibrated",
-            detectors.Wallhack.Score(slot, nowSec), detectors.Wallhack.IsTracking(slot) ? "/tracking" : "",
-            detectors.Namechanger.ChangeCount(slot), reported.empty() ? "-" : reported,
+            detectors.Scores.Total(slot, nowSec), OrDash(detectors.Scores.Breakdown(slot, nowSec)),
+            InProgress(detectors, slot), ReportedCvars(detectors, slot),
             app.Runtime.Hooks.ClientConVars.PendingCount(slot), app.Cvars.PollsIn(slot, nowSec),
             detectors.History.Shots(slot).size(), detectors.History.CommandCount(slot),
             detectors.History.Generation(slot)));

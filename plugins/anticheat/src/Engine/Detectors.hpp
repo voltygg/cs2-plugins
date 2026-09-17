@@ -13,6 +13,7 @@
 #include "Detect/Rules/Wallhack.hpp"
 #include "Detect/Finding.hpp"
 #include "Detect/ShotHistory.hpp"
+#include "Detect/Suspicion.hpp"
 #include "Response/ResponseManager.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -62,6 +63,8 @@ public:
     void Reset();
     void OnSlotChanged(int slot);
 
+    /** Every rule's evidence about every player, and the one place a report is decided. */
+    Suspicion Scores;
     ShotHistory History;
     Rules::Aimbot Aimbot{History};
     Rules::Aimlock Aimlock{History};
@@ -71,14 +74,14 @@ public:
     Rules::Recoil Recoil;
     Rules::MouseMismatch Mouse{History};
     Rules::Wallhack Wallhack{History};
-    Rules::Namechanger Namechanger;
+    Rules::Namechanger Namechanger{Scores};
     Rules::InvalidCvar InvalidCvars;
 
 private:
     /** Every rule a reset or a slot change has to clear; a new rule is wired in here only. */
     auto All()
     {
-        return std::tie(History, Aimbot, Aimlock, AntiAim, SilentAim, Triggerbot, Recoil, Mouse, Wallhack,
+        return std::tie(Scores, History, Aimbot, Aimlock, AntiAim, SilentAim, Triggerbot, Recoil, Mouse, Wallhack,
                         Namechanger, InvalidCvars);
     }
 

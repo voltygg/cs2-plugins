@@ -47,6 +47,12 @@ struct Contribution
 };
 
 /**
+ * The compiled calibration: each rule's ConfidentAlone is the evidence it reports at on its own,
+ * so one rule reaching its own threshold is exactly 1.0 suspicion and today's sensitivity stands.
+ */
+SuspicionTuning DefaultTuning();
+
+/**
  * One decaying score per player and rule, and the single place that decides whether the evidence
  * so far is worth reporting.
  *

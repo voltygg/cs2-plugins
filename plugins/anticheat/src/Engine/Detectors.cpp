@@ -15,6 +15,8 @@ using Rules::SvCheatsPropagationGraceSec;
 
 void Detectors::Initialize()
 {
+    Scores.Configure(DefaultTuning());
+
     _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
     if (auto cheats = _rt.ConVars.Find<bool>("sv_cheats"))
