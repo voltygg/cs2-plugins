@@ -22,22 +22,16 @@ public:
         : _rt(runtime), _config(config), _reporter(reporter)
     {}
 
-    void Initialize();
-
     /** Log, report, then apply the funnel decision. */
     void Handle(int slot, const Finding& finding);
 
-    /** Disconnect: a new occupant of the slot starts clean. */
-    void OnSlotChanged(int slot);
-
-    /** Map change or config reload. Named to match the detection detectors, so the manager can fan out
-     *  over all of them at once. */
-    void Reset();
+    /** Drop alert history for players nobody has heard from in a while. */
+    void PruneThrottles();
 
     Mode CurrentMode() const;
 
-    /** What has already been done to @p slot this map. */
-    PunishmentLevel Issued(int slot) const { return _issued.Level(slot); }
+    /** What has already been done to @p steamId while the server has been up. */
+    PunishmentLevel Issued(int64_t steamId) const { return _issued.Level(steamId); }
 
 private:
     /** One admin alert per (steamId, detection) per window. */

@@ -29,7 +29,6 @@ bool App::Start()
         return loaded;
     });
 
-    Response.Initialize();
     Detection.Initialize();
     Simulator.Initialize();
     Dump.Initialize();
@@ -74,6 +73,7 @@ void App::LoadDetectionData()
 void App::ResetEvidence()
 {
     std::apply([](auto&... modules) { (modules.Reset(), ...); }, Modules());
+    Response.PruneThrottles();
 }
 
 void App::OnMapStart()

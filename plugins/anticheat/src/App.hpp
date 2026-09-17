@@ -58,7 +58,7 @@ private:
     void OnPlayerFullyConnected(VoltMod::Player& player);
 
     /** Everything a reset or a slot change has to clear; a new adapter is wired in here only. */
-    auto Modules() { return std::tie(Detection, DllScan, Cvars, Response); }
+    auto Modules() { return std::tie(Detection, DllScan, Cvars); }
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */

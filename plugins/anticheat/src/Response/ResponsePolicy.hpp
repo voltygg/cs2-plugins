@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Detect/Samples.hpp"
+#include "Detect/Finding.hpp"
 
 #include <VoltMod/Core/EnumNames.hpp>
-#include <array>
 #include <cstdint>
 #include <string_view>
+#include <unordered_map>
 
 namespace Anticheat
 {
@@ -38,7 +38,7 @@ constexpr std::string_view ModeName(Mode mode)
     return "observe";
 }
 
-/** Ordered: a slot's punishment may only ever be raised. */
+/** Ordered: a player's punishment may only ever be raised. */
 enum class PunishmentLevel
 {
     None = 0,
@@ -67,7 +67,7 @@ enum class ResponseOutcome
     Whitelisted,      // reported, never punished
     Observed,         // observe mode
     Alerted,          // alert mode, or ban mode with nothing left to escalate
-    AlreadyPunished,  // this slot already carries an equal or higher punishment
+    AlreadyPunished,  // this player already carries an equal or higher punishment
     KickIssued,
     BanIssued,
 };
@@ -94,13 +94,34 @@ constexpr std::string_view OutcomeName(ResponseOutcome outcome)
     return "observed";
 }
 
+/**
+ * How far the evidence lets the server go, whatever the configured mode.
+ *
+ * Suspicion reaches Certain only when one rule is confident on its own, so evidence fused from
+ * several partial rules can raise an alert but can never get somebody punished by itself.
+ */
+constexpr Mode CapByConfidence(Mode mode, Confidence level)
+{
+    switch (level)
+    {
+    case Confidence::Suspect:
+        return Mode::Observe;
+    case Confidence::Likely:
+        return mode == Mode::Observe ? Mode::Observe : Mode::Alert;
+    case Confidence::Certain:
+        return mode;
+    }
+    return Mode::Observe;
+}
+
 struct ResponseInput
 {
     int64_t SteamId = 0;
     bool Whitelisted = false;
     Mode CurrentMode = Mode::Observe;
+    Confidence Level = Confidence::Certain;          // from the Finding
     bool KickOnly = false;                           // from the Finding
-    PunishmentLevel Issued = PunishmentLevel::None;  // what this slot already carries
+    PunishmentLevel Issued = PunishmentLevel::None;  // what this player already carries
 };
 
 struct ResponseDecision
@@ -117,10 +138,12 @@ constexpr ResponseDecision Decide(const ResponseInput& input)
         return {.Outcome = ResponseOutcome::NoIdentity};
     if (input.Whitelisted)
         return {.Outcome = ResponseOutcome::Whitelisted};
-    if (input.CurrentMode == Mode::Observe)
+
+    const Mode mode = CapByConfidence(input.CurrentMode, input.Level);
+    if (mode == Mode::Observe)
         return {.Outcome = ResponseOutcome::Observed};
 
-    if (input.CurrentMode == Mode::Alert)
+    if (mode == Mode::Alert)
         return {.Outcome = ResponseOutcome::Alerted, .SendAlert = true};
 
     const PunishmentLevel requested = input.KickOnly ? PunishmentLevel::Kick : PunishmentLevel::Ban;
@@ -132,34 +155,36 @@ constexpr ResponseDecision Decide(const ResponseInput& input)
             .Apply = requested};
 }
 
-/** The highest punishment each slot has already received; it never goes back down. */
+/**
+ * The highest punishment each player has already received; it never goes back down.
+ *
+ * Keyed by SteamID rather than slot, so reconnecting or sitting out a map change does not hand a
+ * kicked player a clean slate. Only players who were kicked or banned are held, so it grows with
+ * punishments issued rather than with players seen.
+ */
 class IssuedPunishments
 {
 public:
-    PunishmentLevel Level(int slot) const
+    PunishmentLevel Level(int64_t steamId) const
     {
-        return InSlotRange(slot) ? _levels[static_cast<size_t>(slot)] : PunishmentLevel::None;
+        const auto it = _levels.find(steamId);
+        return it == _levels.end() ? PunishmentLevel::None : it->second;
     }
 
-    /** Raises the slot to @p level; false when it was already at or above it. */
-    bool Raise(int slot, PunishmentLevel level)
+    /** Raises @p steamId to @p level; false when it was already at or above it. */
+    bool Raise(int64_t steamId, PunishmentLevel level)
     {
-        if (!InSlotRange(slot) || _levels[static_cast<size_t>(slot)] >= level)
+        PunishmentLevel& held = _levels[steamId];
+        if (held >= level)
             return false;
-        _levels[static_cast<size_t>(slot)] = level;
+        held = level;
         return true;
     }
 
-    void Clear(int slot)
-    {
-        if (InSlotRange(slot))
-            _levels[static_cast<size_t>(slot)] = PunishmentLevel::None;
-    }
-
-    void Reset() { _levels = {}; }
+    void Reset() { _levels.clear(); }
 
 private:
-    std::array<PunishmentLevel, MaxSlots> _levels{};
+    std::unordered_map<int64_t, PunishmentLevel> _levels;
 };
 
 }  // namespace Anticheat

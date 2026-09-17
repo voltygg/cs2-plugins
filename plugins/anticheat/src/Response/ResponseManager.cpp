@@ -5,6 +5,7 @@
 #include <Contracts/IAdminActions.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <algorithm>
+#include <cmath>
 #include <format>
 
 namespace Log = VoltMod::Log;
@@ -27,20 +28,10 @@ static std::string TrimReason(std::string_view reason)
     return std::string(reason.substr(0, std::min(reason.size(), MaxReasonLength)));
 }
 
-void ResponseManager::Initialize()
+void ResponseManager::PruneThrottles()
 {
-    _issued.Reset();
-}
-
-void ResponseManager::OnSlotChanged(int slot)
-{
-    _issued.Clear(slot);
-}
-
-void ResponseManager::Reset()
-{
-    _issued.Reset();
-    // Keyed by SteamID, so without this the map grows for the lifetime of the server.
+    // Keyed by SteamID, so without this the map grows for the lifetime of the server. Punishments
+    // are deliberately not cleared here: surviving a map change is the point of keeping them.
     _alertThrottle.Prune(VoltMod::Time::Now(), AlertThrottleSec);
 }
 
@@ -65,22 +56,23 @@ void ResponseManager::Handle(int slot, const Finding& finding)
         .SteamId = steamId,
         .Whitelisted = IsWhitelisted(steamId),
         .CurrentMode = CurrentMode(),
+        .Level = finding.Level,
         .KickOnly = finding.KickOnly,
-        .Issued = _issued.Level(slot),
+        .Issued = _issued.Level(steamId),
     });
 
-    Log::Warn("[AC] {} on {} ({}) -> {}: {}", DisplayName(finding.Kind), name, steamId, OutcomeName(decision.Outcome),
-              finding.Evidence);
+    Log::Warn("[AC] {} on {} ({}) {} -> {}: {}", DisplayName(finding.Kind), name, steamId,
+              ConfidenceName(finding.Level), OutcomeName(decision.Outcome), finding.Evidence);
     _reporter.Report(slot, name, steamId, finding, decision.Outcome);
 
     if (decision.SendAlert &&
         _alertThrottle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, VoltMod::Time::Now()))
     {
         if (auto* admin = AdminActions(_rt))
-            admin->AlertAdmins(steamId, TokenName(finding.Kind), 1);
+            admin->AlertAdmins(steamId, TokenName(finding.Kind), std::lround(finding.Suspicion * 100.0f));
     }
 
-    if (decision.Apply == PunishmentLevel::None || !_issued.Raise(slot, decision.Apply))
+    if (decision.Apply == PunishmentLevel::None || !_issued.Raise(steamId, decision.Apply))
         return;
 
     const std::string reason =

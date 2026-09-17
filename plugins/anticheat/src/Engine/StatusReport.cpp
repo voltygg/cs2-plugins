@@ -75,7 +75,7 @@ std::vector<std::string> StatusLines(const App& app, double nowSec)
         report.push_back(std::format(
             "[AC] s{} {} ({}) punished={} aimbot={} aimlock={}{} antiaim={:.1f} silentaim={} trigger={} recoil={}{} "
             "mouse={}{} wallhack={}{} names={} cvars=[{}] pending={} poll={:.1f}s shots={} cmds={} gen={}",
-            slot, player->Name(), player->SteamId(), PunishmentName(app.Response.Issued(slot)),
+            slot, player->Name(), player->SteamId(), PunishmentName(app.Response.Issued(player->SteamId())),
             detectors.Aimbot.IncidentCount(slot), detectors.Aimlock.IncidentCount(slot),
             detectors.Aimlock.IsTracking(slot) ? "/tracking" : "", detectors.AntiAim.Score(slot),
             detectors.SilentAim.Score(slot, nowSec), detectors.Triggerbot.Score(slot, nowSec),

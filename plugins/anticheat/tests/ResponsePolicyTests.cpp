@@ -4,13 +4,14 @@
 #include <algorithm>
 #include <doctest/doctest.h>
 #include <iterator>
+#include <ostream>  // doctest stringifies the string_view comparisons below
 #include <string_view>
 
 using Anticheat::Decide;
 using Anticheat::DetectionCatalog;
 using Anticheat::DetectionInfo;
+using Anticheat::Confidence;
 using Anticheat::IssuedPunishments;
-using Anticheat::MaxSlots;
 using Anticheat::Mode;
 using Anticheat::ParseMode;
 using Anticheat::PunishmentLevel;
@@ -20,9 +21,15 @@ using Anticheat::ResponseOutcome;
 
 static constexpr int64_t SteamId = 76561198000000000LL;
 
-static ResponseInput Input(Mode mode, bool kickOnly = false, PunishmentLevel issued = PunishmentLevel::None)
+static ResponseInput Input(Mode mode, bool kickOnly = false, PunishmentLevel issued = PunishmentLevel::None,
+                           Confidence level = Confidence::Certain)
 {
-    return {.SteamId = SteamId, .Whitelisted = false, .CurrentMode = mode, .KickOnly = kickOnly, .Issued = issued};
+    return {.SteamId = SteamId,
+            .Whitelisted = false,
+            .CurrentMode = mode,
+            .Level = level,
+            .KickOnly = kickOnly,
+            .Issued = issued};
 }
 
 TEST_CASE("Every detection has a distinct display name and a console token free of whitespace")
@@ -133,34 +140,67 @@ TEST_CASE("A punishment already issued is never repeated or downgraded, but may 
     CHECK(upgrade.Apply == PunishmentLevel::Ban);
 }
 
-TEST_CASE("IssuedPunishments only ever raises a slot's level")
+TEST_CASE("Suspect evidence never leaves observe, whatever the mode")
 {
-    IssuedPunishments issued;
-    CHECK(issued.Level(3) == PunishmentLevel::None);
-    CHECK(issued.Raise(3, PunishmentLevel::Kick));
-    CHECK(issued.Level(3) == PunishmentLevel::Kick);
-    CHECK_FALSE(issued.Raise(3, PunishmentLevel::Kick));
-    CHECK(issued.Raise(3, PunishmentLevel::Ban));
-    CHECK_FALSE(issued.Raise(3, PunishmentLevel::Kick));
-    CHECK(issued.Level(3) == PunishmentLevel::Ban);
+    for (const Mode mode : {Mode::Observe, Mode::Alert, Mode::Ban})
+    {
+        const ResponseDecision decision = Decide(Input(mode, false, PunishmentLevel::None, Confidence::Suspect));
+        CHECK(decision.Outcome == ResponseOutcome::Observed);
+        CHECK_FALSE(decision.SendAlert);
+        CHECK(decision.Apply == PunishmentLevel::None);
+    }
 }
 
-TEST_CASE("IssuedPunishments clears one slot and resets every slot")
+TEST_CASE("Likely evidence alerts but never punishes, even in ban mode")
+{
+    const ResponseDecision decision = Decide(Input(Mode::Ban, false, PunishmentLevel::None, Confidence::Likely));
+    CHECK(decision.Outcome == ResponseOutcome::Alerted);
+    CHECK(decision.SendAlert);
+    CHECK(decision.Apply == PunishmentLevel::None);
+}
+
+TEST_CASE("Likely evidence in observe mode stays silent")
+{
+    const ResponseDecision decision = Decide(Input(Mode::Observe, false, PunishmentLevel::None, Confidence::Likely));
+    CHECK(decision.Outcome == ResponseOutcome::Observed);
+    CHECK_FALSE(decision.SendAlert);
+}
+
+TEST_CASE("Certain evidence in ban mode punishes")
+{
+    const ResponseDecision decision = Decide(Input(Mode::Ban, false, PunishmentLevel::None, Confidence::Certain));
+    CHECK(decision.Outcome == ResponseOutcome::BanIssued);
+    CHECK(decision.Apply == PunishmentLevel::Ban);
+}
+
+TEST_CASE("IssuedPunishments only ever raises a player's level")
+{
+    IssuedPunishments issued;
+    CHECK(issued.Level(SteamId) == PunishmentLevel::None);
+    CHECK(issued.Raise(SteamId, PunishmentLevel::Kick));
+    CHECK(issued.Level(SteamId) == PunishmentLevel::Kick);
+    CHECK_FALSE(issued.Raise(SteamId, PunishmentLevel::Kick));
+    CHECK(issued.Raise(SteamId, PunishmentLevel::Ban));
+    CHECK_FALSE(issued.Raise(SteamId, PunishmentLevel::Kick));
+    CHECK(issued.Level(SteamId) == PunishmentLevel::Ban);
+}
+
+TEST_CASE("IssuedPunishments keeps a player's level across slots and forgets all of them on reset")
 {
     IssuedPunishments issued;
     issued.Raise(1, PunishmentLevel::Ban);
     issued.Raise(2, PunishmentLevel::Kick);
-    issued.Clear(1);
-    CHECK(issued.Level(1) == PunishmentLevel::None);
+    // Keyed by SteamID, so reconnecting into another slot does not wipe what a player already got.
+    CHECK(issued.Level(1) == PunishmentLevel::Ban);
     CHECK(issued.Level(2) == PunishmentLevel::Kick);
     issued.Reset();
     CHECK(issued.Level(2) == PunishmentLevel::None);
 }
 
-TEST_CASE("IssuedPunishments ignores out of range slots instead of writing past its array")
+TEST_CASE("IssuedPunishments reads None for a player it has never punished")
 {
     IssuedPunishments issued;
-    CHECK_FALSE(issued.Raise(-1, PunishmentLevel::Ban));
-    CHECK_FALSE(issued.Raise(MaxSlots, PunishmentLevel::Ban));
-    CHECK(issued.Level(-1) == PunishmentLevel::None);
+    CHECK(issued.Level(SteamId) == PunishmentLevel::None);
+    // Decide refuses an unresolved SteamID outright, so nothing is ever raised under a zero key.
+    CHECK(issued.Level(0) == PunishmentLevel::None);
 }
