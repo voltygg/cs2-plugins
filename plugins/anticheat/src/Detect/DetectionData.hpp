@@ -17,7 +17,7 @@ namespace Anticheat
 
 inline constexpr std::string_view DetectionDataPath = "addons/anticheat/configs/detections.jsonc";
 
-/** How the value reaches us. A convar must appear in one tier only: the two share a latch and
+/** How the value reaches us. A convar must appear in one tier only: the two share one report flag and
  *  would flip it back and forth against each other. */
 enum class CvarTier
 {

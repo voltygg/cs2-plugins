@@ -70,11 +70,11 @@ private:
     {
         Sample Pending;
         Track Current;
-        int LatchedTarget = -1;
-        int LatchedBodyPoint = -1;
-        int32_t BreakStartTick = -1;
+        int LockedTarget = -1;
+        int LockedBodyPoint = -1;
+        int32_t OffTargetSince = -1;
         int32_t LastProcessedTick = -1;
-        bool Latched = false;
+        bool Locked = false;
     };
 
     void Evaluate(int slot, SlotData& data, const Sample& sample, const ViewLag& lag, double nowSec,

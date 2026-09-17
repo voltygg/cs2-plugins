@@ -160,12 +160,12 @@ TEST_CASE("After a detection the module stays quiet until the lock is broken for
     REQUIRE(harness.Findings == 1);
     CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
 
-    // Still glued to the target: latched, so no new episode is even started.
+    // Still glued to the target: still locked, so no new episode is even started.
     harness.Run(200);
     CHECK(harness.Findings == 1);
     CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
 
-    // Look away for more than the 32 tick rearm window, then return.
+    // Look away for longer than the 32 tick off-target window, then return.
     for (int i = 0; i < 40; ++i)
         harness.Step(90.0f);
     CHECK_FALSE(harness.Aimlock.IsTracking(Observer));

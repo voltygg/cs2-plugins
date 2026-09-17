@@ -104,8 +104,8 @@ std::vector<std::string> CvarRuleTable::Load(const std::vector<CvarRule>& rules)
         {
             if (rule.tier != tier)
                 continue;
-            // Latches are keyed by position, so a second rule for one cvar would share the first
-            // one's latch and the two would flip it back and forth against each other.
+            // Report flags are keyed by position, so a second rule for one cvar would share the
+            // first one's flag and the two would flip it back and forth against each other.
             if (IndexOf(rule.name) >= 0)
             {
                 rejected.push_back(rule.name);
@@ -184,7 +184,7 @@ bool ShouldEnforceCheatCvars(bool svCheatsEnabled, double nowSec, double graceUn
 
 void InvalidCvar::Reset()
 {
-    std::ranges::fill(_latched, uint8_t{0});
+    std::ranges::fill(_reported, uint8_t{0});
     std::ranges::fill(_missingReplies, 0);
 }
 
@@ -193,14 +193,14 @@ void InvalidCvar::OnSlotChanged(int slot)
     if (!InSlotRange(slot) || _rules.Size() == 0)
         return;
     const size_t first = At(slot, 0);
-    std::fill_n(_latched.begin() + first, _rules.Size(), uint8_t{0});
+    std::fill_n(_reported.begin() + first, _rules.Size(), uint8_t{0});
     std::fill_n(_missingReplies.begin() + first, _rules.Size(), 0);
 }
 
 std::vector<std::string> InvalidCvar::LoadRules(const std::vector<CvarRule>& rules)
 {
     std::vector<std::string> rejected = _rules.Load(rules);
-    _latched.assign(static_cast<size_t>(MaxSlots) * _rules.Size(), 0);
+    _reported.assign(static_cast<size_t>(MaxSlots) * _rules.Size(), 0);
     _missingReplies.assign(static_cast<size_t>(MaxSlots) * _rules.Size(), 0);
     return rejected;
 }
@@ -238,29 +238,29 @@ std::optional<Finding> InvalidCvar::Apply(int slot, size_t index, const CvarVerd
     if (!verdict.Checked)
         return out;
 
-    uint8_t& latched = _latched[At(slot, index)];
+    uint8_t& reported = _reported[At(slot, index)];
     if (!verdict.Invalid)
     {
-        latched = 0;
+        reported = 0;
         return out;
     }
-    if (latched)
+    if (reported)
         return out;
 
-    latched = 1;
+    reported = 1;
     out = Finding{.Kind = DetectionKind::InvalidCvar, .KickOnly = verdict.KickOnly, .Evidence = verdict.Reason};
     return out;
 }
 
-bool InvalidCvar::IsLatched(int slot, std::string_view name) const
+bool InvalidCvar::AlreadyReported(int slot, std::string_view name) const
 {
     const int index = _rules.IndexOf(name);
-    return index >= 0 && IsLatchedAt(slot, static_cast<size_t>(index));
+    return index >= 0 && AlreadyReportedAt(slot, static_cast<size_t>(index));
 }
 
-bool InvalidCvar::IsLatchedAt(int slot, size_t index) const
+bool InvalidCvar::AlreadyReportedAt(int slot, size_t index) const
 {
-    return InSlotRange(slot) && index < _rules.Size() && _latched[At(slot, index)] != 0;
+    return InSlotRange(slot) && index < _rules.Size() && _reported[At(slot, index)] != 0;
 }
 
 }  // namespace Anticheat::Rules

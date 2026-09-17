@@ -175,42 +175,42 @@ TEST_CASE("A cvar that stays invalid reports once")
     REQUIRE(first.has_value());
     CHECK(first->Kind == DetectionKind::InvalidCvar);
     CHECK(first->KickOnly);
-    CHECK(rules.IsLatched(Slot, "m_yaw"));
+    CHECK(rules.AlreadyReported(Slot, "m_yaw"));
 
     CHECK_FALSE(rules.Observe(Slot, "m_yaw", "0.5", Enforcing).has_value());
     CHECK_FALSE(rules.Observe(Slot, "m_yaw", "0.6", Enforcing).has_value());
 }
 
-TEST_CASE("A cvar that returns to a valid value re-arms the latch")
+TEST_CASE("A cvar that returns to a valid value can be reported again")
 {
     InvalidCvar rules = MakeRules();
     REQUIRE(rules.Observe(Slot, "m_yaw", "0.5", Enforcing).has_value());
     CHECK_FALSE(rules.Observe(Slot, "m_yaw", "0.022", Enforcing).has_value());
-    CHECK_FALSE(rules.IsLatched(Slot, "m_yaw"));
+    CHECK_FALSE(rules.AlreadyReported(Slot, "m_yaw"));
     CHECK(rules.Observe(Slot, "m_yaw", "0.5", Enforcing).has_value());
 }
 
-TEST_CASE("A skipped cheat protected rule leaves the latch untouched")
+TEST_CASE("A skipped cheat protected rule leaves the report flag untouched")
 {
     InvalidCvar rules = MakeRules();
     REQUIRE(rules.Observe(Slot, "cl_showpos", "1", Enforcing).has_value());
-    CHECK(rules.IsLatched(Slot, "cl_showpos"));
-    // Enforcement stopping must not silently clear the latch and let the next reply fire again.
+    CHECK(rules.AlreadyReported(Slot, "cl_showpos"));
+    // Enforcement stopping must not silently clear the flag and let the next reply fire again.
     CHECK_FALSE(rules.Observe(Slot, "cl_showpos", "0", NotEnforcing).has_value());
-    CHECK(rules.IsLatched(Slot, "cl_showpos"));
+    CHECK(rules.AlreadyReported(Slot, "cl_showpos"));
 }
 
-TEST_CASE("Each cvar latches independently and a slot change clears them all")
+TEST_CASE("Each cvar is tracked independently and a slot change clears them all")
 {
     InvalidCvar rules = MakeRules();
     REQUIRE(rules.Observe(Slot, "m_yaw", "0.5", Enforcing).has_value());
     REQUIRE(rules.Observe(Slot, "cl_yawspeed", "500", Enforcing).has_value());
-    CHECK(rules.IsLatched(Slot, "m_yaw"));
-    CHECK(rules.IsLatched(Slot, "cl_yawspeed"));
+    CHECK(rules.AlreadyReported(Slot, "m_yaw"));
+    CHECK(rules.AlreadyReported(Slot, "cl_yawspeed"));
 
     rules.OnSlotChanged(Slot);
-    CHECK_FALSE(rules.IsLatched(Slot, "m_yaw"));
-    CHECK_FALSE(rules.IsLatched(Slot, "cl_yawspeed"));
+    CHECK_FALSE(rules.AlreadyReported(Slot, "m_yaw"));
+    CHECK_FALSE(rules.AlreadyReported(Slot, "cl_yawspeed"));
     CHECK(rules.Observe(Slot, "m_yaw", "0.5", Enforcing).has_value());
 }
 
@@ -229,14 +229,14 @@ TEST_CASE("Every cvar the two tiers read is covered by the rule table")
     CHECK(Rules().Queried().size() + Rules().UserInfo().size() == Rules().Size());
 }
 
-TEST_CASE("A cvar belongs to one tier alone, so one latch never has two sources")
+TEST_CASE("A cvar belongs to one tier alone, so one report flag never has two sources")
 {
     for (const CvarRule& userInfo : Rules().UserInfo())
         for (const CvarRule& queried : Rules().Queried())
             CHECK(userInfo.name != queried.name);
 }
 
-TEST_CASE("A second rule for a cvar already in the table is rejected rather than sharing its latch")
+TEST_CASE("A second rule for a cvar already in the table is rejected rather than sharing its report flag")
 {
     CvarRuleTable table;
     const std::vector<std::string> rejected = table.Load({
@@ -272,7 +272,7 @@ TEST_CASE("The table stores the queried tier first so each tier is a contiguous 
     REQUIRE(table.Queried().size() == 1);
     REQUIRE(table.UserInfo().size() == 2);
     CHECK(table.Queried()[0].name == "cl_yawspeed");
-    // Latches are keyed by position, so the file's order must not change which latch a rule owns
+    // Report flags are keyed by position, so the file order must not change which flag a rule owns
     // within its tier.
     CHECK(table.UserInfo()[0].name == "sensitivity");
     CHECK(table.IndexOf("m_yaw") == 2);
@@ -310,10 +310,10 @@ TEST_CASE("Only the third refusal in a row for one cvar becomes a finding")
 {
     InvalidCvar rules = MakeRules();
     CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
-    CHECK_FALSE(rules.IsLatched(Slot, "cl_showpos"));
+    CHECK_FALSE(rules.AlreadyReported(Slot, "cl_showpos"));
     CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
     CHECK(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
-    CHECK(rules.IsLatched(Slot, "cl_showpos"));
+    CHECK(rules.AlreadyReported(Slot, "cl_showpos"));
 }
 
 TEST_CASE("A reply that carries a value restarts the run of refusals")
@@ -328,8 +328,8 @@ TEST_CASE("A reply that carries a value restarts the run of refusals")
     CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
     CHECK(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
 
-    // A withheld cvar shares the latch an invalid value uses, so it reports once either way.
-    CHECK(rules.IsLatched(Slot, "cl_showpos"));
+    // A withheld cvar shares the flag an invalid value uses, so it reports once either way.
+    CHECK(rules.AlreadyReported(Slot, "cl_showpos"));
     CHECK_FALSE(rules.ObserveMissing(Slot, "cl_showpos", "cvar_protected", Enforcing).has_value());
 }
 
@@ -344,7 +344,7 @@ TEST_CASE("Refusals of different cvars are counted apart")
     }
     // The next refusal reports for the cvar that received it, and only for that one.
     CHECK(rules.ObserveMissing(Slot, "cl_showpos", "cvar_not_found", Enforcing).has_value());
-    CHECK_FALSE(rules.IsLatched(Slot, "cl_drawhud"));
+    CHECK_FALSE(rules.AlreadyReported(Slot, "cl_drawhud"));
 }
 
 TEST_CASE("Successive polls walk the whole cvar table without repeating within a lap")

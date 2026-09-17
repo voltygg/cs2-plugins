@@ -24,6 +24,33 @@ enum class DetectionKind
     Count,
 };
 
+/**
+ * How strong the accumulated evidence is, and so the strongest response the policy may take.
+ *
+ * Bands are read off the fused suspicion total, not off one rule, so several rules that are each
+ * most of the way to their own threshold can still raise one together.
+ */
+enum class Confidence
+{
+    Suspect,
+    Likely,
+    Certain,
+};
+
+constexpr std::string_view ConfidenceName(Confidence level)
+{
+    switch (level)
+    {
+    case Confidence::Suspect:
+        return "suspect";
+    case Confidence::Likely:
+        return "likely";
+    case Confidence::Certain:
+        return "certain";
+    }
+    return "suspect";
+}
+
 /** How one detection is named. Token is space-free so it works as a detector key in alerts,
  *  webhooks and log lines. */
 struct DetectionInfo
@@ -78,14 +105,19 @@ constexpr std::string_view TokenName(DetectionKind kind)
 }
 
 /**
- * A confirmed detection: rules self-threshold on their own rolling windows, so the response funnel
- * decides the punishment, not whether one is warranted. KickOnly caps it at a kick even in ban
- * mode, for rules whose false-positive cost must stay recoverable.
+ * A reportable detection. Rules contribute weighted points and @ref Suspicion decides whether the
+ * total is worth reporting, so the response funnel only decides how loudly to react.
+ *
+ * Kind names the rule that just fired, even when the band was reached by several rules together;
+ * Evidence names the rest. KickOnly caps the response at a kick even in ban mode, for rules whose
+ * false-positive cost must stay recoverable.
  */
 struct Finding
 {
     DetectionKind Kind = DetectionKind::Aimbot;
+    Confidence Level = Confidence::Certain;
     bool KickOnly = false;
+    float Suspicion = 0.0f;
     std::string Evidence;
 };
 

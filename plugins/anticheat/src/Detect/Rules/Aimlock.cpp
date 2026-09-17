@@ -10,7 +10,7 @@ namespace Anticheat::Rules
 {
 
 static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
-static constexpr int RearmTicks = static_cast<int>(TickRate * 0.5f);     // 32
+static constexpr int OffTargetTicks = static_cast<int>(TickRate * 0.5f);     // 32
 static constexpr float MinimumDistance = 200.0f;
 static constexpr float MinimumTargetTravel = 48.0f;  // one and a half player widths, as degrees at that range
 static constexpr int DetectionThreshold = 3;
@@ -198,7 +198,7 @@ void Aimlock::Evaluate(int slot, SlotData& data, const Sample& sample, const Vie
         return;
     }
 
-    if (data.Latched)
+    if (data.Locked)
     {
         // After a detection, stay quiet until the player leaves the target for half a second.
         bool stillLocked = false;
@@ -206,21 +206,21 @@ void Aimlock::Evaluate(int slot, SlotData& data, const Sample& sample, const Vie
             for (int lagTicks = std::max(0, lag.Ticks - LagSearchRadius);
                  !stillLocked && lagTicks <= lag.Ticks + LagSearchRadius; ++lagTicks)
                 stillLocked = EvaluateTarget(_shots, sample.Angles, sample.EyePos, sample.ServerTick, *frame, slot,
-                                             data.LatchedTarget, data.LatchedBodyPoint, lagTicks)
+                                             data.LockedTarget, data.LockedBodyPoint, lagTicks)
                                   .OnTarget();
         if (stillLocked)
         {
-            data.BreakStartTick = -1;
+            data.OffTargetSince = -1;
             return;
         }
-        if (data.BreakStartTick < 0)
-            data.BreakStartTick = sample.ServerTick;
-        if (static_cast<int64_t>(sample.ServerTick) - data.BreakStartTick < RearmTicks)
+        if (data.OffTargetSince < 0)
+            data.OffTargetSince = sample.ServerTick;
+        if (static_cast<int64_t>(sample.ServerTick) - data.OffTargetSince < OffTargetTicks)
             return;
-        data.Latched = false;
-        data.LatchedTarget = -1;
-        data.LatchedBodyPoint = -1;
-        data.BreakStartTick = -1;
+        data.Locked = false;
+        data.LockedTarget = -1;
+        data.LockedBodyPoint = -1;
+        data.OffTargetSince = -1;
     }
 
     if (data.Current.TargetSlot < 0)
@@ -339,10 +339,10 @@ void Aimlock::Count(int slot, SlotData& data, const Hypothesis& hypothesis, doub
                                               episodes, hypothesis.OnTargetSamples, data.Current.Samples,
                                               hypothesis.MaxTargetDisplacement, hypothesis.RequiredTargetDisplacement)};
         incidents.Clear();
-        data.Latched = true;
-        data.LatchedTarget = data.Current.TargetSlot;
-        data.LatchedBodyPoint = data.Current.BodyPoint;
-        data.BreakStartTick = -1;
+        data.Locked = true;
+        data.LockedTarget = data.Current.TargetSlot;
+        data.LockedBodyPoint = data.Current.BodyPoint;
+        data.OffTargetSince = -1;
     }
     data.Current = {};
 }

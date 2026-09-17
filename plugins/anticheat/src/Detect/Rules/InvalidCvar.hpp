@@ -64,7 +64,7 @@ public:
     std::span<const CvarRule> Queried() const { return All().first(_queriedCount); }
     std::span<const CvarRule> UserInfo() const { return All().subspan(_queriedCount); }
 
-    /** Position in the table, which is what latches are keyed by, or -1 when not covered.
+    /** Position in the table, which is what report flags are keyed by, or -1 when not covered.
      *  Matched without regard to case, as the engine spells convars inconsistently. */
     int IndexOf(std::string_view name) const;
 
@@ -101,7 +101,7 @@ private:
 bool ShouldEnforceCheatCvars(bool svCheatsEnabled, double nowSec, double graceUntilSec);
 
 /**
- * Per-slot, per-cvar latch over @ref CvarRuleTable: a cvar that stays invalid reports once, and
+ * Per-slot, per-cvar record over @ref CvarRuleTable: a cvar that stays invalid reports once, and
  * only again after it has read valid in between.
  */
 class InvalidCvar
@@ -113,7 +113,7 @@ public:
     void Reset();
     void OnSlotChanged(int slot);
 
-    /** Replaces the rules and drops every latch, since latches are keyed by table position.
+    /** Replaces the rules and forgets what was reported, since the flags are keyed by position.
      *  Returns the names of any rules that did not validate. */
     std::vector<std::string> LoadRules(const std::vector<CvarRule>& rules);
 
@@ -125,9 +125,9 @@ public:
     std::optional<Finding> ObserveMissing(int slot, std::string_view name, std::string_view statusName,
                                           bool enforceCheatCvars);
 
-    bool IsLatched(int slot, std::string_view name) const;
+    bool AlreadyReported(int slot, std::string_view name) const;
     /** For callers already walking the table, which know the position. */
-    bool IsLatchedAt(int slot, size_t index) const;
+    bool AlreadyReportedAt(int slot, size_t index) const;
 
 private:
     std::optional<Finding> Apply(int slot, size_t index, const CvarVerdict& verdict);
@@ -135,7 +135,7 @@ private:
 
     CvarRuleTable _rules;
     // Size this from the loaded table; the configuration has no compile-time rule limit.
-    std::vector<uint8_t> _latched;
+    std::vector<uint8_t> _reported;
     /** Any reply that does carry a value puts the count back to zero. */
     std::vector<int> _missingReplies;
 };

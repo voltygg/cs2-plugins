@@ -61,15 +61,15 @@ std::vector<std::string> StatusLines(const App& app, double nowSec)
             continue;
         any = true;
 
-        std::string latched;
+        std::string reported;
         const std::span<const CvarRule> rules = detectors.InvalidCvars.Rules().All();
         for (size_t index = 0; index < rules.size(); ++index)
         {
-            if (!detectors.InvalidCvars.IsLatchedAt(slot, index))
+            if (!detectors.InvalidCvars.AlreadyReportedAt(slot, index))
                 continue;
-            if (!latched.empty())
-                latched += ",";
-            latched += rules[index].name;
+            if (!reported.empty())
+                reported += ",";
+            reported += rules[index].name;
         }
 
         report.push_back(std::format(
@@ -82,7 +82,7 @@ std::vector<std::string> StatusLines(const App& app, double nowSec)
             detectors.Recoil.Score(slot, nowSec), detectors.Recoil.InSpray(slot) ? "/spraying" : "",
             detectors.Mouse.Score(slot, nowSec), detectors.Mouse.Calibrated(slot) ? "" : "/uncalibrated",
             detectors.Wallhack.Score(slot, nowSec), detectors.Wallhack.IsTracking(slot) ? "/tracking" : "",
-            detectors.Namechanger.ChangeCount(slot), latched.empty() ? "-" : latched,
+            detectors.Namechanger.ChangeCount(slot), reported.empty() ? "-" : reported,
             app.Runtime.Hooks.ClientConVars.PendingCount(slot), app.Cvars.PollsIn(slot, nowSec),
             detectors.History.Shots(slot).size(), detectors.History.CommandCount(slot),
             detectors.History.Generation(slot)));
