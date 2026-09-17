@@ -1,9 +1,5 @@
 #pragma once
 
-// Sustained, unnaturally precise tracking (including through walls): the aim stays inside the
-// target's own angular width for 1.5 seconds while the target moves enough that a human would have
-// drifted off it. SDK-free.
-
 #include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/LagEstimate.hpp"
@@ -19,6 +15,9 @@ namespace Anticheat
 class AimlockCore
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::Aimlock;
+
     explicit AimlockCore(const ShotCorrelatorCore& shots) : _shots(shots) {}
 
     void Reset();
@@ -56,7 +55,7 @@ private:
 
     struct Track
     {
-        std::array<Hypothesis, 5> Hypotheses{};
+        std::array<Hypothesis, LagHypothesisCount> Hypotheses{};
         int TargetSlot = -1;
         int BodyPoint = -1;
         int32_t StartServerTick = -1;

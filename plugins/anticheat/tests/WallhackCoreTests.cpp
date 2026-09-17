@@ -67,7 +67,6 @@ struct WallhackHarness
 
     void Step(const AimAngles& aim)
     {
-        std::fflush(stderr);
         TargetY += TargetSpeed;
         Correlator.CaptureFrame(Tick, Frame());
         Core.OnSimulated(Observer, Tick, aim, Eye);

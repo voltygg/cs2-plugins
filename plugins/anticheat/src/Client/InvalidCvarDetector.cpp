@@ -27,7 +27,7 @@ void InvalidCvarDetector::Initialize()
 
     _random.seed(Seed());
     _pollTimer = _rt.Scheduler.Repeat(PollIntervalMs, [this] {
-        if (!_detectors.Enabled() || !_detectors.ModuleEnabled(DetectionKind::InvalidCvar))
+        if (!_detectors.Enabled() || !_detectors.ModuleEnabled(_detectors.InvalidCvars))
             return;
         const double now = Time::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
@@ -115,7 +115,7 @@ void InvalidCvarDetector::ReadUserInfo(int slot)
 void InvalidCvarDetector::OnReply(int slot, VoltMod::ClientConVarStatus status, std::string_view name,
                                   std::string_view value)
 {
-    if (!_detectors.Enabled() || !_detectors.ModuleEnabled(DetectionKind::InvalidCvar) ||
+    if (!_detectors.Enabled() || !_detectors.ModuleEnabled(_detectors.InvalidCvars) ||
         !_detectors.IsEligible(slot))
         return;
 

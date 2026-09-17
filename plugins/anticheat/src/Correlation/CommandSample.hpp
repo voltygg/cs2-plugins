@@ -1,7 +1,5 @@
 #pragma once
 
-// Turns a decoded usercmd plus the pawn it drives into the plain sample the cores read.
-
 #include "Core/Samples.hpp"
 
 #include <VoltMod/Api.hpp>

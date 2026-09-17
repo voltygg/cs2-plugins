@@ -1,9 +1,5 @@
 #pragma once
 
-// The view can only turn as far as the mouse moved. Once a player's degrees-per-count is known
-// from their own ordinary commands, a command whose turn the mouse counts cannot explain - and
-// which lands on an enemy - was written by something else. SDK-free.
-
 #include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
@@ -19,6 +15,9 @@ namespace Anticheat
 class MouseCore
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::MouseMismatch;
+
     explicit MouseCore(const ShotCorrelatorCore& shots) : _shots(shots) {}
 
     void Reset();

@@ -1,8 +1,5 @@
 #pragma once
 
-// Aim detectors need great-circle distance, not the framework's Euclidean
-// pitch/yaw error.
-
 #include "Core/Samples.hpp"
 
 #include <algorithm>
@@ -19,6 +16,17 @@ inline constexpr double RadiansPerDegree = std::numbers::pi / 180.0;
 /** Feet, chest, and head heights used when measuring aim error. */
 inline constexpr float BodyHeights[] = {8.0f, 46.0f, 64.0f};
 inline constexpr int BodyPointCount = static_cast<int>(std::size(BodyHeights));
+
+/** The CS2 hull is 32 units wide, measured from its center. */
+inline constexpr float PlayerHalfWidth = 16.0f;
+
+/** Whether @p onTarget out of @p samples clears @p percent, with no rounding surprises. */
+inline constexpr bool MeetsCoverage(int onTarget, int samples, int percent)
+{
+    return samples > 0 && onTarget * 100 >= samples * percent;
+}
+static_assert(MeetsCoverage(123, 129, 95));
+static_assert(!MeetsCoverage(122, 129, 95));
 
 inline bool IsFinite(const Vec3& v)
 {
@@ -77,15 +85,20 @@ inline float AimErrorDeg(const Vec3& eye, const AimAngles& angles, const Vec3& t
     return AimErrorDeg(eye, AimForward(angles), target);
 }
 
-/** Smallest aim error against the three body points above @p feet. */
-inline float NearestBodyAimError(const Vec3& eye, const AimAngles& angles, const Vec3& feet)
+/** Smallest aim error against the three body points above @p feet, for a forward vector the
+ *  caller already has. */
+inline float NearestBodyAimErrorAlong(const Vec3& eye, const Vec3& forward, const Vec3& feet)
 {
-    // The forward vector is the same for every target point.
-    const Vec3 forward = AimForward(angles);
     float best = 180.0f;
     for (float height : BodyHeights)
         best = std::min(best, AimErrorDeg(eye, forward, {feet.X, feet.Y, feet.Z + height}));
     return best;
+}
+
+/** Smallest aim error against the three body points above @p feet. */
+inline float NearestBodyAimError(const Vec3& eye, const AimAngles& angles, const Vec3& feet)
+{
+    return NearestBodyAimErrorAlong(eye, AimForward(angles), feet);
 }
 
 /** Angles pointing from @p eye at @p target. */

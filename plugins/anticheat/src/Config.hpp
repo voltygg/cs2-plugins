@@ -2,7 +2,6 @@
 
 #include <VoltMod/App/JsonConfig.hpp>
 
-// SDK-free so cores and their tests can include it: JsonConfig is header-only.
 #include "Core/Finding.hpp"
 
 #include <cstddef>

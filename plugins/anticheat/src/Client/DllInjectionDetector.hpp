@@ -1,7 +1,5 @@
 #pragma once
 
-// Detect injected listeners that subscribe to events unused by the stock HUD.
-
 #include "Detectors.hpp"
 #include "Core/DetectionData.hpp"
 #include "Core/Samples.hpp"

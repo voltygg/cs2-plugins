@@ -1,7 +1,5 @@
 #pragma once
 
-// The aim cores' only network dependency: how stale the world a client aimed at was.
-
 #include "Core/LagEstimate.hpp"
 
 #include <VoltMod/Api.hpp>

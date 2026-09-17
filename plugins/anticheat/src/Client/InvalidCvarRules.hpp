@@ -1,7 +1,5 @@
 #pragma once
 
-// SDK-free evaluation of client convars supplied by the engine adapter.
-
 #include "Core/DetectionData.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
@@ -109,6 +107,9 @@ bool ShouldEnforceCheatCvars(bool svCheatsEnabled, double nowSec, double graceUn
 class InvalidCvarRules
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::InvalidCvar;
+
     void Reset();
     void OnSlotChanged(int slot);
 

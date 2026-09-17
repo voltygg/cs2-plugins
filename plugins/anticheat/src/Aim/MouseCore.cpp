@@ -3,9 +3,9 @@
 #include "Core/Geometry.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <format>
-#include <vector>
 
 namespace Anticheat
 {
@@ -35,17 +35,21 @@ void MouseCore::Axis::Learn(float ratio)
     if (Ratios.size() < RatiosToCalibrate)
         return;
 
-    std::vector<float> sorted(Ratios.begin(), Ratios.end());
-    std::sort(sorted.begin(), sorted.end());
-    const float median = sorted[sorted.size() / 2];
+    // Learning runs on every command, so the median stays on the stack and stops at the middle.
+    std::array<float, RatioHistorySize> buffer{};
+    const size_t count = Ratios.size();
+    std::copy(Ratios.begin(), Ratios.end(), buffer.begin());
+    const auto middle = buffer.begin() + count / 2;
+    std::nth_element(buffer.begin(), middle, buffer.begin() + count);
+    const float median = *middle;
     if (median == 0.0f || !std::isfinite(median))
         return;
 
     // A controller, or a client that does not fill the counts, never agrees with itself.
     size_t consistent = 0;
-    for (float value : sorted)
+    for (float value : Ratios)
         consistent += std::abs(value - median) <= std::abs(median) * ConsistentSpread;
-    if (static_cast<float>(consistent) >= static_cast<float>(sorted.size()) * ConsistentShare)
+    if (static_cast<float>(consistent) >= static_cast<float>(count) * ConsistentShare)
     {
         Scale = median;
         Ready = true;
@@ -79,8 +83,7 @@ std::optional<float> MouseCore::NearestOpponentError(int slot, int32_t serverTic
     for (int target = 0; target < MaxSlots; ++target)
     {
         const PositionSample& player = frame->Players[target];
-        if (target == slot || !player.Valid || !player.Alive || player.Teleported || !_shots.AreOpponents(team, player.Team) ||
-            (player.Origin - eye).Length() < MinimumDistance)
+        if (target == slot || !_shots.IsOpponent(team, player) || (player.Origin - eye).Length() < MinimumDistance)
             continue;
         const float error = Geometry::NearestBodyAimError(eye, angles, player.Origin);
         if (std::isfinite(error) && (!best || error < *best))

@@ -1,15 +1,12 @@
 #pragma once
 
-// Looks only at commands that damaged an enemy, then asks how the aim arrived there: a human
-// decelerates onto a target, an aimbot jumps onto it in one command and stops. SDK-free.
-
+#include "Core/CommandHistory.hpp"
 #include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
 
 #include <array>
-#include <deque>
 #include <optional>
 
 namespace Anticheat
@@ -18,6 +15,11 @@ namespace Anticheat
 class AimbotCore
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::Aimbot;
+
+    static constexpr size_t CommandHistorySize = 128;
+
     explicit AimbotCore(const ShotCorrelatorCore& shots) : _shots(shots) {}
 
     void Reset();
@@ -49,7 +51,7 @@ private:
 
     struct SlotData
     {
-        std::deque<AimCommand> Commands;
+        CommandHistory<AimCommand, CommandHistorySize> Commands;
         LongEvidenceWindow Incidents;
         int32_t PendingShot = 0;
         int VictimSlot = -1;

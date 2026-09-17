@@ -11,7 +11,6 @@ namespace Anticheat
 {
 
 /** A 30-shot rifle spray spans about 190 ticks, and every shot needs the command after it. */
-static constexpr size_t CommandHistorySize = 256;
 static constexpr int MaxShotGapTicks = 16;
 static constexpr size_t MinSprayShots = 8;
 static constexpr size_t MaxSprayShots = 30;
@@ -41,23 +40,15 @@ void RecoilCore::OnCommand(int slot, const CmdSample& cmd)
     if (!InSlotRange(slot) || !cmd.BaseAnglesFinite)
         return;
 
-    auto& commands = _slots[slot].Commands;
-    if (std::any_of(commands.rbegin(), commands.rend(), [&](const Command& stored) { return stored.CmdNum == cmd.CmdNum; }))
-        return;
-
-    commands.push_back({.CmdNum = cmd.CmdNum,
-                        .View = cmd.BaseAngles(),
-                        .Punch = cmd.Punch,
-                        .HasPunch = cmd.HasPunch && Geometry::IsFinite(cmd.Punch)});
-    while (commands.size() > CommandHistorySize)
-        commands.pop_front();
+    _slots[slot].Commands.Push({.CmdNum = cmd.CmdNum,
+                                .View = cmd.BaseAngles(),
+                                .Punch = cmd.Punch,
+                                .HasPunch = cmd.HasPunch && Geometry::IsFinite(cmd.Punch)});
 }
 
 const RecoilCore::Command* RecoilCore::Find(const SlotData& data, int32_t cmdNum) const
 {
-    auto found = std::find_if(data.Commands.rbegin(), data.Commands.rend(),
-                              [&](const Command& stored) { return stored.CmdNum == cmdNum; });
-    return found == data.Commands.rend() ? nullptr : &*found;
+    return data.Commands.Find(cmdNum);
 }
 
 std::optional<Finding> RecoilCore::OnShot(int slot, const ShotView& shot, double nowSec)
@@ -130,7 +121,6 @@ SprayFit RecoilCore::Fit(const SlotData& data, int viewLag) const
         fit.PunchTravelDeg += std::hypot(pair.PunchPitch, pair.PunchYaw);
     }
 
-    fit.Pairs = static_cast<int>(pairs.size());
     if (pairs.size() + 1 < MinSprayShots || fit.PunchTravelDeg < MinPunchTravelDeg || sxx <= 0.0f)
         return fit;
 

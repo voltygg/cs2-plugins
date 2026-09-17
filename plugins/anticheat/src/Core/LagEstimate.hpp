@@ -1,8 +1,5 @@
 #pragma once
 
-// How far in the past the world a client aimed at actually is. SDK-free: the engine adapter in
-// Correlation/VisualLag.cpp measures the inputs, every aim core consumes the estimate.
-
 #include "Core/Samples.hpp"
 
 #include <algorithm>

@@ -1,7 +1,5 @@
 #pragma once
 
-// SDK-free correlation of usercmds, shots, events, and world snapshots.
-
 #include "Core/Samples.hpp"
 
 #include <array>
@@ -73,6 +71,12 @@ public:
     /** Both teams playing, and either different or free-for-all. */
     static bool AreOpponents(int teamA, int teamB, bool teammatesAreEnemies);
     bool AreOpponents(int teamA, int teamB) const { return AreOpponents(teamA, teamB, _teammatesAreEnemies); }
+
+    /** A trackable enemy of @p team: what every target scan means by a candidate. */
+    bool IsOpponent(int team, const PositionSample& target) const
+    {
+        return target.Trackable() && AreOpponents(team, target.Team);
+    }
 
     std::deque<ShotView>& Shots(int slot);
     const std::deque<ShotView>& Shots(int slot) const;

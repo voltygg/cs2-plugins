@@ -123,8 +123,7 @@ ShotView* ShotCorrelatorCore::OnWeaponFire(int slot, std::string_view weapon, in
     auto& data = _slots[slot];
     PendingCommand* match = nullptr;
     int matches = 0;
-    // The pawn names the firing command outright; the window only has to contain it. A number
-    // the ring never saw falls back to the window rule rather than binding nothing.
+    // The pawn names the firing command; a number the ring never saw falls back to the window rule.
     for (auto& entry : data.Commands)
     {
         if (fireCmdNum != 0 && entry.Cmd.CmdNum == fireCmdNum && entry.Simulated && !entry.Consumed &&
@@ -164,8 +163,6 @@ ShotView* ShotCorrelatorCore::OnWeaponFire(int slot, std::string_view weapon, in
     shot.FireTick = serverTick;
     shot.VisibleAngles = visibleAngles;
     shot.HasVisibleAngles = hasVisibleAngles && Geometry::IsFinite(visibleAngles);
-    shot.CmdAngles = match->Cmd.BaseAngles();
-    shot.HasCmdAngles = match->Cmd.BaseAnglesFinite && Geometry::IsFinite(shot.CmdAngles);
     shot.EyePos = match->Cmd.EyePos;
     shot.Weapon = NormalizeWeapon(weapon);
     shot.Airborne = match->Cmd.Airborne;

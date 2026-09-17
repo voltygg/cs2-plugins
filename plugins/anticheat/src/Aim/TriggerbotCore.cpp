@@ -10,7 +10,6 @@ namespace Anticheat
 {
 
 static constexpr size_t AimHistorySize = 48;
-static constexpr float PlayerHalfWidth = 16.0f;
 /** The hull is a box, so a crosshair a little outside its inscribed angle still rests on it. */
 static constexpr float HullSlack = 1.25f;
 static constexpr float MinimumDistance = 150.0f;
@@ -70,7 +69,7 @@ bool TriggerbotCore::OnTarget(const Vec3& eye, const AimAngles& angles, const Po
         if (!std::isfinite(distance) || distance < 1e-3f)
             continue;
         const float error = Geometry::AimErrorDeg(eye, forward, point);
-        if (std::isfinite(error) && error <= Geometry::AngularSizeDeg(PlayerHalfWidth, distance) * HullSlack)
+        if (std::isfinite(error) && error <= Geometry::AngularSizeDeg(Geometry::PlayerHalfWidth, distance) * HullSlack)
             return true;
     }
     return false;
@@ -97,17 +96,21 @@ void TriggerbotCore::OnFrame(int slot, int32_t serverTick, bool aliveHuman, cons
 
     const PositionFrame* frame = _shots.FindFrame(serverTick);
     const PositionSample* observer = frame ? &frame->Players[slot] : nullptr;
-    if (!observer || !observer->Valid || !observer->Alive || observer->Teleported)
+    if (!observer || !observer->Trackable())
     {
         data.ClearRuns();
         return;
     }
 
+    // One lookup per hypothesis, not per hypothesis per target.
+    std::array<const PositionFrame*, LagHypothesisCount> past{};
+    for (int index = 0; index < LagHypothesisCount; ++index)
+        past[index] = _shots.FindFrame(serverTick - LagHypothesis(lag, index));
+
     for (int target = 0; target < MaxSlots; ++target)
     {
         const PositionSample& current = frame->Players[target];
-        const bool eligible = target != slot && current.Valid && current.Alive && !current.Teleported &&
-                              _shots.AreOpponents(observer->Team, current.Team);
+        const bool eligible = target != slot && _shots.IsOpponent(observer->Team, current);
         for (int index = 0; index < LagHypothesisCount; ++index)
         {
             int32_t& since = data.OnSince[target][index];
@@ -115,10 +118,8 @@ void TriggerbotCore::OnFrame(int slot, int32_t serverTick, bool aliveHuman, cons
             if (eligible)
             {
                 // What the client saw: the target where it stood that many ticks ago.
-                const PositionFrame* past = _shots.FindFrame(serverTick - LagHypothesis(lag, index));
-                const PositionSample* seen = past ? &past->Players[target] : nullptr;
-                on = seen && seen->Valid && seen->Alive && !seen->Teleported &&
-                     OnTarget(data.PendingEye, data.Pending.Angles, *seen);
+                const PositionSample* seen = past[index] ? &past[index]->Players[target] : nullptr;
+                on = seen && seen->Trackable() && OnTarget(data.PendingEye, data.Pending.Angles, *seen);
             }
             since = on ? (since < 0 ? serverTick : since) : -1;
         }
@@ -170,8 +171,7 @@ std::optional<Finding> TriggerbotCore::OnPlayerHurt(int slot, const ShotView& sh
     if (previousFire >= 0 && shot.FireTick - previousFire <= BurstGapTicks)
         return out;
 
-    // The slowest reading across the lag hypotheses, so a wrong guess about the client's view of
-    // the world can only make the reaction look slower than it was.
+    // The slowest hypothesis, so a wrong guess about the client's view can only understate the reaction.
     int reaction = -1;
     for (int index = 0; index < LagHypothesisCount; ++index)
     {

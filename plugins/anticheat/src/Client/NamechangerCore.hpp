@@ -15,6 +15,9 @@ namespace Anticheat
 class NamechangerCore
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::Namechanger;
+
     void Reset();
     void OnSlotChanged(int slot);
 

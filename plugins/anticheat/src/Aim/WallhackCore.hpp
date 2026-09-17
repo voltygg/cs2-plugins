@@ -1,9 +1,5 @@
 #pragma once
 
-// Aim that knows where hidden enemies are: following one through a wall as it moves, a hit that
-// lands the moment it steps out of that wall, and shots through cover at an enemy nobody on the
-// team has seen or heard. Sight lines come stamped into the position frames. SDK-free.
-
 #include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/LagEstimate.hpp"
@@ -26,6 +22,9 @@ struct WallhackShotContext
 class WallhackCore
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::Wallhack;
+
     explicit WallhackCore(const ShotCorrelatorCore& shots) : _shots(shots) {}
 
     void Reset();

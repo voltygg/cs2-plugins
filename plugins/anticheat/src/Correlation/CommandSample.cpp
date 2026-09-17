@@ -28,8 +28,7 @@ CmdSample BuildSample(const VoltMod::PlayerInput& cmd)
     sample.MouseDx = cmd.MouseDx;
     sample.MouseDy = cmd.MouseDy;
     sample.Buttons = cmd.ButtonsHeld;
-    // A command that carried no viewangles leaves the fields at a perfectly ordinary-looking
-    // (0,0,0), so the angles have to be untrusted rather than merely finite.
+    // A command with no viewangles leaves an ordinary-looking (0,0,0), so finite is not enough.
     sample.BaseAnglesFinite =
         cmd.HasViewAngles && Geometry::IsFinite(sample.BaseAngles()) && std::isfinite(sample.ViewRoll);
 
@@ -44,8 +43,7 @@ CmdSample BuildSample(const VoltMod::PlayerInput& cmd)
 
     const int attackIndex = cmd.Attack1StartHistoryIndex;
     sample.AttackStarted = attackIndex >= 0;
-    // Only an index the client never sent is a fabrication. One the transport cap dropped is merely
-    // absent, and must never be clamped back into range - that reads another shot's angles.
+    // An index the transport cap dropped is absent, not fabricated; clamping it reads another shot's angles.
     sample.AttackIndexInvalid = attackIndex < -1 || attackIndex >= cmd.InputHistoryTotalCount;
     if (auto attack = cmd.SampleAt(attackIndex); attack && attack->HasViewAngles)
         sample.AttackAngles = AimAngles{attack->ViewPitch, attack->ViewYaw};

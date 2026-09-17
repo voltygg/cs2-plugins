@@ -1,7 +1,5 @@
 #pragma once
 
-// Plain adapter-to-core data. Keep this header SDK-free for unit tests.
-
 #include <VoltMod/Core/Slot.hpp>
 #include <VoltMod/Core/Time.hpp>
 #include <cmath>
@@ -121,6 +119,12 @@ struct PositionSample
     uint64_t CheckedBy = 0;
     uint64_t SeenBy = 0;
 
+    /** A real player in this frame: the engine gave us a pawn, and it is alive. */
+    bool InPlay() const { return Valid && Alive; }
+
+    /** In play and not warped by a recent teleport, so its motion reads across frames. */
+    bool Trackable() const { return InPlay() && !Teleported; }
+
     bool SightKnownTo(int viewer) const { return (CheckedBy & SlotBit(viewer)) != 0; }
     bool VisibleTo(int viewer) const { return (SeenBy & SlotBit(viewer)) != 0; }
     bool HiddenFrom(int viewer) const { return SightKnownTo(viewer) && !VisibleTo(viewer); }
@@ -142,8 +146,6 @@ struct ShotView
 
     AimAngles VisibleAngles;  // pawn eye angles at the moment of the fire event
     bool HasVisibleAngles = false;
-    AimAngles CmdAngles;  // the base view angles of the command that fired
-    bool HasCmdAngles = false;
 
     Vec3 EyePos;
     Vec3 ImpactPos;

@@ -1,8 +1,5 @@
 #pragma once
 
-// Reaction time from the moment an enemy walks into a resting crosshair to the shot that hits
-// them. A human needs 150 ms and more; a triggerbot fires on the next command. SDK-free.
-
 #include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/LagEstimate.hpp"
@@ -19,6 +16,9 @@ namespace Anticheat
 class TriggerbotCore
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::Triggerbot;
+
     explicit TriggerbotCore(const ShotCorrelatorCore& shots) : _shots(shots) {}
 
     void Reset();

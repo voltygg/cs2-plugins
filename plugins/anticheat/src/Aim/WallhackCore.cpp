@@ -11,7 +11,6 @@
 namespace Anticheat
 {
 
-static constexpr float PlayerHalfWidth = 16.0f;
 static constexpr float MinimumDistance = 150.0f;
 /** Through a wall the aim only has to stay near the enemy, not on it. */
 static constexpr float ToleranceMinDeg = 3.0f;
@@ -37,7 +36,7 @@ static constexpr int DetectionScore = 6;
 /** 90% of the episode's samples must have stayed within tolerance. */
 static constexpr bool MeetsCoverage(int onTarget, int samples)
 {
-    return samples > 0 && onTarget * 10 >= samples * 9;
+    return Geometry::MeetsCoverage(onTarget, samples, 90);
 }
 
 void WallhackCore::Reset()
@@ -128,8 +127,7 @@ std::optional<Finding> WallhackCore::OnFrame(int slot, int32_t serverTick, bool 
     const PositionFrame* frame = _shots.FindFrame(serverTick);
     const PositionFrame* past = lag.Valid ? _shots.FindFrame(serverTick - lag.Ticks) : nullptr;
     const PositionSample* observer = frame ? &frame->Players[slot] : nullptr;
-    if (!aliveHuman || !sample.Valid || sample.ServerTick != serverTick || !past || !observer || !observer->Valid ||
-        !observer->Alive || observer->Teleported)
+    if (!aliveHuman || !sample.Valid || sample.ServerTick != serverTick || !past || !observer || !observer->Trackable())
     {
         CloseTrack(data, serverTick, false);
         return out;
@@ -143,11 +141,11 @@ std::optional<Finding> WallhackCore::OnFrame(int slot, int32_t serverTick, bool 
         bool Hidden = false;
         bool Visible = false;
     };
+    const Vec3 forward = Geometry::AimForward(sample.Angles);
     const auto read = [&](int target) -> std::optional<Reading> {
         const PositionSample& current = frame->Players[target];
         const PositionSample& seen = past->Players[target];
-        if (target == slot || !current.Valid || !current.Alive || current.Teleported || !seen.Valid || !seen.Alive ||
-            seen.Teleported || !_shots.AreOpponents(observer->Team, current.Team))
+        if (target == slot || !seen.Trackable() || !_shots.IsOpponent(observer->Team, current))
             return std::nullopt;
         const Vec3 chest{seen.Origin.X, seen.Origin.Y, seen.Origin.Z + Geometry::BodyHeights[1]};
         const float distance = (chest - sample.EyePos).Length();
@@ -155,9 +153,9 @@ std::optional<Finding> WallhackCore::OnFrame(int slot, int32_t serverTick, bool 
             return std::nullopt;
         Reading reading;
         reading.Bearing = Geometry::Bearing(sample.EyePos, chest);
-        reading.Error = Geometry::NearestBodyAimError(sample.EyePos, sample.Angles, seen.Origin);
-        reading.Tolerance =
-            std::max(ToleranceMinDeg, ToleranceHullFactor * Geometry::AngularSizeDeg(PlayerHalfWidth, distance));
+        reading.Error = Geometry::NearestBodyAimErrorAlong(sample.EyePos, forward, seen.Origin);
+        reading.Tolerance = std::max(ToleranceMinDeg, ToleranceHullFactor *
+                                                          Geometry::AngularSizeDeg(Geometry::PlayerHalfWidth, distance));
         reading.Hidden = current.HiddenFrom(slot);
         reading.Visible = current.SightKnownTo(slot) && current.VisibleTo(slot);
         if (!std::isfinite(reading.Error) || !Geometry::IsFinite(reading.Bearing))
@@ -177,8 +175,11 @@ std::optional<Finding> WallhackCore::OnFrame(int slot, int32_t serverTick, bool 
         Reading bestReading;
         for (int target = 0; target < MaxSlots; ++target)
         {
+            // Acquisition only wants hidden targets, and the sight stamps make that a bitmask test.
+            if (!frame->Players[target].HiddenFrom(slot))
+                continue;
             const std::optional<Reading> reading = read(target);
-            if (reading && reading->Hidden && reading->Error <= reading->Tolerance &&
+            if (reading && reading->Error <= reading->Tolerance &&
                 (best < 0 || reading->Error < bestReading.Error))
             {
                 best = target;

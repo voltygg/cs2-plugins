@@ -1,8 +1,5 @@
 #pragma once
 
-// The SDK-free cores plus the gates every engine adapter asks before feeding them. Adapters hold a
-// Detectors&, and nothing here includes an adapter, so no header has to declare the other side.
-
 #include "Aim/AimbotCore.hpp"
 #include "Aim/AimlockCore.hpp"
 #include "Aim/AntiAimCore.hpp"
@@ -38,6 +35,14 @@ public:
     /** Disabled globally or while `sv_cheats` is enabled outside test mode. */
     bool Enabled() const;
     bool ModuleEnabled(DetectionKind kind) const;
+
+    /** The gate for @p core, taken from the core's own Kind so the two cannot disagree. */
+    template <class Core>
+    bool ModuleEnabled(const Core& core) const
+    {
+        (void)core;
+        return ModuleEnabled(Core::Kind);
+    }
 
     /** True when @p slot is checked at all: a spawned human, or a bot while `debug.includeBots` is on. */
     bool IsEligible(int slot);

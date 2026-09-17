@@ -1,7 +1,5 @@
 #pragma once
 
-// Converts usercmd, frame, and shot-event feeds into samples for the aim cores.
-
 #include "Core/Samples.hpp"
 #include "Correlation/SightProbe.hpp"
 #include "Detectors.hpp"

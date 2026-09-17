@@ -1,9 +1,5 @@
 #pragma once
 
-// Compares where a shot visibly pointed against where its bullet landed. Legitimately the two
-// differ by spread and recoil only; writing the fire angle separately from the view opens a gap no
-// weapon can explain. SDK-free.
-
 #include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
@@ -17,6 +13,9 @@ namespace Anticheat
 class SilentAimCore
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::SilentAim;
+
     void Reset();
     void OnSlotChanged(int slot);
 

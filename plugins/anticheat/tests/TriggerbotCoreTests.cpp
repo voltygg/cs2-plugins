@@ -56,7 +56,6 @@ struct TriggerbotHarness
 
     void Step(bool moving = true)
     {
-        std::fflush(stderr);
         if (moving)
             TargetY += TargetSpeed;
         Correlator.CaptureFrame(Tick, Frame());
@@ -75,7 +74,6 @@ struct TriggerbotHarness
 
     void Hit(int32_t fireTick)
     {
-        std::fflush(stderr);
         Core.OnWeaponFire(Observer, fireTick);
         ShotView shot;
         shot.Slot = Observer;

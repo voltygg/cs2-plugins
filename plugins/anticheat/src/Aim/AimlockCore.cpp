@@ -11,7 +11,6 @@ namespace Anticheat
 
 static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
 static constexpr int RearmTicks = static_cast<int>(TickRate * 0.5f);     // 32
-static constexpr float PlayerHalfWidth = 16.0f;  // the CS2 hull is 32 units wide, measured from its center
 static constexpr float MinimumDistance = 200.0f;
 static constexpr float MinimumTargetTravel = 48.0f;  // one and a half player widths, as degrees at that range
 static constexpr int DetectionThreshold = 3;
@@ -19,10 +18,8 @@ static constexpr int DetectionThreshold = 3;
 /** 95% of the episode's samples must have been inside the target's angular width. */
 static constexpr bool MeetsCoverage(int onTarget, int samples)
 {
-    return samples > 0 && onTarget * 20 >= samples * 19;
+    return Geometry::MeetsCoverage(onTarget, samples, 95);
 }
-static_assert(MeetsCoverage(123, 129));
-static_assert(!MeetsCoverage(122, 129));
 
 struct TargetEvaluation
 {
@@ -48,13 +45,11 @@ static TargetEvaluation EvaluateTarget(const ShotCorrelatorCore& shots, const Ai
     const PositionSample& observer = currentFrame.Players[observerSlot];
     const PositionSample& currentTarget = currentFrame.Players[targetSlot];
     const PositionFrame* historical = shots.FindFrame(serverTick - lagTicks);
-    if (!observer.Valid || !observer.Alive || observer.Teleported || !currentTarget.Valid || !currentTarget.Alive ||
-        currentTarget.Teleported || !shots.AreOpponents(observer.Team, currentTarget.Team) || !historical)
+    if (!observer.Trackable() || !shots.IsOpponent(observer.Team, currentTarget) || !historical)
         return result;
 
     const PositionSample& target = historical->Players[targetSlot];
-    if (!target.Valid || !target.Alive || target.Teleported || !shots.AreOpponents(observer.Team, target.Team) ||
-        (target.Origin - eyePos).Length() < MinimumDistance)
+    if (!shots.IsOpponent(observer.Team, target) || (target.Origin - eyePos).Length() < MinimumDistance)
         return result;
 
     const Vec3 point = {target.Origin.X, target.Origin.Y, target.Origin.Z + Geometry::BodyHeights[bodyPoint]};
@@ -63,7 +58,7 @@ static TargetEvaluation EvaluateTarget(const ShotCorrelatorCore& shots, const Ai
         return result;
 
     result.Error = Geometry::AimErrorDeg(eyePos, angles, point);
-    result.MaximumError = Geometry::AngularSizeDeg(PlayerHalfWidth, distance);
+    result.MaximumError = Geometry::AngularSizeDeg(Geometry::PlayerHalfWidth, distance);
     result.RequiredDisplacement = Geometry::AngularSizeDeg(MinimumTargetTravel, distance);
     result.Bearing = Geometry::Bearing(eyePos, point);
     result.Valid = std::isfinite(result.Error) && std::isfinite(result.MaximumError) &&
@@ -94,7 +89,7 @@ static Candidate FindCandidate(const ShotCorrelatorCore& shots, const AimAngles&
         return best;
 
     const PositionSample& observer = frame.Players[observerSlot];
-    if (!observer.Valid || !observer.Alive || observer.Teleported)
+    if (!observer.Trackable())
         return best;
 
     const int firstLag = std::max(0, lag.Ticks - LagSearchRadius);
@@ -107,8 +102,7 @@ static Candidate FindCandidate(const ShotCorrelatorCore& shots, const AimAngles&
         if (targetSlot == observerSlot)
             continue;
         const PositionSample& currentTarget = frame.Players[targetSlot];
-        if (!currentTarget.Valid || !currentTarget.Alive || currentTarget.Teleported ||
-            !shots.AreOpponents(observer.Team, currentTarget.Team))
+        if (!shots.IsOpponent(observer.Team, currentTarget))
             continue;
 
         for (int lagTicks = firstLag; lagTicks <= lastLag; ++lagTicks)

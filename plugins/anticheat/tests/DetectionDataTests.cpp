@@ -1,9 +1,3 @@
-// The mapping between configs/detections.jsonc and the structs the rule engine consumes. Two of
-// these checks now come from the reader itself - an unknown key and an unrecognized token are
-// parse errors - and the rest from ValidateDetectionData, which states what a schema cannot:
-// that a section is present, that a numeric constraint carries its bound, and that a range's max
-// is not below its value. Every case below would otherwise produce a working-looking table.
-
 #include "Core/DetectionData.hpp"
 #include "Client/InvalidCvarRules.hpp"
 

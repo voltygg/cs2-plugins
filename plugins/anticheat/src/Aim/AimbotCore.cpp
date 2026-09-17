@@ -10,7 +10,6 @@
 namespace Anticheat
 {
 
-static constexpr size_t CommandHistorySize = 128;
 static constexpr int SnapWindowTicks = static_cast<int>(TickRate * 0.5f);  // 32
 static constexpr float MinimumDistance = 100.0f;
 static constexpr int DetectionThreshold = 4;
@@ -47,21 +46,12 @@ void AimbotCore::OnCommand(int slot, const CmdSample& cmd)
     if (!Geometry::IsFinite(angles))
         return;
 
-    auto& commands = _slots[slot].Commands;
-    if (std::any_of(commands.rbegin(), commands.rend(),
-                    [&](const AimCommand& stored) { return stored.CmdNum == cmd.CmdNum; }))
-        return;
-
-    commands.push_back({.CmdNum = cmd.CmdNum, .ClientTick = cmd.ClientTick, .Angles = angles});
-    while (commands.size() > CommandHistorySize)
-        commands.pop_front();
+    _slots[slot].Commands.Push({.CmdNum = cmd.CmdNum, .ClientTick = cmd.ClientTick, .Angles = angles});
 }
 
 AimbotCore::AimCommand* AimbotCore::Find(SlotData& data, int32_t cmdNum)
 {
-    auto found = std::find_if(data.Commands.begin(), data.Commands.end(),
-                              [&](const AimCommand& command) { return command.CmdNum == cmdNum && command.Simulated; });
-    return found == data.Commands.end() ? nullptr : &*found;
+    return data.Commands.FindIf([&](const AimCommand& command) { return command.CmdNum == cmdNum && command.Simulated; });
 }
 
 std::optional<Finding> AimbotCore::OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos,
@@ -72,9 +62,8 @@ std::optional<Finding> AimbotCore::OnSimulated(int slot, int32_t cmdNum, int32_t
         return out;
 
     auto& data = _slots[slot];
-    auto found = std::find_if(data.Commands.rbegin(), data.Commands.rend(),
-                              [&](const AimCommand& stored) { return stored.CmdNum == cmdNum; });
-    if (found == data.Commands.rend())
+    AimCommand* found = data.Commands.Find(cmdNum);
+    if (!found)
         return out;
 
     found->ServerTick = serverTick;

@@ -1,7 +1,5 @@
 #pragma once
 
-// Owns the core bundle, the engine adapters that feed it, and the operator commands.
-
 #include "Client/DllInjectionDetector.hpp"
 #include "Client/InvalidCvarDetector.hpp"
 #include "Client/NamechangerDetector.hpp"
@@ -15,6 +13,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace Anticheat
@@ -64,6 +63,12 @@ private:
 
     VoltMod::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
     CheatSimulator _simulator{_cores, _rt, _config};
+
+    /** Everything a reset or a slot change has to clear; a new module is wired in here only. */
+    auto Modules()
+    {
+        return std::tie(_cores, _dllInjection, _invalidCvarPoller, _response);
+    }
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */

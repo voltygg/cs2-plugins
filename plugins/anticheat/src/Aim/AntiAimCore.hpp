@@ -1,16 +1,11 @@
 #pragma once
 
-// Anti-aim / fake-angle detection: impossible pitch or roll, a base view angle that disagrees with
-// the angles the client says it fired along, one-command attack returns, sustained spin, and exact
-// repeating yaw jitter. Everything feeds one decaying score; motion patterns score it out instantly.
-// Ingest, scoring and the per-command rules live here; spin/jitter in AntiAimMotionCore.cpp.
-
+#include "Core/CommandHistory.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
 
 #include <array>
 #include <cstdint>
-#include <deque>
 #include <optional>
 #include <string_view>
 
@@ -57,6 +52,9 @@ inline constexpr float RequiredJitterSeconds = 5.0f;
 class AntiAimCore
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::AntiAim;
+
     void Reset();
     /** Also the spawn reset: a fresh pawn invalidates every in-flight command the same way. */
     void OnSlotChanged(int slot);
@@ -98,7 +96,7 @@ private:
 
     struct SlotData
     {
-        std::deque<Command> Commands;
+        CommandHistory<Command, AntiAimTuning::CommandHistorySize> Commands;
 
         float Score = 0.0f;
         float MismatchScore = 0.0f;

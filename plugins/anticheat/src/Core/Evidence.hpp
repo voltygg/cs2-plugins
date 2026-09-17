@@ -1,8 +1,5 @@
 #pragma once
 
-// The rolling "N incidents within the window" counter every core thresholds on. The window is a
-// template parameter so a default-constructed core - and every `= {}` reset - carries it.
-
 #include <VoltMod/Core/SlidingWindowScore.hpp>
 
 namespace Anticheat

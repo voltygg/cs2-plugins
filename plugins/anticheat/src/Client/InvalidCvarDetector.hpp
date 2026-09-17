@@ -1,12 +1,5 @@
 #pragma once
 
-// Feeds InvalidCvarRules from two tiers: the userinfo copies the engine already holds, and the
-// network convar query for everything else. Without _rt.Hooks.ClientConVars the query tier is simply
-// absent, so a degraded load falls back to userinfo rather than going blind.
-//
-// An unanswered query produces no callback at all, so nothing here waits on a reply or reads
-// silence as evidence.
-
 #include "Detectors.hpp"
 #include "Client/InvalidCvarRules.hpp"
 

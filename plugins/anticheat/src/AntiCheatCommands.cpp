@@ -31,8 +31,7 @@ void AntiCheatManager::RegisterCommands()
         .Describe("Re-read settings.jsonc and detections.jsonc, and drop all accumulated evidence.")
         .ConsoleOnly()
         .Run([this](Caller) -> Result<Reply> {
-            // The reason names the offending key and its position, which is what an operator
-            // who just mistyped a setting needs to see.
+            // The reason names the offending key and its position, which is what a mistyped setting needs.
             if (auto loaded = _config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")); !loaded)
                 return Reply{std::format("Settings not reloaded: {}", loaded.error().Detail)};
             // Keep valid rules active if the edited file cannot be parsed.

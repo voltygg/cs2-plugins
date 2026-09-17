@@ -38,8 +38,7 @@ void ShotCorrelator::Initialize()
                        [this](int slot, const VoltMod::PlayerInput& cmd) { OnCommand(slot, cmd); });
     _subscriptions.Add(_rt.Scheduler.EveryFrame([this] { OnFrame(); }));
 
-    // The aim cores discount the frames after a teleport, so the stamps live here rather than in
-    // the framework: subscribing is what arms the per-pawn hook, and the grace window is ours.
+    // Subscribing arms the per-pawn hook, and the teleport grace window is ours, not the framework's.
     _lastTeleport.BindReset(_rt.Slots);
     _subscriptions.Add(_rt.Hooks.Teleport.Teleported += [this](int slot) {
         if (IsValidSlot(slot))
@@ -47,7 +46,7 @@ void ShotCorrelator::Initialize()
     });
 
     _subscriptions.Add(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
-        if (_detectors.ModuleEnabled(DetectionKind::AntiAim))
+        if (_detectors.ModuleEnabled(_detectors.AntiAim))
             _detectors.AntiAim.OnSlotChanged(e.Slot);
     }));
     _subscriptions.Add(events.On<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
@@ -72,20 +71,12 @@ void ShotCorrelator::OnCommand(int slot, const VoltMod::PlayerInput& cmd)
         return;
 
     Detectors& d = _detectors;
-    const bool aimbot = d.ModuleEnabled(DetectionKind::Aimbot);
-    const bool aimlock = d.ModuleEnabled(DetectionKind::Aimlock);
-    const bool antiAim = d.ModuleEnabled(DetectionKind::AntiAim);
-    const bool triggerbot = d.ModuleEnabled(DetectionKind::Triggerbot);
-    const bool recoil = d.ModuleEnabled(DetectionKind::Recoil);
-    const bool mouse = d.ModuleEnabled(DetectionKind::MouseMismatch);
-    const bool wallhack = d.ModuleEnabled(DetectionKind::Wallhack);
-
     d.Correlator.OnCommand(slot, sample);
-    if (aimbot)
+    if (d.ModuleEnabled(d.Aimbot))
         d.Aimbot.OnCommand(slot, sample);
-    if (antiAim)
+    if (d.ModuleEnabled(d.AntiAim))
         d.AntiAim.OnCommand(slot, sample);
-    if (recoil)
+    if (d.ModuleEnabled(d.Recoil))
         d.Recoil.OnCommand(slot, sample);
 
     // This is the command the server is about to simulate, so ingest and stamp in the same pass.
@@ -93,17 +84,17 @@ void ShotCorrelator::OnCommand(int slot, const VoltMod::PlayerInput& cmd)
     const double now = Time::MonotonicSeconds();
     const bool teleported = JustTeleported(slot);
     d.Correlator.OnSimulated(slot, sample.CmdNum, serverTick, sample.EyePos, sample.Airborne);
-    if (aimbot)
+    if (d.ModuleEnabled(d.Aimbot))
         d.Report(slot, d.Aimbot.OnSimulated(slot, sample.CmdNum, serverTick, sample.EyePos, now));
-    if (aimlock)
+    if (d.ModuleEnabled(d.Aimlock))
         d.Aimlock.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
-    if (triggerbot)
+    if (d.ModuleEnabled(d.Triggerbot))
         d.Triggerbot.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
-    if (wallhack)
+    if (d.ModuleEnabled(d.Wallhack))
         d.Wallhack.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
-    if (mouse)
+    if (d.ModuleEnabled(d.Mouse))
         d.Report(slot, d.Mouse.OnSimulated(slot, sample, serverTick, teleported, now));
-    if (antiAim)
+    if (d.ModuleEnabled(d.AntiAim))
         d.Report(slot, d.AntiAim.OnSimulated(slot, sample.CmdNum, serverTick, true, teleported, now));
 }
 
@@ -160,40 +151,35 @@ void ShotCorrelator::OnFrame()
     const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
     const double now = Time::MonotonicSeconds();
 
-    const bool aimbot = d.ModuleEnabled(DetectionKind::Aimbot);
-    const bool aimlock = d.ModuleEnabled(DetectionKind::Aimlock);
-    const bool antiAim = d.ModuleEnabled(DetectionKind::AntiAim);
-    const bool triggerbot = d.ModuleEnabled(DetectionKind::Triggerbot);
-    const bool recoil = d.ModuleEnabled(DetectionKind::Recoil);
-    const bool wallhack = d.ModuleEnabled(DetectionKind::Wallhack);
+    // Two engine reads and a parse per estimate, so only measure it when a core will read it.
+    const bool lagWanted =
+        d.ModuleEnabled(d.Aimlock) || d.ModuleEnabled(d.Triggerbot) || d.ModuleEnabled(d.Wallhack);
 
     std::array<PositionSample, MaxSlots> players{};
     std::array<AimAngles, MaxSlots> aims{};
     std::array<bool, MaxSlots> viewers{};
     CollectPositions(players, aims, viewers);
-    if (wallhack)
+    if (d.ModuleEnabled(d.Wallhack))
         _sight.Stamp(players, aims, viewers, d.Correlator);
     d.Correlator.CaptureFrame(serverTick, players);
 
     for (int slot = 0; slot < MaxSlots; ++slot)
     {
-        const bool eligible = viewers[slot] || d.IsEligible(slot);
-        const bool aliveHuman = eligible && players[slot].Alive;
-        // Two engine reads and a parse per call, so only for the slots an estimate is used on.
-        const LagEstimate lag =
-            aliveHuman && (aimlock || triggerbot || wallhack) ? MeasureVisualLag(_rt, slot) : LagEstimate{};
+        const bool aliveHuman = viewers[slot];
+        const bool eligible = aliveHuman || d.IsEligible(slot);
+        const LagEstimate lag = aliveHuman && lagWanted ? MeasureVisualLag(_rt, slot) : LagEstimate{};
 
-        if (aimbot)
+        if (d.ModuleEnabled(d.Aimbot))
             d.Report(slot, d.Aimbot.OnFrame(slot, serverTick, eligible, now));
-        if (aimlock)
+        if (d.ModuleEnabled(d.Aimlock))
             d.Report(slot, d.Aimlock.OnFrame(slot, serverTick, aliveHuman, lag, now));
-        if (triggerbot)
+        if (d.ModuleEnabled(d.Triggerbot))
             d.Triggerbot.OnFrame(slot, serverTick, aliveHuman, lag);
-        if (wallhack)
+        if (d.ModuleEnabled(d.Wallhack))
             d.Report(slot, d.Wallhack.OnFrame(slot, serverTick, aliveHuman, lag, now));
-        if (antiAim)
+        if (d.ModuleEnabled(d.AntiAim))
             d.Report(slot, d.AntiAim.OnFrame(slot, serverTick, eligible, now));
-        if (recoil && eligible)
+        if (eligible && d.ModuleEnabled(d.Recoil))
             d.Report(slot, d.Recoil.OnFrame(slot, serverTick, now));
         if (eligible)
             FinalizeShots(slot, serverTick, now);
@@ -204,19 +190,20 @@ void ShotCorrelator::OnFrame()
 
 bool ShotCorrelator::TeamSawVictim(int shooter, int victim, int32_t fireTick) const
 {
-    const ShotCorrelatorCore& frames = _detectors.Correlator;
-    const auto shooterSample = frames.FindPosition(fireTick, shooter);
-    if (!shooterSample)
+    if (!IsValidSlot(shooter) || !IsValidSlot(victim))
         return false;
 
+    const ShotCorrelatorCore& frames = _detectors.Correlator;
+    const PositionFrame* frame = frames.FindFrame(fireTick);
+    if (!frame || !frame->Players[shooter].Valid)
+        return false;
+
+    const int shooterTeam = frame->Players[shooter].Team;
     uint64_t teammates = 0;
-    for (const VoltMod::Player* player : _rt.Players.All())
+    for (int mate = 0; mate < MaxSlots; ++mate)
     {
-        const int mate = player ? player->Slot() : -1;
-        if (!IsValidSlot(mate) || mate == shooter || mate == victim)
-            continue;
-        const auto mateSample = frames.FindPosition(fireTick, mate);
-        if (mateSample && mateSample->Alive && mateSample->Team == shooterSample->Team)
+        const PositionSample& mateSample = frame->Players[mate];
+        if (mate != shooter && mate != victim && mateSample.Alive && mateSample.Team == shooterTeam)
             teammates |= SlotBit(mate);
     }
     if (teammates == 0)
@@ -226,12 +213,13 @@ bool ShotCorrelator::TeamSawVictim(int shooter, int victim, int32_t fireTick) co
     uint64_t seenBy = 0;
     for (int32_t tick = fireTick; tick > fireTick - TeamSightMemoryTicks; --tick)
     {
-        const auto seen = frames.FindPosition(tick, victim);
-        if (seen)
-            seenBy |= seen->SeenBy;
+        const PositionFrame* past = frames.FindFrame(tick);
+        if (!past)
+            continue;
+        seenBy |= past->Players[victim].SeenBy;
+        if ((seenBy & teammates) != 0)
+            return true;
     }
-    if ((seenBy & teammates) != 0)
-        return true;
 
     for (int mate = 0; mate < MaxSlots; ++mate)
         if ((teammates & SlotBit(mate)) != 0 && _sight.CanSee(mate, victim).value_or(false))
@@ -242,8 +230,8 @@ bool ShotCorrelator::TeamSawVictim(int shooter, int victim, int32_t fireTick) co
 void ShotCorrelator::FinalizeShots(int slot, int32_t serverTick, double nowSec)
 {
     Detectors& d = _detectors;
-    const bool silentAim = d.ModuleEnabled(DetectionKind::SilentAim);
-    const bool wallhack = d.ModuleEnabled(DetectionKind::Wallhack);
+    const bool silentAim = d.ModuleEnabled(d.SilentAim);
+    const bool wallhack = d.ModuleEnabled(d.Wallhack);
 
     // Reporting can kick, which clears the slot's shots - so report only after the walk.
     std::vector<Finding> findings;
@@ -275,9 +263,9 @@ void ShotCorrelator::OnWeaponFire(const VoltMod::WeaponFire& fire)
 
     const auto serverTick = static_cast<int32_t>(_rt.Clock.Tick());
     const double now = Time::MonotonicSeconds();
-    if (d.ModuleEnabled(DetectionKind::Triggerbot))
+    if (d.ModuleEnabled(d.Triggerbot))
         d.Triggerbot.OnWeaponFire(fire.Slot, serverTick);
-    if (d.ModuleEnabled(DetectionKind::Wallhack))
+    if (d.ModuleEnabled(d.Wallhack))
         d.Wallhack.OnWeaponFire(fire.Slot, serverTick);
 
     const VoltMod::Pawn pawn = _rt.Entities.PawnOf(fire.Slot);
@@ -292,9 +280,9 @@ void ShotCorrelator::OnWeaponFire(const VoltMod::WeaponFire& fire)
         d.Correlator.OnWeaponFire(fire.Slot, fire.Weapon, serverTick, visible, hasVisible, fireCmd, shotsFired);
     if (!shot)
         return;
-    if (d.ModuleEnabled(DetectionKind::AntiAim))
+    if (d.ModuleEnabled(d.AntiAim))
         d.Report(fire.Slot, d.AntiAim.OnWeaponFire(fire.Slot, *shot, now));
-    if (d.ModuleEnabled(DetectionKind::Recoil))
+    if (d.ModuleEnabled(d.Recoil))
         d.Report(fire.Slot, d.Recoil.OnShot(fire.Slot, *shot, now));
 }
 
@@ -314,7 +302,7 @@ void ShotCorrelator::OnBulletImpact(const VoltMod::BulletImpact& impact)
         return;
 
     ShotView* shot = d.Correlator.OnBulletImpact(slot, {impact.X, impact.Y, impact.Z}, serverTick);
-    if (shot && d.ModuleEnabled(DetectionKind::SilentAim))
+    if (shot && d.ModuleEnabled(d.SilentAim))
         d.SilentAim.OnShotUpdated(slot, *shot);
 }
 
@@ -335,12 +323,12 @@ void ShotCorrelator::OnPlayerHurt(const VoltMod::PlayerHurt& hurt)
         return;
 
     const double now = Time::MonotonicSeconds();
-    if (d.ModuleEnabled(DetectionKind::SilentAim))
+    if (d.ModuleEnabled(d.SilentAim))
         d.SilentAim.OnShotUpdated(attacker, *shot);
     // Judged now, while the crosshair runs still describe the tick the shot was fired on.
-    if (d.ModuleEnabled(DetectionKind::Triggerbot))
+    if (d.ModuleEnabled(d.Triggerbot))
         d.Report(attacker, d.Triggerbot.OnPlayerHurt(attacker, *shot, now));
-    if (d.ModuleEnabled(DetectionKind::Aimbot))
+    if (d.ModuleEnabled(d.Aimbot))
         d.Report(attacker, d.Aimbot.OnPlayerHurt(attacker, victim, *shot, now));
 }
 

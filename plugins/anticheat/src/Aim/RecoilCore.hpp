@@ -1,15 +1,11 @@
 #pragma once
 
-// Recoil control: across a spray, the view moves against the recoil punch shot by shot. A human
-// follows the remembered pattern loosely; software cancels the actual punch, including the part
-// that is not in the pattern, with a near-constant factor and almost no residual. SDK-free.
-
+#include "Core/CommandHistory.hpp"
 #include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
 
 #include <array>
-#include <deque>
 #include <optional>
 #include <string>
 #include <vector>
@@ -20,7 +16,6 @@ namespace Anticheat
 /** How well one spray's view motion cancelled its recoil. */
 struct SprayFit
 {
-    int Pairs = 0;
     float Slope = 0.0f;          // view motion per unit of punch motion, positive when it cancels
     float ResidualDeg = 180.0f;  // RMS of what the slope leaves unexplained, per shot
     float PunchTravelDeg = 0.0f;
@@ -30,6 +25,11 @@ struct SprayFit
 class RecoilCore
 {
 public:
+    /** The settings toggle and catalog entry this core reports under. */
+    static constexpr DetectionKind Kind = DetectionKind::Recoil;
+
+    static constexpr size_t CommandHistorySize = 256;
+
     void Reset();
     void OnSlotChanged(int slot);
 
@@ -63,7 +63,7 @@ private:
 
     struct SlotData
     {
-        std::deque<Command> Commands;
+        CommandHistory<Command, CommandHistorySize> Commands;
         std::vector<Shot> Spray;
         std::string Weapon;
     };

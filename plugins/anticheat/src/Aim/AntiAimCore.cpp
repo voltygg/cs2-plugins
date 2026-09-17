@@ -92,11 +92,6 @@ void AntiAimCore::OnCommand(int slot, const CmdSample& cmd)
     if (!InSlotRange(slot))
         return;
 
-    auto& commands = _slots[slot].Commands;
-    if (std::any_of(commands.rbegin(), commands.rend(),
-                    [&](const Command& stored) { return stored.CmdNum == cmd.CmdNum; }))
-        return;
-
     Command captured;
     captured.CmdNum = cmd.CmdNum;
     captured.ClientTick = cmd.ClientTick;
@@ -110,16 +105,12 @@ void AntiAimCore::OnCommand(int slot, const CmdSample& cmd)
                             !cmd.SubtickAnglesFinite || !std::isfinite(cmd.SubtickPitchDelta) ||
                             !std::isfinite(cmd.SubtickYawDelta);
 
-    commands.push_back(captured);
-    while (commands.size() > CommandHistorySize)
-        commands.pop_front();
+    _slots[slot].Commands.Push(captured);
 }
 
 AntiAimCore::Command* AntiAimCore::Find(SlotData& data, int32_t cmdNum)
 {
-    auto found = std::find_if(data.Commands.rbegin(), data.Commands.rend(),
-                              [&](const Command& stored) { return stored.CmdNum == cmdNum && stored.Simulated; });
-    return found == data.Commands.rend() ? nullptr : &*found;
+    return data.Commands.FindIf([&](const Command& stored) { return stored.CmdNum == cmdNum && stored.Simulated; });
 }
 
 std::optional<Finding> AntiAimCore::OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, bool eligible,
@@ -132,7 +123,7 @@ std::optional<Finding> AntiAimCore::OnSimulated(int slot, int32_t cmdNum, int32_
     auto& data = _slots[slot];
     if (!eligible)
     {
-        data.Commands.clear();
+        data.Commands.Clear();
         data.PendingShot = -1;
         data.PendingShotTick = -1;
         data.LastMismatchEvidenceCommand = -1;
@@ -144,9 +135,8 @@ std::optional<Finding> AntiAimCore::OnSimulated(int slot, int32_t cmdNum, int32_
     }
 
     ApplyDecay(data, nowSec);
-    auto found = std::find_if(data.Commands.rbegin(), data.Commands.rend(),
-                              [&](const Command& stored) { return stored.CmdNum == cmdNum; });
-    if (found == data.Commands.rend())
+    Command* found = data.Commands.Find(cmdNum);
+    if (!found)
     {
         data.PendingShot = -1;
         data.PendingShotTick = -1;
@@ -216,7 +206,7 @@ void AntiAimCore::EvaluatePendingShot(SlotData& data, int32_t currentTick, doubl
     {
         // Expire once the command after the shot can no longer arrive.
         if (static_cast<int64_t>(currentTick) - data.PendingShotTick > 1 ||
-            (!data.Commands.empty() && static_cast<int64_t>(data.Commands.back().CmdNum) - data.PendingShot > 1))
+            (!data.Commands.Empty() && static_cast<int64_t>(data.Commands.Newest().CmdNum) - data.PendingShot > 1))
         {
             data.PendingShot = -1;
             data.PendingShotTick = -1;
@@ -247,10 +237,10 @@ std::optional<Finding> AntiAimCore::OnWeaponFire(int slot, const ShotView& shot,
         return out;
 
     auto& data = _slots[slot];
-    const bool matched = std::any_of(data.Commands.rbegin(), data.Commands.rend(), [&](const Command& candidate) {
+    const bool matched = data.Commands.FindIf([&](const Command& candidate) {
         return candidate.CmdNum == shot.CmdNum && candidate.Attack && candidate.Simulated &&
                candidate.ServerTick == shot.ServerTick;
-    });
+    }) != nullptr;
     if (!matched)
         return out;
 

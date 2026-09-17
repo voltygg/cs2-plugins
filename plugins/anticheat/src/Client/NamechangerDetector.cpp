@@ -28,14 +28,14 @@ void NamechangerDetector::Initialize()
 // a change measured against a stale identity would be a false positive later.
 void NamechangerDetector::OnFullyConnected(VoltMod::Player& player)
 {
-    if (!_detectors.ModuleEnabled(DetectionKind::Namechanger) || !_detectors.IsEligible(player.Slot()))
+    if (!_detectors.ModuleEnabled(_detectors.Namechanger) || !_detectors.IsEligible(player.Slot()))
         return;
     _detectors.Namechanger.OnBaseline(player.Slot(), player.Name(), ClanOf(player.Ctrl()));
 }
 
 bool NamechangerDetector::Enabled() const
 {
-    return _detectors.Enabled() && _detectors.ModuleEnabled(DetectionKind::Namechanger);
+    return _detectors.Enabled() && _detectors.ModuleEnabled(_detectors.Namechanger);
 }
 
 void NamechangerDetector::OnSettingsChanged(VoltMod::Player& player)

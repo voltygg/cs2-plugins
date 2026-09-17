@@ -6,6 +6,7 @@
 #include <format>
 #include <map>
 #include <string>
+#include <tuple>
 
 using VoltMod::IsValidSlot;
 
@@ -148,10 +149,7 @@ std::string AntiCheatManager::StatusSnapshot() const
 
 void AntiCheatManager::ResetEvidence()
 {
-    _cores.Reset();
-    _dllInjection.Reset();
-    _invalidCvarPoller.Reset();
-    _response.Reset();
+    std::apply([](auto&... modules) { (modules.Reset(), ...); }, Modules());
 }
 
 void AntiCheatManager::OnMapStart()
@@ -162,10 +160,7 @@ void AntiCheatManager::OnMapStart()
 
 void AntiCheatManager::OnSlotChanged(int slot)
 {
-    _cores.OnSlotChanged(slot);
-    _dllInjection.OnSlotChanged(slot);
-    _invalidCvarPoller.OnSlotChanged(slot);
-    _response.OnSlotChanged(slot);
+    std::apply([slot](auto&... modules) { (modules.OnSlotChanged(slot), ...); }, Modules());
 }
 
 void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Player& player)

@@ -47,17 +47,18 @@ void SightProbe::Stamp(std::array<PositionSample, MaxSlots>& players, const std:
     for (int viewer = 0; viewer < MaxSlots; ++viewer)
     {
         const PositionSample& self = players[viewer];
-        if (!viewers[viewer] || !self.Valid || !self.Alive || !Geometry::IsFinite(aims[viewer]))
+        if (!viewers[viewer] || !self.InPlay() || !Geometry::IsFinite(aims[viewer]))
             continue;
 
+        const Vec3 forward = Geometry::AimForward(aims[viewer]);
         int nearest = -1;
         float nearestError = CandidateConeDeg;
         for (int target = 0; target < MaxSlots; ++target)
         {
             const PositionSample& other = players[target];
-            if (target == viewer || !other.Valid || !other.Alive || !teams.AreOpponents(self.Team, other.Team))
+            if (target == viewer || !other.InPlay() || !teams.AreOpponents(self.Team, other.Team))
                 continue;
-            const float error = Geometry::NearestBodyAimError(self.EyePos, aims[viewer], other.Origin);
+            const float error = Geometry::NearestBodyAimErrorAlong(self.EyePos, forward, other.Origin);
             if (std::isfinite(error) && error < nearestError)
             {
                 nearest = target;

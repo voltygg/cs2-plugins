@@ -1,9 +1,5 @@
 #pragma once
 
-// Stamps who can see whom into a position frame, through the framework's trace service. Only the
-// pairs worth asking about are traced: each viewer's enemy nearest its crosshair, and on a hit the
-// victim's line to the shooter's teammates.
-
 #include "Core/Samples.hpp"
 #include "Correlation/ShotCorrelatorCore.hpp"
 
