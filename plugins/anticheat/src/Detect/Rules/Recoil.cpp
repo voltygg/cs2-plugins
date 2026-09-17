@@ -19,12 +19,10 @@ static constexpr float MinPunchTravelDeg = 3.0f;
 static constexpr float MaxResidualDeg = 0.35f;
 static constexpr float MinSlope = 0.5f;
 static constexpr float MaxSlope = 2.5f;
-static constexpr int DetectionThreshold = 3;
 
 void Recoil::Reset()
 {
     _slots = {};
-    _incidents = {};
 }
 
 void Recoil::OnSlotChanged(int slot)
@@ -32,7 +30,6 @@ void Recoil::OnSlotChanged(int slot)
     if (!InSlotRange(slot))
         return;
     _slots[slot] = {};
-    _incidents[slot].Clear();
 }
 
 void Recoil::OnCommand(int slot, const CmdSample& cmd)
@@ -140,13 +137,12 @@ SprayFit Recoil::Fit(const SlotData& data, int viewLag) const
 
 std::optional<Finding> Recoil::Finalize(int slot, SlotData& data, double nowSec)
 {
-    std::optional<Finding> out;
     const size_t shots = data.Spray.size();
     const std::string weapon = data.Weapon;
     if (shots < MinSprayShots)
     {
         data.Spray.clear();
-        return out;
+        return std::nullopt;
     }
 
     // The view may cancel the punch in the same command or the one after; take the better fit.
@@ -160,23 +156,16 @@ std::optional<Finding> Recoil::Finalize(int slot, SlotData& data, double nowSec)
     data.Spray.clear();
 
     if (!best.Valid || best.Slope < MinSlope || best.Slope > MaxSlope || best.ResidualDeg > MaxResidualDeg)
-        return out;
+        return std::nullopt;
 
-    const int sprays = _incidents[slot].Add(nowSec);
-    if (sprays < DetectionThreshold)
-        return out;
-
-    out = Finding{.Kind = DetectionKind::Recoil,
-                  .Evidence = std::format("{} sprays cancelled their recoil; the latest ({} shots of {}) followed "
-                                          "{:.1f} degrees of punch with factor {:.2f} and {:.2f} degrees of residual.",
-                                          sprays, shots, weapon, best.PunchTravelDeg, best.Slope, best.ResidualDeg)};
-    _incidents[slot].Clear();
-    return out;
-}
-
-int Recoil::Score(int slot, double nowSec) const
-{
-    return InSlotRange(slot) ? _incidents[slot].Value(nowSec) : 0;
+    return _suspicion.Add(
+        slot,
+        {.Kind = Kind,
+         .Points = 1.0f,
+         .Reason = std::format("A spray of {} shots of {} followed {:.1f} degrees of punch with factor {:.2f} and "
+                               "{:.2f} degrees of residual.",
+                               shots, weapon, best.PunchTravelDeg, best.Slope, best.ResidualDeg)},
+        nowSec);
 }
 
 bool Recoil::InSpray(int slot) const

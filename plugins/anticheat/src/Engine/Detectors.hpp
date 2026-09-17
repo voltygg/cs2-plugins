@@ -71,7 +71,7 @@ public:
     Rules::AntiAim AntiAim;
     Rules::SilentAim SilentAim{Scores};
     Rules::Triggerbot Triggerbot{History};
-    Rules::Recoil Recoil;
+    Rules::Recoil Recoil{Scores};
     Rules::MouseMismatch Mouse{History};
     Rules::Wallhack Wallhack{History, Scores};
     Rules::Namechanger Namechanger{Scores};

@@ -4,8 +4,11 @@
 
 using Anticheat::AimAngles;
 using Anticheat::CmdSample;
+using Anticheat::DefaultTuning;
+using Anticheat::DetectionKind;
 using Anticheat::Rules::Recoil;
 using Anticheat::ShotView;
+using Anticheat::Suspicion;
 
 static constexpr int Slot = 3;
 static constexpr double Now = 100.0;
@@ -17,7 +20,13 @@ static constexpr int CommandsPerShot = 6;
  */
 struct RecoilHarness
 {
-    Recoil Rule;
+    RecoilHarness() { Scores.Configure(DefaultTuning()); }
+
+    /** Sprays this rule has marked on the slot. */
+    float Marked() const { return Scores.Value(Slot, DetectionKind::Recoil, Now); }
+
+    Suspicion Scores;
+    Recoil Rule{Scores};
     int32_t Cmd = 100;
     AimAngles View{10.0f, 0.0f};
     AimAngles Punch;
@@ -91,7 +100,7 @@ struct RecoilHarness
     }
 };
 
-TEST_CASE("Sprays whose view cancels the punch exactly add up to a finding")
+TEST_CASE("Every spray whose view cancels the punch is marked, and three of them report")
 {
     RecoilHarness h;
     for (int spray = 0; spray < 2; ++spray)
@@ -100,11 +109,12 @@ TEST_CASE("Sprays whose view cancels the punch exactly add up to a finding")
         h.Quiet();
     }
     CHECK(h.Findings == 0);
-    CHECK(h.Rule.Score(Slot, Now) == 2);
+    CHECK(h.Marked() == doctest::Approx(2.0f));
+
     h.Spray(10, 1.0f, 0.0f);
     h.Quiet();
     CHECK(h.Findings == 1);
-    CHECK(h.Rule.Score(Slot, Now) == 0);
+    CHECK(h.Marked() == doctest::Approx(3.0f));
 }
 
 TEST_CASE("A hand that follows the pattern with its own error is not recoil control")
@@ -116,7 +126,7 @@ TEST_CASE("A hand that follows the pattern with its own error is not recoil cont
         h.Quiet();
     }
     CHECK(h.Findings == 0);
-    CHECK(h.Rule.Score(Slot, Now) == 0);
+    CHECK(h.Marked() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("Cancelling in the same command and a scaled factor both fit")
@@ -138,7 +148,7 @@ TEST_CASE("Short bursts carry too little punch to judge")
         h.Spray(5, 1.0f, 0.0f);
         h.Quiet();
     }
-    CHECK(h.Rule.Score(Slot, Now) == 0);
+    CHECK(h.Marked() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A new burst counter closes the spray before it")
@@ -148,5 +158,5 @@ TEST_CASE("A new burst counter closes the spray before it")
     CHECK(h.Rule.InSpray(Slot));
     // Restarting at shot one without a quiet gap still ends the previous spray.
     h.Spray(1, 1.0f, 0.0f);
-    CHECK(h.Rule.Score(Slot, Now) == 1);
+    CHECK(h.Marked() == doctest::Approx(1.0f));
 }

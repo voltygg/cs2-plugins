@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Detect/CommandHistory.hpp"
-#include "Detect/Evidence.hpp"
 #include "Detect/Finding.hpp"
 #include "Detect/Samples.hpp"
+#include "Detect/Suspicion.hpp"
 
 #include <array>
 #include <optional>
@@ -30,6 +30,8 @@ public:
 
     static constexpr size_t CommandHistorySize = 256;
 
+    explicit Recoil(Suspicion& suspicion) : _suspicion(suspicion) {}
+
     void Reset();
     void OnSlotChanged(int slot);
 
@@ -42,7 +44,6 @@ public:
     /** Closes a spray that has gone quiet. */
     std::optional<Finding> OnFrame(int slot, int32_t serverTick, double nowSec);
 
-    int Score(int slot, double nowSec) const;
     bool InSpray(int slot) const;
 
 private:
@@ -73,8 +74,8 @@ private:
     SprayFit Fit(const SlotData& data, int viewLag) const;
     std::optional<Finding> Finalize(int slot, SlotData& data, double nowSec);
 
+    Suspicion& _suspicion;
     std::array<SlotData, MaxSlots> _slots{};
-    std::array<LongEvidenceWindow, MaxSlots> _incidents{};
 };
 
 }  // namespace Anticheat::Rules
