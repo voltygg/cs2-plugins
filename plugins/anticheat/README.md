@@ -40,7 +40,7 @@ compiled into the plugin.
 | `silentaim` | Impacts far from the visible aim direction | 12 points in 10 minutes |
 | `triggerbot` | Hits within 47-94 ms of an enemy walking into a resting crosshair | 8 points in 10 minutes |
 | `recoil` | Sprays whose view cancels the actual recoil punch | 3 sprays in 10 minutes |
-| `mouse_mismatch` | View turns the mouse counts cannot explain that land on an enemy | 6 turns in 10 minutes |
+| `aim_assist` | View turns the mouse counts cannot explain that land on an enemy | 6 turns in 10 minutes |
 | `wallhack` | Following, pre-aiming and shooting enemies through cover | 6 points in 10 minutes |
 | `dll_injection` | Client event subscriptions unused by the stock HUD | First match |
 | `invalid_cvar` | Client convars outside allowed values | First confirmed invalid value |
@@ -128,9 +128,9 @@ and a residual of 0.35 degrees RMS or less per shot marks the spray; three
 marked sprays in ten minutes report. The pattern is public, but the residual
 requires cancelling the punch the engine actually produced, tick by tick.
 
-### Mouse mismatch
+### Aim assist
 
-Mouse mismatch learns each player's degrees per mouse count from their own
+Aim assist learns each player's degrees per mouse count from their own
 turns: the median of the last 32 ratios between the yaw change and the counts
 the command carried, accepted once 16 samples agree within 25%. A client whose
 counts never agree with its turns (a controller, or a client that does not fill
@@ -315,7 +315,7 @@ Each simulation lasts 10 seconds.
 | `anticheat_sim_off [target]` | Stop one simulation, or all if omitted |
 
 Targets may be a slot or SteamID64. `anticheat_sim_aimlock` also exercises the
-wallhack rules when the nearest opponent is behind cover. Mouse mismatch needs
+wallhack rules when the nearest opponent is behind cover. Aim assist needs
 the slot calibrated first, so play normally for a few seconds before
 `anticheat_sim_nomouse`. There is no silent-aim, triggerbot or recoil simulation
 because those detectors evaluate real shots.
@@ -332,7 +332,7 @@ map and `box-a` entry in [`deploy/inventory.yml`](../../deploy/inventory.yml).
 3. Switch to `alert` for a second soak period.
 4. Enable `ban` one detector at a time. Start with `invalidCvar`, then
    `namechanger` and `dllInjection`. Add `silentAim`, `antiAim`, `aimbot`,
-   `recoil`, `triggerbot`, `mouseMismatch`, `wallhack` and `aimlock` last, with
+   `recoil`, `triggerbot`, `aimAssist`, `wallhack` and `aimlock` last, with
    a soak between each change.
 
 ## Maintenance after CS2 updates

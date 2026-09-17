@@ -1,4 +1,4 @@
-#include "Detect/Rules/MouseMismatch.hpp"
+#include "Detect/Rules/AimAssist.hpp"
 #include "Detect/Geometry.hpp"
 
 #include <array>
@@ -11,7 +11,7 @@ using Anticheat::CmdSample;
 using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::MaxSlots;
-using Anticheat::Rules::MouseMismatch;
+using Anticheat::Rules::AimAssist;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::Suspicion;
@@ -28,16 +28,16 @@ static constexpr float TargetY = 43.74f;
 /** Degrees per count for m_yaw 0.022 at sensitivity 2. Turning right lowers the yaw. */
 static constexpr float Scale = -0.044f;
 
-struct MouseHarness
+struct AimAssistHarness
 {
-    MouseHarness() { Scores.Configure(DefaultTuning()); }
+    AimAssistHarness() { Scores.Configure(DefaultTuning()); }
 
     /** Unexplained turns this rule has counted on the observer. */
-    float Turns() const { return Scores.Value(Observer, DetectionKind::MouseMismatch, Now); }
+    float Turns() const { return Scores.Value(Observer, DetectionKind::AimAssist, Now); }
 
     Suspicion Scores;
     ShotHistory History;
-    MouseMismatch Rule{History, Scores};
+    AimAssist Rule{History, Scores};
     int32_t Tick = 0;
     int32_t Cmd = 1;
     float Yaw = 0.0f;
@@ -85,7 +85,7 @@ struct MouseHarness
 
 TEST_CASE("Turns the mouse counts cannot explain that land on an enemy are counted")
 {
-    MouseHarness h;
+    AimAssistHarness h;
     h.Calibrate();
     CHECK(h.Rule.Calibrated(Observer));
 
@@ -102,7 +102,7 @@ TEST_CASE("Turns the mouse counts cannot explain that land on an enemy are count
 
 TEST_CASE("The same turn reported by the mouse is ordinary aim")
 {
-    MouseHarness h;
+    AimAssistHarness h;
     h.Calibrate();
     for (int i = 0; i < 6; ++i)
     {
@@ -115,7 +115,7 @@ TEST_CASE("The same turn reported by the mouse is ordinary aim")
 
 TEST_CASE("An unexplained turn away from every enemy is not evidence")
 {
-    MouseHarness h;
+    AimAssistHarness h;
     h.Calibrate();
     for (int i = 0; i < 6; ++i)
     {
@@ -127,7 +127,7 @@ TEST_CASE("An unexplained turn away from every enemy is not evidence")
 
 TEST_CASE("A client whose counts never agree with its turns is never judged")
 {
-    MouseHarness h;
+    AimAssistHarness h;
     for (int i = 0; i < 20; ++i)
         h.Command(i % 2 == 0 ? 10 : -3, h.Yaw + (i % 2 == 0 ? 0.44f : -0.44f));
     CHECK_FALSE(h.Rule.Calibrated(Observer));
@@ -141,7 +141,7 @@ TEST_CASE("A client whose counts never agree with its turns is never judged")
 
 TEST_CASE("Keyboard turning and scoped commands are skipped")
 {
-    MouseHarness h;
+    AimAssistHarness h;
     h.Calibrate();
     for (int i = 0; i < 6; ++i)
     {

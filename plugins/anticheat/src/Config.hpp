@@ -25,7 +25,7 @@ struct DetectionToggles
     bool silentAim = true;
     bool triggerbot = true;
     bool recoil = true;
-    bool mouseMismatch = true;
+    bool aimAssist = true;
     bool wallhack = true;
     bool dllInjection = true;
     bool invalidCvar = true;
@@ -36,7 +36,7 @@ struct DetectionToggles
 inline constexpr bool DetectionToggles::* DetectionToggleTable[] = {
     &DetectionToggles::aimbot,     &DetectionToggles::aimlock,       &DetectionToggles::antiAim,
     &DetectionToggles::silentAim,  &DetectionToggles::triggerbot,    &DetectionToggles::recoil,
-    &DetectionToggles::mouseMismatch, &DetectionToggles::wallhack,   &DetectionToggles::dllInjection,
+    &DetectionToggles::aimAssist, &DetectionToggles::wallhack,   &DetectionToggles::dllInjection,
     &DetectionToggles::invalidCvar, &DetectionToggles::namechanger,
 };
 static_assert(std::size(DetectionToggleTable) == static_cast<size_t>(DetectionKind::Count));

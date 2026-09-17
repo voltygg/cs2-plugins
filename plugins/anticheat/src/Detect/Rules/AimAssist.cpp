@@ -1,4 +1,4 @@
-#include "Detect/Rules/MouseMismatch.hpp"
+#include "Detect/Rules/AimAssist.hpp"
 
 #include "Detect/Geometry.hpp"
 
@@ -25,7 +25,7 @@ static constexpr float ConvergedDeg = 3.0f;
 static constexpr float ConvergenceShare = 0.5f;
 static constexpr float MinimumDistance = 100.0f;
 
-void MouseMismatch::Axis::Learn(float ratio)
+void AimAssist::Axis::Learn(float ratio)
 {
     Ratios.push_back(ratio);
     while (Ratios.size() > RatioHistorySize)
@@ -55,19 +55,19 @@ void MouseMismatch::Axis::Learn(float ratio)
     }
 }
 
-void MouseMismatch::Reset()
+void AimAssist::Reset()
 {
     _slots = {};
 }
 
-void MouseMismatch::OnSlotChanged(int slot)
+void AimAssist::OnSlotChanged(int slot)
 {
     if (!InSlotRange(slot))
         return;
     _slots[slot] = {};
 }
 
-std::optional<float> MouseMismatch::NearestOpponentError(int slot, int32_t serverTick, const Vec3& eye,
+std::optional<float> AimAssist::NearestOpponentError(int slot, int32_t serverTick, const Vec3& eye,
                                                      const AimAngles& angles) const
 {
     // The frame for this tick is captured after the command, so the previous one is the newest.
@@ -89,7 +89,7 @@ std::optional<float> MouseMismatch::NearestOpponentError(int slot, int32_t serve
     return best;
 }
 
-std::optional<Finding> MouseMismatch::OnSimulated(int slot, const CmdSample& cmd, int32_t serverTick, bool recentlyTeleported,
+std::optional<Finding> AimAssist::OnSimulated(int slot, const CmdSample& cmd, int32_t serverTick, bool recentlyTeleported,
                                               double nowSec)
 {
     std::optional<Finding> out;
@@ -150,7 +150,7 @@ std::optional<Finding> MouseMismatch::OnSimulated(int slot, const CmdSample& cmd
         nowSec);
 }
 
-bool MouseMismatch::Calibrated(int slot) const
+bool AimAssist::Calibrated(int slot) const
 {
     return InSlotRange(slot) && _slots[slot].Yaw.Ready;
 }

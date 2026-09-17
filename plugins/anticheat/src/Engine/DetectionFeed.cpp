@@ -93,8 +93,8 @@ void DetectionFeed::OnCommand(int slot, const VoltMod::PlayerInput& cmd)
         d.Triggerbot.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
     if (d.RuleEnabled(d.Wallhack))
         d.Wallhack.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
-    if (d.RuleEnabled(d.Mouse))
-        d.Report(slot, d.Mouse.OnSimulated(slot, sample, serverTick, teleported, now));
+    if (d.RuleEnabled(d.AimAssist))
+        d.Report(slot, d.AimAssist.OnSimulated(slot, sample, serverTick, teleported, now));
     if (d.RuleEnabled(d.AntiAim))
         d.Report(slot, d.AntiAim.OnSimulated(slot, sample.CmdNum, serverTick, true, teleported, now));
 }

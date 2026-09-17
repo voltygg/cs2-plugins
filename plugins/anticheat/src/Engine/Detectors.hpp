@@ -5,7 +5,7 @@
 #include "Detect/Rules/Aimlock.hpp"
 #include "Detect/Rules/AntiAim.hpp"
 #include "Detect/Rules/InvalidCvar.hpp"
-#include "Detect/Rules/MouseMismatch.hpp"
+#include "Detect/Rules/AimAssist.hpp"
 #include "Detect/Rules/Namechanger.hpp"
 #include "Detect/Rules/Recoil.hpp"
 #include "Detect/Rules/SilentAim.hpp"
@@ -72,7 +72,7 @@ public:
     Rules::SilentAim SilentAim{Scores};
     Rules::Triggerbot Triggerbot{History, Scores};
     Rules::Recoil Recoil{Scores};
-    Rules::MouseMismatch Mouse{History, Scores};
+    Rules::AimAssist AimAssist{History, Scores};
     Rules::Wallhack Wallhack{History, Scores};
     Rules::Namechanger Namechanger{Scores};
     Rules::InvalidCvar InvalidCvars;
@@ -81,7 +81,7 @@ private:
     /** Every rule holding per-player state of its own; one that holds none is left out. */
     auto All()
     {
-        return std::tie(Scores, History, Aimbot, Aimlock, AntiAim, Triggerbot, Recoil, Mouse, Wallhack,
+        return std::tie(Scores, History, Aimbot, Aimlock, AntiAim, Triggerbot, Recoil, AimAssist, Wallhack,
                         Namechanger, InvalidCvars);
     }
 

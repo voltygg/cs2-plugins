@@ -68,7 +68,7 @@ static std::string InProgress(const Detectors& detectors, int slot)
     add(detectors.Aimlock.IsTracking(slot), "aimlock");
     add(detectors.Wallhack.IsTracking(slot), "wallhack");
     add(detectors.Recoil.InSpray(slot), "spray");
-    add(!detectors.Mouse.Calibrated(slot), "mouse-learning");
+    add(!detectors.AimAssist.Calibrated(slot), "calibrating");
     return OrDash(std::move(flags));
 }
 

@@ -24,7 +24,7 @@
       "silentAim": true,
       "triggerbot": true,
       "recoil": true,
-      "mouseMismatch": true,
+      "aimAssist": true,
       "wallhack": true,
       "dllInjection": true,
       "invalidCvar": true,

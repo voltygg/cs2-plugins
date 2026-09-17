@@ -12,13 +12,13 @@
 namespace Anticheat::Rules
 {
 
-class MouseMismatch
+class AimAssist
 {
 public:
     /** The settings toggle and catalog entry this rule reports under. */
-    static constexpr DetectionKind Kind = DetectionKind::MouseMismatch;
+    static constexpr DetectionKind Kind = DetectionKind::AimAssist;
 
-    MouseMismatch(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
+    AimAssist(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
     void OnSlotChanged(int slot);
