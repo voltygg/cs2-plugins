@@ -46,10 +46,10 @@ void DetectionFeed::Initialize()
             _lastTeleport[slot] = _rt.Clock.Time();
     });
 
-    _subscriptions.Add(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
-        if (_detectors.RuleEnabled(_detectors.AntiAim))
-            _detectors.AntiAim.OnSlotChanged(e.Slot);
-    }));
+    // Not gated by the rule toggle: a fresh pawn invalidates in-flight state whether or not the
+    // rule is reporting, so a mid-map re-enable must not wake up holding stale commands.
+    _subscriptions.Add(
+        events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { _detectors.AntiAim.OnSlotChanged(e.Slot); }));
     _subscriptions.Add(events.On<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
     _subscriptions.Add(events.On<VoltMod::BulletImpact>([this](const VoltMod::BulletImpact& e) { OnBulletImpact(e); }));
     // player_hurt carries the hitgroup SilentAim scores headshots from.
@@ -161,7 +161,7 @@ void DetectionFeed::OnFrame()
     std::array<bool, MaxSlots> viewers{};
     CollectPositions(players, aims, viewers);
     if (d.RuleEnabled(d.Wallhack))
-        _sight.Trace(players, aims, viewers, d.History);
+        _sight.StampVisibility(players, aims, viewers, d.History);
     d.History.CaptureFrame(serverTick, players);
 
     for (int slot = 0; slot < MaxSlots; ++slot)

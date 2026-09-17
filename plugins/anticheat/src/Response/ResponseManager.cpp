@@ -28,13 +28,6 @@ static std::string TrimReason(std::string_view reason)
     return std::string(reason.substr(0, std::min(reason.size(), MaxReasonLength)));
 }
 
-void ResponseManager::PruneThrottles()
-{
-    // Keyed by SteamID, so without this the map grows for the lifetime of the server. Punishments
-    // are deliberately not cleared here: surviving a map change is the point of keeping them.
-    _alertThrottle.Prune(VoltMod::Time::Now(), AlertThrottleSec);
-}
-
 Mode ResponseManager::CurrentMode() const
 {
     return ParseMode(_config.Get().anticheat.mode);
@@ -65,8 +58,7 @@ void ResponseManager::Handle(int slot, const Finding& finding)
               ConfidenceName(finding.Level), OutcomeName(decision.Outcome), finding.Evidence);
     _reporter.Report(slot, name, steamId, finding, decision.Outcome);
 
-    if (decision.SendAlert &&
-        _alertThrottle.TryAcquire({steamId, static_cast<int>(finding.Kind)}, VoltMod::Time::Now()))
+    if (decision.SendAlert)
     {
         if (auto* admin = AdminActions(_rt))
             admin->AlertAdmins(steamId, TokenName(finding.Kind), std::lround(finding.Suspicion * 100.0f));

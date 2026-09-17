@@ -23,8 +23,8 @@ public:
      * For every slot in @p viewers, trace the sight line to the opponent nearest its aim and record
      * the answer in that opponent's sample. @p aims are the viewers' current eye angles.
      */
-    void Trace(std::array<PositionSample, MaxSlots>& players, const std::array<AimAngles, MaxSlots>& aims,
-               const std::array<bool, MaxSlots>& viewers, const ShotHistory& teams) const;
+    void StampVisibility(std::array<PositionSample, MaxSlots>& players, const std::array<AimAngles, MaxSlots>& aims,
+                         const std::array<bool, MaxSlots>& viewers, const ShotHistory& teams) const;
 
     /** Whether @p viewer has line of sight to any body point of @p target right now. */
     std::optional<bool> CanSee(int viewer, int target) const;

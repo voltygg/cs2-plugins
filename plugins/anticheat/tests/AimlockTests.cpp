@@ -48,7 +48,6 @@ struct AimlockHarness
 
     explicit AimlockHarness(bool moving = true) : Moving(moving)
     {
-        Scores.Configure({});
         // Enough history for every lag hypothesis to have a frame to look back at.
         for (; Tick < 10; ++Tick)
             History.CaptureFrame(Tick, Frame(Tick));

@@ -44,7 +44,7 @@ static constexpr Vec3 BlatantImpact{100.0f, 100.0f, 0.0f};
 /** The rule and the score it feeds, since a finding now comes out of the score. */
 struct SilentAimHarness
 {
-    SilentAimHarness() { Scores.Configure({}); }
+    SilentAimHarness() = default;
 
     /** Points this rule has on the slot, in its own units, where twelve weighted points are one whole unit of suspicion, as of @p now. */
     float Points(double now = Now) const { return Scores.Value(Slot, DetectionKind::SilentAim, now) * 12.0f; }

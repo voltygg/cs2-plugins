@@ -20,7 +20,6 @@ using Anticheat::Rules::AntiAimTuning::InvalidAnglesWeight;
 using Anticheat::Rules::AntiAimTuning::InvalidPitch;
 using Anticheat::Rules::AntiAimTuning::InvalidRoll;
 using Anticheat::Rules::AntiAimTuning::MinimumAttackReturnAngle;
-using Anticheat::Rules::AntiAimTuning::PerWeight;
 
 namespace Anticheat::Rules
 {
@@ -56,7 +55,7 @@ void AntiAim::AddEvidence(int slot, SlotData& data, float weight, std::string_vi
     std::optional<Finding> finding = _suspicion.Add(
         slot,
         {.Kind = Kind,
-         .Points = weight * PerWeight,
+         .Points = weight,
          .HalfLifeSec = FadesOverSeconds,
          .Reason = std::format("Anti-aim: {}.", reason)},
         nowSec);

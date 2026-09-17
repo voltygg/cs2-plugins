@@ -29,7 +29,7 @@ static constexpr float Scale = -0.044f;
 
 struct AimAssistHarness
 {
-    AimAssistHarness() { Scores.Configure({}); }
+    AimAssistHarness() = default;
 
     /** Unexplained turns this rule has counted on the observer. */
     float Turns() const { return Scores.Value(Observer, DetectionKind::AimAssist, Now) * 6.0f; }

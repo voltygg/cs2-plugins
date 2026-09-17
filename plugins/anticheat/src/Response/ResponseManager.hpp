@@ -11,9 +11,9 @@ namespace Anticheat
 {
 
 /**
- * Rules already self-threshold, so this only decides how loudly to react. Bans go through
- * admin-system's Contracts::IAdminActions to keep persistence, kick and broadcast in one place;
- * when that plugin is absent the interface is simply missing and the ban is logged as skipped.
+ * Suspicion decides whether to speak; this only decides how loudly. Bans go through admin-system's
+ * Contracts::IAdminActions, so persistence, kick and broadcast stay in one place; when that plugin
+ * is absent the interface is missing and the ban is logged as skipped.
  */
 class ResponseManager
 {
@@ -25,25 +25,18 @@ public:
     /** Log, report, then apply the funnel decision. */
     void Handle(int slot, const Finding& finding);
 
-    /** Drop alert history for players nobody has heard from in a while. */
-    void PruneThrottles();
-
     Mode CurrentMode() const;
 
     /** What has already been done to @p steamId while the server has been up. */
     PunishmentLevel Issued(int64_t steamId) const { return _issued.Level(steamId); }
 
 private:
-    /** One admin alert per (steamId, detection) per window. */
-    static constexpr int64_t AlertThrottleSec = 30;
-
     bool IsWhitelisted(int64_t steamId) const;
 
     VoltMod::Runtime& _rt;
     ConfigManager& _config;
     DiscordReporter& _reporter;
     IssuedPunishments _issued;
-    VoltMod::PairThrottle<int64_t, int> _alertThrottle{AlertThrottleSec};
     /** Deferred kick per slot: a new one replaces whatever was pending, and unload cancels it. */
     VoltMod::PerSlot<VoltMod::Subscription> _pendingKick;
 };

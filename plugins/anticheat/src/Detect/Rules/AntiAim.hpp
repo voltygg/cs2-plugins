@@ -17,21 +17,19 @@ namespace Anticheat::Rules
 namespace AntiAimTuning
 {
 inline constexpr size_t CommandHistorySize = 96;
-/** Per-command weights are out of a hundred, so this puts them on the shared scale. */
-inline constexpr float PerWeight = 1.0f / 100.0f;
 /** A sustained spin or jitter is enough on its own, so it carries a whole unit of evidence. */
-inline constexpr float MotionWeight = 100.0f;
+inline constexpr float MotionWeight = 1.0f;
 
 // Per-command rules.
 inline constexpr float InvalidPitch = 89.01f;
 inline constexpr float InvalidRoll = 50.01f;
-inline constexpr float InvalidAnglesWeight = 2.0f;
-inline constexpr float InconsistentCommandWeight = 1.0f;
+inline constexpr float InvalidAnglesWeight = 0.02f;
+inline constexpr float InconsistentCommandWeight = 0.01f;
 /** Worth less than the other per-command rules: it used to be discounted by decaying faster. */
-inline constexpr float HistoryMismatchWeight = 0.4f;
+inline constexpr float HistoryMismatchWeight = 0.004f;
 inline constexpr float CommandYawMismatchAngle = 120.0f;
 inline constexpr int CommandMismatchSpacing = 4;
-inline constexpr float AttackReturnWeight = 5.0f;
+inline constexpr float AttackReturnWeight = 0.05f;
 inline constexpr float MinimumAttackReturnAngle = 30.0f;
 inline constexpr float AttackReturnSurroundingAngle = 10.0f;
 inline constexpr float AttackReturnRatio = 5.0f;
@@ -79,7 +77,6 @@ public:
 
     /** Resolves an attack-return that is still waiting for the command after the shot. */
     std::optional<Finding> OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec);
-
 
 private:
     struct Command

@@ -44,7 +44,6 @@ struct TriggerbotHarness
 
     TriggerbotHarness()
     {
-        Scores.Configure({});
         for (; Tick < 8; ++Tick)
             History.CaptureFrame(Tick, Frame());
     }

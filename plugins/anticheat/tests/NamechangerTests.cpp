@@ -15,7 +15,7 @@ static constexpr double Now = 100.0;
 /** The rule and the score it feeds, since a finding now comes out of the score. */
 struct NamechangerHarness
 {
-    NamechangerHarness() { Scores.Configure({}); }
+    NamechangerHarness() = default;
 
     Suspicion Scores;
     Namechanger Rule{Scores};

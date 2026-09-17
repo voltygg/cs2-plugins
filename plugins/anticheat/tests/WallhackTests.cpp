@@ -47,7 +47,6 @@ struct WallhackHarness
 
     WallhackHarness()
     {
-        Scores.Configure({});
         for (; Tick < 4; ++Tick)
             History.CaptureFrame(Tick, Frame());
     }

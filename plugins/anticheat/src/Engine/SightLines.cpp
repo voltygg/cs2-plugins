@@ -38,8 +38,9 @@ std::optional<bool> SightLines::Trace(const VoltMod::Pawn& viewer, const Vec3& e
     return false;
 }
 
-void SightLines::Trace(std::array<PositionSample, MaxSlots>& players, const std::array<AimAngles, MaxSlots>& aims,
-                       const std::array<bool, MaxSlots>& viewers, const ShotHistory& teams) const
+void SightLines::StampVisibility(std::array<PositionSample, MaxSlots>& players,
+                                 const std::array<AimAngles, MaxSlots>& aims,
+                                 const std::array<bool, MaxSlots>& viewers, const ShotHistory& teams) const
 {
     if (!Available())
         return;

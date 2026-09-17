@@ -19,7 +19,7 @@ static constexpr int CommandsPerShot = 6;
  */
 struct RecoilHarness
 {
-    RecoilHarness() { Scores.Configure({}); }
+    RecoilHarness() = default;
 
     /** Sprays this rule has marked on the slot. */
     float Marked() const { return Scores.Value(Slot, DetectionKind::Recoil, Now) * 3.0f; }

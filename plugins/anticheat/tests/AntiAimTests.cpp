@@ -16,7 +16,7 @@ static constexpr double Now = 100.0;
 /** The rule and the score it feeds, since a finding now comes out of the score. */
 struct AntiAimHarness
 {
-    AntiAimHarness() { Scores.Configure({}); }
+    AntiAimHarness() = default;
 
     /** Evidence points this rule has on the slot, as of @p now. */
     float Points(double now = Now) const { return Scores.Value(Slot, DetectionKind::AntiAim, now) * 100.0f; }

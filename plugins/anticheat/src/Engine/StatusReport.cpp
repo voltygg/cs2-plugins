@@ -2,10 +2,12 @@
 
 #include <VoltMod/Core/Json.hpp>
 #include <VoltMod/Core/Slot.hpp>
+#include <VoltMod/Core/Strings.hpp>
 #include <format>
 #include <map>
 #include <span>
 #include <string>
+#include <vector>
 
 namespace Anticheat
 {
@@ -57,35 +59,23 @@ static std::string OrDash(std::string text)
 /** Episodes and calibration in progress right now - state a score cannot show. */
 static std::string InProgress(const Detectors& detectors, int slot)
 {
-    std::string flags;
-    const auto add = [&flags](bool active, std::string_view name) {
-        if (!active)
-            return;
-        if (!flags.empty())
-            flags += ",";
-        flags += name;
-    };
-    add(detectors.Aimlock.IsTracking(slot), "aimlock");
-    add(detectors.Wallhack.IsTracking(slot), "wallhack");
-    add(detectors.Recoil.InSpray(slot), "spray");
-    add(!detectors.AimAssist.Calibrated(slot), "calibrating");
-    return OrDash(std::move(flags));
+    const auto name = [](bool active, std::string_view text) { return active ? std::string(text) : std::string(); };
+    return OrDash(VoltMod::Strings::JoinNonEmpty({name(detectors.Aimlock.IsTracking(slot), "aimlock"),
+                                                  name(detectors.Wallhack.IsTracking(slot), "wallhack"),
+                                                  name(detectors.Recoil.InSpray(slot), "spray"),
+                                                  name(!detectors.AimAssist.Calibrated(slot), "calibrating")},
+                                                 ","));
 }
 
 /** The cvars this player has already been reported for. */
 static std::string ReportedCvars(const Detectors& detectors, int slot)
 {
-    std::string names;
+    std::vector<std::string> names;
     const std::span<const CvarRule> rules = detectors.InvalidCvars.Rules().All();
     for (size_t index = 0; index < rules.size(); ++index)
-    {
-        if (!detectors.InvalidCvars.AlreadyReportedAt(slot, index))
-            continue;
-        if (!names.empty())
-            names += ",";
-        names += rules[index].name;
-    }
-    return OrDash(std::move(names));
+        if (detectors.InvalidCvars.AlreadyReportedAt(slot, index))
+            names.push_back(rules[index].name);
+    return OrDash(VoltMod::Strings::JoinNonEmpty(names, ","));
 }
 
 std::vector<std::string> StatusLines(const App& app, double nowSec)

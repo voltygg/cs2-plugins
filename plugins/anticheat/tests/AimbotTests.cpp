@@ -25,7 +25,6 @@ static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
 static Suspicion MakeScores()
 {
     Suspicion scores;
-    scores.Configure({});
     return scores;
 }
 

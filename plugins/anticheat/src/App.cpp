@@ -5,6 +5,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
+#include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Time.hpp>
 #include <string>
 #include <tuple>
@@ -60,12 +61,7 @@ void App::LoadDetectionData()
     const std::vector<std::string> rejected = Detection.InvalidCvars.LoadRules(data.cvarRules);
 
     if (!rejected.empty())
-    {
-        std::string names;
-        for (const std::string& name : rejected)
-            names += (names.empty() ? "" : ", ") + name;
-        Log::Warn("Ignoring duplicate cvar rule(s): {}.", names);
-    }
+        Log::Warn("Ignoring duplicate cvar rule(s): {}.", VoltMod::Strings::Join(rejected, ", "));
 
     Log::Info("Detection data: {} cvar rule(s), {} blacklisted event(s).", Detection.InvalidCvars.Rules().Size(),
               data.dllEventBlacklist.size());
@@ -74,7 +70,6 @@ void App::LoadDetectionData()
 void App::ResetInFlight()
 {
     std::apply([](auto&... modules) { (modules.Reset(), ...); }, Modules());
-    Response.PruneThrottles();
 }
 
 void App::ForgetEvidence()
