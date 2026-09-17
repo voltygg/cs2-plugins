@@ -205,7 +205,7 @@ std::vector<std::string> InvalidCvar::LoadRules(const std::vector<CvarRule>& rul
     return rejected;
 }
 
-std::optional<Finding> InvalidCvar::Observe(int slot, std::string_view name, std::string_view value,
+std::optional<CvarVerdict> InvalidCvar::Observe(int slot, std::string_view name, std::string_view value,
                                                  bool enforceCheatCvars)
 {
     const int index = _rules.IndexOf(name);
@@ -218,7 +218,7 @@ std::optional<Finding> InvalidCvar::Observe(int slot, std::string_view name, std
     return Apply(slot, at, _rules.Evaluate(_rules.All()[at], value, enforceCheatCvars));
 }
 
-std::optional<Finding> InvalidCvar::ObserveMissing(int slot, std::string_view name, std::string_view statusName,
+std::optional<CvarVerdict> InvalidCvar::ObserveMissing(int slot, std::string_view name, std::string_view statusName,
                                                         bool enforceCheatCvars)
 {
     const int index = _rules.IndexOf(name);
@@ -232,24 +232,22 @@ std::optional<Finding> InvalidCvar::ObserveMissing(int slot, std::string_view na
     return Apply(slot, at, _rules.EvaluateMissing(_rules.All()[at], statusName, enforceCheatCvars, consecutive));
 }
 
-std::optional<Finding> InvalidCvar::Apply(int slot, size_t index, const CvarVerdict& verdict)
+std::optional<CvarVerdict> InvalidCvar::Apply(int slot, size_t index, CvarVerdict verdict)
 {
-    std::optional<Finding> out;
     if (!verdict.Checked)
-        return out;
+        return std::nullopt;
 
     uint8_t& reported = _reported[At(slot, index)];
     if (!verdict.Invalid)
     {
         reported = 0;
-        return out;
+        return std::nullopt;
     }
     if (reported)
-        return out;
+        return std::nullopt;
 
     reported = 1;
-    out = Finding{.Kind = DetectionKind::InvalidCvar, .KickOnly = verdict.KickOnly, .Evidence = verdict.Reason};
-    return out;
+    return verdict;
 }
 
 bool InvalidCvar::AlreadyReported(int slot, std::string_view name) const

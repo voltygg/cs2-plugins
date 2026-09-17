@@ -82,6 +82,18 @@ double CvarPoll::NextDelaySec()
     return PollDelaySec(std::generate_canonical<double, 24>(_random));
 }
 
+void CvarPoll::ReportVerdict(int slot, const std::optional<Rules::CvarVerdict>& verdict)
+{
+    if (!verdict)
+        return;
+    _detectors.Report(slot, _detectors.Scores.Add(slot,
+                                                 {.Kind = Rules::InvalidCvar::Kind,
+                                                  .Points = 1.0f,
+                                                  .KickOnly = verdict->KickOnly,
+                                                  .Reason = verdict->Reason},
+                                                 VoltMod::Time::MonotonicSeconds()));
+}
+
 void CvarPoll::Poll(int slot, SlotState& state)
 {
     ReadUserInfo(slot);
@@ -112,7 +124,7 @@ void CvarPoll::ReadUserInfo(int slot)
         const std::string_view value = _rt.World.NetChannels.GetUserInfoCvar(slot, rule.name);
         if (value.empty())
             continue;
-        _detectors.Report(slot, _detectors.InvalidCvars.Observe(slot, rule.name, value, enforce));
+        ReportVerdict(slot, _detectors.InvalidCvars.Observe(slot, rule.name, value, enforce));
     }
 }
 
@@ -126,9 +138,9 @@ void CvarPoll::OnReply(int slot, VoltMod::ClientConVarStatus status, std::string
     // Both strings borrow the decoded message. The rule copies whatever becomes evidence.
     const bool enforce = _detectors.EnforceCheatCvars();
     InvalidCvar& rules = _detectors.InvalidCvars;
-    _detectors.Report(slot, status == VoltMod::ClientConVarStatus::Answered
-                              ? rules.Observe(slot, name, value, enforce)
-                              : rules.ObserveMissing(slot, name, VoltMod::Name(status), enforce));
+    ReportVerdict(slot, status == VoltMod::ClientConVarStatus::Answered
+                            ? rules.Observe(slot, name, value, enforce)
+                            : rules.ObserveMissing(slot, name, VoltMod::Name(status), enforce));
 }
 
 }  // namespace Anticheat

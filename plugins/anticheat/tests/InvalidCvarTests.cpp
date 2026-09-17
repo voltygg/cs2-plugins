@@ -9,8 +9,6 @@ using Anticheat::Rules::CvarRuleTable;
 using Anticheat::Rules::CvarsPerPoll;
 using Anticheat::CvarTier;
 using Anticheat::Rules::CvarVerdict;
-using Anticheat::DetectionKind;
-using Anticheat::Finding;
 using Anticheat::Rules::InvalidCvar;
 using Anticheat::Rules::MissingRepliesBeforeEvidence;
 using Anticheat::Rules::PollDelaySec;
@@ -171,9 +169,8 @@ TEST_CASE("Cheat cvar enforcement waits out the propagation grace after sv_cheat
 TEST_CASE("A cvar that stays invalid reports once")
 {
     InvalidCvar rules = MakeRules();
-    const std::optional<Finding> first = rules.Observe(Slot, "m_yaw", "0.5", Enforcing);
+    const std::optional<CvarVerdict> first = rules.Observe(Slot, "m_yaw", "0.5", Enforcing);
     REQUIRE(first.has_value());
-    CHECK(first->Kind == DetectionKind::InvalidCvar);
     CHECK(first->KickOnly);
     CHECK(rules.AlreadyReported(Slot, "m_yaw"));
 

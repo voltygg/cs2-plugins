@@ -119,18 +119,21 @@ public:
 
     const CvarRuleTable& Rules() const { return _rules; }
 
-    std::optional<Finding> Observe(int slot, std::string_view name, std::string_view value, bool enforceCheatCvars);
+    /** The verdict when this reading is newly worth reporting, and nothing while it is not.
+     *  The caller turns it into evidence, so this half stays free of the score. */
+    std::optional<CvarVerdict> Observe(int slot, std::string_view name, std::string_view value,
+                                       bool enforceCheatCvars);
 
     /** @copydoc CvarRuleTable::EvaluateMissing */
-    std::optional<Finding> ObserveMissing(int slot, std::string_view name, std::string_view statusName,
-                                          bool enforceCheatCvars);
+    std::optional<CvarVerdict> ObserveMissing(int slot, std::string_view name, std::string_view statusName,
+                                              bool enforceCheatCvars);
 
     bool AlreadyReported(int slot, std::string_view name) const;
     /** For callers already walking the table, which know the position. */
     bool AlreadyReportedAt(int slot, size_t index) const;
 
 private:
-    std::optional<Finding> Apply(int slot, size_t index, const CvarVerdict& verdict);
+    std::optional<CvarVerdict> Apply(int slot, size_t index, CvarVerdict verdict);
     size_t At(int slot, size_t index) const { return static_cast<size_t>(slot) * _rules.Size() + index; }
 
     CvarRuleTable _rules;

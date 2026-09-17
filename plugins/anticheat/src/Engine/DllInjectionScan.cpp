@@ -103,9 +103,14 @@ void DllInjectionScan::Scan(int slot, SlotState& state, double nowSec)
         evidence += name;
     }
 
-    _detectors.Report(slot, Finding{.Kind = DetectionKind::DllInjection,
-                                  .Evidence = std::format("{} blacklisted client event subscription{} found: {}.",
-                                                          matches.size(), matches.size() == 1 ? "" : "s", evidence)});
+    // A subscription no stock client makes is a confirmed fact, so it is a whole unit of evidence.
+    _detectors.Report(
+        slot, _detectors.Scores.Add(slot,
+                                    {.Kind = DetectionKind::DllInjection,
+                                     .Points = 1.0f,
+                                     .Reason = std::format("{} blacklisted client event subscription{} found: {}.",
+                                                           matches.size(), matches.size() == 1 ? "" : "s", evidence)},
+                                    VoltMod::Time::MonotonicSeconds()));
 }
 
 }  // namespace Anticheat

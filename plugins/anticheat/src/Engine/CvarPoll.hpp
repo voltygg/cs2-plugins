@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <random>
+#include <optional>
 #include <string_view>
 
 namespace Anticheat
@@ -39,6 +40,8 @@ private:
     void Poll(int slot, SlotState& state);
     void ReadUserInfo(int slot);
     void OnReply(int slot, VoltMod::ClientConVarStatus status, std::string_view name, std::string_view value);
+    /** Turn a newly invalid reading into evidence. A confirmed bad value is a whole unit of it. */
+    void ReportVerdict(int slot, const std::optional<Rules::CvarVerdict>& verdict);
     double NextDelaySec();
 
     Detectors& _detectors;
