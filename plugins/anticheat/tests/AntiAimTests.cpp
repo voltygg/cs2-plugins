@@ -5,7 +5,6 @@
 
 using Anticheat::Rules::AntiAim;
 using Anticheat::CmdSample;
-using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::Finding;
 using Anticheat::ShotView;
@@ -17,10 +16,10 @@ static constexpr double Now = 100.0;
 /** The rule and the score it feeds, since a finding now comes out of the score. */
 struct AntiAimHarness
 {
-    AntiAimHarness() { Scores.Configure(DefaultTuning()); }
+    AntiAimHarness() { Scores.Configure({}); }
 
     /** Evidence points this rule has on the slot, as of @p now. */
-    float Points(double now = Now) const { return Scores.Value(Slot, DetectionKind::AntiAim, now); }
+    float Points(double now = Now) const { return Scores.Value(Slot, DetectionKind::AntiAim, now) * 100.0f; }
 
     Suspicion Scores;
     AntiAim Rule{Scores};

@@ -9,6 +9,9 @@
 namespace Anticheat::Rules
 {
 
+/** Three tracking episodes are what this rule reports on alone. */
+static constexpr float PerEpisode = 1.0f / 3.0f;
+
 static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
 static constexpr int OffTargetTicks = static_cast<int>(TickRate * 0.5f);     // 32
 static constexpr float MinimumDistance = 200.0f;
@@ -328,7 +331,7 @@ void Aimlock::Count(int slot, SlotData& data, const Hypothesis& hypothesis, doub
     std::optional<Finding> finding = _suspicion.Add(
         slot,
         {.Kind = Kind,
-         .Points = 1.0f,
+         .Points = PerEpisode,
          .Reason = std::format("A tracking episode stayed on target for {}/{} samples while the target moved {:.1f} "
                                "of {:.1f} required degrees.",
                                hypothesis.OnTargetSamples, data.Current.Samples, hypothesis.MaxTargetDisplacement,

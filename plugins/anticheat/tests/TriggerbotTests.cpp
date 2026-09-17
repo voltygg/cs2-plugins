@@ -5,7 +5,6 @@
 #include <doctest/doctest.h>
 
 using Anticheat::AimAngles;
-using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::EstimateViewLag;
 using Anticheat::ViewLag;
@@ -40,12 +39,12 @@ struct TriggerbotHarness
     AimAngles Aim = Geometry::Bearing(Eye, {TargetX, 0.0f, Geometry::BodyHeights[1]});
     int Findings = 0;
 
-    /** Points this rule has on the observer, in its own units. */
-    float Points() const { return Scores.Value(Observer, DetectionKind::Triggerbot, Now); }
+    /** Points this rule has on the observer, in its own units, where eight weighted points are one whole unit of suspicion. */
+    float Points() const { return Scores.Value(Observer, DetectionKind::Triggerbot, Now) * 8.0f; }
 
     TriggerbotHarness()
     {
-        Scores.Configure(DefaultTuning());
+        Scores.Configure({});
         for (; Tick < 8; ++Tick)
             History.CaptureFrame(Tick, Frame());
     }

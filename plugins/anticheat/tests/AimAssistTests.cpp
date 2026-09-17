@@ -8,7 +8,6 @@
 using Anticheat::AimAngles;
 using Anticheat::ButtonTurnRight;
 using Anticheat::CmdSample;
-using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::MaxSlots;
 using Anticheat::Rules::AimAssist;
@@ -30,10 +29,10 @@ static constexpr float Scale = -0.044f;
 
 struct AimAssistHarness
 {
-    AimAssistHarness() { Scores.Configure(DefaultTuning()); }
+    AimAssistHarness() { Scores.Configure({}); }
 
     /** Unexplained turns this rule has counted on the observer. */
-    float Turns() const { return Scores.Value(Observer, DetectionKind::AimAssist, Now); }
+    float Turns() const { return Scores.Value(Observer, DetectionKind::AimAssist, Now) * 6.0f; }
 
     Suspicion Scores;
     ShotHistory History;

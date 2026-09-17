@@ -108,6 +108,7 @@ void DllInjectionScan::Scan(int slot, SlotState& state, double nowSec)
         slot, _detectors.Scores.Add(slot,
                                     {.Kind = DetectionKind::DllInjection,
                                      .Points = 1.0f,
+                                     .HalfLifeSec = FadesOverTheSession,
                                      .Reason = std::format("{} blacklisted client event subscription{} found: {}.",
                                                            matches.size(), matches.size() == 1 ? "" : "s", evidence)},
                                     VoltMod::Time::MonotonicSeconds()));

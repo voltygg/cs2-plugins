@@ -10,6 +10,9 @@
 namespace Anticheat::Rules
 {
 
+/** Four snap-hit incidents are what this rule reports on alone. */
+static constexpr float PerIncident = 1.0f / 4.0f;
+
 static constexpr int SnapWindowTicks = static_cast<int>(TickRate * 0.5f);  // 32
 static constexpr float MinimumDistance = 100.0f;
 
@@ -251,7 +254,7 @@ void Aimbot::Count(int slot, SlotData& data, int32_t incidentCommand, double now
     std::optional<Finding> finding = _suspicion.Add(
         slot,
         {.Kind = Kind,
-         .Points = 1.0f,
+         .Points = PerIncident,
          .Reason = snapReturn ? std::format("A snap-hit returned {:.2f} degrees to where it came from.", snap)
                               : std::format("A snap-hit moved {:.2f} degrees and closed the target error from "
                                             "{:.2f} to {:.2f} degrees.",

@@ -16,19 +16,33 @@ namespace Anticheat
 
 inline constexpr size_t DetectionKindCount = static_cast<size_t>(DetectionKind::Count);
 
-/** What one rule's points are worth and how long they last. */
-struct KindTuning
+/** How long evidence takes to lose half its weight. Rules say which one they mean. */
+inline constexpr float FadesOverMinutes = 600.0f;
+/** For evidence arriving at command rate, where the fade is a rate limit rather than a memory. */
+inline constexpr float FadesOverSeconds = 30.0f;
+/** For a confirmed fact about the client, which stays true for as long as they are connected. */
+inline constexpr float FadesOverTheSession = 3600.0f;
+
+/**
+ * One rule's evidence, already on the shared scale.
+ *
+ * Points is a share of one whole unit: 1.0 is a rule confident on its own, so a rule that reports
+ * after four incidents contributes a quarter each time. Keeping that division in the rule is what
+ * lets the score stay free of a per-rule table.
+ */
+struct Contribution
 {
-    bool Enabled = true;
-    /** Points of this kind alone that mean "confident": one whole unit of suspicion. */
-    float ConfidentAlone = 1.0f;
-    /** Seconds for a point to lose half its weight. 0 or less never decays, so a rule can report once and keep its weight. */
-    float HalfLifeSec = 600.0f;
+    DetectionKind Kind = DetectionKind::Aimbot;
+    float Points = 1.0f;
+    float HalfLifeSec = FadesOverMinutes;
+    bool KickOnly = false;
+    /** One clause naming what happened; Suspicion appends the running total. */
+    std::string Reason;
 };
 
-struct SuspicionTuning
+/** Where the response ladder steps, and when a step may speak again. */
+struct SuspicionBands
 {
-    std::array<KindTuning, DetectionKindCount> Kinds{};
     float Suspect = 1.0f;
     float Likely = 2.0f;
     float Certain = 3.0f;
@@ -36,50 +50,34 @@ struct SuspicionTuning
     float ReportAgainBelow = 0.75f;
 };
 
-/** One rule's evidence. Points are in that rule's own units; Suspicion normalizes them. */
-struct Contribution
-{
-    DetectionKind Kind = DetectionKind::Aimbot;
-    float Points = 1.0f;
-    bool KickOnly = false;
-    /** One clause naming what happened; Suspicion appends the running total. */
-    std::string Reason;
-};
-
-/**
- * The compiled calibration: each rule's ConfidentAlone is the evidence it reports at on its own,
- * so one rule reaching its own threshold is exactly 1.0 suspicion and today's sensitivity stands.
- */
-SuspicionTuning DefaultTuning();
-
 /**
  * One decaying score per player and rule, and the single place that decides whether the evidence
  * so far is worth reporting.
  *
- * Suspicion is the sum of each rule's score over its own ConfidentAlone, so 1.0 means "one rule is
- * confident on its own, or several are most of the way there". That fusion is the point: rules
- * that each stay under their own threshold still add up.
+ * Suspicion is the sum of every rule's score, so 1.0 means "one rule is confident on its own, or
+ * several are most of the way there". That fusion is the point: rules that each stay under their
+ * own threshold still add up.
  *
  * Reporting is banded and each band fires once. Nothing is ever cleared on report, so a detection
  * cannot hand a cheat a clean slate; a band speaks again only after the score decays back below
- * @ref SuspicionTuning::ReportAgainBelow of that band.
+ * @ref SuspicionBands::ReportAgainBelow of that band.
  */
 class Suspicion
 {
 public:
-    /** Replaces the tuning, clamping unusable values, and names the keys it had to fall back on. */
-    std::vector<std::string_view> Configure(const SuspicionTuning& tuning);
+    /** Replaces the bands, clamping unusable values, and names the keys it had to fall back on. */
+    std::vector<std::string_view> Configure(const SuspicionBands& bands);
 
     /** Record @p contribution; returns a Finding when it crossed a band not yet reported. */
     std::optional<Finding> Add(int slot, const Contribution& contribution, double nowSec);
 
-    /** This rule's decayed points, in the rule's own units. */
+    /** This rule's decayed share of one whole unit. */
     float Value(int slot, DetectionKind kind, double nowSec) const;
 
-    /** Sum over rules of Value/ConfidentAlone - the whole player. The fusion point. */
+    /** Sum over rules - the whole player. The fusion point. */
     float Total(int slot, double nowSec) const;
 
-    /** The rule carrying the most normalized weight, for naming a fused finding. */
+    /** The rule carrying the most weight, for naming a fused finding. */
     DetectionKind TopContributor(int slot, double nowSec) const;
 
     /** "aimbot 0.75, wallhack 0.83" - every rule with weight to speak of. */
@@ -93,7 +91,6 @@ private:
     /** The band @p total falls in, or nothing while it is below Suspect. */
     std::optional<Confidence> BandOf(float total) const;
     float Threshold(Confidence level) const;
-    float Normalized(int slot, DetectionKind kind, double nowSec) const;
 
     struct SlotState
     {
@@ -103,7 +100,7 @@ private:
     };
 
     std::array<SlotState, MaxSlots> _slots{};
-    SuspicionTuning _tuning;
+    SuspicionBands _bands;
 };
 
 }  // namespace Anticheat

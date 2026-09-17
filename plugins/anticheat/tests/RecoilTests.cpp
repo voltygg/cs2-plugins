@@ -4,7 +4,6 @@
 
 using Anticheat::AimAngles;
 using Anticheat::CmdSample;
-using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::Rules::Recoil;
 using Anticheat::ShotView;
@@ -20,10 +19,10 @@ static constexpr int CommandsPerShot = 6;
  */
 struct RecoilHarness
 {
-    RecoilHarness() { Scores.Configure(DefaultTuning()); }
+    RecoilHarness() { Scores.Configure({}); }
 
     /** Sprays this rule has marked on the slot. */
-    float Marked() const { return Scores.Value(Slot, DetectionKind::Recoil, Now); }
+    float Marked() const { return Scores.Value(Slot, DetectionKind::Recoil, Now) * 3.0f; }
 
     Suspicion Scores;
     Recoil Rule{Scores};

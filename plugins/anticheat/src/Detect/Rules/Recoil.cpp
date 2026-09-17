@@ -10,6 +10,9 @@
 namespace Anticheat::Rules
 {
 
+/** Three sprays that cancel their recoil are what this rule reports on alone. */
+static constexpr float PerSpray = 1.0f / 3.0f;
+
 /** A 30-shot rifle spray spans about 190 ticks, and every shot needs the command after it. */
 static constexpr int MaxShotGapTicks = 16;
 static constexpr size_t MinSprayShots = 8;
@@ -161,7 +164,7 @@ std::optional<Finding> Recoil::Finalize(int slot, SlotData& data, double nowSec)
     return _suspicion.Add(
         slot,
         {.Kind = Kind,
-         .Points = 1.0f,
+         .Points = PerSpray,
          .Reason = std::format("A spray of {} shots of {} followed {:.1f} degrees of punch with factor {:.2f} and "
                                "{:.2f} degrees of residual.",
                                shots, weapon, best.PunchTravelDeg, best.Slope, best.ResidualDeg)},

@@ -89,6 +89,7 @@ void CvarPoll::ReportVerdict(int slot, const std::optional<Rules::CvarVerdict>& 
     _detectors.Report(slot, _detectors.Scores.Add(slot,
                                                  {.Kind = Rules::InvalidCvar::Kind,
                                                   .Points = 1.0f,
+                                                  .HalfLifeSec = FadesOverTheSession,
                                                   .KickOnly = verdict->KickOnly,
                                                   .Reason = verdict->Reason},
                                                  VoltMod::Time::MonotonicSeconds()));

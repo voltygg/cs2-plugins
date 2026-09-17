@@ -6,7 +6,6 @@
 using Anticheat::AimAngles;
 using Anticheat::Rules::Aimbot;
 using Anticheat::CmdSample;
-using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::Finding;
 using Anticheat::MaxSlots;
@@ -26,14 +25,14 @@ static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
 static Suspicion MakeScores()
 {
     Suspicion scores;
-    scores.Configure(DefaultTuning());
+    scores.Configure({});
     return scores;
 }
 
 /** Snap-hit incidents counted against the attacker, in this rule's own units. */
 static float Incidents(const Suspicion& scores, double now = Now)
 {
-    return scores.Value(Attacker, DetectionKind::Aimbot, now);
+    return scores.Value(Attacker, DetectionKind::Aimbot, now) * 4.0f;
 }
 
 static std::array<PositionSample, MaxSlots> Frame(float victimX = 500.0f, bool teleported = false)

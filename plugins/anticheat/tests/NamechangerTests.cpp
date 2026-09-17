@@ -3,7 +3,6 @@
 #include <doctest/doctest.h>
 #include <format>
 
-using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::Finding;
 using Anticheat::MaxSlots;
@@ -16,7 +15,7 @@ static constexpr double Now = 100.0;
 /** The rule and the score it feeds, since a finding now comes out of the score. */
 struct NamechangerHarness
 {
-    NamechangerHarness() { Scores.Configure(DefaultTuning()); }
+    NamechangerHarness() { Scores.Configure({}); }
 
     Suspicion Scores;
     Namechanger Rule{Scores};

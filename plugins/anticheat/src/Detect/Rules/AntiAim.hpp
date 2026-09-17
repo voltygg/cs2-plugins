@@ -17,6 +17,8 @@ namespace Anticheat::Rules
 namespace AntiAimTuning
 {
 inline constexpr size_t CommandHistorySize = 96;
+/** Per-command weights are out of a hundred, so this puts them on the shared scale. */
+inline constexpr float PerWeight = 1.0f / 100.0f;
 /** A sustained spin or jitter is enough on its own, so it carries a whole unit of evidence. */
 inline constexpr float MotionWeight = 100.0f;
 

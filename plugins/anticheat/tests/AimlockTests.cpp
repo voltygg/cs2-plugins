@@ -7,7 +7,6 @@
 #include <limits>
 
 using Anticheat::AimAngles;
-using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::Rules::Aimlock;
 using Anticheat::EstimateViewLag;
@@ -45,11 +44,11 @@ struct AimlockHarness
     int32_t FirstFinding = -1;
 
     /** Tracking episodes counted against the observer. */
-    float Episodes() const { return Scores.Value(Observer, DetectionKind::Aimlock, Now); }
+    float Episodes() const { return Scores.Value(Observer, DetectionKind::Aimlock, Now) * 3.0f; }
 
     explicit AimlockHarness(bool moving = true) : Moving(moving)
     {
-        Scores.Configure(DefaultTuning());
+        Scores.Configure({});
         // Enough history for every lag hypothesis to have a frame to look back at.
         for (; Tick < 10; ++Tick)
             History.CaptureFrame(Tick, Frame(Tick));

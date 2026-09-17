@@ -11,6 +11,9 @@
 namespace Anticheat::Rules
 {
 
+/** Six weighted points are what this rule reports on alone. */
+static constexpr float PerPoint = 1.0f / 6.0f;
+
 static constexpr float MinimumDistance = 150.0f;
 /** Through a wall the aim only has to stay near the enemy, not on it. */
 static constexpr float ToleranceMinDeg = 3.0f;
@@ -91,7 +94,8 @@ void Wallhack::CloseTrack(SlotData& data, int32_t serverTick, bool becameVisible
 std::optional<Finding> Wallhack::Report(int slot, int points, std::string reason, double nowSec)
 {
     return _suspicion.Add(
-        slot, {.Kind = Kind, .Points = static_cast<float>(points), .Reason = std::move(reason)}, nowSec);
+        slot, {.Kind = Kind, .Points = static_cast<float>(points) * PerPoint, .Reason = std::move(reason)},
+        nowSec);
 }
 
 float Wallhack::Speed(int slot, int32_t serverTick) const

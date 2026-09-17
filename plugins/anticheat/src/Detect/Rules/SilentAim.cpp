@@ -10,6 +10,9 @@
 namespace Anticheat::Rules
 {
 
+/** Twelve weighted points are what this rule reports on alone. */
+static constexpr float PerPoint = 1.0f / 12.0f;
+
 static constexpr float MinimumImpactDistance = 100.0f;
 static constexpr float MaximumImpactDistance = 10000.0f;
 
@@ -55,7 +58,7 @@ std::optional<Finding> SilentAim::Finalize(int slot, ShotView& shot, double nowS
 
     return _suspicion.Add(slot,
                           {.Kind = Kind,
-                           .Points = static_cast<float>(points),
+                           .Points = static_cast<float>(points) * PerPoint,
                            .Reason = std::format("{:.2f} degrees from visible aim with {} added {} points.",
                                                  shot.SilentMaxDeviation, shot.Weapon, points)},
                           nowSec);

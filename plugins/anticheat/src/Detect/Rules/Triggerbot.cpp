@@ -9,6 +9,9 @@
 namespace Anticheat::Rules
 {
 
+/** Eight weighted points are what this rule reports on alone. */
+static constexpr float PerPoint = 1.0f / 8.0f;
+
 static constexpr size_t AimHistorySize = 48;
 /** The hull is a box, so a crosshair a little outside its inscribed angle still rests on it. */
 static constexpr float HullTolerance = 1.25f;
@@ -188,7 +191,7 @@ std::optional<Finding> Triggerbot::OnPlayerHurt(int slot, const ShotView& shot, 
     return _suspicion.Add(
         slot,
         {.Kind = Kind,
-         .Points = static_cast<float>(points),
+         .Points = static_cast<float>(points) * PerPoint,
          .Reason = std::format("A hit landed {} ticks (~{} ms) after the target walked into a resting crosshair.",
                                reaction, static_cast<int>(reaction * 1000.0f / TickRate))},
         nowSec);

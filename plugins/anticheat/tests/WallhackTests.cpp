@@ -6,7 +6,6 @@
 #include <optional>
 
 using Anticheat::AimAngles;
-using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::EstimateViewLag;
 using Anticheat::ViewLag;
@@ -43,12 +42,12 @@ struct WallhackHarness
     bool Known = true;
     int Findings = 0;
 
-    /** Points this rule has on the observer, in its own units. */
-    float Points() const { return Scores.Value(Observer, DetectionKind::Wallhack, Now); }
+    /** Points this rule has on the observer, in its own units, where six weighted points are one whole unit of suspicion. */
+    float Points() const { return Scores.Value(Observer, DetectionKind::Wallhack, Now) * 6.0f; }
 
     WallhackHarness()
     {
-        Scores.Configure(DefaultTuning());
+        Scores.Configure({});
         for (; Tick < 4; ++Tick)
             History.CaptureFrame(Tick, Frame());
     }

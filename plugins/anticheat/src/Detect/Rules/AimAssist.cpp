@@ -10,6 +10,9 @@
 namespace Anticheat::Rules
 {
 
+/** Six unexplained turns are what this rule reports on alone. */
+static constexpr float PerTurn = 1.0f / 6.0f;
+
 static constexpr size_t RatioHistorySize = 32;
 static constexpr size_t RatiosToCalibrate = 16;
 /** Counts and degrees below these carry too much rounding to teach a scale from. */
@@ -142,7 +145,7 @@ std::optional<Finding> AimAssist::OnSimulated(int slot, const CmdSample& cmd, in
     return _suspicion.Add(
         slot,
         {.Kind = Kind,
-         .Points = 1.0f,
+         .Points = PerTurn,
          .Reason = std::format("A turn the mouse could not explain landed on an enemy: {:.2f} degrees on {}/{} "
                                "counts (scale {:.4f} deg/count), closing the aim from {:.2f} to {:.2f} degrees.",
                                std::hypot(yawTurn, pitchTurn), cmd.MouseDx, cmd.MouseDy, data.Yaw.Scale, *before,

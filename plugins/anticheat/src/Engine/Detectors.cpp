@@ -15,7 +15,7 @@ using Rules::SvCheatsPropagationGraceSec;
 
 void Detectors::Initialize()
 {
-    Scores.Configure(DefaultTuning());
+    Scores.Configure({});
 
     _cheatGraceUntil = Time::MonotonicSeconds() + SvCheatsPropagationGraceSec;
 
