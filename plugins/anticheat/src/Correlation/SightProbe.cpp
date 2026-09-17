@@ -19,7 +19,7 @@ static Vector ToVector(const Vec3& v)
 
 VoltMod::Status SightProbe::Available() const
 {
-    return _rt.Hooks.Trace.Available();
+    return _rt.World.Trace.Available();
 }
 
 std::optional<bool> SightProbe::Trace(const VoltMod::Pawn& viewer, const Vec3& eye, const VoltMod::Pawn& target,
@@ -29,7 +29,7 @@ std::optional<bool> SightProbe::Trace(const VoltMod::Pawn& viewer, const Vec3& e
     for (float height : Geometry::BodyHeights)
     {
         const auto clear =
-            _rt.Hooks.Trace.Clear(ToVector(eye), ToVector({feet.X, feet.Y, feet.Z + height}), options);
+            _rt.World.Trace.Clear(ToVector(eye), ToVector({feet.X, feet.Y, feet.Z + height}), options);
         if (!clear)
             return std::nullopt;
         if (*clear)
