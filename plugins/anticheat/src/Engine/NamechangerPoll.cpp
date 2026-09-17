@@ -1,6 +1,5 @@
 #include "Engine/NamechangerPoll.hpp"
 
-
 #include <VoltMod/Core/Slot.hpp>
 #include <VoltMod/Core/Time.hpp>
 #include <string_view>

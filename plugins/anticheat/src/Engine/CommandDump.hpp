@@ -8,10 +8,8 @@ namespace Anticheat
 {
 
 /**
- * Logs raw usercmds for one slot on demand (`anticheat_dumpcmd`).
- *
- * A debugging aid with no part in detection, so it owns its own movement hook and console command
- * rather than sharing the detection wiring.
+ * Logs raw usercmds for one slot on demand (`anticheat_dumpcmd`). No part in detection, so it
+ * owns its own movement hook and console command rather than sharing the detection wiring.
  */
 class CommandDump
 {

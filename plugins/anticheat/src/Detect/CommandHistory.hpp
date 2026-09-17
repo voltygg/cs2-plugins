@@ -15,11 +15,9 @@ concept HasCommandNumber = requires(const T& entry) {
 };
 
 /**
- * One slot's recent commands, oldest first, at most @p Limit of them.
- *
- * A client may replay a command number, so only one entry per number is kept: the first to arrive
- * wins and later copies are dropped. Every lookup therefore has a single answer, and searching
- * from the newest end finds it soonest.
+ * One slot's recent commands, oldest first, at most @p Limit of them. A client may replay a
+ * command number, so the first entry per number wins and later copies are dropped; every lookup
+ * therefore has a single answer.
  */
 template <HasCommandNumber T, size_t Limit>
 class CommandHistory

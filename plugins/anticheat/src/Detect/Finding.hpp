@@ -26,9 +26,7 @@ enum class DetectionKind
 
 /**
  * How strong the accumulated evidence is, and so the strongest response the policy may take.
- *
- * Bands are read off the fused suspicion total, not off one rule, so several rules that are each
- * most of the way to their own threshold can still raise one together.
+ * Read off the fused total rather than one rule, so partial rules can raise a band together.
  */
 enum class Confidence
 {
@@ -105,12 +103,9 @@ constexpr std::string_view TokenName(DetectionKind kind)
 }
 
 /**
- * A reportable detection. Rules contribute weighted points and @ref Suspicion decides whether the
- * total is worth reporting, so the response funnel only decides how loudly to react.
- *
- * Kind names the rule that just fired, even when the band was reached by several rules together;
- * Evidence names the rest. KickOnly caps the response at a kick even in ban mode, for rules whose
- * false-positive cost must stay recoverable.
+ * A reportable detection. Kind names the rule that just fired even when several reached the band
+ * together, and Evidence names the rest. KickOnly caps the response at a kick even in ban mode,
+ * for rules whose false-positive cost must stay recoverable.
  */
 struct Finding
 {

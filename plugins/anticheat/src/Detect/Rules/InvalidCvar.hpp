@@ -21,15 +21,11 @@ inline constexpr double SvCheatsPropagationGraceSec = 30.0;
 inline constexpr float PollIntervalMinSec = 1.0f;
 inline constexpr float PollIntervalMaxSec = 5.0f;
 
-/**
- * Cvars per poll. Rotation stays below the framework's per-slot pending cap.
- */
+/** Cvars per poll; the rotation stays below the framework's per-slot pending cap. */
 inline constexpr size_t CvarsPerPoll = 4;
 
-/**
- * Refusals required before a cheat-protected cvar becomes evidence. This avoids
- * treating a renamed or removed cvar as a client fault.
- */
+/** Refusals before a cheat-protected cvar becomes evidence, so a renamed or removed cvar is not
+ *  read as a client fault. */
 inline constexpr int MissingRepliesBeforeEvidence = 3;
 
 /** Delay until a slot's next poll, for a uniform @p unit in [0, 1]. */
@@ -47,10 +43,8 @@ struct CvarVerdict
     std::string Reason;
 };
 
-/**
- * Loaded rules and stateless evaluation. An empty table judges nothing. Queried rules
- * precede userinfo rules so each tier can be exposed as a span.
- */
+/** Loaded rules and stateless evaluation; queried rules precede userinfo ones so each tier is a
+ *  span. An empty table judges nothing. */
 class CvarRuleTable
 {
 public:
@@ -74,12 +68,9 @@ public:
     CvarVerdict Evaluate(std::string_view name, std::string_view value, bool enforceCheatCvars) const;
 
     /**
-     * Evaluate a reply that refused to return a value. @p consecutiveReplies
-     * includes the current refusal.
-     *
-     * Silence is never judged. Refusals are evidence only for cheat-protected rules after
-     * @ref MissingRepliesBeforeEvidence consecutive replies, and only for a kick. The rule table
-     * contains names supplied by the game, so a refusal differs from an unanswered query.
+     * A reply that refused to return a value; @p consecutiveReplies includes this one. Silence is
+     * never judged, and a refusal is evidence only for a cheat-protected rule after
+     * @ref MissingRepliesBeforeEvidence replies, and only for a kick.
      */
     CvarVerdict EvaluateMissing(std::string_view name, std::string_view statusName, bool enforceCheatCvars,
                                 int consecutiveReplies) const;

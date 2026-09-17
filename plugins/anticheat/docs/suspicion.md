@@ -18,21 +18,16 @@ That division lives in the rule, next to the constant it divides by:
 static constexpr float PerIncident = 1.0f / 4.0f;
 ```
 
-Keeping it there is what lets the score stay free of a per-detector table, and
-what makes the number readable where it is earned rather than in a list
-somewhere else.
+Keeping it there is what lets the score stay free of a per-detector table.
 
 The point of one scale is that partial evidence adds up. Three quarters of
 `aimbot` plus a third of `wallhack` is more than one unit, and neither detector
-would ever have spoken alone. Under the old design each detector counted by
-itself, so a player two thirds of the way along four different detectors
-produced nothing at all.
+would ever have spoken alone.
 
 ## Fading, not expiring
 
-Evidence fades on a half-life. A window with a hard edge meant an incident
-counted fully at nine minutes and not at all at eleven; a half-life means it
-simply matters less as it ages.
+Evidence fades on a half-life rather than falling off a window edge, so an
+incident simply matters less as it ages.
 
 | Half-life | Used by | Why |
 | --- | --- | --- |
@@ -42,11 +37,8 @@ simply matters less as it ages.
 
 ## Reporting never clears the score
 
-A detection used to zero the counter that produced it, which handed a cheat a
-clean ten minutes before the same detector could speak again. Now the evidence
-stays and the response escalates instead.
-
-Each band reports once. It speaks again only after the score decays back below
+A detection never clears the evidence that produced it; the response escalates
+instead. Each band reports once. It speaks again only after the score decays back below
 three quarters of that band, so a player sitting at a threshold does not become
 a stream of alerts. The band a player has reached is remembered across a
 reconnect, so returning does not re-report what it already did.

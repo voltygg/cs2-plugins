@@ -37,7 +37,6 @@ public:
     /** Nudge so an evaluation waiting on a later command cannot hang forever. */
     std::optional<Finding> OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec);
 
-
 private:
     struct AimCommand
     {

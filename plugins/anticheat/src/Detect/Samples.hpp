@@ -24,10 +24,8 @@ inline constexpr uint64_t SlotBit(int slot)
     return InSlotRange(slot) ? uint64_t{1} << slot : 0;
 }
 
-/**
- * Fixed CS2 simulation rate. CS2 exposes no variable tickrate or interval field;
- * tick-derived thresholds depend on this value.
- */
+/** Fixed CS2 simulation rate: no variable tickrate or interval field is exposed, and every
+ *  tick-derived threshold depends on this. */
 inline constexpr float TickRate = 64.0f;
 
 /** Time::MonotonicSeconds() drives the rolling evidence windows: real elapsed time, not game
@@ -58,10 +56,7 @@ inline constexpr uint64_t ButtonAttack = 0x1;
 inline constexpr uint64_t ButtonTurnLeft = 0x80;
 inline constexpr uint64_t ButtonTurnRight = 0x100;
 
-/**
- * One decoded usercmd. Aimbot requires adjacent command numbers and client ticks.
- * ServerTick remains -1 until simulation stamps the command.
- */
+/** One decoded usercmd. ServerTick stays -1 until simulation stamps the command. */
 struct CmdSample
 {
     int32_t CmdNum = 0;

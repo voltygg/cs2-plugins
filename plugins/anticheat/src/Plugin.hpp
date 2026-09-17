@@ -5,11 +5,8 @@
 #include <VoltMod/Api.hpp>
 #include <optional>
 
-/**
- * Anticheat plugin entry point. VoltMod::MetamodPlugin owns the Metamod lifecycle, standard
- * hooks and player tracking; this class adds the metadata and owns the plugin's object graph
- * for one load cycle.
- */
+/** Entry point: metadata, and the object graph for one load cycle. The base owns the Metamod
+ *  lifecycle, standard hooks and player tracking. */
 class AnticheatPlugin final : public VoltMod::MetamodPlugin
 {
 protected:

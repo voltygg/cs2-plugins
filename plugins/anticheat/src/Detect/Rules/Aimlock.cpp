@@ -77,11 +77,9 @@ struct Candidate
 };
 
 /**
- * The single target the aim is already inside; two candidates means no episode.
- *
- * This runs for every alive player on every frame they are not already tracking, so the search is
- * ordered to reject early: the observer once, then each target slot once, and only then the lag
- * hypotheses and body points that need a full evaluation.
+ * The single target the aim is already inside; two candidates means no episode. Runs per alive
+ * player per frame, so the search rejects early: the observer once, each target slot once, then
+ * the lag hypotheses and body points that need a full evaluation.
  */
 static Candidate FindCandidate(const ShotHistory& shots, const AimAngles& angles, const Vec3& eyePos,
                                int32_t serverTick, const PositionFrame& frame, int observerSlot, const ViewLag& lag)

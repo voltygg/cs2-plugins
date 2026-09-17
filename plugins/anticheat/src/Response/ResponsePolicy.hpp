@@ -95,10 +95,8 @@ constexpr std::string_view OutcomeName(ResponseOutcome outcome)
 }
 
 /**
- * How far the evidence lets the server go, whatever the configured mode.
- *
- * Suspicion reaches Certain only when one rule is confident on its own, so evidence fused from
- * several partial rules can raise an alert but can never get somebody punished by itself.
+ * How far the evidence lets the server go, whatever the configured mode. Certain needs one rule
+ * confident on its own, so fused evidence can alert but never punish by itself.
  */
 constexpr Mode CapByConfidence(Mode mode, Confidence level)
 {
@@ -156,11 +154,8 @@ constexpr ResponseDecision Decide(const ResponseInput& input)
 }
 
 /**
- * The highest punishment each player has already received; it never goes back down.
- *
- * Keyed by SteamID rather than slot, so reconnecting or sitting out a map change does not hand a
- * kicked player a clean slate. Only players who were kicked or banned are held, so it grows with
- * punishments issued rather than with players seen.
+ * The highest punishment each player has received; it never goes back down. Keyed by SteamID, so
+ * reconnecting or sitting out a map change does not clear it, and only the punished are held.
  */
 class IssuedPunishments
 {

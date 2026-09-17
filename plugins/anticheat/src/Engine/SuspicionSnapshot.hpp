@@ -11,11 +11,9 @@ namespace Anticheat
 {
 
 /**
- * Holds a player's suspicion between their sessions, keyed by SteamID.
- *
- * Without it, evidence lives only as long as a slot, so reconnecting hands a cheat a clean slate.
- * Entries are dropped once they decay to nothing, so this grows with players still under suspicion
- * rather than with every player the server has ever seen.
+ * Holds a player's suspicion between sessions, keyed by SteamID, so reconnecting does not hand a
+ * cheat a clean slate. Entries decayed to nothing are dropped, so this grows with players still
+ * under suspicion rather than with everyone the server has seen.
  */
 class SuspicionSnapshot
 {

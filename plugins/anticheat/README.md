@@ -37,7 +37,7 @@ contributes is compiled in, beside the rule that earns it.
 | --- | --- | --- |
 | `aimbot` | Aim snapping onto the player damaged by that command | 4 snap-hit incidents |
 | `aimlock` | Aim held inside a moving target's angular width | 3 tracking episodes |
-| `antiaim` | Impossible angles, fabricated fire angles, spin, and jitter | 100 weight; spin and jitter reach it alone |
+| `antiaim` | Impossible angles, fabricated fire angles, spin, and jitter | Accumulated command weight; spin and jitter reach it alone |
 | `silentaim` | Impacts far from the visible aim direction | 12 weighted points |
 | `triggerbot` | Hits within 47-94 ms of an enemy walking into a resting crosshair | 8 weighted points |
 | `recoil` | Sprays whose view cancels the actual recoil punch | 3 marked sprays |

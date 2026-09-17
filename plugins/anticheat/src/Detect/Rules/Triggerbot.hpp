@@ -36,7 +36,6 @@ public:
     /** A shot that hurt someone, judged while the crosshair runs still describe the tick it fired. */
     std::optional<Finding> OnPlayerHurt(int slot, const ShotView& shot, double nowSec);
 
-
 private:
     struct AimSample
     {

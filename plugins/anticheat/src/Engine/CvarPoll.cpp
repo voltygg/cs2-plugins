@@ -1,6 +1,5 @@
 #include "Engine/CvarPoll.hpp"
 
-
 #include <algorithm>
 #include <chrono>
 #include <string>

@@ -3,10 +3,6 @@
 #include <VoltMod/Core/Json.hpp>
 #include <VoltMod/Core/Result.hpp>
 
-// Reloadable Valve event and convar data. Parsing rejects unknown tokens and
-// missing keys so a typo cannot silently change a detector rule. Kept SDK-free
-// for unit tests.
-
 #include <optional>
 #include <string>
 #include <string_view>
@@ -81,13 +77,8 @@ struct DetectionDocument
     std::optional<std::vector<Rule>> cvarRules;
 };
 
-/**
- * @brief Apply every rule the document's shape cannot state.
- *
- * Both sections must be present (a renamed section must fail rather than silently disabling its
- * detector), a rule needs a non-empty name and a constraint, a numeric constraint needs its
- * `value`, and `range` needs a `max` that is not below it.
- */
+/** Every rule the document's shape cannot state. A renamed section must fail rather than
+ *  silently disable its detector, so both sections are required. */
 VoltMod::Result<DetectionData> ValidateDetectionData(DetectionDocument document);
 
 }  // namespace Anticheat

@@ -6,7 +6,7 @@ additional action:
 | Mode | Behavior |
 | --- | --- |
 | `observe` | Log and webhook only |
-| `alert` | Also notify admins with ban access, rate-limited per finding |
+| `alert` | Also notify admins with ban access |
 | `ban` | Kick kick-only findings and ban other findings |
 
 Mode is a ceiling rather than a separate axis: the confidence band decides how

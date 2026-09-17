@@ -21,11 +21,8 @@ namespace Anticheat
 {
 
 /**
- * Everything this plugin owns for one Load/Unload cycle, and the wiring between it. The plugin
- * creates it in OnLoad and drops it in OnUnload, so no state survives a `meta reload`.
- *
- * Members are declared in dependency order and destroyed in reverse; each is handed the
- * collaborators it needs.
+ * Everything this plugin owns for one load cycle, so no state survives a `meta reload`. Members
+ * are declared in dependency order and destroyed in reverse.
  */
 struct App
 {
