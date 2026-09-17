@@ -6,12 +6,14 @@
 using Anticheat::AimAngles;
 using Anticheat::Rules::Aimbot;
 using Anticheat::CmdSample;
+using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::Finding;
 using Anticheat::MaxSlots;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::ShotView;
+using Anticheat::Suspicion;
 using Anticheat::TeamCT;
 using Anticheat::TeamT;
 using Anticheat::Vec3;
@@ -20,6 +22,19 @@ static constexpr int Attacker = 0;
 static constexpr int Victim = 1;
 static constexpr double Now = 1000.0;
 static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
+
+static Suspicion MakeScores()
+{
+    Suspicion scores;
+    scores.Configure(DefaultTuning());
+    return scores;
+}
+
+/** Snap-hit incidents counted against the attacker, in this rule's own units. */
+static float Incidents(const Suspicion& scores, double now = Now)
+{
+    return scores.Value(Attacker, DetectionKind::Aimbot, now);
+}
 
 static std::array<PositionSample, MaxSlots> Frame(float victimX = 500.0f, bool teleported = false)
 {
@@ -88,120 +103,127 @@ static std::optional<Finding> Run(ShotHistory& correlator, Aimbot& aimbot, const
 TEST_CASE("The wide convergence branch counts at a snap over 10 degrees collapsing below a fifth of the error")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     // snap 12.1 degrees, error 15 -> 2.9, and 2.9 is just under 15 * 0.2.
     Run(correlator, aimbot, {.YawOlder = 15.0f, .YawShot = 2.9f});
-    CHECK(aimbot.IncidentCount(Attacker) == 1);
+    CHECK(Incidents(scores) == doctest::Approx(1.0f));
 }
 
 TEST_CASE("The wide convergence branch stops just short when the error does not collapse far enough")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     // The snap still clears 10 degrees; 3.1 is just over 15 * 0.2, and 15 * 0.1 is far out of reach.
     Run(correlator, aimbot, {.YawOlder = 15.0f, .YawShot = 3.1f});
-    CHECK(aimbot.IncidentCount(Attacker) == 0);
+    CHECK(Incidents(scores) == doctest::Approx(0.0f));
 }
 
 TEST_CASE("The tight convergence branch counts a smaller snap that collapses below a tenth of the error")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     // snap 7.3 degrees is under the wide branch's threshold; 0.7 < 8 * 0.1 carries it.
     Run(correlator, aimbot, {.YawOlder = 8.0f, .YawShot = 0.7f});
-    CHECK(aimbot.IncidentCount(Attacker) == 1);
+    CHECK(Incidents(scores) == doctest::Approx(1.0f));
 }
 
 TEST_CASE("The tight convergence branch stops just short at a tenth of the error")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     Run(correlator, aimbot, {.YawOlder = 8.0f, .YawShot = 0.9f});
-    CHECK(aimbot.IncidentCount(Attacker) == 0);
+    CHECK(Incidents(scores) == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A snap of exactly five degrees is below both branches")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     Run(correlator, aimbot, {.YawOlder = 5.0f, .YawShot = 0.0f});
-    CHECK(aimbot.IncidentCount(Attacker) == 0);
+    CHECK(Incidents(scores) == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A gap in the command chain breaks the convergence walk")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     Run(correlator, aimbot, {.YawOlder = 12.0f, .YawShot = 1.9f, .OlderClientTickOffset = 2});
     // The pending evaluation waits one tick for the command after the shot, then gives up.
     aimbot.OnFrame(Attacker, 103, true, Now);
-    CHECK(aimbot.IncidentCount(Attacker) == 0);
+    CHECK(Incidents(scores) == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A target closer than a hundred units never counts")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     Run(correlator, aimbot, {.YawOlder = 12.0f, .YawShot = 1.9f, .VictimX = 50.0f});
-    CHECK(aimbot.IncidentCount(Attacker) == 0);
+    CHECK(Incidents(scores) == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A teleport inside the snap window rejects the incident")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     Run(correlator, aimbot, {.YawOlder = 12.0f, .YawShot = 1.9f, .Teleported = true});
-    CHECK(aimbot.IncidentCount(Attacker) == 0);
+    CHECK(Incidents(scores) == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A shot against a teammate never counts")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     Run(correlator, aimbot, {.VictimIsTeammate = true});
-    CHECK(aimbot.IncidentCount(Attacker) == 0);
+    CHECK(Incidents(scores) == doctest::Approx(0.0f));
 }
 
-TEST_CASE("The fourth incident fires and the third does not")
+TEST_CASE("Incidents accumulate and the fourth is what this rule reports on alone")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     for (int i = 0; i < 3; ++i)
     {
         const int32_t base = 100 + 10 * i;
         CHECK_FALSE(Run(correlator, aimbot, {.Base = base, .Tick = base}).has_value());
     }
-    CHECK(aimbot.IncidentCount(Attacker) == 3);
+    CHECK(Incidents(scores) == doctest::Approx(3.0f));
 
     const std::optional<Finding> finding = Run(correlator, aimbot, {.Base = 130, .Tick = 130});
     REQUIRE(finding.has_value());
     CHECK(finding->Kind == DetectionKind::Aimbot);
     CHECK_FALSE(finding->KickOnly);
     CHECK_FALSE(finding->Evidence.empty());
-    // Firing clears the window so the next detection needs four fresh incidents.
-    CHECK(aimbot.IncidentCount(Attacker) == 0);
+    CHECK(Incidents(scores) == doctest::Approx(4.0f));
 }
 
-TEST_CASE("Incidents outside the ten minute window fall out before the threshold is reached")
+TEST_CASE("Evidence survives a player going ineligible mid shot")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
-    for (int i = 0; i < 3; ++i)
-    {
-        const int32_t base = 100 + 10 * i;
-        Run(correlator, aimbot, {.Base = base, .Tick = base});
-    }
-    CHECK(aimbot.IncidentCount(Attacker) == 3);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
+    Run(correlator, aimbot, {});
+    REQUIRE(Incidents(scores) == doctest::Approx(1.0f));
 
-    // Eleven minutes later the earlier three no longer support a detection.
-    CHECK_FALSE(Run(correlator, aimbot, {.Base = 130, .Tick = 130, .At = Now + 660.0}).has_value());
-    CHECK(aimbot.IncidentCount(Attacker) == 1);
+    // Dropping the shot waiting to be judged must not take the evidence already earned with it.
+    aimbot.OnFrame(Attacker, 200, false, Now);
+    CHECK(Incidents(scores) == doctest::Approx(1.0f));
 }
 
 TEST_CASE("A one command excursion that returns to the surrounding angle counts as a snap return")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     for (int32_t tick = 99; tick <= 101; ++tick)
         correlator.CaptureFrame(tick, Frame());
 
@@ -218,17 +240,18 @@ TEST_CASE("A one command excursion that returns to the surrounding angle counts 
     shot.ServerTick = 100;
     shot.FireTick = 100;
     CHECK_FALSE(aimbot.OnPlayerHurt(Attacker, Victim, shot, Now).has_value());
-    CHECK(aimbot.IncidentCount(Attacker) == 0);  // still waiting for the command after the shot
+    CHECK(Incidents(scores) == doctest::Approx(0.0f));  // still waiting for the command after the shot
 
     aimbot.OnCommand(Attacker, AimCmd(102, 101, 0.2f));
     aimbot.OnSimulated(Attacker, 102, 101, Eye, Now);
-    CHECK(aimbot.IncidentCount(Attacker) == 1);
+    CHECK(Incidents(scores) == doctest::Approx(1.0f));
 }
 
 TEST_CASE("A steady aim across the shot is not a snap return")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     for (int32_t tick = 99; tick <= 101; ++tick)
         correlator.CaptureFrame(tick, Frame());
 
@@ -246,13 +269,14 @@ TEST_CASE("A steady aim across the shot is not a snap return")
 
     aimbot.OnCommand(Attacker, AimCmd(102, 101, 0.6f));
     aimbot.OnSimulated(Attacker, 102, 101, Eye, Now);
-    CHECK(aimbot.IncidentCount(Attacker) == 0);
+    CHECK(Incidents(scores) == doctest::Approx(0.0f));
 }
 
 TEST_CASE("One shot never funds two incidents")
 {
     ShotHistory correlator;
-    Aimbot aimbot(correlator);
+    Suspicion scores = MakeScores();
+    Aimbot aimbot(correlator, scores);
     Run(correlator, aimbot, {});
 
     ShotView shot;
@@ -261,5 +285,5 @@ TEST_CASE("One shot never funds two incidents")
     shot.ServerTick = 100;
     shot.FireTick = 100;
     aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);  // the shot is already consumed
-    CHECK(aimbot.IncidentCount(Attacker) == 1);
+    CHECK(Incidents(scores) == doctest::Approx(1.0f));
 }

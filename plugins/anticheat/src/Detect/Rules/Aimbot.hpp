@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Detect/CommandHistory.hpp"
-#include "Detect/Evidence.hpp"
 #include "Detect/Finding.hpp"
 #include "Detect/Samples.hpp"
 #include "Detect/ShotHistory.hpp"
+#include "Detect/Suspicion.hpp"
 
 #include <array>
 #include <optional>
@@ -20,7 +20,7 @@ public:
 
     static constexpr size_t CommandHistorySize = 128;
 
-    explicit Aimbot(const ShotHistory& shots) : _shots(shots) {}
+    Aimbot(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
     void OnSlotChanged(int slot);
@@ -37,7 +37,6 @@ public:
     /** Nudge so an evaluation waiting on a later command cannot hang forever. */
     std::optional<Finding> OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec);
 
-    int IncidentCount(int slot) const;
 
 private:
     struct AimCommand
@@ -52,7 +51,6 @@ private:
     struct SlotData
     {
         CommandHistory<AimCommand, CommandHistorySize> Commands;
-        LongEvidenceWindow Incidents;
         int32_t PendingShot = 0;
         int VictimSlot = -1;
         bool Pending = false;
@@ -62,10 +60,11 @@ private:
 
     AimCommand* Find(SlotData& data, int32_t cmdNum);
     void Evaluate(int slot, int32_t currentTick, double nowSec, std::optional<Finding>& out);
-    void Count(SlotData& data, int32_t incidentCommand, double nowSec, bool snapReturn, float snap, float before,
-               float after, std::optional<Finding>& out);
+    void Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, bool snapReturn, float snap,
+               float before, float after, std::optional<Finding>& out);
 
     const ShotHistory& _shots;
+    Suspicion& _suspicion;
     std::array<SlotData, MaxSlots> _slots{};
 };
 

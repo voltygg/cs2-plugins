@@ -12,7 +12,6 @@ namespace Anticheat::Rules
 
 static constexpr int SnapWindowTicks = static_cast<int>(TickRate * 0.5f);  // 32
 static constexpr float MinimumDistance = 100.0f;
-static constexpr int DetectionThreshold = 4;
 
 // Convergence: a large jump landing far closer to the target than it started. The two branches
 // trade snap size against how completely the error collapsed.
@@ -80,6 +79,8 @@ std::optional<Finding> Aimbot::OnFrame(int slot, int32_t serverTick, bool eligib
         return out;
     if (!eligible)
     {
+        // Drops the shot waiting to be judged. The evidence itself lives on the score, which a
+        // player going ineligible must not be able to wipe.
         _slots[slot] = {};
         return out;
     }
@@ -238,37 +239,28 @@ void Aimbot::Evaluate(int slot, int32_t currentTick, double nowSec, std::optiona
     clearPending();
     if (!suspicious)
         return;
-    Count(data, incidentCommand, nowSec, snapReturn, largestSnap, bestBefore, bestAfter, out);
+    Count(slot, data, incidentCommand, nowSec, snapReturn, largestSnap, bestBefore, bestAfter, out);
 }
 
-void Aimbot::Count(SlotData& data, int32_t incidentCommand, double nowSec, bool snapReturn, float snap,
-                       float before, float after, std::optional<Finding>& out)
+void Aimbot::Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, bool snapReturn, float snap,
+                   float before, float after, std::optional<Finding>& out)
 {
     data.LastCountedIncidentCommand = incidentCommand;
     data.HasCountedIncident = true;
 
-    const int incidents = data.Incidents.Add(nowSec);
-    if (incidents < DetectionThreshold)
-        return;
+    std::optional<Finding> finding = _suspicion.Add(
+        slot,
+        {.Kind = Kind,
+         .Points = 1.0f,
+         .Reason = snapReturn ? std::format("A snap-hit returned {:.2f} degrees to where it came from.", snap)
+                              : std::format("A snap-hit moved {:.2f} degrees and closed the target error from "
+                                            "{:.2f} to {:.2f} degrees.",
+                                            snap, before, after)},
+        nowSec);
 
-    // A finding is already in hand from an earlier evaluation in this same pass; leave the window
-    // alone so this crossing is reported on the next one rather than cleared and lost.
-    if (out)
-        return;
-
-    data.Incidents.Clear();
-    out = Finding{
-        .Kind = DetectionKind::Aimbot,
-        .Evidence = snapReturn
-                        ? std::format("{} snap-hit incidents; latest was a {:.2f} degree snap-return.", incidents, snap)
-                        : std::format("{} snap-hit incidents; latest snap {:.2f} degrees, target error "
-                                      "{:.2f} -> {:.2f} degrees.",
-                                      incidents, snap, before, after)};
-}
-
-int Aimbot::IncidentCount(int slot) const
-{
-    return InSlotRange(slot) ? static_cast<int>(_slots[slot].Incidents.Count()) : 0;
+    // An earlier evaluation in this same pass already has one; the points are recorded either way.
+    if (!out)
+        out = std::move(finding);
 }
 
 }  // namespace Anticheat::Rules

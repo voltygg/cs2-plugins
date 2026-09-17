@@ -66,7 +66,7 @@ public:
     /** Every rule's evidence about every player, and the one place a report is decided. */
     Suspicion Scores;
     ShotHistory History;
-    Rules::Aimbot Aimbot{History};
+    Rules::Aimbot Aimbot{History, Scores};
     Rules::Aimlock Aimlock{History};
     Rules::AntiAim AntiAim;
     Rules::SilentAim SilentAim{Scores};
