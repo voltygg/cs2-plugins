@@ -2,7 +2,7 @@
 
 #include "AntiCheatManager.hpp"
 #include "Config.hpp"
-#include "Core/DetectionData.hpp"
+#include "Engine/DetectionDataManager.hpp"
 #include "Response/DiscordReporter.hpp"
 #include "Response/ResponseManager.hpp"
 

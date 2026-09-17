@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Samples.hpp"
+#include "Detect/Samples.hpp"
 
 #include <VoltMod/Core/EnumNames.hpp>
 #include <array>

@@ -1,4 +1,4 @@
-#include "Correlation/ShotCorrelatorCore.hpp"
+#include "Detect/ShotCorrelatorCore.hpp"
 
 #include <array>
 #include <doctest/doctest.h>

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Client/DllInjectionDetector.hpp"
-#include "Client/InvalidCvarDetector.hpp"
-#include "Client/NamechangerDetector.hpp"
+#include "Engine/DllInjectionDetector.hpp"
+#include "Engine/InvalidCvarDetector.hpp"
+#include "Engine/NamechangerDetector.hpp"
 #include "Config.hpp"
-#include "Core/DetectionData.hpp"
-#include "Correlation/ShotCorrelator.hpp"
-#include "Detectors.hpp"
+#include "Engine/DetectionDataManager.hpp"
+#include "Engine/ShotCorrelator.hpp"
+#include "Engine/Detectors.hpp"
 #include "Response/ResponseManager.hpp"
-#include "Simulator/CheatSimulator.hpp"
+#include "Engine/CheatSimulator.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>

@@ -1,5 +1,5 @@
-#include "Core/Geometry.hpp"
-#include "Aim/AimlockCore.hpp"
+#include "Detect/Geometry.hpp"
+#include "Detect/Rules/AimlockCore.hpp"
 
 #include <array>
 #include <cmath>

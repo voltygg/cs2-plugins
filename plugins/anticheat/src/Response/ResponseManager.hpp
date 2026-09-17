@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Config.hpp"
-#include "Core/Finding.hpp"
+#include "Detect/Finding.hpp"
 #include "Response/DiscordReporter.hpp"
 #include "Response/ResponsePolicy.hpp"
 

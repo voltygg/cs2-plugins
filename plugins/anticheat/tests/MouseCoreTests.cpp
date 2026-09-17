@@ -1,5 +1,5 @@
-#include "Aim/MouseCore.hpp"
-#include "Core/Geometry.hpp"
+#include "Detect/Rules/MouseCore.hpp"
+#include "Detect/Geometry.hpp"
 
 #include <array>
 #include <cmath>

@@ -2,7 +2,7 @@
 
 #include <VoltMod/App/JsonConfig.hpp>
 
-#include "Core/Finding.hpp"
+#include "Detect/Finding.hpp"
 
 #include <cstddef>
 #include <cstdint>

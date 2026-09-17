@@ -1,5 +1,5 @@
-#include "Aim/WallhackCore.hpp"
-#include "Core/Geometry.hpp"
+#include "Detect/Rules/WallhackCore.hpp"
+#include "Detect/Geometry.hpp"
 
 #include <array>
 #include <doctest/doctest.h>

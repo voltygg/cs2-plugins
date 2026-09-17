@@ -1,5 +1,5 @@
-#include "Core/DetectionData.hpp"
-#include "Client/InvalidCvarRules.hpp"
+#include "Detect/DetectionData.hpp"
+#include "Detect/Rules/InvalidCvarRules.hpp"
 
 #include <VoltMod/Core/Json.hpp>
 #include <doctest/doctest.h>

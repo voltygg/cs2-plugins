@@ -1,5 +1,5 @@
-#include "Aim/TriggerbotCore.hpp"
-#include "Core/Geometry.hpp"
+#include "Detect/Rules/TriggerbotCore.hpp"
+#include "Detect/Geometry.hpp"
 
 #include <array>
 #include <doctest/doctest.h>

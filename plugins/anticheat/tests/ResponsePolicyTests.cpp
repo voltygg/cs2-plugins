@@ -1,4 +1,4 @@
-#include "Core/Finding.hpp"
+#include "Detect/Finding.hpp"
 #include "Response/ResponsePolicy.hpp"
 
 #include <algorithm>
