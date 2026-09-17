@@ -14,9 +14,9 @@ static constexpr int Slot = 3;
 static constexpr double Now = 100.0;
 
 /** The rule and the score it feeds, since a finding now comes out of the score. */
-struct Harness
+struct NamechangerHarness
 {
-    Harness() { Scores.Configure(DefaultTuning()); }
+    NamechangerHarness() { Scores.Configure(DefaultTuning()); }
 
     Suspicion Scores;
     Namechanger Rule{Scores};
@@ -24,7 +24,7 @@ struct Harness
 
 TEST_CASE("The fifth name change inside one minute fires and the fourth does not")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     rule.OnBaseline(Slot, "original", "");
 
@@ -42,7 +42,7 @@ TEST_CASE("The fifth name change inside one minute fires and the fourth does not
 
 TEST_CASE("A settings change that leaves the name alone is not a change")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     rule.OnBaseline(Slot, "steady", "");
     for (int i = 0; i < 10; ++i)
@@ -52,7 +52,7 @@ TEST_CASE("A settings change that leaves the name alone is not a change")
 
 TEST_CASE("Changes older than a minute fall out of the rolling window")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     rule.OnBaseline(Slot, "original", "");
     for (int i = 1; i <= 4; ++i)
@@ -66,7 +66,7 @@ TEST_CASE("Changes older than a minute fall out of the rolling window")
 
 TEST_CASE("A change arriving before the baseline establishes it instead of counting")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     CHECK_FALSE(rule.OnIdentity(Slot, "first", "", Now).has_value());
     CHECK(rule.RecentChanges(Slot, Now) == 0);
@@ -78,7 +78,7 @@ TEST_CASE("A change arriving before the baseline establishes it instead of count
 
 TEST_CASE("An empty name is ignored rather than counted as a change")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     rule.OnBaseline(Slot, "original", "");
     CHECK_FALSE(rule.OnIdentity(Slot, "", "", Now).has_value());
@@ -87,7 +87,7 @@ TEST_CASE("An empty name is ignored rather than counted as a change")
 
 TEST_CASE("A new baseline drops the slot's previous change history")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     rule.OnBaseline(Slot, "original", "");
     for (int i = 1; i <= 4; ++i)
@@ -99,7 +99,7 @@ TEST_CASE("A new baseline drops the slot's previous change history")
 
 TEST_CASE("A slot change and a reset both clear the history")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     rule.OnBaseline(Slot, "original", "");
     for (int i = 1; i <= 4; ++i)
@@ -117,7 +117,7 @@ TEST_CASE("A slot change and a reset both clear the history")
 
 TEST_CASE("Out of range slots are ignored rather than written past the array")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     CHECK_FALSE(rule.OnIdentity(-1, "name", "", Now).has_value());
     CHECK_FALSE(rule.OnIdentity(MaxSlots, "name", "", Now).has_value());
@@ -126,7 +126,7 @@ TEST_CASE("Out of range slots are ignored rather than written past the array")
 
 TEST_CASE("Clan tag changes count exactly like name changes")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     rule.OnBaseline(Slot, "steady", "");
 
@@ -141,7 +141,7 @@ TEST_CASE("Clan tag changes count exactly like name changes")
 
 TEST_CASE("A repeated read of the same name and tag never counts")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     rule.OnBaseline(Slot, "steady", "[tag]");
     for (int i = 0; i < 100; ++i)
@@ -151,7 +151,7 @@ TEST_CASE("A repeated read of the same name and tag never counts")
 
 TEST_CASE("After a burst the rule waits out its cooldown, then a fresh burst counts again")
 {
-    Harness h;
+    NamechangerHarness h;
     Namechanger& rule = h.Rule;
     rule.OnBaseline(Slot, "steady", "");
     for (int i = 1; i <= 5; ++i)

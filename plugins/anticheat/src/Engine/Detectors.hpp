@@ -69,7 +69,7 @@ public:
     Rules::Aimbot Aimbot{History};
     Rules::Aimlock Aimlock{History};
     Rules::AntiAim AntiAim;
-    Rules::SilentAim SilentAim;
+    Rules::SilentAim SilentAim{Scores};
     Rules::Triggerbot Triggerbot{History};
     Rules::Recoil Recoil;
     Rules::MouseMismatch Mouse{History};
@@ -78,10 +78,10 @@ public:
     Rules::InvalidCvar InvalidCvars;
 
 private:
-    /** Every rule a reset or a slot change has to clear; a new rule is wired in here only. */
+    /** Every rule holding per-player state of its own; one that holds none is left out. */
     auto All()
     {
-        return std::tie(Scores, History, Aimbot, Aimlock, AntiAim, SilentAim, Triggerbot, Recoil, Mouse, Wallhack,
+        return std::tie(Scores, History, Aimbot, Aimlock, AntiAim, Triggerbot, Recoil, Mouse, Wallhack,
                         Namechanger, InvalidCvars);
     }
 

@@ -1,23 +1,22 @@
 #pragma once
 
-#include "Detect/Evidence.hpp"
 #include "Detect/Finding.hpp"
 #include "Detect/Samples.hpp"
+#include "Detect/Suspicion.hpp"
 
-#include <array>
 #include <optional>
 
 namespace Anticheat::Rules
 {
 
+/** Holds nothing per player: the measurement rides on the shot and the evidence on the score. */
 class SilentAim
 {
 public:
     /** The settings toggle and catalog entry this rule reports under. */
     static constexpr DetectionKind Kind = DetectionKind::SilentAim;
 
-    void Reset();
-    void OnSlotChanged(int slot);
+    explicit SilentAim(Suspicion& suspicion) : _suspicion(suspicion) {}
 
     /** Measure the shot once its impact point is known. Safe to call repeatedly. */
     void OnShotUpdated(int slot, ShotView& shot);
@@ -28,11 +27,8 @@ public:
      */
     std::optional<Finding> Finalize(int slot, ShotView& shot, double nowSec);
 
-    int Score(int slot, double nowSec) const;
-
 private:
-    /** Weighted: a blatant deviation, a headshot and a wallbang each count for more than one shot. */
-    std::array<LongEvidenceWindow, MaxSlots> _incidents{};
+    Suspicion& _suspicion;
 };
 
 }  // namespace Anticheat::Rules

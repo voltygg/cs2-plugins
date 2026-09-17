@@ -4,6 +4,7 @@
 #include <doctest/doctest.h>
 #include <string>
 
+using Anticheat::DefaultTuning;
 using Anticheat::DetectionKind;
 using Anticheat::Finding;
 using Anticheat::IsBallisticWeapon;
@@ -11,6 +12,7 @@ using Anticheat::NormalizeWeapon;
 using Anticheat::ShotView;
 using Anticheat::Rules::SilentAim;
 using Anticheat::SilentAimDeviationThreshold;
+using Anticheat::Suspicion;
 using Anticheat::Vec3;
 
 static constexpr int Slot = 0;
@@ -40,10 +42,22 @@ static constexpr Vec3 ModerateImpact{1000.0f, 100.0f, 0.0f};
 /** 45 degrees off at 141 units: past the blatant threshold. */
 static constexpr Vec3 BlatantImpact{100.0f, 100.0f, 0.0f};
 
-static std::optional<Finding> Land(SilentAim& rule, ShotView shot, double now = Now)
+/** The rule and the score it feeds, since a finding now comes out of the score. */
+struct SilentAimHarness
 {
-    rule.OnShotUpdated(Slot, shot);
-    return rule.Finalize(Slot, shot, now);
+    SilentAimHarness() { Scores.Configure(DefaultTuning()); }
+
+    /** Points this rule has on the slot, in its own units, as of @p now. */
+    float Points(double now = Now) const { return Scores.Value(Slot, DetectionKind::SilentAim, now); }
+
+    Suspicion Scores;
+    SilentAim Rule{Scores};
+};
+
+static std::optional<Finding> Land(SilentAimHarness& h, ShotView shot, double now = Now)
+{
+    h.Rule.OnShotUpdated(Slot, shot);
+    return h.Rule.Finalize(Slot, shot, now);
 }
 
 TEST_CASE("The per weapon deviation table matches each weapon class")
@@ -84,91 +98,98 @@ TEST_CASE("IsBallisticWeapon accepts hitscan weapons and rejects grenades and th
 TEST_CASE("A deviation scores only when the weapon cannot explain it")
 {
     // 5.71 degrees is well inside a rifle's 12.5 degree ceiling and far outside an AWP's 2.5.
-    SilentAim rifle;
+    SilentAimHarness rifle;
     CHECK_FALSE(Land(rifle, Shot("ak47", ModerateImpact)).has_value());
-    CHECK(rifle.Score(Slot, Now) == 0);
+    CHECK(rifle.Points() == doctest::Approx(0.0f));
 
-    SilentAim sniper;
+    SilentAimHarness sniper;
     CHECK_FALSE(Land(sniper, Shot("awp", ModerateImpact)).has_value());
-    CHECK(sniper.Score(Slot, Now) == 2);
+    CHECK(sniper.Points() == doctest::Approx(2.0f));
 }
 
 TEST_CASE("An impact closer than a hundred units or beyond ten thousand is not measured")
 {
-    SilentAim near;
+    SilentAimHarness near;
     Land(near, Shot("awp", {50.0f, 50.0f, 0.0f}));
-    CHECK(near.Score(Slot, Now) == 0);
+    CHECK(near.Points() == doctest::Approx(0.0f));
 
-    SilentAim far;
+    SilentAimHarness far;
     Land(far, Shot("awp", {15000.0f, 1500.0f, 0.0f}));
-    CHECK(far.Score(Slot, Now) == 0);
+    CHECK(far.Points() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A shot is only finalized into evidence when it both hurt someone and reported an impact")
 {
-    SilentAim missed;
+    SilentAimHarness missed;
     Land(missed, Shot("awp", ModerateImpact, false));
-    CHECK(missed.Score(Slot, Now) == 0);
+    CHECK(missed.Points() == doctest::Approx(0.0f));
 
-    SilentAim unseen;
+    SilentAimHarness unseen;
     ShotView shot = Shot("awp", ModerateImpact);
     shot.ImpactSeen = false;
-    unseen.OnShotUpdated(Slot, shot);
-    unseen.Finalize(Slot, shot, Now);
-    CHECK(unseen.Score(Slot, Now) == 0);
+    unseen.Rule.OnShotUpdated(Slot, shot);
+    unseen.Rule.Finalize(Slot, shot, Now);
+    CHECK(unseen.Points() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("The points formula weighs blatant deviation airborne shots headshots and wallbangs")
 {
     // The plain moderate-deviation shot above is worth 2; each modifier moves it from there.
-    SilentAim airborne;
-    Land(airborne, Shot("awp", ModerateImpact, true, true));
-    CHECK(airborne.Score(Slot, Now) == 1);
-
-    SilentAim blatant;
-    Land(blatant, Shot("awp", BlatantImpact));
-    CHECK(blatant.Score(Slot, Now) == 3);
-
-    SilentAim decorated;
-    Land(decorated, Shot("awp", ModerateImpact, true, false, true, true));
-    CHECK(decorated.Score(Slot, Now) == 4);
-
-    SilentAim worst;
-    Land(worst, Shot("awp", BlatantImpact, true, false, true, true));
-    CHECK(worst.Score(Slot, Now) == 5);
+    {
+        SilentAimHarness airborne;
+        Land(airborne, Shot("awp", ModerateImpact, true, true));
+        CHECK(airborne.Points() == doctest::Approx(1.0f));
+    }
+    {
+        SilentAimHarness blatant;
+        Land(blatant, Shot("awp", BlatantImpact));
+        CHECK(blatant.Points() == doctest::Approx(3.0f));
+    }
+    {
+        SilentAimHarness decorated;
+        Land(decorated, Shot("awp", ModerateImpact, true, false, true, true));
+        CHECK(decorated.Points() == doctest::Approx(4.0f));
+    }
+    {
+        SilentAimHarness worst;
+        Land(worst, Shot("awp", BlatantImpact, true, false, true, true));
+        CHECK(worst.Points() == doctest::Approx(5.0f));
+    }
 }
 
 TEST_CASE("The rolling score fires at twelve and not at ten")
 {
-    SilentAim rule;
+    SilentAimHarness rule;
     for (int i = 0; i < 5; ++i)
         CHECK_FALSE(Land(rule, Shot("awp", ModerateImpact)).has_value());
-    CHECK(rule.Score(Slot, Now) == 10);
+    CHECK(rule.Points() == doctest::Approx(10.0f));
 
     const std::optional<Finding> finding = Land(rule, Shot("awp", ModerateImpact));
     REQUIRE(finding.has_value());
     CHECK(finding->Kind == DetectionKind::SilentAim);
     CHECK_FALSE(finding->KickOnly);
-    CHECK(rule.Score(Slot, Now) == 0);  // firing clears the window
+    // Reporting no longer wipes the score, so the next shot builds on twelve rather than on nothing.
+    CHECK(rule.Points() == doctest::Approx(12.0f));
 }
 
-TEST_CASE("Incidents older than ten minutes stop counting toward the score")
+TEST_CASE("Old points fade rather than falling off a window edge")
 {
-    SilentAim rule;
+    SilentAimHarness rule;
     for (int i = 0; i < 5; ++i)
         Land(rule, Shot("awp", ModerateImpact));
-    CHECK(rule.Score(Slot, Now) == 10);
+    CHECK(rule.Points() == doctest::Approx(10.0f));
 
-    // Eleven minutes later the old points are gone, so a new blatant hit cannot reach twelve.
+    // Eleven minutes is a little over one half-life, so the ten has faded to under five and a
+    // blatant hit on top of it still cannot reach twelve.
     CHECK_FALSE(Land(rule, Shot("awp", BlatantImpact), Now + 660.0).has_value());
-    CHECK(rule.Score(Slot, Now + 660.0) == 3);
+    CHECK(rule.Points(Now + 660.0) == doctest::Approx(10.0f * 0.4665f + 3.0f).epsilon(0.01));
 }
 
 TEST_CASE("A slot change drops the slot's accumulated silent aim evidence")
 {
-    SilentAim rule;
+    SilentAimHarness rule;
     for (int i = 0; i < 5; ++i)
         Land(rule, Shot("awp", ModerateImpact));
-    rule.OnSlotChanged(Slot);
-    CHECK(rule.Score(Slot, Now) == 0);
+    rule.Scores.OnSlotChanged(Slot);
+    CHECK(rule.Points() == doctest::Approx(0.0f));
 }
