@@ -44,14 +44,14 @@ inline constexpr int SpinSamples = 16;
 inline constexpr float MinimumSpinRate = 320.0f;
 inline constexpr float MediumSpinRate = 1000.0f;
 inline constexpr float FastSpinRate = 2200.0f;
-inline constexpr float SlowSpinSeconds = 15.0f;
-inline constexpr float MediumSpinSeconds = 10.0f;
-inline constexpr float FastSpinSeconds = 10.0f;
+inline constexpr float SlowSpinSeconds = 10.0f;
+inline constexpr float MediumSpinSeconds = 6.0f;
+inline constexpr float FastSpinSeconds = 3.0f;
 inline constexpr float SpinBreakAllowance = 1.0f;
 inline constexpr float SpinConsistency = 0.85f;
 inline constexpr float JitterTolerance = 0.25f;
 inline constexpr float MinimumJitterSpan = 10.0f;
-inline constexpr float RequiredJitterSeconds = 10.0f;
+inline constexpr float RequiredJitterSeconds = 5.0f;
 }  // namespace AntiAimTuning
 
 class AntiAimCore
@@ -119,7 +119,7 @@ private:
         std::array<float, 3> SpinBreakSeconds{};
         float JitterSeconds = 0.0f;
         float JitterBreakSeconds = 0.0f;
-        int32_t LastMotionServerTick = -1;
+        int32_t LastMotionCmdNum = -1;
     };
 
     static void ResetMotion(SlotData& data);

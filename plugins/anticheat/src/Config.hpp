@@ -50,10 +50,12 @@ struct WebhookSettings
     std::string url;
 };
 
-/** The simulator rewrites live player commands: leave it off outside a test box. */
+/** Test-box switches: the simulator rewrites live player commands, and including bots lets a
+ *  headless server exercise the whole detection path. Leave both off in production. */
 struct DebugSettings
 {
     bool simulator = false;
+    bool includeBots = false;
 };
 
 struct AntiCheatSettings

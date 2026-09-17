@@ -44,7 +44,7 @@ void AntiAimCore::ResetMotion(SlotData& data)
     data.SpinBreakSeconds = {};
     data.JitterSeconds = 0.0f;
     data.JitterBreakSeconds = 0.0f;
-    data.LastMotionServerTick = -1;
+    data.LastMotionCmdNum = -1;
     data.SpinActive = false;
     data.JitterActive = false;
 }

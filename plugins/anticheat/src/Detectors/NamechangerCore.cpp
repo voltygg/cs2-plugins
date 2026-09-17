@@ -6,6 +6,7 @@ namespace Anticheat
 {
 
 static constexpr int DetectionThreshold = 5;
+static constexpr double QuietAfterFindingSec = 60.0;
 
 void NamechangerCore::Reset()
 {
@@ -18,14 +19,15 @@ void NamechangerCore::OnSlotChanged(int slot)
         _slots[slot] = {};
 }
 
-void NamechangerCore::OnBaseline(int slot, std::string_view name)
+void NamechangerCore::OnBaseline(int slot, std::string_view name, std::string_view clan)
 {
     if (!InSlotRange(slot) || name.empty())
         return;
-    _slots[slot] = {.LastName = std::string(name), .Initialized = true};
+    _slots[slot] = {.LastName = std::string(name), .LastClan = std::string(clan), .Initialized = true};
 }
 
-std::optional<Finding> NamechangerCore::OnNameChanged(int slot, std::string_view name, double nowSec)
+std::optional<Finding> NamechangerCore::OnIdentity(int slot, std::string_view name, std::string_view clan,
+                                                   double nowSec)
 {
     std::optional<Finding> out;
     if (!InSlotRange(slot) || name.empty())
@@ -34,22 +36,32 @@ std::optional<Finding> NamechangerCore::OnNameChanged(int slot, std::string_view
     auto& data = _slots[slot];
     if (!data.Initialized)
     {
-        // A settings change before the baseline landed establishes it instead of counting.
+        // A change before the baseline landed establishes it instead of counting.
         data.LastName.assign(name);
+        data.LastClan.assign(clan);
         data.Initialized = true;
         return out;
     }
-    if (data.LastName == name)
+
+    const bool nameChanged = data.LastName != name;
+    const bool clanChanged = data.LastClan != clan;
+    if (!nameChanged && !clanChanged)
         return out;
     data.LastName.assign(name);
+    data.LastClan.assign(clan);
+    if (nowSec < data.QuietUntil)
+        return out;
 
     const int changes = data.Changes.Add(nowSec);
     if (changes < DetectionThreshold)
         return out;
 
     out = Finding{.Kind = DetectionKind::Namechanger,
-                  .Evidence = std::format("{} visible name changes occurred within one minute.", changes)};
+                  .Evidence = std::format("{} visible name or clan tag changes occurred within one minute (last: "
+                                          "name '{}', tag '{}').",
+                                          changes, name, clan)};
     data.Changes.Clear();
+    data.QuietUntil = nowSec + QuietAfterFindingSec;
     return out;
 }
 

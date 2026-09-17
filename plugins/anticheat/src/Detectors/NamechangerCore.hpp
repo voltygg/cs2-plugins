@@ -1,8 +1,5 @@
 #pragma once
 
-// Rapid visible name changes are a griefing/evasion tool, not something the client UI produces by
-// accident. SDK-free.
-
 #include "Core/Evidence.hpp"
 #include "Core/Finding.hpp"
 #include "Core/Samples.hpp"
@@ -22,10 +19,10 @@ public:
     void OnSlotChanged(int slot);
 
     /** The baseline the first change is measured against. */
-    void OnBaseline(int slot, std::string_view name);
+    void OnBaseline(int slot, std::string_view name, std::string_view clan);
 
-    /** A settings change. Only an actually different name counts. */
-    std::optional<Finding> OnNameChanged(int slot, std::string_view name, double nowSec);
+    /** What the scoreboard shows right now. Only an actually different name or tag counts. */
+    std::optional<Finding> OnIdentity(int slot, std::string_view name, std::string_view clan, double nowSec);
 
     int ChangeCount(int slot) const;
 
@@ -36,7 +33,9 @@ private:
     struct SlotData
     {
         std::string LastName;
+        std::string LastClan;
         ChangeWindow Changes;
+        double QuietUntil = 0.0;  // after a finding: an animated tag is one offence, not one a second
         bool Initialized = false;
     };
 

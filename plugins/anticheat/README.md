@@ -34,7 +34,7 @@ compiled into the plugin.
 | `silentaim` | Impacts far from the visible aim direction | 12 points in 10 minutes |
 | `dll_injection` | Client event subscriptions unused by the stock HUD | First match |
 | `invalid_cvar` | Client convars outside allowed values | First confirmed invalid value |
-| `namechanger` | Repeated visible-name changes | 5 changes in 60 seconds |
+| `namechanger` | Repeated name or clan tag changes | 5 changes in 60 seconds |
 
 All detectors require the master switch, a connected human player, and
 `sv_cheats` off unless `allowSvCheatsTesting` is enabled. Map changes, reloads,
@@ -71,9 +71,12 @@ Antiaim uses a decaying score:
   at most once every four commands.
 - A one-command attack return adds 5.
 
-Spin reports only after sustained angular speed with at least 0.85 directional
-consistency. Jitter requires an exactly repeating yaw pattern, so a legitimate
-180-degree bind does not report.
+Spin and jitter walk the client's own command sequence, so server-side batching
+or a lagging connection does not break an episode. Spin reports after sustained
+one-direction rotation with at least 0.85 directional consistency: 10 seconds
+above 320 degrees a second, 6 above 1000, or 3 above 2200. Jitter requires an
+exactly repeating yaw pattern for 5 seconds, so a legitimate 180-degree bind does
+not report.
 
 ### Silent aim
 
@@ -99,8 +102,33 @@ full connection, then every 120 seconds.
 counts only after three consecutive refusals and is always kick-only. Every
 player/convar pair reports once and re-arms only after a valid result.
 
-`namechanger` tracks distinct visible names. Its baseline stays current while
-detection is gated off, so a name recorded during that gap cannot report later.
+`namechanger` tracks the scoreboard name and the clan tag together. It reads the
+controller eight times a second as well as on settings changes, because a tag pushed
+by a cheat does not always raise one. Its baseline stays current while detection
+is gated off, so a name recorded during that gap cannot report later. After a
+finding the slot is quiet for a minute, so an animated tag is one report rather
+than one a second.
+
+### What it cannot see
+
+- **No-spread and no-recoil.** CS2 computes bullet spread and recoil on the
+  server from its own seed; a client that removes them only changes what its
+  owner sees. There is nothing to detect and nothing to gain.
+- **Fake angles inside the legal range.** A pitch of exactly 89 or a yaw that
+  only moves when the player fires is indistinguishable from real input on its
+  own; the attack-return and base-versus-fire-angle rules catch the shots it
+  produces, not the pose.
+
+## Verifying on a headless server
+
+`anticheat_status` prints the module state and one line per checked player over
+the console or RCON. With `debug.includeBots` and `debug.simulator` on, bots are
+checked like humans and `anticheat_sim_spin`, `anticheat_sim_jitter`,
+`anticheat_sim_badangles`, `anticheat_sim_names`, `anticheat_sim_aimlock` and
+`anticheat_sim_mismatch` drive a slot through each detector for ten seconds; a
+finding then appears in the log as `[AC] <DETECTOR> on <name>`. Bots run no
+input history, so their `cmds=` counter stays at zero. Keep both switches off in
+production.
 
 ## Responses
 

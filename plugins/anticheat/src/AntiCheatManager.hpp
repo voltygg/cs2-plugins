@@ -21,7 +21,9 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>
 #include <optional>
+#include <string>
 #include <tuple>
+#include <vector>
 
 namespace Anticheat
 {
@@ -56,7 +58,8 @@ public:
 
     bool ModuleEnabled(DetectionKind kind) const;
 
-    /** True when @p slot should be judged at all (a connected, non-bot human). */
+    /** True when @p slot is checked at all: a spawned human, or a bot while `debug.includeBots`
+     *  is on. */
     bool IsEligible(int slot);
 
     void Report(int slot, const std::optional<Finding>& finding);
@@ -89,7 +92,9 @@ private:
     /** Push configs/detections.jsonc into the two table-driven modules. */
     void LoadDetectionData();
     void DumpCommand(int slot, const VoltMod::PlayerInput& cmd);
-    void LogStatus() const;
+    /** The module state and per-player evidence, one line each. */
+    std::vector<std::string> StatusReport() const;
+    bool IncludesBots() const;
     /** Update hostile-shot rules from `mp_teammates_are_enemies`. */
     void RefreshTeamRules();
 
@@ -107,7 +112,7 @@ private:
     InvalidCvarRules _invalidCvars;
 
     ShotCorrelator _feed{*this, _rt};
-    NamechangerDetector _namechangerDetector{*this};
+    NamechangerDetector _namechangerDetector{*this, _rt};
     DllInjectionDetector _dllInjection{*this, _rt, _detections};
     InvalidCvarDetector _invalidCvarPoller{*this, _rt};
 

@@ -1,4 +1,4 @@
-﻿#include "CheatSimulator.hpp"
+#include "CheatSimulator.hpp"
 
 #include "AntiCheatManager.hpp"
 #include "App.hpp"
@@ -12,6 +12,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <format>
+#include <string>
 #include <mathlib/vector.h>
 #include <tier1/convar.h>
 
@@ -29,6 +31,8 @@ static constexpr int JitterPeriod = 3;
 static constexpr float BadRoll = 60.0f;
 /** Chest height, so the lock reads as a body point rather than a graze. */
 static constexpr float LockHeight = 46.0f;
+/** A rename every quarter second: the pace of an animated clan tag. */
+static constexpr int RenameEveryCommands = 16;
 
 void CheatSimulator::Initialize()
 {
@@ -36,24 +40,26 @@ void CheatSimulator::Initialize()
 
     if (!Enabled())
     {
-        Log::Info("Cheat simulator idle; enable anticheat.debug.simulator and reload the plugin to arm it.");
+        Log::Info("Cheat simulator idle; enable anticheat.debug.simulator and reload the plugin to enable it.");
         return;
     }
 
     _cmdSpin.emplace("anticheat_sim_spin", "Sim spinbot: anticheat_sim_spin <slot|steamid64> [degPerSec=720]",
-                     [this](const CCommand& args) { Arm(args, Kind::Spin, 720.0f); });
+                     [this](const CCommand& args) { Start(args, Kind::Spin, 720.0f); });
     _cmdJitter.emplace("anticheat_sim_jitter", "Sim yaw jitter: anticheat_sim_jitter <slot|steamid64> [stepDeg=20]",
-                       [this](const CCommand& args) { Arm(args, Kind::Jitter, 20.0f); });
+                       [this](const CCommand& args) { Start(args, Kind::Jitter, 20.0f); });
     _cmdBadAngles.emplace("anticheat_sim_badangles",
                           "Sim impossible pitch and roll: anticheat_sim_badangles <slot|steamid64> [pitch=89.5]",
-                          [this](const CCommand& args) { Arm(args, Kind::BadAngles, 89.5f); });
+                          [this](const CCommand& args) { Start(args, Kind::BadAngles, 89.5f); });
     _cmdAimlock.emplace("anticheat_sim_aimlock",
                         "Sim locking onto the nearest opponent: anticheat_sim_aimlock <slot|steamid64>",
-                        [this](const CCommand& args) { Arm(args, Kind::Aimlock, 0.0f); });
+                        [this](const CCommand& args) { Start(args, Kind::Aimlock, 0.0f); });
     _cmdMismatch.emplace(
         "anticheat_sim_mismatch",
         "Sim input-history angles diverging from the view: anticheat_sim_mismatch <slot|steamid64> [deg=130]",
-        [this](const CCommand& args) { Arm(args, Kind::Mismatch, 130.0f); });
+        [this](const CCommand& args) { Start(args, Kind::Mismatch, 130.0f); });
+    _cmdNames.emplace("anticheat_sim_names", "Sim a name changer: anticheat_sim_names <slot|steamid64>",
+                      [this](const CCommand& args) { Start(args, Kind::Names, 0.0f); });
     _cmdOff.emplace("anticheat_sim_off", "Stop simulating: anticheat_sim_off [slot|steamid64] (omit to clear all)",
                     [this](const CCommand& args) {
                         if (args.ArgC() < 2)
@@ -68,7 +74,7 @@ void CheatSimulator::Initialize()
                             Log::Warn("'{}' is not a live slot or steamid64.", args.Arg(1));
                     });
 
-    Log::Info("Cheat simulator armed and ready (anticheat_sim_*).");
+    Log::Info("Cheat simulator ready (anticheat_sim_*).");
 }
 
 bool CheatSimulator::Enabled() const
@@ -90,7 +96,7 @@ int CheatSimulator::ResolveSlot(std::string_view arg)
     return static_cast<int>(*number);
 }
 
-void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
+void CheatSimulator::Start(const CCommand& args, Kind kind, float defaultParam)
 {
     if (!Enabled())
     {
@@ -110,7 +116,7 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
         return;
     }
 
-    // The filter rewrites live player commands, so it stays uninstalled until the first Arm. A
+    // The filter rewrites live player commands, so it stays uninstalled until the first Start. A
     // disabled simulator then costs nothing on the per-tick movement path.
     if (!_filter)
         _filter = _rt.Hooks.Movement.Rewrite +=
@@ -121,6 +127,8 @@ void CheatSimulator::Arm(const CCommand& args, Kind kind, float defaultParam)
     state.kind = kind;
     state.param = args.ArgC() > 2 ? std::strtof(args.Arg(2), nullptr) : defaultParam;
     state.expireAt = Time::MonotonicSeconds() + SimulationSeconds;
+    if (kind == Kind::Names)
+        state.baseName = std::string(_rt.Entities.Controller(slot).Name());
     Log::Info("Simulating slot {} (param {:.1f}) for {:.0f}s.", slot, state.param, SimulationSeconds);
 }
 
@@ -178,6 +186,8 @@ void CheatSimulator::OnFilter(int slot, VoltMod::PlayerInput& cmd)
         return;
     if (Time::MonotonicSeconds() > state.expireAt)
     {
+        if (state.kind == Kind::Names)
+            _rt.Entities.Controller(slot).SetName(state.baseName);
         state.kind = Kind::Off;
         return;
     }
@@ -212,13 +222,18 @@ void CheatSimulator::OnFilter(int slot, VoltMod::PlayerInput& cmd)
         break;
     case Kind::Mismatch:
         // Rewrite the claimed input-history angles away from the visible view, which is what
-        // AntiAim's base-vs-history rule reads. SilentAim judges real impact geometry, so an edit
+        // AntiAim's base-vs-history rule reads. SilentAim evaluates real impact geometry, so an edit
         // to the decoded view never reaches it.
         cmd.InputHistorySampleCount = 1;
         cmd.InputHistoryTotalCount = 1;
         cmd.InputHistorySamples[0] = {
             .HasViewAngles = true, .ViewPitch = cmd.ViewPitch, .ViewYaw = cmd.ViewYaw + state.param};
         cmd.Attack1StartHistoryIndex = (cmd.ButtonsHeld & VoltMod::IN_ATTACK) != 0 ? 0 : -1;
+        break;
+    case Kind::Names:
+        if (state.step % RenameEveryCommands == 0)
+            _rt.Entities.Controller(slot).SetName(
+                std::format("{}~{}", state.baseName, state.step / RenameEveryCommands));
         break;
     case Kind::Off:
         break;

@@ -35,7 +35,7 @@
         "allowSvCheatsTesting": {
           "type": "boolean",
           "default": false,
-          "description": "Keep detections armed while sv_cheats is on. Test boxes only."
+          "description": "Keep detections running while sv_cheats is on. Test boxes only."
         },
         "detections": {
           "type": "object",
@@ -68,7 +68,12 @@
             "simulator": {
               "type": "boolean",
               "default": false,
-              "description": "Arms the built-in cheat simulator commands (dev boxes only)."
+              "description": "Enables the built-in cheat simulator commands (dev boxes only)."
+            },
+            "includeBots": {
+              "type": "boolean",
+              "default": false,
+              "description": "Check bots like human players, so a headless server exercises every detector (dev boxes only)."
             }
           }
         }

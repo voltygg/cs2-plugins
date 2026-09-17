@@ -1,4 +1,4 @@
-﻿#include "AntiCheatManager.hpp"
+#include "AntiCheatManager.hpp"
 
 #include "App.hpp"
 
@@ -67,6 +67,7 @@ void AntiCheatManager::Initialize()
     RefreshTeamRules();
     LoadDetectionData();
     _feed.Initialize();
+    _namechangerDetector.Initialize();
     _dllInjection.Initialize();
     _invalidCvarPoller.Initialize();
 
@@ -123,8 +124,10 @@ void AntiCheatManager::RegisterCommands()
     commands.Add("anticheat_status")
         .Describe("Print the module state and per-player detection evidence.")
         .ConsoleOnly()
-        .Run([this](Caller) -> Result<Reply> {
-            LogStatus();
+        .Run([this](Caller caller) -> Result<Reply> {
+            // One line per call, so a remote console that keeps the first line still sees them all.
+            for (const std::string& line : StatusReport())
+                caller.SayRaw(line);
             return Reply::Silent();
         });
 
@@ -213,19 +216,21 @@ std::string AntiCheatManager::StatusSnapshot() const
                  "webhook",
                  !settings.webhook.url.empty(),
                  "simulator",
-                 settings.debug.simulator});
+                 settings.debug.simulator,
+                 "includeBots",
+                 settings.debug.includeBots});
 }
 
-void AntiCheatManager::LogStatus() const
+std::vector<std::string> AntiCheatManager::StatusReport() const
 {
-    Log::Info("[AC] {}", StatusSnapshot());
+    std::vector<std::string> report{std::format("[AC] {}", StatusSnapshot())};
 
     const double now = Time::MonotonicSeconds();
     bool any = false;
     for (const VoltMod::Player* player : _rt.Players.All())
     {
         const int slot = player ? player->Slot() : -1;
-        if (!InSlotRange(slot) || player->IsBot())
+        if (!InSlotRange(slot) || (player->IsBot() && !IncludesBots()))
             continue;
         any = true;
 
@@ -240,7 +245,7 @@ void AntiCheatManager::LogStatus() const
             latched += rules[index].name;
         }
 
-        Log::Info(
+        report.push_back(std::format(
             "[AC] s{} {} ({}) punished={} aimbot={} aimlock={}{} antiaim={:.1f} silentaim={} names={} "
             "cvars=[{}] pending={} poll={:.1f}s shots={} cmds={} gen={}",
             slot, player->Name(), player->SteamId(), PunishmentName(_response.Issued(slot)),
@@ -248,10 +253,11 @@ void AntiCheatManager::LogStatus() const
             _antiAim.Score(slot), _silentAim.Score(slot, now), _namechanger.ChangeCount(slot),
             latched.empty() ? "-" : latched, _rt.Hooks.ClientConVars.PendingCount(slot),
             _invalidCvarPoller.PollsIn(slot, now), _correlator.Shots(slot).size(), _correlator.CommandCount(slot),
-            _correlator.Generation(slot));
+            _correlator.Generation(slot)));
     }
     if (!any)
-        Log::Info("[AC] no human players connected.");
+        report.push_back(IncludesBots() ? "[AC] no players connected." : "[AC] no human players connected.");
+    return report;
 }
 
 void AntiCheatManager::ResetEvidence()
@@ -308,12 +314,20 @@ bool AntiCheatManager::IsEligible(int slot)
 {
     if (!IsValidSlot(slot))
         return false;
-    // Identity is available before the player's pawn exists.
     const VoltMod::Player* player = _rt.Players.Get(slot);
-    if (!player || player->IsBot())
+    if (!player)
         return false;
+    // FL_FAKECLIENT lives on the pawn, so a slot that has not spawned yet cannot be cleared.
     VoltMod::Pawn pawn = _rt.Entities.PawnOf(slot);
-    return static_cast<bool>(pawn) && !(pawn.Flags() & VoltMod::FL_FAKECLIENT);
+    if (!pawn)
+        return false;
+    const bool bot = player->IsBot() || (pawn.Flags() & VoltMod::FL_FAKECLIENT);
+    return !bot || IncludesBots();
+}
+
+bool AntiCheatManager::IncludesBots() const
+{
+    return _config.Get().anticheat.debug.includeBots;
 }
 
 void AntiCheatManager::Report(int slot, const std::optional<Finding>& finding)

@@ -190,15 +190,42 @@ TEST_CASE("A shot excursion under thirty degrees is not an attack return")
     CHECK(core.Score(Slot) == doctest::Approx(0.0f));
 }
 
-TEST_CASE("A sustained one direction spin fires after fifteen seconds of the slow tier")
+TEST_CASE("A sustained one direction spin fires after ten seconds of the slow tier")
 {
     AntiAimCore core;
     // 6 degrees a tick is 384 degrees a second: above the 320 tier, below the 1000 one.
     const int fired = RunPattern(core, 1200, SteadySpin);
     REQUIRE(fired > 0);
-    // Progress starts once sixteen consecutive commands exist, so 960 ticks later is command 975.
-    CHECK(fired >= 970);
-    CHECK(fired <= 985);
+    // Progress starts once sixteen consecutive commands exist, so 640 ticks later is command 655.
+    CHECK(fired >= 650);
+    CHECK(fired <= 665);
+}
+
+static float FastSpin(int i)
+{
+    return std::fmod(40.0f * static_cast<float>(i), 360.0f);
+}
+
+TEST_CASE("A fast spin fires after three seconds")
+{
+    AntiAimCore core;
+    // 40 degrees a tick is 2560 degrees a second: the fast tier.
+    const int fired = RunPattern(core, 400, FastSpin);
+    REQUIRE(fired > 0);
+    CHECK(fired >= 200);
+    CHECK(fired <= 215);
+}
+
+TEST_CASE("A spin keeps accruing when the server simulates commands in uneven batches")
+{
+    AntiAimCore core;
+    // Two commands land on one server tick, none on the next: the client sequence is unbroken.
+    int fired = -1;
+    for (int i = 1; i <= 1200 && fired < 0; ++i)
+        if (Feed(core, Cmd(i, i, SteadySpin(i)), (i / 2) * 2))
+            fired = i;
+    REQUIRE(fired > 0);
+    CHECK(fired <= 665);
 }
 
 TEST_CASE("A yaw that reverses every tick never reaches the spin direction consistency")
@@ -207,29 +234,28 @@ TEST_CASE("A yaw that reverses every tick never reaches the spin direction consi
     CHECK(RunPattern(core, 1200, ReversingYaw) == -1);
 }
 
-TEST_CASE("A spin broken by more than a second of missing ticks loses its progress")
+TEST_CASE("A spin broken by more than a second of missing commands loses its progress")
 {
     AntiAimCore core;
-    int32_t tick = 1;
-    for (int32_t i = 1; i <= 500; ++i, ++tick)
-        REQUIRE_FALSE(Feed(core, Cmd(i, i, SteadySpin(i)), tick).has_value());
+    for (int32_t i = 1; i <= 400; ++i)
+        REQUIRE_FALSE(Feed(core, Cmd(i, i, SteadySpin(i)), i).has_value());
 
-    tick += 128;  // two seconds of nothing
+    // Two seconds of commands the server never received.
     std::optional<Finding> finding;
-    for (int32_t i = 501; i <= 1000 && !finding; ++i, ++tick)
-        finding = Feed(core, Cmd(i, i, SteadySpin(i)), tick);
-    // Uninterrupted, 1000 commands would have fired; the reset means these 500 are not enough.
+    for (int32_t i = 529; i <= 928 && !finding; ++i)
+        finding = Feed(core, Cmd(i, i, SteadySpin(i)), i);
+    // Uninterrupted, 800 commands would have fired; the reset means these 400 are not enough.
     CHECK_FALSE(finding.has_value());
 }
 
-TEST_CASE("An exact two way yaw pattern fires after ten seconds of jitter")
+TEST_CASE("An exact two way yaw pattern fires after five seconds of jitter")
 {
     AntiAimCore core;
     const int fired = RunPattern(core, 900, TwoWayJitter);
     REQUIRE(fired > 0);
-    // Period 2 needs eight commands of history, so 640 ticks later is command 647.
-    CHECK(fired >= 640);
-    CHECK(fired <= 665);
+    // Period 2 needs eight commands of history, so 320 ticks later is command 327.
+    CHECK(fired >= 320);
+    CHECK(fired <= 345);
 }
 
 TEST_CASE("A two way yaw pattern spanning under ten degrees is not jitter")

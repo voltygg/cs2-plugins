@@ -1,20 +1,12 @@
 #pragma once
 
-// Dev-only: synthesises cheat-shaped input by rewriting the decoded PlayerInput. The game still
-// runs the real command, so nothing here changes where the player's bullets go.
-// anticheat.debug.simulator decides whether the arming commands exist at all.
-//
-// Each pattern targets one module: Spin and Jitter feed AntiAim's motion rules, BadAngles its
-// invalid pitch/roll rule, Aimlock the tracking episodes, and Mismatch its base-vs-input-history
-// divergence rule. SilentAim is deliberately absent - only the real usercmd can move where the
-// bullet actually landed.
-
 #include "AnticheatTypes.hpp"
 #include "Config.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <string_view>
 
 namespace Anticheat
@@ -42,6 +34,7 @@ private:
         BadAngles,
         Aimlock,
         Mismatch,
+        Names,
     };
 
     struct SimState
@@ -51,12 +44,13 @@ private:
         float spinYaw = 0.0f;  // accumulated spin angle
         float baseYaw = 0.0f;  // jitter anchor, captured on the first rewritten command
         int step = 0;          // commands rewritten so far, for the jitter cycle
+        std::string baseName;  // what Names restores when it expires
         bool anchored = false;
         double expireAt = 0.0;
     };
 
     void OnFilter(int slot, VoltMod::PlayerInput& cmd);
-    void Arm(const CCommand& args, Kind kind, float defaultParam);
+    void Start(const CCommand& args, Kind kind, float defaultParam);
     /** Point the command at the nearest opponent's chest; false with nobody to lock onto. */
     bool AimAtNearestOpponent(int slot, VoltMod::PlayerInput& cmd);
 
@@ -65,13 +59,14 @@ private:
     bool Enabled() const;
 
     VoltMod::PerSlot<SimState> _sim;
-    // Movement filter, installed lazily on the first Arm; empty while the simulator is idle.
+    // Movement filter, installed lazily on the first Start; empty while the simulator is idle.
     VoltMod::Subscription _filter;
     std::optional<VoltMod::ServerCommand> _cmdSpin;
     std::optional<VoltMod::ServerCommand> _cmdJitter;
     std::optional<VoltMod::ServerCommand> _cmdBadAngles;
     std::optional<VoltMod::ServerCommand> _cmdAimlock;
     std::optional<VoltMod::ServerCommand> _cmdMismatch;
+    std::optional<VoltMod::ServerCommand> _cmdNames;
     std::optional<VoltMod::ServerCommand> _cmdOff;
 };
 

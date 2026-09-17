@@ -1,6 +1,3 @@
-// Spin and jitter analysis for AntiAimCore, split out purely to keep both TUs readable. The tuned
-// constants live in AntiAimCore.hpp.
-
 #include "Core/Geometry.hpp"
 #include "Detectors/AntiAimCore.hpp"
 
@@ -36,33 +33,32 @@ static constexpr int JitterPeriods[] = {2, 3, 5};
 
 void AntiAimCore::EvaluateMotion(SlotData& data, const Command& command, double nowSec, std::optional<Finding>& out)
 {
-    if (command.ServerTick == data.LastMotionServerTick)
+    if (command.CmdNum == data.LastMotionCmdNum)
         return;
 
-    const int64_t serverGap =
-        data.LastMotionServerTick < 0 ? 1 : static_cast<int64_t>(command.ServerTick) - data.LastMotionServerTick;
-    if (serverGap <= 0)
+    const int64_t gap = data.LastMotionCmdNum < 0 ? 1 : static_cast<int64_t>(command.CmdNum) - data.LastMotionCmdNum;
+    if (gap <= 0)
     {
         ResetMotion(data);
         return;
     }
-    if (serverGap > static_cast<int64_t>(TickRate))
+    if (gap > static_cast<int64_t>(TickRate))
         ResetMotion(data);
-    data.LastMotionServerTick = command.ServerTick;
+    data.LastMotionCmdNum = command.CmdNum;
 
-    // Strictly consecutive server ticks: a lost tick makes any rate computed across it a fiction.
+    // Strictly consecutive commands: a missing one makes any rate computed across it a fiction.
     std::array<const Command*, MotionHistorySize> history{};
     size_t historyCount = 0;
-    int64_t wantedTick = command.ServerTick;
+    int64_t wanted = command.CmdNum;
     for (auto candidate = data.Commands.rbegin(); candidate != data.Commands.rend() && historyCount < history.size();
          ++candidate)
     {
-        if (!candidate->Simulated || !Geometry::IsFinite(candidate->Base) || candidate->ServerTick > wantedTick)
+        if (!candidate->Simulated || !Geometry::IsFinite(candidate->Base) || candidate->CmdNum > wanted)
             continue;
-        if (candidate->ServerTick < wantedTick)
+        if (candidate->CmdNum < wanted)
             break;
         history[historyCount++] = &*candidate;
-        --wantedTick;
+        --wanted;
     }
 
     bool spinMatches = false;
@@ -77,22 +73,19 @@ void AntiAimCore::EvaluateMotion(SlotData& data, const Command& command, double 
             total += std::abs(delta);
             net += delta;
         }
-        const float elapsed =
-            static_cast<float>(static_cast<int64_t>(history[0]->ServerTick) - history[SpinSamples - 1]->ServerTick) /
-            TickRate;
-        spinRate = elapsed > 0.0f ? total / elapsed : 0.0f;
+        spinRate = total * TickRate / static_cast<float>(SpinSamples - 1);
         // Direction consistency separates a spinbot from a player flicking back and forth.
         const float consistency = total > 0.0f ? std::abs(net) / total : 0.0f;
         const float latestRate = std::abs(Geometry::YawDelta(history[1]->Base.Yaw, history[0]->Base.Yaw)) * TickRate;
         spinMatches = spinRate >= MinimumSpinRate && latestRate >= MinimumSpinRate && consistency >= SpinConsistency;
     }
 
-    const float commandSeconds = static_cast<float>(serverGap) / TickRate;
+    const float commandSeconds = static_cast<float>(gap) / TickRate;
     bool spinDetected = false;
     bool spinEpisodeActive = false;
     for (size_t tier = 0; tier < std::size(TierRates); ++tier)
     {
-        if (spinMatches && spinRate >= TierRates[tier] && serverGap == 1)
+        if (spinMatches && spinRate >= TierRates[tier] && gap == 1)
         {
             data.SpinBreakSeconds[tier] = 0.0f;
             if (!data.SuppressContinuous)
@@ -149,7 +142,7 @@ void AntiAimCore::EvaluateMotion(SlotData& data, const Command& command, double 
 
     // Sustain rather than score each repetition: a legitimate 180-degree bind briefly looks the same.
     bool jitterEpisodeActive = false;
-    if (jitterPeriod != 0 && serverGap == 1)
+    if (jitterPeriod != 0 && gap == 1)
     {
         data.JitterBreakSeconds = 0.0f;
         if (!data.SuppressContinuous)

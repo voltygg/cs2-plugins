@@ -32,9 +32,11 @@
       "url": ""
     },
 
-    // Arms the built-in cheat simulator commands (dev boxes only).
+    // Dev boxes only: enable the cheat simulator commands, and check bots like human players so a
+    // headless server can exercise every detector.
     "debug": {
-      "simulator": false
+      "simulator": false,
+      "includeBots": false
     }
   }
 }
