@@ -70,7 +70,7 @@ public:
     Rules::Aimlock Aimlock{History};
     Rules::AntiAim AntiAim;
     Rules::SilentAim SilentAim{Scores};
-    Rules::Triggerbot Triggerbot{History};
+    Rules::Triggerbot Triggerbot{History, Scores};
     Rules::Recoil Recoil{Scores};
     Rules::MouseMismatch Mouse{History};
     Rules::Wallhack Wallhack{History, Scores};

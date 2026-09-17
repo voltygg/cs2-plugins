@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Detect/Evidence.hpp"
 #include "Detect/Finding.hpp"
 #include "Detect/ViewLag.hpp"
 #include "Detect/Samples.hpp"
 #include "Detect/ShotHistory.hpp"
+#include "Detect/Suspicion.hpp"
 
 #include <array>
 #include <deque>
@@ -19,7 +19,7 @@ public:
     /** The settings toggle and catalog entry this rule reports under. */
     static constexpr DetectionKind Kind = DetectionKind::Triggerbot;
 
-    explicit Triggerbot(const ShotHistory& shots) : _shots(shots) {}
+    Triggerbot(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
     void OnSlotChanged(int slot);
@@ -36,7 +36,6 @@ public:
     /** A shot that hurt someone, judged while the crosshair runs still describe the tick it fired. */
     std::optional<Finding> OnPlayerHurt(int slot, const ShotView& shot, double nowSec);
 
-    int Score(int slot, double nowSec) const;
 
 private:
     struct AimSample
@@ -65,8 +64,8 @@ private:
     static bool OnTarget(const Vec3& eye, const AimAngles& angles, const PositionSample& target);
 
     const ShotHistory& _shots;
+    Suspicion& _suspicion;
     std::array<SlotData, MaxSlots> _slots{};
-    std::array<LongEvidenceWindow, MaxSlots> _incidents{};
 };
 
 }  // namespace Anticheat::Rules

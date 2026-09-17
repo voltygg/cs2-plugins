@@ -19,7 +19,6 @@ static constexpr int FastReactionTicks = 3;  // 47 ms
 static constexpr int SlowReactionTicks = 6;  // 94 ms
 static constexpr int FastPoints = 2;
 static constexpr int SlowPoints = 1;
-static constexpr int DetectionScore = 8;
 /** The crosshair must have been resting: the target walked in, the shooter did not flick. */
 static constexpr float StillAimDeg = 2.0f;
 static constexpr int StillLeadTicks = 4;
@@ -33,7 +32,6 @@ void Triggerbot::SlotData::ClearRuns()
 void Triggerbot::Reset()
 {
     _slots = {};
-    _incidents = {};
 }
 
 void Triggerbot::OnSlotChanged(int slot)
@@ -41,7 +39,6 @@ void Triggerbot::OnSlotChanged(int slot)
     if (!InSlotRange(slot))
         return;
     _slots[slot] = {};
-    _incidents[slot].Clear();
     // Nobody can rest a crosshair on a seat that just changed hands.
     for (auto& data : _slots)
         data.OnSince[slot].fill(-1);
@@ -188,22 +185,13 @@ std::optional<Finding> Triggerbot::OnPlayerHurt(int slot, const ShotView& shot, 
     if (AimTravel(data, shot.FireTick - reaction - StillLeadTicks, shot.FireTick) > StillAimDeg)
         return out;
 
-    const int total = _incidents[slot].Add(nowSec, points);
-    if (total < DetectionScore)
-        return out;
-
-    out = Finding{.Kind = DetectionKind::Triggerbot,
-                  .Evidence = std::format("hit {} ticks (~{} ms) after the target walked into a resting crosshair; "
-                                          "the rolling score reached {}/{}.",
-                                          reaction, static_cast<int>(reaction * 1000.0f / TickRate), total,
-                                          DetectionScore)};
-    _incidents[slot].Clear();
-    return out;
-}
-
-int Triggerbot::Score(int slot, double nowSec) const
-{
-    return InSlotRange(slot) ? _incidents[slot].Value(nowSec) : 0;
+    return _suspicion.Add(
+        slot,
+        {.Kind = Kind,
+         .Points = static_cast<float>(points),
+         .Reason = std::format("A hit landed {} ticks (~{} ms) after the target walked into a resting crosshair.",
+                               reaction, static_cast<int>(reaction * 1000.0f / TickRate))},
+        nowSec);
 }
 
 }  // namespace Anticheat::Rules
