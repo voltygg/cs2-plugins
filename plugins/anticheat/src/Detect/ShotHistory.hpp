@@ -32,7 +32,7 @@ public:
     void Reset();
 
     /** Invalidate one slot's in-flight shots after connect or disconnect. */
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
 
     /** Duplicates (same CmdNum) are dropped. */
     void OnCommand(int slot, const CmdSample& cmd);
@@ -46,11 +46,9 @@ public:
     /** Drop commands and shots that can no longer match an event. */
     void Prune(int32_t serverTick);
 
-    /**
-     * weapon_fire for a ballistic weapon. @p fireCmdNum is the command the pawn says fired (0 when
-     * unknown) and binds exactly; otherwise the unique simulated command in the window binds, and
-     * ambiguous candidates are consumed so later events cannot select one arbitrarily.
-     */
+    /** weapon_fire for a ballistic weapon. @p fireCmdNum binds exactly when the pawn names it (0
+     *  when unknown); otherwise the window's one unique command binds and ambiguous ones are
+     *  consumed. */
     ShotView* OnWeaponFire(int slot, std::string_view weapon, int32_t serverTick, const AimAngles& visibleAngles,
                            bool hasVisibleAngles, int32_t fireCmdNum = 0, int shotsFired = 0);
 
@@ -59,10 +57,8 @@ public:
     ShotView* OnPlayerDeath(int attackerSlot, int victimSlot, std::string_view weapon, bool wallbang,
                             int32_t serverTick);
 
-    /**
-     * bullet_impact carries only the low byte of the shooter's userid. Matches it against
-     * @p userIdBySlot, requiring both the slot and its in-window shot to be unique; -1 otherwise.
-     */
+    /** bullet_impact carries only the low byte of the shooter's userid. Matched against
+     *  @p userIdBySlot, requiring both the slot and its in-window shot to be unique; -1 otherwise. */
     int ResolveImpactShooter(int truncatedUserId, int32_t serverTick, std::span<const int32_t> userIdBySlot) const;
 
     const PositionFrame* FindFrame(int32_t serverTick) const;
@@ -80,7 +76,6 @@ public:
 
     std::deque<ShotView>& Shots(int slot);
     const std::deque<ShotView>& Shots(int slot) const;
-    uint32_t Generation(int slot) const;
 
     size_t FrameCount() const { return _frames.size(); }
     size_t CommandCount(int slot) const;
@@ -97,10 +92,8 @@ private:
     {
         std::deque<PendingCommand> Commands;
         std::deque<ShotView> Shots;
-        uint32_t Generation = 1;
     };
 
-    void AdvanceGeneration(SlotData& data);
     /** Newest shot within the match window whose weapon matches, when it is the only one. */
     ShotView* MatchEvent(int slot, std::string_view weapon, int32_t serverTick);
 

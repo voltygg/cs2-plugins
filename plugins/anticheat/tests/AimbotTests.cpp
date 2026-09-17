@@ -1,4 +1,5 @@
 #include "Detect/Rules/Aimbot.hpp"
+#include "Harness.hpp"
 
 #include <array>
 #include <doctest/doctest.h>
@@ -76,7 +77,7 @@ struct Incident
     double At = Now;
 };
 
-static std::optional<Finding> Run(ShotHistory& correlator, Aimbot& aimbot, const Incident& incident)
+static void Run(ShotHistory& correlator, Aimbot& aimbot, const Incident& incident)
 {
     auto players = Frame(incident.VictimX, incident.Teleported);
     if (incident.VictimIsTeammate)
@@ -95,7 +96,7 @@ static std::optional<Finding> Run(ShotHistory& correlator, Aimbot& aimbot, const
     shot.CmdNum = incident.Base + 1;
     shot.ServerTick = incident.Tick;
     shot.FireTick = incident.Tick;
-    return aimbot.OnPlayerHurt(Attacker, Victim, shot, incident.At);
+    aimbot.OnPlayerHurt(Attacker, Victim, shot, incident.At);
 }
 
 TEST_CASE("The wide convergence branch counts at a snap over 10 degrees collapsing below a fifth of the error")
@@ -186,21 +187,24 @@ TEST_CASE("A shot against a teammate never counts")
 
 TEST_CASE("Incidents accumulate and the fourth is what this rule reports on alone")
 {
+    Anticheat::Test::Findings reported;
     ShotHistory correlator;
-    Suspicion scores = MakeScores();
+    Suspicion scores;
+    scores.ReportTo(reported.Sink());
     Aimbot aimbot(correlator, scores);
     for (int i = 0; i < 3; ++i)
     {
         const int32_t base = 100 + 10 * i;
-        CHECK_FALSE(Run(correlator, aimbot, {.Base = base, .Tick = base}).has_value());
+        Run(correlator, aimbot, {.Base = base, .Tick = base});
     }
+    CHECK(reported.Count == 0);
     CHECK(Incidents(scores) == doctest::Approx(3.0f));
 
-    const std::optional<Finding> finding = Run(correlator, aimbot, {.Base = 130, .Tick = 130});
-    REQUIRE(finding.has_value());
-    CHECK(finding->Kind == DetectionKind::Aimbot);
-    CHECK_FALSE(finding->KickOnly);
-    CHECK_FALSE(finding->Evidence.empty());
+    Run(correlator, aimbot, {.Base = 130, .Tick = 130});
+    REQUIRE(reported.Last.has_value());
+    CHECK(reported.Last->Kind == DetectionKind::Aimbot);
+    CHECK_FALSE(reported.Last->KickOnly);
+    CHECK_FALSE(reported.Last->Evidence.empty());
     CHECK(Incidents(scores) == doctest::Approx(4.0f));
 }
 
@@ -237,7 +241,7 @@ TEST_CASE("A one command excursion that returns to the surrounding angle counts 
     shot.CmdNum = 101;
     shot.ServerTick = 100;
     shot.FireTick = 100;
-    CHECK_FALSE(aimbot.OnPlayerHurt(Attacker, Victim, shot, Now).has_value());
+    aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);
     CHECK(Incidents(scores) == doctest::Approx(0.0f));  // still waiting for the command after the shot
 
     aimbot.OnCommand(Attacker, AimCmd(102, 101, 0.2f));
@@ -282,6 +286,6 @@ TEST_CASE("One shot never funds two incidents")
     shot.CmdNum = 101;
     shot.ServerTick = 100;
     shot.FireTick = 100;
-    aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);  // the shot is already consumed
+    aimbot.OnPlayerHurt(Attacker, Victim, shot, Now);  // same command, already counted once
     CHECK(Incidents(scores) == doctest::Approx(1.0f));
 }

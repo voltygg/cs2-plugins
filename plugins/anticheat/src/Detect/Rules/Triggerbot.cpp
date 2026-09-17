@@ -37,7 +37,7 @@ void Triggerbot::Reset()
     _slots = {};
 }
 
-void Triggerbot::OnSlotChanged(int slot)
+void Triggerbot::ClearSlot(int slot)
 {
     if (!InSlotRange(slot))
         return;
@@ -159,17 +159,16 @@ float Triggerbot::AimTravel(const SlotData& data, int32_t sinceTick, int32_t unt
     return rest ? travel : 180.0f;
 }
 
-std::optional<Finding> Triggerbot::OnPlayerHurt(int slot, const ShotView& shot, double nowSec)
+void Triggerbot::OnPlayerHurt(int slot, const ShotView& shot, double nowSec)
 {
-    std::optional<Finding> out;
     const int victim = shot.VictimSlot;
     if (!InSlotRange(slot) || shot.Slot != slot || !shot.HurtSeen || !InSlotRange(victim) || victim == slot)
-        return out;
+        return;
 
     auto& data = _slots[slot];
     const int32_t previousFire = data.LastFireTick == shot.FireTick ? data.PreviousFireTick : data.LastFireTick;
     if (previousFire >= 0 && shot.FireTick - previousFire <= BurstGapTicks)
-        return out;
+        return;
 
     // The slowest hypothesis, so a wrong guess about the client's view can only understate the reaction.
     int reaction = -1;
@@ -180,15 +179,15 @@ std::optional<Finding> Triggerbot::OnPlayerHurt(int slot, const ShotView& shot, 
             reaction = std::max(reaction, shot.FireTick - since);
     }
     if (reaction < 0)
-        return out;
+        return;
 
     const int points = reaction <= FastReactionTicks ? FastPoints : reaction <= SlowReactionTicks ? SlowPoints : 0;
     if (points == 0)
-        return out;
+        return;
     if (AimTravel(data, shot.FireTick - reaction - StillLeadTicks, shot.FireTick) > StillAimDeg)
-        return out;
+        return;
 
-    return _suspicion.Add(
+    _suspicion.Add(
         slot,
         {.Kind = Kind,
          .Points = static_cast<float>(points) * PerPoint,

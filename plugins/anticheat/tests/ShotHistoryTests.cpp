@@ -166,15 +166,13 @@ TEST_CASE("Shots survive two ticks and are pruned on the third")
     CHECK(history.Shots(Shooter).empty());
 }
 
-TEST_CASE("A generation bump invalidates the slot's pending shots and commands")
+TEST_CASE("A slot change drops the slot's pending shots and commands")
 {
     ShotHistory history;
     FeedSimulated(history, 1, 10);
     REQUIRE(history.OnWeaponFire(Shooter, "ak47", 10, {}, false) != nullptr);
-    const uint32_t before = history.Generation(Shooter);
 
-    history.OnSlotChanged(Shooter);
-    CHECK(history.Generation(Shooter) == before + 1);
+    history.ClearSlot(Shooter);
     CHECK(history.Shots(Shooter).empty());
     CHECK(history.CommandCount(Shooter) == 0);
 }

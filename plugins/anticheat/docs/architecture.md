@@ -80,9 +80,19 @@ command's angles.
 directly by concrete type - no mocks, no interfaces - with a per-rule harness
 struct that owns a `Suspicion` and reads values back in the rule's own units.
 
+Rules report through `Suspicion::ReportTo` rather than returning a finding, so a
+harness wires `Anticheat::Test::Findings` from `tests/Harness.hpp` into the score
+and reads what came out. That header also holds the shared slots, frame builder
+and constants every scenario uses.
+
 Each harness has its own name (`WallhackHarness`, `AimlockHarness`), because two
 same-named structs at namespace scope in one binary is an ODR violation the
-linker resolves silently.
+linker resolves silently. An anonymous namespace would be the usual fix, but
+`voltmod modgraph` rejects those, so distinct names it is.
+
+Neither `App` nor the engine adapters are covered: the test target links no SDK,
+so slot reuse, snapshot transfer, response execution and polling are verified by
+hand on a live server.
 
 ```bash
 uv run poe test                # build, then CTest

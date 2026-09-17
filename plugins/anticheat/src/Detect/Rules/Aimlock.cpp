@@ -35,18 +35,16 @@ struct TargetEvaluation
 };
 
 static TargetEvaluation EvaluateTarget(const ShotHistory& shots, const AimAngles& angles, const Vec3& eyePos,
-                                       int32_t serverTick, const PositionFrame& currentFrame, int observerSlot,
-                                       int targetSlot, int bodyPoint, int lagTicks)
+                                       const PositionFrame& currentFrame, const PositionFrame* historical,
+                                       int observerSlot, int targetSlot, int bodyPoint)
 {
     TargetEvaluation result;
     if (!InSlotRange(observerSlot) || !InSlotRange(targetSlot) || bodyPoint < 0 ||
-        bodyPoint >= Geometry::BodyPointCount || lagTicks < 0 || !Geometry::IsFinite(eyePos) ||
-        !Geometry::IsFinite(angles))
+        bodyPoint >= Geometry::BodyPointCount || !Geometry::IsFinite(eyePos) || !Geometry::IsFinite(angles))
         return result;
 
     const PositionSample& observer = currentFrame.Players[observerSlot];
     const PositionSample& currentTarget = currentFrame.Players[targetSlot];
-    const PositionFrame* historical = shots.FindFrame(serverTick - lagTicks);
     if (!observer.Trackable() || !shots.IsOpponent(observer.Team, currentTarget) || !historical)
         return result;
 
@@ -76,24 +74,18 @@ struct Candidate
     bool Valid = false;
 };
 
-/**
- * The single target the aim is already inside; two candidates means no episode. Runs per alive
- * player per frame, so the search rejects early: the observer once, each target slot once, then
- * the lag hypotheses and body points that need a full evaluation.
- */
+/** The single target the aim is already inside; two candidates means no episode. Runs per alive
+ *  player per frame, so it rejects the observer and each target once before the inner search. */
 static Candidate FindCandidate(const ShotHistory& shots, const AimAngles& angles, const Vec3& eyePos,
-                               int32_t serverTick, const PositionFrame& frame, int observerSlot, const ViewLag& lag)
+                               const PositionFrame& frame, const LagFrames& lagFrames, int observerSlot)
 {
     Candidate best;
-    if (!lag.Valid || !InSlotRange(observerSlot) || !Geometry::IsFinite(eyePos) || !Geometry::IsFinite(angles))
+    if (lagFrames.Last < 0 || !InSlotRange(observerSlot) || !Geometry::IsFinite(eyePos) || !Geometry::IsFinite(angles))
         return best;
 
     const PositionSample& observer = frame.Players[observerSlot];
     if (!observer.Trackable())
         return best;
-
-    const int firstLag = std::max(0, lag.Ticks - LagSearchRadius);
-    const int lastLag = lag.Ticks + LagSearchRadius;
 
     int matchedTarget = -1;
     bool ambiguous = false;
@@ -105,12 +97,13 @@ static Candidate FindCandidate(const ShotHistory& shots, const AimAngles& angles
         if (!shots.IsOpponent(observer.Team, currentTarget))
             continue;
 
-        for (int lagTicks = firstLag; lagTicks <= lastLag; ++lagTicks)
+        for (int lagTicks = lagFrames.First; lagTicks <= lagFrames.Last; ++lagTicks)
         {
+            const PositionFrame* historical = lagFrames.Frames[lagTicks - lagFrames.First];
             for (int bodyPoint = 0; bodyPoint < Geometry::BodyPointCount; ++bodyPoint)
             {
-                const TargetEvaluation evaluation = EvaluateTarget(shots, angles, eyePos, serverTick, frame,
-                                                                   observerSlot, targetSlot, bodyPoint, lagTicks);
+                const TargetEvaluation evaluation = EvaluateTarget(shots, angles, eyePos, frame, historical,
+                                                                   observerSlot, targetSlot, bodyPoint);
                 if (!evaluation.OnTarget())
                     continue;
                 if (matchedTarget < 0)
@@ -131,7 +124,7 @@ void Aimlock::Reset()
     _slots = {};
 }
 
-void Aimlock::OnSlotChanged(int slot)
+void Aimlock::ClearSlot(int slot)
 {
     if (!InSlotRange(slot))
         return;
@@ -155,12 +148,10 @@ void Aimlock::OnSimulated(int slot, int32_t serverTick, const AimAngles& angles,
     data.Pending = {.ServerTick = serverTick, .Angles = angles, .EyePos = eyePos, .Valid = true};
 }
 
-std::optional<Finding> Aimlock::OnFrame(int slot, int32_t serverTick, bool aliveHuman, const ViewLag& lag,
-                                            double nowSec)
+void Aimlock::OnFrame(int slot, int32_t serverTick, bool aliveHuman, const ViewLag& lag, double nowSec)
 {
-    std::optional<Finding> out;
     if (!InSlotRange(slot))
-        return out;
+        return;
 
     auto& data = _slots[slot];
     if (!aliveHuman)
@@ -168,10 +159,10 @@ std::optional<Finding> Aimlock::OnFrame(int slot, int32_t serverTick, bool alive
         // Only the tracking state is unusable across a death - counted episodes stay in _incidents,
         // so dying between them cannot wipe the evidence.
         data = {};
-        return out;
+        return;
     }
     if (!data.Pending.Valid)
-        return out;
+        return;
 
     const Sample sample = data.Pending;
     data.Pending = {};
@@ -179,15 +170,28 @@ std::optional<Finding> Aimlock::OnFrame(int slot, int32_t serverTick, bool alive
     if (sample.ServerTick != serverTick || sample.ServerTick == data.LastProcessedTick || !_shots.FindFrame(serverTick))
     {
         data.Current = {};
-        return out;
+        return;
     }
     data.LastProcessedTick = sample.ServerTick;
-    Evaluate(slot, data, sample, lag, nowSec, out);
-    return out;
+    Evaluate(slot, data, sample, lag, nowSec);
 }
 
-void Aimlock::Evaluate(int slot, SlotData& data, const Sample& sample, const ViewLag& lag, double nowSec,
-                           std::optional<Finding>& out)
+/** Whether any lag hypothesis still puts the aim on @p targetSlot's @p bodyPoint. */
+bool Aimlock::StillOnTarget(const Sample& sample, const PositionFrame& frame, const LagFrames& lagFrames, int slot,
+                            int targetSlot, int bodyPoint) const
+{
+    for (int lagTicks = lagFrames.First; lagTicks <= lagFrames.Last; ++lagTicks)
+    {
+        const TargetEvaluation evaluation =
+            EvaluateTarget(_shots, sample.Angles, sample.EyePos, frame, lagFrames.Frames[lagTicks - lagFrames.First],
+                           slot, targetSlot, bodyPoint);
+        if (evaluation.OnTarget())
+            return true;
+    }
+    return false;
+}
+
+void Aimlock::Evaluate(int slot, SlotData& data, const Sample& sample, const ViewLag& lag, double nowSec)
 {
     const PositionFrame* frame = _shots.FindFrame(sample.ServerTick);
     if (!frame)
@@ -195,18 +199,12 @@ void Aimlock::Evaluate(int slot, SlotData& data, const Sample& sample, const Vie
         data.Current = {};
         return;
     }
+    const LagFrames lagFrames = ResolveLagFrames(_shots, sample.ServerTick, lag);
 
     if (data.Locked)
     {
         // After a detection, stay quiet until the player leaves the target for half a second.
-        bool stillLocked = false;
-        if (lag.Valid)
-            for (int lagTicks = std::max(0, lag.Ticks - LagSearchRadius);
-                 !stillLocked && lagTicks <= lag.Ticks + LagSearchRadius; ++lagTicks)
-                stillLocked = EvaluateTarget(_shots, sample.Angles, sample.EyePos, sample.ServerTick, *frame, slot,
-                                             data.LockedTarget, data.LockedBodyPoint, lagTicks)
-                                  .OnTarget();
-        if (stillLocked)
+        if (StillOnTarget(sample, *frame, lagFrames, slot, data.LockedTarget, data.LockedBodyPoint))
         {
             data.OffTargetSince = -1;
             return;
@@ -223,13 +221,13 @@ void Aimlock::Evaluate(int slot, SlotData& data, const Sample& sample, const Vie
 
     if (data.Current.TargetSlot < 0)
     {
-        StartTrack(slot, data, sample, lag);
+        StartTrack(slot, data, sample, lagFrames);
         return;
     }
     if (static_cast<int64_t>(sample.ServerTick) - data.Current.LastServerTick != 1)
     {
         data.Current = {};
-        StartTrack(slot, data, sample, lag);
+        StartTrack(slot, data, sample, lagFrames);
         return;
     }
 
@@ -242,8 +240,9 @@ void Aimlock::Evaluate(int slot, SlotData& data, const Sample& sample, const Vie
             continue;
 
         const TargetEvaluation evaluation =
-            EvaluateTarget(_shots, sample.Angles, sample.EyePos, sample.ServerTick, *frame, slot,
-                           data.Current.TargetSlot, data.Current.BodyPoint, hypothesis.LagTicks);
+            EvaluateTarget(_shots, sample.Angles, sample.EyePos, *frame,
+                           FrameForLag(_shots, sample.ServerTick, lagFrames, hypothesis.LagTicks), slot,
+                           data.Current.TargetSlot, data.Current.BodyPoint);
         const float displacement =
             evaluation.Valid ? Geometry::AngularDistance(hypothesis.StartBearing, evaluation.Bearing) : 0.0f;
         if (!evaluation.Valid || !std::isfinite(displacement))
@@ -258,7 +257,7 @@ void Aimlock::Evaluate(int slot, SlotData& data, const Sample& sample, const Vie
     if (validHypotheses == 0)
     {
         data.Current = {};
-        StartTrack(slot, data, sample, lag);
+        StartTrack(slot, data, sample, lagFrames);
         return;
     }
 
@@ -281,17 +280,16 @@ void Aimlock::Evaluate(int slot, SlotData& data, const Sample& sample, const Vie
         data.Current = {};
         return;
     }
-    Count(slot, data, *passing, nowSec, out);
+    Count(slot, data, *passing, nowSec);
 }
 
-void Aimlock::StartTrack(int slot, SlotData& data, const Sample& sample, const ViewLag& lag)
+void Aimlock::StartTrack(int slot, SlotData& data, const Sample& sample, const LagFrames& lagFrames)
 {
     const PositionFrame* frame = _shots.FindFrame(sample.ServerTick);
     if (!frame)
         return;
 
-    const Candidate candidate =
-        FindCandidate(_shots, sample.Angles, sample.EyePos, sample.ServerTick, *frame, slot, lag);
+    const Candidate candidate = FindCandidate(_shots, sample.Angles, sample.EyePos, *frame, lagFrames, slot);
     if (!candidate.Valid)
         return;
 
@@ -301,14 +299,11 @@ void Aimlock::StartTrack(int slot, SlotData& data, const Sample& sample, const V
     data.Current.StartServerTick = sample.ServerTick;
     data.Current.LastServerTick = sample.ServerTick;
     data.Current.Samples = 1;
-    for (int lagTicks = std::max(0, lag.Ticks - LagSearchRadius);
-         lagTicks <= lag.Ticks + LagSearchRadius &&
-         data.Current.HypothesisCount < static_cast<int>(data.Current.Hypotheses.size());
-         ++lagTicks)
+    for (int lagTicks = lagFrames.First; lagTicks <= lagFrames.Last; ++lagTicks)
     {
         const TargetEvaluation evaluation =
-            EvaluateTarget(_shots, sample.Angles, sample.EyePos, sample.ServerTick, *frame, slot, candidate.TargetSlot,
-                           candidate.BodyPoint, lagTicks);
+            EvaluateTarget(_shots, sample.Angles, sample.EyePos, *frame, lagFrames.Frames[lagTicks - lagFrames.First],
+                           slot, candidate.TargetSlot, candidate.BodyPoint);
         if (!evaluation.Valid)
             continue;
         data.Current.Hypotheses[data.Current.HypothesisCount++] = {
@@ -323,10 +318,9 @@ void Aimlock::StartTrack(int slot, SlotData& data, const Sample& sample, const V
         data.Current = {};
 }
 
-void Aimlock::Count(int slot, SlotData& data, const Hypothesis& hypothesis, double nowSec,
-                        std::optional<Finding>& out)
+void Aimlock::Count(int slot, SlotData& data, const Hypothesis& hypothesis, double nowSec)
 {
-    std::optional<Finding> finding = _suspicion.Add(
+    const bool reported = _suspicion.Add(
         slot,
         {.Kind = Kind,
          .Points = PerEpisode,
@@ -336,9 +330,8 @@ void Aimlock::Count(int slot, SlotData& data, const Hypothesis& hypothesis, doub
                                hypothesis.RequiredTargetDisplacement)},
         nowSec);
 
-    if (finding)
+    if (reported)
     {
-        out = std::move(finding);
         // Stay on this target so one continuous lock is one episode, not one per re-evaluation.
         data.Locked = true;
         data.LockedTarget = data.Current.TargetSlot;

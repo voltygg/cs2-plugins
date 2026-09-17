@@ -28,7 +28,7 @@ void Recoil::Reset()
     _slots = {};
 }
 
-void Recoil::OnSlotChanged(int slot)
+void Recoil::ClearSlot(int slot)
 {
     if (!InSlotRange(slot))
         return;
@@ -51,11 +51,10 @@ const Recoil::Command* Recoil::Find(const SlotData& data, int32_t cmdNum) const
     return data.Commands.Find(cmdNum);
 }
 
-std::optional<Finding> Recoil::OnShot(int slot, const ShotView& shot, double nowSec)
+void Recoil::OnShot(int slot, const ShotView& shot, double nowSec)
 {
-    std::optional<Finding> out;
     if (!InSlotRange(slot) || shot.Slot != slot)
-        return out;
+        return;
 
     auto& data = _slots[slot];
     if (!data.Spray.empty())
@@ -64,28 +63,23 @@ std::optional<Finding> Recoil::OnShot(int slot, const ShotView& shot, double now
         // A burst counter that stopped climbing means the engine saw a pause, whatever the ticks say.
         const bool restarted = shot.ShotsFired > 0 && last.ShotsFired > 0 && shot.ShotsFired <= last.ShotsFired;
         if (data.Weapon != shot.Weapon || shot.FireTick - last.FireTick > MaxShotGapTicks || restarted)
-            out = Finalize(slot, data, nowSec);
+            Finalize(slot, data, nowSec);
     }
 
     data.Weapon = shot.Weapon;
     data.Spray.push_back({.CmdNum = shot.CmdNum, .FireTick = shot.FireTick, .ShotsFired = shot.ShotsFired});
     if (data.Spray.size() >= MaxSprayShots)
-    {
-        std::optional<Finding> closed = Finalize(slot, data, nowSec);
-        if (!out)
-            out = std::move(closed);
-    }
-    return out;
+        Finalize(slot, data, nowSec);
 }
 
-std::optional<Finding> Recoil::OnFrame(int slot, int32_t serverTick, double nowSec)
+void Recoil::OnFrame(int slot, int32_t serverTick, double nowSec)
 {
     if (!InSlotRange(slot))
-        return std::nullopt;
+        return;
     auto& data = _slots[slot];
     if (data.Spray.empty() || serverTick - data.Spray.back().FireTick <= MaxShotGapTicks)
-        return std::nullopt;
-    return Finalize(slot, data, nowSec);
+        return;
+    Finalize(slot, data, nowSec);
 }
 
 SprayFit Recoil::Fit(const SlotData& data, int viewLag) const
@@ -138,14 +132,14 @@ SprayFit Recoil::Fit(const SlotData& data, int viewLag) const
     return fit;
 }
 
-std::optional<Finding> Recoil::Finalize(int slot, SlotData& data, double nowSec)
+void Recoil::Finalize(int slot, SlotData& data, double nowSec)
 {
     const size_t shots = data.Spray.size();
     const std::string weapon = data.Weapon;
     if (shots < MinSprayShots)
     {
         data.Spray.clear();
-        return std::nullopt;
+        return;
     }
 
     // The view may cancel the punch in the same command or the one after; take the better fit.
@@ -159,9 +153,9 @@ std::optional<Finding> Recoil::Finalize(int slot, SlotData& data, double nowSec)
     data.Spray.clear();
 
     if (!best.Valid || best.Slope < MinSlope || best.Slope > MaxSlope || best.ResidualDeg > MaxResidualDeg)
-        return std::nullopt;
+        return;
 
-    return _suspicion.Add(
+    _suspicion.Add(
         slot,
         {.Kind = Kind,
          .Points = PerSpray,

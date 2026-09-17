@@ -81,11 +81,9 @@ public:
 
     CvarVerdict Evaluate(std::string_view name, std::string_view value, bool enforceCheatCvars) const;
 
-    /**
-     * A reply that refused to return a value; @p consecutiveReplies includes this one. Silence is
-     * never judged, and a refusal is evidence only for a cheat-protected rule after
-     * @ref MissingRepliesBeforeEvidence replies, and only for a kick.
-     */
+    /** A reply that refused a value; @p consecutiveReplies includes this one. Silence is never
+     *  judged, and a refusal is evidence only for a cheat-protected rule after
+     *  @ref MissingRepliesBeforeEvidence replies, and only for a kick. */
     CvarVerdict EvaluateMissing(std::string_view name, std::string_view statusName, bool enforceCheatCvars,
                                 int consecutiveReplies) const;
 
@@ -116,7 +114,7 @@ public:
     static constexpr DetectionKind Kind = DetectionKind::InvalidCvar;
 
     void Reset();
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
 
     /** Replaces the rules and forgets what was reported, since the flags are keyed by position.
      *  Returns the names of any rules that did not validate. */

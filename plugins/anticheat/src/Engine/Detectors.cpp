@@ -64,12 +64,6 @@ bool Detectors::IsEligible(int slot)
     return !bot || IncludesBots();
 }
 
-void Detectors::Report(int slot, const std::optional<Finding>& finding)
-{
-    if (finding)
-        _response.Handle(slot, *finding);
-}
-
 bool Detectors::EnforceCheatCvars() const
 {
     return ShouldEnforceCheatCvars(_svCheats && _svCheats.Get(), Time::MonotonicSeconds(), _cheatGraceUntil);
@@ -96,14 +90,35 @@ void Detectors::RefreshTeamRules()
     History.SetTeammatesAreEnemies(_teammatesAreEnemies && _teammatesAreEnemies.Get());
 }
 
-void Detectors::Reset()
+void Detectors::ClearTracking()
 {
-    std::apply([](auto&... detectors) { (detectors.Reset(), ...); }, All());
+    History.Reset();
+    Aimbot.Reset();
+    Aimlock.Reset();
+    AntiAim.Reset();
+    Triggerbot.Reset();
+    Recoil.Reset();
+    AimAssist.Reset();
+    Wallhack.Reset();
+    Namechanger.Reset();
+    InvalidCvars.Reset();
+    // Scores stay: a map change must not hand anyone a clean slate.
 }
 
-void Detectors::OnSlotChanged(int slot)
+void Detectors::ClearSlot(int slot)
 {
-    std::apply([slot](auto&... detectors) { (detectors.OnSlotChanged(slot), ...); }, All());
+    // Scores included: without this the next player in the seat inherits them.
+    Scores.ClearSlot(slot);
+    History.ClearSlot(slot);
+    Aimbot.ClearSlot(slot);
+    Aimlock.ClearSlot(slot);
+    AntiAim.ClearSlot(slot);
+    Triggerbot.ClearSlot(slot);
+    Recoil.ClearSlot(slot);
+    AimAssist.ClearSlot(slot);
+    Wallhack.ClearSlot(slot);
+    Namechanger.ClearSlot(slot);
+    InvalidCvars.ClearSlot(slot);
 }
 
 }  // namespace Anticheat

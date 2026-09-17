@@ -67,7 +67,7 @@ void NamechangerPoll::CheckIdentity(int slot, double nowSec)
     const VoltMod::Controller controller = _rt.Entities.Controller(slot);
     if (!controller)
         return;
-    _detectors.Report(slot, _detectors.Namechanger.OnIdentity(slot, controller.Name(), ClanOf(controller), nowSec));
+    _detectors.Namechanger.OnIdentity(slot, controller.Name(), ClanOf(controller), nowSec);
 }
 
 }  // namespace Anticheat

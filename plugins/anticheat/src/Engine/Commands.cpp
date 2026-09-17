@@ -35,7 +35,7 @@ void RegisterCommands(App& app)
             else
                 app.LoadDetectionData();
             app.Detection.RefreshTeamRules();
-            app.ForgetEvidence();
+            app.ClearAll();
             return Reply{std::format("Settings reloaded (mode={}); evidence cleared.", app.Config.Get().anticheat.mode)};
         });
 

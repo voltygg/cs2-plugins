@@ -14,11 +14,8 @@ concept HasCommandNumber = requires(const T& entry) {
     { entry.CmdNum } -> std::convertible_to<int32_t>;
 };
 
-/**
- * One slot's recent commands, oldest first, at most @p Limit of them. A client may replay a
- * command number, so the first entry per number wins and later copies are dropped; every lookup
- * therefore has a single answer.
- */
+/** One slot's recent commands, oldest first, at most @p Limit. A client may replay a command
+ *  number, so the first entry per number wins and every lookup has a single answer. */
 template <HasCommandNumber T, size_t Limit>
 class CommandHistory
 {

@@ -1,5 +1,6 @@
 #include "Detect/WeaponClass.hpp"
 #include "Detect/Rules/SilentAim.hpp"
+#include "Harness.hpp"
 
 #include <doctest/doctest.h>
 #include <string>
@@ -44,7 +45,9 @@ static constexpr Vec3 BlatantImpact{100.0f, 100.0f, 0.0f};
 /** The rule and the score it feeds, since a finding now comes out of the score. */
 struct SilentAimHarness
 {
-    SilentAimHarness() = default;
+    SilentAimHarness() { Scores.ReportTo(Reported.Sink()); }
+
+    Anticheat::Test::Findings Reported;
 
     /** Points this rule has on the slot, in its own units, where twelve weighted points are one whole unit of suspicion, as of @p now. */
     float Points(double now = Now) const { return Scores.Value(Slot, DetectionKind::SilentAim, now) * 12.0f; }
@@ -53,10 +56,13 @@ struct SilentAimHarness
     SilentAim Rule{Scores};
 };
 
+/** Measures and finalizes one shot, handing back the finding it reported, if any. */
 static std::optional<Finding> Land(SilentAimHarness& h, ShotView shot, double now = Now)
 {
+    h.Reported.Last.reset();
     h.Rule.OnShotUpdated(Slot, shot);
-    return h.Rule.Finalize(Slot, shot, now);
+    h.Rule.Finalize(Slot, shot, now);
+    return h.Reported.Last;
 }
 
 TEST_CASE("The per weapon deviation table matches each weapon class")
@@ -189,6 +195,6 @@ TEST_CASE("A slot change drops the slot's accumulated silent aim evidence")
     SilentAimHarness rule;
     for (int i = 0; i < 5; ++i)
         Land(rule, Shot("awp", ModerateImpact));
-    rule.Scores.OnSlotChanged(Slot);
+    rule.Scores.ClearSlot(Slot);
     CHECK(rule.Points() == doctest::Approx(0.0f));
 }

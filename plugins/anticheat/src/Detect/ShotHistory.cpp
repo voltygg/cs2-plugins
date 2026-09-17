@@ -21,26 +21,18 @@ static bool InWindow(int32_t serverTick, int32_t stampTick)
     return delta >= 0 && delta <= ShotMatchTicks;
 }
 
-void ShotHistory::AdvanceGeneration(SlotData& data)
-{
-    data.Commands.clear();
-    data.Shots.clear();
-    if (++data.Generation == 0)
-        data.Generation = 1;
-}
-
 void ShotHistory::Reset()
 {
     for (auto& data : _slots)
-        AdvanceGeneration(data);
+        data = {};
     _frames.clear();
 }
 
-void ShotHistory::OnSlotChanged(int slot)
+void ShotHistory::ClearSlot(int slot)
 {
     if (!InSlotRange(slot))
         return;
-    AdvanceGeneration(_slots[slot]);
+    _slots[slot] = {};
     for (auto& frame : _frames)
         frame.Players[slot] = {};
 }
@@ -155,7 +147,6 @@ ShotView* ShotHistory::OnWeaponFire(int slot, std::string_view weapon, int32_t s
 
     match->Consumed = true;
     ShotView shot;
-    shot.Generation = data.Generation;
     shot.Slot = slot;
     shot.CmdNum = match->Cmd.CmdNum;
     shot.ClientTick = match->Cmd.ClientTick;
@@ -185,7 +176,7 @@ ShotView* ShotHistory::MatchEvent(int slot, std::string_view weapon, int32_t ser
     int matches = 0;
     for (auto& shot : data.Shots)
     {
-        if (shot.Generation != data.Generation || !InWindow(serverTick, shot.FireTick))
+        if (!InWindow(serverTick, shot.FireTick))
             continue;
         if (!weapon.empty() && NormalizeWeapon(shot.Weapon) != weapon)
             continue;
@@ -248,7 +239,7 @@ int ShotHistory::ResolveImpactShooter(int truncatedUserId, int32_t serverTick,
         const auto& data = _slots[slot];
         int compatible = 0;
         for (const auto& shot : data.Shots)
-            compatible += shot.Generation == data.Generation && InWindow(serverTick, shot.FireTick);
+            compatible += InWindow(serverTick, shot.FireTick);
         if (compatible != 1)
             continue;
         if (match >= 0)
@@ -293,11 +284,6 @@ std::deque<ShotView>& ShotHistory::Shots(int slot)
 const std::deque<ShotView>& ShotHistory::Shots(int slot) const
 {
     return InSlotRange(slot) ? _slots[slot].Shots : _noShots;
-}
-
-uint32_t ShotHistory::Generation(int slot) const
-{
-    return InSlotRange(slot) ? _slots[slot].Generation : 0;
 }
 
 size_t ShotHistory::CommandCount(int slot) const

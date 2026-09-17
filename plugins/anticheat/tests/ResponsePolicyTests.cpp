@@ -111,12 +111,12 @@ TEST_CASE("Alert mode ignores the kick-only flag entirely")
 TEST_CASE("Ban mode bans a normal finding and only kicks a kick-only one")
 {
     const ResponseDecision banned = Decide(Input(Mode::Ban, false));
-    CHECK(banned.Outcome == ResponseOutcome::BanIssued);
+    CHECK(banned.Outcome == ResponseOutcome::BanRequested);
     CHECK(banned.SendAlert);
     CHECK(banned.Apply == PunishmentLevel::Ban);
 
     const ResponseDecision kicked = Decide(Input(Mode::Ban, true));
-    CHECK(kicked.Outcome == ResponseOutcome::KickIssued);
+    CHECK(kicked.Outcome == ResponseOutcome::KickRequested);
     CHECK(kicked.Apply == PunishmentLevel::Kick);
 }
 
@@ -136,7 +136,7 @@ TEST_CASE("A punishment already issued is never repeated or downgraded, but may 
     CHECK(downgrade.Apply == PunishmentLevel::None);
 
     const ResponseDecision upgrade = Decide(Input(Mode::Ban, false, PunishmentLevel::Kick));
-    CHECK(upgrade.Outcome == ResponseOutcome::BanIssued);
+    CHECK(upgrade.Outcome == ResponseOutcome::BanRequested);
     CHECK(upgrade.Apply == PunishmentLevel::Ban);
 }
 
@@ -169,7 +169,7 @@ TEST_CASE("Likely evidence in observe mode stays silent")
 TEST_CASE("Certain evidence in ban mode punishes")
 {
     const ResponseDecision decision = Decide(Input(Mode::Ban, false, PunishmentLevel::None, Confidence::Certain));
-    CHECK(decision.Outcome == ResponseOutcome::BanIssued);
+    CHECK(decision.Outcome == ResponseOutcome::BanRequested);
     CHECK(decision.Apply == PunishmentLevel::Ban);
 }
 
@@ -203,4 +203,42 @@ TEST_CASE("IssuedPunishments reads None for a player it has never punished")
     CHECK(issued.Level(SteamId) == PunishmentLevel::None);
     // Decide refuses an unresolved SteamID outright, so nothing is ever raised under a zero key.
     CHECK(issued.Level(0) == PunishmentLevel::None);
+}
+
+TEST_CASE("Deciding to punish is recorded as a request, never as a punishment already landed")
+{
+    // The webhook and the log read this outcome. A decision that has not been executed must not
+    // claim the player was kicked or banned, or a missing admin-system reads as a ban.
+    for (const bool kickOnly : {false, true})
+    {
+        const ResponseDecision decision = Decide(Input(Mode::Ban, kickOnly));
+        REQUIRE(decision.Apply != PunishmentLevel::None);
+        CHECK_FALSE(Anticheat::Punished(decision.Outcome));
+    }
+}
+
+TEST_CASE("Only an outcome that actually landed counts as a punishment")
+{
+    CHECK(Anticheat::Punished(ResponseOutcome::KickIssued));
+    CHECK(Anticheat::Punished(ResponseOutcome::BanIssued));
+
+    // Every way an attempt can end without punishing. Each one has to leave the player retryable.
+    for (const ResponseOutcome outcome : {ResponseOutcome::KickRequested, ResponseOutcome::BanRequested,
+                                          ResponseOutcome::TargetGone, ResponseOutcome::KickFailed,
+                                          ResponseOutcome::BanUnavailable, ResponseOutcome::BanRejected})
+        CHECK_FALSE(Anticheat::Punished(outcome));
+}
+
+TEST_CASE("A player whose punishment never landed is still punishable")
+{
+    // What ResponseManager does when an attempt fails: the issued level is never raised, so the
+    // next finding decides to punish again rather than reporting the player as already punished.
+    IssuedPunishments issued;
+    REQUIRE(issued.Level(SteamId) == PunishmentLevel::None);
+
+    const ResponseDecision retry = Decide(Input(Mode::Ban, false, issued.Level(SteamId)));
+    CHECK(retry.Apply == PunishmentLevel::Ban);
+
+    issued.Raise(SteamId, PunishmentLevel::Ban);
+    CHECK(Decide(Input(Mode::Ban, false, issued.Level(SteamId))).Outcome == ResponseOutcome::AlreadyPunished);
 }

@@ -23,11 +23,8 @@ inline constexpr int LagSearchRadius = 2;
 inline constexpr int LagHypothesisCount = 2 * LagSearchRadius + 1;
 inline constexpr float MaximumInterpolationTicks = 19.0f;
 
-/**
- * The snapshot travelled to the client before this command travelled back, so the round trip plus
- * the interpolation delay is the age of what the player saw. Invalid - and therefore never evidence
- * - for absurd RTT or cl_interp_ratio values.
- */
+/** The round trip plus the interpolation delay is the age of what the player saw. Invalid, and so
+ *  never evidence, for absurd RTT or cl_interp_ratio values. */
 inline ViewLag EstimateViewLag(float rttSeconds, float interpRatio)
 {
     ViewLag estimate;

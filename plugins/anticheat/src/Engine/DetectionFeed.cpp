@@ -11,8 +11,6 @@
 #include <cmath>
 #include <eiface.h>
 #include <mathlib/vector.h>
-#include <optional>
-#include <vector>
 
 using VoltMod::IsValidSlot;
 
@@ -49,7 +47,7 @@ void DetectionFeed::Initialize()
     // Not gated by the rule toggle: a fresh pawn invalidates in-flight state whether or not the
     // rule is reporting, so a mid-map re-enable must not wake up holding stale commands.
     _subscriptions.Add(
-        events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { _detectors.AntiAim.OnSlotChanged(e.Slot); }));
+        events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { _detectors.AntiAim.ClearSlot(e.Slot); }));
     _subscriptions.Add(events.On<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
     _subscriptions.Add(events.On<VoltMod::BulletImpact>([this](const VoltMod::BulletImpact& e) { OnBulletImpact(e); }));
     // player_hurt carries the hitgroup SilentAim scores headshots from.
@@ -86,7 +84,7 @@ void DetectionFeed::OnCommand(int slot, const VoltMod::PlayerInput& cmd)
     const bool teleported = RecentlyTeleported(slot);
     d.History.OnSimulated(slot, sample.CmdNum, serverTick, sample.EyePos, sample.Airborne);
     if (d.RuleEnabled(d.Aimbot))
-        d.Report(slot, d.Aimbot.OnSimulated(slot, sample.CmdNum, serverTick, sample.EyePos, now));
+        d.Aimbot.OnSimulated(slot, sample.CmdNum, serverTick, sample.EyePos, now);
     if (d.RuleEnabled(d.Aimlock))
         d.Aimlock.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
     if (d.RuleEnabled(d.Triggerbot))
@@ -94,9 +92,9 @@ void DetectionFeed::OnCommand(int slot, const VoltMod::PlayerInput& cmd)
     if (d.RuleEnabled(d.Wallhack))
         d.Wallhack.OnSimulated(slot, serverTick, sample.BaseAngles(), sample.EyePos);
     if (d.RuleEnabled(d.AimAssist))
-        d.Report(slot, d.AimAssist.OnSimulated(slot, sample, serverTick, teleported, now));
+        d.AimAssist.OnSimulated(slot, sample, serverTick, teleported, now);
     if (d.RuleEnabled(d.AntiAim))
-        d.Report(slot, d.AntiAim.OnSimulated(slot, sample.CmdNum, serverTick, true, teleported, now));
+        d.AntiAim.OnSimulated(slot, sample.CmdNum, serverTick, true, teleported, now);
 }
 
 bool DetectionFeed::RecentlyTeleported(int slot) const
@@ -171,17 +169,17 @@ void DetectionFeed::OnFrame()
         const ViewLag lag = aliveHuman && lagWanted ? MeasureViewLag(_rt, slot) : ViewLag{};
 
         if (d.RuleEnabled(d.Aimbot))
-            d.Report(slot, d.Aimbot.OnFrame(slot, serverTick, eligible, now));
+            d.Aimbot.OnFrame(slot, serverTick, eligible, now);
         if (d.RuleEnabled(d.Aimlock))
-            d.Report(slot, d.Aimlock.OnFrame(slot, serverTick, aliveHuman, lag, now));
+            d.Aimlock.OnFrame(slot, serverTick, aliveHuman, lag, now);
         if (d.RuleEnabled(d.Triggerbot))
             d.Triggerbot.OnFrame(slot, serverTick, aliveHuman, lag);
         if (d.RuleEnabled(d.Wallhack))
-            d.Report(slot, d.Wallhack.OnFrame(slot, serverTick, aliveHuman, lag, now));
+            d.Wallhack.OnFrame(slot, serverTick, aliveHuman, lag, now);
         if (d.RuleEnabled(d.AntiAim))
-            d.Report(slot, d.AntiAim.OnFrame(slot, serverTick, eligible, now));
+            d.AntiAim.OnFrame(slot, serverTick, eligible, now);
         if (eligible && d.RuleEnabled(d.Recoil))
-            d.Report(slot, d.Recoil.OnFrame(slot, serverTick, now));
+            d.Recoil.OnFrame(slot, serverTick, now);
         if (eligible)
             FinalizeShots(slot, serverTick, now);
     }
@@ -234,8 +232,6 @@ void DetectionFeed::FinalizeShots(int slot, int32_t serverTick, double nowSec)
     const bool silentAim = d.RuleEnabled(d.SilentAim);
     const bool wallhack = d.RuleEnabled(d.Wallhack);
 
-    // Reporting can kick, which clears the slot's shots - so report only after the walk.
-    std::vector<Finding> findings;
     for (ShotView& shot : d.History.Shots(slot))
     {
         if (shot.Finalized || static_cast<int64_t>(serverTick) - shot.FireTick < FinalizeAgeTicks)
@@ -243,17 +239,11 @@ void DetectionFeed::FinalizeShots(int slot, int32_t serverTick, double nowSec)
         shot.Finalized = true;
 
         if (silentAim)
-            if (auto finding = d.SilentAim.Finalize(slot, shot, nowSec))
-                findings.push_back(std::move(*finding));
+            d.SilentAim.Finalize(slot, shot, nowSec);
         if (wallhack && shot.HurtSeen)
-        {
-            const WallhackShotContext context{.TeamSawVictim = TeamSawVictim(slot, shot.VictimSlot, shot.FireTick)};
-            if (auto finding = d.Wallhack.OnShot(slot, shot, context, nowSec))
-                findings.push_back(std::move(*finding));
-        }
+            d.Wallhack.OnShot(slot, shot,
+                              {.TeamSawVictim = TeamSawVictim(slot, shot.VictimSlot, shot.FireTick)}, nowSec);
     }
-    for (const Finding& finding : findings)
-        d.Report(slot, finding);
 }
 
 void DetectionFeed::OnWeaponFire(const VoltMod::WeaponFire& fire)
@@ -282,9 +272,9 @@ void DetectionFeed::OnWeaponFire(const VoltMod::WeaponFire& fire)
     if (!shot)
         return;
     if (d.RuleEnabled(d.AntiAim))
-        d.Report(fire.Slot, d.AntiAim.OnWeaponFire(fire.Slot, *shot, now));
+        d.AntiAim.OnWeaponFire(fire.Slot, *shot, now);
     if (d.RuleEnabled(d.Recoil))
-        d.Report(fire.Slot, d.Recoil.OnShot(fire.Slot, *shot, now));
+        d.Recoil.OnShot(fire.Slot, *shot, now);
 }
 
 void DetectionFeed::OnBulletImpact(const VoltMod::BulletImpact& impact)
@@ -328,9 +318,9 @@ void DetectionFeed::OnPlayerHurt(const VoltMod::PlayerHurt& hurt)
         d.SilentAim.OnShotUpdated(attacker, *shot);
     // Judged now, while the crosshair runs still describe the tick the shot was fired on.
     if (d.RuleEnabled(d.Triggerbot))
-        d.Report(attacker, d.Triggerbot.OnPlayerHurt(attacker, *shot, now));
+        d.Triggerbot.OnPlayerHurt(attacker, *shot, now);
     if (d.RuleEnabled(d.Aimbot))
-        d.Report(attacker, d.Aimbot.OnPlayerHurt(attacker, victim, *shot, now));
+        d.Aimbot.OnPlayerHurt(attacker, victim, *shot, now);
 }
 
 void DetectionFeed::OnPlayerDeath(const VoltMod::PlayerDeath& death)

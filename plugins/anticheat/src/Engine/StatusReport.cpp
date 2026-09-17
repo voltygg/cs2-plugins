@@ -93,13 +93,12 @@ std::vector<std::string> StatusLines(const App& app, double nowSec)
 
         report.push_back(std::format(
             "[AC] s{} {} ({}) punished={} suspicion={:.2f} ({}) active={} cvars=[{}] queries={} poll={:.1f}s "
-            "shots={} cmds={} gen={}",
+            "shots={} cmds={}",
             slot, player->Name(), player->SteamId(), PunishmentName(app.Response.Issued(player->SteamId())),
             detectors.Scores.Total(slot, nowSec), OrDash(detectors.Scores.Breakdown(slot, nowSec)),
             InProgress(detectors, slot), ReportedCvars(detectors, slot),
             app.Runtime.Hooks.ClientConVars.PendingCount(slot), app.Cvars.PollsIn(slot, nowSec),
-            detectors.History.Shots(slot).size(), detectors.History.CommandCount(slot),
-            detectors.History.Generation(slot)));
+            detectors.History.Shots(slot).size(), detectors.History.CommandCount(slot)));
     }
     if (!any)
         report.push_back(detectors.IncludesBots() ? "[AC] no players connected." : "[AC] no human players connected.");

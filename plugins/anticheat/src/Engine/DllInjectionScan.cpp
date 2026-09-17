@@ -32,47 +32,38 @@ void DllInjectionScan::Initialize()
 
         const double now = Time::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
-        {
-            SlotState& state = _slots[slot];
-            if (!_detectors.IsEligible(slot))
-                continue;
-            // A map change clears every schedule, and players who ride it out never connect again.
-            if (state.NextScan == 0.0)
-            {
-                state.NextScan = now + DllInitialScanDelaySec;
-                continue;
-            }
-            if (now < state.NextScan)
-                continue;
-            Scan(slot, state, now);
-        }
+            if (_detectors.IsEligible(slot) && _schedule.IsDue(slot, now, DllInitialScanDelaySec))
+                Scan(slot, now);
     });
 }
 
-void DllInjectionScan::OnSlotChanged(int slot)
+void DllInjectionScan::ClearSlot(int slot)
 {
+    _schedule.ClearSlot(slot);
     if (InSlotRange(slot))
-        _slots[slot] = {};
+        _retried[slot] = false;
 }
 
 void DllInjectionScan::Reset()
 {
-    _slots = {};
+    _schedule.ClearAll();
+    _retried = {};
 }
 
-void DllInjectionScan::Scan(int slot, SlotState& state, double nowSec)
+void DllInjectionScan::Scan(int slot, double nowSec)
 {
+    bool& retried = _retried[slot];
     if (!_rt.GameEvents.GetClientLegacyListener(slot))
     {
         // One grace period for a client still settling in. After that a missing listener is simply
         // nothing to scan, and the slot falls back to the normal cadence.
-        state.NextScan = nowSec + (state.Retried ? DllScanIntervalSec : DllInitialScanDelaySec);
-        state.Retried = true;
+        _schedule.RunIn(slot, nowSec, retried ? DllScanIntervalSec : DllInitialScanDelaySec);
+        retried = true;
         return;
     }
 
-    state.NextScan = nowSec + DllScanIntervalSec;
-    state.Retried = true;
+    _schedule.RunIn(slot, nowSec, DllScanIntervalSec);
+    retried = true;
 
     // Read through at scan time rather than holding a copy: one owner for the table, and a reload
     // cannot leave this detector checking a stale list.
@@ -98,8 +89,7 @@ void DllInjectionScan::Scan(int slot, SlotState& state, double nowSec)
 
     const std::string reason = std::format("{} blacklisted client event subscription{} found: {}.",
                                            matches.size(), matches.size() == 1 ? "" : "s", evidence);
-    _detectors.Report(slot, _detectors.Scores.Add(slot, Rules::DllInjectionEvidence(reason),
-                                                  VoltMod::Time::MonotonicSeconds()));
+    _detectors.Scores.Add(slot, Rules::DllInjectionEvidence(reason), VoltMod::Time::MonotonicSeconds());
 }
 
 }  // namespace Anticheat

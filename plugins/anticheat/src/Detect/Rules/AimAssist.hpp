@@ -21,11 +21,10 @@ public:
     AimAssist(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
 
     /** The command the server simulates for @p serverTick, compared with the one before it. */
-    std::optional<Finding> OnSimulated(int slot, const CmdSample& cmd, int32_t serverTick, bool recentlyTeleported,
-                                       double nowSec);
+    void OnSimulated(int slot, const CmdSample& cmd, int32_t serverTick, bool recentlyTeleported, double nowSec);
 
     /** True once the slot's mouse scale is known and its counts agree with its turns. */
     bool Calibrated(int slot) const;

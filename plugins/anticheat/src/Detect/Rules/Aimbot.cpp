@@ -33,7 +33,7 @@ void Aimbot::Reset()
     _slots = {};
 }
 
-void Aimbot::OnSlotChanged(int slot)
+void Aimbot::ClearSlot(int slot)
 {
     if (InSlotRange(slot))
         _slots[slot] = {};
@@ -51,68 +51,66 @@ void Aimbot::OnCommand(int slot, const CmdSample& cmd)
     _slots[slot].Commands.Push({.CmdNum = cmd.CmdNum, .ClientTick = cmd.ClientTick, .Angles = angles});
 }
 
+bool Aimbot::IsAdjacent(const AimCommand& older, const AimCommand& newer)
+{
+    const int64_t serverGap = static_cast<int64_t>(newer.ServerTick) - older.ServerTick;
+    return static_cast<int64_t>(newer.ClientTick) - older.ClientTick == 1 && serverGap >= 0 && serverGap <= 1;
+}
+
 Aimbot::AimCommand* Aimbot::Find(SlotData& data, int32_t cmdNum)
 {
     return data.Commands.FindIf([&](const AimCommand& command) { return command.CmdNum == cmdNum && command.Simulated; });
 }
 
-std::optional<Finding> Aimbot::OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos,
-                                               double nowSec)
+void Aimbot::OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, double nowSec)
 {
-    std::optional<Finding> out;
     if (!InSlotRange(slot) || !Geometry::IsFinite(eyePos))
-        return out;
+        return;
 
     auto& data = _slots[slot];
     AimCommand* found = data.Commands.Find(cmdNum);
     if (!found)
-        return out;
+        return;
 
     found->ServerTick = serverTick;
     found->Simulated = true;
     if (data.Pending)
-        Evaluate(slot, serverTick, nowSec, out);
-    return out;
+        Evaluate(slot, serverTick, nowSec);
 }
 
-std::optional<Finding> Aimbot::OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec)
+void Aimbot::OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec)
 {
-    std::optional<Finding> out;
     if (!InSlotRange(slot) || !_slots[slot].Pending)
-        return out;
+        return;
     if (!eligible)
     {
         // Drops the shot waiting to be judged. The evidence itself lives on the score, which a
         // player going ineligible must not be able to wipe.
         _slots[slot] = {};
-        return out;
+        return;
     }
-    Evaluate(slot, serverTick, nowSec, out);
-    return out;
+    Evaluate(slot, serverTick, nowSec);
 }
 
-std::optional<Finding> Aimbot::OnPlayerHurt(int attackerSlot, int victimSlot, ShotView& shot, double nowSec)
+void Aimbot::OnPlayerHurt(int attackerSlot, int victimSlot, ShotView& shot, double nowSec)
 {
-    std::optional<Finding> out;
     if (!InSlotRange(attackerSlot) || !InSlotRange(victimSlot) || attackerSlot == victimSlot ||
-        shot.Slot != attackerSlot || shot.AimbotConsumed)
-        return out;
+        shot.Slot != attackerSlot)
+        return;
 
-    shot.AimbotConsumed = true;
     auto& data = _slots[attackerSlot];
     if (data.Pending)
     {
-        Evaluate(attackerSlot, shot.FireTick, nowSec, out);
+        Evaluate(attackerSlot, shot.FireTick, nowSec);
         data.Pending = false;  // the previous shot never resolved, so the new one takes its place
     }
     data.PendingShot = shot.CmdNum;
     data.VictimSlot = victimSlot;
     data.Pending = true;
-    Evaluate(attackerSlot, shot.FireTick, nowSec, out);
-    return out;
+    Evaluate(attackerSlot, shot.FireTick, nowSec);
 }
 
-void Aimbot::Evaluate(int slot, int32_t currentTick, double nowSec, std::optional<Finding>& out)
+void Aimbot::Evaluate(int slot, int32_t currentTick, double nowSec)
 {
     auto& data = _slots[slot];
     if (!data.Pending)
@@ -168,8 +166,7 @@ void Aimbot::Evaluate(int slot, int32_t currentTick, double nowSec, std::optiona
         AimCommand* older = Find(data, newer->CmdNum - 1);
         if (!older)
             break;
-        const int64_t serverGap = static_cast<int64_t>(newer->ServerTick) - older->ServerTick;
-        if (static_cast<int64_t>(newer->ClientTick) - older->ClientTick != 1 || serverGap < 0 || serverGap > 1)
+        if (!IsAdjacent(*older, *newer))
             break;
         if (static_cast<int64_t>(shot->ServerTick) - older->ServerTick > SnapWindowTicks)
             break;
@@ -215,13 +212,7 @@ void Aimbot::Evaluate(int slot, int32_t currentTick, double nowSec, std::optiona
         return;
     }
 
-    if (previous && next && shot->CmdNum - previous->CmdNum == 1 && next->CmdNum - shot->CmdNum == 1 &&
-        static_cast<int64_t>(shot->ClientTick) - previous->ClientTick == 1 &&
-        static_cast<int64_t>(next->ClientTick) - shot->ClientTick == 1 &&
-        static_cast<int64_t>(shot->ServerTick) - previous->ServerTick >= 0 &&
-        static_cast<int64_t>(shot->ServerTick) - previous->ServerTick <= 1 &&
-        static_cast<int64_t>(next->ServerTick) - shot->ServerTick >= 0 &&
-        static_cast<int64_t>(next->ServerTick) - shot->ServerTick <= 1)
+    if (previous && next && IsAdjacent(*previous, *shot) && IsAdjacent(*shot, *next))
     {
         const float surrounding = Geometry::AngularDistance(previous->Angles, next->Angles);
         const float snap = Geometry::AngularDistance(previous->Angles, shot->Angles);
@@ -242,28 +233,19 @@ void Aimbot::Evaluate(int slot, int32_t currentTick, double nowSec, std::optiona
     clearPending();
     if (!suspicious)
         return;
-    Count(slot, data, incidentCommand, nowSec, snapReturn, largestSnap, bestBefore, bestAfter, out);
+
+    Count(slot, data, incidentCommand, nowSec,
+          snapReturn ? std::format("A snap-hit returned {:.2f} degrees to where it came from.", largestSnap)
+                     : std::format("A snap-hit moved {:.2f} degrees and closed the target error from {:.2f} to "
+                                   "{:.2f} degrees.",
+                                   largestSnap, bestBefore, bestAfter));
 }
 
-void Aimbot::Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, bool snapReturn, float snap,
-                   float before, float after, std::optional<Finding>& out)
+void Aimbot::Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, std::string reason)
 {
     data.LastCountedIncidentCommand = incidentCommand;
     data.HasCountedIncident = true;
-
-    std::optional<Finding> finding = _suspicion.Add(
-        slot,
-        {.Kind = Kind,
-         .Points = PerIncident,
-         .Reason = snapReturn ? std::format("A snap-hit returned {:.2f} degrees to where it came from.", snap)
-                              : std::format("A snap-hit moved {:.2f} degrees and closed the target error from "
-                                            "{:.2f} to {:.2f} degrees.",
-                                            snap, before, after)},
-        nowSec);
-
-    // An earlier evaluation in this same pass already has one; the points are recorded either way.
-    if (!out)
-        out = std::move(finding);
+    _suspicion.Add(slot, {.Kind = Kind, .Points = PerIncident, .Reason = reason}, nowSec);
 }
 
 }  // namespace Anticheat::Rules

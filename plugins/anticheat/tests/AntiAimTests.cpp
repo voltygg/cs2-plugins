@@ -1,4 +1,5 @@
 #include "Detect/Rules/AntiAim.hpp"
+#include "Harness.hpp"
 
 #include <cmath>
 #include <doctest/doctest.h>
@@ -16,7 +17,9 @@ static constexpr double Now = 100.0;
 /** The rule and the score it feeds, since a finding now comes out of the score. */
 struct AntiAimHarness
 {
-    AntiAimHarness() = default;
+    AntiAimHarness() { Scores.ReportTo(Reported.Sink()); }
+
+    Anticheat::Test::Findings Reported;
 
     /** Evidence points this rule has on the slot, as of @p now. */
     float Points(double now = Now) const { return Scores.Value(Slot, DetectionKind::AntiAim, now) * 100.0f; }
@@ -36,11 +39,14 @@ static CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f, float pi
     return cmd;
 }
 
-static std::optional<Finding> Feed(AntiAimHarness& h, const CmdSample& cmd, int32_t serverTick, double now = Now,
-                                   bool teleported = false)
+/** Feeds one command; true when it produced a finding. */
+static bool Feed(AntiAimHarness& h, const CmdSample& cmd, int32_t serverTick, double now = Now,
+                 bool teleported = false)
 {
+    const int before = h.Reported.Count;
     h.Rule.OnCommand(Slot, cmd);
-    return h.Rule.OnSimulated(Slot, cmd.CmdNum, serverTick, true, teleported, now);
+    h.Rule.OnSimulated(Slot, cmd.CmdNum, serverTick, true, teleported, now);
+    return h.Reported.Count > before;
 }
 
 /** A command whose base view angle disagrees with the angles it claims it fired along. */
@@ -251,14 +257,14 @@ TEST_CASE("A spin broken by more than a second of missing commands loses its pro
 {
     AntiAimHarness rule;
     for (int32_t i = 1; i <= 400; ++i)
-        REQUIRE_FALSE(Feed(rule, Cmd(i, i, SteadySpin(i)), i).has_value());
+        REQUIRE_FALSE(Feed(rule, Cmd(i, i, SteadySpin(i)), i));
 
     // Two seconds of commands the server never received.
-    std::optional<Finding> finding;
-    for (int32_t i = 529; i <= 928 && !finding; ++i)
-        finding = Feed(rule, Cmd(i, i, SteadySpin(i)), i);
+    bool fired = false;
+    for (int32_t i = 529; i <= 928 && !fired; ++i)
+        fired = Feed(rule, Cmd(i, i, SteadySpin(i)), i);
     // Uninterrupted, 800 commands would have fired; the reset means these 400 are not enough.
-    CHECK_FALSE(finding.has_value());
+    CHECK_FALSE(fired);
 }
 
 TEST_CASE("An exact two way yaw pattern fires after five seconds of jitter")
@@ -282,8 +288,8 @@ TEST_CASE("A slot change drops the slot's accumulated anti aim score")
     AntiAimHarness rule;
     Feed(rule, Cmd(1, 1, 0.0f, 89.5f), 1);
     CHECK(rule.Points() == doctest::Approx(2.0f));
-    rule.Rule.OnSlotChanged(Slot);
-    rule.Scores.OnSlotChanged(Slot);
+    rule.Rule.ClearSlot(Slot);
+    rule.Scores.ClearSlot(Slot);
     CHECK(rule.Points() == doctest::Approx(0.0f));
 }
 

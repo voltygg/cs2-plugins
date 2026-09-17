@@ -56,15 +56,23 @@ float Suspicion::Total(int slot, double nowSec) const
     return std::accumulate(shares.begin(), shares.end(), 0.0f);
 }
 
+float Suspicion::Total(const PlayerEvidence& evidence, double nowSec)
+{
+    float total = 0.0f;
+    for (const VoltMod::DecayingScore& score : evidence.Scores)
+        total += static_cast<float>(score.Value(nowSec));
+    return total;
+}
+
 std::string Suspicion::Breakdown(int slot, double nowSec) const
 {
     return Describe(Decayed(slot, nowSec));
 }
 
-std::optional<Finding> Suspicion::Add(int slot, const Contribution& contribution, double nowSec)
+bool Suspicion::Add(int slot, const Contribution& contribution, double nowSec)
 {
     if (!InSlotRange(slot) || contribution.Kind == DetectionKind::Count || !std::isfinite(contribution.Points))
-        return std::nullopt;
+        return false;
 
     PlayerEvidence& state = _slots[slot];
 
@@ -85,7 +93,7 @@ std::optional<Finding> Suspicion::Add(int slot, const Contribution& contribution
     const float total = std::accumulate(shares.begin(), shares.end(), 0.0f);
     const std::optional<Confidence> band = BandOf(total);
     if (!band)
-        return std::nullopt;
+        return false;
 
     Confidence level = *band;
     // Fused evidence may alert, but only a rule confident on its own may get someone punished.
@@ -93,16 +101,20 @@ std::optional<Finding> Suspicion::Add(int slot, const Contribution& contribution
         level = Confidence::Likely;
 
     if (state.Reported && level <= *state.Reported)
-        return std::nullopt;
+        return false;
 
     state.Reported = level;
-    return Finding{
-        .Kind = contribution.Kind,
-        .Level = level,
-        .KickOnly = contribution.KickOnly,
-        .Suspicion = total,
-        .Evidence = std::format("{} Suspicion {:.2f} ({}).", contribution.Reason, total, Describe(shares)),
-    };
+    if (!_report)
+        return true;
+
+    _report(slot, Finding{
+                      .Kind = contribution.Kind,
+                      .Level = level,
+                      .KickOnly = contribution.KickOnly,
+                      .Suspicion = total,
+                      .Evidence = std::format("{} Suspicion {:.2f} ({}).", contribution.Reason, total, Describe(shares)),
+                  });
+    return true;
 }
 
 PlayerEvidence Suspicion::Save(int slot) const
@@ -116,7 +128,7 @@ void Suspicion::Restore(int slot, const PlayerEvidence& evidence)
         _slots[slot] = evidence;
 }
 
-void Suspicion::OnSlotChanged(int slot)
+void Suspicion::ClearSlot(int slot)
 {
     if (InSlotRange(slot))
         _slots[slot] = {};

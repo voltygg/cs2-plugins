@@ -1,5 +1,6 @@
 #include "Detect/Rules/AimAssist.hpp"
 #include "Detect/Geometry.hpp"
+#include "Harness.hpp"
 
 #include <array>
 #include <cmath>
@@ -29,7 +30,9 @@ static constexpr float Scale = -0.044f;
 
 struct AimAssistHarness
 {
-    AimAssistHarness() = default;
+    AimAssistHarness() { Scores.ReportTo(Reported.Sink()); }
+
+    Anticheat::Test::Findings Reported;
 
     /** Unexplained turns this rule has counted on the observer. */
     float Turns() const { return Scores.Value(Observer, DetectionKind::AimAssist, Now) * 6.0f; }
@@ -68,8 +71,8 @@ struct AimAssistHarness
         cmd.Buttons = buttons;
         cmd.Scoped = scoped;
         cmd.EyePos = Eye;
-        if (Rule.OnSimulated(Observer, cmd, Tick, false, Now))
-            ++Findings;
+        Rule.OnSimulated(Observer, cmd, Tick, false, Now);
+        Findings = Reported.Count;
     }
 
     /** A mouse turn of @p dx counts, as the client would report it. */

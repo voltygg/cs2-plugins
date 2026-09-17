@@ -125,13 +125,10 @@ struct PositionSample
     bool HiddenFrom(int viewer) const { return SightKnownTo(viewer) && !VisibleTo(viewer); }
 };
 
-/**
- * A correlated shot: the command that fired it joined to the events it produced. Every shot is
- * finalized once, after its events have had time to arrive, and each rule reads it then.
- */
+/** A correlated shot: the command that fired it joined to the events it produced. Finalized once,
+ *  after its events have had time to arrive, and every rule reads it then. */
 struct ShotView
 {
-    uint32_t Generation = 0;
     int Slot = -1;
 
     int32_t CmdNum = 0;
@@ -158,7 +155,6 @@ struct ShotView
     bool Wallbang = false;
 
     // Per-module bookkeeping.
-    bool AimbotConsumed = false;
     bool SilentMeasured = false;
     float SilentMaxDeviation = 0.0f;
     bool Finalized = false;

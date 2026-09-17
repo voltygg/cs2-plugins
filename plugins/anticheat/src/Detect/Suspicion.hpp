@@ -6,6 +6,7 @@
 #include <VoltMod/Core/DecayingScore.hpp>
 #include <array>
 #include <cstddef>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -28,13 +29,9 @@ inline constexpr std::array<float, ConfidenceCount> BandThresholds{1.0f, 2.0f, 3
 /** A band may speak again once suspicion falls below this fraction of it. */
 inline constexpr float ReportAgainBelow = 0.75f;
 
-/**
- * One rule's evidence, already on the shared scale.
- *
- * Points is a share of one whole unit, so a rule that reports after four incidents contributes a
- * quarter each time. Keeping that division in the rule is what lets the score stay free of a
- * per-rule table. Reason is read during the call only, so a temporary is fine.
- */
+/** One rule's evidence on the shared scale. Points is a share of one whole unit, so a rule that
+ *  reports after four incidents contributes a quarter each time; keeping that division in the rule
+ *  is what frees the score of a per-rule table. Reason is read during the call only. */
 struct Contribution
 {
     DetectionKind Kind = DetectionKind::Aimbot;
@@ -54,24 +51,31 @@ struct PlayerEvidence
 };
 
 /**
- * One decaying score per player and rule, and the single place that decides whether the evidence
- * so far is worth reporting.
- *
- * Suspicion is the sum over rules, so rules that each stay under their own threshold still add up.
- * Nothing is ever cleared on report, so a detection cannot hand a cheat a clean slate; each band
- * fires once and speaks again only after the score decays below @ref ReportAgainBelow of it.
+ * One decaying score per player and rule, and the only place a report is decided. The total sums
+ * over rules, so rules under their own thresholds still add up. Nothing is cleared on report; each
+ * band fires once and speaks again only below @ref ReportAgainBelow of it.
  */
 class Suspicion
 {
 public:
-    /** Record @p contribution; returns a Finding when it crossed a band not yet reported. */
-    std::optional<Finding> Add(int slot, const Contribution& contribution, double nowSec);
+    /** Where a finding goes once the evidence produces one. */
+    using Reporter = std::function<void(int slot, const Finding& finding)>;
+
+    /** Wire the response in. Unset until then, so a rule under test reports nowhere. */
+    void ReportTo(Reporter reporter) { _report = std::move(reporter); }
+
+    /** Record @p contribution. Reports through @ref ReportTo and returns true when it crossed a
+     *  band not yet reported, which is how a rule knows to latch its episode. */
+    bool Add(int slot, const Contribution& contribution, double nowSec);
 
     /** This rule's decayed share of one whole unit. */
     float Value(int slot, DetectionKind kind, double nowSec) const;
 
     /** Sum over rules - the whole player. The fusion point. */
     float Total(int slot, double nowSec) const;
+
+    /** The same sum over evidence that is saved rather than live in a slot. */
+    static float Total(const PlayerEvidence& evidence, double nowSec);
 
     /** "aimbot 0.75, wallhack 0.83" - every rule with weight to speak of. */
     std::string Breakdown(int slot, double nowSec) const;
@@ -81,7 +85,7 @@ public:
     /** Hand a returning player back what they left with. */
     void Restore(int slot, const PlayerEvidence& evidence);
 
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
     /** Map changes do not call this; only an operator reset does. */
     void Reset();
 
@@ -95,6 +99,7 @@ private:
     static std::string Describe(const Shares& shares);
 
     std::array<PlayerEvidence, MaxSlots> _slots{};
+    Reporter _report;
 };
 
 }  // namespace Anticheat

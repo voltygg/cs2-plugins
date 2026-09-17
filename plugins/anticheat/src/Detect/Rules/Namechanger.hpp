@@ -6,7 +6,6 @@
 
 #include <array>
 #include <cstddef>
-#include <optional>
 #include <string>
 #include <string_view>
 
@@ -22,13 +21,13 @@ public:
     explicit Namechanger(Suspicion& suspicion) : _suspicion(suspicion) {}
 
     void Reset();
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
 
     /** The baseline the first change is measured against. */
     void OnBaseline(int slot, std::string_view name, std::string_view clan);
 
     /** What the scoreboard shows right now. Only an actually different name or tag counts. */
-    std::optional<Finding> OnIdentity(int slot, std::string_view name, std::string_view clan, double nowSec);
+    void OnIdentity(int slot, std::string_view name, std::string_view clan, double nowSec);
 
     /** Changes still inside the burst window. */
     int RecentChanges(int slot, double nowSec) const;

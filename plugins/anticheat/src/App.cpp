@@ -8,7 +8,6 @@
 #include <VoltMod/Core/Strings.hpp>
 #include <VoltMod/Core/Time.hpp>
 #include <string>
-#include <tuple>
 #include <vector>
 
 namespace Log = VoltMod::Log;
@@ -30,17 +29,21 @@ bool App::Start()
         return loaded;
     });
 
+    // Every rule reports through the score, so this is the single seam between detection and
+    // response.
+    Detection.Scores.ReportTo([this](int slot, const Finding& finding) { Response.Handle(slot, finding); });
+
     Detection.Initialize();
     Simulator.Initialize();
     Dump.Initialize();
     Carried.Initialize();
 
-    _subs.Add(Runtime.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
+    _subs.Add(Runtime.Slots.Changed += [this](int slot) { ClearSlot(slot); });
     _subs.Add(Runtime.Players.FullyConnected += [this](VoltMod::Player& player) { OnPlayerFullyConnected(player); });
     _subs.Add(Runtime.Players.SettingsChanged += [this](VoltMod::Player& player) { Names.OnSettingsChanged(player); });
     _subs.Add(Runtime.ConVars.Changed += [this](const VoltMod::ConVarChange& change) {
         if (Detection.OnConVarChanged(change))
-            ResetInFlight();
+            ClearTracking();
     });
 
     LoadDetectionData();
@@ -67,29 +70,31 @@ void App::LoadDetectionData()
               data.dllEventBlacklist.size());
 }
 
-void App::ResetInFlight()
+void App::ClearTracking()
 {
-    std::apply([](auto&... modules) { (modules.Reset(), ...); }, Modules());
+    Detection.ClearTracking();
+    DllScan.Reset();
+    Cvars.Reset();
 }
 
-void App::ForgetEvidence()
+void App::ClearAll()
 {
-    ResetInFlight();
-    Detection.ForgetEvidence();
+    ClearTracking();
+    Detection.ClearEvidence();
     Carried.Reset();
 }
 
-void App::OnMapStart()
+void App::OnMapChanged()
 {
     Detection.RefreshTeamRules();
-    // In-flight tracking is keyed by ticks and positions the new map invalidates. What a player
-    // has already earned is not, so it rides the map change out.
-    ResetInFlight();
+    ClearTracking();
 }
 
-void App::OnSlotChanged(int slot)
+void App::ClearSlot(int slot)
 {
-    std::apply([slot](auto&... modules) { (modules.OnSlotChanged(slot), ...); }, Modules());
+    Detection.ClearSlot(slot);
+    DllScan.ClearSlot(slot);
+    Cvars.ClearSlot(slot);
 }
 
 void App::OnPlayerFullyConnected(VoltMod::Player& player)

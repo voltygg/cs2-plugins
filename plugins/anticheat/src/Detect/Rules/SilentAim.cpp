@@ -41,22 +41,21 @@ void SilentAim::OnShotUpdated(int slot, ShotView& shot)
     shot.SilentMaxDeviation = std::max(shot.SilentMaxDeviation, deviation);
 }
 
-std::optional<Finding> SilentAim::Finalize(int slot, ShotView& shot, double nowSec)
+void SilentAim::Finalize(int slot, ShotView& shot, double nowSec)
 {
-    std::optional<Finding> out;
     if (!InSlotRange(slot) || !shot.HurtSeen || !shot.ImpactSeen)
-        return out;
+        return;
 
     const float threshold = SilentAimDeviationThreshold(shot.Weapon);
     if (!std::isfinite(shot.SilentMaxDeviation) || shot.SilentMaxDeviation <= threshold)
-        return out;
+        return;
 
     const int points = (shot.SilentMaxDeviation > BlatantDeviation ? BlatantPoints
                         : shot.Airborne                            ? AirbornePoints
                                                                    : GroundedPoints) +
                        static_cast<int>(shot.Headshot) + static_cast<int>(shot.Wallbang);
 
-    return _suspicion.Add(slot,
+    _suspicion.Add(slot,
                           {.Kind = Kind,
                            .Points = static_cast<float>(points) * PerPoint,
                            .Reason = std::format("{:.2f} degrees from visible aim with {} added {} points.",

@@ -1,5 +1,6 @@
 #include "Detect/Rules/Triggerbot.hpp"
 #include "Detect/Geometry.hpp"
+#include "Harness.hpp"
 
 #include <array>
 #include <doctest/doctest.h>
@@ -30,6 +31,7 @@ static constexpr float TargetSpeed = 25.0f;
 /** A crosshair resting on the spot an enemy walks through, from the side. */
 struct TriggerbotHarness
 {
+    Anticheat::Test::Findings Reported;
     Suspicion Scores;
     ShotHistory History;
     Triggerbot Rule{History, Scores};
@@ -44,6 +46,7 @@ struct TriggerbotHarness
 
     TriggerbotHarness()
     {
+        Scores.ReportTo(Reported.Sink());
         for (; Tick < 8; ++Tick)
             History.CaptureFrame(Tick, Frame());
     }
@@ -86,8 +89,8 @@ struct TriggerbotHarness
         shot.FireTick = fireTick;
         shot.HurtSeen = true;
         shot.VictimSlot = Target;
-        if (Rule.OnPlayerHurt(Observer, shot, Now))
-            ++Findings;
+        Rule.OnPlayerHurt(Observer, shot, Now);
+        Findings = Reported.Count;
     }
 };
 

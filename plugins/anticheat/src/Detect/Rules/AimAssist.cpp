@@ -63,7 +63,7 @@ void AimAssist::Reset()
     _slots = {};
 }
 
-void AimAssist::OnSlotChanged(int slot)
+void AimAssist::ClearSlot(int slot)
 {
     if (!InSlotRange(slot))
         return;
@@ -92,12 +92,11 @@ std::optional<float> AimAssist::NearestOpponentError(int slot, int32_t serverTic
     return best;
 }
 
-std::optional<Finding> AimAssist::OnSimulated(int slot, const CmdSample& cmd, int32_t serverTick, bool recentlyTeleported,
-                                              double nowSec)
+void AimAssist::OnSimulated(int slot, const CmdSample& cmd, int32_t serverTick, bool recentlyTeleported,
+                            double nowSec)
 {
-    std::optional<Finding> out;
     if (!InSlotRange(slot))
-        return out;
+        return;
 
     auto& data = _slots[slot];
     const CmdSample last = data.Last;
@@ -106,24 +105,24 @@ std::optional<Finding> AimAssist::OnSimulated(int slot, const CmdSample& cmd, in
     data.LastTick = serverTick;
     data.HasLast = cmd.BaseAnglesFinite;
     if (!consecutive || !cmd.BaseAnglesFinite || recentlyTeleported)
-        return out;
+        return;
 
     // Keyboard turning and scope zoom both change the degrees a count is worth.
     const bool keyboardTurn = ((cmd.Buttons | last.Buttons) & (ButtonTurnLeft | ButtonTurnRight)) != 0;
     if (keyboardTurn || cmd.Scoped || last.Scoped)
-        return out;
+        return;
 
     const float yawTurn = Geometry::YawDelta(last.ViewYaw, cmd.ViewYaw);
     const float pitchTurn = cmd.ViewPitch - last.ViewPitch;
     if (!std::isfinite(yawTurn) || !std::isfinite(pitchTurn))
-        return out;
+        return;
 
     if (std::abs(cmd.MouseDx) >= MinLearnCounts && std::abs(yawTurn) >= MinLearnDeg)
         data.Yaw.Learn(yawTurn / static_cast<float>(cmd.MouseDx));
     if (std::abs(cmd.MouseDy) >= MinLearnCounts && std::abs(pitchTurn) >= MinLearnDeg)
         data.Pitch.Learn(pitchTurn / static_cast<float>(cmd.MouseDy));
     if (!data.Yaw.Ready)
-        return out;
+        return;
 
     const auto unexplained = [](float turn, int counts, const Axis& axis) {
         const float residual = std::abs(turn - static_cast<float>(counts) * axis.Scale);
@@ -134,15 +133,15 @@ std::optional<Finding> AimAssist::OnSimulated(int slot, const CmdSample& cmd, in
     const float pitchResidual = data.Pitch.Ready ? unexplained(pitchTurn, cmd.MouseDy, data.Pitch) : 0.0f;
     const float residual = std::hypot(yawResidual, pitchResidual);
     if (residual <= 0.0f)
-        return out;
+        return;
 
     // Only a turn that arrived on an enemy is evidence; the rest is a lost packet or a hiccup.
     const std::optional<float> before = NearestOpponentError(slot, serverTick, last.EyePos, last.BaseAngles());
     const std::optional<float> after = NearestOpponentError(slot, serverTick, cmd.EyePos, cmd.BaseAngles());
     if (!before || !after || *after > ConvergedDeg || *before - *after < residual * ConvergenceShare)
-        return out;
+        return;
 
-    return _suspicion.Add(
+    _suspicion.Add(
         slot,
         {.Kind = Kind,
          .Points = PerTurn,

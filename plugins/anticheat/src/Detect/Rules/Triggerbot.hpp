@@ -8,7 +8,6 @@
 
 #include <array>
 #include <deque>
-#include <optional>
 
 namespace Anticheat::Rules
 {
@@ -22,7 +21,7 @@ public:
     Triggerbot(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
 
     /** The command the server simulates for @p serverTick. */
     void OnSimulated(int slot, int32_t serverTick, const AimAngles& angles, const Vec3& eyePos);
@@ -34,7 +33,7 @@ public:
     void OnWeaponFire(int slot, int32_t fireTick);
 
     /** A shot that hurt someone, judged while the crosshair runs still describe the tick it fired. */
-    std::optional<Finding> OnPlayerHurt(int slot, const ShotView& shot, double nowSec);
+    void OnPlayerHurt(int slot, const ShotView& shot, double nowSec);
 
 private:
     struct AimSample

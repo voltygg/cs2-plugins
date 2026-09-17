@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Engine/Detectors.hpp"
-#include "Engine/DetectionDataManager.hpp"
 #include "Detect/Samples.hpp"
+#include "Engine/DetectionDataManager.hpp"
+#include "Engine/Detectors.hpp"
+#include "Engine/SlotSchedule.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <array>
@@ -21,22 +22,18 @@ public:
     /** Start the repeating scan timer. Idempotent. */
     void Initialize();
 
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
     void Reset();
 
 private:
-    struct SlotState
-    {
-        double NextScan = 0.0;  // 0 = not scheduled
-        bool Retried = false;   // the one grace scan for a client whose listener was not up yet
-    };
-
-    void Scan(int slot, SlotState& state, double nowSec);
+    void Scan(int slot, double nowSec);
 
     Detectors& _detectors;
     VoltMod::Runtime& _rt;
     DetectionDataManager& _detections;
-    std::array<SlotState, MaxSlots> _slots{};
+    SlotSchedule _schedule;
+    /** The one grace scan each slot gets while its client's listener is not up yet. */
+    std::array<bool, MaxSlots> _retried{};
     VoltMod::Subscription _scanTimer;
 };
 

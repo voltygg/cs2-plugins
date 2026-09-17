@@ -1,6 +1,7 @@
 #include "Engine/SuspicionSnapshot.hpp"
 
 #include <VoltMod/Core/Time.hpp>
+#include <unordered_map>
 
 namespace Anticheat
 {
@@ -21,11 +22,16 @@ void SuspicionSnapshot::Keep(VoltMod::Player& player)
 
     const double now = VoltMod::Time::MonotonicSeconds();
     if (_detectors.Scores.Total(player.Slot(), now) < ForgetBelow)
-    {
         _held.erase(steamId);
-        return;
-    }
-    _held[steamId] = _detectors.Scores.Save(player.Slot());
+    else
+        _held[steamId] = _detectors.Scores.Save(player.Slot());
+
+    DropLowScores(now);
+}
+
+void SuspicionSnapshot::DropLowScores(double nowSec)
+{
+    std::erase_if(_held, [nowSec](const auto& entry) { return Suspicion::Total(entry.second, nowSec) < ForgetBelow; });
 }
 
 void SuspicionSnapshot::Return(VoltMod::Player& player)

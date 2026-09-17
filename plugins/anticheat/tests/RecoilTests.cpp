@@ -1,4 +1,5 @@
 #include "Detect/Rules/Recoil.hpp"
+#include "Harness.hpp"
 
 #include <doctest/doctest.h>
 
@@ -19,7 +20,9 @@ static constexpr int CommandsPerShot = 6;
  */
 struct RecoilHarness
 {
-    RecoilHarness() = default;
+    RecoilHarness() { Scores.ReportTo(Reported.Sink()); }
+
+    Anticheat::Test::Findings Reported;
 
     /** Sprays this rule has marked on the slot. */
     float Marked() const { return Scores.Value(Slot, DetectionKind::Recoil, Now) * 3.0f; }
@@ -74,7 +77,9 @@ struct RecoilHarness
                     view.FireTick = Cmd;
                     view.Weapon = weapon;
                     view.ShotsFired = shot;
-                    if (Rule.OnShot(Slot, view, Now))
+                    const int beforeShot = Reported.Count;
+                    Rule.OnShot(Slot, view, Now);
+                    if (Reported.Count > beforeShot)
                         ++Findings;
                     // The kick is in the punch the next command carries.
                     Punch.Pitch += kick.Pitch;
@@ -94,7 +99,9 @@ struct RecoilHarness
     void Quiet()
     {
         Cmd += 40;
-        if (Rule.OnFrame(Slot, Cmd, Now))
+        const int beforeFrame = Reported.Count;
+        Rule.OnFrame(Slot, Cmd, Now);
+        if (Reported.Count > beforeFrame)
             ++Findings;
     }
 };

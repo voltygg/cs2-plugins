@@ -42,38 +42,49 @@ void CheatSimulator::Initialize()
         return;
     }
 
-    _cmdSpin.emplace("anticheat_sim_spin", "Sim spinbot: anticheat_sim_spin <slot|steamid64> [degPerSec=720]",
-                     [this](const CCommand& args) { Start(args, Kind::Spin, 720.0f); });
-    _cmdJitter.emplace("anticheat_sim_jitter", "Sim yaw jitter: anticheat_sim_jitter <slot|steamid64> [stepDeg=20]",
-                       [this](const CCommand& args) { Start(args, Kind::Jitter, 20.0f); });
-    _cmdBadAngles.emplace("anticheat_sim_badangles",
-                          "Sim impossible pitch and roll: anticheat_sim_badangles <slot|steamid64> [pitch=89.5]",
-                          [this](const CCommand& args) { Start(args, Kind::BadAngles, 89.5f); });
-    _cmdAimlock.emplace("anticheat_sim_aimlock",
-                        "Sim locking onto the nearest opponent: anticheat_sim_aimlock <slot|steamid64>",
-                        [this](const CCommand& args) { Start(args, Kind::Aimlock, 0.0f); });
-    _cmdMismatch.emplace(
-        "anticheat_sim_mismatch",
-        "Sim input-history angles diverging from the view: anticheat_sim_mismatch <slot|steamid64> [deg=130]",
-        [this](const CCommand& args) { Start(args, Kind::Mismatch, 130.0f); });
-    _cmdNoMouse.emplace("anticheat_sim_nomouse",
-                        "Sim view turns without mouse counts: anticheat_sim_nomouse <slot|steamid64>",
-                        [this](const CCommand& args) { Start(args, Kind::NoMouse, 0.0f); });
-    _cmdNames.emplace("anticheat_sim_names", "Sim a name changer: anticheat_sim_names <slot|steamid64>",
-                      [this](const CCommand& args) { Start(args, Kind::Names, 0.0f); });
-    _cmdOff.emplace("anticheat_sim_off", "Stop simulating: anticheat_sim_off [slot|steamid64] (omit to clear all)",
-                    [this](const CCommand& args) {
-                        if (args.ArgC() < 2)
-                        {
-                            _sim.ResetAll();
-                            return;
-                        }
-                        const int slot = ResolveSlot(args.Arg(1));
-                        if (IsValidSlot(slot))
-                            _sim[slot] = {};
-                        else
-                            Log::Warn("'{}' is not a live slot or steamid64.", args.Arg(1));
-                    });
+    struct Pattern
+    {
+        const char* Name;
+        const char* Help;
+        Kind Simulated;
+        float DefaultParam;
+    };
+    static constexpr Pattern patterns[] = {
+        {"anticheat_sim_spin", "Sim spinbot: anticheat_sim_spin <slot|steamid64> [degPerSec=720]", Kind::Spin, 720.0f},
+        {"anticheat_sim_jitter", "Sim yaw jitter: anticheat_sim_jitter <slot|steamid64> [stepDeg=20]", Kind::Jitter,
+         20.0f},
+        {"anticheat_sim_badangles",
+         "Sim impossible pitch and roll: anticheat_sim_badangles <slot|steamid64> [pitch=89.5]", Kind::BadAngles,
+         89.5f},
+        {"anticheat_sim_aimlock", "Sim locking onto the nearest opponent: anticheat_sim_aimlock <slot|steamid64>",
+         Kind::Aimlock, 0.0f},
+        {"anticheat_sim_mismatch",
+         "Sim input-history angles diverging from the view: anticheat_sim_mismatch <slot|steamid64> [deg=130]",
+         Kind::Mismatch, 130.0f},
+        {"anticheat_sim_nomouse", "Sim view turns without mouse counts: anticheat_sim_nomouse <slot|steamid64>",
+         Kind::NoMouse, 0.0f},
+        {"anticheat_sim_names", "Sim a name changer: anticheat_sim_names <slot|steamid64>", Kind::Names, 0.0f},
+    };
+
+    for (const Pattern& pattern : patterns)
+        _commands.emplace_back(pattern.Name, pattern.Help, [this, pattern](const CCommand& args) {
+            Start(args, pattern.Simulated, pattern.DefaultParam);
+        });
+
+    _commands.emplace_back("anticheat_sim_off",
+                           "Stop simulating: anticheat_sim_off [slot|steamid64] (omit to clear all)",
+                           [this](const CCommand& args) {
+                               if (args.ArgC() < 2)
+                               {
+                                   _sim.ResetAll();
+                                   return;
+                               }
+                               const int slot = ResolveSlot(args.Arg(1));
+                               if (IsValidSlot(slot))
+                                   _sim[slot] = {};
+                               else
+                                   Log::Warn("'{}' is not a live slot or steamid64.", args.Arg(1));
+                           });
 
     Log::Info("Cheat simulator ready (anticheat_sim_*).");
 }
@@ -222,9 +233,8 @@ void CheatSimulator::OnFilter(int slot, VoltMod::PlayerInput& cmd)
         AimAtNearestOpponent(slot, cmd);
         break;
     case Kind::Mismatch:
-        // Rewrite the claimed input-history angles away from the visible view, which is what
-        // AntiAim's base-vs-history rule reads. SilentAim evaluates real impact geometry, so an edit
-        // to the decoded view never reaches it.
+        // What AntiAim's base-vs-history rule reads. SilentAim measures real impact geometry, so
+        // editing the decoded view never reaches it.
         cmd.InputHistorySampleCount = 1;
         cmd.InputHistoryTotalCount = 1;
         cmd.InputHistorySamples[0] = {

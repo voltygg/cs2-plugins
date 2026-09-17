@@ -60,7 +60,8 @@ constexpr std::string_view PunishmentName(PunishmentLevel level)
     return "none";
 }
 
-/** Outcome recorded in logs and webhook reports. */
+/** What logs and webhook reports record. @ref Decide returns the first seven; the rest are what
+ *  an attempted punishment returned, so nothing reports an enforcement it did not land. */
 enum class ResponseOutcome
 {
     NoIdentity,       // SteamID not resolved yet - reported, never punished
@@ -68,8 +69,14 @@ enum class ResponseOutcome
     Observed,         // observe mode
     Alerted,          // alert mode, or ban mode with nothing left to escalate
     AlreadyPunished,  // this player already carries an equal or higher punishment
-    KickIssued,
-    BanIssued,
+    KickRequested,    // decided; the execution result replaces it
+    BanRequested,     // decided; the execution result replaces it
+    KickIssued,       // the client was dropped
+    BanIssued,        // admin-system accepted the ban
+    TargetGone,       // the player left before the deferred kick ran
+    KickFailed,       // the controller refused the kick
+    BanUnavailable,   // admin-system is not loaded, so nothing was applied
+    BanRejected,      // admin-system refused the ban
 };
 
 constexpr std::string_view OutcomeName(ResponseOutcome outcome)
@@ -86,18 +93,34 @@ constexpr std::string_view OutcomeName(ResponseOutcome outcome)
         return "alerted";
     case ResponseOutcome::AlreadyPunished:
         return "already punished";
+    case ResponseOutcome::KickRequested:
+        return "kick requested";
+    case ResponseOutcome::BanRequested:
+        return "ban requested";
     case ResponseOutcome::KickIssued:
         return "kicked";
     case ResponseOutcome::BanIssued:
         return "banned";
+    case ResponseOutcome::TargetGone:
+        return "target gone";
+    case ResponseOutcome::KickFailed:
+        return "kick failed";
+    case ResponseOutcome::BanUnavailable:
+        return "ban unavailable";
+    case ResponseOutcome::BanRejected:
+        return "ban rejected";
     }
     return "observed";
 }
 
-/**
- * How far the evidence lets the server go, whatever the configured mode. Certain needs one rule
- * confident on its own, so fused evidence can alert but never punish by itself.
- */
+/** True for an outcome that means the punishment actually landed. */
+constexpr bool Punished(ResponseOutcome outcome)
+{
+    return outcome == ResponseOutcome::KickIssued || outcome == ResponseOutcome::BanIssued;
+}
+
+/** How far the evidence lets the server go, whatever the mode. Certain needs one rule confident
+ *  on its own, so fused evidence alerts but never punishes. */
 constexpr Mode CapByConfidence(Mode mode, Confidence level)
 {
     switch (level)
@@ -124,12 +147,14 @@ struct ResponseInput
 
 struct ResponseDecision
 {
+    /** What to record when @ref Apply is None. When a punishment is attempted, the executor's
+     *  result replaces it: deciding to punish is not the same as having punished. */
     ResponseOutcome Outcome = ResponseOutcome::Observed;
     bool SendAlert = false;
     PunishmentLevel Apply = PunishmentLevel::None;  // None = nothing to issue
 };
 
-/** The caller logs and reports every detection regardless; this decides alert and punishment only. */
+/** The caller reports every detection regardless; this decides alert and punishment only. */
 constexpr ResponseDecision Decide(const ResponseInput& input)
 {
     if (input.SteamId == 0)
@@ -148,15 +173,14 @@ constexpr ResponseDecision Decide(const ResponseInput& input)
     if (input.Issued >= requested)
         return {.Outcome = ResponseOutcome::AlreadyPunished, .SendAlert = true};
 
-    return {.Outcome = requested == PunishmentLevel::Kick ? ResponseOutcome::KickIssued : ResponseOutcome::BanIssued,
+    return {.Outcome =
+                requested == PunishmentLevel::Kick ? ResponseOutcome::KickRequested : ResponseOutcome::BanRequested,
             .SendAlert = true,
             .Apply = requested};
 }
 
-/**
- * The highest punishment each player has received; it never goes back down. Keyed by SteamID, so
- * reconnecting or sitting out a map change does not clear it, and only the punished are held.
- */
+/** The highest punishment each player actually received; it never goes back down, and rises only
+ *  once one lands. Keyed by SteamID, so reconnecting or a map change does not clear it. */
 class IssuedPunishments
 {
 public:

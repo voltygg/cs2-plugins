@@ -5,7 +5,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <cstdint>
-#include <optional>
+#include <deque>
 #include <string>
 #include <string_view>
 
@@ -62,14 +62,9 @@ private:
     VoltMod::PerSlot<SimState> _sim;
     // Movement filter, installed lazily on the first Start; empty while the simulator is idle.
     VoltMod::Subscription _filter;
-    std::optional<VoltMod::ServerCommand> _cmdSpin;
-    std::optional<VoltMod::ServerCommand> _cmdJitter;
-    std::optional<VoltMod::ServerCommand> _cmdBadAngles;
-    std::optional<VoltMod::ServerCommand> _cmdAimlock;
-    std::optional<VoltMod::ServerCommand> _cmdMismatch;
-    std::optional<VoltMod::ServerCommand> _cmdNoMouse;
-    std::optional<VoltMod::ServerCommand> _cmdNames;
-    std::optional<VoltMod::ServerCommand> _cmdOff;
+    /** One entry per registered anticheat_sim_* command, held for the load cycle. A deque
+     *  because ServerCommand can be neither copied nor moved. */
+    std::deque<VoltMod::ServerCommand> _commands;
 };
 
 }  // namespace Anticheat

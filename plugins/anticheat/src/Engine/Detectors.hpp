@@ -17,8 +17,6 @@
 #include "Response/ResponseManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <optional>
-#include <tuple>
 
 namespace Anticheat
 {
@@ -49,8 +47,6 @@ public:
     bool IsEligible(int slot);
     bool IncludesBots() const;
 
-    void Report(int slot, const std::optional<Finding>& finding);
-
     /** Cheat-protected client values only mean something once a disabled sv_cheats has reached them. */
     bool EnforceCheatCvars() const;
 
@@ -59,12 +55,14 @@ public:
     /** Update hostile-shot rules from `mp_teammates_are_enemies`. */
     void RefreshTeamRules();
 
-    /** Clear every rule; the caller clears its adapters alongside. */
-    void Reset();
-    void OnSlotChanged(int slot);
+    /** Part-built episodes and the ticks and positions they rest on. Scores survive it. */
+    void ClearTracking();
 
-    /** Drop every player's accumulated suspicion. A map change deliberately does not do this. */
-    void ForgetEvidence() { Scores.Reset(); }
+    /** The seat changed hands: everything keyed to it goes, scores included. */
+    void ClearSlot(int slot);
+
+    /** Every player's score, for the operator reset alone. */
+    void ClearEvidence() { Scores.Reset(); }
 
     /** Every rule's evidence about every player, and the one place a report is decided. */
     Suspicion Scores;
@@ -81,14 +79,6 @@ public:
     Rules::InvalidCvar InvalidCvars;
 
 private:
-    /** Every rule holding in-flight state of its own; one that holds none is left out. The score
-     *  is not here: it outlives a map the way the evidence it holds is meant to. */
-    auto All()
-    {
-        return std::tie(History, Aimbot, Aimlock, AntiAim, Triggerbot, Recoil, AimAssist, Wallhack, Namechanger,
-                        InvalidCvars);
-    }
-
     VoltMod::Runtime& _rt;
     ConfigManager& _config;
     ResponseManager& _response;

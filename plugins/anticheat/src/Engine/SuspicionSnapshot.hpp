@@ -10,11 +10,8 @@
 namespace Anticheat
 {
 
-/**
- * Holds a player's suspicion between sessions, keyed by SteamID, so reconnecting does not hand a
- * cheat a clean slate. Entries decayed to nothing are dropped, so this grows with players still
- * under suspicion rather than with everyone the server has seen.
- */
+/** Holds a player's suspicion between sessions, keyed by SteamID, so reconnecting is not a clean
+ *  slate. Held scores keep decaying, so each disconnect also drops those past @ref ForgetBelow. */
 class SuspicionSnapshot
 {
 public:
@@ -31,6 +28,8 @@ private:
 
     void Keep(VoltMod::Player& player);
     void Return(VoltMod::Player& player);
+    /** Drop held scores that have decayed below @ref ForgetBelow since they were stored. */
+    void DropLowScores(double nowSec);
 
     Detectors& _detectors;
     VoltMod::Runtime& _rt;

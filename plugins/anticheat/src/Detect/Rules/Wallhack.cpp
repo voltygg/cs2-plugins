@@ -46,7 +46,7 @@ void Wallhack::Reset()
     _slots = {};
 }
 
-void Wallhack::OnSlotChanged(int slot)
+void Wallhack::ClearSlot(int slot)
 {
     if (!InSlotRange(slot))
         return;
@@ -91,7 +91,7 @@ void Wallhack::CloseTrack(SlotData& data, int32_t serverTick, bool becameVisible
     track = {};
 }
 
-std::optional<Finding> Wallhack::Report(int slot, int points, std::string reason, double nowSec)
+bool Wallhack::Report(int slot, int points, std::string reason, double nowSec)
 {
     return _suspicion.Add(
         slot, {.Kind = Kind, .Points = static_cast<float>(points) * PerPoint, .Reason = std::move(reason)},
@@ -108,12 +108,10 @@ float Wallhack::Speed(int slot, int32_t serverTick) const
     return (now->Origin - before->Origin).Length() * TickRate / static_cast<float>(SpeedWindowTicks);
 }
 
-std::optional<Finding> Wallhack::OnFrame(int slot, int32_t serverTick, bool aliveHuman, const ViewLag& lag,
-                                             double nowSec)
+void Wallhack::OnFrame(int slot, int32_t serverTick, bool aliveHuman, const ViewLag& lag, double nowSec)
 {
-    std::optional<Finding> out;
     if (!InSlotRange(slot))
-        return out;
+        return;
 
     auto& data = _slots[slot];
     const AimSample sample = data.Pending;
@@ -127,7 +125,7 @@ std::optional<Finding> Wallhack::OnFrame(int slot, int32_t serverTick, bool aliv
     if (!aliveHuman || !sample.Valid || sample.ServerTick != serverTick || !past || !observer || !observer->Trackable())
     {
         CloseTrack(data, serverTick, false);
-        return out;
+        return;
     }
 
     struct Reading
@@ -167,7 +165,7 @@ std::optional<Finding> Wallhack::OnFrame(int slot, int32_t serverTick, bool aliv
     if (track.Target < 0)
     {
         if (serverTick < data.CooldownUntilTick)
-            return out;
+            return;
         int best = -1;
         Reading bestReading;
         for (int target = 0; target < MaxSlots; ++target)
@@ -184,7 +182,7 @@ std::optional<Finding> Wallhack::OnFrame(int slot, int32_t serverTick, bool aliv
             }
         }
         if (best < 0)
-            return out;
+            return;
         track = {.Target = best,
                  .StartTick = serverTick,
                  .LastTick = serverTick,
@@ -192,14 +190,14 @@ std::optional<Finding> Wallhack::OnFrame(int slot, int32_t serverTick, bool aliv
                  .OnSamples = 1,
                  .LastAim = sample.Angles,
                  .LastBearing = bestReading.Bearing};
-        return out;
+        return;
     }
 
     const std::optional<Reading> reading = read(track.Target);
     if (!reading || reading->Visible || !reading->Hidden)
     {
         CloseTrack(data, serverTick, reading && reading->Visible);
-        return out;
+        return;
     }
 
     ++track.Samples;
@@ -211,7 +209,7 @@ std::optional<Finding> Wallhack::OnFrame(int slot, int32_t serverTick, bool aliv
     else if (++track.OffRun > MaxOffRun)
     {
         CloseTrack(data, serverTick, false);
-        return out;
+        return;
     }
     track.AimYawTravel += Geometry::YawDelta(track.LastAim.Yaw, sample.Angles.Yaw);
     track.BearingYawTravel += Geometry::YawDelta(track.LastBearing.Yaw, reading->Bearing.Yaw);
@@ -224,51 +222,48 @@ std::optional<Finding> Wallhack::OnFrame(int slot, int32_t serverTick, bool aliv
                           (track.AimYawTravel > 0.0f) == (track.BearingYawTravel > 0.0f) &&
                           std::abs(track.AimYawTravel) >= FollowShare * std::abs(track.BearingYawTravel);
     if (track.Qualified || track.Samples < TrackingTicks || !MeetsCoverage(track.OnSamples, track.Samples) || !followed)
-        return out;
+        return;
 
     track.Qualified = true;
-    return Report(slot, TrackPoints,
+    Report(slot, TrackPoints,
                  std::format("The aim followed a hidden enemy through cover for {} ticks, turning {:.1f} degrees "
                              "as the enemy's bearing moved {:.1f}.",
                              track.Samples, track.AimYawTravel, track.BearingYawTravel),
                  nowSec);
 }
 
-std::optional<Finding> Wallhack::OnShot(int slot, const ShotView& shot, const WallhackShotContext& context,
-                                            double nowSec)
+void Wallhack::OnShot(int slot, const ShotView& shot, const WallhackShotContext& context, double nowSec)
 {
-    std::optional<Finding> out;
     const int victim = shot.VictimSlot;
     if (!InSlotRange(slot) || shot.Slot != slot || !shot.HurtSeen || !InSlotRange(victim) || victim == slot)
-        return out;
+        return;
 
     auto& data = _slots[slot];
     if (data.PeekTarget == victim && shot.FireTick >= data.PeekTick && shot.FireTick - data.PeekTick <= PeekWindowTicks)
     {
         data.PeekTarget = -1;
-        out = Report(slot, PeekPoints,
-                    std::format("A hit landed {} ticks after the aim had followed the same enemy through cover "
-                                "into view.",
-                                shot.FireTick - data.PeekTick),
-                    nowSec);
-        if (out)
-            return out;
+        if (Report(slot, PeekPoints,
+                   std::format("A hit landed {} ticks after the aim had followed the same enemy through cover into "
+                               "view.",
+                               shot.FireTick - data.PeekTick),
+                   nowSec))
+            return;
     }
 
     const auto target = _shots.FindPosition(shot.FireTick, victim);
     const auto shooter = _shots.FindPosition(shot.FireTick, slot);
     if (!target || !shooter || !target->HiddenFrom(slot) || target->Teleported || shooter->Teleported ||
         context.TeamSawVictim || (target->Origin - shooter->EyePos).Length() < MinimumDistance)
-        return out;
+        return;
 
     // A hidden enemy who fired or ran recently gave their position away legitimately.
     const int32_t victimFired = _slots[victim].LastFireTick;
     if ((victimFired >= 0 && shot.FireTick - victimFired <= VictimFireMemoryTicks) ||
         Speed(victim, shot.FireTick) > WalkSpeed)
-        return out;
+        return;
 
     const int points = WallbangPoints + (shot.Headshot ? HeadshotBonus : 0);
-    return Report(slot, points,
+    Report(slot, points,
                  std::format("A {}shot through cover hit an enemy nobody on the team could see, who was neither "
                              "shooting nor running.",
                              shot.Headshot ? "head" : ""),

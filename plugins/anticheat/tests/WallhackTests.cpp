@@ -1,5 +1,6 @@
 #include "Detect/Rules/Wallhack.hpp"
 #include "Detect/Geometry.hpp"
+#include "Harness.hpp"
 
 #include <array>
 #include <doctest/doctest.h>
@@ -31,6 +32,7 @@ static constexpr float TargetX = 500.0f;
 /** One observer and one enemy walking sideways behind a wall, with the sight line stamped. */
 struct WallhackHarness
 {
+    Anticheat::Test::Findings Reported;
     Suspicion Scores;
     ShotHistory History;
     Wallhack Rule{History, Scores};
@@ -47,6 +49,7 @@ struct WallhackHarness
 
     WallhackHarness()
     {
+        Scores.ReportTo(Reported.Sink());
         for (; Tick < 4; ++Tick)
             History.CaptureFrame(Tick, Frame());
     }
@@ -76,8 +79,8 @@ struct WallhackHarness
         TargetY += TargetSpeed;
         History.CaptureFrame(Tick, Frame());
         Rule.OnSimulated(Observer, Tick, aim, Eye);
-        if (Rule.OnFrame(Observer, Tick, true, Lag, Now))
-            ++Findings;
+        Rule.OnFrame(Observer, Tick, true, Lag, Now);
+        Findings = Reported.Count;
         ++Tick;
     }
 
@@ -105,7 +108,9 @@ struct WallhackHarness
         shot.HurtSeen = true;
         shot.Headshot = headshot;
         shot.VictimSlot = Target;
-        return Rule.OnShot(Observer, shot, WallhackShotContext{.TeamSawVictim = teamSaw}, Now);
+        Reported.Last.reset();
+        Rule.OnShot(Observer, shot, WallhackShotContext{.TeamSawVictim = teamSaw}, Now);
+        return Reported.Last;
     }
 };
 

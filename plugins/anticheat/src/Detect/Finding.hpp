@@ -24,10 +24,8 @@ enum class DetectionKind
     Count,
 };
 
-/**
- * How strong the accumulated evidence is, and so the strongest response the policy may take.
- * Read off the fused total rather than one rule, so partial rules can raise a band together.
- */
+/** How strong the evidence is, and so the strongest response allowed. Read off the fused total,
+ *  so partial rules can raise a band together. */
 enum class Confidence
 {
     Suspect,
@@ -102,11 +100,8 @@ constexpr std::string_view TokenName(DetectionKind kind)
     return Info(kind).Token;
 }
 
-/**
- * A reportable detection. Kind names the rule that just fired even when several reached the band
- * together, and Evidence names the rest. KickOnly caps the response at a kick even in ban mode,
- * for rules whose false-positive cost must stay recoverable.
- */
+/** A reportable detection. Kind names the rule that just fired, Evidence names the rest, and
+ *  KickOnly caps the response at a kick for rules whose false positives must stay recoverable. */
 struct Finding
 {
     DetectionKind Kind = DetectionKind::Aimbot;

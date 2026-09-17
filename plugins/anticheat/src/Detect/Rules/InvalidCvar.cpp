@@ -188,7 +188,7 @@ void InvalidCvar::Reset()
     std::ranges::fill(_missingReplies, 0);
 }
 
-void InvalidCvar::OnSlotChanged(int slot)
+void InvalidCvar::ClearSlot(int slot)
 {
     if (!InSlotRange(slot) || _rules.Size() == 0)
         return;

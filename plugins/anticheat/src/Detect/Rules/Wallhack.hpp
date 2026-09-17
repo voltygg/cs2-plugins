@@ -7,7 +7,6 @@
 #include "Detect/Suspicion.hpp"
 
 #include <array>
-#include <optional>
 
 namespace Anticheat::Rules
 {
@@ -28,20 +27,19 @@ public:
     Wallhack(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
 
     /** The command the server simulates for @p serverTick. */
     void OnSimulated(int slot, int32_t serverTick, const AimAngles& angles, const Vec3& eyePos);
 
     /** Advance or close the through-wall tracking episode against the frame for @p serverTick. */
-    std::optional<Finding> OnFrame(int slot, int32_t serverTick, bool aliveHuman, const ViewLag& lag,
-                                   double nowSec);
+    void OnFrame(int slot, int32_t serverTick, bool aliveHuman, const ViewLag& lag, double nowSec);
 
     /** Every ballistic fire event, matched or not: gunfire gives a hidden player's position away. */
     void OnWeaponFire(int slot, int32_t fireTick);
 
     /** A finalized shot; judged only when it hurt someone. */
-    std::optional<Finding> OnShot(int slot, const ShotView& shot, const WallhackShotContext& context, double nowSec);
+    void OnShot(int slot, const ShotView& shot, const WallhackShotContext& context, double nowSec);
 
     bool IsTracking(int slot) const;
 
@@ -81,8 +79,9 @@ private:
         int32_t LastFireTick = -1;
     };
 
-    /** Every report this rule makes goes through here, so the reason always reads the same way. */
-    std::optional<Finding> Report(int slot, int points, std::string reason, double nowSec);
+    /** Every report this rule makes goes through here, so the reason always reads the same way.
+     *  True when the added points crossed a band. */
+    bool Report(int slot, int points, std::string reason, double nowSec);
     void CloseTrack(SlotData& data, int32_t serverTick, bool becameVisible);
     /** How fast @p slot moved over the ticks before @p serverTick, in units per second. */
     float Speed(int slot, int32_t serverTick) const;

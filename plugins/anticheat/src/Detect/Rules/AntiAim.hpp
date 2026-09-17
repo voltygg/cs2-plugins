@@ -7,48 +7,18 @@
 
 #include <array>
 #include <cstdint>
-#include <optional>
 #include <string_view>
 
 namespace Anticheat::Rules
 {
 
-/** In the header rather than a .cpp only because both TUs share them. */
-namespace AntiAimTuning
-{
+/** The command ring's depth, here because SlotData below holds one. Every other threshold this
+ *  rule uses is private to the .cpp that reads it. */
 inline constexpr size_t CommandHistorySize = 96;
-/** A sustained spin or jitter is enough on its own, so it carries a whole unit of evidence. */
+
+/** A sustained spin or jitter is enough on its own, so it carries a whole unit of evidence.
+ *  Shared because AntiAimMotion.cpp scores with it and the episode latch here reads it. */
 inline constexpr float MotionWeight = 1.0f;
-
-// Per-command rules.
-inline constexpr float InvalidPitch = 89.01f;
-inline constexpr float InvalidRoll = 50.01f;
-inline constexpr float InvalidAnglesWeight = 0.02f;
-inline constexpr float InconsistentCommandWeight = 0.01f;
-/** Worth less than the other per-command rules: it used to be discounted by decaying faster. */
-inline constexpr float HistoryMismatchWeight = 0.004f;
-inline constexpr float CommandYawMismatchAngle = 120.0f;
-inline constexpr int CommandMismatchSpacing = 4;
-inline constexpr float AttackReturnWeight = 0.05f;
-inline constexpr float MinimumAttackReturnAngle = 30.0f;
-inline constexpr float AttackReturnSurroundingAngle = 10.0f;
-inline constexpr float AttackReturnRatio = 5.0f;
-
-// Motion rules (AntiAimMotion.cpp).
-inline constexpr int MotionHistorySize = 20;
-inline constexpr int SpinSamples = 16;
-inline constexpr float MinimumSpinRate = 320.0f;
-inline constexpr float MediumSpinRate = 1000.0f;
-inline constexpr float FastSpinRate = 2200.0f;
-inline constexpr float SlowSpinSeconds = 10.0f;
-inline constexpr float MediumSpinSeconds = 6.0f;
-inline constexpr float FastSpinSeconds = 3.0f;
-inline constexpr float SpinBreakAllowance = 1.0f;
-inline constexpr float SpinConsistency = 0.85f;
-inline constexpr float JitterTolerance = 0.25f;
-inline constexpr float MinimumJitterSpan = 10.0f;
-inline constexpr float RequiredJitterSeconds = 5.0f;
-}  // namespace AntiAimTuning
 
 class AntiAim
 {
@@ -60,7 +30,7 @@ public:
 
     void Reset();
     /** Also the spawn reset: a fresh pawn invalidates every in-flight command the same way. */
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
 
     /** Duplicates (same CmdNum) are dropped. */
     void OnCommand(int slot, const CmdSample& cmd);
@@ -69,14 +39,14 @@ public:
      * The command the server simulates for @p serverTick. @p recentlyTeleported covers the spawn and
      * teleport grace, during which fake angles are indistinguishable from an engine-driven change.
      */
-    std::optional<Finding> OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, bool eligible, bool recentlyTeleported,
-                                       double nowSec);
+    void OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, bool eligible, bool recentlyTeleported,
+                     double nowSec);
 
     /** A correlated shot: arms the attack-return check for the command that fired it. */
-    std::optional<Finding> OnWeaponFire(int slot, const ShotView& shot, double nowSec);
+    void OnWeaponFire(int slot, const ShotView& shot, double nowSec);
 
     /** Resolves an attack-return that is still waiting for the command after the shot. */
-    std::optional<Finding> OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec);
+    void OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec);
 
 private:
     struct Command
@@ -97,7 +67,7 @@ private:
 
     struct SlotData
     {
-        CommandHistory<Command, AntiAimTuning::CommandHistorySize> Commands;
+        CommandHistory<Command, CommandHistorySize> Commands;
 
         bool EpisodeReported = false;
 
@@ -119,12 +89,14 @@ private:
     };
 
     static void ResetMotion(SlotData& data);
-    void AddEvidence(int slot, SlotData& data, float weight, std::string_view reason, bool continuous, double nowSec,
-                     std::optional<Finding>& out);
+    void AddEvidence(int slot, SlotData& data, float weight, std::string_view reason, bool continuous,
+                     double nowSec);
+    /** Sent back to back by the client, and simulated on consecutive ticks. */
+    static bool IsAdjacent(const Command& older, const Command& newer);
     Command* Find(SlotData& data, int32_t cmdNum);
     /** Defined in AntiAimMotion.cpp. */
-    void EvaluateMotion(int slot, SlotData& data, const Command& command, double nowSec, std::optional<Finding>& out);
-    void EvaluatePendingShot(int slot, SlotData& data, int32_t currentTick, double nowSec, std::optional<Finding>& out);
+    void EvaluateMotion(int slot, SlotData& data, const Command& command, double nowSec);
+    void EvaluatePendingShot(int slot, SlotData& data, int32_t currentTick, double nowSec);
 
     Suspicion& _suspicion;
     std::array<SlotData, MaxSlots> _slots{};

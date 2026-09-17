@@ -4,7 +4,6 @@
 #include "Detect/Samples.hpp"
 #include "Detect/Suspicion.hpp"
 
-#include <optional>
 
 namespace Anticheat::Rules
 {
@@ -25,7 +24,7 @@ public:
      * Score a shot old enough that every event it could produce has arrived. Only shots that both
      * hurt someone and reported an impact are judged; the rest are dropped.
      */
-    std::optional<Finding> Finalize(int slot, ShotView& shot, double nowSec);
+    void Finalize(int slot, ShotView& shot, double nowSec);
 
 private:
     Suspicion& _suspicion;

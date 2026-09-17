@@ -6,9 +6,8 @@
 namespace Anticheat
 {
 
-// Deviation ceilings in degrees. Precision rifles sit lowest (their first shot is near-perfectly
-// accurate), SMGs highest (spray plus movement inaccuracy is legitimately wide). One table, so a
-// weapon cannot be ballistic without a ceiling or carry a ceiling without being ballistic.
+// Deviation ceilings in degrees, lowest for precision rifles and highest for SMGs. One table, so
+// ballistic and "has a ceiling" cannot disagree.
 static constexpr float RifleDeviation = 12.5f;
 static constexpr float SniperDeviation = 2.5f;
 static constexpr float HeavyPistolDeviation = 4.5f;

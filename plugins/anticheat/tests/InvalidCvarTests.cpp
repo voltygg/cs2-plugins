@@ -205,7 +205,7 @@ TEST_CASE("Each cvar is tracked independently and a slot change clears them all"
     CHECK(rules.AlreadyReported(Slot, "m_yaw"));
     CHECK(rules.AlreadyReported(Slot, "cl_yawspeed"));
 
-    rules.OnSlotChanged(Slot);
+    rules.ClearSlot(Slot);
     CHECK_FALSE(rules.AlreadyReported(Slot, "m_yaw"));
     CHECK_FALSE(rules.AlreadyReported(Slot, "cl_yawspeed"));
     CHECK(rules.Observe(Slot, "m_yaw", "0.5", Enforcing).has_value());

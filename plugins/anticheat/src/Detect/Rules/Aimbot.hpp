@@ -7,7 +7,7 @@
 #include "Detect/Suspicion.hpp"
 
 #include <array>
-#include <optional>
+#include <string>
 
 namespace Anticheat::Rules
 {
@@ -23,19 +23,19 @@ public:
     Aimbot(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
 
     /** Duplicates (same CmdNum) are dropped. */
     void OnCommand(int slot, const CmdSample& cmd);
 
     /** Stamps the command, and re-runs a pending evaluation that was waiting on it. */
-    std::optional<Finding> OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, double nowSec);
+    void OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, double nowSec);
 
     /** A damaging shot: the only kind this module judges. */
-    std::optional<Finding> OnPlayerHurt(int attackerSlot, int victimSlot, ShotView& shot, double nowSec);
+    void OnPlayerHurt(int attackerSlot, int victimSlot, ShotView& shot, double nowSec);
 
     /** Nudge so an evaluation waiting on a later command cannot hang forever. */
-    std::optional<Finding> OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec);
+    void OnFrame(int slot, int32_t serverTick, bool eligible, double nowSec);
 
 private:
     struct AimCommand
@@ -57,10 +57,11 @@ private:
         bool HasCountedIncident = false;
     };
 
+    /** Sent back to back by the client, and simulated on the same tick or the next one. */
+    static bool IsAdjacent(const AimCommand& older, const AimCommand& newer);
     AimCommand* Find(SlotData& data, int32_t cmdNum);
-    void Evaluate(int slot, int32_t currentTick, double nowSec, std::optional<Finding>& out);
-    void Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, bool snapReturn, float snap,
-               float before, float after, std::optional<Finding>& out);
+    void Evaluate(int slot, int32_t currentTick, double nowSec);
+    void Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, std::string reason);
 
     const ShotHistory& _shots;
     Suspicion& _suspicion;

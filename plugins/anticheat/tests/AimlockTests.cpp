@@ -1,5 +1,6 @@
 #include "Detect/Geometry.hpp"
 #include "Detect/Rules/Aimlock.hpp"
+#include "Harness.hpp"
 
 #include <array>
 #include <cmath>
@@ -34,6 +35,7 @@ static constexpr float TargetSpeed = 20.0f;  // units a tick, enough to move the
  */
 struct AimlockHarness
 {
+    Anticheat::Test::Findings Reported;
     Suspicion Scores;
     ShotHistory History;
     Aimlock Rule{History, Scores};
@@ -48,6 +50,7 @@ struct AimlockHarness
 
     explicit AimlockHarness(bool moving = true) : Moving(moving)
     {
+        Scores.ReportTo(Reported.Sink());
         // Enough history for every lag hypothesis to have a frame to look back at.
         for (; Tick < 10; ++Tick)
             History.CaptureFrame(Tick, Frame(Tick));
@@ -73,7 +76,9 @@ struct AimlockHarness
         AimAngles aim = Geometry::Bearing(Eye, {TargetX, TargetY(Tick - aimLag), Geometry::BodyHeights[0]});
         aim.Yaw += aimOffsetDeg;
         Rule.OnSimulated(Observer, Tick, aim, Eye);
-        if (Rule.OnFrame(Observer, Tick, true, Lag, Now))
+        const int before = Reported.Count;
+        Rule.OnFrame(Observer, Tick, true, Lag, Now);
+        if (Reported.Count > before)
         {
             ++Findings;
             if (FirstFinding < 0)
@@ -185,7 +190,7 @@ TEST_CASE("A dead or disconnected player drops the tracking state")
     AimlockHarness harness;
     harness.Run(50);
     REQUIRE(harness.Rule.IsTracking(Observer));
-    CHECK_FALSE(harness.Rule.OnFrame(Observer, harness.Tick, false, harness.Lag, Now).has_value());
+    harness.Rule.OnFrame(Observer, harness.Tick, false, harness.Lag, Now);
     CHECK_FALSE(harness.Rule.IsTracking(Observer));
 }
 
@@ -198,7 +203,7 @@ TEST_CASE("Episodes counted before a death still count after the respawn")
 
     // Dying drops the tracking state but not the evidence, or a cheat that dies between episodes
     // never reaches the threshold.
-    CHECK_FALSE(harness.Rule.OnFrame(Observer, harness.Tick, false, harness.Lag, Now).has_value());
+    harness.Rule.OnFrame(Observer, harness.Tick, false, harness.Lag, Now);
     CHECK_FALSE(harness.Rule.IsTracking(Observer));
     CHECK(harness.Episodes() == doctest::Approx(2.0f));
 
@@ -221,8 +226,8 @@ TEST_CASE("A slot change drops the slot's aimlock evidence")
     AimlockHarness harness;
     harness.Run(200);
     REQUIRE(harness.Episodes() > 0.0f);
-    harness.Rule.OnSlotChanged(Observer);
-    harness.Scores.OnSlotChanged(Observer);
+    harness.Rule.ClearSlot(Observer);
+    harness.Scores.ClearSlot(Observer);
     CHECK(harness.Episodes() == doctest::Approx(0.0f));
     CHECK_FALSE(harness.Rule.IsTracking(Observer));
 }

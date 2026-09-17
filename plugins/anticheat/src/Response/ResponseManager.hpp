@@ -10,11 +10,9 @@
 namespace Anticheat
 {
 
-/**
- * Suspicion decides whether to speak; this only decides how loudly. Bans go through admin-system's
- * Contracts::IAdminActions, so persistence, kick and broadcast stay in one place; when that plugin
- * is absent the interface is missing and the ban is logged as skipped.
- */
+/** Suspicion decides whether to speak; this decides how loudly. Bans go through admin-system's
+ *  Contracts::IAdminActions. Nothing counts as punished until it lands, so a failure stays
+ *  retryable. */
 class ResponseManager
 {
 public:
@@ -22,16 +20,25 @@ public:
         : _rt(runtime), _config(config), _reporter(reporter)
     {}
 
-    /** Log, report, then apply the funnel decision. */
+    /** Alert, apply the funnel decision, then record what actually happened. */
     void Handle(int slot, const Finding& finding);
 
     Mode CurrentMode() const;
 
-    /** What has already been done to @p steamId while the server has been up. */
+    /** What has actually been done to @p steamId while the server has been up. */
     PunishmentLevel Issued(int64_t steamId) const { return _issued.Level(steamId); }
 
 private:
     bool IsWhitelisted(int64_t steamId) const;
+
+    /** Log and report the finding under the outcome it ended with, once any punishment has
+     *  resolved. */
+    void Record(int slot, const std::string& name, int64_t steamId, const Finding& finding,
+                ResponseOutcome outcome);
+
+    /** Both raise the issued level only on success. */
+    ResponseOutcome ApplyKick(int slot, int64_t steamId, const std::string& reason);
+    ResponseOutcome ApplyBan(int64_t steamId, const std::string& reason);
 
     VoltMod::Runtime& _rt;
     ConfigManager& _config;

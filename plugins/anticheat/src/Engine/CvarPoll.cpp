@@ -35,39 +35,30 @@ void CvarPoll::Initialize()
         const double now = Time::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
-            SlotState& state = _slots[slot];
-            if (!_detectors.IsEligible(slot))
+            if (!_detectors.IsEligible(slot) || !_schedule.IsDue(slot, now, NextDelaySec()))
                 continue;
-            // A map change clears every schedule, and players who ride it out never connect again.
-            if (state.NextPoll == 0.0)
-            {
-                state.NextPoll = now + NextDelaySec();
-                continue;
-            }
-            if (now < state.NextPoll)
-                continue;
-            state.NextPoll = now + NextDelaySec();
-            Poll(slot, state);
+            _schedule.RunIn(slot, now, NextDelaySec());
+            Poll(slot);
         }
     });
 }
 
-void CvarPoll::OnSlotChanged(int slot)
+void CvarPoll::ClearSlot(int slot)
 {
+    _schedule.ClearSlot(slot);
     if (InSlotRange(slot))
-        _slots[slot] = {};
+        _cursor[slot] = 0;
 }
 
 void CvarPoll::Reset()
 {
-    _slots = {};
+    _schedule.ClearAll();
+    _cursor = {};
 }
 
 double CvarPoll::PollsIn(int slot, double nowSec) const
 {
-    if (!InSlotRange(slot) || _slots[slot].NextPoll == 0.0)
-        return 0.0;
-    return std::max(0.0, _slots[slot].NextPoll - nowSec);
+    return _schedule.TimeLeft(slot, nowSec);
 }
 
 double CvarPoll::NextDelaySec()
@@ -77,13 +68,11 @@ double CvarPoll::NextDelaySec()
 
 void CvarPoll::ReportVerdict(int slot, const std::optional<Rules::CvarVerdict>& verdict)
 {
-    if (!verdict)
-        return;
-    _detectors.Report(
-        slot, _detectors.Scores.Add(slot, Rules::CvarEvidence(*verdict), VoltMod::Time::MonotonicSeconds()));
+    if (verdict)
+        _detectors.Scores.Add(slot, Rules::CvarEvidence(*verdict), VoltMod::Time::MonotonicSeconds());
 }
 
-void CvarPoll::Poll(int slot, SlotState& state)
+void CvarPoll::Poll(int slot)
 {
     ReadUserInfo(slot);
     if (!_rt.Hooks.ClientConVars.Available())
@@ -96,13 +85,14 @@ void CvarPoll::Poll(int slot, SlotState& state)
 
     // Asking for a convar already in flight re-points the outstanding request rather than sending a
     // second one, so the batch never has to check what is pending.
+    size_t& cursor = _cursor[slot];
     for (size_t offset = 0; offset < CvarsPerPoll; ++offset)
     {
-        _rt.Hooks.ClientConVars.Query(slot, queried[rules.PollCvarIndex(state.Cursor, offset)].name,
-                                    [this](int replySlot, VoltMod::ClientConVarStatus status, std::string_view cvar,
-                                           std::string_view value) { OnReply(replySlot, status, cvar, value); });
+        _rt.Hooks.ClientConVars.Query(slot, queried[rules.PollCvarIndex(cursor, offset)].name,
+                                      [this](int replySlot, VoltMod::ClientConVarStatus status, std::string_view cvar,
+                                             std::string_view value) { OnReply(replySlot, status, cvar, value); });
     }
-    state.Cursor = rules.PollCvarIndex(state.Cursor, CvarsPerPoll);
+    cursor = rules.PollCvarIndex(cursor, CvarsPerPoll);
 }
 
 void CvarPoll::ReadUserInfo(int slot)

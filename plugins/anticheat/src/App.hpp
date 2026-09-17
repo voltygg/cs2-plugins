@@ -15,7 +15,6 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Subscriptions.hpp>
-#include <tuple>
 
 namespace Anticheat
 {
@@ -33,11 +32,15 @@ struct App
 
     /** Push configs/detections.jsonc into the two table-driven rules. */
     void LoadDetectionData();
-    /** Drop in-flight detector state whose ticks and positions no longer mean anything. */
-    void ResetInFlight();
-    /** Also drop every player's accumulated suspicion, for the operator reload that asks for it. */
-    void ForgetEvidence();
-    void OnMapStart();
+
+    /** A new map invalidates every tick and position sampled on the old one. Scores survive it. */
+    void OnMapChanged();
+
+    /** The seat changed hands: everything keyed to it goes, the previous player's score included. */
+    void ClearSlot(int slot);
+
+    /** The operator reset: tracking, every score, and the scores held between sessions. */
+    void ClearAll();
 
     VoltMod::Runtime& Runtime;
     ConfigManager Config;
@@ -55,11 +58,10 @@ struct App
     SuspicionSnapshot Carried{Detection, Runtime};
 
 private:
-    void OnSlotChanged(int slot);
     void OnPlayerFullyConnected(VoltMod::Player& player);
 
-    /** Everything a reset or a slot change has to clear; a new adapter is wired in here only. */
-    auto Modules() { return std::tie(Detection, DllScan, Cvars); }
+    /** Part-built episodes in the detectors, and the poll schedules that feed them. */
+    void ClearTracking();
 
     /** Listener registrations, released together. Declared last: reverse member destruction
      *  stops the callbacks before the state they capture goes away. */

@@ -6,7 +6,6 @@
 #include "Detect/Suspicion.hpp"
 
 #include <array>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -33,16 +32,16 @@ public:
     explicit Recoil(Suspicion& suspicion) : _suspicion(suspicion) {}
 
     void Reset();
-    void OnSlotChanged(int slot);
+    void ClearSlot(int slot);
 
     /** Every simulated command with the recoil punch the client predicted for it. */
     void OnCommand(int slot, const CmdSample& cmd);
 
     /** A correlated shot, at fire time. Closes the spray it does not belong to. */
-    std::optional<Finding> OnShot(int slot, const ShotView& shot, double nowSec);
+    void OnShot(int slot, const ShotView& shot, double nowSec);
 
     /** Closes a spray that has gone quiet. */
-    std::optional<Finding> OnFrame(int slot, int32_t serverTick, double nowSec);
+    void OnFrame(int slot, int32_t serverTick, double nowSec);
 
     bool InSpray(int slot) const;
 
@@ -72,7 +71,7 @@ private:
     const Command* Find(const SlotData& data, int32_t cmdNum) const;
     /** The fit when the view reacts @p viewLag commands after the punch it cancels. */
     SprayFit Fit(const SlotData& data, int viewLag) const;
-    std::optional<Finding> Finalize(int slot, SlotData& data, double nowSec);
+    void Finalize(int slot, SlotData& data, double nowSec);
 
     Suspicion& _suspicion;
     std::array<SlotData, MaxSlots> _slots{};

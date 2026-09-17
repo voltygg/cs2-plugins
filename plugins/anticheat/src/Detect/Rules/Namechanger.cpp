@@ -13,7 +13,7 @@ void Namechanger::Reset()
     _slots = {};
 }
 
-void Namechanger::OnSlotChanged(int slot)
+void Namechanger::ClearSlot(int slot)
 {
     if (InSlotRange(slot))
         _slots[slot] = {};
@@ -26,10 +26,10 @@ void Namechanger::OnBaseline(int slot, std::string_view name, std::string_view c
     _slots[slot] = {.LastName = std::string(name), .LastClan = std::string(clan), .Initialized = true};
 }
 
-std::optional<Finding> Namechanger::OnIdentity(int slot, std::string_view name, std::string_view clan, double nowSec)
+void Namechanger::OnIdentity(int slot, std::string_view name, std::string_view clan, double nowSec)
 {
     if (!InSlotRange(slot) || name.empty())
-        return std::nullopt;
+        return;
 
     auto& data = _slots[slot];
     if (!data.Initialized)
@@ -38,17 +38,17 @@ std::optional<Finding> Namechanger::OnIdentity(int slot, std::string_view name, 
         data.LastName.assign(name);
         data.LastClan.assign(clan);
         data.Initialized = true;
-        return std::nullopt;
+        return;
     }
 
     const bool nameChanged = data.LastName != name;
     const bool clanChanged = data.LastClan != clan;
     if (!nameChanged && !clanChanged)
-        return std::nullopt;
+        return;
     data.LastName.assign(name);
     data.LastClan.assign(clan);
     if (nowSec < data.CooldownUntil)
-        return std::nullopt;
+        return;
 
     data.Changes[data.Next] = nowSec;
     data.Next = (data.Next + 1) % BurstChanges;
@@ -56,10 +56,10 @@ std::optional<Finding> Namechanger::OnIdentity(int slot, std::string_view name, 
         ++data.Held;
 
     if (data.Held < BurstChanges || nowSec - data.Changes[data.Next] > BurstSeconds)
-        return std::nullopt;
+        return;
 
     data.CooldownUntil = nowSec + CooldownSec;
-    return _suspicion.Add(slot,
+    _suspicion.Add(slot,
                           {.Kind = Kind,
                            .Points = 1.0f,
                            .Reason = std::format("{} visible name or clan tag changes occurred within one minute "

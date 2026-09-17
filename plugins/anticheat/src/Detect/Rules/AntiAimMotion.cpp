@@ -6,23 +6,24 @@
 #include <cmath>
 
 using Anticheat::Rules::AntiAim;
-using Anticheat::Rules::AntiAimTuning::FastSpinRate;
-using Anticheat::Rules::AntiAimTuning::FastSpinSeconds;
-using Anticheat::Rules::AntiAimTuning::JitterTolerance;
-using Anticheat::Rules::AntiAimTuning::MediumSpinRate;
-using Anticheat::Rules::AntiAimTuning::MediumSpinSeconds;
-using Anticheat::Rules::AntiAimTuning::MinimumJitterSpan;
-using Anticheat::Rules::AntiAimTuning::MinimumSpinRate;
-using Anticheat::Rules::AntiAimTuning::MotionHistorySize;
-using Anticheat::Rules::AntiAimTuning::MotionWeight;
-using Anticheat::Rules::AntiAimTuning::RequiredJitterSeconds;
-using Anticheat::Rules::AntiAimTuning::SlowSpinSeconds;
-using Anticheat::Rules::AntiAimTuning::SpinBreakAllowance;
-using Anticheat::Rules::AntiAimTuning::SpinConsistency;
-using Anticheat::Rules::AntiAimTuning::SpinSamples;
 
 namespace Anticheat::Rules
 {
+
+// Spin and jitter thresholds.
+static constexpr int MotionHistorySize = 20;
+static constexpr int SpinSamples = 16;
+static constexpr float MinimumSpinRate = 320.0f;
+static constexpr float MediumSpinRate = 1000.0f;
+static constexpr float FastSpinRate = 2200.0f;
+static constexpr float SlowSpinSeconds = 10.0f;
+static constexpr float MediumSpinSeconds = 6.0f;
+static constexpr float FastSpinSeconds = 3.0f;
+static constexpr float SpinBreakAllowance = 1.0f;
+static constexpr float SpinConsistency = 0.85f;
+static constexpr float JitterTolerance = 0.25f;
+static constexpr float MinimumJitterSpan = 10.0f;
+static constexpr float RequiredJitterSeconds = 5.0f;
 
 static constexpr float TierRates[] = {MinimumSpinRate, MediumSpinRate, FastSpinRate};
 static constexpr float TierSeconds[] = {SlowSpinSeconds, MediumSpinSeconds, FastSpinSeconds};
@@ -31,8 +32,7 @@ static_assert(std::size(TierRates) == std::size(TierSeconds));
 /** Yaw periods a jitter bind cycles through; each needs four full repetitions to be believed. */
 static constexpr int JitterPeriods[] = {2, 3, 5};
 
-void AntiAim::EvaluateMotion(int slot, SlotData& data, const Command& command, double nowSec,
-                             std::optional<Finding>& out)
+void AntiAim::EvaluateMotion(int slot, SlotData& data, const Command& command, double nowSec)
 {
     if (command.CmdNum == data.LastMotionCmdNum)
         return;
@@ -113,7 +113,7 @@ void AntiAim::EvaluateMotion(int slot, SlotData& data, const Command& command, d
     data.SpinActive = spinEpisodeActive;
     if (spinDetected && !data.EpisodeReported)
     {
-        AddEvidence(slot, data, MotionWeight, "continuous spin", true, nowSec, out);
+        AddEvidence(slot, data, MotionWeight, "continuous spin", true, nowSec);
         data.SpinActive = true;
     }
 
@@ -167,7 +167,7 @@ void AntiAim::EvaluateMotion(int slot, SlotData& data, const Command& command, d
     data.JitterActive = jitterEpisodeActive;
     if (data.JitterSeconds >= RequiredJitterSeconds && !data.EpisodeReported)
     {
-        AddEvidence(slot, data, MotionWeight, "continuous repeating jitter", true, nowSec, out);
+        AddEvidence(slot, data, MotionWeight, "continuous repeating jitter", true, nowSec);
         data.JitterActive = true;
     }
 }
