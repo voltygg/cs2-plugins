@@ -6,6 +6,8 @@
 #include <optional>
 
 using Anticheat::AimAngles;
+using Anticheat::DefaultTuning;
+using Anticheat::DetectionKind;
 using Anticheat::EstimateViewLag;
 using Anticheat::ViewLag;
 using Anticheat::MaxSlots;
@@ -13,6 +15,7 @@ using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::ShotView;
 using Anticheat::SlotBit;
+using Anticheat::Suspicion;
 using Anticheat::TeamCT;
 using Anticheat::TeamT;
 using Anticheat::Vec3;
@@ -29,8 +32,9 @@ static constexpr float TargetX = 500.0f;
 /** One observer and one enemy walking sideways behind a wall, with the sight line stamped. */
 struct WallhackHarness
 {
+    Suspicion Scores;
     ShotHistory History;
-    Wallhack Rule{History};
+    Wallhack Rule{History, Scores};
     ViewLag Lag = EstimateViewLag(0.0f, 0.0f);  // one tick behind
     int32_t Tick = 0;
     float TargetY = -128.0f;
@@ -39,8 +43,12 @@ struct WallhackHarness
     bool Known = true;
     int Findings = 0;
 
+    /** Points this rule has on the observer, in its own units. */
+    float Points() const { return Scores.Value(Observer, DetectionKind::Wallhack, Now); }
+
     WallhackHarness()
     {
+        Scores.Configure(DefaultTuning());
         for (; Tick < 4; ++Tick)
             History.CaptureFrame(Tick, Frame());
     }
@@ -103,19 +111,20 @@ struct WallhackHarness
     }
 };
 
-TEST_CASE("Following a hidden enemy through a wall for a second is an episode, three are a finding")
+TEST_CASE("Following a hidden enemy through a wall for a second is an episode worth two points")
 {
     WallhackHarness h;
     h.Follow(70);
-    CHECK(h.Rule.Score(Observer, Now) == 2);
+    CHECK(h.Points() == doctest::Approx(2.0f));
     CHECK(h.Rule.IsTracking(Observer));
+
+    // Three episodes are what this rule reports on alone; the score decides that, not the rule.
     h.Break();
     h.Follow(70);
-    CHECK(h.Rule.Score(Observer, Now) == 4);
     h.Break();
     h.Follow(70);
+    CHECK(h.Points() == doctest::Approx(6.0f));
     CHECK(h.Findings == 1);
-    CHECK(h.Rule.Score(Observer, Now) == 0);
 }
 
 TEST_CASE("A crosshair resting where a hidden enemy happens to pass is not following")
@@ -124,7 +133,7 @@ TEST_CASE("A crosshair resting where a hidden enemy happens to pass is not follo
     const AimAngles resting = Geometry::Bearing(Eye, {TargetX, 0.0f, Geometry::BodyHeights[1]});
     for (int i = 0; i < 70; ++i)
         h.Step(resting);
-    CHECK(h.Rule.Score(Observer, Now) == 0);
+    CHECK(h.Points() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("Following an enemy in plain view is aim, not a wallhack")
@@ -132,7 +141,7 @@ TEST_CASE("Following an enemy in plain view is aim, not a wallhack")
     WallhackHarness h;
     h.Hidden = false;
     h.Follow(70);
-    CHECK(h.Rule.Score(Observer, Now) == 0);
+    CHECK(h.Points() == doctest::Approx(0.0f));
     CHECK_FALSE(h.Rule.IsTracking(Observer));
 }
 
@@ -141,7 +150,7 @@ TEST_CASE("Sight lines that were never traced count for nothing")
     WallhackHarness h;
     h.Known = false;
     h.Follow(70);
-    CHECK(h.Rule.Score(Observer, Now) == 0);
+    CHECK(h.Points() == doctest::Approx(0.0f));
 }
 
 TEST_CASE("A hit right after following the enemy into view is evidence")
@@ -152,7 +161,7 @@ TEST_CASE("A hit right after following the enemy into view is evidence")
     h.Step(h.Following());
     CHECK_FALSE(h.Rule.IsTracking(Observer));
     h.Hit(h.Tick + 3);
-    CHECK(h.Rule.Score(Observer, Now) == 2);
+    CHECK(h.Points() == doctest::Approx(2.0f));
 }
 
 TEST_CASE("A shot through cover at a silent, unseen, unmoving enemy is evidence")
@@ -166,23 +175,23 @@ TEST_CASE("A shot through cover at a silent, unseen, unmoving enemy is evidence"
     SUBCASE("body shot")
     {
         h.Hit(fireTick);
-        CHECK(h.Rule.Score(Observer, Now) == 2);
+        CHECK(h.Points() == doctest::Approx(2.0f));
     }
     SUBCASE("headshot")
     {
         h.Hit(fireTick, true);
-        CHECK(h.Rule.Score(Observer, Now) == 3);
+        CHECK(h.Points() == doctest::Approx(3.0f));
     }
     SUBCASE("a teammate could see the victim")
     {
         h.Hit(fireTick, false, true);
-        CHECK(h.Rule.Score(Observer, Now) == 0);
+        CHECK(h.Points() == doctest::Approx(0.0f));
     }
     SUBCASE("the victim fired recently")
     {
         h.Rule.OnWeaponFire(Target, fireTick - 10);
         h.Hit(fireTick);
-        CHECK(h.Rule.Score(Observer, Now) == 0);
+        CHECK(h.Points() == doctest::Approx(0.0f));
     }
 }
 
@@ -193,5 +202,5 @@ TEST_CASE("A running enemy behind cover was heard, so the shot is not evidence")
     for (int i = 0; i < 20; ++i)
         h.Step({0.0f, 90.0f});
     h.Hit(h.Tick - 1);
-    CHECK(h.Rule.Score(Observer, Now) == 0);
+    CHECK(h.Points() == doctest::Approx(0.0f));
 }

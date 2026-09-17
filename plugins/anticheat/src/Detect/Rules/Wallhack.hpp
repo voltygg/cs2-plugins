@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Detect/Evidence.hpp"
 #include "Detect/Finding.hpp"
 #include "Detect/ViewLag.hpp"
 #include "Detect/Samples.hpp"
 #include "Detect/ShotHistory.hpp"
+#include "Detect/Suspicion.hpp"
 
 #include <array>
 #include <optional>
@@ -25,7 +25,7 @@ public:
     /** The settings toggle and catalog entry this rule reports under. */
     static constexpr DetectionKind Kind = DetectionKind::Wallhack;
 
-    explicit Wallhack(const ShotHistory& shots) : _shots(shots) {}
+    Wallhack(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
     void OnSlotChanged(int slot);
@@ -43,7 +43,6 @@ public:
     /** A finalized shot; judged only when it hurt someone. */
     std::optional<Finding> OnShot(int slot, const ShotView& shot, const WallhackShotContext& context, double nowSec);
 
-    int Score(int slot, double nowSec) const;
     bool IsTracking(int slot) const;
 
 private:
@@ -82,14 +81,15 @@ private:
         int32_t LastFireTick = -1;
     };
 
-    std::optional<Finding> Count(int slot, int points, std::string evidence, double nowSec);
+    /** Every report this rule makes goes through here, so the reason always reads the same way. */
+    std::optional<Finding> Report(int slot, int points, std::string reason, double nowSec);
     void CloseTrack(SlotData& data, int32_t serverTick, bool becameVisible);
     /** How fast @p slot moved over the ticks before @p serverTick, in units per second. */
     float Speed(int slot, int32_t serverTick) const;
 
     const ShotHistory& _shots;
+    Suspicion& _suspicion;
     std::array<SlotData, MaxSlots> _slots{};
-    std::array<LongEvidenceWindow, MaxSlots> _incidents{};
 };
 
 }  // namespace Anticheat::Rules

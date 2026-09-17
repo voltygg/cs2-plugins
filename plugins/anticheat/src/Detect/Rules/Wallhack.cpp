@@ -31,7 +31,6 @@ static constexpr int TrackPoints = 2;
 static constexpr int PeekPoints = 2;
 static constexpr int WallbangPoints = 2;
 static constexpr int HeadshotBonus = 1;
-static constexpr int DetectionScore = 6;
 
 /** 90% of the episode's samples must have stayed within tolerance. */
 static constexpr bool MeetsCoverage(int onTarget, int samples)
@@ -42,7 +41,6 @@ static constexpr bool MeetsCoverage(int onTarget, int samples)
 void Wallhack::Reset()
 {
     _slots = {};
-    _incidents = {};
 }
 
 void Wallhack::OnSlotChanged(int slot)
@@ -50,7 +48,6 @@ void Wallhack::OnSlotChanged(int slot)
     if (!InSlotRange(slot))
         return;
     _slots[slot] = {};
-    _incidents[slot].Clear();
     for (auto& data : _slots)
     {
         if (data.Current.Target == slot)
@@ -91,14 +88,10 @@ void Wallhack::CloseTrack(SlotData& data, int32_t serverTick, bool becameVisible
     track = {};
 }
 
-std::optional<Finding> Wallhack::Count(int slot, int points, std::string evidence, double nowSec)
+std::optional<Finding> Wallhack::Report(int slot, int points, std::string reason, double nowSec)
 {
-    const int total = _incidents[slot].Add(nowSec, points);
-    if (total < DetectionScore)
-        return std::nullopt;
-    _incidents[slot].Clear();
-    return Finding{.Kind = DetectionKind::Wallhack,
-                   .Evidence = std::format("{} The rolling score reached {}/{}.", evidence, total, DetectionScore)};
+    return _suspicion.Add(
+        slot, {.Kind = Kind, .Points = static_cast<float>(points), .Reason = std::move(reason)}, nowSec);
 }
 
 float Wallhack::Speed(int slot, int32_t serverTick) const
@@ -230,7 +223,7 @@ std::optional<Finding> Wallhack::OnFrame(int slot, int32_t serverTick, bool aliv
         return out;
 
     track.Qualified = true;
-    return Count(slot, TrackPoints,
+    return Report(slot, TrackPoints,
                  std::format("The aim followed a hidden enemy through cover for {} ticks, turning {:.1f} degrees "
                              "as the enemy's bearing moved {:.1f}.",
                              track.Samples, track.AimYawTravel, track.BearingYawTravel),
@@ -249,7 +242,7 @@ std::optional<Finding> Wallhack::OnShot(int slot, const ShotView& shot, const Wa
     if (data.PeekTarget == victim && shot.FireTick >= data.PeekTick && shot.FireTick - data.PeekTick <= PeekWindowTicks)
     {
         data.PeekTarget = -1;
-        out = Count(slot, PeekPoints,
+        out = Report(slot, PeekPoints,
                     std::format("A hit landed {} ticks after the aim had followed the same enemy through cover "
                                 "into view.",
                                 shot.FireTick - data.PeekTick),
@@ -271,16 +264,11 @@ std::optional<Finding> Wallhack::OnShot(int slot, const ShotView& shot, const Wa
         return out;
 
     const int points = WallbangPoints + (shot.Headshot ? HeadshotBonus : 0);
-    return Count(slot, points,
+    return Report(slot, points,
                  std::format("A {}shot through cover hit an enemy nobody on the team could see, who was neither "
                              "shooting nor running.",
                              shot.Headshot ? "head" : ""),
                  nowSec);
-}
-
-int Wallhack::Score(int slot, double nowSec) const
-{
-    return InSlotRange(slot) ? _incidents[slot].Value(nowSec) : 0;
 }
 
 bool Wallhack::IsTracking(int slot) const

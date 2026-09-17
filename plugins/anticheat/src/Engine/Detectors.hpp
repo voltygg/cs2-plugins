@@ -73,7 +73,7 @@ public:
     Rules::Triggerbot Triggerbot{History};
     Rules::Recoil Recoil;
     Rules::MouseMismatch Mouse{History};
-    Rules::Wallhack Wallhack{History};
+    Rules::Wallhack Wallhack{History, Scores};
     Rules::Namechanger Namechanger{Scores};
     Rules::InvalidCvar InvalidCvars;
 
