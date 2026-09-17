@@ -83,3 +83,5 @@ deploy/.render/
 # Scratch space for local checkouts; VoltMod is optional editable-package source.
 vendor/*
 !vendor/voltmod
+
+plugins/anticheat/cleanup/
