@@ -78,7 +78,7 @@ constexpr std::string_view TokenName(DetectionKind kind)
 }
 
 /**
- * A confirmed detection: cores self-threshold on their own rolling windows, so the response funnel
+ * A confirmed detection: rules self-threshold on their own rolling windows, so the response funnel
  * decides the punishment, not whether one is warranted. KickOnly caps it at a kick even in ban
  * mode, for rules whose false-positive cost must stay recoverable.
  */

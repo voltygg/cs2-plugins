@@ -11,7 +11,7 @@ namespace Anticheat
 {
 
 /**
- * Cores already self-threshold, so this only decides how loudly to react. Bans go through
+ * Rules already self-threshold, so this only decides how loudly to react. Bans go through
  * admin-system's Contracts::IAdminActions to keep persistence, kick and broadcast in one place;
  * when that plugin is absent the interface is simply missing and the ban is logged as skipped.
  */
@@ -30,7 +30,7 @@ public:
     /** Disconnect: a new occupant of the slot starts clean. */
     void OnSlotChanged(int slot);
 
-    /** Map change or config reload. Named to match the detection cores, so the manager can fan out
+    /** Map change or config reload. Named to match the detection detectors, so the manager can fan out
      *  over all of them at once. */
     void Reset();
 

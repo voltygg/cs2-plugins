@@ -18,7 +18,7 @@ namespace Anticheat
 void AntiCheatManager::Initialize()
 {
     _dumpTicks.BindReset(_rt.Slots);
-    _cores.Initialize();
+    _detectors.Initialize();
     _simulator.Initialize();
 
     _subs.Add(_rt.Hooks.Movement.Before +=
@@ -26,27 +26,27 @@ void AntiCheatManager::Initialize()
     _subs.Add(_rt.Slots.Changed += [this](int slot) { OnSlotChanged(slot); });
     _subs.Add(_rt.Players.FullyConnected += [this](VoltMod::Player& player) { OnPlayerFullyConnected(player); });
     _subs.Add(_rt.Players.SettingsChanged +=
-              [this](VoltMod::Player& player) { _namechangerDetector.OnSettingsChanged(player); });
+              [this](VoltMod::Player& player) { _namechangerPoll.OnSettingsChanged(player); });
     _subs.Add(_rt.ConVars.Changed += [this](const VoltMod::ConVarChange& change) {
-        if (_cores.OnConVarChanged(change))
+        if (_detectors.OnConVarChanged(change))
             ResetEvidence();
     });
 
     LoadDetectionData();
     _feed.Initialize();
-    _namechangerDetector.Initialize();
+    _namechangerPoll.Initialize();
     _dllInjection.Initialize();
-    _invalidCvarPoller.Initialize();
+    _cvarPoll.Initialize();
 
     _rt.Status.RegisterSection("anticheat", [this] { return StatusSnapshot(); });
     RegisterCommands();
-    Log::Info("Detection cores ready (mode={}).", _config.Get().anticheat.mode);
+    Log::Info("Detection rules ready (mode={}).", _config.Get().anticheat.mode);
 }
 
 void AntiCheatManager::LoadDetectionData()
 {
     const DetectionData& data = _detections.Get();
-    const std::vector<std::string> rejected = _cores.InvalidCvars.LoadRules(data.cvarRules);
+    const std::vector<std::string> rejected = _detectors.InvalidCvars.LoadRules(data.cvarRules);
 
     if (!rejected.empty())
     {
@@ -56,7 +56,7 @@ void AntiCheatManager::LoadDetectionData()
         Log::Warn("Ignoring duplicate cvar rule(s): {}.", names);
     }
 
-    Log::Info("Detection data: {} cvar rule(s), {} blacklisted event(s).", _cores.InvalidCvars.Rules().Size(),
+    Log::Info("Detection data: {} cvar rule(s), {} blacklisted event(s).", _detectors.InvalidCvars.Rules().Size(),
               data.dllEventBlacklist.size());
 }
 
@@ -114,7 +114,7 @@ std::string AntiCheatManager::StatusSnapshot() const
     const auto& settings = _config.Get().anticheat;
     std::map<std::string, bool> modules;
     for (const DetectionInfo& detection : DetectionCatalog)
-        modules.emplace(detection.Token, _cores.ModuleEnabled(detection.Kind));
+        modules.emplace(detection.Token, _detectors.RuleEnabled(detection.Kind));
 
     const VoltMod::Status sight = _feed.SightAvailable();
     return VoltMod::Json::Write(
@@ -123,9 +123,9 @@ std::string AntiCheatManager::StatusSnapshot() const
                  "mode",
                  ModeName(_response.CurrentMode()),
                  "detecting",
-                 _cores.Enabled(),
+                 _detectors.Enabled(),
                  "enforcingCheatCvars",
-                 _cores.EnforceCheatCvars(),
+                 _detectors.EnforceCheatCvars(),
                  "modules",
                  modules,
                  "clientCvars",
@@ -135,9 +135,9 @@ std::string AntiCheatManager::StatusSnapshot() const
                  "sightLines",
                  sight ? std::string("available") : sight.error().Detail,
                  "correlatorFrames",
-                 _cores.Correlator.FrameCount(),
+                 _detectors.History.FrameCount(),
                  "detectionData",
-                 glz::obj{"cvarRules", _cores.InvalidCvars.Rules().Size(), "blacklistedEvents",
+                 glz::obj{"cvarRules", _detectors.InvalidCvars.Rules().Size(), "blacklistedEvents",
                           _detections.Get().dllEventBlacklist.size()},
                  "webhook",
                  !settings.webhook.url.empty(),
@@ -154,7 +154,7 @@ void AntiCheatManager::ResetEvidence()
 
 void AntiCheatManager::OnMapStart()
 {
-    _cores.RefreshTeamRules();
+    _detectors.RefreshTeamRules();
     ResetEvidence();
 }
 
@@ -165,9 +165,9 @@ void AntiCheatManager::OnSlotChanged(int slot)
 
 void AntiCheatManager::OnPlayerFullyConnected(VoltMod::Player& player)
 {
-    _namechangerDetector.OnFullyConnected(player);
+    _namechangerPoll.OnFullyConnected(player);
     _dllInjection.OnFullyConnected(player.Slot());
-    _invalidCvarPoller.OnFullyConnected(player.Slot());
+    _cvarPoll.OnFullyConnected(player.Slot());
 }
 
 }  // namespace Anticheat

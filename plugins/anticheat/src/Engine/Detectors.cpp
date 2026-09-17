@@ -10,6 +10,8 @@ namespace Anticheat
 {
 
 using VoltMod::Time;
+using Rules::ShouldEnforceCheatCvars;
+using Rules::SvCheatsPropagationGraceSec;
 
 void Detectors::Initialize()
 {
@@ -37,7 +39,7 @@ bool Detectors::Enabled() const
     return !_svCheats.Get() || settings.allowSvCheatsTesting;
 }
 
-bool Detectors::ModuleEnabled(DetectionKind kind) const
+bool Detectors::RuleEnabled(DetectionKind kind) const
 {
     return DetectionEnabled(_config.Get().anticheat.detections, kind);
 }
@@ -91,17 +93,17 @@ bool Detectors::OnConVarChanged(const VoltMod::ConVarChange& change)
 
 void Detectors::RefreshTeamRules()
 {
-    Correlator.SetTeammatesAreEnemies(_teammatesAreEnemies && _teammatesAreEnemies.Get());
+    History.SetTeammatesAreEnemies(_teammatesAreEnemies && _teammatesAreEnemies.Get());
 }
 
 void Detectors::Reset()
 {
-    std::apply([](auto&... cores) { (cores.Reset(), ...); }, Cores());
+    std::apply([](auto&... detectors) { (detectors.Reset(), ...); }, All());
 }
 
 void Detectors::OnSlotChanged(int slot)
 {
-    std::apply([slot](auto&... cores) { (cores.OnSlotChanged(slot), ...); }, Cores());
+    std::apply([slot](auto&... detectors) { (detectors.OnSlotChanged(slot), ...); }, All());
 }
 
 }  // namespace Anticheat

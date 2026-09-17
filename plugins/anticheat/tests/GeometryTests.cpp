@@ -41,7 +41,7 @@ TEST_CASE("AngularDistance equals the yaw difference when both angles are level"
 }
 
 // Euclidean pitch/yaw distance gives 90 degrees here. Great-circle distance
-// gives 14 degrees, which is why the aim cores use it.
+// gives 14 degrees, which is why the aim detectors use it.
 TEST_CASE("AngularDistance is great-circle and diverges from a Euclidean pitch-yaw metric near the poles")
 {
     const float greatCircle = AngularDistance({80.0f, 0.0f}, {80.0f, 90.0f});

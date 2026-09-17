@@ -53,7 +53,7 @@ struct AimAngles
     float Yaw = 0.0f;
 };
 
-/** The usercmd buttons the cores read. Values match the engine's IN_* bits. */
+/** The usercmd buttons the rules read. Values match the engine's IN_* bits. */
 inline constexpr uint64_t ButtonAttack = 0x1;
 inline constexpr uint64_t ButtonTurnLeft = 0x80;
 inline constexpr uint64_t ButtonTurnRight = 0x100;
@@ -132,7 +132,7 @@ struct PositionSample
 
 /**
  * A correlated shot: the command that fired it joined to the events it produced. Every shot is
- * finalized once, after its events have had time to arrive, and each core reads it then.
+ * finalized once, after its events have had time to arrive, and each rule reads it then.
  */
 struct ShotView
 {

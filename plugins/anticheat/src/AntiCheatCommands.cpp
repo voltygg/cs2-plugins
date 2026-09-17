@@ -40,7 +40,7 @@ void AntiCheatManager::RegisterCommands()
                           loaded.error().Detail);
             else
                 LoadDetectionData();
-            _cores.RefreshTeamRules();
+            _detectors.RefreshTeamRules();
             ResetEvidence();
             return Reply{std::format("Settings reloaded (mode={}); evidence cleared.", _config.Get().anticheat.mode)};
         });
@@ -76,20 +76,20 @@ std::vector<std::string> AntiCheatManager::StatusReport() const
     std::vector<std::string> report{std::format("[AC] {}", StatusSnapshot())};
 
     const double now = Time::MonotonicSeconds();
-    const Detectors& cores = _cores;
+    const Detectors& detectors = _detectors;
     bool any = false;
     for (const VoltMod::Player* player : _rt.Players.All())
     {
         const int slot = player ? player->Slot() : -1;
-        if (!InSlotRange(slot) || (player->IsBot() && !cores.IncludesBots()))
+        if (!InSlotRange(slot) || (player->IsBot() && !detectors.IncludesBots()))
             continue;
         any = true;
 
         std::string latched;
-        const std::span<const CvarRule> rules = cores.InvalidCvars.Rules().All();
+        const std::span<const CvarRule> rules = detectors.InvalidCvars.Rules().All();
         for (size_t index = 0; index < rules.size(); ++index)
         {
-            if (!cores.InvalidCvars.IsLatchedAt(slot, index))
+            if (!detectors.InvalidCvars.IsLatchedAt(slot, index))
                 continue;
             if (!latched.empty())
                 latched += ",";
@@ -100,18 +100,18 @@ std::vector<std::string> AntiCheatManager::StatusReport() const
             "[AC] s{} {} ({}) punished={} aimbot={} aimlock={}{} antiaim={:.1f} silentaim={} trigger={} recoil={}{} "
             "mouse={}{} wallhack={}{} names={} cvars=[{}] pending={} poll={:.1f}s shots={} cmds={} gen={}",
             slot, player->Name(), player->SteamId(), PunishmentName(_response.Issued(slot)),
-            cores.Aimbot.IncidentCount(slot), cores.Aimlock.IncidentCount(slot),
-            cores.Aimlock.IsTracking(slot) ? "/tracking" : "", cores.AntiAim.Score(slot),
-            cores.SilentAim.Score(slot, now), cores.Triggerbot.Score(slot, now), cores.Recoil.Score(slot, now),
-            cores.Recoil.InSpray(slot) ? "/spraying" : "", cores.Mouse.Score(slot, now),
-            cores.Mouse.Calibrated(slot) ? "" : "/uncalibrated", cores.Wallhack.Score(slot, now),
-            cores.Wallhack.IsTracking(slot) ? "/tracking" : "", cores.Namechanger.ChangeCount(slot),
+            detectors.Aimbot.IncidentCount(slot), detectors.Aimlock.IncidentCount(slot),
+            detectors.Aimlock.IsTracking(slot) ? "/tracking" : "", detectors.AntiAim.Score(slot),
+            detectors.SilentAim.Score(slot, now), detectors.Triggerbot.Score(slot, now), detectors.Recoil.Score(slot, now),
+            detectors.Recoil.InSpray(slot) ? "/spraying" : "", detectors.Mouse.Score(slot, now),
+            detectors.Mouse.Calibrated(slot) ? "" : "/uncalibrated", detectors.Wallhack.Score(slot, now),
+            detectors.Wallhack.IsTracking(slot) ? "/tracking" : "", detectors.Namechanger.ChangeCount(slot),
             latched.empty() ? "-" : latched, _rt.Hooks.ClientConVars.PendingCount(slot),
-            _invalidCvarPoller.PollsIn(slot, now), cores.Correlator.Shots(slot).size(),
-            cores.Correlator.CommandCount(slot), cores.Correlator.Generation(slot)));
+            _cvarPoll.PollsIn(slot, now), detectors.History.Shots(slot).size(),
+            detectors.History.CommandCount(slot), detectors.History.Generation(slot)));
     }
     if (!any)
-        report.push_back(cores.IncludesBots() ? "[AC] no players connected." : "[AC] no human players connected.");
+        report.push_back(detectors.IncludesBots() ? "[AC] no players connected." : "[AC] no human players connected.");
     return report;
 }
 

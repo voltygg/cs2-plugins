@@ -1,5 +1,5 @@
 #include "Detect/DetectionData.hpp"
-#include "Detect/Rules/InvalidCvarRules.hpp"
+#include "Detect/Rules/InvalidCvar.hpp"
 
 #include <VoltMod/Core/Json.hpp>
 #include <doctest/doctest.h>
@@ -8,8 +8,8 @@
 #include <string>
 
 using Anticheat::CvarConstraint;
-using Anticheat::CvarRuleTable;
-using Anticheat::CvarsPerPoll;
+using Anticheat::Rules::CvarRuleTable;
+using Anticheat::Rules::CvarsPerPoll;
 using Anticheat::CvarTier;
 using Anticheat::DetectionData;
 using Anticheat::DetectionDocument;

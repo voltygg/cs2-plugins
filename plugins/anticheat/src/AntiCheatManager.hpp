@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Engine/DllInjectionDetector.hpp"
-#include "Engine/InvalidCvarDetector.hpp"
-#include "Engine/NamechangerDetector.hpp"
+#include "Engine/DllInjectionScan.hpp"
+#include "Engine/CvarPoll.hpp"
+#include "Engine/NamechangerPoll.hpp"
 #include "Config.hpp"
 #include "Engine/DetectionDataManager.hpp"
-#include "Engine/ShotCorrelator.hpp"
+#include "Engine/DetectionFeed.hpp"
 #include "Engine/Detectors.hpp"
 #include "Response/ResponseManager.hpp"
 #include "Engine/CheatSimulator.hpp"
@@ -54,20 +54,20 @@ private:
     DetectionDataManager& _detections;
     ResponseManager& _response;
 
-    Detectors _cores{_rt, _config, _response};
+    Detectors _detectors{_rt, _config, _response};
 
-    ShotCorrelator _feed{_cores, _rt};
-    NamechangerDetector _namechangerDetector{_cores, _rt};
-    DllInjectionDetector _dllInjection{_cores, _rt, _detections};
-    InvalidCvarDetector _invalidCvarPoller{_cores, _rt};
+    DetectionFeed _feed{_detectors, _rt};
+    NamechangerPoll _namechangerPoll{_detectors, _rt};
+    DllInjectionScan _dllInjection{_detectors, _rt, _detections};
+    CvarPoll _cvarPoll{_detectors, _rt};
 
     VoltMod::PerSlot<int> _dumpTicks;  // remaining ticks to dump raw usercmds (anticheat_dumpcmd)
-    CheatSimulator _simulator{_cores, _rt, _config};
+    CheatSimulator _simulator{_detectors, _rt, _config};
 
     /** Everything a reset or a slot change has to clear; a new module is wired in here only. */
     auto Modules()
     {
-        return std::tie(_cores, _dllInjection, _invalidCvarPoller, _response);
+        return std::tie(_detectors, _dllInjection, _cvarPoll, _response);
     }
 
     /** Listener registrations, released together. Declared last: reverse member destruction

@@ -1,18 +1,18 @@
 #pragma once
 
-#include "Detect/Rules/AimbotCore.hpp"
-#include "Detect/Rules/AimlockCore.hpp"
-#include "Detect/Rules/AntiAimCore.hpp"
-#include "Detect/Rules/MouseCore.hpp"
-#include "Detect/Rules/RecoilCore.hpp"
-#include "Detect/Rules/SilentAimCore.hpp"
-#include "Detect/Rules/TriggerbotCore.hpp"
-#include "Detect/Rules/WallhackCore.hpp"
-#include "Detect/Rules/InvalidCvarRules.hpp"
-#include "Detect/Rules/NamechangerCore.hpp"
 #include "Config.hpp"
+#include "Detect/Rules/Aimbot.hpp"
+#include "Detect/Rules/Aimlock.hpp"
+#include "Detect/Rules/AntiAim.hpp"
+#include "Detect/Rules/InvalidCvar.hpp"
+#include "Detect/Rules/MouseMismatch.hpp"
+#include "Detect/Rules/Namechanger.hpp"
+#include "Detect/Rules/Recoil.hpp"
+#include "Detect/Rules/SilentAim.hpp"
+#include "Detect/Rules/Triggerbot.hpp"
+#include "Detect/Rules/Wallhack.hpp"
 #include "Detect/Finding.hpp"
-#include "Detect/ShotCorrelatorCore.hpp"
+#include "Detect/ShotHistory.hpp"
 #include "Response/ResponseManager.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -34,14 +34,14 @@ public:
 
     /** Disabled globally or while `sv_cheats` is enabled outside test mode. */
     bool Enabled() const;
-    bool ModuleEnabled(DetectionKind kind) const;
+    bool RuleEnabled(DetectionKind kind) const;
 
-    /** The gate for @p core, taken from the core's own Kind so the two cannot disagree. */
-    template <class Core>
-    bool ModuleEnabled(const Core& core) const
+    /** The gate for @p rule, taken from the rule's own Kind so the two cannot disagree. */
+    template <class Rule>
+    bool RuleEnabled(const Rule& rule) const
     {
-        (void)core;
-        return ModuleEnabled(Core::Kind);
+        (void)rule;
+        return RuleEnabled(Rule::Kind);
     }
 
     /** True when @p slot is checked at all: a spawned human, or a bot while `debug.includeBots` is on. */
@@ -58,27 +58,27 @@ public:
     /** Update hostile-shot rules from `mp_teammates_are_enemies`. */
     void RefreshTeamRules();
 
-    /** Clear every core; the caller clears its adapters alongside. */
+    /** Clear every rule; the caller clears its adapters alongside. */
     void Reset();
     void OnSlotChanged(int slot);
 
-    ShotCorrelatorCore Correlator;
-    AimbotCore Aimbot{Correlator};
-    AimlockCore Aimlock{Correlator};
-    AntiAimCore AntiAim;
-    SilentAimCore SilentAim;
-    TriggerbotCore Triggerbot{Correlator};
-    RecoilCore Recoil;
-    MouseCore Mouse{Correlator};
-    WallhackCore Wallhack{Correlator};
-    NamechangerCore Namechanger;
-    InvalidCvarRules InvalidCvars;
+    ShotHistory History;
+    Rules::Aimbot Aimbot{History};
+    Rules::Aimlock Aimlock{History};
+    Rules::AntiAim AntiAim;
+    Rules::SilentAim SilentAim;
+    Rules::Triggerbot Triggerbot{History};
+    Rules::Recoil Recoil;
+    Rules::MouseMismatch Mouse{History};
+    Rules::Wallhack Wallhack{History};
+    Rules::Namechanger Namechanger;
+    Rules::InvalidCvar InvalidCvars;
 
 private:
-    /** Every core a reset or a slot change has to clear; a new core is wired in here only. */
-    auto Cores()
+    /** Every rule a reset or a slot change has to clear; a new rule is wired in here only. */
+    auto All()
     {
-        return std::tie(Correlator, Aimbot, Aimlock, AntiAim, SilentAim, Triggerbot, Recoil, Mouse, Wallhack,
+        return std::tie(History, Aimbot, Aimlock, AntiAim, SilentAim, Triggerbot, Recoil, Mouse, Wallhack,
                         Namechanger, InvalidCvars);
     }
 

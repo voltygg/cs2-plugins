@@ -2,7 +2,7 @@
 
 #include "Detect/Geometry.hpp"
 #include "Detect/Samples.hpp"
-#include "Detect/ShotCorrelatorCore.hpp"
+#include "Detect/ShotHistory.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Slot.hpp>
@@ -144,7 +144,7 @@ bool CheatSimulator::AimAtNearestOpponent(int slot, VoltMod::PlayerInput& cmd)
     const int team = self.Team();
     // The correlator's copy of the free-for-all rule is kept current by RefreshTeamRules, so the
     // simulation opposes exactly who the detectors do - and pays no name lookup per usercmd.
-    const ShotCorrelatorCore& correlator = _detectors.Correlator;
+    const ShotHistory& correlator = _detectors.History;
 
     Vec3 best;
     float bestDistance = 0.0f;
