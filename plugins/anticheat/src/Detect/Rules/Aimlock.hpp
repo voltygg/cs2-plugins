@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Detect/Evidence.hpp"
 #include "Detect/Finding.hpp"
 #include "Detect/ViewLag.hpp"
 #include "Detect/Samples.hpp"
 #include "Detect/ShotHistory.hpp"
+#include "Detect/Suspicion.hpp"
 
 #include <array>
 #include <optional>
@@ -18,7 +18,7 @@ public:
     /** The settings toggle and catalog entry this rule reports under. */
     static constexpr DetectionKind Kind = DetectionKind::Aimlock;
 
-    explicit Aimlock(const ShotHistory& shots) : _shots(shots) {}
+    Aimlock(const ShotHistory& shots, Suspicion& suspicion) : _shots(shots), _suspicion(suspicion) {}
 
     void Reset();
     void OnSlotChanged(int slot);
@@ -30,7 +30,6 @@ public:
     std::optional<Finding> OnFrame(int slot, int32_t serverTick, bool aliveHuman, const ViewLag& lag,
                                    double nowSec);
 
-    int IncidentCount(int slot) const;
     bool IsTracking(int slot) const;
 
 private:
@@ -65,7 +64,7 @@ private:
     };
 
     /** Dropped whenever the player stops being trackable (death, ineligibility). Accumulated
-     *  evidence deliberately lives outside it, in @ref _incidents. */
+     *  evidence lives on the score instead, so dying between episodes does not clear it. */
     struct SlotData
     {
         Sample Pending;
@@ -83,10 +82,8 @@ private:
     void Count(int slot, SlotData& data, const Hypothesis& hypothesis, double nowSec, std::optional<Finding>& out);
 
     const ShotHistory& _shots;
+    Suspicion& _suspicion;
     std::array<SlotData, MaxSlots> _slots{};
-    /** Episodes inside the evidence window. Survives death and respawn, so a cheat that dies
-     *  between episodes does not reset its own count. */
-    std::array<LongEvidenceWindow, MaxSlots> _incidents{};
 };
 
 }  // namespace Anticheat::Rules

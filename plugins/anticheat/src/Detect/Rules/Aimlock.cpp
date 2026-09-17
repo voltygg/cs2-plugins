@@ -13,7 +13,6 @@ static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
 static constexpr int OffTargetTicks = static_cast<int>(TickRate * 0.5f);     // 32
 static constexpr float MinimumDistance = 200.0f;
 static constexpr float MinimumTargetTravel = 48.0f;  // one and a half player widths, as degrees at that range
-static constexpr int DetectionThreshold = 3;
 
 /** 95% of the episode's samples must have been inside the target's angular width. */
 static constexpr bool MeetsCoverage(int onTarget, int samples)
@@ -129,7 +128,6 @@ static Candidate FindCandidate(const ShotHistory& shots, const AimAngles& angles
 void Aimlock::Reset()
 {
     _slots = {};
-    _incidents = {};
 }
 
 void Aimlock::OnSlotChanged(int slot)
@@ -137,7 +135,6 @@ void Aimlock::OnSlotChanged(int slot)
     if (!InSlotRange(slot))
         return;
     _slots[slot] = {};
-    _incidents[slot].Clear();
 }
 
 void Aimlock::OnSimulated(int slot, int32_t serverTick, const AimAngles& angles, const Vec3& eyePos)
@@ -328,28 +325,26 @@ void Aimlock::StartTrack(int slot, SlotData& data, const Sample& sample, const V
 void Aimlock::Count(int slot, SlotData& data, const Hypothesis& hypothesis, double nowSec,
                         std::optional<Finding>& out)
 {
-    auto& incidents = _incidents[slot];
-    const int episodes = incidents.Add(nowSec);
+    std::optional<Finding> finding = _suspicion.Add(
+        slot,
+        {.Kind = Kind,
+         .Points = 1.0f,
+         .Reason = std::format("A tracking episode stayed on target for {}/{} samples while the target moved {:.1f} "
+                               "of {:.1f} required degrees.",
+                               hypothesis.OnTargetSamples, data.Current.Samples, hypothesis.MaxTargetDisplacement,
+                               hypothesis.RequiredTargetDisplacement)},
+        nowSec);
 
-    if (episodes >= DetectionThreshold)
+    if (finding)
     {
-        out = Finding{.Kind = DetectionKind::Aimlock,
-                      .Evidence = std::format("{} precise tracking episodes; the latest stayed on target for {}/{} "
-                                              "samples while the target moved {:.1f} of {:.1f} required degrees.",
-                                              episodes, hypothesis.OnTargetSamples, data.Current.Samples,
-                                              hypothesis.MaxTargetDisplacement, hypothesis.RequiredTargetDisplacement)};
-        incidents.Clear();
+        out = std::move(finding);
+        // Stay on this target so one continuous lock is one episode, not one per re-evaluation.
         data.Locked = true;
         data.LockedTarget = data.Current.TargetSlot;
         data.LockedBodyPoint = data.Current.BodyPoint;
         data.OffTargetSince = -1;
     }
     data.Current = {};
-}
-
-int Aimlock::IncidentCount(int slot) const
-{
-    return InSlotRange(slot) ? static_cast<int>(_incidents[slot].Count()) : 0;
 }
 
 bool Aimlock::IsTracking(int slot) const

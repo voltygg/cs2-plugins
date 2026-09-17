@@ -67,7 +67,7 @@ public:
     Suspicion Scores;
     ShotHistory History;
     Rules::Aimbot Aimbot{History, Scores};
-    Rules::Aimlock Aimlock{History};
+    Rules::Aimlock Aimlock{History, Scores};
     Rules::AntiAim AntiAim;
     Rules::SilentAim SilentAim{Scores};
     Rules::Triggerbot Triggerbot{History, Scores};

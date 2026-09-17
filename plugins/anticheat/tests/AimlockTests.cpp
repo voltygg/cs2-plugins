@@ -7,12 +7,15 @@
 #include <limits>
 
 using Anticheat::AimAngles;
+using Anticheat::DefaultTuning;
+using Anticheat::DetectionKind;
 using Anticheat::Rules::Aimlock;
 using Anticheat::EstimateViewLag;
 using Anticheat::ViewLag;
 using Anticheat::MaxSlots;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
+using Anticheat::Suspicion;
 using Anticheat::TeamCT;
 using Anticheat::TeamT;
 using Anticheat::Vec3;
@@ -32,16 +35,21 @@ static constexpr float TargetSpeed = 20.0f;  // units a tick, enough to move the
  */
 struct AimlockHarness
 {
+    Suspicion Scores;
     ShotHistory History;
-    Aimlock Aimlock{History};
+    Aimlock Rule{History, Scores};
     ViewLag Lag = EstimateViewLag(0.0f, 0.0f);  // one tick of interpolation, no ping
     bool Moving = true;
     int32_t Tick = 0;
     int Findings = 0;
     int32_t FirstFinding = -1;
 
+    /** Tracking episodes counted against the observer. */
+    float Episodes() const { return Scores.Value(Observer, DetectionKind::Aimlock, Now); }
+
     explicit AimlockHarness(bool moving = true) : Moving(moving)
     {
+        Scores.Configure(DefaultTuning());
         // Enough history for every lag hypothesis to have a frame to look back at.
         for (; Tick < 10; ++Tick)
             History.CaptureFrame(Tick, Frame(Tick));
@@ -66,8 +74,8 @@ struct AimlockHarness
         History.CaptureFrame(Tick, Frame(Tick));
         AimAngles aim = Geometry::Bearing(Eye, {TargetX, TargetY(Tick - aimLag), Geometry::BodyHeights[0]});
         aim.Yaw += aimOffsetDeg;
-        Aimlock.OnSimulated(Observer, Tick, aim, Eye);
-        if (Aimlock.OnFrame(Observer, Tick, true, Lag, Now))
+        Rule.OnSimulated(Observer, Tick, aim, Eye);
+        if (Rule.OnFrame(Observer, Tick, true, Lag, Now))
         {
             ++Findings;
             if (FirstFinding < 0)
@@ -132,7 +140,7 @@ TEST_CASE("An aim keyed to a delay outside the searched hypotheses produces no e
     AimlockHarness harness;
     // At this range five ticks of stale aim is far wider than the target, so no episode starts at all.
     harness.Run(50, 0, 8);
-    CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
+    CHECK_FALSE(harness.Rule.IsTracking(Observer));
 
     // Further out the same offset does shrink inside the hull, but never for a whole episode.
     harness.Run(350, 0, 8);
@@ -158,43 +166,43 @@ TEST_CASE("After a detection the module stays quiet until the lock is broken for
     AimlockHarness harness;
     harness.Run(400);
     REQUIRE(harness.Findings == 1);
-    CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
+    CHECK_FALSE(harness.Rule.IsTracking(Observer));
 
     // Still glued to the target: still locked, so no new episode is even started.
     harness.Run(200);
     CHECK(harness.Findings == 1);
-    CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
+    CHECK_FALSE(harness.Rule.IsTracking(Observer));
 
     // Look away for longer than the 32 tick off-target window, then return.
     for (int i = 0; i < 40; ++i)
         harness.Step(90.0f);
-    CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
+    CHECK_FALSE(harness.Rule.IsTracking(Observer));
 
     harness.Step();
-    CHECK(harness.Aimlock.IsTracking(Observer));
+    CHECK(harness.Rule.IsTracking(Observer));
 }
 
 TEST_CASE("A dead or disconnected player drops the tracking state")
 {
     AimlockHarness harness;
     harness.Run(50);
-    REQUIRE(harness.Aimlock.IsTracking(Observer));
-    CHECK_FALSE(harness.Aimlock.OnFrame(Observer, harness.Tick, false, harness.Lag, Now).has_value());
-    CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
+    REQUIRE(harness.Rule.IsTracking(Observer));
+    CHECK_FALSE(harness.Rule.OnFrame(Observer, harness.Tick, false, harness.Lag, Now).has_value());
+    CHECK_FALSE(harness.Rule.IsTracking(Observer));
 }
 
 TEST_CASE("Episodes counted before a death still count after the respawn")
 {
     AimlockHarness harness;
     harness.Run(200);  // two full episodes, one short of the threshold
-    REQUIRE(harness.Aimlock.IncidentCount(Observer) == 2);
+    REQUIRE(harness.Episodes() == doctest::Approx(2.0f));
     REQUIRE(harness.Findings == 0);
 
     // Dying drops the tracking state but not the evidence, or a cheat that dies between episodes
     // never reaches the threshold.
-    CHECK_FALSE(harness.Aimlock.OnFrame(Observer, harness.Tick, false, harness.Lag, Now).has_value());
-    CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
-    CHECK(harness.Aimlock.IncidentCount(Observer) == 2);
+    CHECK_FALSE(harness.Rule.OnFrame(Observer, harness.Tick, false, harness.Lag, Now).has_value());
+    CHECK_FALSE(harness.Rule.IsTracking(Observer));
+    CHECK(harness.Episodes() == doctest::Approx(2.0f));
 
     // One more episode after the respawn is the third, so it reports.
     harness.Run(120);
@@ -207,15 +215,16 @@ TEST_CASE("An invalid lag estimate can never start an episode")
     harness.Lag = EstimateViewLag(5.0f, 2.0f);  // rejected, so no hypotheses exist
     harness.Run(200);
     CHECK(harness.Findings == 0);
-    CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
+    CHECK_FALSE(harness.Rule.IsTracking(Observer));
 }
 
 TEST_CASE("A slot change drops the slot's aimlock evidence")
 {
     AimlockHarness harness;
     harness.Run(200);
-    REQUIRE(harness.Aimlock.IncidentCount(Observer) > 0);
-    harness.Aimlock.OnSlotChanged(Observer);
-    CHECK(harness.Aimlock.IncidentCount(Observer) == 0);
-    CHECK_FALSE(harness.Aimlock.IsTracking(Observer));
+    REQUIRE(harness.Episodes() > 0.0f);
+    harness.Rule.OnSlotChanged(Observer);
+    harness.Scores.OnSlotChanged(Observer);
+    CHECK(harness.Episodes() == doctest::Approx(0.0f));
+    CHECK_FALSE(harness.Rule.IsTracking(Observer));
 }
