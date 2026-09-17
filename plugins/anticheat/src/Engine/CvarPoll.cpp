@@ -35,9 +35,10 @@ void CvarPoll::Initialize()
         const double now = Time::MonotonicSeconds();
         for (int slot = 0; slot < MaxSlots; ++slot)
         {
-            if (!_detectors.IsEligible(slot) || !_schedule.IsDue(slot, now, NextDelaySec()))
+            const double delay = NextDelaySec();
+            if (!_detectors.IsEligible(slot) || !_schedule.IsDue(slot, now, delay))
                 continue;
-            _schedule.RunIn(slot, now, NextDelaySec());
+            _schedule.RunIn(slot, now, delay);
             Poll(slot);
         }
     });

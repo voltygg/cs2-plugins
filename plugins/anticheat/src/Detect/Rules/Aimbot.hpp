@@ -7,7 +7,7 @@
 #include "Detect/Suspicion.hpp"
 
 #include <array>
-#include <string>
+#include <string_view>
 
 namespace Anticheat::Rules
 {
@@ -61,7 +61,7 @@ private:
     static bool IsAdjacent(const AimCommand& older, const AimCommand& newer);
     AimCommand* Find(SlotData& data, int32_t cmdNum);
     void Evaluate(int slot, int32_t currentTick, double nowSec);
-    void Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, std::string reason);
+    void Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, std::string_view reason);
 
     const ShotHistory& _shots;
     Suspicion& _suspicion;

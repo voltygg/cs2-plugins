@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Detect/Samples.hpp"
+#include <VoltMod/Core/Slot.hpp>
 
 #include <array>
 
@@ -16,7 +16,7 @@ public:
      *  @p firstDelaySec out and is not due until then. */
     bool IsDue(int slot, double nowSec, double firstDelaySec)
     {
-        if (!InSlotRange(slot))
+        if (!VoltMod::IsValidSlot(slot))
             return false;
 
         double& next = _next[slot];
@@ -31,21 +31,21 @@ public:
     /** Book @p slot's next run @p delaySec from now. */
     void RunIn(int slot, double nowSec, double delaySec)
     {
-        if (InSlotRange(slot))
+        if (VoltMod::IsValidSlot(slot))
             _next[slot] = nowSec + delaySec;
     }
 
     /** Seconds until @p slot's next run, or 0 when it has none. Diagnostics only. */
     double TimeLeft(int slot, double nowSec) const
     {
-        if (!InSlotRange(slot) || _next[slot] == NotScheduled)
+        if (!VoltMod::IsValidSlot(slot) || _next[slot] == NotScheduled)
             return 0.0;
         return _next[slot] > nowSec ? _next[slot] - nowSec : 0.0;
     }
 
     void ClearSlot(int slot)
     {
-        if (InSlotRange(slot))
+        if (VoltMod::IsValidSlot(slot))
             _next[slot] = NotScheduled;
     }
 
@@ -55,7 +55,7 @@ public:
 private:
     static constexpr double NotScheduled = 0.0;
 
-    std::array<double, MaxSlots> _next{};
+    std::array<double, VoltMod::MaxPlayers> _next{};
 };
 
 }  // namespace Anticheat

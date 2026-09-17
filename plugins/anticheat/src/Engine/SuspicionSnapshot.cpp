@@ -20,13 +20,8 @@ void SuspicionSnapshot::Keep(VoltMod::Player& player)
     if (steamId == 0)
         return;
 
-    const double now = VoltMod::Time::MonotonicSeconds();
-    if (_detectors.Scores.Total(player.Slot(), now) < ForgetBelow)
-        _held.erase(steamId);
-    else
-        _held[steamId] = _detectors.Scores.Save(player.Slot());
-
-    DropLowScores(now);
+    _held[steamId] = _detectors.Scores.Save(player.Slot());
+    DropLowScores(VoltMod::Time::MonotonicSeconds());
 }
 
 void SuspicionSnapshot::DropLowScores(double nowSec)

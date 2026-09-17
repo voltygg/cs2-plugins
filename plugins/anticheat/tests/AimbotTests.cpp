@@ -14,14 +14,13 @@ using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::ShotView;
 using Anticheat::Suspicion;
-using Anticheat::TeamCT;
 using Anticheat::TeamT;
-using Anticheat::Vec3;
 
-static constexpr int Attacker = 0;
-static constexpr int Victim = 1;
+using Anticheat::Test::Eye;
+/** This rule's two slots: the one shooting and the one shot at. */
+constexpr int Attacker = Anticheat::Test::Observer;
+constexpr int Victim = Anticheat::Test::Target;
 static constexpr double Now = 1000.0;
-static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
 
 static Suspicion MakeScores()
 {
@@ -37,15 +36,7 @@ static float Incidents(const Suspicion& scores, double now = Now)
 
 static std::array<PositionSample, MaxSlots> Frame(float victimX = 500.0f, bool teleported = false)
 {
-    std::array<PositionSample, MaxSlots> players{};
-    players[Attacker] = {.Origin = {0.0f, 0.0f, 0.0f}, .EyePos = Eye, .Team = TeamT, .Valid = true, .Alive = true};
-    players[Victim] = {.Origin = {victimX, 0.0f, 0.0f},
-                       .EyePos = {victimX, 0.0f, 64.0f},
-                       .Team = TeamCT,
-                       .Valid = true,
-                       .Alive = true,
-                       .Teleported = teleported};
-    return players;
+    return Anticheat::Test::Frame({.Origin = {victimX, 0.0f, 0.0f}, .Teleported = teleported});
 }
 
 static CmdSample AimCmd(int32_t num, int32_t clientTick, float yaw)

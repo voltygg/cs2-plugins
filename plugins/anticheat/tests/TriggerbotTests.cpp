@@ -13,18 +13,15 @@ using Anticheat::MaxSlots;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::ShotView;
-using Anticheat::TeamCT;
-using Anticheat::TeamT;
 using Anticheat::Rules::Triggerbot;
 using Anticheat::Suspicion;
-using Anticheat::Vec3;
 namespace Geometry = Anticheat::Geometry;
 
-static constexpr int Observer = 0;
-static constexpr int Target = 1;
-static constexpr double Now = 100.0;
-static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
-static constexpr float TargetX = 500.0f;
+using Anticheat::Test::Eye;
+using Anticheat::Test::Now;
+using Anticheat::Test::Observer;
+using Anticheat::Test::Target;
+using Anticheat::Test::TargetX;
 /** Big enough that the hull edge is never landed on exactly: -25 is off, 0 is on. */
 static constexpr float TargetSpeed = 25.0f;
 
@@ -39,7 +36,6 @@ struct TriggerbotHarness
     int32_t Tick = 0;
     float TargetY = -300.0f;
     AimAngles Aim = Geometry::Bearing(Eye, {TargetX, 0.0f, Geometry::BodyHeights[1]});
-    int Findings = 0;
 
     /** Points this rule has on the observer, in its own units, where eight weighted points are one whole unit of suspicion. */
     float Points() const { return Scores.Value(Observer, DetectionKind::Triggerbot, Now) * 8.0f; }
@@ -53,14 +49,7 @@ struct TriggerbotHarness
 
     std::array<PositionSample, MaxSlots> Frame() const
     {
-        std::array<PositionSample, MaxSlots> players{};
-        players[Observer] = {.Origin = {0.0f, 0.0f, 0.0f}, .EyePos = Eye, .Team = TeamT, .Valid = true, .Alive = true};
-        players[Target] = {.Origin = {TargetX, TargetY, 0.0f},
-                           .EyePos = {TargetX, TargetY, 64.0f},
-                           .Team = TeamCT,
-                           .Valid = true,
-                           .Alive = true};
-        return players;
+        return Anticheat::Test::Frame({.Origin = {TargetX, TargetY, 0.0f}});
     }
 
     void Step(bool moving = true)
@@ -90,7 +79,6 @@ struct TriggerbotHarness
         shot.HurtSeen = true;
         shot.VictimSlot = Target;
         Rule.OnPlayerHurt(Observer, shot, Now);
-        Findings = Reported.Count;
     }
 };
 
@@ -101,14 +89,14 @@ TEST_CASE("A hit one tick after the enemy walks into a resting crosshair is wort
     {
         h.Approach();
         h.Hit(h.Tick);
-        CHECK(h.Findings == 0);
+        CHECK(h.Reported.Count == 0);
     }
     CHECK(h.Points() == doctest::Approx(6.0f));
 
     // Eight points are what this rule reports on alone; the score decides that, not the rule.
     h.Approach();
     h.Hit(h.Tick);
-    CHECK(h.Findings == 1);
+    CHECK(h.Reported.Count == 1);
     CHECK(h.Points() == doctest::Approx(8.0f));
 }
 

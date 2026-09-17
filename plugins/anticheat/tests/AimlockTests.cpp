@@ -16,16 +16,12 @@ using Anticheat::MaxSlots;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::Suspicion;
-using Anticheat::TeamCT;
-using Anticheat::TeamT;
-using Anticheat::Vec3;
 namespace Geometry = Anticheat::Geometry;
 
-static constexpr int Observer = 0;
-static constexpr int Target = 1;
-static constexpr double Now = 100.0;
-static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
-static constexpr float TargetX = 500.0f;
+using Anticheat::Test::Eye;
+using Anticheat::Test::Now;
+using Anticheat::Test::Observer;
+using Anticheat::Test::TargetX;
 static constexpr float TargetSpeed = 20.0f;  // units a tick, enough to move the bearing off a stale aim
 
 /**
@@ -60,14 +56,7 @@ struct AimlockHarness
 
     std::array<PositionSample, MaxSlots> Frame(int32_t tick) const
     {
-        std::array<PositionSample, MaxSlots> players{};
-        players[Observer] = {.Origin = {0.0f, 0.0f, 0.0f}, .EyePos = Eye, .Team = TeamT, .Valid = true, .Alive = true};
-        players[Target] = {.Origin = {TargetX, TargetY(tick), 0.0f},
-                           .EyePos = {TargetX, TargetY(tick), 64.0f},
-                           .Team = TeamCT,
-                           .Valid = true,
-                           .Alive = true};
-        return players;
+        return Anticheat::Test::Frame({.Origin = {TargetX, TargetY(tick), 0.0f}});
     }
 
     void Step(float aimOffsetDeg = 0.0f, int aimLag = 1)

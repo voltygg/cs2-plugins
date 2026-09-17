@@ -16,18 +16,15 @@ using Anticheat::ShotHistory;
 using Anticheat::ShotView;
 using Anticheat::SlotBit;
 using Anticheat::Suspicion;
-using Anticheat::TeamCT;
-using Anticheat::TeamT;
-using Anticheat::Vec3;
 using Anticheat::Rules::Wallhack;
 using Anticheat::Rules::WallhackShotContext;
 namespace Geometry = Anticheat::Geometry;
 
-static constexpr int Observer = 0;
-static constexpr int Target = 1;
-static constexpr double Now = 100.0;
-static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
-static constexpr float TargetX = 500.0f;
+using Anticheat::Test::Eye;
+using Anticheat::Test::Now;
+using Anticheat::Test::Observer;
+using Anticheat::Test::Target;
+using Anticheat::Test::TargetX;
 
 /** One observer and one enemy walking sideways behind a wall, with the sight line stamped. */
 struct WallhackHarness
@@ -42,7 +39,6 @@ struct WallhackHarness
     float TargetSpeed = 4.0f;
     bool Hidden = true;
     bool Known = true;
-    int Findings = 0;
 
     /** Points this rule has on the observer, in its own units, where six weighted points are one whole unit of suspicion. */
     float Points() const { return Scores.Value(Observer, DetectionKind::Wallhack, Now) * 6.0f; }
@@ -56,16 +52,9 @@ struct WallhackHarness
 
     std::array<PositionSample, MaxSlots> Frame() const
     {
-        std::array<PositionSample, MaxSlots> players{};
-        players[Observer] = {.Origin = {0.0f, 0.0f, 0.0f}, .EyePos = Eye, .Team = TeamT, .Valid = true, .Alive = true};
-        players[Target] = {.Origin = {TargetX, TargetY, 0.0f},
-                           .EyePos = {TargetX, TargetY, 64.0f},
-                           .Team = TeamCT,
-                           .Valid = true,
-                           .Alive = true,
-                           .CheckedBy = Known ? SlotBit(Observer) : 0,
-                           .SeenBy = Known && !Hidden ? SlotBit(Observer) : 0};
-        return players;
+        return Anticheat::Test::Frame({.Origin = {TargetX, TargetY, 0.0f},
+                                       .CheckedBy = Known ? SlotBit(Observer) : 0,
+                                       .SeenBy = Known && !Hidden ? SlotBit(Observer) : 0});
     }
 
     AimAngles Following() const
@@ -80,7 +69,6 @@ struct WallhackHarness
         History.CaptureFrame(Tick, Frame());
         Rule.OnSimulated(Observer, Tick, aim, Eye);
         Rule.OnFrame(Observer, Tick, true, Lag, Now);
-        Findings = Reported.Count;
         ++Tick;
     }
 
@@ -127,7 +115,7 @@ TEST_CASE("Following a hidden enemy through a wall for a second is an episode wo
     h.Break();
     h.Follow(70);
     CHECK(h.Points() == doctest::Approx(6.0f));
-    CHECK(h.Findings == 1);
+    CHECK(h.Reported.Count == 1);
 }
 
 TEST_CASE("A crosshair resting where a hidden enemy happens to pass is not following")

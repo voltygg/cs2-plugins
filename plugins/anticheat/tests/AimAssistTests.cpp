@@ -15,14 +15,11 @@ using Anticheat::Rules::AimAssist;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::Suspicion;
-using Anticheat::TeamCT;
-using Anticheat::TeamT;
-using Anticheat::Vec3;
 
-static constexpr int Observer = 0;
-static constexpr int Target = 1;
-static constexpr double Now = 100.0;
-static constexpr Vec3 Eye{0.0f, 0.0f, 64.0f};
+using Anticheat::Test::Eye;
+using Anticheat::Test::Now;
+using Anticheat::Test::Observer;
+using Anticheat::Test::TargetX;
 /** Five degrees to the left of a zero yaw: tan(5 deg) * 500. */
 static constexpr float TargetY = 43.74f;
 /** Degrees per count for m_yaw 0.022 at sensitivity 2. Turning right lowers the yaw. */
@@ -43,18 +40,10 @@ struct AimAssistHarness
     int32_t Tick = 0;
     int32_t Cmd = 1;
     float Yaw = 0.0f;
-    int Findings = 0;
 
     std::array<PositionSample, MaxSlots> Frame() const
     {
-        std::array<PositionSample, MaxSlots> players{};
-        players[Observer] = {.Origin = {0.0f, 0.0f, 0.0f}, .EyePos = Eye, .Team = TeamT, .Valid = true, .Alive = true};
-        players[Target] = {.Origin = {500.0f, TargetY, 0.0f},
-                           .EyePos = {500.0f, TargetY, 64.0f},
-                           .Team = TeamCT,
-                           .Valid = true,
-                           .Alive = true};
-        return players;
+        return Anticheat::Test::Frame({.Origin = {TargetX, TargetY, 0.0f}});
     }
 
     /** One command: the frame before it is captured, then the view lands on @p yaw. */
@@ -72,7 +61,6 @@ struct AimAssistHarness
         cmd.Scoped = scoped;
         cmd.EyePos = Eye;
         Rule.OnSimulated(Observer, cmd, Tick, false, Now);
-        Findings = Reported.Count;
     }
 
     /** A mouse turn of @p dx counts, as the client would report it. */
@@ -96,10 +84,10 @@ TEST_CASE("Turns the mouse counts cannot explain that land on an enemy are count
         h.Command(0, 5.0f);  // onto the enemy with the mouse at rest
         h.Turn(114);         // back to zero by hand
     }
-    CHECK(h.Findings == 0);
+    CHECK(h.Reported.Count == 0);
     CHECK(h.Turns() == doctest::Approx(5.0f));
     h.Command(0, 5.0f);
-    CHECK(h.Findings == 1);
+    CHECK(h.Reported.Count == 1);
 }
 
 TEST_CASE("The same turn reported by the mouse is ordinary aim")
@@ -111,7 +99,7 @@ TEST_CASE("The same turn reported by the mouse is ordinary aim")
         h.Turn(-114);
         h.Turn(114);
     }
-    CHECK(h.Findings == 0);
+    CHECK(h.Reported.Count == 0);
     CHECK(h.Turns() == doctest::Approx(0.0f));
 }
 

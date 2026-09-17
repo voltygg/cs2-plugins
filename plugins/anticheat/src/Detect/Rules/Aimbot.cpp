@@ -241,7 +241,7 @@ void Aimbot::Evaluate(int slot, int32_t currentTick, double nowSec)
                                    largestSnap, bestBefore, bestAfter));
 }
 
-void Aimbot::Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, std::string reason)
+void Aimbot::Count(int slot, SlotData& data, int32_t incidentCommand, double nowSec, std::string_view reason)
 {
     data.LastCountedIncidentCommand = incidentCommand;
     data.HasCountedIncident = true;

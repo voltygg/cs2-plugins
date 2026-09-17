@@ -26,7 +26,6 @@ static constexpr float MinimumAttackReturnAngle = 30.0f;
 static constexpr float AttackReturnSurroundingAngle = 10.0f;
 static constexpr float AttackReturnRatio = 5.0f;
 
-
 void AntiAim::Reset()
 {
     _slots = {};

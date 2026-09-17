@@ -52,8 +52,7 @@ float Suspicion::Value(int slot, DetectionKind kind, double nowSec) const
 
 float Suspicion::Total(int slot, double nowSec) const
 {
-    const Shares shares = Decayed(slot, nowSec);
-    return std::accumulate(shares.begin(), shares.end(), 0.0f);
+    return InSlotRange(slot) ? Total(_slots[slot], nowSec) : 0.0f;
 }
 
 float Suspicion::Total(const PlayerEvidence& evidence, double nowSec)
