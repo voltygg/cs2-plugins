@@ -50,17 +50,6 @@ static std::vector<Entry> ResolveList(const std::vector<Raw>& rows, const std::v
     return entries;
 }
 
-VoltMod::Status ConfigManager::LoadSettings(std::string_view path)
-{
-    auto raw = VoltMod::Json::ReadFile<Settings>(path);
-    if (!raw)
-        return std::unexpected(raw.error());
-
-    _snapshot = BuildSnapshot(std::move(*raw));
-    VoltMod::Log::Info("Loaded settings from {}", path);
-    return {};
-}
-
 ConfigManager::ConfigSnapshot ConfigManager::BuildSnapshot(Settings raw)
 {
     ConfigSnapshot snapshot{.Values = std::move(raw)};

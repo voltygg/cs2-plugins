@@ -1,6 +1,6 @@
 #pragma once
 
-#include <VoltMod/App/Config/JsonConfig.hpp>
+#include <VoltMod/App/Config/Options.hpp>
 
 #include "Detect/Finding.hpp"
 
@@ -77,8 +77,8 @@ struct Settings
     AntiCheatSettings anticheat;
 };
 
-/** Subclass VoltMod::JsonConfig instead once you need post-load validation or accessors. */
-using ConfigManager = VoltMod::JsonConfig<Settings>;
+/** Give Options a snapshot type and a builder once you need post-load validation or accessors. */
+using ConfigManager = VoltMod::Options<Settings>;
 
 }  // namespace Anticheat
 

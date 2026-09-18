@@ -69,7 +69,8 @@ commands.Add("slap")
 ## Configuration
 
 - A settings struct is a plain aggregate at namespace scope. The member name is the JSON key, a missing key keeps the initializer, unknown keys are ignored.
-- When settings need validation or derived values, wrap `Json::ReadFile` in a plugin `ConfigManager` that publishes a snapshot in one assignment (admin-system `Config/ConfigManager.*`). Do not subclass `JsonConfig`: a failed reload must not leave half-applied state.
+- `VoltMod::Options<Settings>` loads the struct from `configs/settings.jsonc` and republishes it on every `Load`; bhop and anticheat use it as their `ConfigManager` directly.
+- When settings need validation or derived values, give `Options` a snapshot type and the function that builds it (`Options<Settings, ConfigSnapshot>{&BuildSnapshot}`), and wrap it in a plugin `ConfigManager` for named accessors (admin-system `Config/ConfigManager.*`). The builder runs on a local copy and the snapshot is published in one move, so a failed reload leaves the previous one intact. Never publish a half-validated value.
 - Resolve `VoltMod::ConVar<T>` handles once at start, not by name per call.
 - Ask the service's `Available()` (`runtime.Hooks.Movement`, `runtime.Screens`, ...) before relying on anything that depends on gamedata.
 
