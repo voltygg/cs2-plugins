@@ -7,8 +7,12 @@ paths:
 
 ## Lifecycle
 
-- Derive from `VoltMod::MetamodPlugin` and declare with `VOLTMOD_PLUGIN(Klass)` in `Plugin.cpp`.
-- Build the object graph in `OnLoad(Runtime&)` and release it in `OnUnload`. The base creates a fresh `Runtime` per load cycle, so nothing may survive `meta reload`.
+The plugin is a DLL the VoltMod host loads; the host is the only Metamod plugin. A plugin's
+engine events arrive in load order, and a console command one plugin consumes is not offered to
+the next.
+
+- Derive from `VoltMod::Plugin` and declare with `VOLTMOD_PLUGIN(Klass)` in `Plugin.cpp`.
+- Build the object graph in `OnLoad(Runtime&)` and release it in `OnUnload`. The base creates a fresh `Runtime` per load cycle, so nothing may survive `volt reload`.
 - Use `VoltMod::WithBuildInfo` for metadata and `VoltMod::LoadStandardConfig` to load settings and translations.
 
 ## Commands
@@ -41,7 +45,7 @@ commands.Add("slap")
 - Subscribe with `+=` on `Event` members (`runtime.Slots.Changed`, `runtime.Hooks.Movement.Before`, ...) and with `runtime.GameEvents.On<T>()` for game events. A game event needs a struct in `Events/EventTypes.hpp`; there is no string form.
 - Every subscription returns a `Subscription`. Keep it in a `Subscriptions` beside the state its handler captures: `_subs.Add(event += handler)`.
 - Dropping a subscription unsubscribes, and cancels a `Scheduler` timer, so a fire-and-forget deferral still needs an owner.
-- Hook services arm on the first subscription and disarm on the last. There is no `Install()`/`Enable()`. A leaked subscription leaves a live vtable hook after reload.
+- Hook services arm on the first subscription and disarm on the last. There is no `Install()`/`Enable()`. A leaked subscription leaves a live vtable hook after reload, and the host logs it by name when the plugin unloads.
 - For an engine function the framework does not cover: `HookInterface`, `HookVirtual` or `HookFunction` from `<VoltMod/Unsafe/Hook.hpp>`, keeping the `Subscription` it returns. A handler is a lambda taking the hooked object first; a before-handler returns `HookResult` or nothing, an after-handler observes.
 
 ## Entities

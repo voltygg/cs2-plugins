@@ -7,7 +7,7 @@
 
 /** Entry point: metadata, and the object graph for one load cycle. The base owns the Metamod
  *  lifecycle, standard hooks and player tracking. */
-class AnticheatPlugin final : public VoltMod::MetamodPlugin
+class AnticheatPlugin final : public VoltMod::Plugin
 {
 protected:
     VoltMod::PluginInfo Info() const override;

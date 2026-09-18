@@ -7,11 +7,11 @@
 #include <string_view>
 
 /**
- * Admin System plugin. VoltMod::MetamodPlugin owns the Metamod lifecycle, standard hooks and
+ * Admin System plugin. VoltMod::Plugin owns one Runtime per load cycle, the host's engine events and
  * player tracking; this class provides the metadata, owns the plugin's object graph for one
  * load cycle, and adds the one custom hook (voice-mute listening).
  */
-class AdminSystemPlugin final : public VoltMod::MetamodPlugin
+class AdminSystemPlugin final : public VoltMod::Plugin
 {
 protected:
     VoltMod::PluginInfo Info() const override;

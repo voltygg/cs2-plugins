@@ -1,4 +1,6 @@
-voltmod_add_plugin(anticheat VERSION 1.1.0)
+# The response path uses admin-system's IAdminActions when it is installed, and degrades
+# without it, so the dependency only orders the load.
+voltmod_add_plugin(anticheat VERSION 1.1.0 OPTIONAL_DEPENDS admin-system)
 target_link_libraries(anticheat PRIVATE cs2-contracts)
 
 # Every SDK-free source lives under src/Detect/, so the test target never needs a hand-kept list.

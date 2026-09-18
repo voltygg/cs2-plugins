@@ -6,11 +6,11 @@
 #include <optional>
 
 /**
- * Bhop plugin entry point. VoltMod::MetamodPlugin owns the Metamod lifecycle, standard hooks
+ * Bhop plugin entry point. VoltMod::Plugin owns one Runtime per load cycle, the host's engine hooks
  * and player tracking; this class adds the metadata and owns the plugin's object graph for
  * one load cycle.
  */
-class BhopPlugin final : public VoltMod::MetamodPlugin
+class BhopPlugin final : public VoltMod::Plugin
 {
 protected:
     VoltMod::PluginInfo Info() const override;
