@@ -154,7 +154,7 @@ addons/
 
 Metamod loads the host and nothing else. The host reads each
 `addons/voltmod/plugins/<plugin>/plugin.json` and
-loads the plugins itself, in dependency order; a plugin has no Metamod manifest of its own.
+loads the plugins itself; a plugin has no Metamod manifest of its own.
 
 The host and the plugins are one ABI: the host refuses a plugin built against a different
 `HostAbiVersion`. So `deploy-package` always stages the host, the builder always puts it in the

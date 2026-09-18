@@ -34,9 +34,9 @@ plugins/hello-world/
 ```
 
 `plugin.json` is the plugin's identity. `name` must equal the directory and the CMake target, CMake
-reads the name and version from it, and the host reads the installed copy to decide load order. An
-unknown key is an error. Add a `dependencies` or `optionalDependencies` entry to make the host load
-another plugin first.
+reads the name and version from it, and the host reads the installed copy to decide what may load.
+An unknown key is an error. A `dependencies` entry refuses this plugin when the other one is not
+there; load order is alphabetical either way.
 
 ## Where to put things
 
