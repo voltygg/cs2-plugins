@@ -9,7 +9,7 @@
 #include "Maps/VoteState.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>

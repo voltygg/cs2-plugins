@@ -1,7 +1,7 @@
 #include "Engine/NamechangerPoll.hpp"
 
-#include <VoltMod/Core/Slot.hpp>
-#include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Core/Slots/Slot.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <string_view>
 
 namespace Anticheat

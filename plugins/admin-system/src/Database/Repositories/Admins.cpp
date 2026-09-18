@@ -4,7 +4,7 @@
 #include "Database/Tables/Schema.hpp"
 
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <string_view>
 #include <utility>
 

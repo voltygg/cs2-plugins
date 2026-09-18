@@ -3,7 +3,7 @@
 #include "Engine/Detectors.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Subscriptions.hpp>
+#include <VoltMod/Core/Signals/Subscriptions.hpp>
 #include <cstdint>
 #include <unordered_map>
 

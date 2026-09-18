@@ -3,7 +3,7 @@
 #include "Engine/Detectors.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Subscription.hpp>
+#include <VoltMod/Core/Signals/Subscription.hpp>
 
 namespace Anticheat
 {

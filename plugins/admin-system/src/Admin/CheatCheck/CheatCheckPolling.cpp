@@ -5,8 +5,8 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/Time.hpp>
-#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
+#include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Http/HttpClient.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>

@@ -3,7 +3,7 @@
 #include "Fun/FunToggles.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Subscriptions.hpp>
+#include <VoltMod/Core/Signals/Subscriptions.hpp>
 #include <VoltMod/Engine/ConVars/ConVarOverrides.hpp>
 #include <array>
 #include <string_view>

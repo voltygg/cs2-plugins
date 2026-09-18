@@ -14,7 +14,7 @@
 #include "Response/ResponseManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Subscriptions.hpp>
+#include <VoltMod/Core/Signals/Subscriptions.hpp>
 
 namespace Anticheat
 {

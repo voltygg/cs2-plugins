@@ -5,8 +5,8 @@
 #include "Engine/CommandSample.hpp"
 #include "Engine/ViewLag.hpp"
 
-#include <VoltMod/Core/Slot.hpp>
-#include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Core/Slots/Slot.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <algorithm>
 #include <cmath>
 #include <eiface.h>

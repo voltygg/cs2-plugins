@@ -4,7 +4,7 @@
 #include "Database/Repositories.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Throttle.hpp>
+#include <VoltMod/Core/Time/Throttle.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <cstdint>
 #include <functional>

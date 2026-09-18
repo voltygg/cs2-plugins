@@ -2,7 +2,7 @@
 
 #include "App.hpp"
 
-#include <VoltMod/Core/Json.hpp>
+#include <VoltMod/Core/Text/Json.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <string>
 #include <string_view>

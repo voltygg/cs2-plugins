@@ -2,7 +2,7 @@
 
 #include "Config/PunishmentSettings.hpp"
 
-#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Core/Text/Translations.hpp>
 #include <cstdint>
 #include <string>
 

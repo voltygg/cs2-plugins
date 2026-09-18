@@ -5,7 +5,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <algorithm>
 #include <utility>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <VoltMod/App/JsonConfig.hpp>
+#include <VoltMod/App/Config/JsonConfig.hpp>
 
 #include "Detect/Finding.hpp"
 

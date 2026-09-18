@@ -1,7 +1,7 @@
 #include "Admin/Actions/Descriptors.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Scheduler.hpp>
+#include <VoltMod/Core/Time/Scheduler.hpp>
 #include <VoltMod/Entities/KeyValues.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <mathlib/vector.h>

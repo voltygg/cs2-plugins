@@ -2,9 +2,9 @@
 
 #include "Config/PunishmentSettings.hpp"
 
-#include <VoltMod/Core/Strings.hpp>
-#include <VoltMod/Core/Time.hpp>
-#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Core/Text/Strings.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
+#include <VoltMod/Core/Text/Translations.hpp>
 #include <format>
 #include <string_view>
 

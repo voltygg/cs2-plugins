@@ -3,8 +3,8 @@
 #include "Config/CheatCheckSettings.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Json.hpp>
-#include <VoltMod/Core/Strings.hpp>
+#include <VoltMod/Core/Text/Json.hpp>
+#include <VoltMod/Core/Text/Strings.hpp>
 #include <map>
 #include <utility>
 

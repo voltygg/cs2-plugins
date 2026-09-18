@@ -1,7 +1,7 @@
 #include "Detect/DetectionData.hpp"
 #include "Detect/Rules/InvalidCvar.hpp"
 
-#include <VoltMod/Core/Json.hpp>
+#include <VoltMod/Core/Text/Json.hpp>
 #include <doctest/doctest.h>
 #include <fstream>
 #include <sstream>

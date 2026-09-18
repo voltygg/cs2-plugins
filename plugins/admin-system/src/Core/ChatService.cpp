@@ -2,9 +2,9 @@
 
 #include "Config/ConfigManager.hpp"
 
-#include <VoltMod/Core/Strings.hpp>
-#include <VoltMod/Core/Time.hpp>
-#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Core/Text/Strings.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
+#include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
 #include <VoltMod/Runtime.hpp>

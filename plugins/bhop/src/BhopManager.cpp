@@ -1,6 +1,6 @@
 ﻿#include "BhopManager.hpp"
 
-#include <VoltMod/Core/EnumNames.hpp>
+#include <VoltMod/Core/Text/EnumNames.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Entities/EntitySystem.hpp>
 #include <VoltMod/Events/EventTypes.hpp>

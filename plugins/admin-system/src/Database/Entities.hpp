@@ -2,7 +2,7 @@
 
 #include "Punishments/PunishType.hpp"
 
-#include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <cstdint>
 #include <string>
 #include <vector>

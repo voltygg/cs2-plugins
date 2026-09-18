@@ -19,9 +19,9 @@
 #include "Reports/ReportManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/EffectManager.hpp>
-#include <VoltMod/Core/Subscription.hpp>
-#include <VoltMod/Core/Subscriptions.hpp>
+#include <VoltMod/Players/EffectManager.hpp>
+#include <VoltMod/Core/Signals/Subscription.hpp>
+#include <VoltMod/Core/Signals/Subscriptions.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Menu/PanoramaMenu.hpp>

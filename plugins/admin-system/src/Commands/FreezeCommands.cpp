@@ -5,7 +5,7 @@
 #include "Core/Permissions.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Strings.hpp>
+#include <VoltMod/Core/Text/Strings.hpp>
 #include <format>
 #include <string>
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/PerSlot.hpp>
-#include <VoltMod/Core/Subscriptions.hpp>
+#include <VoltMod/Core/Slots/PerSlot.hpp>
+#include <VoltMod/Core/Signals/Subscriptions.hpp>
 
 namespace Anticheat
 {

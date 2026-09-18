@@ -3,7 +3,7 @@
 #include "Detect/Finding.hpp"
 #include "Detect/Samples.hpp"
 
-#include <VoltMod/Core/DecayingScore.hpp>
+#include <VoltMod/Core/Time/DecayingScore.hpp>
 #include <array>
 #include <cstddef>
 #include <functional>

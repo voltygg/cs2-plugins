@@ -5,8 +5,8 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/Strings.hpp>
-#include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Core/Text/Strings.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <string>
 #include <vector>
 

@@ -5,8 +5,8 @@
 #include "Detect/ShotHistory.hpp"
 
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/Slot.hpp>
-#include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Core/Slots/Slot.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>

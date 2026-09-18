@@ -2,7 +2,7 @@
 
 #include "Core/Permissions.hpp"
 
-#include <VoltMod/Core/EnumNames.hpp>
+#include <VoltMod/Core/Text/EnumNames.hpp>
 #include <array>
 #include <cstddef>
 #include <optional>

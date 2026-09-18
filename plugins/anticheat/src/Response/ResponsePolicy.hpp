@@ -2,7 +2,7 @@
 
 #include "Detect/Finding.hpp"
 
-#include <VoltMod/Core/EnumNames.hpp>
+#include <VoltMod/Core/Text/EnumNames.hpp>
 #include <cstdint>
 #include <string_view>
 #include <unordered_map>

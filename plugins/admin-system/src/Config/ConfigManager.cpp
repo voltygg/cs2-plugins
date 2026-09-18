@@ -1,7 +1,7 @@
 #include "Config/ConfigManager.hpp"
 
-#include <VoltMod/Core/EnumNames.hpp>
-#include <VoltMod/Core/Validation.hpp>
+#include <VoltMod/Core/Text/EnumNames.hpp>
+#include <VoltMod/App/Config/Validation.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <format>

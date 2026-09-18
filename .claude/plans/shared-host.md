@@ -124,17 +124,16 @@ Smallest code that answers each; record the answers in section 7; delete the bra
 `include/VoltMod/Core/` holds 27 headers with unrelated jobs in one flat folder: signals, error types, text helpers, per-player primitives, timing, files, logging. Group them so a new reader can find things and so the files this plan adds land somewhere obvious. `Engine/` already uses subfolders (`Engine/Server/`, `Engine/ConVars/`, `Engine/GameData/`), so this follows an existing shape.
 
 - The module stays `Core`. Only paths change, so the layering graph and both layering blocks are untouched. Confirm that `cli/voltmod/source_rules.py` takes the module from the first path segment, as it must already for `Engine/Server/Clock.hpp`.
-- Proposed grouping. Adjust after reading each file, but keep the folder names plain words and do not create a folder for a single file; a lone file stays at the `Core/` root.
+- The grouping, as built. Folder names are plain words, and no folder holds a single file; a lone file stays at the `Core/` root. `Result` and `LoadSteps` stay at the root rather than in a `Results/` folder: the user's call.
 
 | Folder | Headers |
 | --- | --- |
 | `Core/Signals/` | `Event`, `Subscription`, `Subscriptions`, `SharedLifecycle`, `CallbackRegistry`, `HookResult` |
-| `Core/Results/` | `Result`, `LoadSteps` |
 | `Core/Text/` | `Strings`, `EnumNames`, `CharBuf`, `Json`, `Translations` |
 | `Core/Slots/` | `Slot`, `SlotEvents`, `PerSlot`, `SteamId` |
 | `Core/Time/` | `Time`, `Scheduler`, `Throttle`, `DecayingScore` |
 | `Core/Files/` | `File`, `Paths` |
-| `Core/` root | `Log` (moves to `Core/Logging/` when `Logger<T>` joins it in phase 6), `Random` |
+| `Core/` root | `Result`, `LoadSteps`, `Log` (moves to `Core/Logging/` when `Logger<T>` joins it in phase 6), `Random` |
 
 - `Core` stays one module. It is a layer, not a responsibility: the SDK-free bottom that depends on nothing and that every module may use. Splitting it into top-level modules would add six nodes and their own mini-layering to `modgraph` (`Translations` needs `SlotEvents`, `Scheduler` needs `Subscription`) without enforcing anything useful.
 - `Core` holds two kinds of header: primitives the framework's own modules build on, and small SDK-free utilities offered to plugins. A header belongs if it is SDK-free, depends on nothing above `Core`, and is one of those two. Decided for the doubtful ones, from who includes them today:
@@ -192,7 +191,7 @@ Do none of this up front. When two installed plugins actually collide, move that
 SDK code in the `App` layer, in its own headers outside `Api.hpp`. Three separate commit pairs, in this order. Any time after phase 3.
 
 - **`Logger<T>`.** A small value type that forwards to the existing `Log::` functions (`include/VoltMod/Core/Log.hpp`) with the type's name prefixed to the message. Nothing else; levels are already handled per plugin by `IHostLog`.
-- **`Options<T>`.** First compare `plugins/admin-system/src/Config/ConfigManager.{hpp,cpp}`, `plugins/anticheat/src/Config.hpp` and `plugins/bhop/src/Config.hpp`, and build only what they share. Expected: load a glaze struct from `configs/settings.jsonc`, run an optional validate-and-derive step, publish the result in one move, keep the previous snapshot when a reload fails. Add a change event only if a plugin needs one. Switch bhop, anticheat and admin-system and delete `include/VoltMod/App/JsonConfig.hpp` in the same commit pair; update `docs/config.md`.
+- **`Options<T>`.** First compare `plugins/admin-system/src/Config/ConfigManager.{hpp,cpp}`, `plugins/anticheat/src/Config.hpp` and `plugins/bhop/src/Config.hpp`, and build only what they share. Expected: load a glaze struct from `configs/settings.jsonc`, run an optional validate-and-derive step, publish the result in one move, keep the previous snapshot when a reload fails. Add a change event only if a plugin needs one. Switch bhop, anticheat and admin-system and delete `include/VoltMod/App/Config/JsonConfig.hpp` in the same commit pair; update `docs/config.md`.
 - **Service container.** Two lifetimes. A singleton lives for the plugin load cycle: `AddSingleton<T>()`, `AddSingleton<TInterface, T>()`, `AddInstance<T>(T&)`. A transient is built fresh each time and owned by whoever asked: `AddTransient<T>()`, obtained only through `provider.Create<T>()` or an injected `Factory<T>`, both returning `std::unique_ptr<T>`. A transient may depend on singletons; naming a transient as `T&` in a `Deps` list is a compile error, because nothing would own it. There is no per-player scope (`PerSlot<T>` covers that) and no automatic construction of command handlers. A class names its constructor dependencies with `using Dependencies = VoltMod::Deps<ConfigManager&, DiscordReporter&>;`; no constructor deduction. The runtime's services are pre-registered as instances. `Build()` checks the graph once at load and returns `Status` naming a missing type or a cycle; construction follows dependency order, destruction is the reverse; the provider owns the objects, no `shared_ptr`. Tests are SDK-free. Write anticheat's `App` (`plugins/anticheat/src/App.hpp`) with the container on a scratch branch and show the user the two versions side by side. The user picks one shape. If the container wins, all three plugins, the scaffold and the docs switch to it and the hand-wired form is no longer taught; if it loses, the container is not merged. The two do not coexist.
 
 ## 5. Later, when third-party authors exist
@@ -260,7 +259,7 @@ direction, which is what D2 already says; this confirms it is load-bearing, not 
 host must not free a library that still has live registrations.
 
 **Item 1, process-global statics to audit when the host becomes one module.** Each is written
-today assuming one copy per plugin DLL: `src/Core/Paths.cpp` `g_baseDir`,
+today assuming one copy per plugin DLL: `src/Core/Files/Paths.cpp` `g_baseDir`,
 `src/Engine/ConVars/ConVars.cpp:18` `g_changeCallback` (its comment says "Each plugin DLL owns one
 ConVars instance and callback" - that assumption breaks), and the per-process schema field offset
 cache (`include/VoltMod/Runtime.hpp:85`). The convar change callback is already on the phase 5

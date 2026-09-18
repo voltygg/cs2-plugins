@@ -3,7 +3,7 @@
 
 #include "Database/Tables/Schema.hpp"
 
-#include <VoltMod/Core/Scheduler.hpp>
+#include <VoltMod/Core/Time/Scheduler.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <cstdint>
 #include <doctest/doctest.h>

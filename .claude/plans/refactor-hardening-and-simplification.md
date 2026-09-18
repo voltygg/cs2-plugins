@@ -172,7 +172,7 @@ Explicit non-goals:
 Static audit only; the dynamic repro was cancelled as not worth the effort.
 
 What the audit established: `PerSlot<T>::operator[]`
-(`include/VoltMod/Core/PerSlot.hpp:45-52`) bounds-checks with `assert`, which compiles out
+(`include/VoltMod/Core/Slots/PerSlot.hpp:45-52`) bounds-checks with `assert`, which compiles out
 under NDEBUG, and `windows-msvc-release` is the only preset that links. But **every current
 caller validates with `IsValidSlot` first** - `MenuManager::_states` (its unguarded indexers
 are private and reached only from `OnGameFrame`'s bounded loop), anticheat's `_dumpTicks`,
@@ -841,11 +841,11 @@ Acceptance:
 
 Primary files:
 
-- vendor/voltmod/include/VoltMod/Core/Strings.hpp
-- vendor/voltmod/src/Core/Strings.cpp
+- vendor/voltmod/include/VoltMod/Core/Text/Strings.hpp
+- vendor/voltmod/src/Core/Text/Strings.cpp
 - vendor/voltmod/src/Commands/CommandRouter.cpp
 - vendor/voltmod/src/Commands/Targeting.cpp
-- vendor/voltmod/tests/Core/StringsTests.cpp
+- vendor/voltmod/tests/Core/Text/StringsTests.cpp
 
 Implementation:
 

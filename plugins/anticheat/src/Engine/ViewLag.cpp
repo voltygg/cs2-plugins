@@ -1,7 +1,7 @@
 #include "Engine/ViewLag.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Slot.hpp>
+#include <VoltMod/Core/Slots/Slot.hpp>
 #include <charconv>
 #include <string_view>
 

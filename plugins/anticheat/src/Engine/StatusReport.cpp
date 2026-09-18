@@ -1,8 +1,8 @@
 #include "Engine/StatusReport.hpp"
 
-#include <VoltMod/Core/Json.hpp>
-#include <VoltMod/Core/Slot.hpp>
-#include <VoltMod/Core/Strings.hpp>
+#include <VoltMod/Core/Text/Json.hpp>
+#include <VoltMod/Core/Slots/Slot.hpp>
+#include <VoltMod/Core/Text/Strings.hpp>
 #include <format>
 #include <map>
 #include <span>

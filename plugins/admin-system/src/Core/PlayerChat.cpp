@@ -6,8 +6,8 @@
 #include "Punishments/PunishmentManager.hpp"
 
 #include <VoltMod/Commands/CommandManager.hpp>
-#include <VoltMod/Core/Time.hpp>
-#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
+#include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Hooks/ChatInput.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Messaging/Messages.hpp>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <VoltMod/Core/EnumNames.hpp>
+#include <VoltMod/Core/Text/EnumNames.hpp>
 #include <string_view>
 
 namespace AdminSystem::Admin::CheatCheck

@@ -7,7 +7,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/SteamId.hpp>
+#include <VoltMod/Core/Slots/SteamId.hpp>
 #include <string>
 
 namespace Log = VoltMod::Log;

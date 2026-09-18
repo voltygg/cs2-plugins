@@ -2,7 +2,7 @@
 
 #include "Detect/Geometry.hpp"
 
-#include <VoltMod/Core/Slot.hpp>
+#include <VoltMod/Core/Slots/Slot.hpp>
 #include <cmath>
 #include <mathlib/vector.h>
 

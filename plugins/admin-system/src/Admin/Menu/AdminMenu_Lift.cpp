@@ -8,8 +8,8 @@
 #include "Punishments/PunishType.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Strings.hpp>
-#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Core/Text/Strings.hpp>
+#include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>

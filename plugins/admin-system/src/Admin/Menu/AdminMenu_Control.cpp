@@ -13,7 +13,7 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Random.hpp>
-#include <VoltMod/Core/Translations.hpp>
+#include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Entities/Entity.hpp>
 #include <VoltMod/Entities/PawnPredicates.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>

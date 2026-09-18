@@ -1,6 +1,6 @@
 #include "Engine/SuspicionSnapshot.hpp"
 
-#include <VoltMod/Core/Time.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <unordered_map>
 
 namespace Anticheat

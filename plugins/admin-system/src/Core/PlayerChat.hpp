@@ -5,7 +5,7 @@
 #include "Core/ChatService.hpp"
 #include "Punishments/PunishmentManager.hpp"
 
-#include <VoltMod/Core/Throttle.hpp>
+#include <VoltMod/Core/Time/Throttle.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>
