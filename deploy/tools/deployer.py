@@ -41,3 +41,11 @@ class Deployer[S: Server](ABC):
     def unused_plugin_paths(self, instance: Instance) -> list[str]:
         """Paths under addons/ owned by inventory plugins the instance does not run."""
         return AddonsBuilder.owned_paths(self.inventory.unused_plugins(self.server, instance))
+
+    def stale_manifest_names(self) -> list[str]:
+        """Manifests in addons/metamod named after an inventory plugin, which a deploy removes.
+
+        Servers deployed before the single host still have one Metamod manifest per plugin.
+        Metamod would load those plugin modules itself, beside the host, and they would fail.
+        """
+        return AddonsBuilder.stale_manifests(list(self.inventory.plugins))

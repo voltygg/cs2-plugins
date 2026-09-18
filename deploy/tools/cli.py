@@ -11,6 +11,7 @@ from typing import Annotated
 
 import typer
 
+from deploy.tools.addons.builder import AddonsBuilder
 from deploy.tools.addons.packager import PluginPackager
 from deploy.tools.config.inventory import Inventory
 from deploy.tools.deployer_factory import DeployerFactory
@@ -41,8 +42,10 @@ def plan(server: ServerOption = None) -> None:
 
 @app.command()
 def package(plugins: PluginsArgument = None) -> None:
-    """Stage the Linux build of each plugin under package/."""
+    """Stage the Linux build of the host and each plugin under package/."""
     packager = PluginPackager()
+    # The host goes in every package set; a plugin only loads under the host it was built with.
+    packager.package(AddonsBuilder.HOST)
     for plugin in plugins or Inventory.load().plugins:
         packager.package(plugin)
 

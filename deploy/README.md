@@ -45,7 +45,7 @@ subclass, and one entry in `DeployerFactory.BY_KIND`.
 ## Commands
 
 ```bash
-uv run poe deploy-package                             # stage the Linux build under package/
+uv run poe deploy-package                             # stage the host and plugins under package/
 uv run poe deploy-server [--server ID] [--dry-run]    # install plugins, restart
 uv run poe deploy-update [--server ID] [--dry-run]    # restart so CS2 updates
 uv run poe rcon "meta list" [--server ID] [--instance NAME]
@@ -58,6 +58,32 @@ Without `--server`, `deploy-server` and `deploy-update` act on every enabled ser
 
 The Linux build runs only in CI. To deploy from your machine, download the
 `package` artifact of a Deploy run into `package/`.
+
+## What a deploy installs
+
+Every deploy installs one voltmod host and the instance's plugins:
+
+```text
+addons/
+  metamod/voltmod.vdf             the only Metamod manifest
+  voltmod/bin/linuxsteamrt64/     the host binary
+  voltmod/gamedata/               shipped once, with the host
+  <plugin>/plugin.json            name, version and dependencies
+  <plugin>/bin/linuxsteamrt64/    the plugin module
+  <plugin>/configs/               settings.jsonc, rendered per server
+```
+
+Metamod loads the host and nothing else. The host scans `addons/*/plugin.json` and
+loads each plugin itself, in dependency order. Plugins have no manifest of their own,
+so a `.vdf` named after a plugin is left over from an older deploy: the deploy deletes
+`addons/metamod/<name>.vdf` for every plugin in the inventory, and leaves every other
+manifest alone.
+
+The host and the plugins are one ABI. The host refuses a plugin built against a
+different `HostAbiVersion` and asks for a rebuild, so they must come from the same
+build. `deploy-package` always stages the host, `AddonsBuilder` always puts it in the
+payload, and a payload without a staged host fails the deploy instead of shipping
+plugins onto whatever host the server already has.
 
 ## Inventory
 
@@ -93,7 +119,7 @@ servers:
 ```
 
 - Every plugin a server uses must be listed under `plugins`; CI packages exactly
-  that list.
+  that list, plus the host.
 - An instance's `plugins` replaces the server's list; it does not extend it.
 - `environment` names the GitHub Environment that holds the server's secrets.
 - `runtime_image` is a repository without a tag; see [Docker hosts](#docker-hosts).
@@ -161,7 +187,8 @@ their own migrations when they load.
 Push to `prod`, or run the Deploy workflow by hand with an optional server and dry
 run. The workflow:
 
-1. Builds and tests the Linux plugins, then packages every inventory plugin.
+1. Builds and tests the Linux plugins, then packages the host and every inventory
+   plugin.
 2. When the deploy includes a Docker host and is not a dry run, builds the runtime
    image and pushes it tagged with the commit SHA and `latest`.
 3. Deploys each server in its own job, with that server's GitHub Environment.
@@ -179,11 +206,12 @@ relocking to a new voltmod release, bump the tag in `.github/workflows/ci.yml`,
 A panel server's map, GSLT, hostname and RCON password live in the panel's Startup
 tab, not the inventory. `deploy-server`:
 
-1. Builds the addons tree and patches `gameinfo.gi` to load Metamod.
+1. Builds the addons tree, host included, and patches `gameinfo.gi` to load Metamod.
 2. Downloads Metamod when the mirror has a newer build.
 3. Stops the server, since overwriting a loaded plugin can crash it.
-4. Installs Metamod, uploads the plugins and removes inventory plugins the server no
-   longer uses. If a step fails, it starts the server again before reporting the
+4. Installs Metamod, uploads the host and the plugins, removes inventory plugins the
+   server no longer uses, and removes the per-plugin manifests an older deploy left in
+   `addons/metamod`. If a step fails, it starts the server again before reporting the
    error.
 5. Starts the server and waits until the panel reports it running.
 
@@ -225,9 +253,11 @@ The shared install is mounted into each container, and the instance's own `addon
 directory is mounted over `csgo/addons`, so instances on one host can run different
 plugins.
 
-Before CS2 starts, [`docker/pre.sh`](docker/pre.sh) copies the instance's plugins
-into place, patches `gameinfo.gi`, and installs Metamod when the mirror has a newer
-build. Set `MMS_URL` to pin a build or `MMS_BASE` to use another mirror.
+Before CS2 starts, [`docker/pre.sh`](docker/pre.sh) copies the instance's host and
+plugins into place, removes the per-plugin manifests an older deploy left in
+`addons/metamod`, patches `gameinfo.gi`, and installs Metamod when the mirror has a
+newer build. Set `MMS_URL` to pin a build or `MMS_BASE` to use another mirror. It stops
+the container when the bundle has no host, since no plugin would load without one.
 
 ### Deploy
 
@@ -235,7 +265,7 @@ build. Set `MMS_URL` to pin a build or `MMS_BASE` to use another mirror.
 
 1. Renders the tree under `deploy/.render/<id>` and syncs it to `deploy_root`. The
    sync never deletes files, so the installed Metamod survives.
-2. Deletes the inventory plugins an instance no longer uses.
+2. Deletes the inventory plugins an instance no longer uses, and their old manifests.
 3. Pulls the runtime image tagged `RUNTIME_IMAGE_TAG`: the commit SHA in CI,
    `latest` otherwise.
 4. Recreates the instances one at a time, so `pre.sh` installs the new plugins, and

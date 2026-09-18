@@ -15,6 +15,22 @@ fi
 if [[ -d "$AddonsSrc" ]]; then
     mkdir -p "$Csgo/addons"
     cp -a "$AddonsSrc/." "$Csgo/addons/"
+
+    # Servers deployed before the single host still have one manifest per plugin. Metamod would
+    # load those modules itself and they would fail, so drop the manifest of every bundled
+    # plugin. Named after the bundle, so an unrelated Metamod plugin's manifest is left alone.
+    for path in "$AddonsSrc"/*/; do
+        name="$(basename "$path")"
+        if [[ -d "$path" && "$name" != "metamod" && "$name" != "voltmod" ]]; then
+            rm -f "$Csgo/addons/metamod/$name.vdf"
+        fi
+    done
+fi
+
+# The host loads every plugin, and only ones built against its own ABI. Without it nothing runs.
+if [[ ! -f "$Csgo/addons/metamod/voltmod.vdf" ]]; then
+    echo "ERROR: no voltmod host in $Csgo/addons; deploy the host together with the plugins" >&2
+    exit 1
 fi
 
 if [[ -f "$Csgo/gameinfo.gi" ]] && ! grep -q 'csgo/addons/metamod' "$Csgo/gameinfo.gi"; then

@@ -1,4 +1,4 @@
-"""The Linux build, staged per plugin under package/."""
+"""The Linux build, staged per install component under package/."""
 
 import shutil
 import subprocess
@@ -8,18 +8,18 @@ from deploy.tools.paths import PACKAGE, ROOT
 
 
 class PluginPackager:
-    """Stages built Linux plugins under package/<plugin> with `cmake --install --component`."""
+    """Stages the built Linux host and plugins under package/<name> with `cmake --install`."""
 
     PRESET = "linux-steamrt-release"
 
     def __init__(self) -> None:
         self._build_dir = ROOT / "build" / self.PRESET
 
-    def package(self, plugin: str) -> None:
+    def package(self, component: str) -> None:
         if not self._build_dir.is_dir():
             raise DeployError(f"no build at build/{self.PRESET}; run `voltmod build {self.PRESET}`")
-        destination = PACKAGE / plugin
+        destination = PACKAGE / component
         shutil.rmtree(destination, ignore_errors=True)
-        print(f"=== Packaging {plugin} into package/{plugin} ===")
-        install = ["cmake", "--install", str(self._build_dir), "--component", plugin]
+        print(f"=== Packaging {component} into package/{component} ===")
+        install = ["cmake", "--install", str(self._build_dir), "--component", component]
         subprocess.run([*install, "--prefix", str(destination)], check=True)

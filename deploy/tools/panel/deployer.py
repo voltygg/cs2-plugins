@@ -7,6 +7,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from functools import cached_property
 
+from deploy.tools.addons.builder import AddonsBuilder
 from deploy.tools.config.servers import Instance, PanelServer
 from deploy.tools.deployer import Deployer
 from deploy.tools.errors import DeployError
@@ -32,6 +33,7 @@ class PanelDeployer(Deployer[PanelServer]):
         plugins = " ".join(self.server.plugins_for(instance)) or "<none>"
         print(f"=== Deploying {self.server.id} ({self.server.panel_url}, {self.api.state()}) ===")
         print(f"    plugins:  {plugins} ({len(archive) // 1024} KiB)")
+        print(f"    host:     addons/voltmod and addons/{AddonsBuilder.HOST_MANIFEST}")
         print(f"    metamod:  {metamod.wanted}{'' if metamod.outdated else ' (installed)'}")
         print(f"    gameinfo: {gameinfo.change}")
         if self.dry_run:
@@ -45,6 +47,7 @@ class PanelDeployer(Deployer[PanelServer]):
             metamod.install()
             self.api.extract(game_dir, "cs2-plugins.tar.gz", archive)
             self._remove_unused_plugins(instance)
+            self._remove_stale_manifests()
         except Exception:
             # A server running a partial install beats one left offline.
             print("ERROR: deploy failed; starting the server again", file=sys.stderr)
@@ -77,6 +80,12 @@ class PanelDeployer(Deployer[PanelServer]):
         unused = self.unused_plugin_paths(instance)
         if removed := self.api.delete(f"{self.server.game_dir}/addons", unused):
             print(f"    removed unassigned plugins: {' '.join(removed)}")
+
+    def _remove_stale_manifests(self) -> None:
+        """Drop the per-plugin manifests a deploy from before the single host left behind."""
+        root = f"{self.server.game_dir}/addons/{AddonsBuilder.MANIFEST_DIR}"
+        if removed := self.api.delete(root, self.stale_manifest_names()):
+            print(f"    removed stale Metamod manifests: {' '.join(removed)}")
 
     def _stop(self) -> None:
         # Overwriting a loaded .so can crash a running server.

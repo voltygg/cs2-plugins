@@ -4,6 +4,7 @@ import os
 from collections.abc import Generator
 from contextlib import contextmanager
 
+from deploy.tools.addons.builder import AddonsBuilder
 from deploy.tools.config.inventory import Inventory
 from deploy.tools.config.servers import DockerServer, Instance
 from deploy.tools.deployer import Deployer
@@ -44,7 +45,7 @@ class DockerDeployer(Deployer[DockerServer]):
         self.host.create_folders([root, self.server.game_install, *addons_dirs])
         self.ssh.sync(render_dir, root)
         instances = self.server.instances
-        self.host.remove([path for item in instances for path in self._unused_paths_on_host(item)])
+        self.host.remove([path for item in instances for path in self._removable_paths(item)])
 
         if self.dry_run:
             print("=== Dry run complete; no container changed ===")
@@ -89,9 +90,14 @@ class DockerDeployer(Deployer[DockerServer]):
             plugins = " ".join(self.server.plugins_for(instance)) or "<none>"
             print(f"    {instance.name} (port {instance.port}): {plugins}")
 
-    def _unused_paths_on_host(self, instance: Instance) -> list[str]:
-        """Unused plugins in the synced bundle and installed addons; sync and pre.sh only add."""
+    def _removable_paths(self, instance: Instance) -> list[str]:
+        """Unused plugins and stale Metamod manifests, in the synced bundle and installed addons.
+
+        Both trees, because the sync and pre.sh only ever add: nothing else drops a removed file.
+        """
         instance_dir = self.server.instance_dir(instance)
         trees = ("bundles/addons", "addons")
-        unused = self.unused_plugin_paths(instance)
-        return [f"{instance_dir}/{tree}/{path}" for tree in trees for path in unused]
+        stale = self.unused_plugin_paths(instance) + [
+            f"{AddonsBuilder.MANIFEST_DIR}/{name}" for name in self.stale_manifest_names()
+        ]
+        return [f"{instance_dir}/{tree}/{path}" for tree in trees for path in stale]
