@@ -90,10 +90,10 @@ You do not need to edit the root `CMakeLists.txt`. The scaffold adds its own
 
 The generated plugin already:
 
-- derives from `VoltMod::MetamodPlugin`;
+- derives from `VoltMod::Plugin`;
 - owns one load-cycle `App`;
 - loads JSONC settings and translations;
-- publishes build information to `meta list`;
+- logs its version and build commit when the host loads it;
 - registers `!ping`.
 
 ## Build and run it
@@ -124,11 +124,11 @@ uv run poe start-server
 In the server console:
 
 ```text
-meta list
+volt list
 ```
 
-Confirm `hello-world` appears with its version and build revision. Then join
-the server and enter:
+Confirm `hello-world` appears with its version. (`meta list` shows the VoltMod
+host, which is the only Metamod plugin.) Then join the server and enter:
 
 ```text
 !ping
@@ -189,12 +189,12 @@ Install the Visual Studio C++ workload. The build can import
 
 Point `CS2_SERVER_PATH` at the directory above `game/`, not at `game/csgo`.
 
-### The plugin is missing from `meta list`
+### The plugin is missing from `volt list`
 
-Confirm Metamod loads first, then inspect:
+Confirm the VoltMod host itself is in `meta list`, then inspect:
 
 ```text
-game/csgo/addons/metamod/hello-world.vdf
+game/csgo/addons/hello-world/plugin.json
 game/csgo/addons/hello-world/bin/win64/hello-world.dll
 ```
 

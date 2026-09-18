@@ -53,22 +53,28 @@ uv run poe install admin-system --preset windows-msvc-debug
 
 ## Installed layout
 
-The installer stages the plugin's CMake component and merges:
+The installer stages the host and the plugin's CMake component and merges:
 
 ```text
 game/csgo/addons/
-  metamod/<plugin>.vdf
+  metamod/voltmod.vdf
+  voltmod/
+    bin/win64/voltmod.dll
+    gamedata/
   <plugin>/
+    plugin.json
     bin/win64/<plugin>.dll
     configs/
-  voltmod/
-    gamedata/
 ```
 
 Linux packages use `bin/linuxsteamrt64/<plugin>.so`.
 
-The installer keeps existing `settings.jsonc` files. It copies debug symbols
-when they are available, skips empty config directories, and writes
-platform-correct Metamod VDF files for production packages.
+`voltmod.vdf` is the only Metamod manifest: Metamod loads the host, and the host
+reads each `addons/<plugin>/plugin.json` and loads the plugins itself. A plugin
+has no manifest of its own.
 
-After starting the server, run `meta list` to verify the plugin.
+The installer keeps existing `settings.jsonc` files. It copies debug symbols when
+they are available and skips empty config directories.
+
+After starting the server, run `volt list` to verify the plugin; `meta list`
+shows the host.
