@@ -2,8 +2,10 @@
 
 Status: underway on `shared-host` (voltmod) and `feat/shared-host` (cs2-plugins).
 Phase 0 answered statically in section 7a, and the user verifies the runtime half on a Linux test
-server once the host is fully implemented. Phase R and phase 1 are done and green in both repos.
-Phase 2 is next. Ships as VoltMod 1.5 (the package is 1.4.8 today). Work on a `shared-host` branch in both repos. Each phase ends green (`uv run poe build`, `poe test`, `poe lint` in `vendor/voltmod` and in the consumer) and is its own commit pair: voltmod first, then cs2-plugins with the relocked `conan.lock`. Never tag. `vendor/voltmod` had uncommitted changes when this was written; check `git status` in both repos first.
+server once the host is fully implemented. Phases R, 1, 2 and 3 are done and green in both repos:
+the host is the only Metamod plugin, and log output, gamedata resolution and schema verification
+each happen once per process. Nothing has run inside a real server yet. Phase 4 is next, and
+`deploy/` still writes per-plugin `.vdf` files until it lands. Ships as VoltMod 1.5 (the package is 1.4.8 today). Work on a `shared-host` branch in both repos. Each phase ends green (`uv run poe build`, `poe test`, `poe lint` in `vendor/voltmod` and in the consumer) and is its own commit pair: voltmod first, then cs2-plugins with the relocked `conan.lock`. Never tag. `vendor/voltmod` had uncommitted changes when this was written; check `git status` in both repos first.
 
 ## 1. Why and the decisions
 
