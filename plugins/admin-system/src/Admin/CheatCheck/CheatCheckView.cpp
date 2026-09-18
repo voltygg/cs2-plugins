@@ -73,7 +73,7 @@ std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
         break;
     }
 
-    const auto& cfg = _config.GetCheatCheck();
+    const auto& cfg = _config.Get().cheatCheck;
 
     // Operator-configured (trusted) banner image rendered atop the panel; CS2 fetches it client-side.
     std::string html;

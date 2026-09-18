@@ -1,0 +1,9 @@
+{
+  "name": "bhop",
+  "version": "1.0.0",
+  "logTag": "BHOP",
+  "description": "Smooth, client-predicted bunnyhop with per-player session grants.",
+  "author": "Sukhrob Ilyosbekov",
+  "dependencies": [],
+  "optionalDependencies": []
+}

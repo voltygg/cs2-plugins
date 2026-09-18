@@ -8,7 +8,6 @@
 #include "Admin/Menu/AdminMenu_Map.hpp"
 #include "Admin/Menu/AdminMenu_Punish.hpp"
 #include "Core/App.hpp"
-#include "Plugin.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
@@ -59,7 +58,7 @@ std::shared_ptr<VoltMod::Menu> BuildAdminMainMenu(AdminSystem::App& app, int adm
     // The version goes in the subtitle rather than into the title as markup: both menu hosts
     // show a subtitle, and only one of them can render a <font> tag.
     MenuBuilder builder(translations.Get("panel.admin", adminSlot));
-    builder.Subtitle(std::format("v{}", app.Version));
+    builder.Subtitle(std::format("v{}", app.Runtime.Version));
 
     for (const Category& category : Categories)
     {

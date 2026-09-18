@@ -26,7 +26,7 @@ bool AdminManager::LoadAdmins()
         _admins[admin.SteamId] = admin;
 
     // Merge server grants into each admin's effective group list.
-    for (auto& [steamId, groupNames] : _repos.Admins.FindGroupsForServer(_config.GetServer().tag))
+    for (auto& [steamId, groupNames] : _repos.Admins.FindGroupsForServer(_config.Get().server.tag))
     {
         auto it = _admins.find(steamId);
         if (it == _admins.end())
@@ -191,7 +191,7 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
     }
     else
     {
-        const auto& fallback = _config.GetChat();
+        const auto& fallback = _config.Get().chat;
         style.Prefix = fallback.fallbackPrefix;
         style.PrefixColor = fallback.fallbackPrefixColor;
         style.NameColor = fallback.fallbackNameColor;

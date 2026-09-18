@@ -99,7 +99,7 @@ bool PlayerChat::HandleSay(Player* player, std::string_view message, bool isSayT
         return true;
     }
 
-    const auto& chatCfg = _config.GetChat();
+    const auto& chatCfg = _config.Get().chat;
     if (chatCfg.tagAdminChatMessages && _admins.IsAdmin(steamId))
     {
         RebroadcastAdminChat(player, message, isSayTeam);

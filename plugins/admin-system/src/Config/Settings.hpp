@@ -16,8 +16,6 @@
 
 namespace AdminSystem::Config
 {
-inline constexpr std::string_view AddonName = "admin-system";
-
 using PluginSettings = VoltMod::StandardPluginSettings;
 
 /** The whole of `configs/settings.jsonc`. Each member is one top-level object in the file;

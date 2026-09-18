@@ -6,14 +6,18 @@
 #include "Punishments/KickNotice.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/App/PluginEntry.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Events/EventTypes.hpp>
+#include <VoltMod/Unsafe/Hook.hpp>
 #include <string>
 
 using VoltMod::Error;
 using VoltMod::Player;
 using VoltMod::Status;
 namespace Log = VoltMod::Log;
+
+VOLTMOD_PLUGIN(AdminSystem::App);
 
 namespace AdminSystem
 {
@@ -73,7 +77,7 @@ void App::OnPlayerConnect(Player& player)
     {
         // Build the full notice before deferring because the ban row is only available here.
         Punishments.KickDeferred(slot, steamId,
-                                 AdminSystem::Punishments::BuildBanNotice(Runtime.Translations, Settings.GetAppeal(),
+                                 AdminSystem::Punishments::BuildBanNotice(Runtime.Translations, Settings.Get().punishments.appeal,
                                                                           ban->Reason, ban->ExpiresAt, steamId, slot));
     }
 }
@@ -87,15 +91,15 @@ void App::OnPlayerDisconnect(Player& player)
 
 Status App::ConnectDatabase()
 {
-    if (!Db.Start(Settings.GetDatabase()))
+    if (!Db.Start(Settings.Get().database))
         return std::unexpected(Error::Engine("unavailable; chat commands will reject all callers"));
 
-    Migration = VoltMod::RunMigrations(Db, VoltMod::AddonFile(Config::AddonName, "configs/migrations"),
+    Migration = VoltMod::RunMigrations(Db, Runtime.AddonFile("configs/migrations"),
                                        {.HistoryTable = "schema_migrations", .LockKey = 727274});
     if (!Migration)
         return std::unexpected(Error::Failed("migrations failed; not loading admins against an out-of-date schema"));
 
-    const auto& server = Settings.GetServer();
+    const auto& server = Settings.Get().server;
     if (!Repos.Servers.Upsert(server.tag, server.name))
         Log::Warn("Failed to register server '{}' in the servers table.", server.tag);
 
@@ -120,7 +124,7 @@ Status App::StartPunishments()
     _subs.Add(Runtime.Scheduler.Repeat(60'000, [this] {
         Punishments.ExpireOldPunishments();
         Freeze.RefreshFromDatabase();
-        Repos.Servers.HeartbeatAsync(Settings.GetServer().tag);
+        Repos.Servers.HeartbeatAsync(Settings.Get().server.tag);
     }));
 
     // Publish the anticheat surface only after its database and admin dependencies are ready.
@@ -129,6 +133,25 @@ Status App::StartPunishments()
     if (!loaded)
         return std::unexpected(Error::Failed("failed to load active punishments"));
     return {};
+}
+
+void App::RegisterVoiceMuteHook()
+{
+    _subs.Add(VoltMod::HookInterface(
+        &IVEngineServer2::SetClientListening, Runtime.Unsafe.Interfaces.Engine,
+        [this](IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender, bool listen) -> VoltMod::HookResult<bool> {
+            if (!listen)
+                return {};
+            VoltMod::Player* muted = Runtime.Players.Get(sender.Get());
+            if (!muted || !Punishments.IsPunished(Punishments::PunishType::VoiceMute, muted->SteamId()))
+                return {};
+
+            // One hook call per receiver; ChatService rate-limits this to one chat line.
+            PlayerChat.NotifyVoiceMuted(muted);
+            // Run the engine's own handler with listening off instead of the caller's value.
+            VoltMod::CallOriginal(&IVEngineServer2::SetClientListening, &engine, receiver, sender, false);
+            return VoltMod::HookResult<bool>::Block(false);
+        }));
 }
 
 void App::RegisterGameEventListeners()
@@ -166,7 +189,7 @@ void App::InstallStatusReporting()
                            [this] { return VoltMod::Json::Write(glz::obj{"registered", Runtime.Commands.Count()}); });
 
     status.RegisterSection("server", [this] {
-        const auto& server = Settings.GetServer();
+        const auto& server = Settings.Get().server;
         return VoltMod::Json::Write(glz::obj{"tag", server.tag, "name", server.name});
     });
 
@@ -189,14 +212,14 @@ void App::RegisterCommands()
 
 bool App::Start()
 {
-    if (!VoltMod::LoadStandardConfig(Runtime, Settings, {.Addon = Config::AddonName}))
+    if (!VoltMod::LoadStandardConfig(Runtime, Settings))
         return false;
 
     InstallPolicy();
     RegisterPlayerLifecycle();
     // Freeze players while menus are open so navigation input cannot also move them.
     Runtime.Freeze.Enable(true);
-    if (const auto& menu = Settings.GetMenu(); menu.panorama)
+    if (const auto& menu = Settings.Get().menu; menu.panorama)
     {
         Panorama.emplace(VoltMod::PanoramaMenu::Services{.Scheduler = Runtime.Scheduler,
                                                          .Slots = Runtime.Slots,
@@ -222,6 +245,7 @@ bool App::Start()
         steps.Optional("Punishments", [this] { return StartPunishments(); });
 
     RegisterGameEventListeners();
+    RegisterVoiceMuteHook();
     // Queued model assets reach clients on the next map load.
     Admin::Effects::PrecacheModels(Runtime);
     // Report invalid configured maps at load instead of on the first !map.

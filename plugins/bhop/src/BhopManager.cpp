@@ -117,7 +117,7 @@ void BhopManager::ReloadSettings()
 {
     _conVars.Reset();
 
-    if (auto loaded = _config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")); !loaded)
+    if (auto loaded = _config.Load(_rt.AddonFile("configs/settings.jsonc")); !loaded)
     {
         Log::Warn("bhop_reload: {}; keeping previous values in memory.", loaded.error().Detail);
         return;

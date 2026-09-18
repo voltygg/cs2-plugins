@@ -64,7 +64,7 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
     IssuePunishment(app, *admin, *target, pending.Type, pending.Reason, pending.DurationSec);
 
     // With broadcasts on, the admin already sees the server-wide line; avoid double messaging.
-    if (!app.Settings.GetChat().broadcastPunishments)
+    if (!app.Settings.Get().chat.broadcastPunishments)
     {
         app.Chat.Reply(adminSlot, translations.Get("punish.issued", adminSlot,
                                                    {{"action", translations.Get(ActionTranslationKey(pending.Type), adminSlot)},
@@ -107,7 +107,7 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
         durations.emplace_back(DurationLabel(translations, seconds, adminSlot), seconds);
 
     std::vector<std::pair<std::string, std::string>> reasons;
-    for (const auto& reason : app.Settings.GetPunishments().reasonPresets)
+    for (const auto& reason : app.Settings.Get().punishments.reasonPresets)
         reasons.emplace_back(reason, reason);
 
     MakeBaseFlow(app, adminSlot, std::move(pending))

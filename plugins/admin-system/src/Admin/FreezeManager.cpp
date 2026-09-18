@@ -81,7 +81,7 @@ void FreezeManager::RecordPunishment(int64_t adminSteamId, std::string_view admi
 
     // Console actions and already-frozen admins never trip the rate check; root admins are
     // exempt by design (they resolve every flag, including 'z' itself).
-    if (adminSteamId == 0 || !_config.GetAbuseProtection().enabled || IsFrozen(adminSteamId))
+    if (adminSteamId == 0 || !_config.Get().abuseProtection.enabled || IsFrozen(adminSteamId))
         return;
     // Raw grant, not Access: the frozen case already returned above, and asking the gated
     // surface here would only re-answer that same question.
@@ -95,7 +95,7 @@ void FreezeManager::RecordAudit(int64_t adminSteamId, std::string_view adminName
                                 int64_t targetSteamId, std::string_view targetName, std::string_view detail)
 {
     _repos.Activity.RecordAsync(adminSteamId, adminName, action, targetSteamId, targetName, detail,
-                                _config.GetServer().tag);
+                                _config.Get().server.tag);
 }
 
 void FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_t bySteamId, const std::string& byName,
@@ -112,7 +112,7 @@ void FreezeManager::ApplyFreeze(int64_t steamId, const std::string& name, int64_
 
 void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, std::string_view adminName)
 {
-    const auto& cfg = _config.GetAbuseProtection();
+    const auto& cfg = _config.Get().abuseProtection;
     int64_t windowStart = Time::Now() - static_cast<int64_t>(cfg.windowMinutes) * 60;
 
     // FIFO on the worker: this count sees the audit insert that triggered the check.
@@ -120,7 +120,7 @@ void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, std::string_view admin
         // The name is copied: the completion runs on a later game frame, long after the caller's
         // view is gone.
         adminSteamId, windowStart, [this, adminSteamId, adminName = std::string(adminName)](Db::ActivityCounts counts) {
-            const auto& limits = _config.GetAbuseProtection();
+            const auto& limits = _config.Get().abuseProtection;
             bool tripped = (limits.maxBans > 0 && counts.Bans >= limits.maxBans) ||
                            (limits.maxKicks > 0 && counts.Kicks >= limits.maxKicks) ||
                            (limits.maxMutes > 0 && counts.Mutes >= limits.maxMutes) ||

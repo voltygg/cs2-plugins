@@ -1,0 +1,9 @@
+{
+  "name": "admin-system",
+  "version": "1.0.0",
+  "logTag": "ADMIN",
+  "description": "Admins, punishments, menus and reports.",
+  "author": "Sukhrob Ilyosbekov",
+  "dependencies": [],
+  "optionalDependencies": []
+}

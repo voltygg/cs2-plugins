@@ -35,7 +35,7 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
     if (!target)
         return;  // disconnect cleanup tears the check down
 
-    const auto& cfg = _config.GetCheatCheck().websiteAutoRoom;
+    const auto& cfg = _config.Get().cheatCheck.websiteAutoRoom;
     auto request = BuildPresenceRequest(cfg, pc.RoomCode, target->SteamId());
     if (!request)
     {
@@ -60,7 +60,7 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
     if (!pc.Active || pc.RequestSeq != seq)  // stale: cancelled, expired, re-called, or slot reused
         return;
 
-    const auto& cfg = _config.GetCheatCheck().websiteAutoRoom;
+    const auto& cfg = _config.Get().cheatCheck.websiteAutoRoom;
     pc.PollInFlight = false;
     pc.NextPollAtSec = Time::Now() + cfg.pollIntervalSec;
 

@@ -127,7 +127,7 @@ void PunishmentManager::Issue(Punishment& record)
         {
             // The notice the connect-time reject builds, so both paths read the same.
             KickDeferred(player->Slot(), record.TargetSteamId,
-                         BuildBanNotice(_rt.Translations, _config.GetAppeal(), record.Reason, record.ExpiresAt,
+                         BuildBanNotice(_rt.Translations, _config.Get().punishments.appeal, record.Reason, record.ExpiresAt,
                                         record.TargetSteamId, player->Slot()));
         }
     }
@@ -157,14 +157,14 @@ void PunishmentManager::EscalateWarning(const Punishment& warning)
     // FIFO: this count sees the insert Issue just enqueued, and lands on the game thread.
     _repos.Punishments.CountActiveAsync(
         PunishType::Warn, warning.TargetSteamId, [this, autoBan = std::move(autoBan)](int active) mutable {
-            const int threshold = _config.GetPunishments().warningThreshold;
+            const int threshold = _config.Get().punishments.warningThreshold;
             if (threshold <= 0 || active < threshold)
                 return;
 
             Log::Info("Warning threshold ({}) reached for {} -- escalating to ban.", threshold, autoBan.TargetSteamId);
             _repos.Punishments.ClearAsync(PunishType::Warn, autoBan.TargetSteamId);
 
-            autoBan.Reason = _config.GetPunishments().defaultBanReason;
+            autoBan.Reason = _config.Get().punishments.defaultBanReason;
             Issue(autoBan);
         });
 }

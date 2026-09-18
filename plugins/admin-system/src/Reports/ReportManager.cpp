@@ -19,7 +19,7 @@ namespace Log = VoltMod::Log;
 
 ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<int64_t> targetSteamId, int64_t now) const
 {
-    const auto& config = _config.GetReports();
+    const auto& config = _config.Get().reports;
     if (!config.enabled)
         return {ReportDenial::Disabled};
 
@@ -70,7 +70,7 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
         .TargetIp = std::string(target.Ip()),
         .ReasonCode = reasonCode,
         .Reason = reasonText,
-        .ServerTag = _config.GetServer().tag,
+        .ServerTag = _config.Get().server.tag,
         .MapName = _rt.Map.Current(),
         .CreatedAt = now,
     };
@@ -96,7 +96,7 @@ void ReportManager::StartCooldown(int64_t reporterSteamId, int64_t targetSteamId
     _perTarget.Acquire({reporterSteamId, targetSteamId}, now);
 
     // Both maps only grow here, so this is the one place worth sweeping.
-    const auto& config = _config.GetReports();
+    const auto& config = _config.Get().reports;
     const int64_t horizon = std::max(config.cooldownSec, config.duplicateWindowSec);
     _anyTarget.Prune(now, horizon);
     _perTarget.Prune(now, horizon);

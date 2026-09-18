@@ -85,7 +85,7 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
 
     // The flow runs for one reporter, so every step string resolves in their language here.
     std::vector<std::pair<std::string, std::string>> reasons;
-    for (const auto& reason : app.Settings.GetReports().reasons)
+    for (const auto& reason : app.Settings.Get().reports.reasons)
         reasons.emplace_back(ReasonLabel(app, reason, reporterSlot), reason.code);
 
     ReportFlowT::Create(app.Runtime.Menus, reporterSlot, PendingReport{.Target = targetRef})
@@ -97,7 +97,7 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
                                   p.ReasonText = label;
                                   p.ReasonCode = code;
                               },
-                          .CustomLabel = app.Settings.GetReports().allowCustomReason
+                          .CustomLabel = app.Settings.Get().reports.allowCustomReason
                                              ? translations.Get("report.customReason", reporterSlot)
                                              : std::string(),
                           .CustomPrompt = translations.Get("report.customReasonPrompt", reporterSlot),

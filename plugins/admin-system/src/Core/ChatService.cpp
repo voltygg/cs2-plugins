@@ -89,10 +89,10 @@ void ChatService::BroadcastPunishment(std::string_view actionKey, std::string_vi
                                       std::string_view targetName, std::string_view reason,
                                       std::optional<int64_t> durationSec)
 {
-    if (!_config.GetChat().broadcastPunishments)
+    if (!_config.Get().chat.broadcastPunishments)
         return;
 
-    const AdminLineStyle style = StyleOf(_config.GetChat());
+    const AdminLineStyle style = StyleOf(_config.Get().chat);
 
     std::string durationSuffix;
     if (durationSec)
@@ -114,10 +114,10 @@ void ChatService::BroadcastPunishment(std::string_view actionKey, std::string_vi
 void ChatService::BroadcastAction(std::string_view translationKey, std::string_view adminName,
                                   std::string_view targetName)
 {
-    if (!_config.GetChat().broadcastPunishments)
+    if (!_config.Get().chat.broadcastPunishments)
         return;
 
-    const AdminLineStyle style = StyleOf(_config.GetChat());
+    const AdminLineStyle style = StyleOf(_config.Get().chat);
     auto phrase = BroadcastPhrase(translationKey);
     _rt.Messages.Broadcast(targetName.empty() ? FormatAdminLine(style, adminName, phrase)
                                               : FormatAdminLine(style, adminName, phrase, targetName));
@@ -126,11 +126,11 @@ void ChatService::BroadcastAction(std::string_view translationKey, std::string_v
 void ChatService::BroadcastAction(std::string_view translationKey, std::string_view adminName,
                                   const std::map<std::string, std::string>& nameTokens)
 {
-    if (!_config.GetChat().broadcastPunishments)
+    if (!_config.Get().chat.broadcastPunishments)
         return;
 
     _rt.Messages.Broadcast(
-        FormatAdminLine(StyleOf(_config.GetChat()), adminName, BroadcastPhrase(translationKey), nameTokens));
+        FormatAdminLine(StyleOf(_config.Get().chat), adminName, BroadcastPhrase(translationKey), nameTokens));
 }
 
 std::string ChatService::BroadcastPhrase(std::string_view translationKey) const

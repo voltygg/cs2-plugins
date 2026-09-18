@@ -26,7 +26,7 @@ void RegisterCommands(App& app)
         .ConsoleOnly()
         .Run([&app](Caller) -> Result<Reply> {
             // The reason names the offending key and its position, which is what a mistyped setting needs.
-            if (auto loaded = app.Config.Load(VoltMod::AddonFile(AddonName, "configs/settings.jsonc")); !loaded)
+            if (auto loaded = app.Config.Load(app.Runtime.AddonFile("configs/settings.jsonc")); !loaded)
                 return Reply{std::format("Settings not reloaded: {}", loaded.error().Detail)};
             // Keep valid rules active if the edited file cannot be parsed.
             if (auto loaded = app.RuleTables.Load(DetectionDataPath); !loaded)

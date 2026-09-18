@@ -4,11 +4,14 @@
 #include "Engine/StatusReport.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/App/PluginEntry.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Text/Strings.hpp>
 #include <VoltMod/Core/Time/Time.hpp>
 #include <string>
 #include <vector>
+
+VOLTMOD_PLUGIN(Anticheat::App);
 
 namespace Log = VoltMod::Log;
 
@@ -17,7 +20,7 @@ namespace Anticheat
 
 bool App::Start()
 {
-    if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Addon = AddonName, .Translations = false}))
+    if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Translations = false}))
         return false;
 
     // A missing data file leaves the two table-driven rules inert rather than taking the plugin

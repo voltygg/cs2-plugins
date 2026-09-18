@@ -23,7 +23,7 @@ bool VoteState::StartMapVote(const MapEntry& map, int callerSlot)
     if (_rt.Hooks.Vote.InProgress())
         return false;
 
-    const auto& cfg = _config.GetMaps().vote;
+    const auto& cfg = _config.Get().maps.vote;
 
     return _rt.Hooks.Vote.StartVote(
         VoteTitleToken, map.Label(), static_cast<float>(cfg.durationSec), callerSlot,

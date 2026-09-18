@@ -41,9 +41,6 @@ struct Settings
 
 using ConfigManager = VoltMod::Options<Settings>;
 
-/** The addon folder name - matches the CMake target and keys every addons/ path. */
-inline constexpr std::string_view AddonName = "bhop";
-
 }  // namespace Bhop
 
 /** Accepts the `"$schema"` key settings.jsonc names for editor completion. */

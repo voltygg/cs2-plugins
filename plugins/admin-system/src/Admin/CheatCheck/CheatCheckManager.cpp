@@ -56,7 +56,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 
     Controller targetCtrl = _rt.Entities.Controller(targetSlot);
     Pawn targetPawn = targetCtrl.GetPawn();
-    const auto& cfg = _config.GetCheatCheck();
+    const auto& cfg = _config.Get().cheatCheck;
 
     // A repeated check must restore the original movement/team state.
     const bool wasActive = _checks[targetSlot].Active;
@@ -95,7 +95,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 void CheatCheckManager::ResolveUrl(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
-    const auto& cfg = _config.GetCheatCheck();
+    const auto& cfg = _config.Get().cheatCheck;
 
     switch (pc.Mode)
     {
@@ -120,7 +120,7 @@ void CheatCheckManager::RequestRoom(int targetSlot)
     if (target)
     {
         auto* admin = _rt.Players.Get(pc.AdminSlot);
-        request = BuildRoomRequest(_config.GetCheatCheck().websiteAutoRoom, target->SteamId(), target->Name(),
+        request = BuildRoomRequest(_config.Get().cheatCheck.websiteAutoRoom, target->SteamId(), target->Name(),
                                    pc.AdminSteamId, admin ? admin->Name() : std::string_view{});
     }
 
@@ -145,7 +145,7 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const VoltM
     if (!pc.Active || pc.RequestSeq != seq)  // stale: cancelled, expired, re-called, or slot reused
         return;
 
-    const auto& roomCfg = _config.GetCheatCheck().websiteAutoRoom;
+    const auto& roomCfg = _config.Get().cheatCheck.websiteAutoRoom;
     if (auto urls = ParseRoomResponse(roomCfg, result))
     {
         pc.ResolvedUrl = std::move(urls->PlayerUrl);
@@ -242,7 +242,7 @@ CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSl
 void CheatCheckManager::FallbackToFixed(PendingCheck& pc)
 {
     pc.AwaitingUrl = false;
-    const auto& cfg = _config.GetCheatCheck();
+    const auto& cfg = _config.Get().cheatCheck;
     if (!cfg.fixedLink.url.empty())
         pc.ResolvedUrl = cfg.fixedLink.url;
 }
@@ -291,7 +291,7 @@ bool CheatCheckManager::Cancel(int adminSlot, int targetSlot)
 
 void CheatCheckManager::Expire(int targetSlot)
 {
-    const auto& cfg = _config.GetCheatCheck();
+    const auto& cfg = _config.Get().cheatCheck;
     const bool kick = cfg.autoKick;
 
     auto* target = _rt.Players.Get(targetSlot);

@@ -30,6 +30,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace AdminSystem
@@ -43,13 +44,19 @@ namespace AdminSystem
  */
 struct App
 {
-    App(VoltMod::Runtime& runtime, std::string version) : Runtime(runtime), Version(std::move(version)) {}
+    explicit App(VoltMod::Runtime& runtime) : Runtime(runtime) {}
     ~App();
     App(const App&) = delete;
     App& operator=(const App&) = delete;
 
     /** Connect the database, run migrations, load admins and register commands. */
     bool Start();
+
+    /** Replaces the framework's default chat handling: chat rules first, then menus and commands. */
+    bool OnPlayerChat(VoltMod::Player* player, std::string_view message, bool teamChat)
+    {
+        return PlayerChat.HandleSay(player, message, teamChat);
+    }
 
     /**
      * The admin-panel rows for one admin/target pair, bound to this plugin's services.
@@ -72,7 +79,6 @@ struct App
     }
 
     VoltMod::Runtime& Runtime;
-    const std::string Version;
 
     /** The admin menu layout, and the clickable menu drawn on it when settings turn Panorama on. */
     Menus::AdminMenuScreen MenuScreen{Runtime.Screens};
@@ -123,6 +129,8 @@ private:
     VoltMod::Status LoadAdminData();
     VoltMod::Status StartPunishments();
     void RegisterGameEventListeners();
+    /** The engine asks per (receiver, sender) pair; a voice-muted sender is never heard. */
+    void RegisterVoiceMuteHook();
     void InstallStatusReporting();
     void RegisterCommands();
 
