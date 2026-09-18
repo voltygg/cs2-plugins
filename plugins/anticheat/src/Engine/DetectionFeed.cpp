@@ -17,8 +17,8 @@ using VoltMod::IsValidSlot;
 namespace Anticheat
 {
 
-using VoltMod::Time;
 using Rules::WallhackShotContext;
+using VoltMod::Time;
 
 /** Origin and view angles jump discontinuously around a teleport, so the whole window is unreadable. */
 static constexpr float TeleportGraceSec = 5.0f;
@@ -46,8 +46,8 @@ void DetectionFeed::Initialize()
 
     // Not gated by the rule toggle: a fresh pawn invalidates in-flight state whether or not the
     // rule is reporting, so a mid-map re-enable must not wake up holding stale commands.
-    _subscriptions.Add(
-        events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { _detectors.AntiAim.ClearSlot(e.Slot); }));
+    _subscriptions.Add(events.On<VoltMod::PlayerSpawn>(
+        [this](const VoltMod::PlayerSpawn& e) { _detectors.AntiAim.ClearSlot(e.Slot); }));
     _subscriptions.Add(events.On<VoltMod::WeaponFire>([this](const VoltMod::WeaponFire& e) { OnWeaponFire(e); }));
     _subscriptions.Add(events.On<VoltMod::BulletImpact>([this](const VoltMod::BulletImpact& e) { OnBulletImpact(e); }));
     // player_hurt carries the hitgroup SilentAim scores headshots from.
@@ -109,7 +109,7 @@ bool DetectionFeed::RecentlyTeleported(int slot) const
 }
 
 void DetectionFeed::CollectPositions(std::array<PositionSample, MaxSlots>& players,
-                                      std::array<AimAngles, MaxSlots>& aims, std::array<bool, MaxSlots>& viewers)
+                                     std::array<AimAngles, MaxSlots>& aims, std::array<bool, MaxSlots>& viewers)
 {
     _userIds.fill(-1);
     IVEngineServer2* engine = _rt.Unsafe.Interfaces.Engine;
@@ -151,8 +151,7 @@ void DetectionFeed::OnFrame()
     const double now = Time::MonotonicSeconds();
 
     // Two engine reads and a parse per estimate, so only measure it when a rule will read it.
-    const bool lagWanted =
-        d.RuleEnabled(d.Aimlock) || d.RuleEnabled(d.Triggerbot) || d.RuleEnabled(d.Wallhack);
+    const bool lagWanted = d.RuleEnabled(d.Aimlock) || d.RuleEnabled(d.Triggerbot) || d.RuleEnabled(d.Wallhack);
 
     std::array<PositionSample, MaxSlots> players{};
     std::array<AimAngles, MaxSlots> aims{};
@@ -241,8 +240,8 @@ void DetectionFeed::FinalizeShots(int slot, int32_t serverTick, double nowSec)
         if (silentAim)
             d.SilentAim.Finalize(slot, shot, nowSec);
         if (wallhack && shot.HurtSeen)
-            d.Wallhack.OnShot(slot, shot,
-                              {.TeamSawVictim = TeamSawVictim(slot, shot.VictimSlot, shot.FireTick)}, nowSec);
+            d.Wallhack.OnShot(slot, shot, {.TeamSawVictim = TeamSawVictim(slot, shot.VictimSlot, shot.FireTick)},
+                              nowSec);
     }
 }
 
@@ -331,7 +330,7 @@ void DetectionFeed::OnPlayerDeath(const VoltMod::PlayerDeath& death)
     // Nothing consumes the death directly: it only lands the wallbang flag SilentAim reads when it
     // finalizes two ticks later.
     _detectors.History.OnPlayerDeath(death.AttackerSlot, death.VictimSlot, death.Weapon, death.Penetrated > 0,
-                                        static_cast<int32_t>(_rt.Clock.Tick()));
+                                     static_cast<int32_t>(_rt.Clock.Tick()));
 }
 
 }  // namespace Anticheat

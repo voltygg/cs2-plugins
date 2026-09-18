@@ -97,11 +97,11 @@ TEST_CASE("An insert that supplies only the required columns is accepted")
         // sqlpp23 will not compile this or SQLite rejects the row.
         auto id = db.Run("minimal-punishment", [](auto& conn) {
             const Tables::Punishments t;
-            return VoltMod::Insert(conn,
-                                   sqlpp::insert_into(t).set(t.kind = "ban", t.targetSteamId = int64_t{76561198000000000},
-                                                             t.targetName = "someone", t.adminName = "console",
-                                                             t.reason = "testing"),
-                                   "punishments");
+            return VoltMod::Insert(
+                conn,
+                sqlpp::insert_into(t).set(t.kind = "ban", t.targetSteamId = int64_t{76561198000000000},
+                                          t.targetName = "someone", t.adminName = "console", t.reason = "testing"),
+                "punishments");
         });
         REQUIRE_MESSAGE(id.has_value(), ErrorText(id));
         CHECK(*id > 0);

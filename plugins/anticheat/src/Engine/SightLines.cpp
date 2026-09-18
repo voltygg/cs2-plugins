@@ -28,8 +28,7 @@ std::optional<bool> SightLines::Trace(const VoltMod::Pawn& viewer, const Vec3& e
     const VoltMod::TraceOptions options{.Ignore1 = viewer.Raw(), .Ignore2 = target.Raw()};
     for (float height : Geometry::BodyHeights)
     {
-        const auto clear =
-            _rt.World.Trace.Clear(ToVector(eye), ToVector({feet.X, feet.Y, feet.Z + height}), options);
+        const auto clear = _rt.World.Trace.Clear(ToVector(eye), ToVector({feet.X, feet.Y, feet.Z + height}), options);
         if (!clear)
             return std::nullopt;
         if (*clear)
@@ -39,8 +38,8 @@ std::optional<bool> SightLines::Trace(const VoltMod::Pawn& viewer, const Vec3& e
 }
 
 void SightLines::StampVisibility(std::array<PositionSample, MaxSlots>& players,
-                                 const std::array<AimAngles, MaxSlots>& aims,
-                                 const std::array<bool, MaxSlots>& viewers, const ShotHistory& teams) const
+                                 const std::array<AimAngles, MaxSlots>& aims, const std::array<bool, MaxSlots>& viewers,
+                                 const ShotHistory& teams) const
 {
     if (!Available())
         return;

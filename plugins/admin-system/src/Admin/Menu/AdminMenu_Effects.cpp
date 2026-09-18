@@ -22,11 +22,11 @@ using VoltMod::SubmenuRow;
 std::shared_ptr<VoltMod::Menu> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
-    return BuildPlayerPicker(
-        app, adminSlot,
-        {.Title = translations.Get("category.effects", adminSlot), .Open = [&app, adminSlot](VoltMod::PlayerRef target) {
-             return BuildEffectsActionsMenu(app, app.Runtime.Players.RefFor(adminSlot), target);
-         }});
+    return BuildPlayerPicker(app, adminSlot,
+                             {.Title = translations.Get("category.effects", adminSlot),
+                              .Open = [&app, adminSlot](VoltMod::PlayerRef target) {
+                                  return BuildEffectsActionsMenu(app, app.Runtime.Players.RefFor(adminSlot), target);
+                              }});
 }
 
 std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,

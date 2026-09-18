@@ -37,7 +37,8 @@ using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishType type)
 {
     auto& players = app.Runtime.Players;
-    return app.Runtime.Policy.Authorize(players.RefFor(adminSlot), target, Flag(InfoFor(type).RequiredPermission)).has_value();
+    return app.Runtime.Policy.Authorize(players.RefFor(adminSlot), target, Flag(InfoFor(type).RequiredPermission))
+        .has_value();
 }
 
 /** Flow validation: the target may have left (or the slot rehosts another player) and the
@@ -66,9 +67,10 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
     // With broadcasts on, the admin already sees the server-wide line; avoid double messaging.
     if (!app.Settings.Get().chat.broadcastPunishments)
     {
-        app.Chat.Reply(adminSlot, translations.Get("punish.issued", adminSlot,
-                                                   {{"action", translations.Get(ActionTranslationKey(pending.Type), adminSlot)},
-                                                    {"name", targetName}}));
+        app.Chat.Reply(adminSlot,
+                       translations.Get("punish.issued", adminSlot,
+                                        {{"action", translations.Get(ActionTranslationKey(pending.Type), adminSlot)},
+                                         {"name", targetName}}));
     }
 }
 
@@ -99,7 +101,8 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
     auto type = pending.Type;
     // The flow runs for one admin, so every step string resolves in their language here.
     auto stepTitle = [&translations, type, adminSlot](std::string_view suffixKey) {
-        return std::format("{}: {}", translations.Get(ActionTranslationKey(type), adminSlot), translations.Get(suffixKey, adminSlot));
+        return std::format("{}: {}", translations.Get(ActionTranslationKey(type), adminSlot),
+                           translations.Get(suffixKey, adminSlot));
     };
 
     std::vector<std::pair<std::string, int>> durations;

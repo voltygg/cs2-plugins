@@ -106,8 +106,8 @@ void ShotHistory::Prune(int32_t serverTick)
 }
 
 ShotView* ShotHistory::OnWeaponFire(int slot, std::string_view weapon, int32_t serverTick,
-                                           const AimAngles& visibleAngles, bool hasVisibleAngles, int32_t fireCmdNum,
-                                           int shotsFired)
+                                    const AimAngles& visibleAngles, bool hasVisibleAngles, int32_t fireCmdNum,
+                                    int shotsFired)
 {
     if (!InSlotRange(slot) || !IsBallisticWeapon(weapon))
         return nullptr;
@@ -210,7 +210,7 @@ ShotView* ShotHistory::OnPlayerHurt(int attackerSlot, int victimSlot, bool heads
 }
 
 ShotView* ShotHistory::OnPlayerDeath(int attackerSlot, int victimSlot, std::string_view weapon, bool wallbang,
-                                            int32_t serverTick)
+                                     int32_t serverTick)
 {
     if (!InSlotRange(attackerSlot) || !InSlotRange(victimSlot) || attackerSlot == victimSlot)
         return nullptr;
@@ -224,7 +224,7 @@ ShotView* ShotHistory::OnPlayerDeath(int attackerSlot, int victimSlot, std::stri
 }
 
 int ShotHistory::ResolveImpactShooter(int truncatedUserId, int32_t serverTick,
-                                             std::span<const int32_t> userIdBySlot) const
+                                      std::span<const int32_t> userIdBySlot) const
 {
     if (truncatedUserId < 0)
         return -1;

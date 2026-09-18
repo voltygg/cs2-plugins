@@ -1,8 +1,7 @@
 #pragma once
 
-#include <VoltMod/Core/Text/Json.hpp>
 #include <VoltMod/Core/Result.hpp>
-
+#include <VoltMod/Core/Text/Json.hpp>
 #include <optional>
 #include <string>
 #include <string_view>

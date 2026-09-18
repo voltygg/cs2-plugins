@@ -8,11 +8,11 @@
 #include <string>
 
 using Anticheat::CvarConstraint;
-using Anticheat::Rules::CvarRuleTable;
-using Anticheat::Rules::CvarsPerPoll;
 using Anticheat::CvarTier;
 using Anticheat::DetectionData;
 using Anticheat::DetectionDocument;
+using Anticheat::Rules::CvarRuleTable;
+using Anticheat::Rules::CvarsPerPoll;
 
 /** The whole load path: read, then validate. */
 static VoltMod::Result<DetectionData> Parse(const std::string& text)

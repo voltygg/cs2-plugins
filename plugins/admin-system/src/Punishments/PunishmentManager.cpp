@@ -127,8 +127,8 @@ void PunishmentManager::Issue(Punishment& record)
         {
             // The notice the connect-time reject builds, so both paths read the same.
             KickDeferred(player->Slot(), record.TargetSteamId,
-                         BuildBanNotice(_rt.Translations, _config.Get().punishments.appeal, record.Reason, record.ExpiresAt,
-                                        record.TargetSteamId, player->Slot()));
+                         BuildBanNotice(_rt.Translations, _config.Get().punishments.appeal, record.Reason,
+                                        record.ExpiresAt, record.TargetSteamId, player->Slot()));
         }
     }
     else if (record.Kind == PunishType::VoiceMute)

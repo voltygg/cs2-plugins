@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Engine/Detectors.hpp"
 #include "Config.hpp"
+#include "Engine/Detectors.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <cstdint>

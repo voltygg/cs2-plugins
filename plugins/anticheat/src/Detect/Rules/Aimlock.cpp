@@ -12,8 +12,8 @@ namespace Anticheat::Rules
 /** Three tracking episodes are what this rule reports on alone. */
 static constexpr float PerEpisode = 1.0f / 3.0f;
 
-static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);  // 96
-static constexpr int OffTargetTicks = static_cast<int>(TickRate * 0.5f);     // 32
+static constexpr int TrackingTicks = static_cast<int>(TickRate * 1.5f);   // 96
+static constexpr int OffTargetTicks = static_cast<int>(TickRate * 0.5f);  // 32
 static constexpr float MinimumDistance = 200.0f;
 static constexpr float MinimumTargetTravel = 48.0f;  // one and a half player widths, as degrees at that range
 
@@ -102,8 +102,8 @@ static Candidate FindCandidate(const ShotHistory& shots, const AimAngles& angles
             const PositionFrame* historical = lagFrames.Frames[lagTicks - lagFrames.First];
             for (int bodyPoint = 0; bodyPoint < Geometry::BodyPointCount; ++bodyPoint)
             {
-                const TargetEvaluation evaluation = EvaluateTarget(shots, angles, eyePos, frame, historical,
-                                                                   observerSlot, targetSlot, bodyPoint);
+                const TargetEvaluation evaluation =
+                    EvaluateTarget(shots, angles, eyePos, frame, historical, observerSlot, targetSlot, bodyPoint);
                 if (!evaluation.OnTarget())
                     continue;
                 if (matchedTarget < 0)

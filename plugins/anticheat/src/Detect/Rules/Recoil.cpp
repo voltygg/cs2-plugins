@@ -104,8 +104,9 @@ SprayFit Recoil::Fit(const SlotData& data, int viewLag) const
         if (!punchA || !punchB || !viewA || !viewB || !punchA->HasPunch || !punchB->HasPunch)
             continue;
 
-        const Pair pair{punchB->Punch.Pitch - punchA->Punch.Pitch, Geometry::YawDelta(punchA->Punch.Yaw, punchB->Punch.Yaw),
-                        viewB->View.Pitch - viewA->View.Pitch, Geometry::YawDelta(viewA->View.Yaw, viewB->View.Yaw)};
+        const Pair pair{punchB->Punch.Pitch - punchA->Punch.Pitch,
+                        Geometry::YawDelta(punchA->Punch.Yaw, punchB->Punch.Yaw), viewB->View.Pitch - viewA->View.Pitch,
+                        Geometry::YawDelta(viewA->View.Yaw, viewB->View.Yaw)};
         if (!std::isfinite(pair.PunchPitch) || !std::isfinite(pair.PunchYaw) || !std::isfinite(pair.ViewPitch) ||
             !std::isfinite(pair.ViewYaw))
             continue;

@@ -4,7 +4,6 @@
 #include "Detect/Samples.hpp"
 #include "Detect/Suspicion.hpp"
 
-
 namespace Anticheat::Rules
 {
 

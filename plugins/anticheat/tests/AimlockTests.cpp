@@ -9,13 +9,13 @@
 
 using Anticheat::AimAngles;
 using Anticheat::DetectionKind;
-using Anticheat::Rules::Aimlock;
 using Anticheat::EstimateViewLag;
-using Anticheat::ViewLag;
 using Anticheat::MaxSlots;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::Suspicion;
+using Anticheat::ViewLag;
+using Anticheat::Rules::Aimlock;
 namespace Geometry = Anticheat::Geometry;
 
 using Anticheat::Test::Eye;

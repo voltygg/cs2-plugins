@@ -92,8 +92,7 @@ std::optional<float> AimAssist::NearestOpponentError(int slot, int32_t serverTic
     return best;
 }
 
-void AimAssist::OnSimulated(int slot, const CmdSample& cmd, int32_t serverTick, bool recentlyTeleported,
-                            double nowSec)
+void AimAssist::OnSimulated(int slot, const CmdSample& cmd, int32_t serverTick, bool recentlyTeleported, double nowSec)
 {
     if (!InSlotRange(slot))
         return;
@@ -141,15 +140,14 @@ void AimAssist::OnSimulated(int slot, const CmdSample& cmd, int32_t serverTick, 
     if (!before || !after || *after > ConvergedDeg || *before - *after < residual * ConvergenceShare)
         return;
 
-    _suspicion.Add(
-        slot,
-        {.Kind = Kind,
-         .Points = PerTurn,
-         .Reason = std::format("A turn the mouse could not explain landed on an enemy: {:.2f} degrees on {}/{} "
-                               "counts (scale {:.4f} deg/count), closing the aim from {:.2f} to {:.2f} degrees.",
-                               std::hypot(yawTurn, pitchTurn), cmd.MouseDx, cmd.MouseDy, data.Yaw.Scale, *before,
-                               *after)},
-        nowSec);
+    _suspicion.Add(slot,
+                   {.Kind = Kind,
+                    .Points = PerTurn,
+                    .Reason = std::format(
+                        "A turn the mouse could not explain landed on an enemy: {:.2f} degrees on {}/{} "
+                        "counts (scale {:.4f} deg/count), closing the aim from {:.2f} to {:.2f} degrees.",
+                        std::hypot(yawTurn, pitchTurn), cmd.MouseDx, cmd.MouseDy, data.Yaw.Scale, *before, *after)},
+                   nowSec);
 }
 
 bool AimAssist::Calibrated(int slot) const

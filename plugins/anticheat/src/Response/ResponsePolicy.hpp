@@ -173,10 +173,10 @@ constexpr ResponseDecision Decide(const ResponseInput& input)
     if (input.Issued >= requested)
         return {.Outcome = ResponseOutcome::AlreadyPunished, .SendAlert = true};
 
-    return {.Outcome =
-                requested == PunishmentLevel::Kick ? ResponseOutcome::KickRequested : ResponseOutcome::BanRequested,
-            .SendAlert = true,
-            .Apply = requested};
+    return {
+        .Outcome = requested == PunishmentLevel::Kick ? ResponseOutcome::KickRequested : ResponseOutcome::BanRequested,
+        .SendAlert = true,
+        .Apply = requested};
 }
 
 /** The highest punishment each player actually received; it never goes back down, and rises only

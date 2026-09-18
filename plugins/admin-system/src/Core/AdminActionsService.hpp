@@ -11,7 +11,7 @@ namespace AdminSystem::Core
 
 /**
  * admin-system's side of the cross-plugin admin surface, published into the runtime's
- * ServiceExchange in OnLoad.
+ * ServiceExchange in Load.
  *
  * Bans land with AdminSteamId=0 / AdminName="AntiCheat": there is no admin to attribute,
  * and automated bans must not count against anyone's abuse-rate stats.

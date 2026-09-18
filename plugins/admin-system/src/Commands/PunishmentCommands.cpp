@@ -81,8 +81,9 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Describe("Lift an active voice mute on the target.")
         .Permission(Flag(Permission::Mute))
         .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-            bool removed = app.Punishments.RemoveBySteamId(PunishType::VoiceMute, t.Value->SteamId(), c.Player->SteamId(),
-                                                           c.Tr.Get(LiftReasonKey(PunishType::VoiceMute)));
+            bool removed =
+                app.Punishments.RemoveBySteamId(PunishType::VoiceMute, t.Value->SteamId(), c.Player->SteamId(),
+                                                c.Tr.Get(LiftReasonKey(PunishType::VoiceMute)));
             Tokens tokens{{"name", t.Value->Name()}};
             return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
         });
@@ -103,8 +104,9 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Describe("Lift an active text mute on the target.")
         .Permission(Flag(Permission::Mute))
         .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-            bool removed = app.Punishments.RemoveBySteamId(PunishType::TextMute, t.Value->SteamId(), c.Player->SteamId(),
-                                                           c.Tr.Get(LiftReasonKey(PunishType::TextMute)));
+            bool removed =
+                app.Punishments.RemoveBySteamId(PunishType::TextMute, t.Value->SteamId(), c.Player->SteamId(),
+                                                c.Tr.Get(LiftReasonKey(PunishType::TextMute)));
             Tokens tokens{{"name", t.Value->Name()}};
             return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
         });

@@ -1,5 +1,5 @@
-#include "Detect/Rules/Triggerbot.hpp"
 #include "Detect/Geometry.hpp"
+#include "Detect/Rules/Triggerbot.hpp"
 #include "Harness.hpp"
 
 #include <array>
@@ -8,13 +8,13 @@
 using Anticheat::AimAngles;
 using Anticheat::DetectionKind;
 using Anticheat::EstimateViewLag;
-using Anticheat::ViewLag;
 using Anticheat::MaxSlots;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::ShotView;
-using Anticheat::Rules::Triggerbot;
 using Anticheat::Suspicion;
+using Anticheat::ViewLag;
+using Anticheat::Rules::Triggerbot;
 namespace Geometry = Anticheat::Geometry;
 
 using Anticheat::Test::Eye;
@@ -37,7 +37,8 @@ struct TriggerbotHarness
     float TargetY = -300.0f;
     AimAngles Aim = Geometry::Bearing(Eye, {TargetX, 0.0f, Geometry::BodyHeights[1]});
 
-    /** Points this rule has on the observer, in its own units, where eight weighted points are one whole unit of suspicion. */
+    /** Points this rule has on the observer, in its own units, where eight weighted points are one whole unit of
+     * suspicion. */
     float Points() const { return Scores.Value(Observer, DetectionKind::Triggerbot, Now) * 8.0f; }
 
     TriggerbotHarness()

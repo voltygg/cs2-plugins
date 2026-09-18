@@ -6,9 +6,9 @@
 using Anticheat::AimAngles;
 using Anticheat::CmdSample;
 using Anticheat::DetectionKind;
-using Anticheat::Rules::Recoil;
 using Anticheat::ShotView;
 using Anticheat::Suspicion;
+using Anticheat::Rules::Recoil;
 
 static constexpr int Slot = 3;
 static constexpr double Now = 100.0;

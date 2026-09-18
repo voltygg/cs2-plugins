@@ -1,9 +1,8 @@
 #pragma once
 
-#include <VoltMod/App/Config/Options.hpp>
-
 #include "Detect/Finding.hpp"
 
+#include <VoltMod/App/Config/Options.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -31,9 +30,9 @@ struct DetectionToggles
 
 /** Toggle per DetectionKind, in enum order - the only place the two lists have to agree. */
 inline constexpr bool DetectionToggles::* DetectionToggleTable[] = {
-    &DetectionToggles::aimbot,     &DetectionToggles::aimlock,       &DetectionToggles::antiAim,
-    &DetectionToggles::silentAim,  &DetectionToggles::triggerbot,    &DetectionToggles::recoil,
-    &DetectionToggles::aimAssist, &DetectionToggles::wallhack,   &DetectionToggles::dllInjection,
+    &DetectionToggles::aimbot,      &DetectionToggles::aimlock,     &DetectionToggles::antiAim,
+    &DetectionToggles::silentAim,   &DetectionToggles::triggerbot,  &DetectionToggles::recoil,
+    &DetectionToggles::aimAssist,   &DetectionToggles::wallhack,    &DetectionToggles::dllInjection,
     &DetectionToggles::invalidCvar, &DetectionToggles::namechanger,
 };
 static_assert(std::size(DetectionToggleTable) == static_cast<size_t>(DetectionKind::Count));

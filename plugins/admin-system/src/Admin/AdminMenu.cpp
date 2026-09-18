@@ -62,12 +62,14 @@ std::shared_ptr<VoltMod::Menu> BuildAdminMainMenu(AdminSystem::App& app, int adm
 
     for (const Category& category : Categories)
     {
-        const bool allowed = category.Flags.empty() ? app.Admins.IsAdmin(adminSteamId)
-                                                    : app.Access.HasAnyPermission(adminSteamId, std::string(category.Flags));
-        builder.Add(SubmenuRow{.Label = translations.Get(category.LabelKey, adminSlot),
-                               .Build = [&app, adminSlot, build = category.Build](int) { return build(app, adminSlot); },
-                               .Enabled = allowed,
-                               .Icon = std::string(category.Icon)});
+        const bool allowed = category.Flags.empty()
+                                 ? app.Admins.IsAdmin(adminSteamId)
+                                 : app.Access.HasAnyPermission(adminSteamId, std::string(category.Flags));
+        builder.Add(
+            SubmenuRow{.Label = translations.Get(category.LabelKey, adminSlot),
+                       .Build = [&app, adminSlot, build = category.Build](int) { return build(app, adminSlot); },
+                       .Enabled = allowed,
+                       .Icon = std::string(category.Icon)});
     }
 
     return builder.Build();

@@ -62,8 +62,7 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlo
                        .Activate =
                            [&app, map](int slot) {
                                app.MapCycle.SetNext(map);
-                               app.Chat.BroadcastAction("broadcast.nextMapSet",
-                                                        Core::ActorName(app.Runtime, slot),
+                               app.Chat.BroadcastAction("broadcast.nextMapSet", Core::ActorName(app.Runtime, slot),
                                                         {{"map", map.Label()}});
                            },
                        .Enabled = mayMap})

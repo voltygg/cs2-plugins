@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Detect/Samples.hpp"
-#include "Engine/SightLines.hpp"
 #include "Engine/Detectors.hpp"
+#include "Engine/SightLines.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Signals/Subscriptions.hpp>

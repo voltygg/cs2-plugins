@@ -7,10 +7,10 @@
 #include <ostream>  // doctest stringifies the string_view comparisons below
 #include <string_view>
 
+using Anticheat::Confidence;
 using Anticheat::Decide;
 using Anticheat::DetectionCatalog;
 using Anticheat::DetectionInfo;
-using Anticheat::Confidence;
 using Anticheat::IssuedPunishments;
 using Anticheat::Mode;
 using Anticheat::ParseMode;
@@ -223,9 +223,9 @@ TEST_CASE("Only an outcome that actually landed counts as a punishment")
     CHECK(Anticheat::Punished(ResponseOutcome::BanIssued));
 
     // Every way an attempt can end without punishing. Each one has to leave the player retryable.
-    for (const ResponseOutcome outcome : {ResponseOutcome::KickRequested, ResponseOutcome::BanRequested,
-                                          ResponseOutcome::TargetGone, ResponseOutcome::KickFailed,
-                                          ResponseOutcome::BanUnavailable, ResponseOutcome::BanRejected})
+    for (const ResponseOutcome outcome :
+         {ResponseOutcome::KickRequested, ResponseOutcome::BanRequested, ResponseOutcome::TargetGone,
+          ResponseOutcome::KickFailed, ResponseOutcome::BanUnavailable, ResponseOutcome::BanRejected})
         CHECK_FALSE(Anticheat::Punished(outcome));
 }
 

@@ -19,7 +19,6 @@
 #include "Reports/ReportManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Players/EffectManager.hpp>
 #include <VoltMod/Core/Signals/Subscription.hpp>
 #include <VoltMod/Core/Signals/Subscriptions.hpp>
 #include <VoltMod/Database/Api.hpp>
@@ -27,6 +26,7 @@
 #include <VoltMod/Menu/PanoramaMenu.hpp>
 #include <VoltMod/Players/ActionDispatcher.hpp>
 #include <VoltMod/Players/EffectDispatcher.hpp>
+#include <VoltMod/Players/EffectManager.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -42,18 +42,18 @@ namespace AdminSystem
  * Access composes admin flags with freeze state; PlayerChat owns inbound rules
  * while ChatService remains output-only.
  */
-struct App
+struct App final : VoltMod::Plugin
 {
-    explicit App(VoltMod::Runtime& runtime) : Runtime(runtime) {}
-    ~App();
+    explicit App(VoltMod::Runtime& runtime) : Plugin(runtime) {}
+    ~App() override;
     App(const App&) = delete;
     App& operator=(const App&) = delete;
 
     /** Connect the database, run migrations, load admins and register commands. */
-    bool Start();
+    bool Load() override;
 
     /** Replaces the framework's default chat handling: chat rules first, then menus and commands. */
-    bool OnPlayerChat(VoltMod::Player* player, std::string_view message, bool teamChat)
+    bool OnPlayerChat(VoltMod::Player* player, std::string_view message, bool teamChat) override
     {
         return PlayerChat.HandleSay(player, message, teamChat);
     }
@@ -77,8 +77,6 @@ struct App
                                     .Effects = &Effects},
                                    admin, std::move(target));
     }
-
-    VoltMod::Runtime& Runtime;
 
     /** The admin menu layout, and the clickable menu drawn on it when settings turn Panorama on. */
     Menus::AdminMenuScreen MenuScreen{Runtime.Screens};
@@ -114,7 +112,7 @@ struct App
     /** Every effect descriptor for this load cycle, built from Runtime. */
     Admin::Effects::EffectDescriptors EffectDescriptors{Runtime};
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Settings, Chat};
-    /** Published to other plugins in Start; withdrawn before these managers die. */
+    /** Published to other plugins in Load; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
     /** Load-time migration outcome shown by `admin_status`. */
     VoltMod::MigrationResult Migration;

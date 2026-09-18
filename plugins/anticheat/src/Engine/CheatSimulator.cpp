@@ -11,8 +11,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <format>
-#include <string>
 #include <mathlib/vector.h>
+#include <string>
 #include <tier1/convar.h>
 
 namespace Anticheat

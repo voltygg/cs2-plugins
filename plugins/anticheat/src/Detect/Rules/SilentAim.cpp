@@ -24,9 +24,9 @@ static constexpr int GroundedPoints = 2;
 
 void SilentAim::OnShotUpdated(int slot, ShotView& shot)
 {
-    if (!InSlotRange(slot) || shot.Slot != slot || shot.SilentMeasured || shot.Finalized ||
-        !shot.HasVisibleAngles || !shot.ImpactSeen || !Geometry::IsFinite(shot.EyePos) ||
-        !Geometry::IsFinite(shot.ImpactPos) || !Geometry::IsFinite(shot.VisibleAngles))
+    if (!InSlotRange(slot) || shot.Slot != slot || shot.SilentMeasured || shot.Finalized || !shot.HasVisibleAngles ||
+        !shot.ImpactSeen || !Geometry::IsFinite(shot.EyePos) || !Geometry::IsFinite(shot.ImpactPos) ||
+        !Geometry::IsFinite(shot.VisibleAngles))
         return;
 
     const float distance = (shot.ImpactPos - shot.EyePos).Length();
@@ -56,11 +56,11 @@ void SilentAim::Finalize(int slot, ShotView& shot, double nowSec)
                        static_cast<int>(shot.Headshot) + static_cast<int>(shot.Wallbang);
 
     _suspicion.Add(slot,
-                          {.Kind = Kind,
-                           .Points = static_cast<float>(points) * PerPoint,
-                           .Reason = std::format("{:.2f} degrees from visible aim with {} added {} points.",
-                                                 shot.SilentMaxDeviation, shot.Weapon, points)},
-                          nowSec);
+                   {.Kind = Kind,
+                    .Points = static_cast<float>(points) * PerPoint,
+                    .Reason = std::format("{:.2f} degrees from visible aim with {} added {} points.",
+                                          shot.SilentMaxDeviation, shot.Weapon, points)},
+                   nowSec);
 }
 
 }  // namespace Anticheat::Rules

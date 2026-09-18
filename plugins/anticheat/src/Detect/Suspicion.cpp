@@ -106,13 +106,14 @@ bool Suspicion::Add(int slot, const Contribution& contribution, double nowSec)
     if (!_report)
         return true;
 
-    _report(slot, Finding{
-                      .Kind = contribution.Kind,
-                      .Level = level,
-                      .KickOnly = contribution.KickOnly,
-                      .Suspicion = total,
-                      .Evidence = std::format("{} Suspicion {:.2f} ({}).", contribution.Reason, total, Describe(shares)),
-                  });
+    _report(slot,
+            Finding{
+                .Kind = contribution.Kind,
+                .Level = level,
+                .KickOnly = contribution.KickOnly,
+                .Suspicion = total,
+                .Evidence = std::format("{} Suspicion {:.2f} ({}).", contribution.Reason, total, Describe(shares)),
+            });
     return true;
 }
 

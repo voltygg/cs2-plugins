@@ -9,9 +9,9 @@ namespace Log = VoltMod::Log;
 namespace Anticheat
 {
 
-using VoltMod::Time;
 using Rules::ShouldEnforceCheatCvars;
 using Rules::SvCheatsPropagationGraceSec;
+using VoltMod::Time;
 
 void Detectors::Initialize()
 {

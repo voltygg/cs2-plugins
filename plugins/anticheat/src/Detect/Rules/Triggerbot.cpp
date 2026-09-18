@@ -69,7 +69,8 @@ bool Triggerbot::OnTarget(const Vec3& eye, const AimAngles& angles, const Positi
         if (!std::isfinite(distance) || distance < 1e-3f)
             continue;
         const float error = Geometry::AimErrorDeg(eye, forward, point);
-        if (std::isfinite(error) && error <= Geometry::AngularSizeDeg(Geometry::PlayerHalfWidth, distance) * HullTolerance)
+        if (std::isfinite(error) &&
+            error <= Geometry::AngularSizeDeg(Geometry::PlayerHalfWidth, distance) * HullTolerance)
             return true;
     }
     return false;

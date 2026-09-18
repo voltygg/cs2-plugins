@@ -1,5 +1,5 @@
-#include "Detect/WeaponClass.hpp"
 #include "Detect/Rules/SilentAim.hpp"
+#include "Detect/WeaponClass.hpp"
 #include "Harness.hpp"
 
 #include <doctest/doctest.h>
@@ -10,10 +10,10 @@ using Anticheat::Finding;
 using Anticheat::IsBallisticWeapon;
 using Anticheat::NormalizeWeapon;
 using Anticheat::ShotView;
-using Anticheat::Rules::SilentAim;
 using Anticheat::SilentAimDeviationThreshold;
 using Anticheat::Suspicion;
 using Anticheat::Vec3;
+using Anticheat::Rules::SilentAim;
 
 static constexpr int Slot = 0;
 static constexpr double Now = 500.0;
@@ -49,7 +49,8 @@ struct SilentAimHarness
 
     Anticheat::Test::Findings Reported;
 
-    /** Points this rule has on the slot, in its own units, where twelve weighted points are one whole unit of suspicion, as of @p now. */
+    /** Points this rule has on the slot, in its own units, where twelve weighted points are one whole unit of
+     * suspicion, as of @p now. */
     float Points(double now = Now) const { return Scores.Value(Slot, DetectionKind::SilentAim, now) * 12.0f; }
 
     Suspicion Scores;

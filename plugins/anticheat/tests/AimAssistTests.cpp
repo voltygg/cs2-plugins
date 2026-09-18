@@ -1,5 +1,5 @@
-#include "Detect/Rules/AimAssist.hpp"
 #include "Detect/Geometry.hpp"
+#include "Detect/Rules/AimAssist.hpp"
 #include "Harness.hpp"
 
 #include <array>
@@ -11,10 +11,10 @@ using Anticheat::ButtonTurnRight;
 using Anticheat::CmdSample;
 using Anticheat::DetectionKind;
 using Anticheat::MaxSlots;
-using Anticheat::Rules::AimAssist;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::Suspicion;
+using Anticheat::Rules::AimAssist;
 
 using Anticheat::Test::Eye;
 using Anticheat::Test::Now;

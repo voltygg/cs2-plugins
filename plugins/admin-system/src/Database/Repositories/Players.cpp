@@ -32,14 +32,13 @@ void PlayerRepository::RecordDisconnectAsync(int64_t steamId, const std::string&
     if (steamId <= 0)
         return;
 
-    _db.RunAsync(
-        "player_record_disconnect",
-        [steamId, name, now = Time::Now(), seconds = sessionSeconds > 0 ? sessionSeconds : int64_t{0}](auto& conn) {
-            const Tables::Players t;
-            conn(sqlpp::update(t)
-                     .set(t.name = name, t.lastSeen = now, t.totalPlaytime = t.totalPlaytime + seconds)
-                     .where(t.steamId == steamId));
-        });
+    _db.RunAsync("player_record_disconnect", [steamId, name, now = Time::Now(),
+                                              seconds = sessionSeconds > 0 ? sessionSeconds : int64_t{0}](auto& conn) {
+        const Tables::Players t;
+        conn(sqlpp::update(t)
+                 .set(t.name = name, t.lastSeen = now, t.totalPlaytime = t.totalPlaytime + seconds)
+                 .where(t.steamId == steamId));
+    });
 }
 
 bool ServerRepository::Upsert(const std::string& tag, const std::string& name)

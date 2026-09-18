@@ -4,12 +4,12 @@
 #include <cmath>
 #include <doctest/doctest.h>
 
-using Anticheat::Rules::AntiAim;
 using Anticheat::CmdSample;
 using Anticheat::DetectionKind;
 using Anticheat::Finding;
 using Anticheat::ShotView;
 using Anticheat::Suspicion;
+using Anticheat::Rules::AntiAim;
 
 static constexpr int Slot = 0;
 static constexpr double Now = 100.0;
@@ -40,8 +40,7 @@ static CmdSample Cmd(int32_t num, int32_t clientTick, float yaw = 0.0f, float pi
 }
 
 /** Feeds one command; true when it produced a finding. */
-static bool Feed(AntiAimHarness& h, const CmdSample& cmd, int32_t serverTick, double now = Now,
-                 bool teleported = false)
+static bool Feed(AntiAimHarness& h, const CmdSample& cmd, int32_t serverTick, double now = Now, bool teleported = false)
 {
     const int before = h.Reported.Count;
     h.Rule.OnCommand(Slot, cmd);

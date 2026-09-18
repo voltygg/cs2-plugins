@@ -22,7 +22,7 @@ inline constexpr std::string_view ChickenModelPath = "models/chicken/chicken.vmd
 /** The curated, hardcoded fun-model list shown in the Effects > Model submenu. */
 const std::vector<FunModel>& FunModels();
 
-/** Queue every fun model plus the team-default restore models for precache. Call once in OnLoad;
+/** Queue every fun model plus the team-default restore models for precache. Call once in Load;
  *  the paths only reach clients from the NEXT map load (see Precache). */
 void PrecacheModels(VoltMod::Runtime& runtime);
 

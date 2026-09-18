@@ -6,8 +6,8 @@
 #include "Punishments/PunishmentManager.hpp"
 
 #include <VoltMod/Commands/CommandManager.hpp>
-#include <VoltMod/Core/Time/Time.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <VoltMod/Hooks/ChatInput.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
@@ -95,7 +95,8 @@ bool PlayerChat::HandleSay(Player* player, std::string_view message, bool isSayT
     {
         int slot = player->Slot();
         if (_textMuteNotice.TryAcquire(slot, Time::Now()))
-            ReplyMuteNotice(slot, "muteNotice.text", _punishments.GetActive(Punishments::PunishType::TextMute, steamId));
+            ReplyMuteNotice(slot, "muteNotice.text",
+                            _punishments.GetActive(Punishments::PunishType::TextMute, steamId));
         return true;
     }
 

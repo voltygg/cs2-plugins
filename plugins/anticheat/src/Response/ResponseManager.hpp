@@ -33,8 +33,7 @@ private:
 
     /** Log and report the finding under the outcome it ended with, once any punishment has
      *  resolved. */
-    void Record(int slot, const std::string& name, int64_t steamId, const Finding& finding,
-                ResponseOutcome outcome);
+    void Record(int slot, const std::string& name, int64_t steamId, const Finding& finding, ResponseOutcome outcome);
 
     /** Both raise the issued level only on success. */
     ResponseOutcome ApplyKick(int slot, int64_t steamId, const std::string& reason);

@@ -38,9 +38,7 @@ struct AdminChatStyle
 class AdminManager
 {
 public:
-    AdminManager(Database::Repositories& repos, const Config::ConfigManager& config)
-        : _repos(repos), _config(config)
-    {}
+    AdminManager(Database::Repositories& repos, const Config::ConfigManager& config) : _repos(repos), _config(config) {}
 
     bool LoadAdmins();
     bool LoadGroups();

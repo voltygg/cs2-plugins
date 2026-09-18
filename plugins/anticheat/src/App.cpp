@@ -18,7 +18,7 @@ namespace Log = VoltMod::Log;
 namespace Anticheat
 {
 
-bool App::Start()
+bool App::Load()
 {
     if (!VoltMod::LoadStandardConfig(Runtime, Config, {.Translations = false}))
         return false;
@@ -87,7 +87,7 @@ void App::ClearAll()
     Carried.Reset();
 }
 
-void App::OnMapChanged()
+void App::OnServerStartup(std::string_view /*mapName*/)
 {
     Detection.RefreshTeamRules();
     ClearTracking();

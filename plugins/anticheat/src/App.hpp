@@ -20,21 +20,21 @@ namespace Anticheat
 {
 
 /**
- * Everything this plugin owns for one load cycle, so no state survives a `meta reload`. Members
+ * Everything this plugin owns for one load cycle, so no state survives a `volt reload`. Members
  * are declared in dependency order and destroyed in reverse.
  */
-struct App
+struct App final : VoltMod::Plugin
 {
-    explicit App(VoltMod::Runtime& runtime) : Runtime(runtime) {}
+    explicit App(VoltMod::Runtime& runtime) : Plugin(runtime) {}
 
     /** Load config and detection data, then arm the detection rules. */
-    bool Start();
+    bool Load() override;
 
     /** Push configs/detections.jsonc into the two table-driven rules. */
     void LoadDetectionData();
 
     /** A new map invalidates every tick and position sampled on the old one. Scores survive it. */
-    void OnMapChanged();
+    void OnServerStartup(std::string_view mapName) override;
 
     /** The seat changed hands: everything keyed to it goes, the previous player's score included. */
     void ClearSlot(int slot);
@@ -42,7 +42,6 @@ struct App
     /** The operator reset: tracking, every score, and the scores held between sessions. */
     void ClearAll();
 
-    VoltMod::Runtime& Runtime;
     ConfigManager Config;
     DetectionDataManager RuleTables;
     DiscordReporter Reporter{Runtime, Config};

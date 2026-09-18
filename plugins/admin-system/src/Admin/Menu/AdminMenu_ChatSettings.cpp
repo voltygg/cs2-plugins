@@ -125,7 +125,7 @@ static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& ti
                                                    break;
                                                }
                                                admins.UpdateChatStyleAsync(steamId, admin->DisplayPrefix, nameColor,
-                                                                   messageColor);
+                                                                           messageColor);
                                            },
                                        .Index = initialIndex});
 }
@@ -204,11 +204,13 @@ std::shared_ptr<VoltMod::Menu> BuildChatSettingsMenu(AdminSystem::App& app, int 
                                   const auto* a = admins.GetAdmin(steamId);
                                   if (!a)
                                       return;
-                                  admins.UpdateChatStyleAsync(steamId, !a->DisplayPrefix, a->NameColor, a->MessageColor);
+                                  admins.UpdateChatStyleAsync(steamId, !a->DisplayPrefix, a->NameColor,
+                                                              a->MessageColor);
                               }});
 
     AddColorChoice(app, builder, translations.Get("chat.nameColor", adminSlot), steamId, ColorSlot::Name, adminSlot);
-    AddColorChoice(app, builder, translations.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message, adminSlot);
+    AddColorChoice(app, builder, translations.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message,
+                   adminSlot);
 
     AddLanguageChoice(app, builder, steamId, adminSlot);
 

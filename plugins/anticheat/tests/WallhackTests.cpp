@@ -1,5 +1,5 @@
-#include "Detect/Rules/Wallhack.hpp"
 #include "Detect/Geometry.hpp"
+#include "Detect/Rules/Wallhack.hpp"
 #include "Harness.hpp"
 
 #include <array>
@@ -9,13 +9,13 @@
 using Anticheat::AimAngles;
 using Anticheat::DetectionKind;
 using Anticheat::EstimateViewLag;
-using Anticheat::ViewLag;
 using Anticheat::MaxSlots;
 using Anticheat::PositionSample;
 using Anticheat::ShotHistory;
 using Anticheat::ShotView;
 using Anticheat::SlotBit;
 using Anticheat::Suspicion;
+using Anticheat::ViewLag;
 using Anticheat::Rules::Wallhack;
 using Anticheat::Rules::WallhackShotContext;
 namespace Geometry = Anticheat::Geometry;
@@ -40,7 +40,8 @@ struct WallhackHarness
     bool Hidden = true;
     bool Known = true;
 
-    /** Points this rule has on the observer, in its own units, where six weighted points are one whole unit of suspicion. */
+    /** Points this rule has on the observer, in its own units, where six weighted points are one whole unit of
+     * suspicion. */
     float Points() const { return Scores.Value(Observer, DetectionKind::Wallhack, Now) * 6.0f; }
 
     WallhackHarness()

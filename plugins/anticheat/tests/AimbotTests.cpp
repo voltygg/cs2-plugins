@@ -5,7 +5,6 @@
 #include <doctest/doctest.h>
 
 using Anticheat::AimAngles;
-using Anticheat::Rules::Aimbot;
 using Anticheat::CmdSample;
 using Anticheat::DetectionKind;
 using Anticheat::Finding;
@@ -15,6 +14,7 @@ using Anticheat::ShotHistory;
 using Anticheat::ShotView;
 using Anticheat::Suspicion;
 using Anticheat::TeamT;
+using Anticheat::Rules::Aimbot;
 
 using Anticheat::Test::Eye;
 /** This rule's two slots: the one shooting and the one shot at. */

@@ -2,7 +2,6 @@
 #include "Harness.hpp"
 
 #include <doctest/doctest.h>
-
 #include <utility>
 
 using Anticheat::Confidence;
@@ -187,4 +186,3 @@ TEST_CASE("Out of range slots are ignored rather than indexed")
     CHECK(scored.Score.Value(-1, DetectionKind::Aimbot, Now) == doctest::Approx(0.0f));
     CHECK(scored.Score.Total(MaxSlots, Now) == doctest::Approx(0.0f));
 }
-

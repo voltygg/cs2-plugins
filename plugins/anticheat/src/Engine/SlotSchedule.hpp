@@ -1,7 +1,6 @@
 #pragma once
 
 #include <VoltMod/Core/Slots/Slot.hpp>
-
 #include <array>
 
 namespace Anticheat

@@ -87,8 +87,8 @@ void DllInjectionScan::Scan(int slot, double nowSec)
         evidence += name;
     }
 
-    const std::string reason = std::format("{} blacklisted client event subscription{} found: {}.",
-                                           matches.size(), matches.size() == 1 ? "" : "s", evidence);
+    const std::string reason = std::format("{} blacklisted client event subscription{} found: {}.", matches.size(),
+                                           matches.size() == 1 ? "" : "s", evidence);
     _detectors.Scores.Add(slot, Rules::DllInjectionEvidence(reason), VoltMod::Time::MonotonicSeconds());
 }
 

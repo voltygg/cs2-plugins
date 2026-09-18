@@ -7,11 +7,11 @@
 namespace Anticheat
 {
 
-using VoltMod::Time;
 using Rules::CvarRuleTable;
 using Rules::CvarsPerPoll;
 using Rules::InvalidCvar;
 using Rules::PollDelaySec;
+using VoltMod::Time;
 
 /** Poll-loop cadence only; the per-slot deadlines do the real timing. */
 static constexpr int64_t PollIntervalMs = 1000;
@@ -108,11 +108,9 @@ void CvarPoll::ReadUserInfo(int slot)
     }
 }
 
-void CvarPoll::OnReply(int slot, VoltMod::ClientConVarStatus status, std::string_view name,
-                                  std::string_view value)
+void CvarPoll::OnReply(int slot, VoltMod::ClientConVarStatus status, std::string_view name, std::string_view value)
 {
-    if (!_detectors.Enabled() || !_detectors.RuleEnabled(_detectors.InvalidCvars) ||
-        !_detectors.IsEligible(slot))
+    if (!_detectors.Enabled() || !_detectors.RuleEnabled(_detectors.InvalidCvars) || !_detectors.IsEligible(slot))
         return;
 
     // Both strings borrow the decoded message. The rule copies whatever becomes evidence.

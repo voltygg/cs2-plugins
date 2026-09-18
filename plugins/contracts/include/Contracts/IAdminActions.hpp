@@ -18,7 +18,7 @@ enum class BanResult : int
 /**
  * @brief Admin-system actions offered to other plugins through VoltMod's ServiceExchange.
  *
- * Published by admin-system in OnLoad, consumed by anticheat. Callers get nullptr from the
+ * Published by admin-system in Load, consumed by anticheat. Callers get nullptr from the
  * exchange when admin-system is not loaded.
  *
  * Each plugin has its own operator new, so nothing crosses that owns memory: parameters are

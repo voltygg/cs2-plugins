@@ -9,20 +9,19 @@ namespace Bhop
 {
 
 /**
- * Everything this plugin owns for one Load/Unload cycle. The plugin creates it in OnLoad and
- * drops it in OnUnload, so no state survives a `meta reload`.
+ * Everything this plugin owns for one load cycle. VoltMod destroys it before the runtime, so no
+ * state survives a `volt reload`.
  *
  * Members are declared in dependency order and destroyed in reverse; each is handed the
  * collaborators it needs.
  */
-struct App
+struct App final : VoltMod::Plugin
 {
-    explicit App(VoltMod::Runtime& runtime) : Runtime(runtime) {}
+    explicit App(VoltMod::Runtime& runtime) : Plugin(runtime) {}
 
     /** Load settings and start the bhop policy. False aborts the plugin load. */
-    bool Start();
+    bool Load() override;
 
-    VoltMod::Runtime& Runtime;
     ConfigManager Config;
     BhopManager Bhop{Runtime, Config};
 };

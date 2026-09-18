@@ -206,7 +206,7 @@ std::vector<std::string> InvalidCvar::LoadRules(const std::vector<CvarRule>& rul
 }
 
 std::optional<CvarVerdict> InvalidCvar::Observe(int slot, std::string_view name, std::string_view value,
-                                                 bool enforceCheatCvars)
+                                                bool enforceCheatCvars)
 {
     const int index = _rules.IndexOf(name);
     if (!InSlotRange(slot) || index < 0)
@@ -219,7 +219,7 @@ std::optional<CvarVerdict> InvalidCvar::Observe(int slot, std::string_view name,
 }
 
 std::optional<CvarVerdict> InvalidCvar::ObserveMissing(int slot, std::string_view name, std::string_view statusName,
-                                                        bool enforceCheatCvars)
+                                                       bool enforceCheatCvars)
 {
     const int index = _rules.IndexOf(name);
     if (!InSlotRange(slot) || index < 0)

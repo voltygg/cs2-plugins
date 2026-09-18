@@ -59,7 +59,8 @@ bool Aimbot::IsAdjacent(const AimCommand& older, const AimCommand& newer)
 
 Aimbot::AimCommand* Aimbot::Find(SlotData& data, int32_t cmdNum)
 {
-    return data.Commands.FindIf([&](const AimCommand& command) { return command.CmdNum == cmdNum && command.Simulated; });
+    return data.Commands.FindIf(
+        [&](const AimCommand& command) { return command.CmdNum == cmdNum && command.Simulated; });
 }
 
 void Aimbot::OnSimulated(int slot, int32_t cmdNum, int32_t serverTick, const Vec3& eyePos, double nowSec)

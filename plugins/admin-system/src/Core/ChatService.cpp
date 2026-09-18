@@ -3,8 +3,8 @@
 #include "Config/ConfigManager.hpp"
 
 #include <VoltMod/Core/Text/Strings.hpp>
-#include <VoltMod/Core/Time/Time.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
+#include <VoltMod/Core/Time/Time.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -103,8 +103,7 @@ void ChatService::BroadcastPunishment(std::string_view actionKey, std::string_vi
     }
 
     // The verb is what names the punishment, so it keeps its own colour.
-    const std::string phrase =
-        std::format("{}{}{}", ChatColors::Red, BroadcastPhrase(actionKey), style.PhraseColor);
+    const std::string phrase = std::format("{}{}{}", ChatColors::Red, BroadcastPhrase(actionKey), style.PhraseColor);
     const std::string reasonPart = _rt.Translations.Get("broadcast.punishReason", {{"reason", std::string(reason)}});
 
     _rt.Messages.Broadcast(std::format("{} {}{}{}", FormatAdminLine(style, adminName, phrase, targetName),

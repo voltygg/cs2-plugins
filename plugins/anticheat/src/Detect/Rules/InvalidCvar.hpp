@@ -124,8 +124,7 @@ public:
 
     /** The verdict when this reading is newly worth reporting, and nothing while it is not.
      *  The caller turns it into evidence, so this half stays free of the score. */
-    std::optional<CvarVerdict> Observe(int slot, std::string_view name, std::string_view value,
-                                       bool enforceCheatCvars);
+    std::optional<CvarVerdict> Observe(int slot, std::string_view name, std::string_view value, bool enforceCheatCvars);
 
     /** @copydoc CvarRuleTable::EvaluateMissing */
     std::optional<CvarVerdict> ObserveMissing(int slot, std::string_view name, std::string_view statusName,

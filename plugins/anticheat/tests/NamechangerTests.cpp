@@ -7,8 +7,8 @@
 using Anticheat::DetectionKind;
 using Anticheat::Finding;
 using Anticheat::MaxSlots;
-using Anticheat::Rules::Namechanger;
 using Anticheat::Suspicion;
+using Anticheat::Rules::Namechanger;
 
 static constexpr int Slot = 3;
 static constexpr double Now = 100.0;

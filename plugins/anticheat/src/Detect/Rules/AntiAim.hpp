@@ -2,8 +2,8 @@
 
 #include "Detect/CommandHistory.hpp"
 #include "Detect/Finding.hpp"
-#include "Detect/Suspicion.hpp"
 #include "Detect/Samples.hpp"
+#include "Detect/Suspicion.hpp"
 
 #include <array>
 #include <cstdint>
@@ -89,8 +89,7 @@ private:
     };
 
     static void ResetMotion(SlotData& data);
-    void AddEvidence(int slot, SlotData& data, float weight, std::string_view reason, bool continuous,
-                     double nowSec);
+    void AddEvidence(int slot, SlotData& data, float weight, std::string_view reason, bool continuous, double nowSec);
     /** Sent back to back by the client, and simulated on consecutive ticks. */
     static bool IsAdjacent(const Command& older, const Command& newer);
     Command* Find(SlotData& data, int32_t cmdNum);

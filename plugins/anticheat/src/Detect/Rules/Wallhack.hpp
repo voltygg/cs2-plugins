@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Detect/Finding.hpp"
-#include "Detect/ViewLag.hpp"
 #include "Detect/Samples.hpp"
 #include "Detect/ShotHistory.hpp"
 #include "Detect/Suspicion.hpp"
+#include "Detect/ViewLag.hpp"
 
 #include <array>
 

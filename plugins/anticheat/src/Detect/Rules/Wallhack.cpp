@@ -94,8 +94,7 @@ void Wallhack::CloseTrack(SlotData& data, int32_t serverTick, bool becameVisible
 bool Wallhack::Report(int slot, int points, std::string reason, double nowSec)
 {
     return _suspicion.Add(
-        slot, {.Kind = Kind, .Points = static_cast<float>(points) * PerPoint, .Reason = std::move(reason)},
-        nowSec);
+        slot, {.Kind = Kind, .Points = static_cast<float>(points) * PerPoint, .Reason = std::move(reason)}, nowSec);
 }
 
 float Wallhack::Speed(int slot, int32_t serverTick) const
@@ -149,8 +148,8 @@ void Wallhack::OnFrame(int slot, int32_t serverTick, bool aliveHuman, const View
         Reading reading;
         reading.Bearing = Geometry::Bearing(sample.EyePos, chest);
         reading.Error = Geometry::NearestBodyAimErrorAlong(sample.EyePos, forward, seen.Origin);
-        reading.Tolerance = std::max(ToleranceMinDeg, ToleranceHullFactor *
-                                                          Geometry::AngularSizeDeg(Geometry::PlayerHalfWidth, distance));
+        reading.Tolerance = std::max(
+            ToleranceMinDeg, ToleranceHullFactor * Geometry::AngularSizeDeg(Geometry::PlayerHalfWidth, distance));
         reading.Hidden = current.HiddenFrom(slot);
         reading.Visible = current.SightKnownTo(slot) && current.VisibleTo(slot);
         if (!std::isfinite(reading.Error) || !Geometry::IsFinite(reading.Bearing))
@@ -174,8 +173,7 @@ void Wallhack::OnFrame(int slot, int32_t serverTick, bool aliveHuman, const View
             if (!frame->Players[target].HiddenFrom(slot))
                 continue;
             const std::optional<Reading> reading = read(target);
-            if (reading && reading->Error <= reading->Tolerance &&
-                (best < 0 || reading->Error < bestReading.Error))
+            if (reading && reading->Error <= reading->Tolerance && (best < 0 || reading->Error < bestReading.Error))
             {
                 best = target;
                 bestReading = *reading;
@@ -226,10 +224,10 @@ void Wallhack::OnFrame(int slot, int32_t serverTick, bool aliveHuman, const View
 
     track.Qualified = true;
     Report(slot, TrackPoints,
-                 std::format("The aim followed a hidden enemy through cover for {} ticks, turning {:.1f} degrees "
-                             "as the enemy's bearing moved {:.1f}.",
-                             track.Samples, track.AimYawTravel, track.BearingYawTravel),
-                 nowSec);
+           std::format("The aim followed a hidden enemy through cover for {} ticks, turning {:.1f} degrees "
+                       "as the enemy's bearing moved {:.1f}.",
+                       track.Samples, track.AimYawTravel, track.BearingYawTravel),
+           nowSec);
 }
 
 void Wallhack::OnShot(int slot, const ShotView& shot, const WallhackShotContext& context, double nowSec)
@@ -264,10 +262,10 @@ void Wallhack::OnShot(int slot, const ShotView& shot, const WallhackShotContext&
 
     const int points = WallbangPoints + (shot.Headshot ? HeadshotBonus : 0);
     Report(slot, points,
-                 std::format("A {}shot through cover hit an enemy nobody on the team could see, who was neither "
-                             "shooting nor running.",
-                             shot.Headshot ? "head" : ""),
-                 nowSec);
+           std::format("A {}shot through cover hit an enemy nobody on the team could see, who was neither "
+                       "shooting nor running.",
+                       shot.Headshot ? "head" : ""),
+           nowSec);
 }
 
 bool Wallhack::IsTracking(int slot) const

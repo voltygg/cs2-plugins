@@ -76,9 +76,10 @@ void App::OnPlayerConnect(Player& player)
     if (auto ban = Punishments.GetActive(AdminSystem::Punishments::PunishType::Ban, steamId))
     {
         // Build the full notice before deferring because the ban row is only available here.
-        Punishments.KickDeferred(slot, steamId,
-                                 AdminSystem::Punishments::BuildBanNotice(Runtime.Translations, Settings.Get().punishments.appeal,
-                                                                          ban->Reason, ban->ExpiresAt, steamId, slot));
+        Punishments.KickDeferred(
+            slot, steamId,
+            AdminSystem::Punishments::BuildBanNotice(Runtime.Translations, Settings.Get().punishments.appeal,
+                                                     ban->Reason, ban->ExpiresAt, steamId, slot));
     }
 }
 
@@ -139,7 +140,8 @@ void App::RegisterVoiceMuteHook()
 {
     _subs.Add(VoltMod::HookInterface(
         &IVEngineServer2::SetClientListening, Runtime.Unsafe.Interfaces.Engine,
-        [this](IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender, bool listen) -> VoltMod::HookResult<bool> {
+        [this](IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender,
+               bool listen) -> VoltMod::HookResult<bool> {
             if (!listen)
                 return {};
             VoltMod::Player* muted = Runtime.Players.Get(sender.Get());
@@ -210,7 +212,7 @@ void App::RegisterCommands()
     Commands::RegisterReportCommand(commands, *this);
 }
 
-bool App::Start()
+bool App::Load()
 {
     if (!VoltMod::LoadStandardConfig(Runtime, Settings))
         return false;

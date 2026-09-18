@@ -8,7 +8,7 @@ VOLTMOD_PLUGIN(Bhop::App);
 namespace Bhop
 {
 
-bool App::Start()
+bool App::Load()
 {
     if (!VoltMod::LoadStandardConfig(Runtime, Config))
         return false;

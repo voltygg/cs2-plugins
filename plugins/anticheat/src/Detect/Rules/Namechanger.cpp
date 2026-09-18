@@ -60,12 +60,12 @@ void Namechanger::OnIdentity(int slot, std::string_view name, std::string_view c
 
     data.CooldownUntil = nowSec + CooldownSec;
     _suspicion.Add(slot,
-                          {.Kind = Kind,
-                           .Points = 1.0f,
-                           .Reason = std::format("{} visible name or clan tag changes occurred within one minute "
-                                                 "(last: name '{}', tag '{}').",
-                                                 BurstChanges, name, clan)},
-                          nowSec);
+                   {.Kind = Kind,
+                    .Points = 1.0f,
+                    .Reason = std::format("{} visible name or clan tag changes occurred within one minute "
+                                          "(last: name '{}', tag '{}').",
+                                          BurstChanges, name, clan)},
+                   nowSec);
 }
 
 int Namechanger::RecentChanges(int slot, double nowSec) const

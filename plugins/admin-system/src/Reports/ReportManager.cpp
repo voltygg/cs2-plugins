@@ -79,15 +79,14 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
     Log::Info("Report: {} ({}) reported {} ({}) for '{}' [{}]", report.ReporterName, reporterSteamId, report.TargetName,
               targetSteamId, reasonText, reasonCode);
 
-    _repos.Reports.CreateAsync(
-        report, [this, reporterSteamId, targetSteamId, onDone = std::move(onDone)](bool ok) {
-            // The write is the only database-health signal there is, so a failure refunds the
-            // attempt rather than costing the reporter a cooldown.
-            if (!ok)
-                ReleaseCooldown(reporterSteamId, targetSteamId);
-            if (onDone)
-                onDone(ok);
-        });
+    _repos.Reports.CreateAsync(report, [this, reporterSteamId, targetSteamId, onDone = std::move(onDone)](bool ok) {
+        // The write is the only database-health signal there is, so a failure refunds the
+        // attempt rather than costing the reporter a cooldown.
+        if (!ok)
+            ReleaseCooldown(reporterSteamId, targetSteamId);
+        if (onDone)
+            onDone(ok);
+    });
 }
 
 void ReportManager::StartCooldown(int64_t reporterSteamId, int64_t targetSteamId, int64_t now)

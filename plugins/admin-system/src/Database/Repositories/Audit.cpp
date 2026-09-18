@@ -21,16 +21,15 @@ void AdminActivityRepository::RecordAsync(int64_t adminSteamId, std::string_view
                                           std::string_view serverTag)
 {
     // The job outlives this call, so every view is copied rather than captured.
-    _db.RunAsync("record_admin_activity",
-                 [adminSteamId, adminName = std::string(adminName), action = std::string(action), targetSteamId,
-                  targetName = std::string(targetName), detail = std::string(detail),
-                  serverTag = std::string(serverTag), now = Time::Now()](auto& conn) {
-                     const Tables::AdminActivity t;
-                     conn(sqlpp::insert_into(t).set(t.adminSteamId = adminSteamId, t.adminName = adminName,
-                                                    t.action = action, t.targetSteamId = targetSteamId,
-                                                    t.targetName = targetName, t.detail = detail,
-                                                    t.serverTag = serverTag, t.createdAt = now));
-                 });
+    _db.RunAsync(
+        "record_admin_activity", [adminSteamId, adminName = std::string(adminName), action = std::string(action),
+                                  targetSteamId, targetName = std::string(targetName), detail = std::string(detail),
+                                  serverTag = std::string(serverTag), now = Time::Now()](auto& conn) {
+            const Tables::AdminActivity t;
+            conn(sqlpp::insert_into(t).set(t.adminSteamId = adminSteamId, t.adminName = adminName, t.action = action,
+                                           t.targetSteamId = targetSteamId, t.targetName = targetName,
+                                           t.detail = detail, t.serverTag = serverTag, t.createdAt = now));
+        });
 }
 
 void AdminActivityRepository::CountSinceAsync(int64_t adminSteamId, int64_t sinceEpoch,
