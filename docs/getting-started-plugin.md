@@ -1,158 +1,80 @@
 # Create your first plugin
 
-This guide takes a Windows contributor from a clean checkout to a running
-VoltMod plugin that answers `!ping`.
-
-## Prerequisites
-
-Install:
-
-- Git
-- [uv](https://docs.astral.sh/uv/)
-- Python 3.14 or newer
-- Visual Studio 2022 or newer with Desktop development with C++
-- A local CS2 dedicated server
-- Metamod:Source 2
-
-You do not need global CMake, Conan, Ninja, or clang-format installations.
-`uv sync` installs the versions pinned by VoltMod.
-
-## Set up the repository
-
-```powershell
-git clone https://github.com/voltygg/cs2-plugins.git
-cd cs2-plugins
-Copy-Item .env.example .env
-uv sync
-```
-
-Edit `.env` and set `CS2_SERVER_PATH` to the dedicated-server root. The
-directory must contain `game/csgo`.
-
-Check the environment before starting a build:
-
-```powershell
-uv run poe doctor --server-path C:/cs2-server
-```
-
-`doctor` is read-only. It reports the tool versions, compiler, project files,
-Conan configuration, CS2 executable, and Metamod installation. Missing Conan
-profiles or the `volty` remote are warnings before the first bootstrap because
-bootstrap installs them.
-
-## Run the first build
-
-```powershell
-uv run poe bootstrap
-```
-
-Bootstrap:
-
-1. Installs VoltMod's Conan profiles and public package remote.
-2. Selects `windows-msvc-release`.
-3. Resolves VoltMod, HL2SDK, Metamod:Source, and other dependencies.
-4. Configures CMake.
-5. Builds every target.
-6. Runs CTest.
-
-Success ends with a build path under `build/windows-msvc-release`. Use
-`uv run poe build` for later builds, and `uv run poe test` when you
-want CTest to run as well.
-
-## Scaffold a plugin
-
-Plugin names use kebab case:
+From a working checkout to a plugin answering `!ping`. Set the repository up first with
+[Local development](local-development.md).
 
 ```powershell
 uv run poe new-plugin hello-world
+uv run poe build --install hello-world --start
 ```
 
-The command creates and registers:
+Then, in the server console, `volt list` should show `hello-world` with its version. Join and type
+`!ping`; the translated reply proves the plugin loaded, command routing works, and its translation
+file was installed.
+
+## What the scaffold writes
+
+Plugin names are kebab case. `new-plugin` creates the directory and adds
+`add_subdirectory(plugins/hello-world)` to the root `CMakeLists.txt`, so there is nothing to edit
+by hand.
 
 ```text
 plugins/hello-world/
-  CMakeLists.txt
+  CMakeLists.txt        voltmod_add_plugin(hello-world)
+  plugin.json           name, version, logTag, description, author, dependencies
   configs/
     settings.jsonc
     settings.schema.json
     translations/en.json
   src/
-    App.cpp
-    App.hpp
-    Commands.cpp
-    Config.hpp
-    Plugin.cpp
-    Plugin.hpp
+    App.cpp             VOLTMOD_PLUGIN(HelloWorld::App) and App::Start
+    App.hpp             everything the plugin owns for one load cycle
+    Commands.cpp        the !ping command
+    Config.hpp          the settings struct
 ```
 
-You do not need to edit the root `CMakeLists.txt`. The scaffold adds its own
-`add_subdirectory(plugins/hello-world)` entry.
+`plugin.json` is the plugin's identity. `name` must equal the directory and the CMake target, CMake
+reads the name and version from it, and the host reads the installed copy to decide load order. An
+unknown key is an error. Add a `dependencies` or `optionalDependencies` entry to make the host load
+another plugin first.
 
-The generated plugin already:
+## Where to put things
 
-- derives from `VoltMod::Plugin`;
-- owns one load-cycle `App`;
-- loads JSONC settings and translations;
-- logs its version and build commit when the host loads it;
-- registers `!ping`.
+| Change | File |
+| --- | --- |
+| Startup and composition | `src/App.cpp` |
+| Commands | `src/Commands.cpp`, or another `.cpp` under `src/` |
+| Settings | `src/Config.hpp`, plus `configs/settings.jsonc` and `configs/settings.schema.json` |
+| Player-facing text | every file under `configs/translations/` |
+| SDK-free logic | plain C++ types, so it can be unit-tested |
 
-## Build and run it
+`voltmod_add_plugin` discovers every `.cpp` under `src/`, so a new file needs no CMake edit.
+`FEATURES DATABASE` adds PostgreSQL, MariaDB and SQLite.
 
-```powershell
-uv run poe build --install hello-world --start
+A third-party C++ dependency takes three steps: a requirement in `conanfile.py`, `find_package` in
+the root `CMakeLists.txt`, and the imported target in the plugin's own CMake.
+
+## Talking to another plugin
+
+An interface two plugins share lives in `plugins/contracts/include/`, not in either plugin. The
+provider publishes it and the consumer asks for it:
+
+```cpp
+runtime.Exchange.Publish<IThing>(&_impl);   // provider, in App::Start
+auto* thing = runtime.Exchange.Get<IThing>();  // consumer; null when the provider is not loaded
 ```
 
-`build` compiles the configured preset. `--install` installs only
-`hello-world` into `CS2_SERVER_PATH` and preserves an existing
-`settings.jsonc`; `--start` starts the server afterwards.
+Ask for it where you use it rather than caching the pointer: the publisher can unload between
+callbacks. List the provider under `optionalDependencies` in `plugin.json` so the host loads it
+first when it is installed. Never pass ownership or let an exception cross the module boundary.
 
-Tests are a separate command:
-
-```powershell
-uv run poe build --install hello-world
-uv run poe test
-```
-
-To install without launching, omit `--start`. To launch later:
-
-```powershell
-uv run poe start-server
-```
-
-## Verify the result
-
-In the server console:
-
-```text
-volt list
-```
-
-Confirm `hello-world` appears with its version. (`meta list` shows the VoltMod
-host, which is the only Metamod plugin.) Then join the server and enter:
-
-```text
-!ping
-```
-
-The translated pong reply confirms that the plugin loaded, command routing is
-active, and its translation file was installed.
-
-## Make a change
-
-- Edit plugin startup and composition in `src/App.cpp`.
-- Add commands in `src/Commands.cpp` or another `.cpp` below `src/`.
-- Define settings in `src/Config.hpp` and update both config files.
-- Add player-facing messages to every file under `configs/translations/`.
-- Put SDK-free logic in plain C++ types so it can be unit-tested.
-
-The normal loop is:
+## The loop
 
 ```powershell
 uv run poe build --install hello-world
 ```
 
-Metamod plugins are native modules. Restart the local server after replacing a
-loaded DLL if the operating system keeps it locked. Before pushing, run:
+Restart the local server when Windows keeps the replaced DLL locked. Before pushing:
 
 ```powershell
 uv run poe lint
@@ -160,49 +82,24 @@ uv run poe format
 uv run poe test
 ```
 
-## Local settings
+## Framework documentation
 
-`.env` supports:
+Everything that is not specific to this repository lives in the framework's docs:
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `CS2_SERVER_PATH` | `C:/cs2-server` | Dedicated-server root |
-| `STEAMCMD_PATH` | `C:/Program Files/steamcmd/steamcmd.exe` | SteamCMD executable |
-| `CS2_BUILD_PRESET` | `windows-msvc-release` | Build selected for local installation |
-| `CS2_MAP` | `de_dust2` | Startup map |
-| `CS2_PORT` | `27015` | Server port |
-| `CS2_MAX_PLAYERS` | `16` | Local player limit |
-| `GSLT_TOKEN` | empty | Game Server Login Token; empty starts LAN mode |
-| `RCON_PASSWORD` | empty | Optional local RCON password |
-
-Command-line arguments override these defaults. Environment variables override
-the values loaded from `.env`.
+| Page | Covers |
+| --- | --- |
+| [Getting started](https://github.com/voltygg/voltmod/blob/main/docs/getting-started.md) | the plugin shape, first command, first build |
+| [Plugin](https://github.com/voltygg/voltmod/blob/main/docs/plugin.md) | the load cycle, `App`, hooks, game events |
+| [Config](https://github.com/voltygg/voltmod/blob/main/docs/config.md) | settings, schemas, translations |
+| [Commands](https://github.com/voltygg/voltmod/blob/main/docs/commands.md) | registration, permissions, targeting |
+| [SDK wrappers](https://github.com/voltygg/voltmod/blob/main/docs/sdk.md) | entities, events, hooks, messaging |
+| [Testing](https://github.com/voltygg/voltmod/blob/main/docs/testing.md) | the SDK-free test suite |
 
 ## Troubleshooting
 
-### Doctor cannot find MSVC
-
-Install the Visual Studio C++ workload. The build can import
-`vcvars64.bat` automatically from a normal PowerShell session.
-
-### CS2 server path is invalid
-
-Point `CS2_SERVER_PATH` at the directory above `game/`, not at `game/csgo`.
-
-### The plugin is missing from `volt list`
-
-Confirm the VoltMod host itself is in `meta list`, then inspect:
-
-```text
-game/csgo/addons/hello-world/plugin.json
-game/csgo/addons/hello-world/bin/win64/hello-world.dll
-```
-
-Run `uv run poe build --install hello-world` again after correcting the path.
-
-### Conan cannot resolve SDK packages
-
-Run `uv run poe bootstrap`. It installs the canonical profiles and public
-package remote. If a published SDK binary is missing for a canonical profile,
-the package publication must be fixed; changing plugin source will not resolve
-it.
+| Symptom | Check |
+| --- | --- |
+| `hello-world` is missing from `volt list` | The host is in `meta list`; then `game/csgo/addons/hello-world/plugin.json` and `bin/win64/hello-world.dll` |
+| The plugin loads but `!ping` does nothing | `configs/translations/en.json` was installed, and `plugin.locale` names a file that exists |
+| `settings.jsonc` changes are ignored | The installer seeds it once; edit the copy under `game/csgo/addons/hello-world/configs/` |
+| Conan cannot resolve SDK packages | `uv run poe bootstrap`. A missing published binary is a publication problem; changing source will not fix it |

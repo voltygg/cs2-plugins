@@ -1,114 +1,86 @@
 # CS2 plugins
 
-Native C++23 plugins for Counter-Strike 2, built on the
-[VoltMod framework](https://github.com/voltygg/voltmod).
-
-## Choose your path
-
-| I want to... | Start here |
-| --- | --- |
-| Install an existing plugin | [Install a release](#install-a-release) |
-| Build or change a plugin in this repository | [Create your first plugin](docs/getting-started-plugin.md) |
-| Build a standalone VoltMod project | [VoltMod getting started](https://github.com/voltygg/voltmod/blob/main/docs/getting-started.md) |
-| Deploy production servers | [Deployment guide](deploy/README.md) |
-| Contribute a change | [Contributing guide](CONTRIBUTING.md) |
+Native C++23 plugins for Counter-Strike 2 dedicated servers, built on the
+[VoltMod framework](https://github.com/voltygg/voltmod). VoltMod, HL2SDK and Metamod:Source come
+from Conan, so a framework checkout is only needed when you change the framework and a plugin
+together.
 
 ## Plugins
 
-| Plugin | What it provides | Runtime dependency |
+| Plugin | What it does | Needs |
 | --- | --- | --- |
-| [Admin system](plugins/admin-system/README.md) | Permissions, moderation, reports, effects, and cheat checks | Postgres, MariaDB, or SQLite |
-| [Anticheat](plugins/anticheat/README.md) | Movement, aim, and client-integrity detection | Admin system for alerts and bans; detection still runs without it |
-| [Bhop](plugins/bhop/README.md) | Client-predicted autobhop and movement tuning | Admin system only in grants mode |
+| [admin-system](plugins/admin-system/README.md) | Admins, punishments, menus and reports. | PostgreSQL, MariaDB or SQLite |
+| [anticheat](plugins/anticheat/README.md) | Server-side cheat detection: aim analysis over correlated shots plus client-integrity checks. | admin-system for alerts and bans; detection runs without it |
+| [bhop](plugins/bhop/README.md) | Smooth, client-predicted bunnyhop with per-player session grants. | admin-system only in grants mode |
+
+`plugins/contracts/` holds the interfaces plugins publish to each other.
 
 ## Install a release
 
 You need a CS2 dedicated server and
 [Metamod:Source 2](https://www.sourcemm.net/downloads.php/?branch=master).
-The admin system also needs a database: PostgreSQL, MariaDB, or SQLite.
 
-1. Download the required plugin archive from the repository releases.
-2. Extract it into the server's `game/csgo` directory.
-3. Edit its settings under `game/csgo/addons/<plugin>/configs`.
-4. Restart the server.
-5. Run `meta list` in the server console and confirm the plugin appears.
+1. Download the plugin archive from the repository releases.
+2. Extract it into the server's `game/csgo` directory. It contains the voltmod host and the plugin.
+3. Edit `game/csgo/addons/<plugin>/configs/settings.jsonc`.
+4. Restart the server, then run `volt list` in the console and confirm the plugin loaded.
 
-Read the plugin's guide before enabling it. The anticheat has a staged rollout
-and should begin in `observe` mode.
+Metamod loads one plugin, the voltmod host; the host loads everything under `addons/`. `meta list`
+shows the host, `volt list` shows the plugins.
 
-## Develop a plugin locally
+Read the plugin's own guide before enabling it. The anticheat has a staged rollout and starts in
+`observe` mode.
 
-The supported Windows path needs Git, [uv](https://docs.astral.sh/uv/),
-Python 3.14+, Visual Studio 2022 or newer with C++ tools, a local CS2 dedicated
-server, and Metamod:Source.
+## Build it yourself
 
-The build resolves VoltMod and its SDK dependencies from Conan. A VoltMod
-source checkout or Git submodule is not required.
+Windows with Git, [uv](https://docs.astral.sh/uv/), Python 3.14+, Visual Studio 2022 or newer with
+the C++ workload, a local CS2 dedicated server and Metamod:Source.
 
 ```powershell
 git clone https://github.com/voltygg/cs2-plugins.git
 cd cs2-plugins
-Copy-Item .env.example .env
+Copy-Item .env.example .env      # set CS2_SERVER_PATH
 uv sync
-uv run poe doctor --server-path C:/cs2-server
-uv run poe bootstrap
+uv run poe doctor
+uv run poe bootstrap             # first build: Conan setup, configure, build, test
+uv run poe build --install admin-system --start
 ```
 
-`bootstrap` installs the Conan profiles and package remote, resolves
-dependencies, configures CMake, builds, and runs tests. It is the first build,
-so use `poe build` for later changes.
-
-Create, build, install, and launch a working plugin:
-
-```powershell
-uv run poe new-plugin hello-world
-uv run poe build --install hello-world --start
-```
-
-The scaffold registers itself in `CMakeLists.txt` and includes a `!ping`
-command. After the server starts:
-
-1. Run `meta list` and confirm `hello-world` is loaded.
-2. Join the server and enter `!ping`.
-3. Confirm the plugin replies with its translated pong message.
-
-See [Create your first plugin](docs/getting-started-plugin.md) for the generated
-files, configuration, tests, troubleshooting, and the normal edit-build-reload
-loop.
-
-## Common commands
-
-| Command | Purpose |
+| Command | What it does |
 | --- | --- |
-| `uv run poe doctor` | Check tools, project files, Conan setup, and an optional CS2 server |
-| `uv run poe bootstrap` | Prepare Conan, then configure, build, and test |
-| `uv run poe build` | Run the normal release build |
-| `uv run poe test` | Build, then run the test suite |
-| `uv run poe build windows-msvc-debug` | Build the Windows debug preset |
-| `uv run poe build-linux` | Build in the Linux Steam Runtime target |
-| `uv run poe new-plugin <name>` | Scaffold and register a buildable plugin |
-| `uv run poe build --install <name>` | Build, then install one plugin locally |
-| `uv run poe build --install <name> --start` | Build, install, and launch the local server |
-| `uv run poe lint` | Check Python source |
-| `uv run poe format` | Apply the pinned C++ formatting |
+| `uv run poe doctor` | Check tools, project files, Conan setup and the CS2 server |
+| `uv run poe bootstrap` | First-time setup, then configure, build and test |
+| `uv run poe build [preset]` | Build; presets are `windows-msvc-{release,debug}` and `linux-steamrt-{release,debug}` |
+| `uv run poe build-linux` | Build the Linux Steam Runtime preset (CI container only) |
+| `uv run poe build --install <name> [--start]` | Build, install one plugin locally, optionally launch the server |
+| `uv run poe install [name]` / `start-server` | Install and launch as separate steps |
+| `uv run poe test` | Build, then run CTest |
+| `uv run poe lint` / `format` | Ruff, module graph, Panorama and schema checks / C++ formatting |
+| `uv run poe schema` | Regenerate the admin-system table specs from its migrations |
+| `uv run poe new-plugin <name>` | Scaffold and register a plugin |
+| `uv run poe panorama` | Compile the Panorama screens into your CS2 client (Windows) |
+| `uv run poe deploy-*`, `rcon` | Remote deployment; see [Deployment](deploy/README.md) |
 
-Build output is written to
-`build/<preset>/plugins/<name>/<platform-arch>/`. Local installation preserves
-an existing plugin `settings.jsonc` so development deploys do not overwrite
-operator changes.
+Build output lands in `build/<preset>/plugins/<name>/<platform-arch>/`. A local install keeps an
+existing `settings.jsonc`, so it never overwrites your own changes.
 
-## Repository layout
+## Docs
 
-- `plugins/` contains plugin source, configuration, tests, and documentation.
-- `docs/` contains contributor and local-development guides.
-- `deploy/` contains local and production deployment tooling.
-- `build/` contains generated output and toolchain files.
-- `vendor/voltmod/` is an optional framework checkout for coordinated changes.
+| Page | Covers |
+| --- | --- |
+| [Create your first plugin](docs/getting-started-plugin.md) | scaffold, build, install, verify |
+| [Local development](docs/local-development.md) | toolchain, presets, the editable framework checkout, logs |
+| [Admin system](docs/admin-system.md) | flags, database, multi-server setup |
+| [Deployment](deploy/README.md) | inventory, secrets, panel servers and Docker hosts |
+| [Contributing](CONTRIBUTING.md) | conventions and review expectations |
+| [VoltMod docs](https://github.com/voltygg/voltmod/tree/main/docs) | the framework itself |
 
-VoltMod, HL2SDK, and Metamod are resolved through Conan. The
-`vendor/voltmod` checkout is not required to build this repository unless you
-are changing the framework and a plugin together.
+## Layout
 
-For a feature-level comparison with SwiftlyS2, Plugify, and
-CounterStrikeSharp, see
-[Choosing a CS2 plugin framework](https://github.com/voltygg/voltmod/blob/main/docs/framework-comparison.md).
+```text
+plugins/     plugin source, configs, tests and docs
+docs/        contributor and operator guides
+deploy/      the deploy CLI, inventory and host tooling
+vendor/      an optional VoltMod checkout for coordinated framework changes
+build/       generated output
+```

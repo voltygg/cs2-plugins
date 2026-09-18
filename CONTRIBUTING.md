@@ -28,9 +28,9 @@ uv run poe new-plugin fun-votes
 The command creates `plugins/fun-votes` and registers it in the root
 `CMakeLists.txt`. `voltmod_add_plugin` discovers `.cpp` files below `src/`.
 
-For manual setup, create the plugin CMake file with
-`voltmod_add_plugin(<name> VERSION <version>)` and add its
-`add_subdirectory` line to the root project.
+For manual setup, write `voltmod_add_plugin(<name>)` in the plugin's CMake file,
+put its name and version in `plugins/<name>/plugin.json`, and add the
+`add_subdirectory(plugins/<name>)` line to the root project.
 
 Third-party C++ dependencies require:
 

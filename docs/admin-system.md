@@ -5,7 +5,7 @@ database it owns, and what changes when several servers share one database. For
 the full command and menu listing, see the
 [plugin README](../plugins/admin-system/README.md). For build and deploy
 mechanics, see [Local development](local-development.md) and
-[Deployment scripts](deployment-scripts.md).
+[Deployment](../deploy/README.md).
 
 ## Configuration
 

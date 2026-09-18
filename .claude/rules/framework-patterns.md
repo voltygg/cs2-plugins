@@ -11,9 +11,10 @@ The plugin is a DLL the VoltMod host loads; the host is the only Metamod plugin.
 engine events arrive in load order, and a console command one plugin consumes is not offered to
 the next.
 
-- Derive from `VoltMod::Plugin` and declare with `VOLTMOD_PLUGIN(Klass)` in `Plugin.cpp`.
-- Build the object graph in `OnLoad(Runtime&)` and release it in `OnUnload`. The base creates a fresh `Runtime` per load cycle, so nothing may survive `volt reload`.
-- Use `VoltMod::WithBuildInfo` for metadata and `VoltMod::LoadStandardConfig` to load settings and translations.
+- `plugin.json` beside the plugin's `CMakeLists.txt` is its identity: name, version, log tag, description, dependencies. Nothing in C++ or CMake repeats it; read `runtime.PluginName` and `runtime.Version`.
+- There is no plugin class: `VOLTMOD_PLUGIN(<Namespace>::App)` at global scope in `App.cpp`, with `<VoltMod/App/PluginEntry.hpp>` included in that one .cpp only. `App` is built from `Runtime&` and has `bool Start()`; optional `void OnMapChanged()` (anticheat) and `bool OnPlayerChat(Player*, std::string_view, bool)` (admin-system) are called when present. Custom engine hooks go in the App's `_subs`.
+- The `App` lives for one load cycle. Nothing may survive `volt reload`.
+- `VoltMod::LoadStandardConfig(runtime, config)` loads settings and translations; `runtime.AddonFile("configs/x")` builds any other path under the plugin's directory.
 
 ## Commands
 
@@ -70,7 +71,7 @@ commands.Add("slap")
 
 - A settings struct is a plain aggregate at namespace scope. The member name is the JSON key, a missing key keeps the initializer, unknown keys are ignored.
 - `VoltMod::Options<Settings>` loads the struct from `configs/settings.jsonc` and republishes it on every `Load`; bhop and anticheat use it as their `ConfigManager` directly.
-- When settings need validation or derived values, give `Options` a snapshot type and the function that builds it (`Options<Settings, ConfigSnapshot>{&BuildSnapshot}`), and wrap it in a plugin `ConfigManager` for named accessors (admin-system `Config/ConfigManager.*`). The builder runs on a local copy and the snapshot is published in one move, so a failed reload leaves the previous one intact. Never publish a half-validated value.
+- When settings need validation or derived values, give `Options` a snapshot type and the function that builds it (`Options<Settings, ConfigSnapshot>{&BuildSnapshot}`), and wrap it in a plugin `ConfigManager` that offers `Get()` plus the derived values (admin-system `Config/ConfigManager.*`); read a section as `config.Get().chat`, not through a getter per section. The builder runs on a local copy and the snapshot is published in one move, so a failed reload leaves the previous one intact. Never publish a half-validated value.
 - Resolve `VoltMod::ConVar<T>` handles once at start, not by name per call.
 - Ask the service's `Available()` (`runtime.Hooks.Movement`, `runtime.Screens`, ...) before relying on anything that depends on gamedata.
 
