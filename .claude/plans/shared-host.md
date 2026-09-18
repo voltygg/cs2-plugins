@@ -1,6 +1,7 @@
 # One process-wide VoltMod host
 
-Status: planned 2026-09-18, not started. Ships as VoltMod 1.5 (the package is 1.4.8 today). Work on a `shared-host` branch in both repos. Each phase ends green (`uv run poe build`, `poe test`, `poe lint` in `vendor/voltmod` and in the consumer) and is its own commit pair: voltmod first, then cs2-plugins with the relocked `conan.lock`. Never tag. `vendor/voltmod` had uncommitted changes when this was written; check `git status` in both repos first.
+Status: planned 2026-09-18, underway on `shared-host` (voltmod) and `feat/shared-host`
+(cs2-plugins). Phase 0 answered statically in section 7a; phase R next. Ships as VoltMod 1.5 (the package is 1.4.8 today). Work on a `shared-host` branch in both repos. Each phase ends green (`uv run poe build`, `poe test`, `poe lint` in `vendor/voltmod` and in the consumer) and is its own commit pair: voltmod first, then cs2-plugins with the relocked `conan.lock`. Never tag. `vendor/voltmod` had uncommitted changes when this was written; check `git status` in both repos first.
 
 ## 1. Why and the decisions
 
@@ -215,4 +216,69 @@ SDK code in the `App` layer, in its own headers outside `Api.hpp`. Three separat
 - Fan-out order is new behaviour; today each plugin's hook runs independently in Metamod's order.
 - A plugin crash still takes the server down. The host adds no isolation.
 
-Phase 0 answers: fill in before phase 1.
+## 7a. Phase 0 answers
+
+Answered statically on 2026-09-18 by reading the tree; the user verifies the runtime half on a
+Linux test server once the shared host is fully implemented. Nothing here claims reload works.
+
+**Item 1. What ties the SDK to Metamod.** Six files, and nothing in `plugins/`:
+`Engine/MetamodGlobals.hpp`, `App/MetamodPlugin.{hpp,cpp}`, `src/App/ServiceExchange.cpp`,
+`src/Runtime.cpp`, and the `SourceMM::ISmmAPI` forward declaration in `Engine/EngineTypes.hpp`.
+
+- **SourceHook is not used at all.** No `SH_DECL_HOOK`, `SH_ADD_HOOK`, `g_SHPtr` or
+  `SourceHook::` anywhere. The eight engine hooks are `VoltMod::HookInterface` calls on KHook
+  (`src/App/MetamodPlugin.cpp:114-165`), so the module-local `g_SHPtr` problem does not exist.
+- **`g_PLID` is needed on exactly one line.** `PLUGIN_SAVEVARS()` expands to four assignments
+  (`ISmmPlugin.h:514-518`); the only one taking the plugin's identity is
+  `KHook::__exported__khook = ismm->GetDetourInterface(id)`. Everything else wants the shared
+  `ISmmAPI*`. `g_PLAPI` is only ever `this`.
+- **`g_SMAPI` has five uses, all replaceable.** `GetBaseDir`, `Format` (a `vsnprintf` wrapper),
+  `GetEngineFactory`/`GetServerFactory` + `VInterfaceMatch` for the ten engine interfaces
+  (`src/Runtime.cpp:59-98`), and `MetaFactory` in `ServiceExchange::Query`. The first four become
+  the host's job once; the fifth becomes a direct lookup in the host registry, which leaves
+  `Publish`/`Get<T>`/`Find` unchanged and makes `Get<T>()` unit-testable for the first time.
+- **No `META_*` macro is used for convars or logging.** `Runtime` calls tier1's `ConVar_Register`
+  directly (`src/Runtime.cpp:95-96`), so convars are already not attributed to a Metamod plugin.
+
+**Item 1, KHook across the boundary.** `KHook::__exported__khook` is a plain non-exported global
+defined once per module by `PLUGIN_EXPOSE` (`ISmmPlugin.h:490-495`), and every `KHOOK_API`
+function in `khook.hpp` is a header-defined forwarder that dereferences its own module's copy.
+Hidden visibility (`cmake/VoltModCommon.cmake:42-54`) makes that per-module split unavoidable.
+So the host hands one `IKHook*` to each plugin at load and the plugin's own copy is seeded from
+it, which is what `PLUGIN_SAVEVARS` already does. `IHost` therefore carries the KHook pointer as
+planned. **Open, and the one thing to check before phase 2 lands:** whether
+`ISmmAPI::GetDetourInterface(PluginId)` returns a process-wide singleton or a per-plugin adapter.
+If it is per-plugin, the host owns one adapter for its own `PluginId` and every hosted plugin
+shares it, and Metamod can no longer attribute or tear down hooks per plugin - the host's
+per-plugin context becomes the only thing that can.
+
+**Item 1, the sharpest constraint: allocators.** `memoverride.cpp` and `tier1/convar.cpp` are
+compiled per plugin target (`recipes/hl2sdk-cs2/cmake/hl2sdk-sources.cmake:42-48`), and `/MT`
+gives each module its own CRT heap. Ownership must not cross the host boundary in either
+direction, which is what D2 already says; this confirms it is load-bearing, not stylistic.
+`tier1/convar.cpp` stays per plugin so each plugin keeps its own pending-ConVar list, and the
+host must not free a library that still has live registrations.
+
+**Item 1, process-global statics to audit when the host becomes one module.** Each is written
+today assuming one copy per plugin DLL: `src/Core/Paths.cpp` `g_baseDir`,
+`src/Engine/ConVars/ConVars.cpp:18` `g_changeCallback` (its comment says "Each plugin DLL owns one
+ConVars instance and callback" - that assumption breaks), and the per-process schema field offset
+cache (`include/VoltMod/Runtime.hpp:85`). The convar change callback is already on the phase 5
+candidate list; this is why.
+
+**Item 2. Not answered.** Load, hook, unhook, free, load again on Windows and Linux needs a real
+host binary and a server. Verified in phase 2 and on the user's Linux test server, not before.
+
+**Item 3. Not answered** for the same reason, but the ordering requirement is now precise:
+`MetamodPlugin::Shutdown` (`src/App/MetamodPlugin.cpp:88-103`) runs custom hooks, commands,
+`OnUnload()`, standard hooks, then the runtime. Every `Subscription` closure and every
+`InstalledHook` thunk is plugin-module code that KHook holds a raw `this` and member address for
+(`include/VoltMod/Unsafe/Hook.hpp:54-111`), so the host may not free a library until that whole
+sequence has returned and no frame is in flight. Boundary rule 6's next-frame queue is what makes
+that reachable.
+
+**D4, the Metamod version.** `recipes/metamod-source/conandata.yml` offers
+`2.0.0.20260915` (commit `399ccf3`), but both `conan.lock` files still pin
+`2.0.0.20260910#6142cc7d`. The recipe was bumped without relocking, so the version everything is
+actually built and reasoned about here is **20260910**. Relock and confirm the unload fix is in
+whichever revision phase 2 ships against.
