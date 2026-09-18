@@ -74,9 +74,10 @@ their mtime says what CI shipped.
 
 ## First: confirm the binary is current
 
-Most "the feature is missing" reports are a stale binary. `meta list` shows each
-plugin's version as `1.0.0+<sha>[-dirty]` (from `WithBuildInfo`); if that sha
-predates the commit that added the feature, rebuild instead of reading code.
+Most "the feature is missing" reports are a stale binary. `volt list` shows only
+each plugin's `plugin.json` version, so compare the modified time of the installed
+`addons/voltmod/plugins/<name>/<name>.dll` (`.so`) with the commit that added the
+feature; if the binary is older, rebuild instead of reading code.
 
 ## What is reachable from the console
 

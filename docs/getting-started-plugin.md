@@ -49,7 +49,7 @@ there; load order is alphabetical either way.
 | SDK-free logic | plain C++ types, so it can be unit-tested |
 
 `voltmod_add_plugin` discovers every `.cpp` under `src/`, so a new file needs no CMake edit.
-`FEATURES DATABASE` adds PostgreSQL, MariaDB and SQLite.
+`DATABASE` adds PostgreSQL, MariaDB and SQLite.
 
 A third-party C++ dependency takes three steps: a requirement in `conanfile.py`, `find_package` in
 the root `CMakeLists.txt`, and the imported target in the plugin's own CMake.
