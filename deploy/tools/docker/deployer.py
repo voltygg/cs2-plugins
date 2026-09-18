@@ -4,6 +4,7 @@ import os
 from collections.abc import Generator
 from contextlib import contextmanager
 
+from deploy.tools.addons.builder import AddonsBuilder
 from deploy.tools.config.inventory import Inventory
 from deploy.tools.config.servers import DockerServer, Instance
 from deploy.tools.deployer import Deployer
@@ -94,4 +95,8 @@ class DockerDeployer(Deployer[DockerServer]):
         instance_dir = self.server.instance_dir(instance)
         trees = ("bundles/addons", "addons")
         unused = self.unused_plugin_paths(instance)
-        return [f"{instance_dir}/{tree}/{path}" for tree in trees for path in unused]
+        return [
+            f"{instance_dir}/{tree}/{AddonsBuilder.PLUGINS_DIR}/{path}"
+            for tree in trees
+            for path in unused
+        ]

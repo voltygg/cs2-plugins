@@ -39,5 +39,5 @@ class Deployer[S: Server](ABC):
         raise DeployError(f"a tunnel needs SSH; '{self.server.id}' is a {self.server.kind} server")
 
     def unused_plugin_paths(self, instance: Instance) -> list[str]:
-        """Folders under addons/ owned by inventory plugins the instance does not run."""
+        """Plugin folder names the instance does not run."""
         return self.inventory.unused_plugins(self.server, instance)

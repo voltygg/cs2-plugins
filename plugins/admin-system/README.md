@@ -33,7 +33,7 @@ multi-server grants, abuse protection, and cheat-check workflows.
 ## Install
 
 1. Extract the release into the server's `game/csgo/` directory.
-2. Configure `addons/admin-system/configs/settings.jsonc`.
+2. Configure `addons/voltmod/plugins/admin-system/configs/settings.jsonc`.
 3. Give every server sharing the database a unique, stable `server.tag`.
 4. Start the server and let the plugin apply its migrations.
 5. Put your SteamID64 in [`database/seed-admin.sql`](database/seed-admin.sql),

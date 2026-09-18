@@ -143,14 +143,17 @@ host, then each plugin the instance runs, then that plugin's rendered `settings.
 ```text
 addons/
   metamod/voltmod.vdf             the only Metamod manifest
-  voltmod/bin/linuxsteamrt64/     the host binary
-  voltmod/gamedata/               shipped once, with the host
-  <plugin>/plugin.json            name, version and dependencies
-  <plugin>/bin/linuxsteamrt64/    the plugin module
-  <plugin>/configs/settings.jsonc rendered per instance
+  voltmod/
+    bin/linuxsteamrt64/            the host binary
+    gamedata/                      shipped once, with the host
+    plugins/<plugin>/
+      plugin.json                  name, version and dependencies
+      <plugin>.so                  the plugin module
+      configs/settings.jsonc       rendered per instance
 ```
 
-Metamod loads the host and nothing else. The host reads each `addons/<plugin>/plugin.json` and
+Metamod loads the host and nothing else. The host reads each
+`addons/voltmod/plugins/<plugin>/plugin.json` and
 loads the plugins itself, in dependency order; a plugin has no Metamod manifest of its own.
 
 The host and the plugins are one ABI: the host refuses a plugin built against a different

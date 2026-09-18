@@ -87,9 +87,10 @@ game/csgo/addons/
   metamod/voltmod.vdf        the only Metamod manifest
   voltmod/bin/win64/voltmod.dll
   voltmod/gamedata/
-  <plugin>/plugin.json
-  <plugin>/bin/win64/<plugin>.dll
-  <plugin>/configs/
+  voltmod/plugins/<plugin>/
+    plugin.json
+    <plugin>.dll
+    configs/
 ```
 
 Verify with `volt list` on the server console. `meta list` shows the host, which is the one Metamod
@@ -133,4 +134,4 @@ window.
 | Conan profiles or the `volty` remote are missing | `uv run poe bootstrap`. Set `VOLTMOD_SKIP_REMOTE_SETUP=1` only when something else manages remotes |
 | Missing HL2SDK or Metamod package | A publication problem, not a source one. Check the build uses `windows-msvc.txt` or `linux-steamrt.txt` |
 | Missing SDK binaries in the Conan cache | `uv run poe release build sdk` from `vendor/voltmod`, in the dev shell; they are excluded from `--build=missing` |
-| The plugin is missing from `volt list` | Confirm the host is in `meta list`, then check `game/csgo/addons/<name>/plugin.json` and `bin/win64/<name>.dll` |
+| The plugin is missing from `volt list` | Confirm the host is in `meta list`, then check `game/csgo/addons/voltmod/plugins/<name>/plugin.json` and `<name>.dll` |

@@ -12,13 +12,13 @@ engine events arrive in load order, and a console command one plugin consumes is
 the next.
 
 - `plugin.json` beside the plugin's `CMakeLists.txt` is its identity: name, version, log tag, description, dependencies. Nothing in C++ or CMake repeats it; read `runtime.PluginName` and `runtime.Version`.
-- There is no plugin class: `VOLTMOD_PLUGIN(<Namespace>::App)` at global scope in `App.cpp`, with `<VoltMod/App/PluginEntry.hpp>` included in that one .cpp only. `App` is built from `Runtime&` and has `bool Start()`; optional `void OnMapChanged()` (anticheat) and `bool OnPlayerChat(Player*, std::string_view, bool)` (admin-system) are called when present. Custom engine hooks go in the App's `_subs`.
+- Derive the load-cycle class from `VoltMod::Plugin`, construct the base from `Runtime&`, and override `bool Load()`. Put `VOLTMOD_PLUGIN(<Namespace>::App)` at global scope in `App.cpp`, with `<VoltMod/App/PluginEntry.hpp>` included in that one .cpp only. Override lifecycle hooks on `Plugin`; keep custom engine-hook subscriptions in the App's `_subs`.
 - The `App` lives for one load cycle. Nothing may survive `volt reload`.
-- `VoltMod::LoadStandardConfig(runtime, config)` loads settings and translations; `runtime.AddonFile("configs/x")` builds any other path under the plugin's directory.
+- `VoltMod::LoadStandardConfig(runtime, config)` loads settings and translations; `runtime.PluginFile("configs/x")` builds any other path under the plugin's directory.
 
 ## Commands
 
-Register from `App::Start()` with the fluent builder:
+Register from `App::Load()` with the fluent builder:
 
 ```cpp
 commands.Add("slap")

@@ -9,7 +9,7 @@ mechanics, see [Local development](local-development.md) and
 
 ## Configuration
 
-Runtime settings live in `addons/admin-system/configs/settings.jsonc`. The file
+Runtime settings live in `addons/voltmod/plugins/admin-system/configs/settings.jsonc`. The file
 is JSONC, so comments are allowed. `settings.schema.json` sets
 `additionalProperties: false` throughout, so an editor squiggles an unrecognized
 key; the loader itself ignores both unknown and missing keys, which is why a

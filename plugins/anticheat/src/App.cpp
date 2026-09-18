@@ -26,7 +26,7 @@ bool App::Load()
     // A missing data file leaves the two table-driven rules inert rather than taking the plugin
     // down: the aim rules, which carry no data file, are the ones worth keeping alive.
     Runtime.LoadSteps.Optional("Detection data", [this] {
-        VoltMod::Status loaded = RuleTables.Load(DetectionDataPath);
+        VoltMod::Status loaded = RuleTables.Load(Runtime.PluginFile(DetectionDataFile));
         if (!loaded)
             loaded.error().Detail += "; DLL injection and invalid cvar rules are inert";
         return loaded;

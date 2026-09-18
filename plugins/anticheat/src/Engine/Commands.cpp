@@ -26,11 +26,12 @@ void RegisterCommands(App& app)
         .ConsoleOnly()
         .Run([&app](Caller) -> Result<Reply> {
             // The reason names the offending key and its position, which is what a mistyped setting needs.
-            if (auto loaded = app.Config.Load(app.Runtime.AddonFile("configs/settings.jsonc")); !loaded)
+            if (auto loaded = app.Config.Load(app.Runtime.PluginFile("configs/settings.jsonc")); !loaded)
                 return Reply{std::format("Settings not reloaded: {}", loaded.error().Detail)};
             // Keep valid rules active if the edited file cannot be parsed.
-            if (auto loaded = app.RuleTables.Load(DetectionDataPath); !loaded)
-                Log::Warn("{} could not be re-read ({}); keeping the tables already loaded.", DetectionDataPath,
+            const std::string dataPath = app.Runtime.PluginFile(DetectionDataFile);
+            if (auto loaded = app.RuleTables.Load(dataPath); !loaded)
+                Log::Warn("{} could not be re-read ({}); keeping the tables already loaded.", dataPath,
                           loaded.error().Detail);
             else
                 app.LoadDetectionData();

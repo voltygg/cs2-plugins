@@ -20,6 +20,7 @@ class AddonsBuilder:
     # Not imported from voltmod.cs2_install: CI deploys install only the deploy group.
     HOST_ADDON_DIR = "voltmod"
     HOST_MANIFEST = "metamod/voltmod.vdf"
+    PLUGINS_DIR = f"{HOST_ADDON_DIR}/plugins"
 
     def __init__(self, inventory: Inventory, server: Server, env: ServerEnv) -> None:
         self._server = server
@@ -45,7 +46,7 @@ class AddonsBuilder:
     def _write_settings(self, instance: Instance, plugin: str, addons: Path) -> None:
         settings = self._settings.render(instance, plugin)
         text = json.dumps(settings, indent=2, ensure_ascii=False) + "\n"
-        settings_file = addons / plugin / "configs" / "settings.jsonc"
+        settings_file = addons / self.PLUGINS_DIR / plugin / "configs" / "settings.jsonc"
         settings_file.parent.mkdir(parents=True, exist_ok=True)
         settings_file.write_text(text, encoding="utf-8", newline="\n")
 

@@ -33,7 +33,7 @@ scoped to that player.
 
 ## Configuration
 
-Edit `game/csgo/addons/bhop/configs/settings.jsonc` in the server installation.
+Edit `game/csgo/addons/voltmod/plugins/bhop/configs/settings.jsonc` in the server installation.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |

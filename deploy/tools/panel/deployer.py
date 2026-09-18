@@ -78,7 +78,9 @@ class PanelDeployer(Deployer[PanelServer]):
 
     def _remove_unused_plugins(self, instance: Instance) -> None:
         unused = self.unused_plugin_paths(instance)
-        if removed := self.api.delete(f"{self.server.game_dir}/addons", unused):
+        if removed := self.api.delete(
+            f"{self.server.game_dir}/addons/{AddonsBuilder.PLUGINS_DIR}", unused
+        ):
             print(f"    removed unassigned plugins: {' '.join(removed)}")
 
     def _stop(self) -> None:

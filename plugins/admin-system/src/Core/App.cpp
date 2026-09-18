@@ -95,7 +95,7 @@ Status App::ConnectDatabase()
     if (!Db.Start(Settings.Get().database))
         return std::unexpected(Error::Engine("unavailable; chat commands will reject all callers"));
 
-    Migration = VoltMod::RunMigrations(Db, Runtime.AddonFile("configs/migrations"),
+    Migration = VoltMod::RunMigrations(Db, Runtime.PluginFile("configs/migrations"),
                                        {.HistoryTable = "schema_migrations", .LockKey = 727274});
     if (!Migration)
         return std::unexpected(Error::Failed("migrations failed; not loading admins against an out-of-date schema"));

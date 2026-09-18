@@ -23,7 +23,7 @@
     "connectTimeoutSec": 5
     // SQLite example:
     // "driver": "sqlite",
-    // "path": "addons/admin-system/data/admin-system.sqlite"
+    // "path": "addons/voltmod/plugins/admin-system/data/admin-system.sqlite"
   },
   "punishments": {
     // Used when an admin omits a ban reason.

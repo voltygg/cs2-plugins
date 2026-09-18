@@ -22,11 +22,11 @@ You need a CS2 dedicated server and
 
 1. Download the plugin archive from the repository releases.
 2. Extract it into the server's `game/csgo` directory. It contains the voltmod host and the plugin.
-3. Edit `game/csgo/addons/<plugin>/configs/settings.jsonc`.
+3. Edit `game/csgo/addons/voltmod/plugins/<plugin>/configs/settings.jsonc`.
 4. Restart the server, then run `volt list` in the console and confirm the plugin loaded.
 
-Metamod loads one plugin, the voltmod host; the host loads everything under `addons/`. `meta list`
-shows the host, `volt list` shows the plugins.
+Metamod loads one plugin, the VoltMod host; the host loads plugins from
+`addons/voltmod/plugins/`. `meta list` shows the host, `volt list` shows the plugins.
 
 Read the plugin's own guide before enabling it. The anticheat has a staged rollout and starts in
 `observe` mode.

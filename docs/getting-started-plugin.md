@@ -27,7 +27,7 @@ plugins/hello-world/
     settings.schema.json
     translations/en.json
   src/
-    App.cpp             VOLTMOD_PLUGIN(HelloWorld::App) and App::Start
+    App.cpp             VOLTMOD_PLUGIN(HelloWorld::App) and App::Load
     App.hpp             everything the plugin owns for one load cycle
     Commands.cpp        the !ping command
     Config.hpp          the settings struct
@@ -60,7 +60,7 @@ An interface two plugins share lives in `plugins/contracts/include/`, not in eit
 provider publishes it and the consumer asks for it:
 
 ```cpp
-runtime.Exchange.Publish<IThing>(&_impl);   // provider, in App::Start
+runtime.Exchange.Publish<IThing>(&_impl);   // provider, in App::Load
 auto* thing = runtime.Exchange.Get<IThing>();  // consumer; null when the provider is not loaded
 ```
 
@@ -99,7 +99,7 @@ Everything that is not specific to this repository lives in the framework's docs
 
 | Symptom | Check |
 | --- | --- |
-| `hello-world` is missing from `volt list` | The host is in `meta list`; then `game/csgo/addons/hello-world/plugin.json` and `bin/win64/hello-world.dll` |
+| `hello-world` is missing from `volt list` | The host is in `meta list`; then `game/csgo/addons/voltmod/plugins/hello-world/plugin.json` and `hello-world.dll` |
 | The plugin loads but `!ping` does nothing | `configs/translations/en.json` was installed, and `plugin.locale` names a file that exists |
-| `settings.jsonc` changes are ignored | The installer seeds it once; edit the copy under `game/csgo/addons/hello-world/configs/` |
+| `settings.jsonc` changes are ignored | The installer seeds it once; edit the copy under `game/csgo/addons/voltmod/plugins/hello-world/configs/` |
 | Conan cannot resolve SDK packages | `uv run poe bootstrap`. A missing published binary is a publication problem; changing source will not fix it |

@@ -69,8 +69,8 @@ docker logs <server-id>-cs2-<instance>
 ```
 
 Deployed binaries live under
-`/home/steam/cs2/deploy/instances/<instance>/bundles/addons/<plugin>/`; their
-mtime says what CI shipped.
+`/home/steam/cs2/deploy/instances/<instance>/bundles/addons/voltmod/plugins/<plugin>/`;
+their mtime says what CI shipped.
 
 ## First: confirm the binary is current
 
