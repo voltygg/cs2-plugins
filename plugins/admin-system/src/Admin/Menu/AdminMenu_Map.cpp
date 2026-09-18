@@ -42,7 +42,7 @@ static void ConfirmMapChange(App& app, int adminSlot, MapEntry map)
                                      {{"map", m.Label()}});
             app.MapCycle.ChangeAfter(m);
         })
-        ->Start();
+        ->Begin();
 }
 
 /** What an admin can do with one map: switch now, queue it, or put it to the players. */

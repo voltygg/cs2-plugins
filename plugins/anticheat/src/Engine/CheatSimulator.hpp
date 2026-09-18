@@ -51,7 +51,7 @@ private:
     };
 
     void OnFilter(int slot, VoltMod::PlayerInput& cmd);
-    void Start(const CCommand& args, Kind kind, float defaultParam);
+    void BeginPattern(const CCommand& args, Kind kind, float defaultParam);
     /** Point the command at the nearest opponent's chest; false with nobody to lock onto. */
     bool AimAtNearestOpponent(int slot, VoltMod::PlayerInput& cmd);
 
@@ -60,7 +60,7 @@ private:
     bool Enabled() const;
 
     VoltMod::PerSlot<SimState> _sim;
-    // Movement filter, installed lazily on the first Start; empty while the simulator is idle.
+    // Movement filter, installed lazily on the first BeginPattern; empty while the simulator is idle.
     VoltMod::Subscription _filter;
     /** One entry per registered anticheat_sim_* command, held for the load cycle. A deque
      *  because ServerCommand can be neither copied nor moved. */

@@ -33,7 +33,7 @@ static void WithMigratedDb(Body body)
 {
     Scheduler scheduler;
     Database db(scheduler);
-    REQUIRE(db.Start({.driver = "sqlite", .path = ":memory:"}));
+    REQUIRE(db.Connect({.driver = "sqlite", .path = ":memory:"}));
 
     auto migration = RunMigrations(db, MigrationsDir());
     REQUIRE(migration.Success);

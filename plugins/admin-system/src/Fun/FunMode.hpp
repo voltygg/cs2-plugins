@@ -74,7 +74,7 @@ public:
     FunMode& operator=(const FunMode&) = delete;
 
     /** Subscribe to the round and spawn events the toggles need. Call once during load. */
-    void Start();
+    void Initialize();
 
     /** Flip @p toggle and apply or undo its effect immediately. @return the new state. */
     bool Flip(Toggle toggle);
@@ -86,7 +86,7 @@ public:
 
 private:
     void ApplyRoundStart();
-    /** Resolve every @ref ToggleConVars row into a typed handle. Runs once, from Start. */
+    /** Resolve every @ref ToggleConVars row into a typed handle. Runs once, from Initialize. */
     void ResolveConVars();
     /** Take over or hand back every @ref ToggleConVars row to match the current toggle state. */
     void ApplyOverrides();
@@ -94,7 +94,7 @@ private:
 
     VoltMod::Runtime& _rt;
     ToggleState _state;
-    /** @ref ToggleConVars resolved once in Start; empty until then. */
+    /** @ref ToggleConVars resolved once in Initialize; empty until then. */
     std::vector<ToggleHandle> _handles;
     /** Restores whatever the toggles took over, including on unload. */
     VoltMod::ConVarOverrides _overrides;

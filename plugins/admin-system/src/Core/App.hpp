@@ -125,7 +125,7 @@ private:
     void OnPlayerDisconnect(VoltMod::Player& player);
     VoltMod::Status ConnectDatabase();
     VoltMod::Status LoadAdminData();
-    VoltMod::Status StartPunishments();
+    VoltMod::Status InitializePunishments();
     void RegisterGameEventListeners();
     /** The engine asks per (receiver, sender) pair; a voice-muted sender is never heard. */
     void RegisterVoiceMuteHook();

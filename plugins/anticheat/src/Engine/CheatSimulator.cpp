@@ -68,7 +68,7 @@ void CheatSimulator::Initialize()
 
     for (const Pattern& pattern : patterns)
         _commands.emplace_back(pattern.Name, pattern.Help, [this, pattern](const CCommand& args) {
-            Start(args, pattern.Simulated, pattern.DefaultParam);
+            BeginPattern(args, pattern.Simulated, pattern.DefaultParam);
         });
 
     _commands.emplace_back("anticheat_sim_off",
@@ -108,7 +108,7 @@ int CheatSimulator::ResolveSlot(std::string_view arg)
     return static_cast<int>(*number);
 }
 
-void CheatSimulator::Start(const CCommand& args, Kind kind, float defaultParam)
+void CheatSimulator::BeginPattern(const CCommand& args, Kind kind, float defaultParam)
 {
     if (!Enabled())
     {
@@ -128,7 +128,7 @@ void CheatSimulator::Start(const CCommand& args, Kind kind, float defaultParam)
         return;
     }
 
-    // The filter rewrites live player commands, so it stays uninstalled until the first Start. A
+    // The filter rewrites live player commands, so it stays uninstalled until the first BeginPattern. A
     // disabled simulator then costs nothing on the per-tick movement path.
     if (!_filter)
         _filter = _rt.Hooks.Movement.Rewrite +=

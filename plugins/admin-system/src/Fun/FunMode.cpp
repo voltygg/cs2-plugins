@@ -22,7 +22,7 @@ FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _overrides(runtime.C
 // Restores changed convars when the plugin unloads.
 FunMode::~FunMode() = default;
 
-void FunMode::Start()
+void FunMode::Initialize()
 {
     ResolveConVars();
 

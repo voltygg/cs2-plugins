@@ -74,7 +74,7 @@ load, in an unrelated hash lookup).
 1. `git stash push -- <header> <impl>`, rebuild, run. Crash gone means the size
    is the trigger, not your logic.
 2. Rule out a stale link, which looks identical: print `sizeof(Runtime)` from
-   `Runtime::Start` (framework) and from the plugin's `OnLoad`. Matching numbers
+   `Runtime::Initialize` (framework) and from the plugin's `OnLoad`. Matching numbers
    mean staleness is not the cause; differing ones mean wipe `build/<preset>` and
    relink (see `build-local`).
 3. Keep the class the same size, or find the writer - it is a real bug either way.

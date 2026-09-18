@@ -116,7 +116,7 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
                    .ConfirmLabel = translations.Get("report.confirm", reporterSlot),
                    .CancelLabel = translations.Get("report.cancel", reporterSlot)})
         ->Finish([&app, reporterSlot](PendingReport& p) { Submit(app, reporterSlot, p); })
-        ->Start();
+        ->Begin();
 }
 
 void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
@@ -149,7 +149,7 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
 
     // Reporters may press !report mid-round, where being held still would get them killed. The
     // rest of the flow pushes onto this session, so it stays unfrozen throughout.
-    app.Runtime.Menus.Start(reporterSlot, std::move(menu), {.FreezeMovement = false});
+    app.Runtime.Menus.OpenSession(reporterSlot, std::move(menu), {.FreezeMovement = false});
 }
 
 }  // namespace AdminSystem::Reports

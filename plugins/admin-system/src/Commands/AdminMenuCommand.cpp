@@ -32,7 +32,7 @@ void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app)
             if (!menu)
                 return c.Fail("cmd.menuFailed");
 
-            app.Runtime.Menus.Start(c.Slot, std::move(menu), {});
+            app.Runtime.Menus.OpenSession(c.Slot, std::move(menu), {});
             return Reply::Silent();  // the menu is the feedback
         });
 }

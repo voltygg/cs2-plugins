@@ -90,7 +90,7 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
             app.Chat.Reply(adminSlot, removed ? translations.Get(done, adminSlot, {{"name", r.Name}})
                                               : translations.Get(gone, adminSlot));
         })
-        ->Start();
+        ->Begin();
 }
 
 /** One row per punishment. Bans carry no tag; mutes are tagged with their kind. */

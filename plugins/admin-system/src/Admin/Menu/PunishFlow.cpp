@@ -126,7 +126,7 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
              .Set = [](PendingPunishment& p, const std::string& label, const std::string&) { p.Reason = label; },
              .CustomLabel = translations.Get("punish.customReason", adminSlot),
              .CustomPrompt = translations.Get("punish.customReasonPrompt", adminSlot)})
-        ->Start();
+        ->Begin();
 }
 
 bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target)
@@ -163,7 +163,7 @@ std::shared_ptr<VoltMod::Menu> BuildQuickPunishMenu(AdminSystem::App& app, int a
         };
         // Duration and reason are preset by the template, so the flow jumps straight to confirm.
         builder.Button(std::format("{} - {}", tmpl.Name, DurationLabel(translations, tmpl.DurationSec, adminSlot)),
-                       [&app, pending](int slot) { MakeBaseFlow(app, slot, pending)->Start(); });
+                       [&app, pending](int slot) { MakeBaseFlow(app, slot, pending)->Begin(); });
     }
 
     // Permissions can change between the actions menu and here, so every template may filter out.

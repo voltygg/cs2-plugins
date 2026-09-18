@@ -31,7 +31,7 @@ App::~App()
     // Unload skips disconnect hooks; Clear() raises Players.Disconnected while its cleanup subscription is active.
     Runtime.Players.Clear();
     // Flush queued writes and discard undispatched completions before their managers are destroyed.
-    Db.Stop();
+    Db.Disconnect();
 }
 
 void App::InstallPolicy()
@@ -92,7 +92,7 @@ void App::OnPlayerDisconnect(Player& player)
 
 Status App::ConnectDatabase()
 {
-    if (!Db.Start(Settings.Get().database))
+    if (!Db.Connect(Settings.Get().database))
         return std::unexpected(Error::Engine("unavailable; chat commands will reject all callers"));
 
     Migration = VoltMod::RunMigrations(Db, Runtime.PluginFile("configs/migrations"),
@@ -117,7 +117,7 @@ Status App::LoadAdminData()
     return {};
 }
 
-Status App::StartPunishments()
+Status App::InitializePunishments()
 {
     const bool loaded = Punishments.LoadActivePunishments();
 
@@ -244,7 +244,7 @@ bool App::Load()
     RegisterCommands();
 
     if (database)
-        steps.Optional("Punishments", [this] { return StartPunishments(); });
+        steps.Optional("Punishments", [this] { return InitializePunishments(); });
 
     RegisterGameEventListeners();
     RegisterVoiceMuteHook();
@@ -252,7 +252,7 @@ bool App::Load()
     Admin::Effects::PrecacheModels(Runtime);
     // Report invalid configured maps at load instead of on the first !map.
     MapCycle.VerifyAgainstEngine();
-    FunMode.Start();
+    FunMode.Initialize();
 
     InstallStatusReporting();
     return true;
