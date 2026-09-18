@@ -7,8 +7,8 @@ from deploy.tools.errors import DeployError
 from deploy.tools.paths import PACKAGE, ROOT
 
 
-class PluginPackager:
-    """Stages the built Linux host and plugins under package/<name> with `cmake --install`."""
+class AddonPackager:
+    """Stages one built install component under package/<name> with `cmake --install`."""
 
     PRESET = "linux-steamrt-release"
 

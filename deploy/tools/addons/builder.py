@@ -17,28 +17,13 @@ class AddonsBuilder:
 
     # The framework's install component, staged under package/ by the same name.
     HOST = "host"
-    # Metamod's manifest directory; since the single host, voltmod.vdf is the only manifest in it.
-    MANIFEST_DIR = "metamod"
+    # Not imported from voltmod.cs2_install: CI deploys install only the deploy group.
+    HOST_ADDON_DIR = "voltmod"
     HOST_MANIFEST = "metamod/voltmod.vdf"
 
     def __init__(self, inventory: Inventory, server: Server, env: ServerEnv) -> None:
         self._server = server
         self._settings = SettingsRenderer(inventory, server, env)
-
-    @staticmethod
-    def owned_paths(plugins: list[str]) -> list[str]:
-        """What each plugin owns under addons/: its own folder, and nothing outside it."""
-        return list(plugins)
-
-    @classmethod
-    def stale_manifests(cls, plugins: list[str]) -> list[str]:
-        """The manifest names those plugins had before the host, relative to addons/metamod.
-
-        Plugin names only, so a third-party Metamod plugin's manifest is left alone, and never
-        the host's own manifest however a plugin is named.
-        """
-        host = cls.HOST_MANIFEST.rpartition("/")[2]
-        return [f"{name}.vdf" for name in plugins if f"{name}.vdf" != host]
 
     def build(self, instance: Instance, destination: Path) -> Path:
         """Rebuild destination/addons with the host and the instance's plugins, and return it."""
@@ -54,12 +39,15 @@ class AddonsBuilder:
             )
         for plugin in self._server.plugins_for(instance):
             self._unpack(plugin, addons)
-            settings = self._settings.render(instance, plugin)
-            text = json.dumps(settings, indent=2, ensure_ascii=False) + "\n"
-            settings_file = addons / plugin / "configs" / "settings.jsonc"
-            settings_file.parent.mkdir(parents=True, exist_ok=True)
-            settings_file.write_text(text, encoding="utf-8", newline="\n")
+            self._write_settings(instance, plugin, addons)
         return addons
+
+    def _write_settings(self, instance: Instance, plugin: str, addons: Path) -> None:
+        settings = self._settings.render(instance, plugin)
+        text = json.dumps(settings, indent=2, ensure_ascii=False) + "\n"
+        settings_file = addons / plugin / "configs" / "settings.jsonc"
+        settings_file.parent.mkdir(parents=True, exist_ok=True)
+        settings_file.write_text(text, encoding="utf-8", newline="\n")
 
     @staticmethod
     def _unpack(name: str, addons: Path) -> None:

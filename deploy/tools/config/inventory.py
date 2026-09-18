@@ -28,8 +28,6 @@ class Database(Model):
 
 
 class Inventory(Model):
-    """deploy/inventory.yml: plugins, servers and the Docker runtime image repository."""
-
     PATH: ClassVar[Path] = DEPLOY / "inventory.yml"
 
     runtime_image: str
