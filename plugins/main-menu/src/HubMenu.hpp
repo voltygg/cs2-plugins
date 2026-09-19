@@ -30,7 +30,6 @@ public:
           _menus(menus)
     {}
 
-    [[nodiscard]] std::shared_ptr<VoltMod::Menu> Build(int slot);
     void Open(int slot);
 
     /** Opens the section another plugin publishes as @p id in place of this menu, or tells the player it is
@@ -38,9 +37,11 @@ public:
     void OpenSection(std::string_view id, int slot, VoltMod::MenuSurface& surface);
 
 private:
+    [[nodiscard]] std::shared_ptr<VoltMod::Menu> Build(int slot);
     [[nodiscard]] std::shared_ptr<VoltMod::Menu> BuildTab(const Tab& tab, int slot);
     [[nodiscard]] std::shared_ptr<VoltMod::Menu> BuildSettings(int slot);
-    /** Applies the pick for every plugin until the player leaves, then reopens the menu in it. */
+    /** Applies the pick for every plugin, then reopens the menu on Settings in the new language.
+     *  A member, not the row's lambda: reopening frees that row and its captures. */
     void SetLanguage(int slot, const std::string& lang);
     [[nodiscard]] VoltMod::MenuItem Row(const Entry& entry);
     void Run(const Entry& entry, int slot, VoltMod::MenuSurface& surface);
