@@ -320,6 +320,12 @@
       "nickname": "Inappropriate nickname"
     }
   },
+  "home": {
+    "title": "Welcome, {name}",
+    "body": "Pick a section on the left to manage players, the map and the server.",
+    "players": "Players online",
+    "map": "Map"
+  },
   "menu": {
     "cancel": "Cancel",
     "confirm": "Confirm",

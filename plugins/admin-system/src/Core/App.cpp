@@ -11,6 +11,7 @@
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Events/EventTypes.hpp>
 #include <VoltMod/Unsafe/Hook.hpp>
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -222,6 +223,25 @@ bool App::OpenAdminMenu(int slot)
     return true;
 }
 
+void App::AddHomePageText()
+{
+    auto translated = [this](std::string_view key) {
+        return [this, key](int slot) { return Runtime.Translations.Get(key, slot); };
+    };
+    MenuLayout.AddText(AdminMenuLayout::HomeTitleVar, [this](int slot) {
+        const Player* player = Runtime.Players.Get(slot);
+        return Runtime.Translations.Get("home.title", slot, {{"name", player ? player->Name() : std::string{}}});
+    });
+    MenuLayout.AddText(AdminMenuLayout::HomeBodyVar, translated("home.body"));
+    MenuLayout.AddText(AdminMenuLayout::HomePlayersLabelVar, translated("home.players"));
+    MenuLayout.AddText(AdminMenuLayout::HomePlayersVar, [this](int) {
+        return std::to_string(
+            std::ranges::count_if(Runtime.Players.All(), [](const Player* p) { return !p->IsBot(); }));
+    });
+    MenuLayout.AddText(AdminMenuLayout::HomeMapLabelVar, translated("home.map"));
+    MenuLayout.AddText(AdminMenuLayout::HomeMapVar, [this](int) { return Runtime.Map.Current(); });
+}
+
 bool App::Load()
 {
     if (!VoltMod::LoadStandardConfig(Runtime, Settings))
@@ -233,6 +253,7 @@ bool App::Load()
     Runtime.Freeze.Enable(true);
     if (const auto& menu = Settings.Get().menu; menu.panorama)
     {
+        AddHomePageText();
         Panorama.emplace(Runtime.PanoramaMenuServices(), MenuLayout, menu.addonId);
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);
     }

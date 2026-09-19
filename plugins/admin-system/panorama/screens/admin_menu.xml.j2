@@ -2,12 +2,33 @@
 {% import "menu.xml.j2" as blocks %}
 {% from "admin_menu/icons.j2" import ICONS %}
 
+{#- Shown in place of the rows on the home page; the rows repeat the sidebar there. -#}
+{% set home %}
+<Panel class="hero" hittest="false">
+  <Panel class="hero__text" hittest="false">
+    <Label class="overline hero__overline" text="{s:brand}" hittest="false" />
+    <Label class="hero__title" text="{s:home_title}" hittest="false" />
+    <Label class="hero__body" text="{s:home_body}" hittest="false" />
+  </Panel>
+</Panel>
+<Panel class="stats" hittest="false">
+  <Panel class="stat" hittest="false">
+    <Label class="overline stat__label" text="{s:home_players_label}" hittest="false" />
+    <Label class="stat__value" text="{s:home_players}" hittest="false" />
+  </Panel>
+  <Panel class="stat stat--last" hittest="false">
+    <Label class="overline stat__label" text="{s:home_map_label}" hittest="false" />
+    <Label class="stat__value" text="{s:home_map}" hittest="false" />
+  </Panel>
+</Panel>
+{% endset %}
+
 <root>
   <styles>
     <include src="file://{resources}/styles/custom_game/{{screen}}.css" />
   </styles>
 
-  {% call blocks.menu(6, 8, ICONS) -%}
+  {% call blocks.menu(6, 8, ICONS, home) -%}
   <Label class="menu__brand-title" text="{s:brand}" hittest="false" />
   <Label class="menu__brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
   {%- endcall %}

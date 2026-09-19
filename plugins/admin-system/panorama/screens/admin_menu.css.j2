@@ -1,3 +1,38 @@
 {% import "@main-menu/meatgg/menu_screen.css.j2" as meatgg %}
 {% from "admin_menu/icons.j2" import ICONS %}
 {{ meatgg.menu_styles(ICONS) }}
+
+.stats {
+  width: 100%;
+  height: fit-children;
+  flow-children: right;
+  margin-top: 16px;
+}
+
+.stat {
+  width: fill-parent-flow(1);
+  height: fit-children;
+  flow-children: down;
+  margin-right: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background-color: card-top;
+  border: 1px solid hairline;
+}
+
+.stat--last {
+  margin-right: 0px;
+}
+
+.stat__label {
+  color: text-disabled;
+}
+
+.stat__value {
+  width: 100%;
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: bold;
+  color: text-primary;
+  text-overflow: ellipsis;
+}

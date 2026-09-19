@@ -22,9 +22,9 @@ bool App::Load()
         auto translated = [this](std::string key) {
             return [this, key = std::move(key)](int slot) { return Runtime.Translations.GetOr(key, slot, key); };
         };
-        Layout.AddText(std::string{MainMenuLayout::HomeTitleVar}, translated("home.title"));
-        Layout.AddText(std::string{MainMenuLayout::HomeBodyVar}, translated("home.body"));
-        Layout.AddText(std::string{MainMenuLayout::HomeReportVar}, translated("home.report"));
+        Layout.AddText(MainMenuLayout::HomeTitleVar, translated("home.title"));
+        Layout.AddText(MainMenuLayout::HomeBodyVar, translated("home.body"));
+        Layout.AddText(MainMenuLayout::HomeReportVar, translated("home.report"));
 
         Panorama.emplace(Runtime.PanoramaMenuServices(), Layout, menu.addonId);
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);

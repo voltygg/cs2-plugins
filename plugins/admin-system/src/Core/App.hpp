@@ -132,6 +132,8 @@ private:
     void InstallPolicy();
     /** Subscribe to the roster's connect/disconnect signals. */
     void RegisterPlayerLifecycle();
+    /** The Panorama home page's text: a greeting, players online and the map. */
+    void AddHomePageText();
     void OnPlayerConnect(VoltMod::Player& player);
     void OnPlayerDisconnect(VoltMod::Player& player);
     VoltMod::Status ConnectDatabase();
