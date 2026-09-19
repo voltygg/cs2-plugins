@@ -27,7 +27,7 @@ struct App final : VoltMod::Plugin
     HubMenu Hub{Config, Runtime.Translations, Runtime.Messages, Runtime.ConVars, Runtime.Exchange};
 
     VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Layout, MainMenuLayout::Tabs.size(),
-                                       MainMenuLayout::Rows.size(), MainMenuLayout::IconNames};
+                                       MainMenuLayout::Rows.size(), MainMenuLayout::IconSetNames};
     std::optional<VoltMod::PanoramaMenu> Panorama;
     /** Starts sessions on Panorama while held. Declared after it, so it lets go first. */
     VoltMod::Subscription PreferPanorama;

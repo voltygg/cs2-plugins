@@ -5,15 +5,15 @@
 
 {#- Shown in place of the rows on the home page; the rows repeat the sidebar there. -#}
 {% set home %}
-<Panel class="Hero" hittest="false">
-  <Image class="Hero-mark" src="s2r://panorama/images/custom_game/brand/mark.vtex" hittest="false" />
-  <Panel class="Hero-text" hittest="false">
-    <Label class="Overline Hero-overline" text="Counter-Strike 2" hittest="false" />
-    <Label class="Hero-title" text="{s:home_title}" hittest="false" />
-    <Label class="Hero-body" text="{s:home_body}" hittest="false" />
+<Panel class="hero" hittest="false">
+  <Image class="hero__mark" src="s2r://panorama/images/custom_game/brand/mark.vtex" hittest="false" />
+  <Panel class="hero__text" hittest="false">
+    <Label class="overline hero__overline" text="Counter-Strike 2" hittest="false" />
+    <Label class="hero__title" text="{s:home_title}" hittest="false" />
+    <Label class="hero__body" text="{s:home_body}" hittest="false" />
   </Panel>
 </Panel>
-<Panel class="Home-actions" hittest="true">
+<Panel class="home-actions" hittest="true">
   {{ controls.button("report", "{s:home_report}", "primary") | indent(2) }}
 </Panel>
 {% endset %}
@@ -24,11 +24,11 @@
   </styles>
 
   {% call blocks.menu(6, 8, ICONS, home) -%}
-  <Panel class="Wordmark" hittest="false">
-    <Image class="Wordmark-mark" src="s2r://panorama/images/custom_game/brand/mark.vtex" hittest="false" />
-    <Label class="Wordmark-meat" text="MEAT" hittest="false" />
-    <Label class="Wordmark-gg" text=".GG" hittest="false" />
+  <Panel class="wordmark" hittest="false">
+    <Image class="wordmark__mark" src="s2r://panorama/images/custom_game/brand/mark.vtex" hittest="false" />
+    <Label class="wordmark__meat" text="MEAT" hittest="false" />
+    <Label class="wordmark__gg" text=".GG" hittest="false" />
   </Panel>
-  <Label class="Brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
+  <Label class="menu__brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
   {%- endcall %}
 </root>
