@@ -7,12 +7,8 @@
     <include src="file://{resources}/styles/custom_game/{{screen}}.css" />
   </styles>
 
-  <Panel class="Layer" hittest="false">
-    <Panel id="{{screen}}" class="Screen Hidden" hittest="true">
-      {% call blocks.menu(6, 8, ICONS) -%}
-      <Label class="Brand-title" text="{s:brand}" hittest="false" />
-      <Label class="Brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
-      {%- endcall %}
-    </Panel>
-  </Panel>
+  {% call blocks.menu(6, 8, ICONS) -%}
+  <Label class="Brand-title" text="{s:brand}" hittest="false" />
+  <Label class="Brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
+  {%- endcall %}
 </root>

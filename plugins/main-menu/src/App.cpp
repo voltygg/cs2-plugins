@@ -15,7 +15,7 @@ bool App::Load()
     if (!VoltMod::LoadStandardConfig(Runtime, Config))
         return false;
 
-    if (const MenuSettings& menu = Config.Get().menu; menu.panorama)
+    if (const VoltMod::PanoramaMenuSettings& menu = Config.Get().menu; menu.panorama)
     {
         Panorama.emplace(Runtime.PanoramaMenuServices(), Layout, menu.addonId);
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);

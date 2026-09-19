@@ -1,6 +1,3 @@
-{% import "icons.css.j2" as icons %}
+{% import "meatgg/menu_screen.css.j2" as meatgg %}
 {% from "admin_menu/icons.j2" import ICONS %}
-{% include "meatgg/theme.css.j2" %}
-{% include "menu.css.j2" %}
-{% include "meatgg/menu.css.j2" %}
-{{ icons.show_rules(ICONS) }}
+{{ meatgg.menu_styles(ICONS) }}

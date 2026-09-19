@@ -1,7 +1,6 @@
 #pragma once
 
 #include <VoltMod/App/Config.hpp>
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -31,27 +30,49 @@ struct TabSettings
     std::vector<EntrySettings> entries;
 };
 
-struct MenuSettings
-{
-    /** Without it, or without the layout on the client, the menu is center HTML. */
-    bool panorama = true;
-    /** Workshop addon carrying the compiled layout; 0 requires nothing. */
-    uint64_t addonId = 0;
-};
-
 struct Settings
 {
     VoltMod::StandardPluginSettings plugin;
-    MenuSettings menu;
+    VoltMod::PanoramaMenuSettings menu{.panorama = true};
     std::vector<TabSettings> tabs;
+};
+
+enum class EntryKind
+{
+    Command,
+    Link,
+    Section
+};
+
+/** An entry that passed CleanSettings. */
+struct Entry
+{
+    EntryKind kind = EntryKind::Command;
+    std::string label;
+    /** The command, the url, or the section id. */
+    std::string target;
+};
+
+struct Tab
+{
+    std::string label;
+    std::string icon;
+    std::vector<Entry> entries;
+};
+
+struct Hub
+{
+    VoltMod::StandardPluginSettings plugin;
+    VoltMod::PanoramaMenuSettings menu;
+    std::vector<Tab> tabs;
 };
 
 /** The layout draws no more tabs than this. */
 inline constexpr int MaxTabs = 6;
 
 /** Drops entries with an unknown kind or an unusable target, and tabs past MaxTabs, logging each. */
-Settings CleanSettings(Settings raw);
+Hub CleanSettings(Settings raw);
 
-using ConfigManager = VoltMod::Options<Settings, Settings>;
+using ConfigManager = VoltMod::Options<Settings, Hub>;
 
 }  // namespace MainMenu

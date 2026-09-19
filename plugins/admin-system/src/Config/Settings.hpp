@@ -4,7 +4,6 @@
 #include "Config/ChatSettings.hpp"
 #include "Config/CheatCheckSettings.hpp"
 #include "Config/MapSettings.hpp"
-#include "Config/MenuSettings.hpp"
 #include "Config/PunishmentSettings.hpp"
 #include "Config/ReportSettings.hpp"
 #include "Config/ServerSettings.hpp"
@@ -31,7 +30,7 @@ struct Settings
     ReportSettings reports;
     CheatCheckSettings cheatCheck;
     MapSettings maps;
-    MenuSettings menu;
+    VoltMod::PanoramaMenuSettings menu;
     WeaponSettings weapons;
 };
 

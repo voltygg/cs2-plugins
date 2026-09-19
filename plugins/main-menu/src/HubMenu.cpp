@@ -21,10 +21,10 @@ std::shared_ptr<VoltMod::Menu> HubMenu::Build(int slot)
     MenuBuilder builder(Text(slot, "menu.title"));
     builder.Subtitle(Text(slot, "menu.subtitle"));
 
-    for (const TabSettings& tab : _config.Get().tabs)
+    for (const Tab& tab : _config.Get().tabs)
     {
         const bool visible =
-            std::ranges::any_of(tab.entries, [&](const EntrySettings& entry) { return IsVisible(entry, slot); });
+            std::ranges::any_of(tab.entries, [&](const Entry& entry) { return IsVisible(entry, slot); });
         if (!visible)
             continue;
 
@@ -36,10 +36,10 @@ std::shared_ptr<VoltMod::Menu> HubMenu::Build(int slot)
     return builder.Build();
 }
 
-std::shared_ptr<VoltMod::Menu> HubMenu::BuildTab(const TabSettings& tab, int slot)
+std::shared_ptr<VoltMod::Menu> HubMenu::BuildTab(const Tab& tab, int slot)
 {
     MenuBuilder builder(Text(slot, tab.label));
-    for (const EntrySettings& entry : tab.entries)
+    for (const Entry& entry : tab.entries)
     {
         if (IsVisible(entry, slot))
             builder.Add(Row(entry));
@@ -47,16 +47,16 @@ std::shared_ptr<VoltMod::Menu> HubMenu::BuildTab(const TabSettings& tab, int slo
     return builder.Build();
 }
 
-MenuItem HubMenu::Row(const EntrySettings& entry)
+MenuItem HubMenu::Row(const Entry& entry)
 {
-    auto shared = std::make_shared<const EntrySettings>(entry);
+    auto shared = std::make_shared<const Entry>(entry);
     return MenuItem{
         .Describe =
             [this, shared](int slot) {
                 MenuRow row{.Label = Text(slot, shared->label)};
-                if (shared->kind == "link")
+                if (shared->kind == EntryKind::Link)
                 {
-                    std::string_view url = shared->url;
+                    std::string_view url = shared->target;
                     row.Value = url.substr(url.find("://") + 3);
                 }
                 else
@@ -70,26 +70,26 @@ MenuItem HubMenu::Row(const EntrySettings& entry)
     };
 }
 
-void HubMenu::Run(const EntrySettings& entry, int slot, MenuSurface& surface)
+void HubMenu::Run(const Entry& entry, int slot, MenuSurface& surface)
 {
-    if (entry.kind == "link")
+    if (entry.kind == EntryKind::Link)
     {
-        _messages.ReplyKey(slot, "link.message", {{"label", Text(slot, entry.label)}, {"url", entry.url}});
+        _messages.ReplyKey(slot, "link.message", {{"label", Text(slot, entry.label)}, {"url", entry.target}});
         return;
     }
 
-    if (entry.kind == "command")
+    if (entry.kind == EntryKind::Command)
     {
         surface.CloseAll(slot);
-        if (auto ran = _conVars.ExecuteClientCommand(slot, entry.command); !ran)
+        if (auto ran = _conVars.ExecuteClientCommand(slot, entry.target); !ran)
         {
-            Log::Warn("'{}' did not run: {}", entry.command, ran.error().Detail);
+            Log::Warn("'{}' did not run: {}", entry.target, ran.error().Detail);
             _messages.ReplyKey(slot, "entry.unavailable");
         }
         return;
     }
 
-    Contracts::IMenuSection* section = Section(entry.section);
+    Contracts::IMenuSection* section = Section(entry.target);
     if (!section || !section->IsVisibleTo(slot))
     {
         _messages.ReplyKey(slot, "entry.unavailable");
@@ -100,11 +100,11 @@ void HubMenu::Run(const EntrySettings& entry, int slot, MenuSurface& surface)
         _messages.ReplyKey(slot, "entry.unavailable");
 }
 
-bool HubMenu::IsVisible(const EntrySettings& entry, int slot)
+bool HubMenu::IsVisible(const Entry& entry, int slot)
 {
-    if (entry.kind != "section")
+    if (entry.kind != EntryKind::Section)
         return true;
-    Contracts::IMenuSection* section = Section(entry.section);
+    Contracts::IMenuSection* section = Section(entry.target);
     return section && section->IsVisibleTo(slot);
 }
 

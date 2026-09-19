@@ -1,0 +1,9 @@
+{#- A menu screen's stylesheet in meat.gg's colours: theme tokens, the framework's menu layout, the
+    brand kit over it, then the tab icon rules. The order matters; call this rather than repeat it. -#}
+{% import "icons.css.j2" as icons %}
+{% macro menu_styles(icon_set) -%}
+{% include "meatgg/theme.css.j2" %}
+{% include "menu.css.j2" %}
+{% include "meatgg/menu.css.j2" %}
+{{ icons.show_rules(icon_set) }}
+{%- endmacro %}

@@ -27,10 +27,10 @@ public:
     [[nodiscard]] std::shared_ptr<VoltMod::Menu> Build(int slot);
 
 private:
-    [[nodiscard]] std::shared_ptr<VoltMod::Menu> BuildTab(const TabSettings& tab, int slot);
-    [[nodiscard]] VoltMod::MenuItem Row(const EntrySettings& entry);
-    void Run(const EntrySettings& entry, int slot, VoltMod::MenuSurface& surface);
-    [[nodiscard]] bool IsVisible(const EntrySettings& entry, int slot);
+    [[nodiscard]] std::shared_ptr<VoltMod::Menu> BuildTab(const Tab& tab, int slot);
+    [[nodiscard]] VoltMod::MenuItem Row(const Entry& entry);
+    void Run(const Entry& entry, int slot, VoltMod::MenuSurface& surface);
+    [[nodiscard]] bool IsVisible(const Entry& entry, int slot);
     /** Asked each time, never kept: the publishing plugin can unload between calls. */
     [[nodiscard]] Contracts::IMenuSection* Section(std::string_view id);
     [[nodiscard]] std::string Text(int slot, std::string_view label) const;
