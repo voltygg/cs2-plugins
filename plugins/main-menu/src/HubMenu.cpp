@@ -3,7 +3,7 @@
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <algorithm>
-#include <utility>
+#include <memory>
 
 namespace Log = VoltMod::Log;
 using VoltMod::MenuBuilder;
@@ -49,13 +49,14 @@ std::shared_ptr<VoltMod::Menu> HubMenu::BuildTab(const TabSettings& tab, int slo
 
 MenuItem HubMenu::Row(const EntrySettings& entry)
 {
+    auto shared = std::make_shared<const EntrySettings>(entry);
     return MenuItem{
         .Describe =
-            [this, entry](int slot) {
-                MenuRow row{.Label = Text(slot, entry.label)};
-                if (entry.kind == "link")
+            [this, shared](int slot) {
+                MenuRow row{.Label = Text(slot, shared->label)};
+                if (shared->kind == "link")
                 {
-                    std::string_view url = entry.url;
+                    std::string_view url = shared->url;
                     row.Value = url.substr(url.find("://") + 3);
                 }
                 else
@@ -65,7 +66,7 @@ MenuItem HubMenu::Row(const EntrySettings& entry)
                 }
                 return row;
             },
-        .Activate = [this, entry](int slot, MenuSurface& surface) { Run(entry, slot, surface); },
+        .Activate = [this, shared](int slot, MenuSurface& surface) { Run(*shared, slot, surface); },
     };
 }
 
@@ -109,7 +110,7 @@ bool HubMenu::IsVisible(const EntrySettings& entry, int slot)
 
 Contracts::IMenuSection* HubMenu::Section(std::string_view id)
 {
-    return static_cast<Contracts::IMenuSection*>(_exchange.Find(Contracts::MenuSectionName(id)));
+    return _exchange.Get<Contracts::IMenuSection>(id);
 }
 
 std::string HubMenu::Text(int slot, std::string_view label) const

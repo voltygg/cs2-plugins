@@ -6,7 +6,6 @@
 #include <format>
 #include <optional>
 #include <string>
-#include <utility>
 
 namespace Log = VoltMod::Log;
 namespace Validation = VoltMod::Validation;

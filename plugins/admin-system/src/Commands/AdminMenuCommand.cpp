@@ -1,4 +1,3 @@
-#include "Admin/AdminManager.hpp"
 #include "Commands/Commands.hpp"
 #include "Core/App.hpp"
 
@@ -15,9 +14,8 @@ namespace AdminSystem::Commands
 void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app)
 {
     commands.Add("admin").Alias("a").Describe("Open the admin menu").Run([&app](Caller c) -> Result<Reply> {
-        // Any registered admin may open the menu; each category inside is
-        // gated by its own flags.
-        if (!app.Admins.IsAdmin(c.Player->SteamId()))
+        // Any admin may open it; each category checks its own flags.
+        if (!app.AdminSection.IsVisibleTo(c.Slot))
             return c.Fail("cmd.noPermission");
 
         if (!app.OpenAdminMenu(c.Slot))

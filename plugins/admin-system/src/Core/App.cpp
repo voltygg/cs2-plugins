@@ -237,15 +237,7 @@ bool App::Load()
     Runtime.Freeze.Enable(true);
     if (const auto& menu = Settings.Get().menu; menu.panorama)
     {
-        Panorama.emplace(VoltMod::PanoramaMenu::Services{.Scheduler = Runtime.Scheduler,
-                                                         .Slots = Runtime.Slots,
-                                                         .Freeze = Runtime.Freeze,
-                                                         .ChatInput = Runtime.Hooks.ChatInput,
-                                                         .Translations = Runtime.Translations,
-                                                         .Policy = Runtime.Policy,
-                                                         .Screens = Runtime.Screens,
-                                                         .Addons = Runtime.Addons},
-                         MenuLayout, menu.addonId);
+        Panorama.emplace(Runtime.PanoramaMenuServices(), MenuLayout, menu.addonId);
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);
     }
 

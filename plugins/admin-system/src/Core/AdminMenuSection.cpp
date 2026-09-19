@@ -1,5 +1,7 @@
 #include "Core/AdminMenuSection.hpp"
 
+#include "Core/App.hpp"
+
 #include <VoltMod/Api.hpp>
 
 namespace AdminSystem::Core
@@ -7,24 +9,23 @@ namespace AdminSystem::Core
 
 void AdminMenuSection::Publish()
 {
-    _rt.Exchange.PublishNamed(Contracts::MenuSectionName("admin"),
-                              static_cast<void*>(static_cast<Contracts::IMenuSection*>(this)));
+    _app.Runtime.Exchange.Publish<Contracts::IMenuSection>(this, "admin");
 }
 
 void AdminMenuSection::Unpublish()
 {
-    _rt.Exchange.UnpublishNamed(Contracts::MenuSectionName("admin"));
+    _app.Runtime.Exchange.Unpublish<Contracts::IMenuSection>("admin");
 }
 
 bool AdminMenuSection::IsVisibleTo(int slot)
 {
-    const VoltMod::Player* player = _rt.Players.Get(slot);
-    return player && _admins.IsAdmin(player->SteamId());
+    const VoltMod::Player* player = _app.Runtime.Players.Get(slot);
+    return player && _app.Admins.IsAdmin(player->SteamId());
 }
 
 bool AdminMenuSection::Open(int slot)
 {
-    return IsVisibleTo(slot) && _open(slot);
+    return IsVisibleTo(slot) && _app.OpenAdminMenu(slot);
 }
 
 }  // namespace AdminSystem::Core

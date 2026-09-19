@@ -1,13 +1,12 @@
 #pragma once
 
-#include <string>
 #include <string_view>
 
 namespace Contracts
 {
 
 /**
- * @brief A main menu entry that opens a plugin's own UI, published under MenuSectionName(id).
+ * @brief A main menu entry that opens a plugin's own UI, published with `Exchange.Publish<IMenuSection>(this, id)`.
  *
  * main-menu hides the entry while nothing is published. A vtable change bumps the /N.
  */
@@ -25,10 +24,5 @@ protected:
     // Consumers borrow; they never own or delete.
     ~IMenuSection() = default;
 };
-
-inline std::string MenuSectionName(std::string_view id)
-{
-    return std::string(IMenuSection::InterfaceName) + ":" + std::string(id);
-}
 
 }  // namespace Contracts

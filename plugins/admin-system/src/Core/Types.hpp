@@ -10,7 +10,8 @@ namespace AdminSystem
 
 /** App.hpp holds Admin::Actions::ActionDescriptors by value, and ActionDescriptors' declaring
  *  header (Admin/Actions/Descriptors.hpp) names App& in Swap/CallCheck/CancelCheck - both by
- *  reference only, so the forward declaration here is enough for either side. */
+ *  reference only, so the forward declaration here is enough for either side. Core::AdminMenuSection
+ *  is held the same way and keeps an App&. */
 struct App;
 
 }  // namespace AdminSystem

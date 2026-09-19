@@ -1,11 +1,8 @@
 #pragma once
 
-#include "Admin/AdminManager.hpp"
+#include "Core/Types.hpp"
 
 #include <Contracts/IMenuSection.hpp>
-#include <VoltMod/Runtime.hpp>
-#include <functional>
-#include <utility>
 
 namespace AdminSystem::Core
 {
@@ -14,9 +11,7 @@ namespace AdminSystem::Core
 class AdminMenuSection final : public Contracts::IMenuSection
 {
 public:
-    AdminMenuSection(VoltMod::Runtime& runtime, Admin::AdminManager& admins, std::function<bool(int slot)> open)
-        : _rt(runtime), _admins(admins), _open(std::move(open))
-    {}
+    explicit AdminMenuSection(App& app) : _app(app) {}
 
     void Publish();
     /** Called before the managers this delegates to are destroyed. */
@@ -26,9 +21,7 @@ public:
     bool Open(int slot) override;
 
 private:
-    VoltMod::Runtime& _rt;
-    Admin::AdminManager& _admins;
-    std::function<bool(int slot)> _open;
+    App& _app;
 };
 
 }  // namespace AdminSystem::Core

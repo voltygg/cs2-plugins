@@ -84,7 +84,8 @@ struct App final : VoltMod::Plugin
     }
 
     /** The admin menu layout, and the clickable menu drawn on it when settings turn Panorama on. */
-    VoltMod::PanoramaMenuLayout MenuLayout{Runtime.Screens, AdminMenuLayout::Layout, 6, 8, AdminMenuLayout::IconNames};
+    VoltMod::PanoramaMenuLayout MenuLayout{Runtime.Screens, AdminMenuLayout::Layout, AdminMenuLayout::Tabs.size(),
+                                           AdminMenuLayout::Rows.size(), AdminMenuLayout::IconNames};
     std::optional<VoltMod::PanoramaMenu> Panorama;
     /** Starts sessions on Panorama while held. Declared after it, so it lets go first. */
     VoltMod::Subscription PreferPanorama;
@@ -120,7 +121,7 @@ struct App final : VoltMod::Plugin
     /** Published to other plugins in Load; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
     /** The main menu's admin entry; published in Load, withdrawn before these managers die. */
-    Core::AdminMenuSection AdminSection{Runtime, Admins, [this](int slot) { return OpenAdminMenu(slot); }};
+    Core::AdminMenuSection AdminSection{*this};
     /** Load-time migration outcome shown by `admin_status`. */
     VoltMod::MigrationResult Migration;
 

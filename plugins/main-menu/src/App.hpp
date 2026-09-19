@@ -13,6 +13,9 @@
 namespace MainMenu
 {
 
+static_assert(static_cast<int>(MainMenuLayout::Tabs.size()) == MaxTabs,
+              "settings cap the tabs at what the layout draws");
+
 /** One load cycle's state; members are destroyed in reverse order. */
 struct App final : VoltMod::Plugin
 {
@@ -23,7 +26,8 @@ struct App final : VoltMod::Plugin
     ConfigManager Config{&CleanSettings};
     HubMenu Hub{Config, Runtime.Translations, Runtime.Messages, Runtime.ConVars, Runtime.Exchange};
 
-    VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Layout, MaxTabs, 8, MainMenuLayout::IconNames};
+    VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Layout, MainMenuLayout::Tabs.size(),
+                                       MainMenuLayout::Rows.size(), MainMenuLayout::IconNames};
     std::optional<VoltMod::PanoramaMenu> Panorama;
     /** Starts sessions on Panorama while held. Declared after it, so it lets go first. */
     VoltMod::Subscription PreferPanorama;
