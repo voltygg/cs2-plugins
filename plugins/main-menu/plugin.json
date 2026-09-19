@@ -1,0 +1,9 @@
+{
+  "name": "main-menu",
+  "version": "1.0.0",
+  "logTag": "MENU",
+  "description": "The meat.gg main menu: stats, VIP, admin and website links.",
+  "author": "Sukhrob Ilyosbekov",
+  "dependencies": [],
+  "optionalDependencies": []
+}

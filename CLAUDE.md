@@ -25,6 +25,7 @@ uv run poe lint                              # ruff + modgraph + panorama and sc
 uv run poe schema                            # regenerate the admin-system table specs from its migrations
 uv run poe build --install <plugin> --start  # copy to CS2_SERVER_PATH and launch
 uv run poe panorama                          # render, compile and install the Panorama screens into your client (Windows)
+uv run poe panorama-publish                  # compile every screen into the meatgg_ui workshop addon folder
 uv run poe new-plugin <name>
 ```
 
@@ -45,6 +46,7 @@ uv run poe build --relock                  # before committing; commit conan.loc
 plugins/admin-system/  Admins, punishments, menus, reports, Postgres/MariaDB/SQLite
 plugins/anticheat/     Detection cores, engine adapters, responses
 plugins/bhop/          Bunnyhop modes
+plugins/main-menu/     !menu hub; owns the meat.gg Panorama brand kit (panorama/templates/meatgg)
 plugins/contracts/     Interfaces shared between plugins
 deploy/                Deploy CLI for panel servers and Docker hosts
 docs/                  Development and deployment notes

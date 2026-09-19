@@ -1,0 +1,328 @@
+{#- The menu block in meat.gg's colours; include after `theme.css.j2` and `menu.css.j2`. Hover
+    switches instantly: a fade leaves two rows half-lit when the pointer moves fast. -#}
+.Screen {
+  opacity: 1;
+  transition-property: opacity;
+  transition-duration: 0.12s;
+  transition-timing-function: ease-out;
+}
+
+/* Collapse as well as fade: a transparent panel still takes clicks. */
+.Screen.Hidden {
+  opacity: 0;
+}
+
+/* Pressed buttons shrink a touch; each sets its own scale on :active. */
+.Button,
+.Tab,
+.IconButton,
+.Row-button,
+.Stepper,
+.Pager-arrow {
+  transition-property: pre-transform-scale2d;
+  transition-duration: 0.12s;
+}
+
+.Window {
+  background-color: window;
+  border-radius: 16px;
+  color: text-bright;
+  transform: translateY(0px);
+  transition-property: transform;
+  transition-duration: 0.12s;
+  transition-timing-function: ease-out;
+}
+
+.Screen.Hidden .Window {
+  transform: translateY(10px);
+}
+
+.Sidebar {
+  background-color: sidebar;
+  border-radius: 16px 0px 0px 16px;
+}
+
+.Brand-title {
+  width: 100%;
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-overflow: ellipsis;
+}
+
+.Brand-subtitle {
+  width: 100%;
+  margin-top: 2px;
+  font-size: 12px;
+  color: text-dim;
+}
+
+.Tab {
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0);
+}
+
+.Tab:hover {
+  background-color: #1a1a21;
+}
+
+.Tab:active {
+  pre-transform-scale2d: 0.98;
+}
+
+.Tab.Selected {
+  background-color: gradient(linear, 0% 0%, 100% 0%, from(accent), to(accent-deep));
+}
+
+.Tab .Icons Image {
+  wash-color: #74747e;
+}
+
+.Tab:hover .Icons Image {
+  wash-color: #e6e6ea;
+}
+
+.Tab.Selected .Icons Image {
+  wash-color: #ffffff;
+}
+
+.Tab-label {
+  color: text-soft;
+}
+
+.Tab:hover .Tab-label {
+  color: text-bright;
+}
+
+.Tab.Selected .Tab-label {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.Breadcrumb {
+  color: text-faint;
+}
+
+.Title {
+  color: #ffffff;
+}
+
+.Subtitle {
+  color: text-muted;
+}
+
+.IconButton {
+  border-radius: 10px;
+  background-color: #23232d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.IconButton:hover {
+  background-color: accent;
+}
+
+.IconButton:active {
+  pre-transform-scale2d: 0.94;
+}
+
+.IconButton-image {
+  wash-color: #b4b4be;
+}
+
+.IconButton:hover .IconButton-image {
+  wash-color: #ffffff;
+}
+
+.Screen.Prompting .Rows,
+.Screen.Prompting .Pager {
+  opacity: 0.3;
+}
+
+.Row {
+  background-color: surface;
+  border: 1px solid line;
+  border-radius: 12px;
+  transition-property: background-color;
+  transition-duration: 0.2s;
+}
+
+/* Styling only; a disabled row still reports its press, and the driver drops it. Dimmed rather
+   than faded out: a half-transparent row reads as still loading. */
+.Row.Disabled {
+  background-color: surface-disabled;
+  border: 1px solid line-faint;
+}
+
+.Row.Disabled .Row-label {
+  color: text-dim;
+}
+
+/* A stepped value waiting to apply; the transition fades it out once it has. */
+.Row.Pending {
+  background-color: accent-pending;
+}
+
+.Row-button {
+  border-radius: 12px;
+}
+
+.Row-button:hover {
+  background-color: gradient(linear, 0% 0%, 100% 0%, from(rgba(225, 39, 60, 0.16)), to(rgba(225, 39, 60, 0.02)));
+}
+
+.Row-button:active {
+  pre-transform-scale2d: 0.99;
+}
+
+.Row.Disabled .Row-button:hover,
+.Row.Static .Row-button:hover {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+/* A heading or placeholder: the model refuses the press, so the row must not invite one. */
+.Row.Static {
+  background-color: rgba(0, 0, 0, 0);
+  border: 0px solid rgba(0, 0, 0, 0);
+}
+
+.Row.Static .Row-button:active {
+  pre-transform-scale2d: 1.0;
+}
+
+.Row.Static .Row-label,
+.Row.Static .Row-button:hover .Row-label {
+  color: text-muted;
+}
+
+.Row-label {
+  color: text-row;
+}
+
+.Row-button:hover .Row-label {
+  color: #ffffff;
+}
+
+.Row-hint {
+  color: text-faint;
+}
+
+.Row-value {
+  border-radius: 6px;
+  background-color: rgba(240, 181, 74, 0.1);
+  color: gold;
+}
+
+.Row-chevron {
+  color: text-faint;
+}
+
+.Row-button:hover .Row-chevron {
+  color: accent;
+}
+
+.Switch {
+  border-radius: 12px;
+  background-color: control;
+  border: 1px solid line;
+}
+
+.Row-button:hover .Switch {
+  background-color: #3a3a44;
+}
+
+.Switch-knob {
+  border-radius: 9px;
+  background-color: text-soft;
+  transition-duration: 0.15s;
+}
+
+.Row.On .Switch {
+  background-color: accent;
+  border: 1px solid accent-hover;
+}
+
+.Row.On .Row-button:hover .Switch {
+  background-color: accent-hover;
+}
+
+.Row.On .Switch-knob {
+  background-color: #ffffff;
+}
+
+.Stepper {
+  border-radius: 8px;
+  background-color: control;
+  color: text-soft;
+}
+
+.Stepper:hover {
+  background-color: accent;
+  color: #ffffff;
+}
+
+.Stepper:active {
+  pre-transform-scale2d: 0.92;
+}
+
+.Empty {
+  color: text-dim;
+}
+
+.Prompt {
+  background-color: surface;
+  border: 1px solid accent-line;
+  border-radius: 12px;
+}
+
+.Prompt-text {
+  color: text-bright;
+}
+
+.Prompt-hint {
+  color: gold;
+}
+
+.Button {
+  border-radius: 10px;
+  background-color: surface;
+  border: 1px solid line;
+}
+
+.Button:hover {
+  background-color: surface-hover;
+  border: 1px solid accent-line;
+}
+
+.Button:active {
+  pre-transform-scale2d: 0.97;
+}
+
+.Button-label {
+  color: #d8d8de;
+}
+
+.Button:hover .Button-label {
+  color: #ffffff;
+}
+
+.Pager-label {
+  color: text-muted;
+}
+
+.Pager-arrow {
+  border-radius: 10px;
+  background-color: surface;
+  border: 1px solid line;
+  color: #b4b4be;
+}
+
+.Pager-arrow:hover {
+  background-color: accent;
+  color: #ffffff;
+}
+
+.Pager-arrow:active {
+  pre-transform-scale2d: 0.94;
+}

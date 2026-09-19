@@ -1,0 +1,35 @@
+{#- The main menu: the framework's menu block in meat.gg's colours, with the steak and wordmark. -#}
+{% import "icons.css.j2" as icons %}
+{% from "main_menu/icons.j2" import ICONS %}
+{% include "meatgg/theme.css.j2" %}
+{% include "menu.css.j2" %}
+{% include "meatgg/menu.css.j2" %}
+{{ icons.show_rules(ICONS) }}
+
+.Wordmark {
+  width: 100%;
+  height: 36px;
+  flow-children: right;
+}
+
+.Wordmark-mark {
+  width: 36px;
+  height: 36px;
+  margin-right: 10px;
+}
+
+.Wordmark-meat,
+.Wordmark-gg {
+  vertical-align: center;
+  font-size: 22px;
+  font-weight: black;
+  letter-spacing: -1px;
+}
+
+.Wordmark-meat {
+  color: #ffffff;
+}
+
+.Wordmark-gg {
+  color: accent;
+}

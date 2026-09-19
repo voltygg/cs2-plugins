@@ -1,0 +1,38 @@
+{
+  "menu": {
+    "title": "MEAT.GG",
+    "subtitle": "Main menu",
+    "cancel": "Cancel",
+    "empty": "Nothing here",
+    "pending": "Applying...",
+    "promptHint": "Press Y and type your answer in chat"
+  },
+  "nav": {
+    "back": "Back",
+    "root": "Main"
+  },
+  "tab": {
+    "stats": "Stats",
+    "vip": "VIP",
+    "admin": "Admin",
+    "skins": "Skins",
+    "clans": "Clans",
+    "rules": "Rules"
+  },
+  "entry": {
+    "level": "My level",
+    "rank": "My rank",
+    "top": "Top players",
+    "topTime": "Top by playtime",
+    "session": "This session",
+    "vip": "VIP menu",
+    "admin": "Admin menu",
+    "skins": "Skin changer",
+    "clans": "Clans",
+    "rules": "Server rules",
+    "unavailable": "That is not available right now."
+  },
+  "link": {
+    "message": "{label}: {url}"
+  }
+}

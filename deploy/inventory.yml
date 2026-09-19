@@ -40,6 +40,7 @@ plugins:
       plugin: { locale: ru }
       bhop: { mode: grants }
   anticheat: {}
+  main-menu: {}
 
 servers:
   - id: panel-a
@@ -51,6 +52,7 @@ servers:
       - admin-system
       - bhop
       - anticheat
+      - main-menu
     instances:
       - { name: main, port: 27030, hostname: "CS2 Main" }
 
@@ -62,5 +64,6 @@ servers:
     plugins:
       - admin-system
       - bhop
+      - main-menu
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main", insecure: true }

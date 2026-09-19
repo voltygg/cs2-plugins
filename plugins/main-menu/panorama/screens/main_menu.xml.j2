@@ -1,0 +1,22 @@
+{# namespace: MainMenuLayout #}
+{% import "menu.xml.j2" as blocks %}
+{% from "main_menu/icons.j2" import ICONS %}
+
+<root>
+  <styles>
+    <include src="file://{resources}/styles/custom_game/{{screen}}.css" />
+  </styles>
+
+  <Panel class="Layer" hittest="false">
+    <Panel id="{{screen}}" class="Screen Hidden" hittest="true">
+      {% call blocks.menu(6, 8, ICONS) -%}
+      <Panel class="Wordmark" hittest="false">
+        <Image class="Wordmark-mark" src="s2r://panorama/images/custom_game/brand/mark.vtex" hittest="false" />
+        <Label class="Wordmark-meat" text="MEAT" hittest="false" />
+        <Label class="Wordmark-gg" text=".GG" hittest="false" />
+      </Panel>
+      <Label class="Brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
+      {%- endcall %}
+    </Panel>
+  </Panel>
+</root>
