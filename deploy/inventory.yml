@@ -38,7 +38,7 @@ plugins:
   bhop:
     settings:
       plugin: { locale: ru }
-      bhop: { mode: grants }
+      bhop: { mode: enabled }
   anticheat: {}
   main-menu: {}
 
