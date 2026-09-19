@@ -47,7 +47,7 @@ std::shared_ptr<VoltMod::Menu> HubMenu::Build(int slot)
 std::shared_ptr<VoltMod::Menu> HubMenu::BuildSettings(int slot)
 {
     // "" is the server's language.
-    std::vector<std::pair<std::string, std::string>> choices{{Text(slot, "language.default"), ""}};
+    std::vector<VoltMod::Labeled<std::string>> choices{{.Label = Text(slot, "language.default"), .Value = ""}};
     const std::string current(_translations.PlayerLanguage(slot));
     int index = 0;
     std::vector<std::string> codes = _translations.GetAvailableLanguages();
@@ -56,7 +56,7 @@ std::shared_ptr<VoltMod::Menu> HubMenu::BuildSettings(int slot)
     {
         if (code == current)
             index = static_cast<int>(choices.size());
-        choices.emplace_back(_translations.GetOr("language." + code, slot, code), code);
+        choices.push_back({.Label = _translations.GetOr("language." + code, slot, code), .Value = code});
     }
 
     MenuBuilder builder(Text(slot, "tab.settings"));

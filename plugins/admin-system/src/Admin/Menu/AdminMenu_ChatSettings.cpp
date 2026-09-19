@@ -23,9 +23,6 @@ using VoltMod::ChoiceRow;
 using VoltMod::MenuBuilder;
 using VoltMod::ToggleRow;
 
-/** One labeled entry of a colour choice row. */
-using LabeledValue = std::pair<std::string, std::string>;
-
 namespace ChatColors = VoltMod::ChatColors;
 
 // Explicit keys keep compound color names stable across palette changes.
@@ -55,16 +52,16 @@ static int IndexForColor(std::string_view color)
     return 0;
 }
 
-static std::vector<LabeledValue> BuildColorChoices(App& app, int viewerSlot)
+static std::vector<VoltMod::Labeled<std::string>> BuildColorChoices(App& app, int viewerSlot)
 {
     auto& translations = app.Runtime.Translations;
     const auto& keys = ColorLabelKeys();
 
-    std::vector<LabeledValue> choices;
+    std::vector<VoltMod::Labeled<std::string>> choices;
     choices.reserve(ChatColors::Palette.size() + 1);
 
     // Group inheritance is distinct from the `default` color override.
-    choices.push_back({translations.Get("color.groupDefault", viewerSlot), std::string{}});
+    choices.push_back({.Label = translations.Get("color.groupDefault", viewerSlot), .Value = ""});
 
     // The framework renders the palette; colors without a translation key fall back to their name.
     auto palette = ChatColors::PaletteChoices([&](std::string_view name) -> std::string {
