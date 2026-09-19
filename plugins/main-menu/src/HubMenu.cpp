@@ -4,8 +4,12 @@
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <algorithm>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace Log = VoltMod::Log;
+using VoltMod::ChoiceRow;
 using VoltMod::MenuBuilder;
 using VoltMod::MenuItem;
 using VoltMod::MenuRow;
@@ -33,7 +37,48 @@ std::shared_ptr<VoltMod::Menu> HubMenu::Build(int slot)
                                .Build = [this, tab](int opener) { return BuildTab(tab, opener); },
                                .Icon = tab.icon});
     }
+
+    builder.Add(SubmenuRow{.Label = Text(slot, "tab.settings"),
+                           .Build = [this](int opener) { return BuildSettings(opener); },
+                           .Icon = "settings"});
     return builder.Build();
+}
+
+std::shared_ptr<VoltMod::Menu> HubMenu::BuildSettings(int slot)
+{
+    // "" is the server's language.
+    std::vector<std::pair<std::string, std::string>> choices{{Text(slot, "language.default"), ""}};
+    const std::string current(_translations.PlayerLanguage(slot));
+    int index = 0;
+    std::vector<std::string> codes = _translations.GetAvailableLanguages();
+    std::ranges::sort(codes);
+    for (const std::string& code : codes)
+    {
+        if (code == current)
+            index = static_cast<int>(choices.size());
+        choices.emplace_back(_translations.GetOr("language." + code, slot, code), code);
+    }
+
+    MenuBuilder builder(Text(slot, "tab.settings"));
+    builder.Add(ChoiceRow<std::string>{
+        .Label = Text(slot, "settings.language"),
+        .Choices = std::move(choices),
+        .Commit = [this](int player, const std::string& lang) { SetLanguage(player, lang); },
+        .Index = index,
+    });
+    return builder.Build();
+}
+
+void HubMenu::SetLanguage(int slot, const std::string& lang)
+{
+    _translations.SetPlayerLanguage(slot, lang);
+    Open(slot);
+}
+
+void HubMenu::Open(int slot)
+{
+    // Players reach it mid-round, where being held still is worse than stray movement.
+    _menus.OpenSession(slot, Build(slot), {.FreezeMovement = false});
 }
 
 std::shared_ptr<VoltMod::Menu> HubMenu::BuildTab(const Tab& tab, int slot)

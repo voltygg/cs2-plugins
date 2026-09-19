@@ -21,7 +21,8 @@
     "admin": "Админ",
     "skins": "Скины",
     "clans": "Кланы",
-    "rules": "Правила"
+    "rules": "Правила",
+    "settings": "Настройки"
   },
   "entry": {
     "level": "Мой уровень",
@@ -35,6 +36,14 @@
     "clans": "Кланы",
     "rules": "Правила сервера",
     "unavailable": "Сейчас это недоступно."
+  },
+  "settings": {
+    "language": "Язык"
+  },
+  "language": {
+    "default": "Как на сервере",
+    "en": "English",
+    "ru": "Русский"
   },
   "link": {
     "message": "{label}: {url}"

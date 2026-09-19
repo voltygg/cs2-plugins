@@ -13,8 +13,8 @@
 namespace MainMenu
 {
 
-static_assert(static_cast<int>(MainMenuLayout::Tabs.size()) == MaxTabs,
-              "settings cap the tabs at what the layout draws");
+static_assert(static_cast<int>(MainMenuLayout::Tabs.size()) == MaxTabs + 1,
+              "the layout draws the configured tabs plus Settings");
 
 /** One load cycle's state; members are destroyed in reverse order. */
 struct App final : VoltMod::Plugin
@@ -24,7 +24,7 @@ struct App final : VoltMod::Plugin
     bool Load() override;
 
     ConfigManager Config{&CleanSettings};
-    HubMenu Hub{Config, Runtime.Translations, Runtime.Messages, Runtime.ConVars, Runtime.Exchange};
+    HubMenu Hub{Config, Runtime.Translations, Runtime.Messages, Runtime.ConVars, Runtime.Exchange, Runtime.Menus};
 
     VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Layout, MainMenuLayout::Tabs.size(),
                                        MainMenuLayout::Rows.size(), MainMenuLayout::IconSetNames};

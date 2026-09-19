@@ -1,6 +1,7 @@
 {
   "$schema": "./settings.schema.json",
   "plugin": {
+    // Server default language. A player's pick in the Settings tab wins for every plugin.
     "locale": "ru"
   },
   "menu": {
@@ -9,7 +10,7 @@
     // meatgg_ui, the same addon admin-system requires; a client downloads it once.
     "addonId": 3801580041
   },
-  // At most 6 tabs. A label is a translation key or literal text. `kind` is one of:
+  // At most 6 tabs; a Settings tab is always added after them. A label is a translation key or literal text. `kind` is one of:
   //   command  runs a console command as the player (a legacy plugin's menu, e.g. mm_lvl for !lvl)
   //   link     prints the URL to the player's chat
   //   section  opens another VoltMod plugin's menu; hidden while that plugin is not loaded
