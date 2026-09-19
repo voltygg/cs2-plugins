@@ -68,10 +68,6 @@ void App::OnPlayerConnect(Player& player)
     const int slot = player.Slot();
     Repos.Players.RecordConnectAsync(steamId, player.Name(), std::string(player.Ip()));
 
-    // Register the language once so every slot-aware translation uses it.
-    if (const auto* row = Admins.GetAdmin(steamId))
-        Runtime.Translations.SetPlayerLanguage(slot, row->Language);
-
     // Notify frozen admins on connect instead of waiting for their first denied command.
     if (Freeze.IsFrozen(steamId))
         Freeze.NotifyFrozenSoon(slot, steamId);
@@ -218,7 +214,6 @@ void App::RegisterCommands()
 
 bool App::OpenAdminMenu(int slot)
 {
-    // Panel language is registered at connect (see OnPlayerConnect).
     auto menu = Admin::BuildAdminMainMenu(*this, slot);
     if (!menu)
         return false;

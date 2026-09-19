@@ -227,8 +227,7 @@
   "chat": {
     "displayPrefix": "Prefix",
     "nameColor": "Name",
-    "messageColor": "Message",
-    "panelLanguage": "Language"
+    "messageColor": "Message"
   },
   "color": {
     "groupDefault": "(default)",
@@ -320,10 +319,6 @@
       "micspam": "Mic spam",
       "nickname": "Inappropriate nickname"
     }
-  },
-  "lang": {
-    "en": "English",
-    "ru": "Русский"
   },
   "menu": {
     "cancel": "Cancel",

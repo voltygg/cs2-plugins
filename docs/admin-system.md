@@ -248,7 +248,7 @@ parse JSON.
 
 | Table | Holds |
 | --- | --- |
-| `admins` | Admin records, flags, immunity, language, and freeze state |
+| `admins` | Admin records, flags, immunity, and freeze state |
 | `admin_groups` | Named flag and immunity bundles |
 | `admin_server_groups` | Which groups an admin holds on which server tag |
 | `admin_activity` | Audit trail of every punishment an admin issued |

@@ -10,7 +10,6 @@
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <algorithm>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -24,7 +23,7 @@ using VoltMod::ChoiceRow;
 using VoltMod::MenuBuilder;
 using VoltMod::ToggleRow;
 
-/** One labeled entry of a colour or language choice row. */
+/** One labeled entry of a colour choice row. */
 using LabeledValue = std::pair<std::string, std::string>;
 
 namespace ChatColors = VoltMod::ChatColors;
@@ -130,57 +129,6 @@ static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& ti
                                        .Index = initialIndex});
 }
 
-// `lang.<code>` translations fall back to the raw code.
-static std::string LanguageLabel(App& app, const std::string& code, int viewerSlot)
-{
-    return app.Runtime.Translations.GetOr("lang." + code, viewerSlot, code);
-}
-
-static std::vector<std::string> AvailableLanguagesSorted(App& app)
-{
-    auto langs = app.Runtime.Translations.GetAvailableLanguages();
-    std::sort(langs.begin(), langs.end());
-    return langs;
-}
-
-// Index zero represents no stored language override.
-static int IndexForLanguage(const std::vector<std::string>& langs, const std::string& code)
-{
-    auto it = std::find(langs.begin(), langs.end(), code);
-    return it != langs.end() ? static_cast<int>(it - langs.begin()) : 0;
-}
-
-static void AddLanguageChoice(App& app, MenuBuilder& builder, int64_t steamId, int viewerSlot)
-{
-    auto langs = AvailableLanguagesSorted(app);
-
-    std::vector<LabeledValue> choices;
-    choices.reserve(langs.size());
-
-    for (const auto& code : langs)
-    {
-        choices.push_back({LanguageLabel(app, code, viewerSlot), code});
-    }
-
-    const auto* admin = app.Admins.GetAdmin(steamId);
-    int initialIndex = IndexForLanguage(langs, admin ? admin->Language : std::string("en"));
-
-    builder.Add(ChoiceRow<std::string>{.Label = app.Runtime.Translations.Get("chat.panelLanguage", viewerSlot),
-                                       .Choices = std::move(choices),
-                                       .Commit =
-                                           [&app, steamId](int menuSlot, const std::string& lang) {
-                                               app.Admins.UpdateLanguageAsync(steamId, lang);
-                                               app.Runtime.Translations.SetPlayerLanguage(menuSlot, lang);
-                                               // Rebuild so the baked labels re-render in the new language. Use the
-                                               // by-value menuSlot (not a capture): Close frees this row and its
-                                               // captures, so nothing read after it may live in the lambda's closure.
-                                               auto& menus = app.Runtime.Menus;
-                                               menus.Close(menuSlot);
-                                               menus.Open(menuSlot, BuildChatSettingsMenu(app, menuSlot));
-                                           },
-                                       .Index = initialIndex});
-}
-
 std::shared_ptr<VoltMod::Menu> BuildChatSettingsMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
@@ -211,8 +159,6 @@ std::shared_ptr<VoltMod::Menu> BuildChatSettingsMenu(AdminSystem::App& app, int 
     AddColorChoice(app, builder, translations.Get("chat.nameColor", adminSlot), steamId, ColorSlot::Name, adminSlot);
     AddColorChoice(app, builder, translations.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message,
                    adminSlot);
-
-    AddLanguageChoice(app, builder, steamId, adminSlot);
 
     return builder.Build();
 }

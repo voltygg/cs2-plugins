@@ -27,8 +27,6 @@ struct Admin
     std::string NameColor;
     std::string MessageColor;
 
-    /** Language for this admin's in-game panel; defaults to English. */
-    std::string Language = "en";
 
     int64_t CreatedAt = 0;
     int64_t UpdatedAt = 0;

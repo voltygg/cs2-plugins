@@ -229,16 +229,6 @@ void AdminManager::UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, con
     _resolvedStyles.erase(steamId);
 }
 
-void AdminManager::UpdateLanguageAsync(int64_t steamId, const std::string& lang)
-{
-    auto it = _admins.find(steamId);
-    if (it == _admins.end())
-        return;
-
-    _repos.Admins.UpdateLanguageAsync(steamId, lang);
-    it->second.Language = lang;
-}
-
 uint32_t AdminManager::ResolveFlags(const Database::Admin& admin)
 {
     uint32_t bits = 0;

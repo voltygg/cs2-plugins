@@ -13,7 +13,7 @@
         "locale": {
           "type": "string",
           "default": "en",
-          "description": "Default panel/translation language; matches a file in configs/translations (e.g. \"en\", \"ru\")."
+          "description": "Server default language; matches a file in configs/translations (e.g. \"en\", \"ru\"). A player's own pick wins over it."
         }
       }
     },

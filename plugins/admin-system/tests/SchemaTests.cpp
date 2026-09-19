@@ -43,8 +43,8 @@ static void WithMigratedDb(Body body)
 TEST_CASE("The migrations build the schema the generated specs describe")
 {
     WithMigratedDb([](Database& db, const auto& migration) {
-        CHECK(migration.Applied == 1);
-        CHECK(migration.CurrentVersion == 1);
+        CHECK(migration.Applied == 2);
+        CHECK(migration.CurrentVersion == 2);
 
         // SQLite raises "no such column" when a spec and the schema disagree, so selecting
         // every column is the whole check. Matching no rows keeps it cheap.
@@ -80,13 +80,11 @@ TEST_CASE("The migrations build the schema the generated specs describe")
 
 TEST_CASE("Applying the migrations twice changes nothing")
 {
-    // Every statement is CREATE ... IF NOT EXISTS or an insert-if-absent, so a second load over a
-    // database that skipped the history table would still be safe.
     WithMigratedDb([](Database& db, const auto&) {
         auto again = RunMigrations(db, MigrationsDir());
         CHECK(again.Success);
         CHECK(again.Applied == 0);
-        CHECK(again.CurrentVersion == 1);
+        CHECK(again.CurrentVersion == 2);
     });
 }
 

@@ -129,11 +129,6 @@ namespace AdminSystem::Database::Tables
       using data_type = ::sqlpp::text;
       using has_default = std::true_type;
     };
-    struct Language {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(language, language);
-      using data_type = ::sqlpp::text;
-      using has_default = std::true_type;
-    };
     struct CreatedAt {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(created_at, createdAt);
       using data_type = ::sqlpp::integral;
@@ -176,7 +171,6 @@ namespace AdminSystem::Database::Tables
                DisplayPrefix,
                NameColor,
                MessageColor,
-               Language,
                CreatedAt,
                UpdatedAt,
                IsFrozen,

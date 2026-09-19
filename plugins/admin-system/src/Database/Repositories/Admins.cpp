@@ -42,7 +42,6 @@ std::vector<Admin> AdminRepository::FindAll()
                                    .DisplayPrefix = row.displayPrefix,
                                    .NameColor = std::string(row.nameColor),
                                    .MessageColor = std::string(row.messageColor),
-                                   .Language = std::string(row.language),
                                    .CreatedAt = row.createdAt,
                                    .UpdatedAt = row.updatedAt});
         }
@@ -95,14 +94,6 @@ void AdminRepository::UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, 
                                    t.messageColor = messageColor, t.updatedAt = now)
                               .where(t.steamId == steamId));
                  });
-}
-
-void AdminRepository::UpdateLanguageAsync(int64_t steamId, const std::string& lang)
-{
-    _db.RunAsync("update_admin_language", [steamId, lang, now = Time::Now()](auto& conn) {
-        const Tables::Admins t;
-        conn(sqlpp::update(t).set(t.language = lang, t.updatedAt = now).where(t.steamId == steamId));
-    });
 }
 
 void AdminRepository::SetFrozenAsync(int64_t steamId, int64_t frozenBy, const std::string& reason)

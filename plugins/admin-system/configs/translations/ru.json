@@ -227,8 +227,7 @@
   "chat": {
     "displayPrefix": "Префикс",
     "nameColor": "Имя",
-    "messageColor": "Текст",
-    "panelLanguage": "Язык"
+    "messageColor": "Текст"
   },
   "color": {
     "groupDefault": "по умолч.",
@@ -320,10 +319,6 @@
       "micspam": "Спам в микрофон",
       "nickname": "Недопустимый никнейм"
     }
-  },
-  "lang": {
-    "en": "English",
-    "ru": "Русский"
   },
   "menu": {
     "cancel": "Отмена",

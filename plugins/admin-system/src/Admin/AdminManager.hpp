@@ -72,8 +72,6 @@ public:
     void UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                               const std::string& messageColor);
 
-    /** Persist + apply an admin's panel language. Unknown admins are ignored. */
-    void UpdateLanguageAsync(int64_t steamId, const std::string& lang);
 
     /** Convert a single flag character ('a'-'z') to a bitmask bit. */
     static uint32_t FlagToBit(char flag)
