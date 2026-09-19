@@ -89,7 +89,12 @@ void HubMenu::Run(const Entry& entry, int slot, MenuSurface& surface)
         return;
     }
 
-    Contracts::IMenuSection* section = Section(entry.target);
+    OpenSection(entry.target, slot, surface);
+}
+
+void HubMenu::OpenSection(std::string_view id, int slot, MenuSurface& surface)
+{
+    Contracts::IMenuSection* section = Section(id);
     if (!section || !section->IsVisibleTo(slot))
     {
         _messages.ReplyKey(slot, "entry.unavailable");

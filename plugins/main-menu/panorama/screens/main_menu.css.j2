@@ -23,9 +23,85 @@
 }
 
 .Wordmark-meat {
-  color: #ffffff;
+  color: text-primary;
 }
 
 .Wordmark-gg {
-  color: accent;
+  color: primary;
+}
+
+.Home {
+  width: 100%;
+  height: fill-parent-flow(1);
+  flow-children: down;
+  visibility: collapse;
+}
+
+.Screen.HomePage .Home {
+  visibility: visible;
+}
+
+.Screen.HomePage .Rows {
+  visibility: collapse;
+}
+
+.Hero {
+  width: 100%;
+  height: fit-children;
+  flow-children: right;
+  padding: 24px;
+  border-radius: 14px;
+  background-color: gradient(linear, 0% 0%, 0% 100%, from(card-top), to(window-bottom));
+  border: 1px solid hairline;
+}
+
+.Hero-mark {
+  width: 72px;
+  height: 72px;
+  margin-right: 20px;
+  vertical-align: center;
+}
+
+.Hero-text {
+  width: fill-parent-flow(1);
+  height: fit-children;
+  flow-children: down;
+  vertical-align: center;
+}
+
+.Hero-eyebrow {
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: primary;
+}
+
+.Hero-title {
+  width: 100%;
+  margin-top: 6px;
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: -0.3px;
+  color: text-primary;
+}
+
+.Hero-body {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 14px;
+  color: text-secondary;
+}
+
+.Home-actions {
+  width: 100%;
+  height: fit-children;
+  flow-children: right;
+  margin-top: 16px;
+}
+
+.Home-actions .Button {
+  width: fit-children;
+  height: 44px;
+  padding: 0px 24px;
 }

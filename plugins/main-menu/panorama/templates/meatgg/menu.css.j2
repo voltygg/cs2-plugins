@@ -1,5 +1,5 @@
-{#- The menu block in meat.gg's colours; `menu_screen.css.j2` includes it in order. Hover
-    switches instantly: a fade leaves two rows half-lit when the pointer moves fast. -#}
+{#- The menu block styled like the meat-app frontend. Hover switches instantly: a fade leaves two
+    rows half-lit when the pointer moves fast. -#}
 .Screen {
   opacity: 1;
   transition-property: opacity;
@@ -24,9 +24,11 @@
 }
 
 .Window {
-  background-color: window;
+  background-color: gradient(linear, 0% 0%, 0% 100%, from(window-top), to(window-bottom));
+  border: 1px solid hairline;
   border-radius: 16px;
-  color: text-bright;
+  box-shadow: rgba(0, 0, 0, 0.72) 0px 0px 40px 0px;
+  color: text-primary;
   transform: translateY(0px);
   transition-property: transform;
   transition-duration: 0.12s;
@@ -39,7 +41,18 @@
 
 .Sidebar {
   background-color: sidebar;
+  border-right: 1px solid hairline;
   border-radius: 16px 0px 0px 16px;
+}
+
+/* The site's red bloom behind the page, clipped to the window's right corners. */
+.Content {
+  background-color: gradient(radial, 70% 0%, 0% 0%, 70% 55%, from(primary-glow), to(clear));
+  border-radius: 0px 16px 16px 0px;
+}
+
+.Screen.NoSidebar .Content {
+  border-radius: 16px;
 }
 
 .Brand-title {
@@ -48,24 +61,25 @@
   font-weight: bold;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: #ffffff;
+  color: text-primary;
   text-overflow: ellipsis;
 }
 
 .Brand-subtitle {
   width: 100%;
-  margin-top: 2px;
+  margin-top: 4px;
   font-size: 12px;
-  color: text-dim;
+  color: text-secondary;
 }
 
 .Tab {
   border-radius: 10px;
-  background-color: rgba(255, 255, 255, 0);
+  background-color: clear;
+  border: 1px solid clear;
 }
 
 .Tab:hover {
-  background-color: #1a1a21;
+  background-color: primary-hover;
 }
 
 .Tab:active {
@@ -73,54 +87,58 @@
 }
 
 .Tab.Selected {
-  background-color: gradient(linear, 0% 0%, 100% 0%, from(accent), to(accent-deep));
+  background-color: primary-active;
+  border: 1px solid primary-edge;
 }
 
 .Tab .Icons Image {
-  wash-color: #74747e;
+  wash-color: text-secondary;
 }
 
 .Tab:hover .Icons Image {
-  wash-color: #e6e6ea;
+  wash-color: text-primary;
 }
 
 .Tab.Selected .Icons Image {
-  wash-color: #ffffff;
+  wash-color: primary;
 }
 
 .Tab-label {
-  color: text-soft;
-}
-
-.Tab:hover .Tab-label {
-  color: text-bright;
+  color: text-primary;
 }
 
 .Tab.Selected .Tab-label {
-  color: #ffffff;
   font-weight: bold;
 }
 
+/* Tracked micro-caps, the site's section eyebrow. */
 .Breadcrumb {
-  color: text-faint;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: text-disabled;
 }
 
 .Title {
-  color: #ffffff;
+  font-size: 26px;
+  letter-spacing: -0.5px;
+  color: text-primary;
 }
 
 .Subtitle {
-  color: text-muted;
+  color: text-secondary;
 }
 
 .IconButton {
   border-radius: 10px;
-  background-color: #23232d;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: fill;
+  border: 1px solid hairline;
 }
 
 .IconButton:hover {
-  background-color: accent;
+  background-color: primary-selected;
+  border: 1px solid primary-line;
 }
 
 .IconButton:active {
@@ -128,11 +146,11 @@
 }
 
 .IconButton-image {
-  wash-color: text-icon;
+  wash-color: text-secondary;
 }
 
 .IconButton:hover .IconButton-image {
-  wash-color: #ffffff;
+  wash-color: text-primary;
 }
 
 .Screen.Prompting .Rows,
@@ -140,51 +158,52 @@
   opacity: 0.3;
 }
 
+/* The button is the row's card, so its hover can light the edge too; steppers sit beside it. */
 .Row {
-  background-color: surface;
-  border: 1px solid line;
-  border-radius: 12px;
-  transition-property: background-color;
-  transition-duration: 0.2s;
-}
-
-/* Styling only; a disabled row still reports its press, and the driver drops it. Dimmed rather
-   than faded out: a half-transparent row reads as still loading. */
-.Row.Disabled {
-  background-color: surface-disabled;
-  border: 1px solid line-faint;
-}
-
-.Row.Disabled .Row-label {
-  color: text-dim;
-}
-
-/* A stepped value waiting to apply; the transition fades it out once it has. */
-.Row.Pending {
-  background-color: accent-pending;
+  height: 48px;
 }
 
 .Row-button {
-  border-radius: 12px;
+  padding: 0px 16px 0px 18px;
+  border-radius: 10px;
+  background-color: fill-subtle;
+  border: 1px solid hairline;
+  transition-property: pre-transform-scale2d, background-color;
+  transition-duration: 0.12s, 0.2s;
 }
 
 .Row-button:hover {
-  background-color: gradient(linear, 0% 0%, 100% 0%, from(accent-soft), to(accent-faint));
+  background-color: primary-hover;
+  border: 1px solid primary-edge;
 }
 
 .Row-button:active {
   pre-transform-scale2d: 0.99;
 }
 
-.Row.Disabled .Row-button:hover,
-.Row.Static .Row-button:hover {
-  background-color: rgba(0, 0, 0, 0);
+/* Styling only; a disabled row still reports its press, and the driver drops it. Dimmed rather
+   than faded out: a half-transparent row reads as still loading. */
+.Row.Disabled .Row-button,
+.Row.Disabled .Row-button:hover {
+  background-color: clear;
+  border: 1px solid hairline-faint;
+}
+
+.Row.Disabled .Row-label {
+  color: text-disabled;
+}
+
+/* A stepped value waiting to apply; the transition fades it out once it has. */
+.Row.Pending .Row-button {
+  background-color: primary-selected;
+  border: 1px solid primary-edge;
 }
 
 /* A heading or placeholder: the model refuses the press, so the row must not invite one. */
-.Row.Static {
-  background-color: rgba(0, 0, 0, 0);
-  border: 0px solid rgba(0, 0, 0, 0);
+.Row.Static .Row-button,
+.Row.Static .Row-button:hover {
+  background-color: clear;
+  border: 1px solid clear;
 }
 
 .Row.Static .Row-button:active {
@@ -193,11 +212,11 @@
 
 .Row.Static .Row-label,
 .Row.Static .Row-button:hover .Row-label {
-  color: text-muted;
+  color: text-secondary;
 }
 
 .Row-label {
-  color: text-row;
+  color: text-primary;
 }
 
 .Row-button:hover .Row-label {
@@ -205,61 +224,65 @@
 }
 
 .Row-hint {
-  color: text-faint;
+  color: text-secondary;
 }
 
 .Row-value {
   border-radius: 6px;
-  background-color: rgba(240, 181, 74, 0.1);
-  color: gold;
+  background-color: secondary-tint;
+  color: secondary;
+  font-weight: bold;
 }
 
 .Row-chevron {
-  color: text-faint;
+  margin-bottom: 3px;
+  font-size: 24px;
+  color: text-disabled;
 }
 
 .Row-button:hover .Row-chevron {
-  color: accent;
+  color: primary;
 }
 
 .Switch {
   border-radius: 12px;
-  background-color: control;
-  border: 1px solid line;
-}
-
-.Row-button:hover .Switch {
-  background-color: #3a3a44;
+  background-color: fill;
+  border: 1px solid hairline-strong;
 }
 
 .Switch-knob {
   border-radius: 9px;
-  background-color: text-soft;
+  background-color: text-secondary;
   transition-duration: 0.15s;
 }
 
 .Row.On .Switch {
-  background-color: accent;
-  border: 1px solid accent-hover;
-}
-
-.Row.On .Row-button:hover .Switch {
-  background-color: accent-hover;
+  background-color: primary;
+  border: 1px solid primary-light;
 }
 
 .Row.On .Switch-knob {
   background-color: #ffffff;
 }
 
+.Steppers {
+  margin-left: 6px;
+  margin-right: 0px;
+}
+
 .Stepper {
-  border-radius: 8px;
-  background-color: control;
-  color: text-soft;
+  width: 34px;
+  height: 100%;
+  border-radius: 10px;
+  background-color: fill-subtle;
+  border: 1px solid hairline;
+  color: text-secondary;
 }
 
 .Stepper:hover {
-  background-color: accent;
-  color: #ffffff;
+  background-color: primary-selected;
+  border: 1px solid primary-line;
+  color: text-primary;
 }
 
 .Stepper:active {
@@ -267,32 +290,34 @@
 }
 
 .Empty {
-  color: text-dim;
+  color: text-secondary;
 }
 
 .Prompt {
-  background-color: surface;
-  border: 1px solid accent-line;
+  background-color: fill-subtle;
+  border: 1px solid primary-line;
   border-radius: 12px;
 }
 
 .Prompt-text {
-  color: text-bright;
+  color: text-primary;
 }
 
 .Prompt-hint {
-  color: gold;
+  color: secondary;
 }
 
+/* The site's outlined button: a quiet fill that picks up the red edge on hover. */
 .Button {
+  width: 140px;
   border-radius: 10px;
-  background-color: surface;
-  border: 1px solid line;
+  background-color: fill-subtle;
+  border: 1px solid hairline-strong;
 }
 
 .Button:hover {
-  background-color: surface-hover;
-  border: 1px solid accent-line;
+  background-color: primary-hover;
+  border: 1px solid primary-line;
 }
 
 .Button:active {
@@ -300,7 +325,8 @@
 }
 
 .Button-label {
-  color: #d8d8de;
+  font-weight: bold;
+  color: text-primary;
 }
 
 .Button:hover .Button-label {
@@ -308,21 +334,39 @@
 }
 
 .Pager-label {
-  color: text-muted;
+  color: text-secondary;
 }
 
 .Pager-arrow {
   border-radius: 10px;
-  background-color: surface;
-  border: 1px solid line;
-  color: text-icon;
+  background-color: fill-subtle;
+  border: 1px solid hairline-strong;
+  color: text-secondary;
 }
 
 .Pager-arrow:hover {
-  background-color: accent;
-  color: #ffffff;
+  background-color: primary-selected;
+  border: 1px solid primary-line;
+  color: text-primary;
 }
 
 .Pager-arrow:active {
   pre-transform-scale2d: 0.94;
+}
+
+/* The site's contained primary button, for a screen's main action. */
+.Button-primary {
+  background-color: primary;
+  border: 1px solid primary;
+  box-shadow: rgba(225, 39, 60, 0.2) 0px 3px 8px 0px;
+}
+
+.Button-primary:hover {
+  background-color: primary-light;
+  border: 1px solid primary-light;
+}
+
+.Button-primary .Button-label,
+.Button-primary:hover .Button-label {
+  color: #ffffff;
 }

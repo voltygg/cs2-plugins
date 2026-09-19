@@ -1,6 +1,6 @@
 {
   "menu": {
-    "title": "MEAT.GG",
+    "title": "Home",
     "subtitle": "Main menu",
     "cancel": "Cancel",
     "empty": "Nothing here",
@@ -8,8 +8,12 @@
     "promptHint": "Press Y and type your answer in chat"
   },
   "nav": {
-    "back": "Back",
-    "root": "Main"
+    "back": "Back"
+  },
+  "home": {
+    "title": "Welcome to MEAT.GG",
+    "body": "Stats, VIP, clans and the server rules are in the menu on the left. Spotted a cheater or a griefer? Let the admins know.",
+    "report": "Report a player"
   },
   "tab": {
     "stats": "Stats",

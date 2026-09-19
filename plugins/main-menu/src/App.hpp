@@ -31,6 +31,8 @@ struct App final : VoltMod::Plugin
     std::optional<VoltMod::PanoramaMenu> Panorama;
     /** Starts sessions on Panorama while held. Declared after it, so it lets go first. */
     VoltMod::Subscription PreferPanorama;
+    /** The landing page's report button. */
+    VoltMod::Subscription ReportButton;
 };
 
 }  // namespace MainMenu

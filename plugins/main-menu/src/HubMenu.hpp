@@ -26,6 +26,9 @@ public:
 
     [[nodiscard]] std::shared_ptr<VoltMod::Menu> Build(int slot);
 
+    /** Opens the section another plugin publishes as @p id in place of this menu, or tells the player it is unavailable. */
+    void OpenSection(std::string_view id, int slot, VoltMod::MenuSurface& surface);
+
 private:
     [[nodiscard]] std::shared_ptr<VoltMod::Menu> BuildTab(const Tab& tab, int slot);
     [[nodiscard]] VoltMod::MenuItem Row(const Entry& entry);
