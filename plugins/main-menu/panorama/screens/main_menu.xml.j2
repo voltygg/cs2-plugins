@@ -1,18 +1,12 @@
 {# namespace: MainMenuLayout #}
 {% import "menu.xml.j2" as blocks %}
 {% import "button.xml.j2" as controls %}
+{% import "@main-menu/meatgg/home.xml.j2" as meatgg %}
 {% from "main_menu/icons.j2" import ICONS %}
 
 {#- Shown in place of the rows on the home page; the rows repeat the sidebar there. -#}
 {% set home %}
-<Panel class="hero" hittest="false">
-  <Image class="hero__mark" src="s2r://panorama/images/custom_game/brand/mark.vtex" hittest="false" />
-  <Panel class="hero__text" hittest="false">
-    <Label class="overline hero__overline" text="Counter-Strike 2" hittest="false" />
-    <Label class="hero__title" text="{s:home_title}" hittest="false" />
-    <Label class="hero__body" text="{s:home_body}" hittest="false" />
-  </Panel>
-</Panel>
+{{ meatgg.hero("Counter-Strike 2", mark=true) }}
 <Panel class="home-actions" hittest="true">
   {{ controls.button("report", "{s:home_report}", "primary") | indent(2) }}
 </Panel>

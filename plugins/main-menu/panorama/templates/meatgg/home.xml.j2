@@ -1,0 +1,12 @@
+{% macro hero(overline, mark=false) -%}
+<Panel class="hero" hittest="false">
+  {%- if mark %}
+  <Image class="hero__mark" src="s2r://panorama/images/custom_game/brand/mark.vtex" hittest="false" />
+  {%- endif %}
+  <Panel class="hero__text" hittest="false">
+    <Label class="overline hero__overline" text="{{ overline }}" hittest="false" />
+    <Label class="hero__title" text="{s:home_title}" hittest="false" />
+    <Label class="hero__body" text="{s:home_body}" hittest="false" />
+  </Panel>
+</Panel>
+{%- endmacro %}

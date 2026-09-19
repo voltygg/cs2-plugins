@@ -20,7 +20,7 @@ bool App::Load()
     if (const VoltMod::PanoramaMenuSettings& menu = Config.Get().menu; menu.panorama)
     {
         auto translated = [this](std::string key) {
-            return [this, key = std::move(key)](int slot) { return Runtime.Translations.GetOr(key, slot, key); };
+            return [this, key = std::move(key)](int slot) { return Runtime.Translations.Get(key, slot); };
         };
         Layout.AddText(MainMenuLayout::HomeTitleVar, translated("home.title"));
         Layout.AddText(MainMenuLayout::HomeBodyVar, translated("home.body"));

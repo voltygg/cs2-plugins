@@ -1,16 +1,11 @@
 {# namespace: AdminMenuLayout #}
 {% import "menu.xml.j2" as blocks %}
+{% import "@main-menu/meatgg/home.xml.j2" as meatgg %}
 {% from "admin_menu/icons.j2" import ICONS %}
 
 {#- Shown in place of the rows on the home page; the rows repeat the sidebar there. -#}
 {% set home %}
-<Panel class="hero" hittest="false">
-  <Panel class="hero__text" hittest="false">
-    <Label class="overline hero__overline" text="{s:brand}" hittest="false" />
-    <Label class="hero__title" text="{s:home_title}" hittest="false" />
-    <Label class="hero__body" text="{s:home_body}" hittest="false" />
-  </Panel>
-</Panel>
+{{ meatgg.hero("{s:brand}") }}
 <Panel class="stats" hittest="false">
   <Panel class="stat" hittest="false">
     <Label class="overline stat__label" text="{s:home_players_label}" hittest="false" />
