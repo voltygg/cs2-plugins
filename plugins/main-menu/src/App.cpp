@@ -2,7 +2,6 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/App/PluginEntry.hpp>
-#include <format>
 #include <string>
 #include <utility>
 
@@ -23,17 +22,16 @@ bool App::Load()
         auto translated = [this](std::string key) {
             return [this, key = std::move(key)](int slot) { return Runtime.Translations.GetOr(key, slot, key); };
         };
-        Layout.AddText("home_title", translated("home.title"));
-        Layout.AddText("home_body", translated("home.body"));
-        Layout.AddText("home_report", translated("home.report"));
+        Layout.AddText(std::string{MainMenuLayout::HomeTitleVar}, translated("home.title"));
+        Layout.AddText(std::string{MainMenuLayout::HomeBodyVar}, translated("home.body"));
+        Layout.AddText(std::string{MainMenuLayout::HomeReportVar}, translated("home.report"));
 
         Panorama.emplace(Runtime.PanoramaMenuServices(), Layout, menu.addonId);
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);
 
         // The menu layout ignores ids it does not own, so the landing page's button is handled here.
-        ReportButton = Runtime.Screens.Pressed += [this, button = std::format("{}_report", MainMenuLayout::Layout)](
-                                                       const VoltMod::ButtonPress& press) {
-            if (press.ButtonId == button && Panorama->IsOpen(press.Slot))
+        ReportButton = Runtime.Screens.Pressed += [this](const VoltMod::ButtonPress& press) {
+            if (press.ButtonId == MainMenuLayout::Report && Panorama->IsOpen(press.Slot))
                 Hub.OpenSection("report", press.Slot, *Panorama);
         };
     }

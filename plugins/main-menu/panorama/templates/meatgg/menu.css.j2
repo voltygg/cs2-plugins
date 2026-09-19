@@ -16,7 +16,6 @@
 .Button,
 .Tab,
 .IconButton,
-.Row-button,
 .Stepper,
 .Pager-arrow {
   transition-property: pre-transform-scale2d;
@@ -111,12 +110,16 @@
   font-weight: bold;
 }
 
-/* Tracked micro-caps, the site's section eyebrow. */
-.Breadcrumb {
+/* Tracked micro-caps above a title. */
+.Breadcrumb,
+.Overline {
   font-size: 11px;
   font-weight: bold;
   letter-spacing: 1.5px;
   text-transform: uppercase;
+}
+
+.Breadcrumb {
   color: text-disabled;
 }
 
@@ -164,10 +167,10 @@
 }
 
 .Row-button {
-  padding: 0px 16px 0px 18px;
   border-radius: 10px;
   background-color: fill-subtle;
   border: 1px solid hairline;
+  /* Also fades the pending-value highlight out once it applies. */
   transition-property: pre-transform-scale2d, background-color;
   transition-duration: 0.12s, 0.2s;
 }
@@ -366,7 +369,6 @@
   border: 1px solid primary-light;
 }
 
-.Button-primary .Button-label,
-.Button-primary:hover .Button-label {
+.Button-primary .Button-label {
   color: #ffffff;
 }
