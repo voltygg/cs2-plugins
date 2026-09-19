@@ -29,6 +29,7 @@ App::~App()
     // Unpublish before destroying the managers that answer MetaFactory queries.
     AdminActions.Unpublish();
     AdminSection.Unpublish();
+    ReportSection.Unpublish();
     CheatCheck.CancelAll();
     Effects.CancelAll();
     // Unload skips disconnect hooks; Clear() raises Players.Disconnected while its cleanup subscription is active.
@@ -249,6 +250,7 @@ bool App::Load()
 
     RegisterCommands();
     AdminSection.Publish();
+    ReportSection.Publish();
 
     if (database)
         steps.Optional("Punishments", [this] { return InitializePunishments(); });

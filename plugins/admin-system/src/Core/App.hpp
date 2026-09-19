@@ -17,6 +17,7 @@
 #include "Maps/VoteState.hpp"
 #include "Punishments/PunishmentManager.hpp"
 #include "Reports/ReportManager.hpp"
+#include "Reports/ReportMenuSection.hpp"
 
 #include <Ui/AdminMenu.hpp>
 #include <VoltMod/Api.hpp>
@@ -122,6 +123,8 @@ struct App final : VoltMod::Plugin
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
     /** The main menu's admin entry; published in Load, withdrawn before these managers die. */
     Core::AdminMenuSection AdminSection{*this};
+    /** The main menu's report entry; published in Load, withdrawn before these managers die. */
+    Reports::ReportMenuSection ReportSection{*this};
     /** Load-time migration outcome shown by `admin_status`. */
     VoltMod::MigrationResult Migration;
 

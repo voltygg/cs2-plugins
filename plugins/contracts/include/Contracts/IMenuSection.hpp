@@ -17,7 +17,7 @@ struct IMenuSection
     /** Whether @p slot sees the entry now. */
     virtual bool IsVisibleTo(int slot) = 0;
 
-    /** Open the section for @p slot; false when refused. */
+    /** Open the section for @p slot. False when refused without telling the player why; the caller replies then. */
     virtual bool Open(int slot) = 0;
 
 protected:
