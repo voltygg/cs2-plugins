@@ -54,7 +54,7 @@ sequence = [{ ref = "lint-ci" }, { ref = "schema --check" }]
 help = "Lint checks that run without Conan packages"
 sequence = [
     { cmd = "ruff check ." },
-    { cmd = "voltmod modgraph --plugins ." },
+    { cmd = "voltmod lint" },
     { cmd = "voltmod panorama check" },
 ]
 
