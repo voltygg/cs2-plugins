@@ -8,6 +8,7 @@
 #include "Punishments/IssuePunishment.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Text/Labeled.hpp>
 #include <VoltMod/Core/Text/Strings.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
@@ -28,6 +29,7 @@ using AdminSystem::Punishments::PunishType;
 namespace AdminSystem::Admin::Menu
 {
 
+using VoltMod::Labeled;
 using VoltMod::MenuBuilder;
 using VoltMod::Strings;
 using PunishFlowT = VoltMod::Flow<PendingPunishment>;
@@ -105,13 +107,13 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
                            translations.Get(suffixKey, adminSlot));
     };
 
-    std::vector<std::pair<std::string, int>> durations;
+    std::vector<Labeled<int>> durations;
     for (int seconds : app.Settings.GetMenuDurations())
-        durations.emplace_back(DurationLabel(translations, seconds, adminSlot), seconds);
+        durations.push_back({.Label = DurationLabel(translations, seconds, adminSlot), .Value = seconds});
 
-    std::vector<std::pair<std::string, std::string>> reasons;
+    std::vector<Labeled<std::string>> reasons;
     for (const auto& reason : app.Settings.Get().punishments.reasonPresets)
-        reasons.emplace_back(reason, reason);
+        reasons.push_back({.Label = reason, .Value = reason});
 
     MakeBaseFlow(app, adminSlot, std::move(pending))
         ->AddDurationStep({.Title = stepTitle("panel.selectDuration"),

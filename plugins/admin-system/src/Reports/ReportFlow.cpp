@@ -5,6 +5,7 @@
 #include "Reports/ReportManager.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <VoltMod/Core/Text/Labeled.hpp>
 #include <VoltMod/Core/Text/Strings.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Menu/Flow.hpp>
@@ -19,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+using VoltMod::Labeled;
 using VoltMod::Strings;
 
 namespace AdminSystem::Reports
@@ -84,9 +86,9 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
     auto& translations = app.Runtime.Translations;
 
     // The flow runs for one reporter, so every step string resolves in their language here.
-    std::vector<std::pair<std::string, std::string>> reasons;
+    std::vector<Labeled<std::string>> reasons;
     for (const auto& reason : app.Settings.Get().reports.reasons)
-        reasons.emplace_back(ReasonLabel(app, reason, reporterSlot), reason.code);
+        reasons.push_back({.Label = ReasonLabel(app, reason, reporterSlot), .Value = reason.code});
 
     ReportFlowT::Create(app.Runtime.Menus, reporterSlot, PendingReport{.Target = targetRef})
         ->Validate([&app, reporterSlot](const PendingReport& p) { return ValidatePending(app, reporterSlot, p); })
