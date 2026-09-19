@@ -1,5 +1,6 @@
 #include "Core/App.hpp"
 
+#include "Admin/AdminMenu.hpp"
 #include "Admin/Effects/Model.hpp"
 #include "Commands/Commands.hpp"
 #include "Config/ConfigManager.hpp"
@@ -11,6 +12,7 @@
 #include <VoltMod/Events/EventTypes.hpp>
 #include <VoltMod/Unsafe/Hook.hpp>
 #include <string>
+#include <utility>
 
 using VoltMod::Error;
 using VoltMod::Player;
@@ -26,6 +28,7 @@ App::~App()
 {
     // Unpublish before destroying the managers that answer MetaFactory queries.
     AdminActions.Unpublish();
+    AdminSection.Unpublish();
     CheatCheck.CancelAll();
     Effects.CancelAll();
     // Unload skips disconnect hooks; Clear() raises Players.Disconnected while its cleanup subscription is active.
@@ -212,6 +215,17 @@ void App::RegisterCommands()
     Commands::RegisterReportCommand(commands, *this);
 }
 
+bool App::OpenAdminMenu(int slot)
+{
+    // Panel language is registered at connect (see OnPlayerConnect).
+    auto menu = Admin::BuildAdminMainMenu(*this, slot);
+    if (!menu)
+        return false;
+
+    Runtime.Menus.OpenSession(slot, std::move(menu), {});
+    return true;
+}
+
 bool App::Load()
 {
     if (!VoltMod::LoadStandardConfig(Runtime, Settings))
@@ -231,7 +245,7 @@ bool App::Load()
                                                          .Policy = Runtime.Policy,
                                                          .Screens = Runtime.Screens,
                                                          .Addons = Runtime.Addons},
-                         MenuScreen, menu.addonId);
+                         MenuLayout, menu.addonId);
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);
     }
 
@@ -242,6 +256,7 @@ bool App::Load()
         steps.Optional("Admins", [this] { return LoadAdminData(); });
 
     RegisterCommands();
+    AdminSection.Publish();
 
     if (database)
         steps.Optional("Punishments", [this] { return InitializePunishments(); });

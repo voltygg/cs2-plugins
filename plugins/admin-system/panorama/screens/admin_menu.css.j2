@@ -1,9 +1,7 @@
-{#- The admin menu in meat.gg's colours: flat dark surfaces, red for hover and selection.
-    Framework blocks come first and set only layout; the partials after them set size and colour. -#}
-{% include "button.css.j2" %}
-{% include "icons.css.j2" %}
-{% include "listrow.css.j2" %}
-{% include "admin_menu/window.css.j2" %}
-{% include "admin_menu/sidebar.css.j2" %}
-{% include "admin_menu/rows.css.j2" %}
-{% include "admin_menu/footer.css.j2" %}
+{#- The admin menu: the framework's menu block in meat.gg's colours, from main-menu's brand kit. -#}
+{% import "icons.css.j2" as icons %}
+{% from "admin_menu/icons.j2" import ICONS %}
+{% include "meatgg/theme.css.j2" %}
+{% include "menu.css.j2" %}
+{% include "meatgg/menu.css.j2" %}
+{{ icons.show_rules(ICONS) }}

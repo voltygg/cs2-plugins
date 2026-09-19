@@ -8,22 +8,24 @@
 #include "Admin/FreezeManager.hpp"
 #include "Config/ConfigManager.hpp"
 #include "Core/AdminActionsService.hpp"
+#include "Core/AdminMenuSection.hpp"
 #include "Core/ChatService.hpp"
 #include "Core/PlayerChat.hpp"
 #include "Database/Repositories.hpp"
 #include "Fun/FunMode.hpp"
 #include "Maps/MapCycleState.hpp"
 #include "Maps/VoteState.hpp"
-#include "Menu/AdminMenuScreen.hpp"
 #include "Punishments/PunishmentManager.hpp"
 #include "Reports/ReportManager.hpp"
 
+#include <Ui/AdminMenu.hpp>
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Signals/Subscription.hpp>
 #include <VoltMod/Core/Signals/Subscriptions.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Menu/PanoramaMenu.hpp>
+#include <VoltMod/Menu/PanoramaMenuLayout.hpp>
 #include <VoltMod/Players/ActionDispatcher.hpp>
 #include <VoltMod/Players/EffectDispatcher.hpp>
 #include <VoltMod/Players/EffectManager.hpp>
@@ -52,6 +54,9 @@ struct App final : VoltMod::Plugin
     /** Connect the database, run migrations, load admins and register commands. */
     bool Load() override;
 
+    /** Open the admin main menu for @p slot; false when it could not be built. */
+    bool OpenAdminMenu(int slot);
+
     /** Replaces the framework's default chat handling: chat rules first, then menus and commands. */
     bool OnPlayerChat(VoltMod::Player* player, std::string_view message, bool teamChat) override
     {
@@ -79,7 +84,7 @@ struct App final : VoltMod::Plugin
     }
 
     /** The admin menu layout, and the clickable menu drawn on it when settings turn Panorama on. */
-    Menus::AdminMenuScreen MenuScreen{Runtime.Screens};
+    VoltMod::PanoramaMenuLayout MenuLayout{Runtime.Screens, AdminMenuLayout::Layout, 6, 8, AdminMenuLayout::IconNames};
     std::optional<VoltMod::PanoramaMenu> Panorama;
     /** Starts sessions on Panorama while held. Declared after it, so it lets go first. */
     VoltMod::Subscription PreferPanorama;
@@ -114,6 +119,8 @@ struct App final : VoltMod::Plugin
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Settings, Chat};
     /** Published to other plugins in Load; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
+    /** The main menu's admin entry; published in Load, withdrawn before these managers die. */
+    Core::AdminMenuSection AdminSection{Runtime, Admins, [this](int slot) { return OpenAdminMenu(slot); }};
     /** Load-time migration outcome shown by `admin_status`. */
     VoltMod::MigrationResult Migration;
 
