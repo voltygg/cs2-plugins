@@ -17,7 +17,7 @@ static constexpr int EnvExplosionNoDamage = 1;
 
 Action MakeSmite(VoltMod::Runtime& runtime)
 {
-    return Action{Flag(Permission::Fun), /*requireAlive*/ true, [&runtime](const ActionContext& ctx) -> OptKey {
+    return Action{Permission::Fun, /*requireAlive*/ true, [&runtime](const ActionContext& ctx) -> OptKey {
                       auto& ops = runtime.World.EntityOps;
                       if (ops.CanSpawn())
                       {

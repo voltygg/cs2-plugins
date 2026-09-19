@@ -17,7 +17,7 @@ multi-server grants, abuse protection, and cheat-check workflows.
   strip a player.
 - Fun Mode round modifiers through the menu: low gravity, headshot only, knife
   round, and one-hit kill.
-- Groups, flags, immunity, per-server grants, and admin stealth.
+- Groups, permissions, immunity, per-server grants, and admin stealth.
 - Network-wide punishments and automatic punishment enforcement.
 - Automatic or manual freezing of abusive admins with an audit trail.
 - Player reports for an external website or moderation service to process.
@@ -48,70 +48,71 @@ multi-server grants, abuse protection, and cheat-check workflows.
 To apply migrations manually, render
 [`configs/migrations/`](configs/migrations/) the same way.
 
-## Permission flags
+## Permissions
 
-Root (`z`) grants every permission. Self-targeting remains available where the
-action supports it.
+Permissions are names in a JSON array, for example `'["admin.kick", "admin.ban"]'`.
+`*` grants every permission and `admin.*` every `admin.` one. Self-targeting
+remains available where the action supports it.
 
-| Flag | Access |
+| Permission | Access |
 | --- | --- |
-| `a` | Freeze and unfreeze admins |
-| `b` | Hide and player-list commands |
-| `c` | Kick |
-| `d` | Ban |
-| `e` | Unban |
-| `o` | Voice mute, text mute, and warnings |
-| `s` | Player controls and cheat checks |
-| `f` | Fun effects: ghost, disco, smite, and size |
-| `h` | Health, armor, and godmode |
-| `w` | Wallhack |
-| `j` | Bhop grants |
-| `m` | Change map and queue the next map (Map menu) |
-| `k` | Give and strip weapons (Control menu) |
-| `g` | Fun Mode round modifiers (Fun menu) |
-| `v` | Start and cancel map votes (Map menu) |
-| `z` | Root access |
+| `admin.freeze_admins` | Freeze and unfreeze admins |
+| `admin.hide` | Hide and player-list commands |
+| `admin.kick` | Kick |
+| `admin.ban` | Ban |
+| `admin.unban` | Unban |
+| `admin.mute` | Voice mute, text mute, and warnings |
+| `admin.control` | Player controls and cheat checks |
+| `admin.fun` | Fun effects: ghost, disco, smite, and size |
+| `admin.health` | Health, armor, and godmode |
+| `admin.wallhack` | Wallhack |
+| `admin.bhop` | Bhop grants |
+| `admin.map` | Change map and queue the next map (Map menu) |
+| `admin.weapon` | Give and strip weapons (Control menu) |
+| `admin.fun_mode` | Fun Mode round modifiers (Fun menu) |
+| `admin.vote` | Start and cancel map votes (Map menu) |
+| `*` | Root access |
 
-`!admin` has no dedicated flag, but the caller must be a registered admin.
+`!admin` has no dedicated permission, but the caller must be a registered admin.
 Individual menu categories and actions remain permission-gated.
 
 ## Commands
 
 Map control, weapons, and Fun Mode are menu-only - `!admin` opens the panel and
-each category is gated by its own flag. The commands below are the ones with no
+each category is gated by its own permission. The commands below are the ones with no
 menu equivalent.
 
 ### Moderation and administration
 
-| Command | Flag | Purpose |
+| Command | Permission | Purpose |
 | --- | --- | --- |
-| `!kick <target> [reason]` | `c` | Kick a player |
-| `!ban <target> <duration> [reason]` | `d` | Ban a player |
-| `!unban <steamid> [reason]` | `e` | Remove a ban |
-| `!voice_mute <target> <duration> [reason]` | `o` | Mute voice; aliases: `!vmute`, `!mute` |
-| `!voice_unmute <target>` | `o` | Restore voice; aliases: `!vunmute`, `!unmute` |
-| `!text_mute <target> <duration> [reason]` | `o` | Block chat; aliases: `!tmute`, `!gag` |
-| `!text_unmute <target>` | `o` | Restore chat; aliases: `!tunmute`, `!ungag` |
-| `!warn <target> [reason]` | `o` | Warn a player and apply configured escalation |
+| `!kick <target> [reason]` | `admin.kick` | Kick a player |
+| `!ban <target> <duration> [reason]` | `admin.ban` | Ban a player |
+| `!unban <steamid> [reason]` | `admin.unban` | Remove a ban |
+| `!voice_mute <target> <duration> [reason]` | `admin.mute` | Mute voice; aliases: `!vmute`, `!mute` |
+| `!voice_unmute <target>` | `admin.mute` | Restore voice; aliases: `!vunmute`, `!unmute` |
+| `!text_mute <target> <duration> [reason]` | `admin.mute` | Block chat; aliases: `!tmute`, `!gag` |
+| `!text_unmute <target>` | `admin.mute` | Restore chat; aliases: `!tunmute`, `!ungag` |
+| `!warn <target> [reason]` | `admin.mute` | Warn a player and apply configured escalation |
 | `!admin` | registered admin | Open the menu; aliases: `!a`, `!menu` |
-| `!who` | `b` | List players, prefixes, and immunity; alias: `!players` |
-| `!hide` | `b` | Toggle admin stealth |
-| `!admin_reload` | `z` | Reload admins, groups, grants, and freezes; alias: `!reload_admins` |
+| `!who` | `admin.hide` | List players, prefixes, and immunity; alias: `!players` |
+| `!hide` | `admin.hide` | Toggle admin stealth |
+| `!admin_reload` | `*` | Reload admins, groups, grants, and freezes; alias: `!reload_admins` |
 
 ### Admin freezes
 
-| Command | Flag | Purpose |
+| Command | Permission | Purpose |
 | --- | --- | --- |
-| `!freeze_admin <target\|steamId> [reason]` | `a` | Suspend a lower-immunity admin |
-| `!unfreeze_admin <steamId\|name>` | `a` | Restore a frozen admin |
-| `!frozen_admins` | `a` | List active freezes |
+| `!freeze_admin <target\|steamId> [reason]` | `admin.freeze_admins` | Suspend a lower-immunity admin |
+| `!unfreeze_admin <steamId\|name>` | `admin.freeze_admins` | Restore a frozen admin |
+| `!frozen_admins` | `admin.freeze_admins` | List active freezes |
 
 ### Cheat checks and reports
 
-| Command | Flag | Purpose |
+| Command | Permission | Purpose |
 | --- | --- | --- |
-| `!check <target>` | `s` | Start a cheat check |
-| `!cccancel <target>` | `s` | Cancel a check; alias: `!uncheck` |
+| `!check <target>` | `admin.control` | Start a cheat check |
+| `!cccancel <target>` | `admin.control` | Cancel a check; alias: `!uncheck` |
 | `!cc <link>` | none | Let the suspect submit a verification link |
 | `!report` | none | Open the report menu; alias: `!r` |
 
@@ -166,8 +167,8 @@ plugin registers the server and updates `last_seen` every minute.
 
 - `admins.groups` applies network-wide.
 - `admin_server_groups` adds groups for one `server.tag`.
-- Admin flags and immunity are global.
-- Group flags and immunity apply wherever that group is granted.
+- Admin permissions and immunity are global.
+- Group permissions and immunity apply wherever that group is granted.
 - Bans, mutes, and warnings apply across all servers sharing the database.
 
 Example per-server grant:

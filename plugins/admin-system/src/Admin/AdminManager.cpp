@@ -1,10 +1,12 @@
 #include "Admin/AdminManager.hpp"
 
 #include "Config/ConfigManager.hpp"
+#include "Core/Permissions.hpp"
 #include "Database/Repositories/Admins.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <algorithm>
+#include <format>
 #include <utility>
 
 namespace AdminSystem::Admin
@@ -19,7 +21,7 @@ bool AdminManager::LoadAdmins()
     auto admins = _repos.Admins.FindAll();
 
     _admins.clear();
-    _resolvedFlags.clear();
+    _resolvedPermissions.clear();
     _resolvedStyles.clear();
 
     for (const auto& admin : admins)
@@ -40,7 +42,7 @@ bool AdminManager::LoadAdmins()
     }
 
     for (auto& [steamId, admin] : _admins)
-        _resolvedFlags[steamId] = ResolveFlags(admin);
+        _resolvedPermissions[steamId] = ResolvePermissions(admin);
 
     Log::Info("Loaded {} admin(s) from database.", _admins.size());
     return true;
@@ -80,39 +82,21 @@ const Database::Admin* AdminManager::GetAdmin(int64_t steamId)
     return nullptr;
 }
 
-bool AdminManager::HasPermission(int64_t steamId, char flag)
+bool AdminManager::HasPermission(int64_t steamId, std::string_view permission)
 {
-    auto it = _resolvedFlags.find(steamId);
-    return it != _resolvedFlags.end() && HasBit(it->second, flag);
-}
-
-bool AdminManager::HasAllPermissions(int64_t steamId, const std::string& flags)
-{
-    auto it = _resolvedFlags.find(steamId);
-    if (it == _resolvedFlags.end())
+    auto it = _resolvedPermissions.find(steamId);
+    if (it == _resolvedPermissions.end())
         return false;
 
-    for (char flag : flags)
+    const PermissionSet& granted = it->second;
+    if (granted.contains(Permission::Root) || granted.contains(permission))
+        return true;
+
+    for (size_t dot = permission.find('.'); dot != std::string_view::npos; dot = permission.find('.', dot + 1))
     {
-        if (!HasBit(it->second, flag))
-            return false;
-    }
-
-    return true;
-}
-
-bool AdminManager::HasAnyPermission(int64_t steamId, const std::string& flags)
-{
-    auto it = _resolvedFlags.find(steamId);
-    if (it == _resolvedFlags.end())
-        return false;
-
-    for (char flag : flags)
-    {
-        if (HasBit(it->second, flag))
+        if (granted.contains(std::format("{}*", permission.substr(0, dot + 1))))
             return true;
     }
-
     return false;
 }
 
@@ -135,7 +119,7 @@ bool AdminManager::CanTarget(int64_t adminSteamId, int64_t targetSteamId)
 void AdminManager::AddAdmin(const Database::Admin& admin)
 {
     _admins[admin.SteamId] = admin;
-    _resolvedFlags[admin.SteamId] = ResolveFlags(admin);
+    _resolvedPermissions[admin.SteamId] = ResolvePermissions(admin);
     _resolvedStyles.erase(admin.SteamId);
 }
 
@@ -148,7 +132,7 @@ void AdminManager::AddGroup(const Database::AdminGroup& group)
 void AdminManager::RemoveAdmin(int64_t steamId)
 {
     _admins.erase(steamId);
-    _resolvedFlags.erase(steamId);
+    _resolvedPermissions.erase(steamId);
     _resolvedStyles.erase(steamId);
 }
 
@@ -229,31 +213,22 @@ void AdminManager::UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, con
     _resolvedStyles.erase(steamId);
 }
 
-uint32_t AdminManager::ResolveFlags(const Database::Admin& admin)
+AdminManager::PermissionSet AdminManager::ResolvePermissions(const Database::Admin& admin)
 {
-    uint32_t bits = 0;
-
-    for (char flag : admin.Flags)
-    {
-        bits |= FlagToBit(flag);
-    }
+    PermissionSet granted(admin.Permissions.begin(), admin.Permissions.end());
 
     for (const auto& groupName : admin.Groups)
     {
         auto groupIt = _groups.find(groupName);
         if (groupIt != _groups.end())
         {
-            const auto& group = groupIt->second;
-            for (char flag : group.Flags)
-            {
-                bits |= FlagToBit(flag);
-            }
+            granted.insert(groupIt->second.Permissions.begin(), groupIt->second.Permissions.end());
 
             // TODO: Recursively resolve inherited groups
         }
     }
 
-    return bits;
+    return granted;
 }
 
 int AdminManager::ResolveImmunity(const Database::Admin& admin)

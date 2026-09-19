@@ -30,7 +30,7 @@ static WeaponActionResult RunWeaponAction(App& app, VoltMod::PlayerRef admin, Vo
     auto outcome = WeaponActionResult::NotAllowed;
 
     app.Actions.Run(admin, target,
-                    Action{.Permission = Flag(Permission::Weapon),
+                    Action{.Permission = Permission::Weapon,
                            .RequireAlive = false,
                            .Body = [&](const ActionContext& ctx) -> OptKey {
                                if (!ctx.TargetPawn().IsAlive())

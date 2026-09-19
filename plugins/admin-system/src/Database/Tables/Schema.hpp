@@ -19,11 +19,6 @@ namespace AdminSystem::Database::Tables
       using data_type = ::sqlpp::text;
       using has_default = std::false_type;
     };
-    struct Flags {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(flags, flags);
-      using data_type = ::sqlpp::text;
-      using has_default = std::true_type;
-    };
     struct Immunity {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(immunity, immunity);
       using data_type = ::sqlpp::integral;
@@ -64,12 +59,16 @@ namespace AdminSystem::Database::Tables
       using data_type = ::sqlpp::integral;
       using has_default = std::true_type;
     };
+    struct Permissions {
+      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(permissions, permissions);
+      using data_type = ::sqlpp::text;
+      using has_default = std::true_type;
+    };
     SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_groups, adminGroups);
     template<typename T>
     using _table_columns = sqlpp::table_columns<T,
                Id,
                Name,
-               Flags,
                Immunity,
                Inherits,
                ChatPrefix,
@@ -77,7 +76,8 @@ namespace AdminSystem::Database::Tables
                NameColor,
                MessageColor,
                CreatedAt,
-               UpdatedAt>;
+               UpdatedAt,
+               Permissions>;
     using _required_insert_columns = sqlpp::detail::type_set<
                sqlpp::column_t<sqlpp::table_t<AdminGroups_>, Name>>;
   };
@@ -101,11 +101,6 @@ namespace AdminSystem::Database::Tables
     };
     struct Groups {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(groups, groups);
-      using data_type = ::sqlpp::text;
-      using has_default = std::true_type;
-    };
-    struct Flags {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(flags, flags);
       using data_type = ::sqlpp::text;
       using has_default = std::true_type;
     };
@@ -159,6 +154,11 @@ namespace AdminSystem::Database::Tables
       using data_type = ::sqlpp::text;
       using has_default = std::true_type;
     };
+    struct Permissions {
+      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(permissions, permissions);
+      using data_type = ::sqlpp::text;
+      using has_default = std::true_type;
+    };
     SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admins, admins);
     template<typename T>
     using _table_columns = sqlpp::table_columns<T,
@@ -166,7 +166,6 @@ namespace AdminSystem::Database::Tables
                SteamId,
                Name,
                Groups,
-               Flags,
                Immunity,
                DisplayPrefix,
                NameColor,
@@ -176,7 +175,8 @@ namespace AdminSystem::Database::Tables
                IsFrozen,
                FrozenAt,
                FrozenBy,
-               FreezeReason>;
+               FreezeReason,
+               Permissions>;
     using _required_insert_columns = sqlpp::detail::type_set<
                sqlpp::column_t<sqlpp::table_t<Admins_>, SteamId>,
                sqlpp::column_t<sqlpp::table_t<Admins_>, Name>>;

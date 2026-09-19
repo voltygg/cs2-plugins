@@ -23,7 +23,7 @@ static constexpr float ShakeAmplitude = 8.0f;
  */
 Effect MakeDrunk(VoltMod::Runtime& runtime)
 {
-    return Effect{.Permission = Flag(Permission::Fun),
+    return Effect{.Permission = Permission::Fun,
                   .Id = static_cast<int>(EffectId::Drunk),
                   .NameKey = "action.drunk",
                   .OnKey = "broadcast.drunkOn",

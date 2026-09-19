@@ -1,6 +1,6 @@
 # Admin system
 
-Deployer-facing reference for the admin-system plugin: permission flags, the
+Deployer-facing reference for the admin-system plugin: permissions, the
 database it owns, and what changes when several servers share one database. For
 the full command and menu listing, see the
 [plugin README](../plugins/admin-system/README.md). For build and deploy
@@ -72,8 +72,8 @@ opening an empty Map menu.
 
 Map control is menu-only: the Map category lists the cycle, and each entry
 offers Change map (with a confirmation, since it ends everyone's round), Set as
-next map, and Put to vote. Change map and Set as next map need the `m` flag,
-Put to vote and Cancel running vote the `v` flag; either one opens the category.
+next map, and Put to vote. Change map and Set as next map need `admin.map`,
+Put to vote and Cancel running vote `admin.vote`; either one opens the category.
 
 Plain map names are checked against the engine at load, and one it cannot load
 is logged there rather than failing when an admin picks it. Workshop maps are
@@ -94,7 +94,7 @@ back to the built-in defaults.
 ```
 
 The same menu offers a random pick from the list and a Strip weapons entry.
-All three need the `k` flag.
+All three need `admin.weapon`.
 
 Giving a weapon the target's team cannot buy works: the server retries once with
 the pawn briefly flipped to the other team, then puts it back. A refusal the
@@ -104,7 +104,7 @@ retry cannot fix is reported to the admin who clicked.
 
 Fun Mode is a set of server-wide round modifiers, toggled from the Fun Mode
 menu. Each entry shows its current state, and Clear all turns everything off.
-The category needs the `g` flag.
+The category needs `admin.fun_mode`.
 
 | Modifier | Effect |
 | --- | --- |
@@ -144,35 +144,38 @@ of its own - the engine collects the ballots.
 Judged on the ballots actually cast, not on everyone connected, so abstaining is
 not a no. A passing vote queues the map for the end of the round rather than
 cutting the round short. Cancel running vote calls a vote off early. Only one
-vote runs at a time, and both entries need the `v` flag.
+vote runs at a time, and both entries need `admin.vote`.
 
-## Permission flags
+## Permissions
 
-Flags are single characters stored in `admins.flags` and `admin_groups.flags`.
-An admin holds the union of their own flags and those of every group granted to
-them. Root (`z`) grants everything.
+Permissions are names stored as JSON arrays in `admins.permissions` and
+`admin_groups.permissions`, for example `'["admin.kick", "admin.ban"]'`. An
+admin holds the union of their own permissions and those of every group granted
+to them. `*` grants everything, and `admin.*` grants every `admin.` permission.
 
-| Flag | Access |
+| Permission | Access |
 | --- | --- |
-| `a` | Freeze and unfreeze admins |
-| `b` | Hide and player-list commands |
-| `c` | Kick |
-| `d` | Ban |
-| `e` | Unban |
-| `o` | Voice mute, text mute, and warnings |
-| `s` | Player controls and cheat checks |
-| `f` | Fun effects: ghost, disco, smite, and size |
-| `h` | Health, armor, and godmode |
-| `w` | Wallhack |
-| `j` | Bhop grants |
-| `m` | Change map and queue the next map (Map menu) |
-| `k` | Give and strip weapons |
-| `g` | Fun Mode round modifiers |
-| `v` | Start and cancel map votes (Map menu) |
-| `z` | Root access |
+| `admin.freeze_admins` | Freeze and unfreeze admins |
+| `admin.hide` | Hide and player-list commands |
+| `admin.kick` | Kick |
+| `admin.ban` | Ban |
+| `admin.unban` | Unban |
+| `admin.mute` | Voice mute, text mute, and warnings |
+| `admin.control` | Player controls and cheat checks |
+| `admin.fun` | Fun effects: ghost, disco, smite, and size |
+| `admin.health` | Health, armor, and godmode |
+| `admin.wallhack` | Wallhack |
+| `admin.bhop` | Bhop grants |
+| `admin.map` | Change map and queue the next map (Map menu) |
+| `admin.weapon` | Give and strip weapons |
+| `admin.fun_mode` | Fun Mode round modifiers |
+| `admin.vote` | Start and cancel map votes (Map menu) |
+| `*` | Root access |
 
-Immunity is separate from flags: an admin cannot act on a target whose immunity
-is higher than their own. `!admin` needs no flag, but the caller must be a
+Migration `0003_permission_names` converts the old flag letters to these names.
+
+Immunity is separate from permissions: an admin cannot act on a target whose immunity
+is higher than their own. `!admin` needs no permission, but the caller must be a
 registered admin, and each menu category is still gated individually.
 
 The admin menu draws on either of two surfaces, decided per player when the menu
@@ -248,8 +251,8 @@ parse JSON.
 
 | Table | Holds |
 | --- | --- |
-| `admins` | Admin records, flags, immunity, and freeze state |
-| `admin_groups` | Named flag and immunity bundles |
+| `admins` | Admin records, permissions, immunity, and freeze state |
+| `admin_groups` | Named permission and immunity bundles |
 | `admin_server_groups` | Which groups an admin holds on which server tag |
 | `admin_activity` | Audit trail of every punishment an admin issued |
 | `players` | Seen players, names, and IP addresses |
@@ -285,7 +288,7 @@ Gameplay reads caches. Run `!admin_reload`, or restart the server.
 ### The plugin loads but no commands work
 
 Check the load report in the server console and run `admin_status`. A failed
-`Database` stage skips the `Admins` stage, leaving nobody holding any flag.
+`Database` stage skips the `Admins` stage, leaving nobody holding any permission.
 
 ### A banned player sees only the reason
 

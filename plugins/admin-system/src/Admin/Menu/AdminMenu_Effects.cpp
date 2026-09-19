@@ -73,7 +73,7 @@ std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, Vo
                                         return candidate.Slot != first.Slot && pawn && pawn.IsAlive();
                                     }});
                        },
-                   .Enabled = rows.Allows(Flag(Permission::Control))});
+                   .Enabled = rows.Allows(Permission::Control)});
 
     return builder.Build();
 }

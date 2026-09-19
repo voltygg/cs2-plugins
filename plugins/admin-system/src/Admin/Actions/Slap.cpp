@@ -7,7 +7,7 @@ namespace AdminSystem::Admin::Actions
 
 Action MakeSlap(VoltMod::Runtime& runtime)
 {
-    return Action{Flag(Permission::Control), /*requireAlive*/ true, [&runtime](const ActionContext& ctx) -> OptKey {
+    return Action{Permission::Control, /*requireAlive*/ true, [&runtime](const ActionContext& ctx) -> OptKey {
                       runtime.World.Pawns.Slap(ctx.TargetPawn());
                       return "broadcast.slapped";
                   }};

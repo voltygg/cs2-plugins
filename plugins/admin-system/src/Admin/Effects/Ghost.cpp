@@ -15,7 +15,7 @@ using Actions::ActionContext;
 
 Effect MakeGhost(VoltMod::Runtime& runtime)
 {
-    return Effect{.Permission = Flag(Permission::Fun),
+    return Effect{.Permission = Permission::Fun,
                   .Id = static_cast<int>(EffectId::Ghost),
                   .NameKey = "action.ghost",
                   .OnKey = "broadcast.ghostOn",

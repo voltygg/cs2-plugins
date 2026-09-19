@@ -23,7 +23,7 @@ Register from `App::Load()` with the fluent builder:
 ```cpp
 commands.Add("slap")
     .Describe("Slap a player")
-    .Permission(Flag(Permission::Slap))
+    .Permission(Permission::Slap)
     .Run([&app](Caller c, Args::Target target, Args::Rest reason) -> Result<Reply> { ... });
 ```
 

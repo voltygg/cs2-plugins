@@ -15,7 +15,7 @@ namespace Log = VoltMod::Log;
 using VoltMod::Time;
 
 /** Malformed list text is a bad row, not a bad database: name it and treat it as empty. */
-static std::vector<std::string> ReadGroupList(std::string_view text, std::string_view column, std::string_view row)
+static std::vector<std::string> ReadNameList(std::string_view text, std::string_view column, std::string_view row)
 {
     auto list = ReadJsonList(text);
     if (!list)
@@ -36,8 +36,9 @@ std::vector<Admin> AdminRepository::FindAll()
             admins.push_back(Admin{.Id = row.id,
                                    .SteamId = row.steamId,
                                    .Name = std::string(row.name),
-                                   .Groups = ReadGroupList(row.groups, "admins.groups", std::to_string(row.steamId)),
-                                   .Flags = std::string(row.flags),
+                                   .Groups = ReadNameList(row.groups, "admins.groups", std::to_string(row.steamId)),
+                                   .Permissions = ReadNameList(row.permissions, "admins.permissions",
+                                                               std::to_string(row.steamId)),
                                    .Immunity = static_cast<int32_t>(row.immunity),
                                    .DisplayPrefix = row.displayPrefix,
                                    .NameColor = std::string(row.nameColor),
@@ -58,9 +59,9 @@ std::vector<AdminGroup> AdminRepository::FindAllGroups()
         {
             groups.push_back(AdminGroup{.Id = row.id,
                                         .Name = std::string(row.name),
-                                        .Flags = std::string(row.flags),
+                                        .Permissions = ReadNameList(row.permissions, "admin_groups.permissions", row.name),
                                         .Immunity = static_cast<int32_t>(row.immunity),
-                                        .Inherits = ReadGroupList(row.inherits, "admin_groups.inherits", row.name),
+                                        .Inherits = ReadNameList(row.inherits, "admin_groups.inherits", row.name),
                                         .ChatPrefix = std::string(row.chatPrefix),
                                         .PrefixColor = std::string(row.prefixColor),
                                         .NameColor = std::string(row.nameColor),

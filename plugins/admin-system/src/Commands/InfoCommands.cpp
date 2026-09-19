@@ -22,7 +22,7 @@ void RegisterInfoCommands(VoltMod::CommandManager& commands, App& app)
     commands.Add("who")
         .Alias("players")
         .Describe("List online players, their group prefix, and immunity.")
-        .Permission(Flag(Permission::Hide))
+        .Permission(Permission::Hide)
         .Run([&app](Caller c) -> Result<Reply> {
             auto players = app.Runtime.Players.All();
             if (players.empty())
@@ -45,7 +45,7 @@ void RegisterInfoCommands(VoltMod::CommandManager& commands, App& app)
     commands.Add("admin_reload")
         .Alias("reload_admins")
         .Describe("Reload admins and groups from the database without restarting.")
-        .Permission(Flag(Permission::Root))
+        .Permission(Permission::Root)
         .Run([&app](Caller c) -> Result<Reply> {
             bool ok = app.Admins.Reload();
             app.Freeze.RefreshFromDatabase();

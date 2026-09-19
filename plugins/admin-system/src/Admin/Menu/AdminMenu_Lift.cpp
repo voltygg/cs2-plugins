@@ -59,7 +59,7 @@ static bool Lift(App& app, const LiftRow& row, int64_t adminSteamId)
 static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
 {
     const bool ban = row.Kind == PunishType::Ban;
-    const Permission permission = ban ? Permission::Unban : Permission::Mute;
+    const std::string_view permission = ban ? Permission::Unban : Permission::Mute;
     const std::string_view action = ban ? "action.unban" : "action.unmute";
     const std::string_view done = ban ? "unban.done" : "unmute.done";
     const std::string_view gone = ban ? "unban.gone" : "unmute.gone";

@@ -39,12 +39,12 @@ using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishType type)
 {
     auto& players = app.Runtime.Players;
-    return app.Runtime.Policy.Authorize(players.RefFor(adminSlot), target, Flag(InfoFor(type).RequiredPermission))
+    return app.Runtime.Policy.Authorize(players.RefFor(adminSlot), target, InfoFor(type).RequiredPermission)
         .has_value();
 }
 
 /** Flow validation: the target may have left (or the slot rehosts another player) and the
- *  admin's flags/immunity may have changed (e.g. !admin_reload) while the menu was open. */
+ *  admin's permissions/immunity may have changed (e.g. !admin_reload) while the menu was open. */
 static std::optional<std::string> ValidatePending(App& app, int slot, const PendingPunishment& pending)
 {
     if (!app.Runtime.Players.Get(pending.Target))

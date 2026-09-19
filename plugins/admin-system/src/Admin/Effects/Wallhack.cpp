@@ -11,7 +11,7 @@ using VoltMod::GlowVision;
 
 Effect MakeWallhack(VoltMod::Runtime& runtime)
 {
-    return Effect{.Permission = Flag(Permission::Wallhack),
+    return Effect{.Permission = Permission::Wallhack,
                   .Id = static_cast<int>(EffectId::Wallhack),
                   .NameKey = "action.wallhack",
                   .OnKey = "broadcast.wallhackOn",

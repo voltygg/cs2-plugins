@@ -27,7 +27,7 @@ using VoltMod::TeamSpectator;
 
 Effect MakeHide(VoltMod::Runtime& runtime)
 {
-    return Effect{.Permission = Flag(Permission::Hide),
+    return Effect{.Permission = Permission::Hide,
                   .Id = static_cast<int>(EffectId::Hide),
                   .NameKey = "action.hide",
                   .OnKey = "",

@@ -13,7 +13,7 @@ using Actions::ActionContext;
 
 Effect MakeBhop(VoltMod::Runtime& runtime)
 {
-    return Effect{.Permission = Flag(Permission::Bhop),
+    return Effect{.Permission = Permission::Bhop,
                   .Id = static_cast<int>(EffectId::Bhop),
                   .NameKey = "action.bhop",
                   .OnKey = "broadcast.bhopOn",

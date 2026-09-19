@@ -9,7 +9,7 @@ uv run poe build --install admin-system --start
 ```
 
 For the first-plugin walkthrough see [Create your first plugin](getting-started-plugin.md); for the
-admin-system's flags and database see [Admin system](admin-system.md).
+admin-system's permissions and database see [Admin system](admin-system.md).
 
 ## Toolchain
 

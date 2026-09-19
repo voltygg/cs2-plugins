@@ -8,17 +8,20 @@
 #include "Admin/Menu/AdminMenu_Map.hpp"
 #include "Admin/Menu/AdminMenu_Punish.hpp"
 #include "Core/App.hpp"
+#include "Core/Permissions.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <algorithm>
 #include <array>
 #include <format>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace AdminSystem::Admin
 {
@@ -31,19 +34,19 @@ struct Category
 {
     std::string_view LabelKey;
     std::shared_ptr<VoltMod::Menu> (*Build)(AdminSystem::App& app, int adminSlot);
-    /** Permission letters, any one of which opens the category; empty means any admin. */
-    std::string_view Flags;
+    /** Any one of these opens the category; empty means any admin. */
+    std::vector<std::string_view> Permissions;
     /** The tab icon, one of the names in panorama/screens/admin_menu/icons.j2. */
     std::string_view Icon;
 };
 
-static constexpr std::array<Category, 6> Categories{{
-    {"category.punish", &Menu::BuildPunishMenu, "cdoe", "punish"},
-    {"category.control", &Menu::BuildControlMenu, "bskz", "control"},
-    {"category.effects", &Menu::BuildEffectsMenu, "fjz", "effects"},
-    {"category.fun", &Menu::BuildFunMenu, "gz", "fun"},
-    {"category.map", &Menu::BuildMapMenu, "mvz", "map"},
-    {"category.chatSettings", &Menu::BuildChatSettingsMenu, "", "chat"},
+static const std::array<Category, 6> Categories{{
+    {"category.punish", &Menu::BuildPunishMenu, {Permission::Kick, Permission::Ban, Permission::Mute, Permission::Unban}, "punish"},
+    {"category.control", &Menu::BuildControlMenu, {Permission::Hide, Permission::Control, Permission::Weapon}, "control"},
+    {"category.effects", &Menu::BuildEffectsMenu, {Permission::Fun, Permission::Bhop}, "effects"},
+    {"category.fun", &Menu::BuildFunMenu, {Permission::FunMode}, "fun"},
+    {"category.map", &Menu::BuildMapMenu, {Permission::Map, Permission::Vote}, "map"},
+    {"category.chatSettings", &Menu::BuildChatSettingsMenu, {}, "chat"},
 }};
 
 std::shared_ptr<VoltMod::Menu> BuildAdminMainMenu(AdminSystem::App& app, int adminSlot)
@@ -62,9 +65,11 @@ std::shared_ptr<VoltMod::Menu> BuildAdminMainMenu(AdminSystem::App& app, int adm
 
     for (const Category& category : Categories)
     {
-        const bool allowed = category.Flags.empty()
+        const bool allowed = category.Permissions.empty()
                                  ? app.Admins.IsAdmin(adminSteamId)
-                                 : app.Access.HasAnyPermission(adminSteamId, std::string(category.Flags));
+                                 : std::ranges::any_of(category.Permissions, [&](std::string_view permission) {
+                                       return app.Access.HasPermission(adminSteamId, permission);
+                                   });
         builder.Add(
             SubmenuRow{.Label = translations.Get(category.LabelKey, adminSlot),
                        .Build = [&app, adminSlot, build = category.Build](int) { return build(app, adminSlot); },

@@ -23,7 +23,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
 {
     commands.Add("freeze_admin")
         .Describe("Freeze all admin privileges of another admin pending review.")
-        .Permission(Flag(Permission::FreezeAdmins))
+        .Permission(Permission::FreezeAdmins)
         // PlayerOrSteamId: an offline admin is addressed by the bare SteamID64 they are
         // stored under, anyone online by the usual selector grammar.
         .Run([&app](Caller c, Args::PlayerOrSteamId who, Args::Opt<Args::Rest> why) -> Result<Reply> {
@@ -54,7 +54,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
 
     commands.Add("unfreeze_admin")
         .Describe("Restore a frozen admin's privileges after reviewing their case.")
-        .Permission(Flag(Permission::FreezeAdmins))
+        .Permission(Permission::FreezeAdmins)
         // The target may be offline and not even resolvable as a player - it is matched
         // against the frozen list itself, so this stays a bespoke Word argument.
         .Run([&app](Caller c, Args::Word token) -> Result<Reply> {
@@ -95,7 +95,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
 
     commands.Add("frozen_admins")
         .Describe("List admins whose privileges are currently frozen.")
-        .Permission(Flag(Permission::FreezeAdmins))
+        .Permission(Permission::FreezeAdmins)
         .Run([&app](Caller c) -> Result<Reply> {
             const auto& frozen = app.Freeze.Frozen();
             if (frozen.empty())

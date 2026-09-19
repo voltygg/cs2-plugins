@@ -1,39 +1,27 @@
 #pragma once
 
-#include <string>
-
-namespace AdminSystem
+namespace AdminSystem::Permission
 {
 
 /**
- * Admin permission flags. The underlying char is the flag letter stored in the DB
- * (`admins.flags` / `admin_groups.flags`); 'z' (Root) grants everything. Use these instead of
- * bare character literals at permission-check and command-registration sites.
+ * Permission names stored in `admins.permissions` / `admin_groups.permissions` (JSON arrays).
+ * A grant of "*" holds every permission, and "admin.*" every name under "admin.".
  */
-enum class Permission : char
-{
-    FreezeAdmins = 'a',  // freeze/unfreeze other admins' privileges, list frozen admins
-    Kick = 'c',
-    Ban = 'd',
-    Unban = 'e',
-    Mute = 'o',     // voice mute / text mute / warn
-    Control = 's',  // slay / move / teleport / freeze / noclip / bury / team / speed
-    Fun = 'f',      // ghost / disco / smite / size
-    Health = 'h',   // health / armor / godmode
-    Hide = 'b',
-    Wallhack = 'w',  // grant a target see-through-walls glow vision
-    Bhop = 'j',      // grant a target session bunnyhop (requires the bhop plugin, "grants" mode)
-    Map = 'm',       // change level, queue the next map
-    Weapon = 'k',    // give and strip weapons
-    FunMode = 'g',   // server-wide round modifiers
-    Vote = 'v',      // start and cancel map votes
-    Root = 'z',
-};
+inline constexpr const char* FreezeAdmins = "admin.freeze_admins";  // freeze other admins' privileges
+inline constexpr const char* Kick = "admin.kick";
+inline constexpr const char* Ban = "admin.ban";
+inline constexpr const char* Unban = "admin.unban";
+inline constexpr const char* Mute = "admin.mute";        // voice mute / text mute / warn
+inline constexpr const char* Control = "admin.control";  // slay / move / teleport / freeze / noclip / bury / team / speed
+inline constexpr const char* Fun = "admin.fun";          // ghost / disco / smite / size
+inline constexpr const char* Health = "admin.health";    // health / armor / godmode
+inline constexpr const char* Hide = "admin.hide";
+inline constexpr const char* Wallhack = "admin.wallhack";
+inline constexpr const char* Bhop = "admin.bhop";  // requires the bhop plugin in "grants" mode
+inline constexpr const char* Map = "admin.map";
+inline constexpr const char* Weapon = "admin.weapon";
+inline constexpr const char* FunMode = "admin.fun_mode";  // server-wide round modifiers
+inline constexpr const char* Vote = "admin.vote";
+inline constexpr const char* Root = "*";
 
-/** The single-character flag string for a permission (for `CommandBuilder::Permission`). */
-inline std::string Flag(Permission p)
-{
-    return std::string(1, static_cast<char>(p));
-}
-
-}  // namespace AdminSystem
+}  // namespace AdminSystem::Permission

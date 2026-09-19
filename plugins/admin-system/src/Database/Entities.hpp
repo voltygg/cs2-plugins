@@ -10,7 +10,7 @@
 namespace AdminSystem::Database
 {
 
-/** An administrator: the flags and groups they hold, plus their chat and panel preferences. */
+/** An administrator: the permissions and groups they hold, plus their chat and panel preferences. */
 struct Admin
 {
     int64_t Id = 0;
@@ -19,7 +19,7 @@ struct Admin
     /** In memory this is the EFFECTIVE set for this server (global `admins.groups` merged with
      *  this server's `admin_server_groups` grants at load time); the DB column is global-only. */
     std::vector<std::string> Groups;
-    std::string Flags;
+    std::vector<std::string> Permissions;
     int32_t Immunity = 0;
 
     /** Per-admin chat overrides. Empty color strings fall back to the admin's group. */
@@ -32,12 +32,12 @@ struct Admin
     int64_t UpdatedAt = 0;
 };
 
-/** A named set of flags and immunity that admins inherit from. */
+/** A named set of permissions and immunity that admins inherit from. */
 struct AdminGroup
 {
     int64_t Id = 0;
     std::string Name;
-    std::string Flags;
+    std::vector<std::string> Permissions;
     int32_t Immunity = 0;
     std::vector<std::string> Inherits;
 

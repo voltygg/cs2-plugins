@@ -1,12 +1,14 @@
 #pragma once
 
 #include "Config/ConfigManager.hpp"
-#include "Core/Permissions.hpp"
 #include "Database/Entities.hpp"
 #include "Database/Repositories.hpp"
 
 #include <VoltMod/Messaging/ChatColors.hpp>
+#include <functional>
+#include <set>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace AdminSystem::Admin
@@ -28,10 +30,10 @@ struct AdminChatStyle
 };
 
 /**
- * Owns admin records: flag resolution, immunity, and chat styling. Admins are loaded from the
- * database and their flags resolved into uint32_t bitmasks for O(1) checks ('a'=bit0 ... 'z'=bit25).
+ * Owns admin records: permission resolution, immunity, and chat styling. Each admin's own and
+ * group permissions are merged into one set at load, so a check is a lookup.
  *
- * The permission answers here are the admin's *granted* flags and nothing else. Abuse-protection
+ * The permission answers here are the admin's *granted* permissions and nothing else. Abuse-protection
  * freezes are layered on top by @ref Access, which is what command, menu and action code asks -
  * keeping the freeze gate out of here is what breaks the AdminManager/FreezeManager cycle.
  */
@@ -45,10 +47,8 @@ public:
     bool Reload();
     bool IsAdmin(int64_t steamId);
     const Database::Admin* GetAdmin(int64_t steamId);
-    bool HasPermission(int64_t steamId, char flag);
-    bool HasPermission(int64_t steamId, Permission flag) { return HasPermission(steamId, static_cast<char>(flag)); }
-    bool HasAllPermissions(int64_t steamId, const std::string& flags);
-    bool HasAnyPermission(int64_t steamId, const std::string& flags);
+    /** True if the admin holds @p permission, "*", or a wildcard over any of its prefixes ("admin.*"). */
+    bool HasPermission(int64_t steamId, std::string_view permission);
     int GetImmunity(int64_t steamId);
     /**
      * Check if an admin can target a specific player based on their immunity levels.
@@ -71,36 +71,19 @@ public:
      *  back to the admin's group default. Unknown admins are ignored. */
     void UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                               const std::string& messageColor);
-
-
-    /** Convert a single flag character ('a'-'z') to a bitmask bit. */
-    static uint32_t FlagToBit(char flag)
-    {
-        if (flag >= 'a' && flag <= 'z')
-        {
-            return 1u << (flag - 'a');
-        }
-        return 0;
-    }
-
 private:
+    using PermissionSet = std::set<std::string, std::less<>>;
+
     Database::Repositories& _repos;
     const Config::ConfigManager& _config;
 
-    /** True if a resolved bitmask carries @p flag, or the root flag ('z') that grants everything. */
-    static bool HasBit(uint32_t resolved, char flag)
-    {
-        return (resolved & FlagToBit('z')) != 0 || (resolved & FlagToBit(flag)) != 0;
-    }
-
-    uint32_t ResolveFlags(const Database::Admin& admin);
+    PermissionSet ResolvePermissions(const Database::Admin& admin);
     int ResolveImmunity(const Database::Admin& admin);
 
     std::unordered_map<int64_t, Database::Admin> _admins;
     std::unordered_map<std::string, Database::AdminGroup> _groups;
 
-    /** Cached resolved flag bitmasks per admin steam ID. */
-    std::unordered_map<int64_t, uint32_t> _resolvedFlags;
+    std::unordered_map<int64_t, PermissionSet> _resolvedPermissions;
 
     /** Cached resolved chat styles per admin steam ID; invalidated on Reload(). */
     std::unordered_map<int64_t, AdminChatStyle> _resolvedStyles;

@@ -79,12 +79,9 @@ void FreezeManager::RecordPunishment(int64_t adminSteamId, std::string_view admi
 {
     RecordAudit(adminSteamId, adminName, action, targetSteamId, targetName, detail);
 
-    // Console actions and already-frozen admins never trip the rate check; root admins are
-    // exempt by design (they resolve every flag, including 'z' itself).
+    // The console, frozen admins and root admins never trip the rate check.
     if (adminSteamId == 0 || !_config.Get().abuseProtection.enabled || IsFrozen(adminSteamId))
         return;
-    // Raw grant, not Access: the frozen case already returned above, and asking the gated
-    // surface here would only re-answer that same question.
     if (_admins.HasPermission(adminSteamId, Permission::Root))
         return;
 

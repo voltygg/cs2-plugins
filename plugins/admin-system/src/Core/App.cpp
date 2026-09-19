@@ -43,7 +43,7 @@ void App::InstallPolicy()
 {
     auto& policy = Runtime.Policy;
     policy.HasPermission = [this](int64_t steamId, std::string_view permission) {
-        return Access.HasAnyPermission(steamId, std::string(permission));
+        return Access.HasPermission(steamId, permission);
     };
     // Policy::Authorize handles console and self-targeting; Policy::AuthorizeSteamId uses this for offline targets.
     policy.CanTarget = [this](int64_t callerSteamId, int64_t targetSteamId) {

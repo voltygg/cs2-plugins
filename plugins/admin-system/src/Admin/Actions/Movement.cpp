@@ -9,25 +9,25 @@ namespace PawnOps = VoltMod::PawnOps;
 
 static constexpr float BuryDepth = 15.0f;
 
-const Action Noclip{Flag(Permission::Control), /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
+const Action Noclip{Permission::Control, /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
                         return PawnOps::ToggleNoclip(ctx.TargetPawn()) ? "broadcast.noclipOn" : "broadcast.noclipOff";
                     }};
 
-const Action Freeze{Flag(Permission::Control), /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
+const Action Freeze{Permission::Control, /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
                         return PawnOps::ToggleFreeze(ctx.TargetPawn()) ? "broadcast.freezeOn" : "broadcast.freezeOff";
                     }};
 
-const Action Bury{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Bury{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                       PawnOps::ShiftZ(ctx.TargetPawn(), -BuryDepth);
                       return "broadcast.buried";
                   }};
 
-const Action Unbury{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Unbury{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                         PawnOps::ShiftZ(ctx.TargetPawn(), BuryDepth);
                         return "broadcast.unburied";
                     }};
 
-const ParamAction SetSpeed{Flag(Permission::Control), /*requireAlive*/ true,
+const ParamAction SetSpeed{Permission::Control, /*requireAlive*/ true,
                            [](const ActionContext& ctx, int percent) -> OptKey {
                                ctx.TargetPawn().SetSpeedModifier(percent / 100.0f);
                                return "broadcast.speedSet";

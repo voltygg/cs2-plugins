@@ -42,7 +42,7 @@ namespace AdminSystem
 /**
  * Load-cycle object graph. Members are declared in dependency order and destroyed
  * in reverse, so callbacks stop before captured state and database services.
- * Access composes admin flags with freeze state; PlayerChat owns inbound rules
+ * Access composes admin permissions with freeze state; PlayerChat owns inbound rules
  * while ChatService remains output-only.
  */
 struct App final : VoltMod::Plugin
@@ -108,7 +108,7 @@ struct App final : VoltMod::Plugin
     Maps::VoteState Votes{Runtime, Settings, MapCycle};
     Admin::AdminManager Admins{Repos, Settings};
     Admin::FreezeManager Freeze{Repos, Settings, Runtime, Chat, Admins};
-    /** The permission gate: granted flags minus abuse-protection freezes. Ask this, not Admins. */
+    /** The permission gate: granted permissions minus abuse-protection freezes. Ask this, not Admins. */
     Admin::Access Access{Admins, Freeze};
     Punishments::PunishmentManager Punishments{Repos, Settings, Runtime, Chat};
     Core::PlayerChat PlayerChat{Runtime, Settings, Chat, Admins, Punishments};

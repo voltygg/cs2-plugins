@@ -70,7 +70,7 @@ existing `settings.jsonc`, so it never overwrites your own changes.
 | --- | --- |
 | [Create your first plugin](docs/getting-started-plugin.md) | scaffold, build, install, verify |
 | [Local development](docs/local-development.md) | toolchain, presets, the editable framework checkout, logs |
-| [Admin system](docs/admin-system.md) | flags, database, multi-server setup |
+| [Admin system](docs/admin-system.md) | permissions, database, multi-server setup |
 | [Deployment](deploy/README.md) | inventory, secrets, panel servers and Docker hosts |
 | [Contributing](CONTRIBUTING.md) | conventions and review expectations |
 | [VoltMod docs](https://github.com/voltygg/voltmod/tree/main/docs) | the framework itself |

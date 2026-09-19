@@ -39,7 +39,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
 {
     commands.Add("kick")
         .Describe("Kick a player.")
-        .Permission(Flag(Permission::Kick))
+        .Permission(Permission::Kick)
         .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) -> Result<Reply> {
             return Punish(app, c, *t.Value, PunishType::Kick, ReasonOr(c, why, "reason.kickedByAdmin"),
                           std::chrono::seconds{0}, "cmd.kickSuccess");
@@ -47,7 +47,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
 
     commands.Add("ban")
         .Describe("Ban a player. Duration: minutes (e.g. 30) or 30s/5m/2h/7d; 0/'perm' = permanent.")
-        .Permission(Flag(Permission::Ban))
+        .Permission(Permission::Ban)
         .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
             // The default ban reason is a config string, not a translation key.
             std::string reason = why.Value ? why.Value->Value : app.Settings.Get().punishments.defaultBanReason;
@@ -56,7 +56,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
 
     commands.Add("unban")
         .Describe("Lift an active ban for the given SteamID.")
-        .Permission(Flag(Permission::Unban))
+        .Permission(Permission::Unban)
         .UsageKey("cmd.unbanUsage")
         .Run([&app](Caller c, Args::SteamId id, Args::Opt<Args::Rest> why) -> Result<Reply> {
             const std::string reason = ReasonOr(c, why, LiftReasonKey(PunishType::Ban));
@@ -69,7 +69,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Alias("vmute")
         .Alias("mute")
         .Describe("Voice-mute a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.")
-        .Permission(Flag(Permission::Mute))
+        .Permission(Permission::Mute)
         .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
             return Punish(app, c, *t.Value, PunishType::VoiceMute, ReasonOr(c, why, "reason.voiceMutedByAdmin"),
                           d.Value, "cmd.voiceMuteSuccess");
@@ -79,7 +79,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Alias("vunmute")
         .Alias("unmute")
         .Describe("Lift an active voice mute on the target.")
-        .Permission(Flag(Permission::Mute))
+        .Permission(Permission::Mute)
         .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
             bool removed =
                 app.Punishments.RemoveBySteamId(PunishType::VoiceMute, t.Value->SteamId(), c.Player->SteamId(),
@@ -92,7 +92,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Alias("tmute")
         .Alias("gag")
         .Describe("Text-mute (chat-block) a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.")
-        .Permission(Flag(Permission::Mute))
+        .Permission(Permission::Mute)
         .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
             return Punish(app, c, *t.Value, PunishType::TextMute, ReasonOr(c, why, "reason.textMutedByAdmin"), d.Value,
                           "cmd.textMuteSuccess");
@@ -102,7 +102,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Alias("tunmute")
         .Alias("ungag")
         .Describe("Lift an active text mute on the target.")
-        .Permission(Flag(Permission::Mute))
+        .Permission(Permission::Mute)
         .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
             bool removed =
                 app.Punishments.RemoveBySteamId(PunishType::TextMute, t.Value->SteamId(), c.Player->SteamId(),
@@ -113,7 +113,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
 
     commands.Add("warn")
         .Describe("Issue a warning. Auto-escalates to a ban once the threshold is reached.")
-        .Permission(Flag(Permission::Mute))
+        .Permission(Permission::Mute)
         .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) -> Result<Reply> {
             return Punish(app, c, *t.Value, PunishType::Warn, ReasonOr(c, why, "reason.warnedByAdmin"),
                           std::chrono::seconds{0}, "cmd.warnSuccess");

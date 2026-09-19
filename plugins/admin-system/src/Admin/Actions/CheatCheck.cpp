@@ -7,7 +7,7 @@ namespace AdminSystem::Admin::Actions
 
 bool CallCheck(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target)
 {
-    if (!app.Actions.Resolve(admin, target, Flag(Permission::Control)))
+    if (!app.Actions.Resolve(admin, target, Permission::Control))
         return false;
 
     return app.CheatCheck.StartCheck(admin.Slot, target.Slot);
@@ -15,7 +15,7 @@ bool CallCheck(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target)
 
 bool CancelCheck(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target)
 {
-    if (!app.Actions.Resolve(admin, target, Flag(Permission::Control)))
+    if (!app.Actions.Resolve(admin, target, Permission::Control))
         return false;
 
     return app.CheatCheck.Cancel(admin.Slot, target.Slot);

@@ -2,12 +2,12 @@
 -- pipe it into a client:
 --   uv run voltmod database sql plugins/admin-system/database/seed-admin.sql --driver postgres | psql -d admin_system
 -- Run `!admin_reload` afterwards to pick it up without a restart.
-@INSERT_IF_ABSENT@ admins (steam_id, name, groups, flags, immunity)
+@INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions, immunity)
 VALUES (
   76561198153558892,   -- your SteamID64
   '.NET Player',       -- display name
   '["super_admin"]',   -- group memberships, JSON array text
-  '',                  -- extra flags on top of the group's
+  '[]',                -- extra permissions on top of the group's, JSON array text
   100                  -- extra immunity; the group's is considered too
 )
 @ON_CONFLICT(steam_id)@;

@@ -93,7 +93,7 @@
     "enabled": true,
     // Network-wide sliding window in minutes.
     "windowMinutes": 10,
-    // Reaching a threshold freezes the admin; 0 disables it. Root ('z') admins are exempt.
+    // Reaching a threshold freezes the admin; 0 disables it. Root ("*") admins are exempt.
     "maxBans": 5,
     "maxKicks": 10,
     // Combined voice and text mutes.

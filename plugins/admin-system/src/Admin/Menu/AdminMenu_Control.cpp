@@ -100,7 +100,7 @@ std::shared_ptr<VoltMod::Menu> BuildControlActionsMenu(AdminSystem::App& app, Vo
 
     MenuBuilder builder(std::format("{}: {}", translations.Get("category.control", admin.Slot), targetPlayer->Name()));
     auto rows = app.MenuRows(admin, target);
-    VoltMod::EnabledCondition control = rows.Allows(Flag(Permission::Control));
+    VoltMod::EnabledCondition control = rows.Allows(Permission::Control);
 
     // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
     // (no broadcast / bool result), so they stay plain buttons rather than Actions descriptors.
@@ -110,7 +110,7 @@ std::shared_ptr<VoltMod::Menu> BuildControlActionsMenu(AdminSystem::App& app, Vo
     builder.Add(
         ButtonRow{.Label = rows.Translate("action.cancelCheck"),
                   .Activate = [&app, admin, target](int) { Actions::CancelCheck(app, admin, target); },
-                  // The flag may go, and so may the check it cancels.
+                  // The permission may go, and so may the check it cancels.
                   .Enabled = [&app, control, slot = target.Slot](
                                  int adminSlot) { return control(adminSlot) && app.CheatCheck.IsActive(slot); }});
 
@@ -119,8 +119,6 @@ std::shared_ptr<VoltMod::Menu> BuildControlActionsMenu(AdminSystem::App& app, Vo
         .Add(rows.Action("action.goto", Actions::Goto))
         .Add(rows.StateToggle("action.freeze", VoltMod::InMoveType(VoltMod::MoveType::None), Actions::Freeze))
         .Add(rows.StateToggle("action.noclip", VoltMod::InMoveType(VoltMod::MoveType::NoClip), Actions::Noclip))
-        // HP/Armor/Speed/Size are inline Choice rows: A/D cycles preset values and E applies,
-        // leaving the menu open so a value can be adjusted and applied again.
         .Add(rows.Presets(
             {.LabelKey = "action.health", .Unit = "HP", .Presets = HealthPresets, .Action = Actions::SetHealth}))
         .Add(rows.Presets(
@@ -145,7 +143,7 @@ std::shared_ptr<VoltMod::Menu> BuildControlActionsMenu(AdminSystem::App& app, Vo
 
     builder.Add(SubmenuRow{.Label = rows.Translate("action.giveWeapon"),
                            .Build = [&app, admin, target](int) { return BuildWeaponMenu(app, admin, target); },
-                           .Enabled = rows.Allows(Flag(Permission::Weapon))});
+                           .Enabled = rows.Allows(Permission::Weapon)});
 
     return builder.Build();
 }

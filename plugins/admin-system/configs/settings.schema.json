@@ -126,7 +126,7 @@
     "abuseProtection": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Automatic admin-freeze rate thresholds, counted across ALL servers sharing the database. A threshold of 0 disables that counter; root ('z') admins are always exempt.",
+      "description": "Automatic admin-freeze rate thresholds, counted across ALL servers sharing the database. A threshold of 0 disables that counter; root (\"*\") admins are always exempt.",
       "properties": {
         "enabled": {
           "type": "boolean",

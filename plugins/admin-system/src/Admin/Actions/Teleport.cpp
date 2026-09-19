@@ -18,7 +18,7 @@ static void BroadcastPair(App& app, const ActionContext& first, const ActionCont
     app.Chat.BroadcastAction(key, first.Caller().Name(), {{"a", first.Target().Name()}, {"b", second.Target().Name()}});
 }
 
-const Action Bring{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Bring{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                        if (!ctx.CallerPawn())
                            return std::nullopt;
                        Vector dest = PawnOps::ClearedDestination(ctx.CallerPawn());
@@ -26,7 +26,7 @@ const Action Bring{Flag(Permission::Control), /*requireAlive*/ true, [](const Ac
                        return "broadcast.brought";
                    }};
 
-const Action Goto{Flag(Permission::Control), /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Goto{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                       if (!ctx.CallerPawn())
                           return std::nullopt;
                       Vector dest = PawnOps::ClearedDestination(ctx.TargetPawn());
@@ -38,8 +38,8 @@ void Swap(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef first, VoltMod:
 {
     if (first == second)
         return;
-    auto ctxA = app.Actions.Resolve(admin, first, Flag(Permission::Control));
-    auto ctxB = app.Actions.Resolve(admin, second, Flag(Permission::Control));
+    auto ctxA = app.Actions.Resolve(admin, first, Permission::Control);
+    auto ctxB = app.Actions.Resolve(admin, second, Permission::Control);
     if (!ctxA || !ctxB)
         return;
     if (!ctxA->TargetPawn().IsAlive() || !ctxB->TargetPawn().IsAlive())

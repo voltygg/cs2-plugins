@@ -28,7 +28,7 @@ struct PunishTypeInfo
     std::string_view AuditName;        ///< Stored in `admin_activity.action` and `punishments.kind`.
     std::string_view IssuedBroadcast;  ///< Translation key of the broadcast verb when issued.
     std::string_view LiftedBroadcast;  ///< Same when lifted; empty when the kind cannot be lifted.
-    Permission RequiredPermission;     ///< The admin flag needed to issue it.
+    std::string_view RequiredPermission;  ///< The admin permission needed to issue it.
     bool Timed;                        ///< Carries a duration, and stays cached until it expires.
 };
 
