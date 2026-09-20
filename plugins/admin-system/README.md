@@ -15,7 +15,7 @@ multi-server grants, abuse protection, and cheat-check workflows.
   a map to the game's own yes/no vote panel.
 - Weapon control through the menu: give a configured weapon, a random one, or
   strip a player.
-- Fun Mode round modifiers through the menu: low gravity, headshot only, knife
+- Round Modes through the menu: low gravity, headshot only, knife
   round, and one-hit kill.
 - Groups, permissions, immunity, per-server grants, and admin stealth.
 - Network-wide punishments and automatic punishment enforcement.
@@ -67,20 +67,21 @@ remains available where the action supports it.
 | `admin.health` | Health, armor, and godmode |
 | `admin.wallhack` | Wallhack |
 | `admin.bhop` | Bhop grants |
-| `admin.map` | Change map and queue the next map (Map menu) |
-| `admin.weapon` | Give and strip weapons (Control menu) |
-| `admin.fun_mode` | Fun Mode round modifiers (Fun menu) |
-| `admin.vote` | Start and cancel map votes (Map menu) |
+| `admin.map` | Change map and queue the next map (Map & Vote tab) |
+| `admin.weapon` | Give and strip weapons (Player Actions tab) |
+| `admin.fun_mode` | Server-wide modifiers (Round Modes tab) |
+| `admin.vote` | Start and cancel map votes (Map & Vote tab) |
 | `*` | Root access |
 
 `!admin` has no dedicated permission, but the caller must be a registered admin.
-Individual menu categories and actions remain permission-gated.
+A tab or row the admin holds no permission for is not drawn at all, so the panel
+shows only what that admin can actually use.
 
 ## Commands
 
-Map control, weapons, and Fun Mode are menu-only - `!admin` opens the panel and
-each category is gated by its own permission. The commands below are the ones with no
-menu equivalent.
+Map control, weapons, and the round modifiers are menu-only - `!admin` opens the
+panel, and each tab appears only when the admin may use something inside it. The
+commands below are the ones with no menu equivalent.
 
 ### Moderation and administration
 
@@ -94,7 +95,7 @@ menu equivalent.
 | `!text_mute <target> <duration> [reason]` | `admin.mute` | Block chat; aliases: `!tmute`, `!gag` |
 | `!text_unmute <target>` | `admin.mute` | Restore chat; aliases: `!tunmute`, `!ungag` |
 | `!warn <target> [reason]` | `admin.mute` | Warn a player and apply configured escalation |
-| `!admin` | registered admin | Open the menu; aliases: `!a`, `!menu` |
+| `!admin` | registered admin | Open the menu; alias: `!a` |
 | `!who` | `admin.hide` | List players, prefixes, and immunity; alias: `!players` |
 | `!hide` | `admin.hide` | Toggle admin stealth |
 | `!admin_reload` | `*` | Reload admins, groups, grants, and freezes; alias: `!reload_admins` |

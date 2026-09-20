@@ -195,7 +195,7 @@
     "addonId": 3801580041
   },
   "weapons": {
-    // Offered by !give and Control > Give weapon. `item` is an entity classname; non-`weapon_` values are skipped.
+    // Offered by Player Actions > Give weapon. `item` is an entity classname; non-`weapon_` values are skipped.
     // Omitting `menu` uses these defaults.
     "menu": [
       { "name": "AK-47", "item": "weapon_ak47" },

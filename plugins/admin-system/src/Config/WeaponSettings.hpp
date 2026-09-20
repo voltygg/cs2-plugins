@@ -12,7 +12,7 @@ struct WeaponConfigEntry
     std::string item;
 };
 
-/** Weapons offered by `!give` and the weapon menu. Defaulted for the same reason as
+/** Weapons offered by the weapon menu. Defaulted for the same reason as
  *  @ref MapSettings::cycle. */
 struct WeaponSettings
 {

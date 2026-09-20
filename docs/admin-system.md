@@ -27,7 +27,7 @@ built-in defaults.
 | `reports` | Player report reasons, cooldowns, and duplicate suppression |
 | `cheatCheck` | Cheat-check mode and the link or room API behind it |
 | `maps` | Maps admins may switch to |
-| `weapons` | Weapons the Control > Give weapon menu offers |
+| `weapons` | Weapons the Player Actions > Give weapon menu offers |
 
 A mistyped value fails the whole load; a malformed entry inside a list
 (a punishment template, a report reason) is logged and skipped so one typo
@@ -58,7 +58,7 @@ around the link comes from the `kickNotice` group in
 `maps.cycle` is the list of maps admins may switch to. The engine exposes no
 usable list of its own, so this is the only source. Leaving it out (or having
 every entry skipped) falls back to the built-in active duty group rather than
-opening an empty Map menu.
+opening an empty map list.
 
 ```jsonc
 "cycle": [
@@ -68,12 +68,14 @@ opening an empty Map menu.
 ]
 ```
 
-`displayName` is the label the Map menu shows; it falls back to `name`.
+`displayName` is the label the map list shows; it falls back to `name`.
 
-Map control is menu-only: the Map category lists the cycle, and each entry
-offers Change map (with a confirmation, since it ends everyone's round), Set as
-next map, and Put to vote. Change map and Set as next map need `admin.map`,
-Put to vote and Cancel running vote `admin.vote`; either one opens the category.
+Map control is menu-only. Map & Vote picks the verb first - Change map (with a
+confirmation, since it ends everyone's round), Set as next map, or Put to vote -
+and each opens the same cycle list. Change map and Set as next map need
+`admin.map`, Put to vote and Cancel vote `admin.vote`; a row the admin lacks the
+permission for is not drawn at all. Cancel vote stays visible and grays itself
+while no vote is running, since the tab's rows are fixed once it opens.
 
 Plain map names are checked against the engine at load, and one it cannot load
 is logged there rather than failing when an admin picks it. Workshop maps are
@@ -81,7 +83,7 @@ not checked, because they are addressed by id and are not mounted yet.
 
 ### Weapon list
 
-`weapons.menu` is what Control > Give weapon offers. `item` is the entity
+`weapons.menu` is what Player Actions > Give weapon offers. `item` is the entity
 classname; an entry not starting with `weapon_` is skipped, since it would
 otherwise reach the engine as an arbitrary entity. `name` is the menu label and
 falls back to `item`. Like `maps.cycle`, an absent or fully-skipped list falls
@@ -100,11 +102,11 @@ Giving a weapon the target's team cannot buy works: the server retries once with
 the pawn briefly flipped to the other team, then puts it back. A refusal the
 retry cannot fix is reported to the admin who clicked.
 
-### Fun Mode
+### Round Modes
 
-Fun Mode is a set of server-wide round modifiers, toggled from the Fun Mode
-menu. Each entry shows its current state, and Clear all turns everything off.
-The category needs `admin.fun_mode`.
+Round Modes is a set of server-wide round modifiers, toggled from the Round
+Modes tab. Each entry shows its current state, and Clear all turns everything
+off. The tab needs `admin.fun_mode`.
 
 | Modifier | Effect |
 | --- | --- |
@@ -168,7 +170,7 @@ to them. `*` grants everything, and `admin.*` grants every `admin.` permission.
 | `admin.bhop` | Bhop grants |
 | `admin.map` | Change map and queue the next map (Map menu) |
 | `admin.weapon` | Give and strip weapons |
-| `admin.fun_mode` | Fun Mode round modifiers |
+| `admin.fun_mode` | Round Modes server-wide modifiers |
 | `admin.vote` | Start and cancel map votes (Map menu) |
 | `*` | Root access |
 
