@@ -58,8 +58,7 @@ std::shared_ptr<VoltMod::Menu> BuildRootMenu(AdminSystem::App& app, int adminSlo
 
     for (const TabSpec& tab : Tabs)
     {
-        // A tab is worth a slot only while something inside it is.
-        if (!ctx->AnyVisible(tab.Rows))
+        if (!ctx->Visible(tab))
             continue;
 
         builder.Add(SubmenuRow{.Label = ctx->Translate(tab.LabelKey),

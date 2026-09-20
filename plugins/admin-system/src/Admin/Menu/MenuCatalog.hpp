@@ -3,6 +3,7 @@
 #include "Core/Permissions.hpp"
 
 #include <array>
+#include <cstddef>
 #include <span>
 #include <string_view>
 
@@ -54,8 +55,6 @@ enum class RowId
     Drunk,
     Smite,
     Size,
-    // Round Modes
-    RoundModes,
     // Map & Vote
     ChangeMap,
     SetNextMap,
@@ -134,12 +133,6 @@ inline constexpr std::array<RowSpec, 8> PlayerFunRows{{
     {RowId::Size, "action.size", Permission::Fun, {}},
 }};
 
-/** One entry describes the tab: every modifier shares a permission. The rows stay in
- *  `Fun::Toggles`, whose order its own test pins. */
-inline constexpr std::array<RowSpec, 1> RoundModeRows{{
-    {RowId::RoundModes, "category.roundModes", Permission::FunMode, {}},
-}};
-
 inline constexpr std::array<RowSpec, 4> MapVoteRows{{
     {RowId::ChangeMap, "action.changeMap", Permission::Map, {}},
     {RowId::SetNextMap, "action.setNextMap", Permission::Map, {}},
@@ -164,8 +157,9 @@ enum class TabId
     MySettings,
 };
 
-/** One tab of the panel, visible exactly when one of its rows is, so it cannot outlive its
- *  contents. */
+/** One tab of the panel. A tab that lists @ref Rows is visible exactly when one of them is, so it
+ *  cannot outlive its contents; one whose contents are declared elsewhere names its own
+ *  @ref Permission instead. */
 struct TabSpec
 {
     TabId Id;
@@ -173,16 +167,24 @@ struct TabSpec
     /** One of the six names generated into panorama/screens/admin_menu/icons.j2. Reusing an
      *  existing name keeps a menu change out of the workshop publish queue. */
     std::string_view Icon;
+    std::string_view Permission;
     std::span<const RowSpec> Rows;
 };
 
 inline constexpr std::array<TabSpec, 6> Tabs{{
-    {TabId::Punish, "category.punish", "punish", PunishTabRows},
-    {TabId::PlayerActions, "category.playerActions", "control", PlayerActionRows},
-    {TabId::PlayerFun, "category.playerFun", "effects", PlayerFunRows},
-    {TabId::RoundModes, "category.roundModes", "fun", RoundModeRows},
-    {TabId::MapVote, "category.mapVote", "map", MapVoteRows},
-    {TabId::MySettings, "category.mySettings", "chat", MySettingsRows},
+    {TabId::Punish, "category.punish", "punish", {}, PunishTabRows},
+    {TabId::PlayerActions, "category.playerActions", "control", {}, PlayerActionRows},
+    {TabId::PlayerFun, "category.playerFun", "effects", {}, PlayerFunRows},
+    // The round modifiers are `Fun::Toggles`, which every admin with this permission gets all of.
+    {TabId::RoundModes, "category.roundModes", "fun", Permission::FunMode, {}},
+    {TabId::MapVote, "category.mapVote", "map", {}, MapVoteRows},
+    {TabId::MySettings, "category.mySettings", "chat", {}, MySettingsRows},
 }};
+
+/** The tab @p id describes. MenuCatalogTests pins @ref Tabs in enum order. */
+inline constexpr const TabSpec& TabFor(TabId id)
+{
+    return Tabs[static_cast<std::size_t>(id)];
+}
 
 }  // namespace AdminSystem::Admin::Menu

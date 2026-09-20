@@ -46,6 +46,13 @@ struct MenuContext
         return Menu::AnyVisible(Plugin, Admin.Slot, rows);
     }
 
+    /** Whether @p tab is worth a slot: one that lists rows while any of them shows, one that
+     *  declares a permission while the admin holds it. */
+    [[nodiscard]] bool Visible(const TabSpec& tab) const
+    {
+        return tab.Permission.empty() ? AnyVisible(tab.Rows) : MayUse(Plugin, Admin.Slot, tab.Permission);
+    }
+
     /** The action/effect rows for this admin against @p target. */
     [[nodiscard]] VoltMod::ActionRows Rows(VoltMod::PlayerRef target) const { return Plugin.MenuRows(Admin, target); }
 
