@@ -292,7 +292,6 @@ bool CheatCheckManager::Cancel(int adminSlot, int targetSlot)
 void CheatCheckManager::Expire(int targetSlot)
 {
     const auto& cfg = _config.Get().cheatCheck;
-    const bool kick = cfg.autoKick;
 
     auto* target = _rt.Players.Get(targetSlot);
     std::string targetName = target ? target->Name() : std::string();
@@ -313,7 +312,7 @@ void CheatCheckManager::Expire(int targetSlot)
                                  .Duration = cfg.banDurationSec};
         _punishments.Issue(ban);
     }
-    else if (kick)
+    else if (cfg.autoKick)
         (void)_rt.Entities.Controller(targetSlot).Kick(cfg.kickReason);
     else
         Unfreeze(targetSlot, restore, restoreTeam);

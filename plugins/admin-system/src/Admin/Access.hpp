@@ -24,10 +24,10 @@ public:
         return !_freeze.IsFrozen(steamId) && _admins.HasPermission(steamId, permission);
     }
 
-    /** Punishments only; an admin never outranks themselves, so ask about somebody else. */
+    /** Punishments only; an admin never outranks themselves, so self-targeting always passes. */
     bool CanPunish(int64_t adminSteamId, int64_t targetSteamId)
     {
-        return _admins.CanPunish(adminSteamId, targetSteamId);
+        return adminSteamId == targetSteamId || _admins.CanPunish(adminSteamId, targetSteamId);
     }
 
 private:

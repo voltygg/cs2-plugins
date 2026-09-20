@@ -29,8 +29,7 @@ namespace AdminSystem::Commands
 static Result<Reply> Punish(App& app, const Caller& c, Player& target, PunishType type, const std::string& reason,
                             std::chrono::seconds duration, std::string_view successKey)
 {
-    // Only punishments check rank; self-targeting stays allowed.
-    if (target.SteamId() != c.Player->SteamId() && !app.Access.CanPunish(c.Player->SteamId(), target.SteamId()))
+    if (!app.Access.CanPunish(c.Player->SteamId(), target.SteamId()))
         return c.Fail("target.immune");
 
     // Captured before issuing: bans and kicks can drop the target immediately.

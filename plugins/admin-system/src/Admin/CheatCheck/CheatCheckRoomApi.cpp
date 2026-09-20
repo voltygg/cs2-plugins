@@ -105,9 +105,7 @@ std::optional<bool> ParsePresence(const Config::CheatCheckWebsiteAutoRoom& cfg, 
     const std::string wanted = std::to_string(targetSteamId);
     for (const auto& participant : participants->get<glz::generic::array_t>())
     {
-        const std::string participantJson = participant.dump().value_or("");
-        const std::string steamId = VoltMod::Json::GetStringByPath(participantJson, cfg.presenceField);
-        if (steamId == wanted)
+        if (VoltMod::Json::GetString(participant, cfg.presenceField) == wanted)
             return true;
     }
     return false;
