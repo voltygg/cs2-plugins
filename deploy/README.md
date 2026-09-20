@@ -30,7 +30,7 @@ For a local server use `uv run poe build --install <plugin> --start`; see
 - A `package/` directory holding the Linux build. The Linux build runs only in CI, so download the
   `package` artifact of a Deploy run into `package/`, or run `uv run poe deploy-package` on a
   machine that has one.
-- `deploy/secrets/servers/<id>/.env` for each server you deploy (see [Secrets](#secrets)).
+- `deploy/secrets/<id>/.env` for each server you deploy (see [Secrets](#secrets)).
 - Docker hosts: a prepared host (see [Docker hosts](#docker-hosts)) and an SSH key.
 - Panel servers: an API key from the panel's Account -> API Credentials page.
 
@@ -118,12 +118,12 @@ A plugin with a `database` gets its `database` section from the inventory's `dat
 
 ## Secrets
 
-Each server reads `deploy/secrets/servers/<id>/.env`. A variable already set in the process fills a
+Each server reads `deploy/secrets/<id>/.env`. A variable already set in the process fills a
 key the file lacks, and `SSH_KEY_FILE` from the process wins outright so CI can use its own key.
 The repository's root `.env` is never read.
 
 ```bash
-cp deploy/secrets/servers/panel-a/.env.example deploy/secrets/servers/panel-a/.env
+cp deploy/secrets/panel-a/.env.example deploy/secrets/panel-a/.env
 ```
 
 | Key | Used for |
@@ -258,7 +258,7 @@ tag in `.github/workflows/ci.yml`, `.github/workflows/deploy.yml` and `.circleci
 ```text
 deploy/
   inventory.yml               servers, instances, plugins and their settings
-  secrets/servers/<id>/.env   a server's secrets (gitignored; copy .env.example)
+  secrets/<id>/.env           a server's secrets (gitignored; copy .env.example)
   docker/                     runtime image, pre-launch hook, host setup script
   panel/gameinfo.gi           gameinfo.gi for panel hosts with a linked CS2 install
   tools/                      the CLI, one class per file

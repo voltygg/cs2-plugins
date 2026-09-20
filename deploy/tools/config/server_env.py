@@ -13,7 +13,7 @@ class ServerEnv:
 
     def __init__(self, server_id: str) -> None:
         self.server_id = server_id
-        self.file = DEPLOY / "secrets" / "servers" / server_id / ".env"
+        self.file = DEPLOY / "secrets" / server_id / ".env"
         values = dotenv_values(self.file) if self.file.is_file() else {}
         self._values = {**os.environ, **{name: value or "" for name, value in values.items()}}
 
