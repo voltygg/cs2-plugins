@@ -12,7 +12,8 @@ namespace AdminSystem::Admin::Menu
 {
 
 /** The permission the descriptor behind @p id dispatches on, or empty for a row that has none.
- *  A constexpr table cannot reach these, which is why the catalog repeats them. */
+ *  A constexpr table cannot reach these, which is why the catalog repeats them. Every row is
+ *  named and there is no `default`, so a new one has to be placed here before it compiles. */
 static std::string_view DispatchPermission(App& app, RowId id)
 {
     const auto& actions = app.ActionDescriptors;
@@ -64,10 +65,31 @@ static std::string_view DispatchPermission(App& app, RowId id)
         return actions.SetSize.Permission;
     case RowId::Hide:
         return effects.Hide.Permission;
-    default:
-        // Punishments are covered by MenuCatalogTests; the rest are gated by the plugin.
+
+    // No descriptor to compare against: punishments dispatch through PunishTypes, which
+    // MenuCatalogTests pins to the catalog, and the rest check the catalog's permission directly.
+    case RowId::LiftList:
+    case RowId::PunishPlayers:
+    case RowId::LiftBans:
+    case RowId::LiftMutes:
+    case RowId::PunishKick:
+    case RowId::PunishBan:
+    case RowId::PunishVoiceMute:
+    case RowId::PunishTextMute:
+    case RowId::PunishWarn:
+    case RowId::CheatCheck:
+    case RowId::Swap:
+    case RowId::Weapons:
+    case RowId::ChangeMap:
+    case RowId::SetNextMap:
+    case RowId::VoteMap:
+    case RowId::CancelVote:
+    case RowId::ChatPrefix:
+    case RowId::NameColor:
+    case RowId::MessageColor:
         return {};
     }
+    return {};
 }
 
 static void CheckRows(App& app, std::span<const RowSpec> rows)
