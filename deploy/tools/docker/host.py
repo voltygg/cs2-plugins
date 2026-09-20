@@ -11,7 +11,7 @@ from deploy.tools.errors import DeployError
 
 
 class DockerHost:
-    """Runs one host's Compose project and cleanup commands over SSH."""
+    """Runs one host's instances, each its own Compose project, and cleanup commands over SSH."""
 
     # A first start downloads the whole game.
     STEAMCMD_TIMEOUT_MINUTES = 90
@@ -30,26 +30,37 @@ class DockerHost:
             self._ssh.run(f"rm -rf -- {shlex.join(paths)}")
 
     def pull(self) -> None:
-        self._compose("pull")
+        # Every instance runs the same image.
+        self._compose(self._server.instances[0], "pull")
 
     def recreate(self, instance: Instance) -> None:
         """Start the instance in a new container even when nothing changed, so pre.sh runs."""
-        self._compose(f"up -d --force-recreate {shlex.quote(instance.name)}")
+        self._compose(instance, "up -d --force-recreate")
         self._wait_for_steamcmd(instance)
 
     def restart(self, instance: Instance) -> None:
-        self._compose(f"restart {shlex.quote(instance.name)}")
+        self._compose(instance, "restart")
         self._wait_for_steamcmd(instance)
 
     def check_running(self) -> None:
-        running = self._compose("ps --status running --services", capture=True).split()
-        stopped = [item.name for item in self._server.instances if item.name not in running]
-        for name in stopped:
-            print(f"ERROR: {name} is not running; its last log lines follow", file=sys.stderr)
-            self._compose(f"logs --tail=80 {shlex.quote(name)}")
-        if stopped:
-            raise DeployError(f"{', '.join(stopped)} did not start on {self._server.id}")
-        print("    every instance is running")
+        # One query for every instance: each Compose project would be its own SSH round trip.
+        query = "docker ps --filter status=running --format '{{.Names}}'"
+        running = self._ssh.run(query, capture=True).split()
+        stopped = [
+            item
+            for item in self._server.instances
+            if self._server.container_name(item) not in running
+        ]
+
+        if not stopped:
+            print("    every instance is running")
+            return
+
+        names = ", ".join(item.name for item in stopped)
+        print(f"ERROR: {names} not running; the last log lines of each follow", file=sys.stderr)
+        logs = (self._compose_command(item, "logs --tail=80") for item in stopped)
+        self._ssh.run("; ".join(f"({item}) || true" for item in logs))
+        raise DeployError(f"{names} did not start on {self._server.id}")
 
     def remove_old_images(self, repository: str, keep: str) -> None:
         """Remove the repository's tags other than keep, since every deploy adds a tag."""
@@ -65,34 +76,43 @@ class DockerHost:
             posix = PurePosixPath(path)
             if not posix.is_absolute() or ".." in posix.parts or len(posix.parts) < 4:
                 raise DeployError(f"refusing to delete {path}; use a deeper absolute path")
+
         names = [self._server.container_name(item) for item in self._server.instances]
         images = f"docker image ls -q {shlex.quote(repository)} | xargs -r docker image rm -f"
+        downs = (self._compose_command(item, "down") for item in self._server.instances)
+
         commands = [
-            f"if [ -f {self._root}/docker-compose.yml ]; then "
-            f"(cd {self._root} && docker compose down --remove-orphans) || true; fi",
+            *(f"({down}) || true" for down in downs),
             f"docker rm -f {shlex.join(names)} 2>/dev/null || true",
             f"{images} 2>/dev/null || true",
             f"rm -rf -- {shlex.join(folders)}",
         ]
         self._ssh.run("; ".join(commands))
 
-    def _compose(self, arguments: str, *, capture: bool = False) -> str:
-        return self._ssh.run(f"cd {self._root} && docker compose {arguments}", capture=capture)
+    def _compose(self, instance: Instance, arguments: str, *, capture: bool = False) -> str:
+        return self._ssh.run(self._compose_command(instance, arguments), capture=capture)
+
+    def _compose_command(self, instance: Instance, arguments: str) -> str:
+        """docker-compose.yml describes one instance; its .env and project name pick which."""
+        project = shlex.quote(f"cs2-{instance.name}")
+        env_file = shlex.quote(f"instances/{instance.name}/.env")
+        compose = f"docker compose -p {project} --env-file {env_file}"
+        return f"cd {self._root} && {compose} {arguments}"
 
     def _wait_for_steamcmd(self, instance: Instance) -> None:
         """Block while SteamCMD runs in the instance's container, so updates go one at a time."""
         if self._ssh.dry_run:
             return
-        service = shlex.quote(instance.name)
         waiting = shlex.quote(f"    {instance.name}: SteamCMD still running")
         limit = self.STEAMCMD_TIMEOUT_MINUTES * 60
         script = (
-            f"cd {self._root} && container=$(docker compose ps -q {service}) && "
+            f"container=$({self._compose_command(instance, 'ps -q')}) && "
             'if [ -n "$container" ]; then sleep 10; waited=0; '
             "while docker exec \"$container\" sh -lc 'pgrep -f steamcmd >/dev/null 2>&1'; do "
             f"[ $waited -lt {limit} ] || exit {self.STEAMCMD_TIMEOUT_EXIT_CODE}; "
             f"echo {waiting}; sleep 15; waited=$((waited + 15)); done; fi"
         )
+
         try:
             self._ssh.run(script)
         except subprocess.CalledProcessError as error:

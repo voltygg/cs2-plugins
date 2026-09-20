@@ -1,0 +1,21 @@
+# One CS2 instance; its .env fills every ${NAME}. Run by hand on the host:
+#   docker compose -p cs2-<instance> --env-file instances/<instance>/.env up -d
+services:
+  cs2:
+    image: ${RUNTIME_IMAGE}
+    container_name: ${CONTAINER_NAME}
+    restart: unless-stopped
+    env_file:
+      - ./instances/${INSTANCE}/.env
+    ports:
+      - "${CS2_PORT}:${CS2_PORT}/udp"
+      - "${CS2_PORT}:${CS2_PORT}/tcp"
+    # Reaches Postgres on the host from the bridge network.
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ${GAME_INSTALL}:/home/steam/cs2-dedicated
+      # Each instance mounts its own addons over the shared install.
+      - ./instances/${INSTANCE}/addons:/home/steam/cs2-dedicated/game/csgo/addons
+      - ./instances/${INSTANCE}/pre.sh:/home/steam/cs2-dedicated/pre.sh:ro
+      - ./instances/${INSTANCE}/bundles:/home/steam/plugin-bundles:ro

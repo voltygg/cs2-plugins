@@ -198,8 +198,17 @@ ports 27015-27035.
 
 ```text
 /home/steam/cs2/server                      shared SteamCMD install
-/home/steam/cs2/deploy/docker-compose.yml   one service per instance
+/home/steam/cs2/deploy/docker-compose.yml   one instance; a copy of docker/docker-compose.yml
 /home/steam/cs2/deploy/instances/<name>/    addons, .env, pre.sh, plugin bundles
+```
+
+[`docker/docker-compose.yml`](docker/docker-compose.yml) describes a single instance and is never
+generated. Each instance runs as its own Compose project, `cs2-<name>`, and its `.env` fills in
+the image, container name, port and paths. On the host:
+
+```bash
+cd /home/steam/cs2/deploy
+docker compose -p cs2-main --env-file instances/main/.env ps    # or logs, restart, down
 ```
 
 The shared install is mounted into every container, and each instance's own `addons` directory is
@@ -259,7 +268,7 @@ tag in `.github/workflows/ci.yml`, `.github/workflows/deploy.yml` and `.circleci
 deploy/
   inventory.yml               servers, instances, plugins and their settings
   secrets/<id>/.env           a server's secrets (gitignored; copy .env.example)
-  docker/                     runtime image, pre-launch hook, host setup script
+  docker/                     runtime image, docker-compose.yml, pre-launch hook, host setup script
   panel/gameinfo.gi           gameinfo.gi for panel hosts with a linked CS2 install
   tools/                      the CLI, one class per file
     cli.py                the commands
