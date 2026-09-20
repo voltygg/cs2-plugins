@@ -5,6 +5,7 @@
 #include <VoltMod/Entities/Pawn.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <algorithm>
+#include <memory>
 #include <utility>
 
 namespace AdminSystem::Admin::Menu
@@ -31,23 +32,26 @@ VoltMod::MenuItem DisableUnless(VoltMod::MenuItem item, std::function<bool(int)>
     auto step = std::move(item.Step);
     auto commit = std::move(item.Commit);
 
-    item.Describe = [describe = std::move(describe), usable, reason = std::move(reason)](int slot) {
+    // Shared, so the four wrappers below hold one predicate between them rather than a copy each.
+    auto allowed = std::make_shared<std::function<bool(int)>>(std::move(usable));
+
+    item.Describe = [describe = std::move(describe), allowed, reason = std::move(reason)](int slot) {
         VoltMod::MenuRow row = describe ? describe(slot) : VoltMod::MenuRow{};
-        if (!row.Enabled || usable(slot))
+        if (!row.Enabled || (*allowed)(slot))
             return row;
         row.Enabled = false;
         row.Value = reason;
         return row;
     };
-    item.Activate = [activate = std::move(activate), usable](int slot, VoltMod::MenuSurface& surface) {
-        if (activate && usable(slot))
+    item.Activate = [activate = std::move(activate), allowed](int slot, VoltMod::MenuSurface& surface) {
+        if (activate && (*allowed)(slot))
             activate(slot, surface);
     };
-    item.Step = [step = std::move(step), usable](int slot, int direction) {
-        return step && usable(slot) && step(slot, direction);
+    item.Step = [step = std::move(step), allowed](int slot, int direction) {
+        return step && (*allowed)(slot) && step(slot, direction);
     };
-    item.Commit = [commit = std::move(commit), usable](int slot) {
-        if (commit && usable(slot))
+    item.Commit = [commit = std::move(commit), allowed](int slot) {
+        if (commit && (*allowed)(slot))
             commit(slot);
     };
     return item;
