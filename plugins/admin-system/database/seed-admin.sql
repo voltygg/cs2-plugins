@@ -12,7 +12,13 @@ VALUES (
 )
 @ON_CONFLICT(steam_id)@;
 
--- Optional server-specific group. `admins.groups` above stays global.
--- @INSERT_IF_ABSENT@ admin_server_groups (admin_steam_id, server_tag, group_name)
--- VALUES (76561198153558892, 'server-1', 'super_admin')
--- @ON_CONFLICT(admin_steam_id, server_tag, group_name)@;
+-- A lower-level role and admin to test against: targeting needs strictly higher immunity.
+-- The UPDATE demotes a SteamID that already holds a higher role.
+@INSERT_IF_ABSENT@ admin_groups (name, permissions, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
+VALUES ('admin', '["admin.kick","admin.ban","admin.unban","admin.mute","admin.control","admin.fun","admin.health","admin.map","admin.weapon","admin.vote"]', 50, '[]', '[ADMIN]', 'green', 'default', 'default')
+@ON_CONFLICT(name)@;
+
+@INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions, immunity)
+VALUES (76561198093475210, 'Hikka', '["admin"]', '[]', 0)
+@ON_CONFLICT(steam_id)@;
+UPDATE admins SET groups = '["admin"]', permissions = '[]', immunity = 0 WHERE steam_id = 76561198093475210;
