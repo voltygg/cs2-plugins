@@ -28,46 +28,39 @@ using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 using VoltMod::SubmenuRow;
 
-std::shared_ptr<VoltMod::Menu> BuildPunishTab(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildPunishTab(const MenuContext& ctx)
 {
-    auto& translations = app.Runtime.Translations;
+    App& app = ctx.Plugin;
+    MenuBuilder builder(ctx.Translate("category.punish"));
 
-    auto* admin = app.Runtime.Players.Get(adminSlot);
-    if (!admin)
-        return nullptr;
-
-    MenuBuilder builder(translations.Get("category.punish", adminSlot));
-
-    builder.Add(SubmenuRow{.Label = translations.Get("action.unban", adminSlot),
+    builder.Add(SubmenuRow{.Label = ctx.Translate("action.unban"),
                            .Build = [&app](int slot) { return BuildUnbanMenu(app, slot); },
                            .Enabled = Allows(app, Permission::Unban)});
 
-    builder.Add(SubmenuRow{.Label = translations.Get("action.unmute", adminSlot),
+    builder.Add(SubmenuRow{.Label = ctx.Translate("action.unmute"),
                            .Build = [&app](int slot) { return BuildUnmuteMenu(app, slot); },
                            .Enabled = Allows(app, Permission::Mute)});
 
-    AppendPlayerRows(app, adminSlot, builder, {.Open = [&app, adminSlot](VoltMod::PlayerRef target) {
-                         return BuildPunishCard(app, adminSlot, target);
-                     }});
+    AppendPlayerRows(app, ctx.Admin.Slot, builder,
+                     {.Open = [ctx](VoltMod::PlayerRef target) { return BuildPunishCard(ctx, target); }});
 
     return builder.Build();
 }
 
-std::shared_ptr<VoltMod::Menu> BuildPunishCard(AdminSystem::App& app, int adminSlot,
-                                                      VoltMod::PlayerRef targetRef)
+std::shared_ptr<VoltMod::Menu> BuildPunishCard(const MenuContext& ctx, VoltMod::PlayerRef targetRef)
 {
-    auto& translations = app.Runtime.Translations;
-    auto& players = app.Runtime.Players;
+    App& app = ctx.Plugin;
+    const int adminSlot = ctx.Admin.Slot;
 
-    auto* target = players.Get(targetRef);
-    if (!target || !players.Get(adminSlot))
+    auto* target = ctx.Player(targetRef);
+    if (!target)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", translations.Get("category.punish", adminSlot), target->Name()));
+    MenuBuilder builder(std::format("{}: {}", ctx.Translate("category.punish"), target->Name()));
 
     if (AnyTemplateUsable(app, adminSlot, targetRef))
     {
-        builder.Submenu(translations.Get("punish.quickPunish", adminSlot),
+        builder.Submenu(ctx.Translate("punish.quickPunish"),
                         [&app, targetRef](int slot) { return BuildQuickPunishMenu(app, slot, targetRef); });
     }
 
@@ -75,7 +68,7 @@ std::shared_ptr<VoltMod::Menu> BuildPunishCard(AdminSystem::App& app, int adminS
     {
         const PunishType type = info.Type;
         builder.Add(ButtonRow{
-            .Label = translations.Get(ActionTranslationKey(type), adminSlot),
+            .Label = ctx.Translate(ActionTranslationKey(type)),
             .Activate = [&app, pending = PendingPunishment{.Type = type, .Target = targetRef}](
                             int slot) { StartPunishFlow(app, slot, pending); },
             .Enabled = [&app, targetRef, type](int slot) { return CanStillPunish(app, slot, targetRef, type); }});

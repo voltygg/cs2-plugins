@@ -5,7 +5,7 @@
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Text/Translations.hpp>
+#include <string>
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -15,22 +15,21 @@ namespace AdminSystem::Admin::Menu
 
 using VoltMod::MenuBuilder;
 
-std::shared_ptr<VoltMod::Menu> BuildTeamPicker(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                   VoltMod::PlayerRef target)
+std::shared_ptr<VoltMod::Menu> BuildTeamPicker(const MenuContext& ctx, VoltMod::PlayerRef target)
 {
-    auto& translations = app.Runtime.Translations;
-    MenuBuilder builder(translations.Get("action.changeTeam", admin.Slot));
+    App& app = ctx.Plugin;
+    MenuBuilder builder(ctx.Translate("action.changeTeam"));
 
     auto addTeam = [&](const std::string& label, int team) {
-        builder.Button(label, [&app, admin, target, team](int slot) {
+        builder.Button(label, [&app, admin = ctx.Admin, target, team](int slot) {
             app.Actions.Run(admin, target, team, Actions::ChangeTeam);
             app.Runtime.Menus.CloseAll(slot);
         });
     };
 
-    addTeam(translations.Get("team.ct", admin.Slot), VoltMod::TeamCT);
-    addTeam(translations.Get("team.t", admin.Slot), VoltMod::TeamT);
-    addTeam(translations.Get("team.spec", admin.Slot), VoltMod::TeamSpectator);
+    addTeam(ctx.Translate("team.ct"), VoltMod::TeamCT);
+    addTeam(ctx.Translate("team.t"), VoltMod::TeamT);
+    addTeam(ctx.Translate("team.spec"), VoltMod::TeamSpectator);
 
     return builder.Build();
 }

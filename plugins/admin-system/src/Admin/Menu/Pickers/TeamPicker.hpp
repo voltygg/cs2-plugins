@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Core/App.hpp"
+#include "Admin/Menu/MenuContext.hpp"
 
-#include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Players/PlayerRef.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<VoltMod::Menu> BuildTeamPicker(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                   VoltMod::PlayerRef target);
+/** Team picker for one target: CT, T or spectator. */
+std::shared_ptr<VoltMod::Menu> BuildTeamPicker(const MenuContext& ctx, VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu

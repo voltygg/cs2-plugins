@@ -126,18 +126,16 @@ static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& ti
                                        .Index = initialIndex});
 }
 
-std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(const MenuContext& ctx)
 {
-    auto& translations = app.Runtime.Translations;
-    auto* admin = app.Runtime.Players.Get(adminSlot);
-    if (!admin)
-        return nullptr;
-    int64_t steamId = admin->SteamId();
+    App& app = ctx.Plugin;
+    const int adminSlot = ctx.Admin.Slot;
+    const int64_t steamId = ctx.Admin.SteamId;
 
-    MenuBuilder builder(translations.Get("category.chatSettings", adminSlot));
+    MenuBuilder builder(ctx.Translate("category.chatSettings"));
 
     // Persist each row immediately; the menu has no Save action.
-    builder.Add(ToggleRow{.Label = translations.Get("chat.displayPrefix", adminSlot),
+    builder.Add(ToggleRow{.Label = ctx.Translate("chat.displayPrefix"),
                           .Get =
                               [&app, steamId](int) {
                                   const auto* a = app.Admins.GetAdmin(steamId);
@@ -153,9 +151,8 @@ std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(AdminSystem::App& app, int adm
                                                               a->MessageColor);
                               }});
 
-    AddColorChoice(app, builder, translations.Get("chat.nameColor", adminSlot), steamId, ColorSlot::Name, adminSlot);
-    AddColorChoice(app, builder, translations.Get("chat.messageColor", adminSlot), steamId, ColorSlot::Message,
-                   adminSlot);
+    AddColorChoice(app, builder, ctx.Translate("chat.nameColor"), steamId, ColorSlot::Name, adminSlot);
+    AddColorChoice(app, builder, ctx.Translate("chat.messageColor"), steamId, ColorSlot::Message, adminSlot);
 
     return builder.Build();
 }

@@ -1,17 +1,18 @@
 #pragma once
 
-#include "Core/App.hpp"
+#include "Admin/Menu/MenuContext.hpp"
 
-#include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/Menu.hpp>
-#include <functional>
+#include <VoltMod/Players/PlayerRef.hpp>
 #include <memory>
-#include <string>
 
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<VoltMod::Menu> BuildPunishTab(AdminSystem::App& app, int adminSlot);
-std::shared_ptr<VoltMod::Menu> BuildPunishCard(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target);
+/** Punish: the active bans and mutes, then one row per connected player. */
+std::shared_ptr<VoltMod::Menu> BuildPunishTab(const MenuContext& ctx);
+
+/** The punishments one admin may issue against one player. */
+std::shared_ptr<VoltMod::Menu> BuildPunishCard(const MenuContext& ctx, VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu

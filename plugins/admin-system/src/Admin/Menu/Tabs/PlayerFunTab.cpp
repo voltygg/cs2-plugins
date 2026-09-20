@@ -19,28 +19,24 @@ using VoltMod::EffectDescriptor;
 using VoltMod::MenuBuilder;
 using VoltMod::SubmenuRow;
 
-std::shared_ptr<VoltMod::Menu> BuildPlayerFunTab(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildPlayerFunTab(const MenuContext& ctx)
 {
-    auto& translations = app.Runtime.Translations;
-    return BuildPlayerPicker(app, adminSlot,
-                             {.Title = translations.Get("category.effects", adminSlot),
-                              .Open = [&app, adminSlot](VoltMod::PlayerRef target) {
-                                  return BuildPlayerFunCard(app, app.Runtime.Players.RefFor(adminSlot), target);
-                              }});
+    return BuildPlayerPicker(ctx.Plugin, ctx.Admin.Slot,
+                             {.Title = ctx.Translate("category.effects"),
+                              .Open = [ctx](VoltMod::PlayerRef target) { return BuildPlayerFunCard(ctx, target); }});
 }
 
-std::shared_ptr<VoltMod::Menu> BuildPlayerFunCard(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                  VoltMod::PlayerRef target)
+std::shared_ptr<VoltMod::Menu> BuildPlayerFunCard(const MenuContext& ctx, VoltMod::PlayerRef target)
 {
-    auto& translations = app.Runtime.Translations;
+    App& app = ctx.Plugin;
+    const VoltMod::PlayerRef admin = ctx.Admin;
 
-    auto* adminPlayer = app.Runtime.Players.Get(admin);
-    auto* targetPlayer = app.Runtime.Players.Get(target);
-    if (!targetPlayer || !adminPlayer)
+    auto* targetPlayer = ctx.Player(target);
+    if (!targetPlayer)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", translations.Get("category.effects", admin.Slot), targetPlayer->Name()));
-    auto rows = app.MenuRows(admin, target);
+    MenuBuilder builder(std::format("{}: {}", ctx.Translate("category.effects"), targetPlayer->Name()));
+    auto rows = ctx.Rows(target);
 
     for (const EffectDescriptor* effect : app.EffectDescriptors.MenuEffects)
     {
@@ -57,10 +53,10 @@ std::shared_ptr<VoltMod::Menu> BuildPlayerFunCard(AdminSystem::App& app, VoltMod
     builder.Add(
         SubmenuRow{.Label = rows.Translate("action.swap"),
                    .Build =
-                       [&app, admin, target](int) {
+                       [ctx, &app, admin, target](int) {
                            return BuildPlayerPicker(
                                app, admin.Slot,
-                               {.Title = app.Runtime.Translations.Get("common.selectSwapTarget", admin.Slot),
+                               {.Title = ctx.Translate("common.selectSwapTarget"),
                                 .Pick =
                                     [&app, viewerSlot = admin.Slot, first = target](VoltMod::PlayerRef second) {
                                         Actions::Swap(app, app.Runtime.Players.RefFor(viewerSlot), first, second);

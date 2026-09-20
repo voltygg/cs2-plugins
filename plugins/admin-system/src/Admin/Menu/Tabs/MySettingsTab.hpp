@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Core/App.hpp"
+#include "Admin/Menu/MenuContext.hpp"
 
-#include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Players/PlayerRef.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Menu
 {
 
-/** My Settings: this admin's own chat prefix and colors. */
-std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(AdminSystem::App& app, int adminSlot);
+/** My Settings: this admin's own hide toggle, chat prefix and colors. */
+std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(const MenuContext& ctx);
 
 }  // namespace AdminSystem::Admin::Menu

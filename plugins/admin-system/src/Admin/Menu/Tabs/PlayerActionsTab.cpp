@@ -38,44 +38,38 @@ static constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
 static constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
 static constexpr int SizeDefault = 4;   // index of 100 in SizePresets
 
-std::shared_ptr<VoltMod::Menu> BuildPlayerActionsTab(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildPlayerActionsTab(const MenuContext& ctx)
 {
-    auto& translations = app.Runtime.Translations;
+    App& app = ctx.Plugin;
+    const int adminSlot = ctx.Admin.Slot;
+    const VoltMod::PlayerRef adminRef = ctx.Admin;
 
-    auto* admin = app.Runtime.Players.Get(adminSlot);
-    if (!admin)
-        return nullptr;
-
-    const VoltMod::PlayerRef adminRef = admin->Ref();
-
-    MenuBuilder builder(translations.Get("category.control", adminSlot));
+    MenuBuilder builder(ctx.Translate("category.control"));
 
     // Self-only Hide toggle sits at the top of the Control list before player picks.
     builder.Add(ToggleRow{
-        .Label = translations.Get("action.hide", adminSlot),
+        .Label = ctx.Translate("action.hide"),
         .Get = [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, app.EffectDescriptors.Hide.Id); },
         .Flip = [&app, adminRef](int) { app.PlayerEffects.Toggle(adminRef, adminRef, app.EffectDescriptors.Hide); },
         .Enabled = Allows(app, Permission::Hide)});
 
-    AppendPlayerRows(app, adminSlot, builder, {.Open = [&app, adminSlot](VoltMod::PlayerRef target) {
-                         return BuildPlayerActionsCard(app, app.Runtime.Players.RefFor(adminSlot), target);
-                     }});
+    AppendPlayerRows(app, adminSlot, builder,
+                     {.Open = [ctx](VoltMod::PlayerRef target) { return BuildPlayerActionsCard(ctx, target); }});
 
     return builder.Build();
 }
 
-std::shared_ptr<VoltMod::Menu> BuildPlayerActionsCard(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                      VoltMod::PlayerRef target)
+std::shared_ptr<VoltMod::Menu> BuildPlayerActionsCard(const MenuContext& ctx, VoltMod::PlayerRef target)
 {
-    auto& translations = app.Runtime.Translations;
+    App& app = ctx.Plugin;
+    const VoltMod::PlayerRef admin = ctx.Admin;
 
-    auto* adminPlayer = app.Runtime.Players.Get(admin);
-    auto* targetPlayer = app.Runtime.Players.Get(target);
-    if (!targetPlayer || !adminPlayer)
+    auto* targetPlayer = ctx.Player(target);
+    if (!targetPlayer)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", translations.Get("category.control", admin.Slot), targetPlayer->Name()));
-    auto rows = app.MenuRows(admin, target);
+    MenuBuilder builder(std::format("{}: {}", ctx.Translate("category.control"), targetPlayer->Name()));
+    auto rows = ctx.Rows(target);
     VoltMod::EnabledCondition control = rows.Allows(Permission::Control);
 
     // Cheat check first: it's the most time-critical action here. Call/cancel are orchestration
@@ -114,11 +108,11 @@ std::shared_ptr<VoltMod::Menu> BuildPlayerActionsCard(AdminSystem::App& app, Vol
         .Add(rows.Action("action.unbury", Actions::Unbury));
 
     builder.Add(SubmenuRow{.Label = rows.Translate("action.changeTeam"),
-                           .Build = [&app, admin, target](int) { return BuildTeamPicker(app, admin, target); },
+                           .Build = [ctx, target](int) { return BuildTeamPicker(ctx, target); },
                            .Enabled = control});
 
     builder.Add(SubmenuRow{.Label = rows.Translate("action.giveWeapon"),
-                           .Build = [&app, admin, target](int) { return BuildWeaponPicker(app, admin, target); },
+                           .Build = [ctx, target](int) { return BuildWeaponPicker(ctx, target); },
                            .Enabled = rows.Allows(Permission::Weapon)});
 
     return builder.Build();

@@ -1,19 +1,18 @@
 #pragma once
 
-#include "Core/App.hpp"
+#include "Admin/Menu/MenuContext.hpp"
 
-#include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Players/PlayerRef.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Menu
 {
 
-/** Player Actions: the self Hide toggle, then one row per connected player. */
-std::shared_ptr<VoltMod::Menu> BuildPlayerActionsTab(AdminSystem::App& app, int adminSlot);
+/** Player Actions: one row per connected player. */
+std::shared_ptr<VoltMod::Menu> BuildPlayerActionsTab(const MenuContext& ctx);
 
 /** Everything one admin may do to one player: cheat check, vitals, movement, team, weapons. */
-std::shared_ptr<VoltMod::Menu> BuildPlayerActionsCard(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                      VoltMod::PlayerRef target);
+std::shared_ptr<VoltMod::Menu> BuildPlayerActionsCard(const MenuContext& ctx, VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu

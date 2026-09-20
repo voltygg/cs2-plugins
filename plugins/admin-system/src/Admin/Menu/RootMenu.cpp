@@ -1,6 +1,7 @@
 #include "Admin/Menu/RootMenu.hpp"
 
 #include "Admin/AdminManager.hpp"
+#include "Admin/Menu/MenuContext.hpp"
 #include "Admin/Menu/Tabs/MapVoteTab.hpp"
 #include "Admin/Menu/Tabs/MySettingsTab.hpp"
 #include "Admin/Menu/Tabs/PlayerActionsTab.hpp"
@@ -19,6 +20,7 @@
 #include <array>
 #include <format>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -33,7 +35,7 @@ using VoltMod::SubmenuRow;
 struct Category
 {
     std::string_view LabelKey;
-    std::shared_ptr<VoltMod::Menu> (*Build)(AdminSystem::App& app, int adminSlot);
+    std::shared_ptr<VoltMod::Menu> (*Build)(const MenuContext& ctx);
     /** Any one of these opens the category; empty means any admin. */
     std::vector<std::string_view> Permissions;
     /** The tab icon, one of the names in panorama/screens/admin_menu/icons.j2. */
@@ -51,30 +53,26 @@ static const std::array<Category, 6> Categories{{
 
 std::shared_ptr<VoltMod::Menu> BuildRootMenu(AdminSystem::App& app, int adminSlot)
 {
-    auto& translations = app.Runtime.Translations;
-    auto* adminPlayer = app.Runtime.Players.Get(adminSlot);
-    if (!adminPlayer)
+    const std::optional<MenuContext> ctx = MenuContext::For(app, adminSlot);
+    if (!ctx)
         return nullptr;
-
-    const int64_t adminSteamId = adminPlayer->SteamId();
 
     // The version goes in the subtitle rather than into the title as markup: both menu hosts
     // show a subtitle, and only one of them can render a <font> tag.
-    MenuBuilder builder(translations.Get("panel.admin", adminSlot));
+    MenuBuilder builder(ctx->Translate("panel.admin"));
     builder.Subtitle(std::format("v{}", app.Runtime.Version));
 
     for (const Category& category : Categories)
     {
         const bool allowed = category.Permissions.empty()
-                                 ? app.Admins.IsAdmin(adminSteamId)
+                                 ? app.Admins.IsAdmin(ctx->Admin.SteamId)
                                  : std::ranges::any_of(category.Permissions, [&](std::string_view permission) {
-                                       return app.Access.HasPermission(adminSteamId, permission);
+                                       return app.Access.HasPermission(ctx->Admin.SteamId, permission);
                                    });
-        builder.Add(
-            SubmenuRow{.Label = translations.Get(category.LabelKey, adminSlot),
-                       .Build = [&app, adminSlot, build = category.Build](int) { return build(app, adminSlot); },
-                       .Enabled = allowed,
-                       .Icon = std::string(category.Icon)});
+        builder.Add(SubmenuRow{.Label = ctx->Translate(category.LabelKey),
+                               .Build = [ctx = *ctx, build = category.Build](int) { return build(ctx); },
+                               .Enabled = allowed,
+                               .Icon = std::string(category.Icon)});
     }
 
     return builder.Build();

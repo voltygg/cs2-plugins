@@ -7,9 +7,7 @@
 #include "Fun/FunMode.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <string>
 #include <string_view>
@@ -21,20 +19,16 @@ using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 using VoltMod::ToggleRow;
 
-std::shared_ptr<VoltMod::Menu> BuildRoundModesTab(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildRoundModesTab(const MenuContext& ctx)
 {
-    auto& translations = app.Runtime.Translations;
-
-    if (!app.Runtime.Players.Get(adminSlot))
-        return nullptr;
-
+    App& app = ctx.Plugin;
     const VoltMod::EnabledCondition allowed = Allows(app, Permission::FunMode);
 
-    MenuBuilder builder(translations.Get("category.fun", adminSlot));
+    MenuBuilder builder(ctx.Translate("category.fun"));
 
     for (const auto& info : Fun::Toggles)
     {
-        builder.Add(ToggleRow{.Label = translations.Get(std::string(info.NameKey), adminSlot),
+        builder.Add(ToggleRow{.Label = ctx.Translate(info.NameKey),
                               .Get = [&app, id = info.Id](int) { return app.FunMode.IsOn(id); },
                               .Flip =
                                   [&app, id = info.Id, onKey = info.OnKey, offKey = info.OffKey](int slot) {
@@ -44,7 +38,7 @@ std::shared_ptr<VoltMod::Menu> BuildRoundModesTab(AdminSystem::App& app, int adm
                               .Enabled = allowed});
     }
 
-    builder.Add(ButtonRow{.Label = translations.Get("fun.clearAll", adminSlot),
+    builder.Add(ButtonRow{.Label = ctx.Translate("fun.clearAll"),
                           .Activate =
                               [&app](int slot) {
                                   app.FunMode.ClearAll();

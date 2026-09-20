@@ -1,16 +1,15 @@
 #pragma once
 
-#include "Core/App.hpp"
+#include "Admin/Menu/MenuContext.hpp"
 
-#include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Players/PlayerRef.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Menu
 {
 
 /** Weapon picker for one target: every configured weapon, a random pick, and strip. */
-std::shared_ptr<VoltMod::Menu> BuildWeaponPicker(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                 VoltMod::PlayerRef target);
+std::shared_ptr<VoltMod::Menu> BuildWeaponPicker(const MenuContext& ctx, VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu

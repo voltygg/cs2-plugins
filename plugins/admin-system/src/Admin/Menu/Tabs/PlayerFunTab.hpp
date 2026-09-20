@@ -1,19 +1,18 @@
 #pragma once
 
-#include "Core/App.hpp"
+#include "Admin/Menu/MenuContext.hpp"
 
-#include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Players/PlayerRef.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Menu
 {
 
 /** Player Fun: one row per connected player. */
-std::shared_ptr<VoltMod::Menu> BuildPlayerFunTab(AdminSystem::App& app, int adminSlot);
+std::shared_ptr<VoltMod::Menu> BuildPlayerFunTab(const MenuContext& ctx);
 
 /** The cosmetic and joke effects one admin may apply to one player. */
-std::shared_ptr<VoltMod::Menu> BuildPlayerFunCard(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                  VoltMod::PlayerRef target);
+std::shared_ptr<VoltMod::Menu> BuildPlayerFunCard(const MenuContext& ctx, VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu

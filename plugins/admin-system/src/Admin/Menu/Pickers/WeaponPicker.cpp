@@ -40,19 +40,19 @@ static void ReportWeaponOutcome(AdminSystem::App& app, int adminSlot, Weapons::W
     }
 }
 
-std::shared_ptr<VoltMod::Menu> BuildWeaponPicker(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                 VoltMod::PlayerRef target)
+std::shared_ptr<VoltMod::Menu> BuildWeaponPicker(const MenuContext& ctx, VoltMod::PlayerRef target)
 {
-    auto& translations = app.Runtime.Translations;
+    App& app = ctx.Plugin;
+    const VoltMod::PlayerRef admin = ctx.Admin;
 
-    auto* targetPlayer = app.Runtime.Players.Get(target);
+    auto* targetPlayer = ctx.Player(target);
     if (!targetPlayer)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", translations.Get("action.giveWeapon", admin.Slot), targetPlayer->Name()));
+    MenuBuilder builder(std::format("{}: {}", ctx.Translate("action.giveWeapon"), targetPlayer->Name()));
 
     const auto& menu = app.Settings.GetWeaponMenu();
-    builder.EmptyText(translations.Get("action.noWeapons", admin.Slot));
+    builder.EmptyText(ctx.Translate("action.noWeapons"));
     for (const auto& weapon : menu)
     {
         builder.Button(weapon.Label(), [&app, admin, target, item = weapon.Item](int slot) {
@@ -62,7 +62,7 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponPicker(AdminSystem::App& app, VoltMod:
 
     if (!menu.empty())
     {
-        builder.Button(translations.Get("action.giveRandomWeapon", admin.Slot), [&app, admin, target](int slot) {
+        builder.Button(ctx.Translate("action.giveRandomWeapon"), [&app, admin, target](int slot) {
             const auto& weapons = app.Settings.GetWeaponMenu();
             if (weapons.empty())
                 return;
@@ -72,7 +72,7 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponPicker(AdminSystem::App& app, VoltMod:
         });
     }
 
-    builder.Button(translations.Get("action.strip", admin.Slot), [&app, admin, target](int slot) {
+    builder.Button(ctx.Translate("action.strip"), [&app, admin, target](int slot) {
         ReportWeaponOutcome(app, slot, Weapons::StripWeapons(app, admin, target), "cmd.weaponStripFailed");
     });
 
