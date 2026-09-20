@@ -12,11 +12,11 @@ VALUES (
 @ON_CONFLICT(steam_id)@;
 
 -- A lower-level role and admin to test against: punishing needs strictly higher immunity.
--- The UPDATE demotes a SteamID that already holds a higher role.
 @INSERT_IF_ABSENT@ admin_groups (name, permissions, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
-VALUES ('admin', '["admin.kick","admin.ban","admin.unban","admin.mute","admin.control","admin.fun","admin.health","admin.map","admin.weapon","admin.vote"]', 50, '[]', '[ADMIN]', 'green', 'default', 'default')
+VALUES ('admin', '["admin.freeze_admins","admin.kick","admin.ban","admin.unban","admin.mute","admin.control","admin.fun","admin.health","admin.hide","admin.wallhack","admin.bhop","admin.map","admin.weapon","admin.fun_mode","admin.vote"]', 50, '[]', '[ADMIN]', 'green', 'default', 'default')
 @ON_CONFLICT(name)@;
 
+-- The UPDATE demotes a SteamID that already holds a higher role.
 @INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions)
 VALUES (76561198093475210, 'Hikka', '["admin"]', '[]')
 @ON_CONFLICT(steam_id)@;
