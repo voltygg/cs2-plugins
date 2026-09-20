@@ -35,7 +35,7 @@ void AppendTargetRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder,
             .Label = player->Name(), .Build = [open, target](int) {
                 return open(target);
             }}.ToItem();
-        builder.Add(WhileTargetable(app, ctx.Admin, target, std::move(row)));
+        builder.Add(std::move(row));
     }
 
     if (connected.empty())

@@ -39,8 +39,12 @@ using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishType type)
 {
     auto& players = app.Runtime.Players;
-    return app.Runtime.Policy.Authorize(players.RefFor(adminSlot), target, InfoFor(type).RequiredPermission)
-        .has_value();
+    const VoltMod::PlayerRef admin = players.RefFor(adminSlot);
+    if (!app.Runtime.Policy.Authorize(admin, target, InfoFor(type).RequiredPermission).has_value())
+        return false;
+
+    // Only punishments check rank; self-targeting stays allowed.
+    return admin.SteamId == target.SteamId || app.Access.CanPunish(admin.SteamId, target.SteamId);
 }
 
 /** Re-checked at every step: the target may have left, the slot may rehost another player, and

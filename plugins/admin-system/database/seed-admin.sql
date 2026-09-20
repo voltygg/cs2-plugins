@@ -2,23 +2,22 @@
 -- pipe it into a client:
 --   uv run voltmod database sql plugins/admin-system/database/seed-admin.sql --driver postgres | psql -d admin_system
 -- Run `!admin_reload` afterwards to pick it up without a restart.
-@INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions, immunity)
+@INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions)
 VALUES (
   76561198153558892,   -- your SteamID64
   '.NET Player',       -- display name
   '["super_admin"]',   -- group memberships, JSON array text
-  '[]',                -- extra permissions on top of the group's, JSON array text
-  100                  -- extra immunity; the group's is considered too
+  '[]'                 -- extra permissions on top of the group's, JSON array text
 )
 @ON_CONFLICT(steam_id)@;
 
--- A lower-level role and admin to test against: targeting needs strictly higher immunity.
+-- A lower-level role and admin to test against: punishing needs strictly higher immunity.
 -- The UPDATE demotes a SteamID that already holds a higher role.
 @INSERT_IF_ABSENT@ admin_groups (name, permissions, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
 VALUES ('admin', '["admin.kick","admin.ban","admin.unban","admin.mute","admin.control","admin.fun","admin.health","admin.map","admin.weapon","admin.vote"]', 50, '[]', '[ADMIN]', 'green', 'default', 'default')
 @ON_CONFLICT(name)@;
 
-@INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions, immunity)
-VALUES (76561198093475210, 'Hikka', '["admin"]', '[]', 0)
+@INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions)
+VALUES (76561198093475210, 'Hikka', '["admin"]', '[]')
 @ON_CONFLICT(steam_id)@;
-UPDATE admins SET groups = '["admin"]', permissions = '[]', immunity = 0 WHERE steam_id = 76561198093475210;
+UPDATE admins SET groups = '["admin"]', permissions = '[]' WHERE steam_id = 76561198093475210;

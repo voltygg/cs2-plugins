@@ -58,11 +58,6 @@ inline auto RequirePermission(App& app, std::string_view permission, int slot)
  *  those silently, so the row would otherwise look live and do nothing. */
 [[nodiscard]] VoltMod::MenuItem WhileAlive(App& app, int adminSlot, VoltMod::PlayerRef target, VoltMod::MenuItem item);
 
-/** @ref DisableUnless for a row acting on @p target, so an admin who outranks the viewer greys
- *  once in the player list rather than on every row of the card behind it. */
-[[nodiscard]] VoltMod::MenuItem WhileTargetable(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target,
-                                                VoltMod::MenuItem item);
-
 /** Warn about any row whose catalog permission differs from the one its descriptor runs on. */
 void VerifyCatalog(App& app);
 

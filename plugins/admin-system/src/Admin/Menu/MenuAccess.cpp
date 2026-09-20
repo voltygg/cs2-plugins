@@ -66,13 +66,4 @@ VoltMod::MenuItem WhileAlive(App& app, int adminSlot, VoltMod::PlayerRef target,
     return DisableUnless(std::move(item), alive, app.Runtime.Translations.Get("hint.targetDead", adminSlot));
 }
 
-VoltMod::MenuItem WhileTargetable(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target, VoltMod::MenuItem item)
-{
-    // An empty permission skips the permission check but still applies immunity and self-targeting.
-    auto targetable = [&app, admin, target](int) {
-        return app.Runtime.Policy.Authorize(admin, target, {}).has_value();
-    };
-    return DisableUnless(std::move(item), targetable, app.Runtime.Translations.Get("hint.immune", admin.Slot));
-}
-
 }  // namespace AdminSystem::Admin::Menu

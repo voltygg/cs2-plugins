@@ -50,10 +50,8 @@ public:
     /** True if the admin holds @p permission, "*", or a wildcard over any of its prefixes ("admin.*"). */
     bool HasPermission(int64_t steamId, std::string_view permission);
     int GetImmunity(int64_t steamId);
-    /**
-     * Check if an admin can target a specific player based on their immunity levels.
-     */
-    bool CanTarget(int64_t adminSteamId, int64_t targetSteamId);
+    /** Strictly higher immunity. Punishments are the only rank-gated verbs. */
+    bool CanPunish(int64_t adminSteamId, int64_t targetSteamId);
 
     void AddAdmin(const Database::Admin& admin);
     void AddGroup(const Database::AdminGroup& group);

@@ -39,7 +39,6 @@ std::vector<Admin> AdminRepository::FindAll()
                                    .Groups = ReadNameList(row.groups, "admins.groups", std::to_string(row.steamId)),
                                    .Permissions = ReadNameList(row.permissions, "admins.permissions",
                                                                std::to_string(row.steamId)),
-                                   .Immunity = static_cast<int32_t>(row.immunity),
                                    .DisplayPrefix = row.displayPrefix,
                                    .NameColor = std::string(row.nameColor),
                                    .MessageColor = std::string(row.messageColor),

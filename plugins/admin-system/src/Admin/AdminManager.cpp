@@ -109,10 +109,8 @@ int AdminManager::GetImmunity(int64_t steamId)
     return ResolveImmunity(it->second);
 }
 
-bool AdminManager::CanTarget(int64_t adminSteamId, int64_t targetSteamId)
+bool AdminManager::CanPunish(int64_t adminSteamId, int64_t targetSteamId)
 {
-    // Immunity, and nothing else. The console has no caller and a caller targeting themselves is
-    // allowed, both decided by VoltMod::Policy::Authorize before this is ever consulted.
     return GetImmunity(adminSteamId) > GetImmunity(targetSteamId);
 }
 
@@ -233,7 +231,7 @@ AdminManager::PermissionSet AdminManager::ResolvePermissions(const Database::Adm
 
 int AdminManager::ResolveImmunity(const Database::Admin& admin)
 {
-    int maxImmunity = admin.Immunity;
+    int maxImmunity = 0;
 
     for (const auto& groupName : admin.Groups)
     {

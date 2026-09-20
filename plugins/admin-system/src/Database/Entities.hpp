@@ -20,7 +20,6 @@ struct Admin
      *  this server's `admin_server_groups` grants at load time); the DB column is global-only. */
     std::vector<std::string> Groups;
     std::vector<std::string> Permissions;
-    int32_t Immunity = 0;
 
     /** Per-admin chat overrides. Empty color strings fall back to the admin's group. */
     bool DisplayPrefix = true;

@@ -156,9 +156,12 @@ to them. `*` grants everything, and `admin.*` grants every `admin.` permission.
 
 Migration `0003_permission_names` converts the old flag letters to these names.
 
-Immunity is separate from permissions: an admin cannot act on a target whose immunity
-is higher than their own. `!admin` needs no permission, but the caller must be a
-registered admin, and each menu category is still gated individually.
+Immunity is separate from permissions and gates punishments only: a kick, ban, mute,
+warning or admin freeze needs immunity strictly higher than the target's. Actions and
+effects - slay, teleport, health, fun and the rest - are open to any admin holding the
+permission, whatever rank the target holds. Immunity comes from the admin's groups;
+`admin_groups.immunity` is the only place it is set. `!admin` needs no permission, but
+the caller must be a registered admin, and each menu category is still gated individually.
 
 The admin menu draws on either of two surfaces, decided per player when the menu
 opens. Rows, flows and callbacks are the same on both.
@@ -233,7 +236,7 @@ parse JSON.
 
 | Table | Holds |
 | --- | --- |
-| `admins` | Admin records, permissions, immunity, and freeze state |
+| `admins` | Admin records, permissions, and freeze state |
 | `admin_groups` | Named permission and immunity bundles |
 | `admin_server_groups` | Which groups an admin holds on which server tag |
 | `admin_activity` | Audit trail of every punishment an admin issued |

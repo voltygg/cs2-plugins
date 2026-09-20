@@ -177,7 +177,7 @@ plugin registers the server and updates `last_seen` every minute.
 
 - `admins.groups` applies network-wide.
 - `admin_server_groups` adds groups for one `server.tag`.
-- Admin permissions and immunity are global.
+- Admin permissions are global; immunity comes from the admin's groups.
 - Group permissions and immunity apply wherever that group is granted.
 - Bans, mutes, and warnings apply across all servers sharing the database.
 

@@ -43,10 +43,7 @@ void App::InstallPolicy()
     policy.HasPermission = [this](int64_t steamId, std::string_view permission) {
         return Access.HasPermission(steamId, permission);
     };
-    // Policy::Authorize handles console and self-targeting; Policy::AuthorizeSteamId uses this for offline targets.
-    policy.CanTarget = [this](int64_t callerSteamId, int64_t targetSteamId) {
-        return Access.CanTarget(callerSteamId, targetSteamId);
-    };
+    // CanTarget stays unset: only punishments check rank, where they are issued.
     policy.Reply = [this](int slot, std::string_view message) { Chat.Reply(slot, message); };
     policy.Broadcast = [this](const VoltMod::Authorized& who, std::string_view key) {
         // Target-less and self-targeted both read as "Bob noclipped"; one roster makes self pointer identity.

@@ -24,11 +24,10 @@ public:
         return !_freeze.IsFrozen(steamId) && _admins.HasPermission(steamId, permission);
     }
 
-    /** Immunity only; permission checks apply freeze state. An admin never outranks themselves,
-     *  so ask this about somebody else - self-targeting is `Policy::Authorize`'s call. */
-    bool CanTarget(int64_t adminSteamId, int64_t targetSteamId)
+    /** Punishments only; an admin never outranks themselves, so ask about somebody else. */
+    bool CanPunish(int64_t adminSteamId, int64_t targetSteamId)
     {
-        return _admins.CanTarget(adminSteamId, targetSteamId);
+        return _admins.CanPunish(adminSteamId, targetSteamId);
     }
 
 private:

@@ -104,11 +104,6 @@ namespace AdminSystem::Database::Tables
       using data_type = ::sqlpp::text;
       using has_default = std::true_type;
     };
-    struct Immunity {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(immunity, immunity);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
     struct DisplayPrefix {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(display_prefix, displayPrefix);
       using data_type = ::sqlpp::boolean;
@@ -166,7 +161,6 @@ namespace AdminSystem::Database::Tables
                SteamId,
                Name,
                Groups,
-               Immunity,
                DisplayPrefix,
                NameColor,
                MessageColor,
