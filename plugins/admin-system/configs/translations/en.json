@@ -276,7 +276,7 @@
   },
   "lift": {
     "empty": "No active bans or mutes",
-    "truncated": "Showing {shown} of {total} - lift older bans with !unban <steamid>"
+    "truncated": "Showing {shown} of {total} - lift older ones with !unban or !unmute <steamid>"
   },
   "kickNotice": {
     "permanent": "Permanent ban",

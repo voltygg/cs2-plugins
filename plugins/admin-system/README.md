@@ -91,9 +91,9 @@ commands below are the ones with no menu equivalent.
 | `!ban <target> <duration> [reason]` | `admin.ban` | Ban a player |
 | `!unban <steamid> [reason]` | `admin.unban` | Remove a ban |
 | `!voice_mute <target> <duration> [reason]` | `admin.mute` | Mute voice; aliases: `!vmute`, `!mute` |
-| `!voice_unmute <target>` | `admin.mute` | Restore voice; aliases: `!vunmute`, `!unmute` |
+| `!voice_unmute <target\|steamid>` | `admin.mute` | Restore voice; aliases: `!vunmute`, `!unmute` |
 | `!text_mute <target> <duration> [reason]` | `admin.mute` | Block chat; aliases: `!tmute`, `!gag` |
-| `!text_unmute <target>` | `admin.mute` | Restore chat; aliases: `!tunmute`, `!ungag` |
+| `!text_unmute <target\|steamid>` | `admin.mute` | Restore chat; aliases: `!tunmute`, `!ungag` |
 | `!warn <target> [reason]` | `admin.mute` | Warn a player and apply configured escalation |
 | `!admin` | registered admin | Open the menu; alias: `!a` |
 | `!who` | `admin.hide` | List players, prefixes, and immunity; alias: `!players` |

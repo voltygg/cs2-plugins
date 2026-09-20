@@ -276,7 +276,7 @@
   },
   "lift": {
     "empty": "Нет активных банов и мутов",
-    "truncated": "Показано {shown} из {total} - снимите старые баны через !unban <steamid>"
+    "truncated": "Показано {shown} из {total} - снимите остальные через !unban или !unmute <steamid>"
   },
   "kickNotice": {
     "permanent": "Перманентный бан",

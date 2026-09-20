@@ -78,13 +78,13 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
     commands.Add("voice_unmute")
         .Alias("vunmute")
         .Alias("unmute")
-        .Describe("Lift an active voice mute on the target.")
+        .Describe("Lift an active voice mute. Takes a SteamID64 for a player who has left.")
         .Permission(Permission::Mute)
-        .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-            bool removed =
-                app.Punishments.RemoveBySteamId(PunishType::VoiceMute, t.Value->SteamId(), c.Player->SteamId(),
-                                                c.Tr.Get(LiftReasonKey(PunishType::VoiceMute)));
-            Tokens tokens{{"name", t.Value->Name()}};
+        // A mute outlives the session that earned it, so the target may be offline by now.
+        .Run([&app](Caller c, Args::PlayerOrSteamId who) -> Result<Reply> {
+            bool removed = app.Punishments.RemoveBySteamId(PunishType::VoiceMute, who.SteamId, c.Player->SteamId(),
+                                                           c.Tr.Get(LiftReasonKey(PunishType::VoiceMute)));
+            Tokens tokens{{"name", who.Online ? who.Online->Name() : std::to_string(who.SteamId)}};
             return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
         });
 
@@ -101,13 +101,13 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
     commands.Add("text_unmute")
         .Alias("tunmute")
         .Alias("ungag")
-        .Describe("Lift an active text mute on the target.")
+        .Describe("Lift an active text mute. Takes a SteamID64 for a player who has left.")
         .Permission(Permission::Mute)
-        .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-            bool removed =
-                app.Punishments.RemoveBySteamId(PunishType::TextMute, t.Value->SteamId(), c.Player->SteamId(),
-                                                c.Tr.Get(LiftReasonKey(PunishType::TextMute)));
-            Tokens tokens{{"name", t.Value->Name()}};
+        // A mute outlives the session that earned it, so the target may be offline by now.
+        .Run([&app](Caller c, Args::PlayerOrSteamId who) -> Result<Reply> {
+            bool removed = app.Punishments.RemoveBySteamId(PunishType::TextMute, who.SteamId, c.Player->SteamId(),
+                                                           c.Tr.Get(LiftReasonKey(PunishType::TextMute)));
+            Tokens tokens{{"name", who.Online ? who.Online->Name() : std::to_string(who.SteamId)}};
             return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
         });
 
