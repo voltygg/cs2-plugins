@@ -11,11 +11,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
-/**
- * The permission the descriptor behind @p id actually dispatches on, or empty for a row with no
- * descriptor. A `constexpr` table cannot read these: they live in .cpp files that need the game
- * SDK, which is why the catalog spells the permission a second time.
- */
+/** The permission the descriptor behind @p id dispatches on, or empty for a row that has none.
+ *  A constexpr table cannot reach these, which is why the catalog repeats them. */
 static std::string_view DispatchPermission(App& app, RowId id)
 {
     const auto& actions = app.ActionDescriptors;
@@ -68,8 +65,7 @@ static std::string_view DispatchPermission(App& app, RowId id)
     case RowId::Hide:
         return effects.Hide.Permission;
     default:
-        // Punishments are checked against PunishTypes by MenuCatalogTests; the rest - the lift
-        // list, the map verbs, the chat settings - are gated by the plugin, not a descriptor.
+        // Punishments are covered by MenuCatalogTests; the rest are gated by the plugin.
         return {};
     }
 }

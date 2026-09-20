@@ -31,10 +31,7 @@ static constexpr int SpeedPresets[] = {10, 25, 50, 100, 150, 200, 300};
 // Speed cycles both up and down from normal, so it opens anchored on 100% (no change).
 static constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
 
-/**
- * One switch rather than a pair of buttons: Cancel used to sit there greyed out whenever no check
- * was running, which is nearly always.
- */
+/** Call and cancel share one switch; as two buttons, Cancel was greyed out nearly always. */
 static VoltMod::MenuItem CheatCheckRow(const MenuContext& ctx, VoltMod::ActionRows& rows, VoltMod::PlayerRef target)
 {
     App& app = ctx.Plugin;
@@ -56,9 +53,7 @@ static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& ro
 {
     const VoltMod::EnabledCondition control = rows.Allows(Permission::Control);
 
-    // The dispatcher skips a RequireAlive descriptor on a dead target without a word, so those
-    // rows say why instead of looking live and doing nothing. Read off the descriptor, never a
-    // list kept here, which would drift the moment one of them changed.
+    // A RequireAlive descriptor is skipped silently on a dead target, so those rows say why.
     auto live = [&](const auto& descriptor, VoltMod::MenuItem item) {
         return descriptor.RequireAlive ? WhileAlive(ctx.Plugin, ctx.Admin.Slot, target, std::move(item))
                                        : std::move(item);

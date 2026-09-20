@@ -31,12 +31,8 @@ std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int admi
  */
 void AppendPlayerRows(AdminSystem::App& app, int adminSlot, VoltMod::MenuBuilder& builder, VoltMod::PlayerPicker spec);
 
-/**
- * @brief @ref AppendPlayerRows for a list whose rows act on the player, each opening @p open.
- *
- * A player this admin may not touch is grayed here, once, saying why - rather than opening a card
- * whose every row is dead for a reason the card never gives.
- */
+/** @ref AppendPlayerRows for a list whose rows act on the player, each opening @p open. A player
+ *  this admin may not touch is grayed here, once, rather than on every row of the card. */
 void AppendTargetRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder,
                       std::function<std::shared_ptr<VoltMod::Menu>(VoltMod::PlayerRef target)> open);
 

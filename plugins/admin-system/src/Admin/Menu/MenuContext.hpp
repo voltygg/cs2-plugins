@@ -19,12 +19,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
-/**
- * @brief One admin's view of the panel: the plugin plus the admin every builder is building for.
- *
- * Resolving the admin once here is what lets a builder start with its first row instead of the
- * same four lines of lookups and null checks.
- */
+/** One admin's view of the panel: the plugin, plus the admin every builder is building for,
+ *  resolved once here rather than in each of them. */
 struct MenuContext
 {
     /** Empty when the admin is no longer connected, which is the only reason a build fails. */
@@ -58,12 +54,9 @@ struct MenuContext
     VoltMod::PlayerRef Admin;
 };
 
-/**
- * @brief Appends every row of @p specs this admin may see, in catalog order, built by @p make.
- *
- * A row @p make returns nothing for is skipped and logged. The catalog and a tab's `MakeRow` are
- * two edit sites, and a row silently missing from a menu is the kind of gap nobody reports.
- */
+/** Appends every row of @p specs this admin may see, in catalog order, built by @p make. A row
+ *  @p make returns nothing for is skipped and logged: the catalog and a tab's `MakeRow` are two
+ *  edit sites. */
 template <class Make>
 void AppendCatalogRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder, std::span<const RowSpec> specs,
                        Make make)

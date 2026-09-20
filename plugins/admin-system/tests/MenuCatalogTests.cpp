@@ -1,6 +1,3 @@
-// The catalog decides what an admin sees; the descriptors decide what the dispatcher accepts.
-// Nothing else checks the two still agree, or that a label the panel draws has been translated.
-
 #include "Admin/Menu/MenuCatalog.hpp"
 #include "Punishments/PunishType.hpp"
 

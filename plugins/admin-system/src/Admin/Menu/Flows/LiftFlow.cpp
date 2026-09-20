@@ -40,8 +40,7 @@ struct LiftRow
     std::string Reason;
 };
 
-/** Translation key of the punishment tag for a kind. Bans and mutes share one list, so every row
- *  is tagged with its kind rather than leaving the reader to infer it. */
+/** Translation key of the punishment tag. Bans and mutes share one list, so every row is tagged. */
 static std::string_view TagKey(PunishType kind)
 {
     return kind == PunishType::Ban ? std::string_view{"action.ban"} : ActionTranslationKey(kind);
@@ -93,7 +92,7 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
         ->Begin();
 }
 
-/** One row per punishment. Bans carry no tag; mutes are tagged with their kind. */
+/** One row per punishment, tagged with its kind. */
 static void AppendRows(App& app, MenuBuilder& builder, const std::vector<Database::Punishment>& punishments,
                        int adminSlot)
 {
@@ -120,8 +119,7 @@ std::shared_ptr<VoltMod::Menu> BuildLiftMenu(const MenuContext& ctx)
     MenuBuilder builder(ctx.Translate("punish.activeList"));
     builder.EmptyText(ctx.Translate("lift.empty"));
 
-    // One list rather than two: an admin looking for somebody rarely knows which kind to open,
-    // and each kind still appears only for an admin who may lift it.
+    // One list, but each kind still appears only for an admin who may lift it.
     if (ctx.Visible(LiftRows[0]))
         AppendRows(app, builder, app.Punishments.GetActive(PunishType::Ban), adminSlot);
 

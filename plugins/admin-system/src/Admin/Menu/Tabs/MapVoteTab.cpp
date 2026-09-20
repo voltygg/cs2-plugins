@@ -21,8 +21,7 @@ using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 using VoltMod::SubmenuRow;
 
-/** A row that opens the map list for @p verb. The verb comes first so the admin picks what to do
- *  before scrolling a list of maps, and so Cancel vote is not buried under that list. */
+/** Opens the map list for @p verb. Verb first, so Cancel vote is not buried under the maps. */
 static VoltMod::MenuItem MapListRow(const MenuContext& ctx, std::string_view labelKey, MapVerb verb,
                                     std::string_view permission)
 {
@@ -32,8 +31,8 @@ static VoltMod::MenuItem MapListRow(const MenuContext& ctx, std::string_view lab
         .ToItem();
 }
 
-/** Cancel stays visible and grays itself: the tab's rows are fixed when it opens, so a row added
- *  only while a vote was running would still be there after the vote ended. */
+/** Greys rather than disappears: a tab's rows are fixed when it opens, so a row added only while
+ *  a vote ran would still be there once it ended. */
 static VoltMod::MenuItem CancelVoteRow(const MenuContext& ctx)
 {
     App& app = ctx.Plugin;

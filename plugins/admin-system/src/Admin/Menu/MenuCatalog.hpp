@@ -12,12 +12,9 @@ namespace AdminSystem::Admin::Menu
 /**
  * @brief Every row the admin panel can draw.
  *
- * The tables below own three things a menu builder must not decide for itself: the order rows
- * appear in, the label they carry, and the permission that makes them visible at all. Each tab's
- * builder switches on @ref RowId to turn an entry into a `MenuItem`; that switch has no
- * `default:`, so a new enumerator here is a compile error until the tab handles it.
- *
- * This header stays free of the game SDK so `MenuCatalogTests` can link it.
+ * The tables below own the order rows appear in, the label they carry, and the permission that
+ * makes them visible. Each tab's builder turns an entry into a `MenuItem`; one nothing builds is
+ * logged and skipped. Free of the game SDK, so `MenuCatalogTests` can link it.
  */
 enum class RowId
 {
@@ -71,11 +68,9 @@ enum class RowId
     MessageColor,
 };
 
-/**
- * One row of one menu. An empty @ref Permission means any registered admin may see it; a
- * non-empty @ref Children makes the row visible exactly when one of its children is, so a list
- * that would open empty is never offered.
- */
+/** One row of one menu. An empty @ref Permission means any registered admin; a non-empty
+ *  @ref Children makes the row visible exactly when one of its children is, so a list that would
+ *  open empty is never offered. */
 struct RowSpec
 {
     RowId Id;
@@ -90,9 +85,8 @@ inline constexpr std::array<RowSpec, 2> LiftRows{{
     {RowId::LiftMutes, "action.unmute", Permission::Mute, {}},
 }};
 
-/** The player card under the Punish tab. Mirrors `Punishments::PunishTypes` row for row;
- *  MenuCatalogTests checks the two agree, because the permission here decides what an admin
- *  sees and the one there decides what the dispatcher accepts. */
+/** The player card under the Punish tab, mirroring `Punishments::PunishTypes` row for row:
+ *  this permission decides what an admin sees, that one what the dispatcher accepts. */
 inline constexpr std::array<RowSpec, 5> PunishCardRows{{
     {RowId::PunishKick, "action.kick", Permission::Kick, {}},
     {RowId::PunishBan, "action.ban", Permission::Ban, {}},
@@ -139,8 +133,8 @@ inline constexpr std::array<RowSpec, 8> PlayerFunRows{{
     {RowId::Size, "action.size", Permission::Fun, {}},
 }};
 
-/** Every modifier shares one permission, so a single entry describes the tab. The rows themselves
- *  stay in `Fun::Toggles`, whose order its own test pins. */
+/** One entry describes the tab: every modifier shares a permission. The rows stay in
+ *  `Fun::Toggles`, whose order its own test pins. */
 inline constexpr std::array<RowSpec, 1> RoundModeRows{{
     {RowId::RoundModes, "category.roundModes", Permission::FunMode, {}},
 }};
@@ -169,14 +163,14 @@ enum class TabId
     MySettings,
 };
 
-/** One tab of the panel. Visible exactly when one of its rows is, so a tab cannot outlive its
- *  contents the way the old hand-written permission lists did. */
+/** One tab of the panel, visible exactly when one of its rows is, so it cannot outlive its
+ *  contents. */
 struct TabSpec
 {
     TabId Id;
     std::string_view LabelKey;
-    /** One of the names generated into panorama/screens/admin_menu/icons.j2. That set is fixed at
-     *  six; reusing these names is what keeps a menu change out of the workshop publish queue. */
+    /** One of the six names generated into panorama/screens/admin_menu/icons.j2. Reusing an
+     *  existing name keeps a menu change out of the workshop publish queue. */
     std::string_view Icon;
     std::span<const RowSpec> Rows;
 };

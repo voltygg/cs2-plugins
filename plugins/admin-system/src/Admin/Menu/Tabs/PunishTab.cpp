@@ -29,8 +29,8 @@ using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 using VoltMod::SubmenuRow;
 
-/** The punishment a catalog row issues. The two tables are checked against each other by
- *  MenuCatalogTests, so an index lookup is enough here. */
+/** The punishment a catalog row issues. MenuCatalogTests pins the two tables in step, so an
+ *  index lookup is enough. */
 static PunishType PunishTypeFor(RowId id)
 {
     const auto row = std::ranges::find(PunishCardRows, id, &RowSpec::Id);

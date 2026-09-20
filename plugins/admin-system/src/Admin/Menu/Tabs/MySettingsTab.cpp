@@ -124,8 +124,7 @@ static VoltMod::MenuItem ColorRow(const MenuContext& ctx, std::string_view label
         .ToItem();
 }
 
-/** Hide acts on the admin alone, so it belongs with their own settings rather than among the rows
- *  that act on somebody else. */
+/** Hide acts on the admin alone, which is why it sits here and not among the target rows. */
 static VoltMod::MenuItem HideRow(const MenuContext& ctx)
 {
     App& app = ctx.Plugin;

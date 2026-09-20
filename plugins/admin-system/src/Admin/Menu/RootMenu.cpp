@@ -58,8 +58,7 @@ std::shared_ptr<VoltMod::Menu> BuildRootMenu(AdminSystem::App& app, int adminSlo
 
     for (const TabSpec& tab : Tabs)
     {
-        // A tab is worth a slot only while something inside it is. Derived from the rows
-        // themselves, so a tab can no longer outlive its contents the way a hand-kept list did.
+        // A tab is worth a slot only while something inside it is.
         if (!ctx->AnyVisible(tab.Rows))
             continue;
 
