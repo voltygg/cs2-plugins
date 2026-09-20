@@ -76,6 +76,7 @@ declarations in plugin headers, anonymous namespaces and using-directives.
 
 ```powershell
 uv run poe build --install <plugin>            # build, then copy into CS2_SERVER_PATH
+uv run poe build --install-all                 # ...every plugin, host included
 uv run poe build --install <plugin> --start    # ...and launch the server
 uv run poe start-server                        # launch alone
 ```
