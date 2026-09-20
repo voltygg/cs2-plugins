@@ -13,17 +13,8 @@ using VoltMod::Controller;
 using VoltMod::GlowVision;
 using VoltMod::TeamSpectator;
 
-// Hide moves the player to the spectator team and stops transmitting their
-// controller, which removes their row from every other client's scoreboard.
-// While hidden the admin also gets glow vision - every live player rendered as
-// a team-colored glow through walls, visibility-filtered to the admin alone - so
-// suspected wallhackers can be observed covertly. The toggle is deliberately
-// silent (empty On/Off keys): a public broadcast would defeat the stealth.
-// The name blanking stays as a fallback for when the visibility filter is inert
-// (missing gamedata offset after a CS2 update). Tradeoff the operator accepts:
-// when the admin was the last human on a playing team, CS2's bot manager
-// unloads bots until a human rejoins. Toggle off restores team, name and
-// scoreboard visibility.
+// Silent by design (empty On/Off keys): a broadcast would defeat the stealth, and the blanked
+// name covers the case where the visibility filter is inert after a CS2 update.
 
 Effect MakeHide(VoltMod::Runtime& runtime)
 {
@@ -34,7 +25,8 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                   .OffKey = "",
                   .TickIntervalMs = GlowVision::RefreshIntervalMs,
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
-                      int savedTeam = ctx.TargetPawn().Team();
+                      // The controller keeps a team while dead or spectating; the pawn may not exist.
+                      int savedTeam = ctx.TargetCtrl.Team();
                       std::string savedName(ctx.TargetCtrl.Name());
 
                       ctx.TargetCtrl.SetName("");
@@ -44,8 +36,7 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                       auto& visibility = runtime.Hooks.Visibility;
                       visibility.SetControllerHidden(slot, true);
 
-                      // Hide is persistent, so the reconcile tick rebuilds the glow clones after
-                      // round restarts and tracks spawns/deaths/team changes across rounds.
+                      // The tick rebuilds the clones across rounds, spawns and deaths.
                       auto glow = runtime.Hooks.Visibility.CreateGlow(slot);
                       glow->Refresh();
 
@@ -58,7 +49,8 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                                       if (!controller)
                                           return;
                                       controller.SetName(savedName);
-                                      if (controller.GetPawn().Team() != savedTeam)
+                                      // Joining T or CT also ends hide, and that choice wins.
+                                      if (savedTeam != TeamSpectator && controller.Team() == TeamSpectator)
                                           (void)controller.ChangeTeam(savedTeam);
                                   }};
                   }};

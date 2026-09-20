@@ -9,6 +9,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/App/PluginEntry.hpp>
 #include <VoltMod/Database/Api.hpp>
+#include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Events/EventTypes.hpp>
 #include <VoltMod/Unsafe/Hook.hpp>
 #include <algorithm>
@@ -27,15 +28,12 @@ namespace AdminSystem
 
 App::~App()
 {
-    // Unpublish before destroying the managers that answer MetaFactory queries.
     AdminActions.Unpublish();
     AdminSection.Unpublish();
     ReportSection.Unpublish();
     CheatCheck.CancelAll();
     Effects.CancelAll();
-    // Unload skips disconnect hooks; Clear() raises Players.Disconnected while its cleanup subscription is active.
     Runtime.Players.Clear();
-    // Flush queued writes and discard undispatched completions before their managers are destroyed.
     Db.Disconnect();
 }
 
@@ -171,6 +169,13 @@ void App::RegisterGameEventListeners()
         MapCycle.ChangeToNext();
     }));
     _subs.Add(events.On<VoltMod::RoundPrestart>([this](const VoltMod::RoundPrestart&) { Effects.CancelRound(); }));
+    _subs.Add(events.On<VoltMod::PlayerTeam>([this](const VoltMod::PlayerTeam& e) {
+        // Hide is spectator-only: joining T or CT ends it, invisible play included.
+        if (e.Slot < 0 || e.Disconnect)
+            return;
+        if (e.Team == VoltMod::TeamT || e.Team == VoltMod::TeamCT)
+            Effects.Cancel(e.Slot, EffectDescriptors.Hide.Id);
+    }));
 }
 
 void App::InstallStatusReporting()
