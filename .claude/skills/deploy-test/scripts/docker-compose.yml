@@ -1,0 +1,25 @@
+# The local Linux build box. linux_build.py sets FRAMEWORK and RUN_TESTS and runs it.
+name: cs2-plugins-linux
+
+services:
+  build:
+    build: .
+    image: cs2-plugins-linux-build
+    command: bash /work/.claude/skills/deploy-test/scripts/container-build.sh
+    environment:
+      FRAMEWORK: ${FRAMEWORK:-checkout}
+      RUN_TESTS: ${RUN_TESTS:-0}
+    volumes:
+      - ../../../..:/work
+      - cache:/cache
+      # Build trees stay in volumes: compiling onto the Windows bind mount is several times slower.
+      - build:/work/build/linux-steamrt-release
+      - framework:/work/vendor/voltmod/build/linux-steamrt-release
+
+volumes:
+  cache:
+    name: cs2-plugins-linux-cache
+  build:
+    name: cs2-plugins-linux-build
+  framework:
+    name: cs2-plugins-linux-framework
