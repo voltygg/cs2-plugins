@@ -10,27 +10,13 @@
 #include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <string>
 
 namespace AdminSystem::Admin::Menu
 {
 
 using AdminSystem::Maps::MapEntry;
 using VoltMod::MenuBuilder;
-
-/** The title key each verb's list carries, so the screen says what picking a map will do. */
-static std::string_view TitleKey(MapVerb verb)
-{
-    switch (verb)
-    {
-    case MapVerb::SetNext:
-        return "action.setNextMap";
-    case MapVerb::PutToVote:
-        return "action.voteMap";
-    case MapVerb::ChangeNow:
-        break;
-    }
-    return "action.changeMap";
-}
 
 static void Apply(const MenuContext& ctx, MapVerb verb, const MapEntry& map, int slot)
 {
@@ -52,9 +38,9 @@ static void Apply(const MenuContext& ctx, MapVerb verb, const MapEntry& map, int
     }
 }
 
-std::shared_ptr<VoltMod::Menu> BuildMapPicker(const MenuContext& ctx, MapVerb verb)
+std::shared_ptr<VoltMod::Menu> BuildMapPicker(const MenuContext& ctx, MapVerb verb, const std::string& title)
 {
-    MenuBuilder builder(ctx.Translate(TitleKey(verb)));
+    MenuBuilder builder(title);
     builder.EmptyText(ctx.Translate("map.noMaps"));
 
     for (const auto& map : ctx.Plugin.MapCycle.Cycle())

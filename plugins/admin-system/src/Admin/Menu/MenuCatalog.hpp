@@ -79,11 +79,12 @@ struct RowSpec
     std::span<const RowSpec> Children;
 };
 
-/** The punishment kinds the merged lift list may show, each with the permission that lifts it. */
-inline constexpr std::array<RowSpec, 2> LiftRows{{
-    {RowId::LiftBans, "action.unban", Permission::Unban, {}},
-    {RowId::LiftMutes, "action.unmute", Permission::Mute, {}},
-}};
+/** The punishment kinds the merged lift list may show, each with the permission that lifts it.
+ *  Named so the lift menu asks for a kind rather than a position in the table. */
+inline constexpr RowSpec LiftBansRow{RowId::LiftBans, "action.unban", Permission::Unban, {}};
+inline constexpr RowSpec LiftMutesRow{RowId::LiftMutes, "action.unmute", Permission::Mute, {}};
+
+inline constexpr std::array<RowSpec, 2> LiftRows{{LiftBansRow, LiftMutesRow}};
 
 /** The player card under the Punish tab, mirroring `Punishments::PunishTypes` row for row:
  *  this permission decides what an admin sees, that one what the dispatcher accepts. */
@@ -183,8 +184,5 @@ inline constexpr std::array<TabSpec, 6> Tabs{{
     {TabId::MapVote, "category.mapVote", "map", MapVoteRows},
     {TabId::MySettings, "category.mySettings", "chat", MySettingsRows},
 }};
-
-/** The exact icon names icons.j2 generates. A tab naming anything else draws no icon at all. */
-inline constexpr std::array<std::string_view, 6> IconNames{"punish", "control", "effects", "fun", "map", "chat"};
 
 }  // namespace AdminSystem::Admin::Menu

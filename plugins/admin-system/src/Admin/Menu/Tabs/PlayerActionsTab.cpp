@@ -13,9 +13,6 @@
 #include <VoltMod/Entities/PawnPredicates.hpp>
 #include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <format>
-#include <string_view>
-#include <utility>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -32,10 +29,11 @@ static constexpr int SpeedPresets[] = {10, 25, 50, 100, 150, 200, 300};
 static constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
 
 /** Call and cancel share one switch; as two buttons, Cancel was greyed out nearly always. */
-static VoltMod::MenuItem CheatCheckRow(const MenuContext& ctx, VoltMod::ActionRows& rows, VoltMod::PlayerRef target)
+static VoltMod::MenuItem CheatCheckRow(const MenuContext& ctx, VoltMod::ActionRows& rows, const RowSpec& spec,
+                                       VoltMod::PlayerRef target)
 {
     App& app = ctx.Plugin;
-    return ToggleRow{.Label = rows.Translate("action.cheatCheck"),
+    return ToggleRow{.Label = rows.Translate(spec.LabelKey),
                      .Get = [&app, slot = target.Slot](int) { return app.CheatCheck.IsActive(slot); },
                      .Flip =
                          [&app, admin = ctx.Admin, target](int) {
@@ -44,75 +42,67 @@ static VoltMod::MenuItem CheatCheckRow(const MenuContext& ctx, VoltMod::ActionRo
                              else
                                  Actions::CallCheck(app, admin, target);
                          },
-                     .Enabled = rows.Allows(Permission::Control)}
+                     .Enabled = rows.Allows(spec.Permission)}
         .ToItem();
 }
 
-/** The row @p id names, for the target this card belongs to. */
-static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& rows, RowId id, VoltMod::PlayerRef target)
+/** The row @p spec names, for the target this card belongs to. */
+static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& rows, const RowSpec& spec,
+                                 VoltMod::PlayerRef target)
 {
-    const VoltMod::EnabledCondition control = rows.Allows(Permission::Control);
-
-    // A RequireAlive descriptor is skipped silently on a dead target, so those rows say why.
-    auto live = [&](const auto& descriptor, VoltMod::MenuItem item) {
-        return descriptor.RequireAlive ? WhileAlive(ctx.Plugin, ctx.Admin.Slot, target, std::move(item))
-                                       : std::move(item);
+    auto action = [&](const VoltMod::Action& a) { return ctx.WhileAlive(target, a, rows.Action(spec.LabelKey, a)); };
+    auto toggle = [&](auto pred, const VoltMod::Action& a) {
+        return ctx.WhileAlive(target, a, rows.StateToggle(spec.LabelKey, pred, a));
     };
-    auto action = [&](std::string_view key, const VoltMod::Action& a) { return live(a, rows.Action(key, a)); };
-    auto toggle = [&](std::string_view key, auto pred, const VoltMod::Action& a) {
-        return live(a, rows.StateToggle(key, pred, a));
+    auto presets = [&](const VoltMod::ActionRows::PresetSpec& preset) {
+        return ctx.WhileAlive(target, preset.Action, rows.Presets(preset));
     };
-    auto presets = [&](const VoltMod::ActionRows::PresetSpec& spec) { return live(spec.Action, rows.Presets(spec)); };
+    auto submenu = [&](auto build) {
+        return SubmenuRow{.Label = rows.Translate(spec.LabelKey),
+                          .Build = [ctx, target, build](int) { return build(ctx, target); },
+                          .Enabled = rows.Allows(spec.Permission)}
+            .ToItem();
+    };
 
-    switch (id)
+    switch (spec.Id)
     {
     case RowId::CheatCheck:
-        return CheatCheckRow(ctx, rows, target);
+        return CheatCheckRow(ctx, rows, spec, target);
     case RowId::Kill:
-        return action("action.kill", Actions::Kill);
+        return action(Actions::Kill);
     case RowId::Bring:
-        return action("action.bring", Actions::Bring);
+        return action(Actions::Bring);
     case RowId::Goto:
-        return action("action.goto", Actions::Goto);
+        return action(Actions::Goto);
     case RowId::Swap:
-        return SubmenuRow{.Label = rows.Translate("action.swap"),
-                          .Build = [ctx, target](int) { return BuildSwapPartnerPicker(ctx, target); },
-                          .Enabled = control}
-            .ToItem();
+        return submenu(BuildSwapPartnerPicker);
     case RowId::Freeze:
-        return toggle("action.freeze", VoltMod::InMoveType(VoltMod::MoveType::None), Actions::Freeze);
+        return toggle(VoltMod::InMoveType(VoltMod::MoveType::None), Actions::Freeze);
     case RowId::Noclip:
-        return toggle("action.noclip", VoltMod::InMoveType(VoltMod::MoveType::NoClip), Actions::Noclip);
+        return toggle(VoltMod::InMoveType(VoltMod::MoveType::NoClip), Actions::Noclip);
     case RowId::Bury:
-        return action("action.bury", Actions::Bury);
+        return action(Actions::Bury);
     case RowId::Unbury:
-        return action("action.unbury", Actions::Unbury);
+        return action(Actions::Unbury);
     case RowId::ChangeTeam:
-        return SubmenuRow{.Label = rows.Translate("action.changeTeam"),
-                          .Build = [ctx, target](int) { return BuildTeamPicker(ctx, target); },
-                          .Enabled = control}
-            .ToItem();
+        return submenu(BuildTeamPicker);
     case RowId::Speed:
-        return presets({.LabelKey = "action.speed",
+        return presets({.LabelKey = spec.LabelKey,
                         .Unit = "%",
                         .Presets = SpeedPresets,
                         .Action = Actions::SetSpeed,
                         .Index = SpeedDefault});
     case RowId::Slap:
-        return action("action.slap", ctx.Plugin.ActionDescriptors.Slap);
+        return action(ctx.Plugin.ActionDescriptors.Slap);
     case RowId::Health:
         return presets(
-            {.LabelKey = "action.health", .Unit = "HP", .Presets = HealthPresets, .Action = Actions::SetHealth});
+            {.LabelKey = spec.LabelKey, .Unit = "HP", .Presets = HealthPresets, .Action = Actions::SetHealth});
     case RowId::Armor:
-        return presets(
-            {.LabelKey = "action.armor", .Unit = "AP", .Presets = ArmorPresets, .Action = Actions::SetArmor});
+        return presets({.LabelKey = spec.LabelKey, .Unit = "AP", .Presets = ArmorPresets, .Action = Actions::SetArmor});
     case RowId::Godmode:
-        return toggle("action.godmode", VoltMod::HasPawnFlag(VoltMod::FL_GODMODE), Actions::Godmode);
+        return toggle(VoltMod::HasPawnFlag(VoltMod::FL_GODMODE), Actions::Godmode);
     case RowId::Weapons:
-        return SubmenuRow{.Label = rows.Translate("action.giveWeapon"),
-                          .Build = [ctx, target](int) { return BuildWeaponPicker(ctx, target); },
-                          .Enabled = rows.Allows(Permission::Weapon)}
-            .ToItem();
+        return submenu(BuildWeaponPicker);
     default:
         return {};
     }
@@ -129,14 +119,15 @@ std::shared_ptr<VoltMod::Menu> BuildPlayerActionsTab(const MenuContext& ctx)
 
 std::shared_ptr<VoltMod::Menu> BuildPlayerActionsCard(const MenuContext& ctx, VoltMod::PlayerRef target)
 {
-    auto* targetPlayer = ctx.Player(target);
-    if (!targetPlayer)
+    const auto title = ctx.CardTitle("category.playerActions", target);
+    if (!title)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", ctx.Translate("category.playerActions"), targetPlayer->Name()));
+    MenuBuilder builder(*title);
     auto rows = ctx.Rows(target);
 
-    AppendCatalogRows(ctx, builder, PlayerActionRows, [&](RowId id) { return MakeRow(ctx, rows, id, target); });
+    AppendCatalogRows(ctx, builder, PlayerActionRows,
+                      [&](const RowSpec& spec) { return MakeRow(ctx, rows, spec, target); });
 
     return builder.Build();
 }

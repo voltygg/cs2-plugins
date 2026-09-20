@@ -11,10 +11,12 @@
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Players/PlayerRef.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <format>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -48,25 +50,46 @@ struct MenuContext
     [[nodiscard]] VoltMod::ActionRows Rows(VoltMod::PlayerRef target) const { return Plugin.MenuRows(Admin, target); }
 
     /** The connected player @p target names, or null once they leave. */
-    [[nodiscard]] VoltMod::Player* Player(VoltMod::PlayerRef target) const { return Plugin.Runtime.Players.Get(target); }
+    [[nodiscard]] VoltMod::Player* Player(VoltMod::PlayerRef target) const
+    {
+        return Plugin.Runtime.Players.Get(target);
+    }
+
+    /** @p item greyed with a reason when @p descriptor refuses a dead target: the dispatcher skips
+     *  those silently, so the row would otherwise look live and do nothing. */
+    template <class Descriptor>
+    [[nodiscard]] VoltMod::MenuItem WhileAlive(VoltMod::PlayerRef target, const Descriptor& descriptor,
+                                               VoltMod::MenuItem item) const
+    {
+        return descriptor.RequireAlive ? Menu::WhileAlive(Plugin, Admin.Slot, target, std::move(item))
+                                       : std::move(item);
+    }
+
+    /** The "<tab>: <name>" title every card carries, or nothing once @p target leaves. */
+    [[nodiscard]] std::optional<std::string> CardTitle(std::string_view titleKey, VoltMod::PlayerRef target) const
+    {
+        VoltMod::Player* player = Player(target);
+        if (!player)
+            return std::nullopt;
+        return std::format("{}: {}", Translate(titleKey), player->Name());
+    }
 
     App& Plugin;
     VoltMod::PlayerRef Admin;
 };
 
-/** Appends every row of @p specs this admin may see, in catalog order, built by @p make. A row
- *  @p make returns nothing for is skipped and logged: the catalog and a tab's `MakeRow` are two
- *  edit sites. */
+/** Appends every row of @p specs this admin may see, in catalog order, built by @p make. The whole
+ *  spec goes to @p make, so a builder reads the label and permission off the catalog rather than
+ *  repeating them. A row @p make returns nothing for is skipped and logged. */
 template <class Make>
-void AppendCatalogRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder, std::span<const RowSpec> specs,
-                       Make make)
+void AppendCatalogRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder, std::span<const RowSpec> specs, Make make)
 {
     for (const RowSpec& spec : specs)
     {
         if (!ctx.Visible(spec))
             continue;
 
-        VoltMod::MenuItem item = make(spec.Id);
+        VoltMod::MenuItem item = make(spec);
         if (!item.Describe)
         {
             VoltMod::Log::Warn("Admin menu row '{}' is in the catalog but nothing builds it.", spec.LabelKey);

@@ -1,6 +1,5 @@
 #include "Admin/Menu/Tabs/PunishTab.hpp"
 
-#include "Admin/AdminManager.hpp"
 #include "Admin/Menu/Flows/LiftFlow.hpp"
 #include "Admin/Menu/Flows/PunishFlow.hpp"
 #include "Admin/Menu/MenuAccess.hpp"
@@ -9,18 +8,10 @@
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
-#include <VoltMod/Menu/MenuPresets.hpp>
-#include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <algorithm>
-#include <format>
-#include <string>
-#include <utility>
 
 using AdminSystem::Punishments::PunishType;
-using AdminSystem::Punishments::PunishTypes;
 
 namespace AdminSystem::Admin::Menu
 {
@@ -29,24 +20,33 @@ using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 using VoltMod::SubmenuRow;
 
-/** The punishment a catalog row issues. MenuCatalogTests pins the two tables in step, so an
- *  index lookup is enough. */
+/** The punishment a catalog row issues. */
 static PunishType PunishTypeFor(RowId id)
 {
-    const auto row = std::ranges::find(PunishCardRows, id, &RowSpec::Id);
-    return PunishTypes[static_cast<std::size_t>(row - PunishCardRows.begin())].Type;
+    switch (id)
+    {
+    case RowId::PunishBan:
+        return PunishType::Ban;
+    case RowId::PunishVoiceMute:
+        return PunishType::VoiceMute;
+    case RowId::PunishTextMute:
+        return PunishType::TextMute;
+    case RowId::PunishWarn:
+        return PunishType::Warn;
+    default:
+        return PunishType::Kick;
+    }
 }
 
 std::shared_ptr<VoltMod::Menu> BuildPunishTab(const MenuContext& ctx)
 {
-    App& app = ctx.Plugin;
     MenuBuilder builder(ctx.Translate("category.punish"));
 
-    AddIfVisible(app, ctx.Admin.Slot, builder, PunishLiftList, [&] {
-        return SubmenuRow{.Label = ctx.Translate("punish.activeList"),
-                          .Build = [ctx](int) { return BuildLiftMenu(ctx); }}
-            .ToItem();
-    });
+    if (ctx.Visible(PunishLiftList))
+    {
+        builder.Add(SubmenuRow{.Label = ctx.Translate(PunishLiftList.LabelKey),
+                               .Build = [ctx](int) { return BuildLiftMenu(ctx); }});
+    }
 
     AppendTargetRows(ctx, builder, [ctx](VoltMod::PlayerRef target) { return BuildPunishCard(ctx, target); });
 
@@ -58,11 +58,11 @@ std::shared_ptr<VoltMod::Menu> BuildPunishCard(const MenuContext& ctx, VoltMod::
     App& app = ctx.Plugin;
     const int adminSlot = ctx.Admin.Slot;
 
-    auto* target = ctx.Player(targetRef);
-    if (!target)
+    const auto title = ctx.CardTitle("category.punish", targetRef);
+    if (!title)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", ctx.Translate("category.punish"), target->Name()));
+    MenuBuilder builder(*title);
 
     if (AnyTemplateUsable(app, adminSlot, targetRef))
     {
@@ -70,10 +70,10 @@ std::shared_ptr<VoltMod::Menu> BuildPunishCard(const MenuContext& ctx, VoltMod::
                         [&app, targetRef](int slot) { return BuildQuickPunishMenu(app, slot, targetRef); });
     }
 
-    AppendCatalogRows(ctx, builder, PunishCardRows, [&](RowId id) -> VoltMod::MenuItem {
-        const PunishType type = PunishTypeFor(id);
+    AppendCatalogRows(ctx, builder, PunishCardRows, [&](const RowSpec& spec) -> VoltMod::MenuItem {
+        const PunishType type = PunishTypeFor(spec.Id);
         return ButtonRow{
-            .Label = ctx.Translate(ActionTranslationKey(type)),
+            .Label = ctx.Translate(spec.LabelKey),
             .Activate = [&app, pending = PendingPunishment{.Type = type, .Target = targetRef}](
                             int slot) { StartPunishFlow(app, slot, pending); },
             .Enabled = [&app, targetRef, type](int slot) { return CanStillPunish(app, slot, targetRef, type); }}

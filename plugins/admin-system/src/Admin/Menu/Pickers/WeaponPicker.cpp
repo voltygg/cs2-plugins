@@ -11,7 +11,6 @@
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <format>
 #include <memory>
 #include <string_view>
 
@@ -45,11 +44,11 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponPicker(const MenuContext& ctx, VoltMod
     App& app = ctx.Plugin;
     const VoltMod::PlayerRef admin = ctx.Admin;
 
-    auto* targetPlayer = ctx.Player(target);
-    if (!targetPlayer)
+    const auto title = ctx.CardTitle("action.giveWeapon", target);
+    if (!title)
         return nullptr;
 
-    MenuBuilder builder(std::format("{}: {}", ctx.Translate("action.giveWeapon"), targetPlayer->Name()));
+    MenuBuilder builder(*title);
 
     const auto& menu = app.Settings.GetWeaponMenu();
     builder.EmptyText(ctx.Translate("action.noWeapons"));

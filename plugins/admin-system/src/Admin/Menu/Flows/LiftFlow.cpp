@@ -5,7 +5,6 @@
 #include "Admin/Menu/MenuCatalog.hpp"
 #include "Core/App.hpp"
 #include "Core/ChatService.hpp"
-#include "Core/Permissions.hpp"
 #include "Punishments/PunishType.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -59,16 +58,15 @@ static bool Lift(App& app, const LiftRow& row, int64_t adminSteamId)
 static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
 {
     const bool ban = row.Kind == PunishType::Ban;
-    const std::string_view permission = ban ? Permission::Unban : Permission::Mute;
-    const std::string_view action = ban ? "action.unban" : "action.unmute";
+    const RowSpec& kind = ban ? LiftBansRow : LiftMutesRow;
     const std::string_view done = ban ? "unban.done" : "unmute.done";
     const std::string_view gone = ban ? "unban.gone" : "unmute.gone";
 
     auto& translations = app.Runtime.Translations;
 
     VoltMod::Flow<LiftRow>::Create(app.Runtime.Menus, adminSlot, std::move(row))
-        ->Validate(RequirePermission(app, permission, adminSlot))
-        ->Confirm({.Title = ConfirmTitle(translations, action, adminSlot),
+        ->Validate(RequirePermission(app, kind.Permission, adminSlot))
+        ->Confirm({.Title = ConfirmTitle(translations, kind.LabelKey, adminSlot),
                    .Summary =
                        [&app, adminSlot](const LiftRow& r, VoltMod::SummaryRows& rows) {
                            auto& translations = app.Runtime.Translations;
@@ -116,14 +114,14 @@ std::shared_ptr<VoltMod::Menu> BuildLiftMenu(const MenuContext& ctx)
     App& app = ctx.Plugin;
     const int adminSlot = ctx.Admin.Slot;
 
-    MenuBuilder builder(ctx.Translate("punish.activeList"));
+    MenuBuilder builder(ctx.Translate(PunishLiftList.LabelKey));
     builder.EmptyText(ctx.Translate("lift.empty"));
 
     // One list, but each kind still appears only for an admin who may lift it.
-    if (ctx.Visible(LiftRows[0]))
+    if (ctx.Visible(LiftBansRow))
         AppendRows(app, builder, app.Punishments.GetActive(PunishType::Ban), adminSlot);
 
-    if (ctx.Visible(LiftRows[1]))
+    if (ctx.Visible(LiftMutesRow))
     {
         AppendRows(app, builder, app.Punishments.GetActive(PunishType::VoiceMute), adminSlot);
         AppendRows(app, builder, app.Punishments.GetActive(PunishType::TextMute), adminSlot);

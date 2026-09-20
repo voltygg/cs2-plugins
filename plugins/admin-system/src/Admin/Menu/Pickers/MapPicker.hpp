@@ -4,6 +4,7 @@
 
 #include <VoltMod/Menu/Menu.hpp>
 #include <memory>
+#include <string>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -16,7 +17,8 @@ enum class MapVerb
     PutToVote,
 };
 
-/** The configured map cycle, where picking one applies @p verb to it. */
-std::shared_ptr<VoltMod::Menu> BuildMapPicker(const MenuContext& ctx, MapVerb verb);
+/** The configured map cycle under @p title, where picking a map applies @p verb to it. The
+ *  caller owns the title so the row opening this screen and the screen itself cannot disagree. */
+std::shared_ptr<VoltMod::Menu> BuildMapPicker(const MenuContext& ctx, MapVerb verb, const std::string& title);
 
 }  // namespace AdminSystem::Admin::Menu

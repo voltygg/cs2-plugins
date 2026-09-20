@@ -1,9 +1,9 @@
 #include "Admin/Menu/Tabs/RoundModesTab.hpp"
 
 #include "Admin/Menu/MenuAccess.hpp"
+#include "Admin/Menu/MenuCatalog.hpp"
 #include "Core/App.hpp"
 #include "Core/ChatService.hpp"
-#include "Core/Permissions.hpp"
 #include "Fun/FunMode.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -22,9 +22,10 @@ using VoltMod::ToggleRow;
 std::shared_ptr<VoltMod::Menu> BuildRoundModesTab(const MenuContext& ctx)
 {
     App& app = ctx.Plugin;
-    const VoltMod::EnabledCondition allowed = Allows(app, Permission::FunMode);
+    const RowSpec& spec = RoundModeRows.front();
+    const VoltMod::EnabledCondition allowed = Allows(app, spec.Permission);
 
-    MenuBuilder builder(ctx.Translate("category.roundModes"));
+    MenuBuilder builder(ctx.Translate(spec.LabelKey));
 
     for (const auto& info : Fun::Toggles)
     {

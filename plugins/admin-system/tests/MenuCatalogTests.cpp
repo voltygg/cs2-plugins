@@ -10,25 +10,28 @@
 #include <span>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace Menu = AdminSystem::Admin::Menu;
 using AdminSystem::Punishments::PunishTypes;
 using Menu::RowSpec;
 
+static void CollectRows(std::span<const RowSpec> group, std::vector<RowSpec>& rows)
+{
+    for (const RowSpec& row : group)
+    {
+        rows.push_back(row);
+        CollectRows(row.Children, rows);
+    }
+}
+
 /** Every row of every table, children included. */
 static std::vector<RowSpec> AllRows()
 {
     std::vector<RowSpec> rows;
-    auto walk = [&rows](auto&& self, std::span<const RowSpec> group) -> void {
-        for (const RowSpec& row : group)
-        {
-            rows.push_back(row);
-            self(self, row.Children);
-        }
-    };
     for (const Menu::TabSpec& tab : Menu::Tabs)
-        walk(walk, tab.Rows);
+        CollectRows(tab.Rows, rows);
     return rows;
 }
 
@@ -73,13 +76,17 @@ static bool HasPhrase(const glz::json_t& root, std::string_view dotted)
     return node->holds<std::string>();
 }
 
+/** The exact icon names panorama/screens/admin_menu/icons.j2 generates. A tab naming anything
+ *  else draws no icon at all. */
+static constexpr std::string_view IconNames[] = {"punish", "control", "effects", "fun", "map", "chat"};
+
 TEST_CASE("Tabs are indexed by TabId and name a generated icon")
 {
     for (std::size_t i = 0; i < Menu::Tabs.size(); ++i)
     {
         CHECK(static_cast<std::size_t>(Menu::Tabs[i].Id) == i);
         CHECK_FALSE(Menu::Tabs[i].LabelKey.empty());
-        CHECK_MESSAGE(std::ranges::contains(Menu::IconNames, Menu::Tabs[i].Icon),
+        CHECK_MESSAGE(std::ranges::contains(IconNames, Menu::Tabs[i].Icon),
                       "tab " << Menu::Tabs[i].LabelKey << " names icon '" << Menu::Tabs[i].Icon
                              << "', which icons.j2 does not generate");
     }
@@ -102,9 +109,9 @@ TEST_CASE("No row both names a permission and groups children")
     {
         if (row.Permission.empty())
             continue;
-        CHECK_MESSAGE(row.Children.empty(),
-                      "row " << row.LabelKey << " names a permission and also groups children, so its own"
-                             << " permission would be ignored in favour of theirs");
+        CHECK_MESSAGE(row.Children.empty(), "row " << row.LabelKey
+                                                   << " names a permission and also groups children, so its own"
+                                                   << " permission would be ignored in favour of theirs");
     }
 }
 

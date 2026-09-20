@@ -69,7 +69,7 @@ static std::vector<VoltMod::Labeled<std::string>> BuildColorChoices(App& app, in
     // The framework renders the palette; colors without a translation key fall back to their name.
     auto palette = ChatColors::PaletteChoices([&](std::string_view name) -> std::string {
         if (auto it = keys.find(name); it != keys.end())
-            return translations.Get(std::string(it->second), viewerSlot);
+            return translations.Get(it->second, viewerSlot);
         return {};
     });
     choices.insert(choices.end(), std::make_move_iterator(palette.begin()), std::make_move_iterator(palette.end()));
@@ -111,39 +111,40 @@ static void SaveColor(App& app, int64_t steamId, ColorSlot slot, const std::stri
     admins.UpdateChatStyleAsync(steamId, admin->DisplayPrefix, name, message);
 }
 
-static VoltMod::MenuItem ColorRow(const MenuContext& ctx, std::string_view labelKey, ColorSlot slot)
+static VoltMod::MenuItem ColorRow(const MenuContext& ctx, const RowSpec& spec, ColorSlot slot,
+                                  std::vector<VoltMod::Labeled<std::string>> choices)
 {
     App& app = ctx.Plugin;
     const int64_t steamId = ctx.Admin.SteamId;
 
     return ChoiceRow<std::string>{
-        .Label = ctx.Translate(labelKey),
-        .Choices = BuildColorChoices(app, ctx.Admin.Slot),
+        .Label = ctx.Translate(spec.LabelKey),
+        .Choices = std::move(choices),
         .Commit = [&app, steamId, slot](int, const std::string& value) { SaveColor(app, steamId, slot, value); },
         .Index = IndexForColor(CurrentSlotColor(app, steamId, slot))}
         .ToItem();
 }
 
 /** Hide acts on the admin alone, which is why it sits here and not among the target rows. */
-static VoltMod::MenuItem HideRow(const MenuContext& ctx)
+static VoltMod::MenuItem HideRow(const MenuContext& ctx, const RowSpec& spec)
 {
     App& app = ctx.Plugin;
     const VoltMod::PlayerRef admin = ctx.Admin;
 
     return ToggleRow{
-        .Label = ctx.Translate("action.hide"),
+        .Label = ctx.Translate(spec.LabelKey),
         .Get = [&app, slot = admin.Slot](int) { return app.Effects.IsActive(slot, app.EffectDescriptors.Hide.Id); },
         .Flip = [&app, admin](int) { app.PlayerEffects.Toggle(admin, admin, app.EffectDescriptors.Hide); },
-        .Enabled = Allows(app, Permission::Hide)}
+        .Enabled = Allows(app, spec.Permission)}
         .ToItem();
 }
 
-static VoltMod::MenuItem PrefixRow(const MenuContext& ctx)
+static VoltMod::MenuItem PrefixRow(const MenuContext& ctx, const RowSpec& spec)
 {
     App& app = ctx.Plugin;
     const int64_t steamId = ctx.Admin.SteamId;
 
-    return ToggleRow{.Label = ctx.Translate("chat.displayPrefix"),
+    return ToggleRow{.Label = ctx.Translate(spec.LabelKey),
                      .Get =
                          [&app, steamId](int) {
                              const auto* admin = app.Admins.GetAdmin(steamId);
@@ -163,18 +164,21 @@ std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(const MenuContext& ctx)
 {
     MenuBuilder builder(ctx.Translate("category.mySettings"));
 
+    // Both color rows offer the same palette, so it is translated once for the two of them.
+    const std::vector<VoltMod::Labeled<std::string>> palette = BuildColorChoices(ctx.Plugin, ctx.Admin.Slot);
+
     // Every row here persists immediately; the menu has no Save action.
-    AppendCatalogRows(ctx, builder, MySettingsRows, [&](RowId id) -> VoltMod::MenuItem {
-        switch (id)
+    AppendCatalogRows(ctx, builder, MySettingsRows, [&](const RowSpec& spec) -> VoltMod::MenuItem {
+        switch (spec.Id)
         {
         case RowId::Hide:
-            return HideRow(ctx);
+            return HideRow(ctx, spec);
         case RowId::ChatPrefix:
-            return PrefixRow(ctx);
+            return PrefixRow(ctx, spec);
         case RowId::NameColor:
-            return ColorRow(ctx, "chat.nameColor", ColorSlot::Name);
+            return ColorRow(ctx, spec, ColorSlot::Name, palette);
         case RowId::MessageColor:
-            return ColorRow(ctx, "chat.messageColor", ColorSlot::Message);
+            return ColorRow(ctx, spec, ColorSlot::Message, palette);
         default:
             return {};
         }

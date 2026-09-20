@@ -70,23 +70,24 @@ static std::string_view DispatchPermission(App& app, RowId id)
     }
 }
 
+static void CheckRows(App& app, std::span<const RowSpec> rows)
+{
+    for (const RowSpec& row : rows)
+    {
+        const std::string_view dispatch = DispatchPermission(app, row.Id);
+        if (!dispatch.empty() && dispatch != row.Permission)
+        {
+            VoltMod::Log::Warn("Admin menu row '{}' is shown on '{}' but runs on '{}'; one of the two is wrong.",
+                               row.LabelKey, row.Permission, dispatch);
+        }
+        CheckRows(app, row.Children);
+    }
+}
+
 void VerifyCatalog(App& app)
 {
-    auto check = [&app](auto&& self, std::span<const RowSpec> rows) -> void {
-        for (const RowSpec& row : rows)
-        {
-            const std::string_view dispatch = DispatchPermission(app, row.Id);
-            if (!dispatch.empty() && dispatch != row.Permission)
-            {
-                VoltMod::Log::Warn("Admin menu row '{}' is shown on '{}' but runs on '{}'; one of the two is wrong.",
-                                   row.LabelKey, row.Permission, dispatch);
-            }
-            self(self, row.Children);
-        }
-    };
-
     for (const TabSpec& tab : Tabs)
-        check(check, tab.Rows);
+        CheckRows(app, tab.Rows);
 }
 
 }  // namespace AdminSystem::Admin::Menu
