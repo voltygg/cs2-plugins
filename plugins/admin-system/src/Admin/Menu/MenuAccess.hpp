@@ -5,7 +5,6 @@
 #include "Core/Permissions.hpp"
 
 #include <VoltMod/Menu/Menu.hpp>
-#include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <functional>
 #include <optional>
@@ -68,13 +67,5 @@ inline auto RequirePermission(App& app, std::string_view permission, int slot)
 /** Warn about any row whose catalog permission differs from the one its descriptor runs on. Lives
  *  here, not beside the tables, because MenuCatalog.hpp stays free of the game SDK. */
 void VerifyCatalog(App& app);
-
-/** Appends what @p make builds, but only when @p row is visible to @p adminSlot. */
-template <class Make>
-void AddIfVisible(App& app, int adminSlot, VoltMod::MenuBuilder& builder, const RowSpec& row, Make make)
-{
-    if (Visible(app, adminSlot, row))
-        builder.Add(make());
-}
 
 }  // namespace AdminSystem::Admin::Menu

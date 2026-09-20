@@ -14,22 +14,10 @@
 namespace AdminSystem::Admin::Menu
 {
 
-// The defaults every picker in this plugin carries, whichever entry point draws it.
-static void ApplyDefaults(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker& spec)
-{
-    spec.EmptyLabel = app.Runtime.Translations.Get("common.noPlayers", adminSlot);
-}
-
 std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker spec)
 {
-    ApplyDefaults(app, adminSlot, spec);
+    spec.EmptyLabel = app.Runtime.Translations.Get("common.noPlayers", adminSlot);
     return ::VoltMod::BuildPlayerPicker(app.Runtime.Players, std::move(spec));
-}
-
-void AppendPlayerRows(AdminSystem::App& app, int adminSlot, VoltMod::MenuBuilder& builder, VoltMod::PlayerPicker spec)
-{
-    ApplyDefaults(app, adminSlot, spec);
-    ::VoltMod::AppendPlayerRows(builder, app.Runtime.Players, spec);
 }
 
 void AppendTargetRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder,
@@ -43,9 +31,10 @@ void AppendTargetRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder,
         // Resolve the original player, not a later occupant of the slot.
         const VoltMod::PlayerRef target = player->Ref();
 
-        VoltMod::MenuItem row =
-            VoltMod::SubmenuRow{.Label = player->Name(), .Build = [open, target](int) { return open(target); }}
-                .ToItem();
+        VoltMod::MenuItem row = VoltMod::SubmenuRow{
+            .Label = player->Name(), .Build = [open, target](int) {
+                return open(target);
+            }}.ToItem();
         builder.Add(WhileTargetable(app, ctx.Admin, target, std::move(row)));
     }
 

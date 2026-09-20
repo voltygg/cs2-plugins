@@ -22,17 +22,8 @@ namespace AdminSystem::Admin::Menu
  */
 std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker spec);
 
-/**
- * @brief @ref BuildPlayerPicker's rows, appended to a builder that already has rows of its own.
- *
- * Wraps the framework's `AppendPlayerRows` the same way, so both entry points fill the plugin's
- * defaults in one place: a caller that appends the list into its own menu gets the same
- * "nobody connected" label as one that opens a picker.
- */
-void AppendPlayerRows(AdminSystem::App& app, int adminSlot, VoltMod::MenuBuilder& builder, VoltMod::PlayerPicker spec);
-
-/** @ref AppendPlayerRows for a list whose rows act on the player, each opening @p open. A player
- *  this admin may not touch is grayed here, once, rather than on every row of the card. */
+/** A list whose rows act on the player, each opening @p open. A player this admin may not touch
+ *  is grayed here, once, rather than on every row of the card behind it. */
 void AppendTargetRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder,
                       std::function<std::shared_ptr<VoltMod::Menu>(VoltMod::PlayerRef target)> open);
 
