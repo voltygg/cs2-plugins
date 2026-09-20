@@ -32,7 +32,7 @@ plugins:
           createRoomUrl: "https://meat.gg/api/rooms"
           playerUrlTemplate: "https://meat.gg/rooms/{value}"
           checkerUrlTemplate: "https://meat.gg/rooms/{value}"
-          presenceUrl: "https://meat.gg/api/rooms/{code}/presence?steamId={steamId}"
+          presenceUrl: "https://meat.gg/api/rooms/{code}/participants"
   bhop:
     settings:
       plugin: { locale: ru }

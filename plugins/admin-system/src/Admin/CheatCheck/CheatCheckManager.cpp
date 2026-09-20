@@ -299,9 +299,21 @@ void CheatCheckManager::Expire(int targetSlot)
 
     const MoveType restore = _checks[targetSlot].PriorMoveType;
     const int restoreTeam = _checks[targetSlot].PriorTeam;
+    const int64_t adminSteamId = _checks[targetSlot].AdminSteamId;
     ResetCheck(targetSlot);  // deactivate before the kick triggers disconnect cleanup
 
-    if (kick)
+    if (cfg.autoBan && target)
+    {
+        Database::Punishment ban{.Kind = Punishments::PunishType::Ban,
+                                 .TargetSteamId = target->SteamId(),
+                                 .TargetName = targetName,
+                                 .AdminSteamId = adminSteamId,
+                                 .AdminName = _punishments.AdminDisplayName(adminSteamId),
+                                 .Reason = cfg.kickReason,
+                                 .Duration = cfg.banDurationSec};
+        _punishments.Issue(ban);
+    }
+    else if (kick)
         (void)_rt.Entities.Controller(targetSlot).Kick(cfg.kickReason);
     else
         Unfreeze(targetSlot, restore, restoreTeam);

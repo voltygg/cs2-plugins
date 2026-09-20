@@ -26,9 +26,9 @@ struct CheatCheckWebsiteAutoRoom
     std::string checkerUrlField = "code";
     std::string checkerUrlTemplate;  // optional; relayed to the calling admin
     int timeoutMs = 8000;
-    /** Presence URL. `{code}` and `{steamId}` are substituted; empty disables polling. */
+    /** Participant-list URL. `{code}` and `{steamId}` are substituted; empty disables polling. */
     std::string presenceUrl;
-    std::string presenceField = "present";  // dot-path to the response's in-room flag
+    std::string presenceField = "user.steamId";  // dot-path to the SteamID in each listed participant
     int pollIntervalSec = 5;                // also the worst-case delay before a join is noticed
 };
 
@@ -39,6 +39,8 @@ struct CheatCheckSettings
     int timeoutSec = 120;
     bool autoKick = true;
     std::string kickReason = "Failed to comply with cheat check";
+    bool autoBan = true;        // ban on timeout with kickReason; the ban kicks, whatever autoKick says
+    int banDurationSec = 0;     // 0 = permanent
     bool moveToSpectator = true;  // force the suspect to spectator so they can't keep playing
     std::string bannerImageUrl;   // optional online image shown atop the panel ("" => none)
     int bannerWidth = 320;

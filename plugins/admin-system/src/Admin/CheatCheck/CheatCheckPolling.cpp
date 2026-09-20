@@ -64,7 +64,8 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
     pc.PollInFlight = false;
     pc.NextPollAtSec = Time::Now() + cfg.pollIntervalSec;
 
-    const auto present = ParsePresence(cfg, result);
+    auto* target = _rt.Players.Get(targetSlot);
+    const auto present = target ? ParsePresence(cfg, result, target->SteamId()) : std::nullopt;
     if (!present)
     {
         // Fail-open: an unreachable/failing presence API keeps the current state (the countdown
@@ -77,7 +78,6 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
     if (*present == pc.SuspectJoined)
         return;
 
-    auto* target = _rt.Players.Get(targetSlot);
     const std::string targetName = target ? target->Name() : std::string();
 
     if (*present)

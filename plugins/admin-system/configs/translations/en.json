@@ -253,6 +253,7 @@
     "provideLink": "Send your Discord/Telegram link with: !cc <link>",
     "timeRemaining": "Time remaining",
     "willKick": "You will be kicked if you do not comply.",
+    "willBan": "You will be banned if you do not comply.",
     "linkReceived": "Verification link received",
     "linkInvalid": "Invalid link. Use a full https:// URL, e.g. !cc https://discord.gg/...",
     "noActiveCheck": "You have no active cheat check.",

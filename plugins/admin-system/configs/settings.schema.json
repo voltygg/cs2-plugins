@@ -218,6 +218,12 @@
           "description": "If true, auto-kick on timeout; if false, just unfreeze and notify the admin."
         },
         "kickReason": { "type": "string", "default": "Failed to comply with cheat check" },
+        "autoBan": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ban the suspect on timeout, with kickReason as the reason. The ban kicks, whatever autoKick says."
+        },
+        "banDurationSec": { "type": "integer", "minimum": 0, "default": 0, "description": "Ban length in seconds; 0 is permanent." },
         "moveToSpectator": {
           "type": "boolean",
           "default": true,
@@ -276,12 +282,12 @@
             "timeoutMs": { "type": "integer", "minimum": 1, "default": 8000 },
             "presenceUrl": {
               "type": "string",
-              "description": "Presence poll GET; {code} = raw playerUrlField value, {steamId} = suspect's SteamID64. Empty disables polling."
+              "description": "GET returning the room's participants as a JSON array; {code} = raw playerUrlField value, {steamId} = suspect's SteamID64. Empty disables polling."
             },
             "presenceField": {
               "type": "string",
-              "default": "present",
-              "description": "Dot-path into the poll response holding the in-room flag."
+              "default": "user.steamId",
+              "description": "Dot-path to the SteamID in each entry of the polled participant list."
             },
             "pollIntervalSec": {
               "type": "integer",

@@ -92,9 +92,10 @@ std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
     html += std::format("<font color='#ff4040' size='5'>{}</font><br>{}<br>{}", tr.Get("cheatCheck.panelTitle", slot),
                         body, statusLine);
 
-    if (cfg.autoKick && state != PanelState::Joined)
+    if ((cfg.autoKick || cfg.autoBan) && state != PanelState::Joined)
     {
-        html += std::format("<br><font color='#ff8080'>{}</font>", tr.Get("cheatCheck.willKick", slot));
+        html += std::format("<br><font color='#ff8080'>{}</font>",
+                            tr.Get(cfg.autoBan ? "cheatCheck.willBan" : "cheatCheck.willKick", slot));
     }
 
     return html;

@@ -128,6 +128,9 @@
     // False unfreezes and notifies the admin instead of kicking.
     "autoKick": true,
     "kickReason": "Failed to comply with cheat check",
+    // Ban on timeout, with `kickReason` as the reason. `banDurationSec` 0 is permanent.
+    "autoBan": true,
+    "banDurationSec": 0,
     // Move the suspect to spectator as well as freezing them.
     "moveToSpectator": true,
     // Optional HTTPS panel image; empty disables it. `bannerWidth` and `bannerHeight` default to 320x180.
@@ -156,9 +159,9 @@
       // Shown to the suspect and relayed to the admin; {value} is the room code.
       "playerUrlTemplate": "http://localhost:4001/rooms/{value}",
       "checkerUrlTemplate": "http://localhost:4001/rooms/{value}",
-      // Polling pauses the countdown while the suspect is in the room. Empty disables it;
-      // placeholders are {code} and {steamId}.
-      "presenceUrl": "http://localhost:4000/api/rooms/{code}/presence?steamId={steamId}",
+      // Polled participant list; the countdown pauses while the suspect is in it. Empty disables
+      // it; placeholders are {code} and {steamId}.
+      "presenceUrl": "http://localhost:4000/api/rooms/{code}/participants",
       // Poll cadence and maximum delay before detecting a join.
       "pollIntervalSec": 5
     }

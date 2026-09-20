@@ -66,6 +66,9 @@ public:
      *  callers run inside target hooks, where disconnecting interrupts the virtual call. */
     void KickDeferred(int slot, int64_t steamId, std::string reason);
 
+    /** The admin's name; an offline admin falls back to a console label. */
+    std::string AdminDisplayName(int64_t steamId) const;
+
 private:
     using Cache = std::unordered_map<int64_t, Database::Punishment>;  ///< keyed by TargetSteamId
 
@@ -78,9 +81,6 @@ private:
 
     /** Lift the cached entry @p it points at: persist, drop it, refresh voice, broadcast. */
     void RemoveCached(PunishType kind, Cache::iterator it, int64_t removedBy, const std::string& reason);
-
-    /** The lifting admin's name; an offline admin falls back to a console label. */
-    std::string AdminDisplayName(int64_t steamId) const;
 
     /** Re-query every active row off-thread and swap the caches when they arrive. */
     void RefreshCachesAsync();

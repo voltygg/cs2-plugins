@@ -4,6 +4,7 @@
 #include "Admin/CheatCheck/PendingCheck.hpp"
 #include "Config/ConfigManager.hpp"
 #include "Core/ChatService.hpp"
+#include "Punishments/PunishmentManager.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/Entity.hpp>
@@ -28,8 +29,9 @@ constexpr int MaxSlots = VoltMod::MaxPlayers;
 class CheatCheckManager
 {
 public:
-    CheatCheckManager(VoltMod::Runtime& runtime, const Config::ConfigManager& config, Core::ChatService& chat)
-        : _rt(runtime), _config(config), _chat(chat)
+    CheatCheckManager(VoltMod::Runtime& runtime, const Config::ConfigManager& config, Core::ChatService& chat,
+                      Punishments::PunishmentManager& punishments)
+        : _rt(runtime), _config(config), _chat(chat), _punishments(punishments)
     {}
 
     enum class SubmitResult
@@ -62,6 +64,7 @@ private:
     VoltMod::Runtime& _rt;
     const Config::ConfigManager& _config;
     Core::ChatService& _chat;
+    Punishments::PunishmentManager& _punishments;
     CheatCheckView _view{_rt, _config, _chat};
     /** Panel refresh loop. Declared after _view because its callback reads through it. */
     VoltMod::CenterHtml _panel{_rt.Messages, _rt.Scheduler};

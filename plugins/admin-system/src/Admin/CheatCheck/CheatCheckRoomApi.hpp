@@ -44,9 +44,10 @@ std::optional<VoltMod::HttpRequest> BuildPresenceRequest(const Config::CheatChec
                                                          const std::string& roomCode, int64_t targetSteamId);
 
 /**
- * Read the in-room flag from a presence response. Returns nullopt on transport/HTTP/parse
- * failure so callers can distinguish "not in the room" from "API broke".
+ * Whether @p targetSteamId is in the room's participant list. Returns nullopt on
+ * transport/HTTP/parse failure so callers can distinguish "not in the room" from "API broke".
  */
-std::optional<bool> ParsePresence(const Config::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result);
+std::optional<bool> ParsePresence(const Config::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result,
+                                  int64_t targetSteamId);
 
 }  // namespace AdminSystem::Admin::CheatCheck

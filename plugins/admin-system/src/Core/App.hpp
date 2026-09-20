@@ -118,7 +118,7 @@ struct App final : VoltMod::Plugin
     VoltMod::EffectDispatcher PlayerEffects{Actions, Effects};
     /** Every effect descriptor for this load cycle, built from Runtime. */
     Admin::Effects::EffectDescriptors EffectDescriptors{Runtime};
-    Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Settings, Chat};
+    Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Settings, Chat, Punishments};
     /** Published to other plugins in Load; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
     /** The main menu's admin entry; published in Load, withdrawn before these managers die. */

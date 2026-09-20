@@ -92,15 +92,25 @@ std::optional<VoltMod::HttpRequest> BuildPresenceRequest(const Config::CheatChec
     return request;
 }
 
-std::optional<bool> ParsePresence(const Config::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result)
+std::optional<bool> ParsePresence(const Config::CheatCheckWebsiteAutoRoom& cfg, const VoltMod::HttpResult& result,
+                                  int64_t targetSteamId)
 {
     if (!result.IsSuccess())
         return std::nullopt;
 
-    const std::string present = ExtractField(result, cfg.presenceField);
-    if (present.empty())
+    auto participants = VoltMod::Json::ParseDocument(result.Body);
+    if (!participants || !participants->is_array())
         return std::nullopt;
-    return present == "true";
+
+    const std::string wanted = std::to_string(targetSteamId);
+    for (const auto& participant : participants->get<glz::generic::array_t>())
+    {
+        const std::string participantJson = participant.dump().value_or("");
+        const std::string steamId = VoltMod::Json::GetStringByPath(participantJson, cfg.presenceField);
+        if (steamId == wanted)
+            return true;
+    }
+    return false;
 }
 
 }  // namespace AdminSystem::Admin::CheatCheck
