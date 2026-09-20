@@ -1,6 +1,6 @@
 #include "Core/App.hpp"
 
-#include "Admin/AdminMenu.hpp"
+#include "Admin/Menu/RootMenu.hpp"
 #include "Admin/Effects/Model.hpp"
 #include "Commands/Commands.hpp"
 #include "Config/ConfigManager.hpp"
@@ -220,7 +220,7 @@ void App::RegisterCommands()
 
 bool App::OpenAdminMenu(int slot)
 {
-    auto menu = Admin::BuildAdminMainMenu(*this, slot);
+    auto menu = Admin::Menu::BuildRootMenu(*this, slot);
     if (!menu)
         return false;
 

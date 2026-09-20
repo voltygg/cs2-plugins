@@ -1,4 +1,4 @@
-#include "Admin/Menu/PlayerPicker.hpp"
+#include "Admin/Menu/Pickers/PlayerPicker.hpp"
 
 #include "Core/App.hpp"
 

@@ -1,4 +1,4 @@
-#include "Admin/Menu/PunishFlow.hpp"
+#include "Admin/Menu/Flows/PunishFlow.hpp"
 
 #include "Admin/AdminManager.hpp"
 #include "Admin/Menu/Labels.hpp"

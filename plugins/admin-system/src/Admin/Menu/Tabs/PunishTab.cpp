@@ -1,10 +1,10 @@
-#include "Admin/Menu/AdminMenu_Punish.hpp"
+#include "Admin/Menu/Tabs/PunishTab.hpp"
 
 #include "Admin/AdminManager.hpp"
-#include "Admin/Menu/AdminMenu_Lift.hpp"
+#include "Admin/Menu/Flows/LiftFlow.hpp"
 #include "Admin/Menu/MenuAccess.hpp"
-#include "Admin/Menu/PlayerPicker.hpp"
-#include "Admin/Menu/PunishFlow.hpp"
+#include "Admin/Menu/Pickers/PlayerPicker.hpp"
+#include "Admin/Menu/Flows/PunishFlow.hpp"
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -28,7 +28,7 @@ using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 using VoltMod::SubmenuRow;
 
-std::shared_ptr<VoltMod::Menu> BuildPunishMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildPunishTab(AdminSystem::App& app, int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
 
@@ -47,13 +47,13 @@ std::shared_ptr<VoltMod::Menu> BuildPunishMenu(AdminSystem::App& app, int adminS
                            .Enabled = Allows(app, Permission::Mute)});
 
     AppendPlayerRows(app, adminSlot, builder, {.Open = [&app, adminSlot](VoltMod::PlayerRef target) {
-                         return BuildPunishActionsMenu(app, adminSlot, target);
+                         return BuildPunishCard(app, adminSlot, target);
                      }});
 
     return builder.Build();
 }
 
-std::shared_ptr<VoltMod::Menu> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot,
+std::shared_ptr<VoltMod::Menu> BuildPunishCard(AdminSystem::App& app, int adminSlot,
                                                       VoltMod::PlayerRef targetRef)
 {
     auto& translations = app.Runtime.Translations;

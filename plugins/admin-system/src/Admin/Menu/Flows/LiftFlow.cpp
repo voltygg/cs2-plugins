@@ -1,4 +1,4 @@
-#include "Admin/Menu/AdminMenu_Lift.hpp"
+#include "Admin/Menu/Flows/LiftFlow.hpp"
 
 #include "Admin/Menu/Labels.hpp"
 #include "Admin/Menu/MenuAccess.hpp"

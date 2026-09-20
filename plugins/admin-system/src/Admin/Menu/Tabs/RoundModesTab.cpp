@@ -1,4 +1,4 @@
-#include "Admin/Menu/AdminMenu_Fun.hpp"
+#include "Admin/Menu/Tabs/RoundModesTab.hpp"
 
 #include "Admin/Menu/MenuAccess.hpp"
 #include "Core/App.hpp"
@@ -21,7 +21,7 @@ using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 using VoltMod::ToggleRow;
 
-std::shared_ptr<VoltMod::Menu> BuildFunMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildRoundModesTab(AdminSystem::App& app, int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
 

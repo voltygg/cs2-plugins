@@ -9,7 +9,7 @@
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<VoltMod::Menu> BuildTeamPickerMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                   VoltMod::PlayerRef target);
+/** My Settings: this admin's own chat prefix and colors. */
+std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(AdminSystem::App& app, int adminSlot);
 
 }  // namespace AdminSystem::Admin::Menu

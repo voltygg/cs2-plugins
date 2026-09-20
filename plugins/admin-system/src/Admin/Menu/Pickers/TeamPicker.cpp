@@ -1,4 +1,4 @@
-#include "Admin/Menu/PresetSubmenu.hpp"
+#include "Admin/Menu/Pickers/TeamPicker.hpp"
 
 #include "Admin/Actions/ActionContext.hpp"
 #include "Admin/Actions/Descriptors.hpp"
@@ -15,7 +15,7 @@ namespace AdminSystem::Admin::Menu
 
 using VoltMod::MenuBuilder;
 
-std::shared_ptr<VoltMod::Menu> BuildTeamPickerMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
+std::shared_ptr<VoltMod::Menu> BuildTeamPicker(AdminSystem::App& app, VoltMod::PlayerRef admin,
                                                    VoltMod::PlayerRef target)
 {
     auto& translations = app.Runtime.Translations;

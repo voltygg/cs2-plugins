@@ -1,9 +1,9 @@
-#include "Admin/Menu/AdminMenu_Effects.hpp"
+#include "Admin/Menu/Tabs/PlayerFunTab.hpp"
 
 #include "Admin/Actions/Descriptors.hpp"
 #include "Admin/AdminManager.hpp"
 #include "Admin/Effects/Descriptors.hpp"
-#include "Admin/Menu/PlayerPicker.hpp"
+#include "Admin/Menu/Pickers/PlayerPicker.hpp"
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -19,18 +19,18 @@ using VoltMod::EffectDescriptor;
 using VoltMod::MenuBuilder;
 using VoltMod::SubmenuRow;
 
-std::shared_ptr<VoltMod::Menu> BuildEffectsMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildPlayerFunTab(AdminSystem::App& app, int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
     return BuildPlayerPicker(app, adminSlot,
                              {.Title = translations.Get("category.effects", adminSlot),
                               .Open = [&app, adminSlot](VoltMod::PlayerRef target) {
-                                  return BuildEffectsActionsMenu(app, app.Runtime.Players.RefFor(adminSlot), target);
+                                  return BuildPlayerFunCard(app, app.Runtime.Players.RefFor(adminSlot), target);
                               }});
 }
 
-std::shared_ptr<VoltMod::Menu> BuildEffectsActionsMenu(AdminSystem::App& app, VoltMod::PlayerRef admin,
-                                                       VoltMod::PlayerRef target)
+std::shared_ptr<VoltMod::Menu> BuildPlayerFunCard(AdminSystem::App& app, VoltMod::PlayerRef admin,
+                                                  VoltMod::PlayerRef target)
 {
     auto& translations = app.Runtime.Translations;
 

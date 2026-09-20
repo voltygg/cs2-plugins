@@ -1,12 +1,12 @@
-#include "Admin/AdminMenu.hpp"
+#include "Admin/Menu/RootMenu.hpp"
 
 #include "Admin/AdminManager.hpp"
-#include "Admin/Menu/AdminMenu_ChatSettings.hpp"
-#include "Admin/Menu/AdminMenu_Control.hpp"
-#include "Admin/Menu/AdminMenu_Effects.hpp"
-#include "Admin/Menu/AdminMenu_Fun.hpp"
-#include "Admin/Menu/AdminMenu_Map.hpp"
-#include "Admin/Menu/AdminMenu_Punish.hpp"
+#include "Admin/Menu/Tabs/MapVoteTab.hpp"
+#include "Admin/Menu/Tabs/MySettingsTab.hpp"
+#include "Admin/Menu/Tabs/PlayerActionsTab.hpp"
+#include "Admin/Menu/Tabs/PlayerFunTab.hpp"
+#include "Admin/Menu/Tabs/PunishTab.hpp"
+#include "Admin/Menu/Tabs/RoundModesTab.hpp"
 #include "Core/App.hpp"
 #include "Core/Permissions.hpp"
 
@@ -23,7 +23,7 @@
 #include <string_view>
 #include <vector>
 
-namespace AdminSystem::Admin
+namespace AdminSystem::Admin::Menu
 {
 
 using VoltMod::MenuBuilder;
@@ -41,15 +41,15 @@ struct Category
 };
 
 static const std::array<Category, 6> Categories{{
-    {"category.punish", &Menu::BuildPunishMenu, {Permission::Kick, Permission::Ban, Permission::Mute, Permission::Unban}, "punish"},
-    {"category.control", &Menu::BuildControlMenu, {Permission::Hide, Permission::Control, Permission::Weapon}, "control"},
-    {"category.effects", &Menu::BuildEffectsMenu, {Permission::Fun, Permission::Bhop}, "effects"},
-    {"category.fun", &Menu::BuildFunMenu, {Permission::FunMode}, "fun"},
-    {"category.map", &Menu::BuildMapMenu, {Permission::Map, Permission::Vote}, "map"},
-    {"category.chatSettings", &Menu::BuildChatSettingsMenu, {}, "chat"},
+    {"category.punish", &BuildPunishTab, {Permission::Kick, Permission::Ban, Permission::Mute, Permission::Unban}, "punish"},
+    {"category.control", &BuildPlayerActionsTab, {Permission::Hide, Permission::Control, Permission::Weapon}, "control"},
+    {"category.effects", &BuildPlayerFunTab, {Permission::Fun, Permission::Bhop}, "effects"},
+    {"category.fun", &BuildRoundModesTab, {Permission::FunMode}, "fun"},
+    {"category.map", &BuildMapVoteTab, {Permission::Map, Permission::Vote}, "map"},
+    {"category.chatSettings", &BuildMySettingsTab, {}, "chat"},
 }};
 
-std::shared_ptr<VoltMod::Menu> BuildAdminMainMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildRootMenu(AdminSystem::App& app, int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
     auto* adminPlayer = app.Runtime.Players.Get(adminSlot);
@@ -80,4 +80,4 @@ std::shared_ptr<VoltMod::Menu> BuildAdminMainMenu(AdminSystem::App& app, int adm
     return builder.Build();
 }
 
-}  // namespace AdminSystem::Admin
+}  // namespace AdminSystem::Admin::Menu

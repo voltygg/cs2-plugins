@@ -11,7 +11,7 @@
 namespace AdminSystem::Admin::Menu
 {
 
-std::shared_ptr<VoltMod::Menu> BuildPunishMenu(AdminSystem::App& app, int adminSlot);
-std::shared_ptr<VoltMod::Menu> BuildPunishActionsMenu(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target);
+std::shared_ptr<VoltMod::Menu> BuildPunishTab(AdminSystem::App& app, int adminSlot);
+std::shared_ptr<VoltMod::Menu> BuildPunishCard(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef target);
 
 }  // namespace AdminSystem::Admin::Menu

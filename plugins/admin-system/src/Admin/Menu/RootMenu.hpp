@@ -9,7 +9,7 @@
 namespace AdminSystem::Admin::Menu
 {
 
-/** Build the per-admin chat settings submenu (prefix toggle + prefix/name/message colors). */
-std::shared_ptr<VoltMod::Menu> BuildChatSettingsMenu(AdminSystem::App& app, int adminSlot);
+/** Build the top-level admin panel: one submenu row per tab the viewer may open. */
+std::shared_ptr<VoltMod::Menu> BuildRootMenu(AdminSystem::App& app, int adminSlot);
 
 }  // namespace AdminSystem::Admin::Menu

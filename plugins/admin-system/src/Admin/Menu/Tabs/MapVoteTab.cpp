@@ -1,4 +1,4 @@
-#include "Admin/Menu/AdminMenu_Map.hpp"
+#include "Admin/Menu/Tabs/MapVoteTab.hpp"
 
 #include "Admin/Menu/Labels.hpp"
 #include "Admin/Menu/MenuAccess.hpp"
@@ -76,7 +76,7 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(App& app, int adminSlo
         .Build();
 }
 
-std::shared_ptr<VoltMod::Menu> BuildMapMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildMapVoteTab(AdminSystem::App& app, int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
 

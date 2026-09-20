@@ -1,4 +1,4 @@
-#include "Admin/Menu/AdminMenu_ChatSettings.hpp"
+#include "Admin/Menu/Tabs/MySettingsTab.hpp"
 
 #include "Admin/AdminManager.hpp"
 #include "Core/App.hpp"
@@ -126,7 +126,7 @@ static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& ti
                                        .Index = initialIndex});
 }
 
-std::shared_ptr<VoltMod::Menu> BuildChatSettingsMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(AdminSystem::App& app, int adminSlot)
 {
     auto& translations = app.Runtime.Translations;
     auto* admin = app.Runtime.Players.Get(adminSlot);
