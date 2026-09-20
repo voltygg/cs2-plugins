@@ -5,7 +5,6 @@
 #include "Admin/Menu/RootMenu.hpp"
 #include "Commands/Commands.hpp"
 #include "Config/ConfigManager.hpp"
-#include "Punishments/KickNotice.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/App/PluginEntry.hpp>
@@ -74,13 +73,7 @@ void App::OnPlayerConnect(Player& player)
 
     // Defer kicks because some builds cannot kick safely inside the connect hook; bots never match SteamID bans.
     if (auto ban = Punishments.GetActive(AdminSystem::Punishments::PunishType::Ban, steamId))
-    {
-        // Build the full notice before deferring because the ban row is only available here.
-        Punishments.KickDeferred(
-            slot, steamId,
-            AdminSystem::Punishments::BuildBanNotice(Runtime.Translations, Settings.Get().punishments.appeal,
-                                                     ban->Reason, ban->ExpiresAt, steamId, slot));
-    }
+        Punishments.KickDeferred(slot, steamId, ban->Reason);
 }
 
 void App::OnPlayerDisconnect(Player& player)

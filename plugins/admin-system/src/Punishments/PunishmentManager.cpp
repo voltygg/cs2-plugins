@@ -2,7 +2,6 @@
 
 #include "Config/ConfigManager.hpp"
 #include "Core/ChatService.hpp"
-#include "Punishments/KickNotice.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
@@ -137,12 +136,7 @@ void PunishmentManager::Issue(Punishment& record)
     if (record.Kind == PunishType::Ban)
     {
         if (auto* player = _rt.Players.BySteamId(record.TargetSteamId))
-        {
-            // The notice the connect-time reject builds, so both paths read the same.
-            KickDeferred(player->Slot(), record.TargetSteamId,
-                         BuildBanNotice(_rt.Translations, _config.Get().punishments.appeal, record.Reason,
-                                        record.ExpiresAt, record.TargetSteamId, player->Slot()));
-        }
+            KickDeferred(player->Slot(), record.TargetSteamId, record.Reason);
     }
     else if (record.Kind == PunishType::VoiceMute)
     {

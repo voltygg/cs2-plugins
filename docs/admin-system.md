@@ -21,7 +21,7 @@ built-in defaults.
 | `plugin` | Translation file to use, without `.json` |
 | `server` | This server's `tag` and display `name` in the shared database |
 | `database` | Backend `driver` (`postgres`, `mariadb`, `sqlite`), host, credentials, `sslMode` |
-| `punishments` | Ban defaults, warning threshold, appeal notice, presets |
+| `punishments` | Ban defaults, warning threshold, presets |
 | `abuseProtection` | Sliding-window thresholds that auto-freeze an admin |
 | `chat` | Punishment broadcasts and admin chat tagging |
 | `reports` | Player report reasons, cooldowns, and duplicate suppression |
@@ -32,26 +32,6 @@ built-in defaults.
 A mistyped value fails the whole load; a malformed entry inside a list
 (a punishment template, a report reason) is logged and skipped so one typo
 cannot take moderation offline.
-
-### Ban appeal notice
-
-`punishments.appeal` controls what a banned player reads on the disconnect
-screen. Both the connect-time reject and the kick after an online ban use it,
-so a player sees the same text either way.
-
-```jsonc
-"appeal": {
-  // `{steamId}` is substituted; empty omits the appeal from the notice.
-  "url": "https://example.com/appeal?steam={steamId}",
-  // Append how long the ban still has to run.
-  "showExpiry": true
-}
-```
-
-The notice joins the reason, the expiry, and the appeal link, dropping whatever
-is not configured. With neither option set it is just the reason. The wording
-around the link comes from the `kickNotice` group in
-`configs/translations/<locale>.json`.
 
 ### Map list
 
@@ -291,11 +271,6 @@ Gameplay reads caches. Run `!admin_reload`, or restart the server.
 
 Check the load report in the server console and run `admin_status`. A failed
 `Database` stage skips the `Admins` stage, leaving nobody holding any permission.
-
-### A banned player sees only the reason
-
-`punishments.appeal.url` is empty and `showExpiry` is off, so there is nothing
-else to join. Set either one.
 
 ### Grants disappeared after a config change
 

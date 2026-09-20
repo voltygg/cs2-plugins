@@ -31,12 +31,6 @@
     "defaultBanReason": "Banned by administrator",
     // Warnings before escalation triggers.
     "warningThreshold": 3,
-    "appeal": {
-      // `{steamId}` is substituted; empty omits the appeal from the notice.
-      "url": "",
-      // Include the remaining ban duration.
-      "showExpiry": true
-    },
     // Quick Punish presets. Invalid entries are skipped after logging.
     // Durations: "perm"/"0" or <n>s / <n>m / <n>h / <n>d; bare numbers are seconds.
     "templates": [

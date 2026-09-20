@@ -16,20 +16,10 @@ struct PunishmentTemplate
     std::string reason;
 };
 
-/** Appeal route shown to a banned player on the disconnect screen. */
-struct AppealSettings
-{
-    /** Appeal page. `{steamId}` is substituted; empty omits the appeal from the notice. */
-    std::string url;
-    /** Append how long the ban still has to run. */
-    bool showExpiry = true;
-};
-
 struct PunishmentSettings
 {
     std::string defaultBanReason = "Banned by administrator";
     int warningThreshold = 3;
-    AppealSettings appeal;
     std::vector<PunishmentTemplate> templates;
     std::vector<std::string> reasonPresets;
     std::vector<std::string> menuDurations = {"5m", "30m", "1h", "1d", "7d", "perm"};
