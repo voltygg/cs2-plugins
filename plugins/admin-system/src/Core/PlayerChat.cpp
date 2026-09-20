@@ -56,11 +56,9 @@ void PlayerChat::RebroadcastAdminChat(const Player* admin, std::string_view mess
 
     auto prefixColor = ChatColors::ParseNamed(style.PrefixColor);
 
-    // Hiding the prefix is an incognito signal: default the name and message colors too, so
-    // custom colors don't still mark the admin as staff. Render-only - the saved colors return
-    // when the prefix is re-enabled.
-    auto nameColor = style.DisplayPrefix ? ChatColors::ParseNamed(style.NameColor) : ChatColors::Default;
-    auto messageColor = style.DisplayPrefix ? ChatColors::ParseNamed(style.MessageColor) : ChatColors::Default;
+    // Hiding the prefix hides the prefix only; the admin's chosen name and message colors stand.
+    auto nameColor = ChatColors::ParseNamed(style.NameColor);
+    auto messageColor = ChatColors::ParseNamed(style.MessageColor);
 
     // {prefixColor}{prefix} {nameColor}{name}{Default}: {messageColor}{message}
     std::string line;
