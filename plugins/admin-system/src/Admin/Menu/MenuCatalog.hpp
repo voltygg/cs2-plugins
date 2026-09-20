@@ -101,11 +101,13 @@ inline constexpr std::array<RowSpec, 5> PunishCardRows{{
     {RowId::PunishWarn, "action.warn", Permission::Mute, {}},
 }};
 
-inline constexpr std::array<RowSpec, 2> PunishTabRows{{
-    {RowId::LiftList, "punish.activeList", {}, LiftRows},
-    // The player rows only lead to the card, so the tab is worth showing when any card row is.
-    {RowId::PunishPlayers, "category.punish", {}, PunishCardRows},
-}};
+/** The one drawn row of the Punish tab; the rest of it is one row per connected player. */
+inline constexpr RowSpec PunishLiftList{RowId::LiftList, "punish.activeList", {}, LiftRows};
+
+/** The player rows only lead to the card, so the tab is worth showing when any card row is. */
+inline constexpr RowSpec PunishPlayerList{RowId::PunishPlayers, "category.punish", {}, PunishCardRows};
+
+inline constexpr std::array<RowSpec, 2> PunishTabRows{{PunishLiftList, PunishPlayerList}};
 
 inline constexpr std::array<RowSpec, 16> PlayerActionRows{{
     {RowId::CheatCheck, "action.cheatCheck", Permission::Control, {}},

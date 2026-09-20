@@ -43,13 +43,11 @@ std::shared_ptr<VoltMod::Menu> BuildPunishTab(const MenuContext& ctx)
     App& app = ctx.Plugin;
     MenuBuilder builder(ctx.Translate("category.punish"));
 
-    builder.Add(SubmenuRow{.Label = ctx.Translate("action.unban"),
-                           .Build = [&app](int slot) { return BuildUnbanMenu(app, slot); },
-                           .Enabled = Allows(app, Permission::Unban)});
-
-    builder.Add(SubmenuRow{.Label = ctx.Translate("action.unmute"),
-                           .Build = [&app](int slot) { return BuildUnmuteMenu(app, slot); },
-                           .Enabled = Allows(app, Permission::Mute)});
+    AddIfVisible(app, ctx.Admin.Slot, builder, PunishLiftList, [&] {
+        return SubmenuRow{.Label = ctx.Translate("punish.activeList"),
+                          .Build = [ctx](int) { return BuildLiftMenu(ctx); }}
+            .ToItem();
+    });
 
     AppendTargetRows(ctx, builder, [ctx](VoltMod::PlayerRef target) { return BuildPunishCard(ctx, target); });
 

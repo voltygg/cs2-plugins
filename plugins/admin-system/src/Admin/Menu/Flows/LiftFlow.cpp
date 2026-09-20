@@ -2,6 +2,7 @@
 
 #include "Admin/Menu/Labels.hpp"
 #include "Admin/Menu/MenuAccess.hpp"
+#include "Admin/Menu/MenuCatalog.hpp"
 #include "Core/App.hpp"
 #include "Core/ChatService.hpp"
 #include "Core/Permissions.hpp"
@@ -40,10 +41,11 @@ struct LiftRow
     std::string Reason;
 };
 
-/** Translation key of the punishment tag for a kind, or empty for a ban (which has no tag). */
+/** Translation key of the punishment tag for a kind. Bans and mutes share one list, so every row
+ *  is tagged with its kind rather than leaving the reader to infer it. */
 static std::string_view TagKey(PunishType kind)
 {
-    return kind == PunishType::Ban ? std::string_view{} : ActionTranslationKey(kind);
+    return kind == PunishType::Ban ? std::string_view{"action.ban"} : ActionTranslationKey(kind);
 }
 
 /** Lift the punishment; false when another server already did. */
@@ -72,9 +74,8 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
                    .Summary =
                        [&app, adminSlot](const LiftRow& r, VoltMod::SummaryRows& rows) {
                            auto& translations = app.Runtime.Translations;
-                           const auto tag = TagKey(r.Kind);
                            rows.Add(translations.Get("punish.target", adminSlot), r.Name)
-                               .AddIf(!tag.empty(), translations.Get(tag, adminSlot))
+                               .Add(translations.Get(TagKey(r.Kind), adminSlot))
                                .Add(translations.Get("punish.duration", adminSlot),
                                     ExpiryLabel(translations, r.ExpiresAt, adminSlot))
                                .Add(translations.Get("punish.reason", adminSlot), Strings::TruncateUtf8(r.Reason, 40));
@@ -106,32 +107,30 @@ static void AppendRows(App& app, MenuBuilder& builder, const std::vector<Databas
                     .ExpiresAt = punishment.ExpiresAt,
                     .Reason = punishment.Reason};
 
-        const auto tag = TagKey(row.Kind);
-        const std::string prefix = tag.empty() ? "" : std::format("[{}] ", translations.Get(tag, adminSlot));
-        auto label = std::format("{}{} - {}", prefix, row.Name, ExpiryLabel(translations, row.ExpiresAt, adminSlot));
+        auto label = std::format("[{}] {} - {}", translations.Get(TagKey(row.Kind), adminSlot), row.Name,
+                                 ExpiryLabel(translations, row.ExpiresAt, adminSlot));
         builder.Button(label, [&app, row = std::move(row)](int slot) { StartLiftConfirm(app, slot, row); });
     }
 }
 
-std::shared_ptr<VoltMod::Menu> BuildUnbanMenu(AdminSystem::App& app, int adminSlot)
+std::shared_ptr<VoltMod::Menu> BuildLiftMenu(const MenuContext& ctx)
 {
-    auto& translations = app.Runtime.Translations;
-    MenuBuilder builder(translations.Get("unban.title", adminSlot));
+    App& app = ctx.Plugin;
+    const int adminSlot = ctx.Admin.Slot;
 
-    builder.EmptyText(translations.Get("unban.noBans", adminSlot));
-    AppendRows(app, builder, app.Punishments.GetActive(PunishType::Ban), adminSlot);
+    MenuBuilder builder(ctx.Translate("punish.activeList"));
+    builder.EmptyText(ctx.Translate("lift.empty"));
 
-    return builder.Build();
-}
+    // One list rather than two: an admin looking for somebody rarely knows which kind to open,
+    // and each kind still appears only for an admin who may lift it.
+    if (ctx.Visible(LiftRows[0]))
+        AppendRows(app, builder, app.Punishments.GetActive(PunishType::Ban), adminSlot);
 
-std::shared_ptr<VoltMod::Menu> BuildUnmuteMenu(AdminSystem::App& app, int adminSlot)
-{
-    auto& translations = app.Runtime.Translations;
-    MenuBuilder builder(translations.Get("unmute.title", adminSlot));
-
-    builder.EmptyText(translations.Get("unmute.noMutes", adminSlot));
-    AppendRows(app, builder, app.Punishments.GetActive(PunishType::VoiceMute), adminSlot);
-    AppendRows(app, builder, app.Punishments.GetActive(PunishType::TextMute), adminSlot);
+    if (ctx.Visible(LiftRows[1]))
+    {
+        AppendRows(app, builder, app.Punishments.GetActive(PunishType::VoiceMute), adminSlot);
+        AppendRows(app, builder, app.Punishments.GetActive(PunishType::TextMute), adminSlot);
+    }
 
     return builder.Build();
 }

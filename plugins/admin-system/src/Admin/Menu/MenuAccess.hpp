@@ -74,6 +74,15 @@ inline auto RequirePermission(App& app, std::string_view permission, int slot)
 [[nodiscard]] VoltMod::MenuItem WhileTargetable(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target,
                                                 VoltMod::MenuItem item);
 
+/**
+ * @brief Warn about any row whose catalog permission differs from the one its descriptor runs on.
+ *
+ * Declared here rather than beside the tables because it needs @ref App, and MenuCatalog.hpp stays
+ * free of the game SDK so the catalog test can link it. Run once at load: this is the drift that
+ * twice left a tab greyed out for the very admins it was meant for.
+ */
+void VerifyCatalog(App& app);
+
 /** Appends what @p make builds, but only when @p row is visible to @p adminSlot. */
 template <class Make>
 void AddIfVisible(App& app, int adminSlot, VoltMod::MenuBuilder& builder, const RowSpec& row, Make make)

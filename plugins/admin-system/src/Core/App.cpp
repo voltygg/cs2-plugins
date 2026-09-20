@@ -1,7 +1,8 @@
 #include "Core/App.hpp"
 
-#include "Admin/Menu/RootMenu.hpp"
 #include "Admin/Effects/Model.hpp"
+#include "Admin/Menu/MenuAccess.hpp"
+#include "Admin/Menu/RootMenu.hpp"
 #include "Commands/Commands.hpp"
 #include "Config/ConfigManager.hpp"
 #include "Punishments/KickNotice.hpp"
@@ -252,6 +253,7 @@ bool App::Load()
     if (!VoltMod::LoadStandardConfig(Runtime, Settings))
         return false;
 
+    Admin::Menu::VerifyCatalog(*this);
     InstallPolicy();
     RegisterPlayerLifecycle();
     // Freeze players while menus are open so navigation input cannot also move them.

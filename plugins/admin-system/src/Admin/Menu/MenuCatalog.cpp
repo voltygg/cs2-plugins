@@ -1,0 +1,96 @@
+#include "Admin/Menu/MenuCatalog.hpp"
+
+#include "Admin/Actions/Descriptors.hpp"
+#include "Admin/Effects/Descriptors.hpp"
+#include "Admin/Menu/MenuAccess.hpp"
+#include "Core/App.hpp"
+
+#include <VoltMod/Core/Log.hpp>
+#include <span>
+
+namespace AdminSystem::Admin::Menu
+{
+
+/**
+ * The permission the descriptor behind @p id actually dispatches on, or empty for a row with no
+ * descriptor. A `constexpr` table cannot read these: they live in .cpp files that need the game
+ * SDK, which is why the catalog spells the permission a second time.
+ */
+static std::string_view DispatchPermission(App& app, RowId id)
+{
+    const auto& actions = app.ActionDescriptors;
+    const auto& effects = app.EffectDescriptors;
+
+    switch (id)
+    {
+    case RowId::Kill:
+        return Actions::Kill.Permission;
+    case RowId::Bring:
+        return Actions::Bring.Permission;
+    case RowId::Goto:
+        return Actions::Goto.Permission;
+    case RowId::Freeze:
+        return Actions::Freeze.Permission;
+    case RowId::Noclip:
+        return Actions::Noclip.Permission;
+    case RowId::Bury:
+        return Actions::Bury.Permission;
+    case RowId::Unbury:
+        return Actions::Unbury.Permission;
+    case RowId::ChangeTeam:
+        return Actions::ChangeTeam.Permission;
+    case RowId::Speed:
+        return Actions::SetSpeed.Permission;
+    case RowId::Slap:
+        return actions.Slap.Permission;
+    case RowId::Health:
+        return Actions::SetHealth.Permission;
+    case RowId::Armor:
+        return Actions::SetArmor.Permission;
+    case RowId::Godmode:
+        return Actions::Godmode.Permission;
+    case RowId::Ghost:
+        return effects.Ghost.Permission;
+    case RowId::Disco:
+        return effects.Disco.Permission;
+    case RowId::Wallhack:
+        return effects.Wallhack.Permission;
+    case RowId::Model:
+        return effects.Model.Permission;
+    case RowId::Bhop:
+        return effects.Bhop.Permission;
+    case RowId::Drunk:
+        return effects.Drunk.Permission;
+    case RowId::Smite:
+        return actions.Smite.Permission;
+    case RowId::Size:
+        return actions.SetSize.Permission;
+    case RowId::Hide:
+        return effects.Hide.Permission;
+    default:
+        // Punishments are checked against PunishTypes by MenuCatalogTests; the rest - the lift
+        // list, the map verbs, the chat settings - are gated by the plugin, not a descriptor.
+        return {};
+    }
+}
+
+void VerifyCatalog(App& app)
+{
+    auto check = [&app](auto&& self, std::span<const RowSpec> rows) -> void {
+        for (const RowSpec& row : rows)
+        {
+            const std::string_view dispatch = DispatchPermission(app, row.Id);
+            if (!dispatch.empty() && dispatch != row.Permission)
+            {
+                VoltMod::Log::Warn("Admin menu row '{}' is shown on '{}' but runs on '{}'; one of the two is wrong.",
+                                   row.LabelKey, row.Permission, dispatch);
+            }
+            self(self, row.Children);
+        }
+    };
+
+    for (const TabSpec& tab : Tabs)
+        check(check, tab.Rows);
+}
+
+}  // namespace AdminSystem::Admin::Menu

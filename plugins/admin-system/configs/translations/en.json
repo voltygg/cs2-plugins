@@ -1,9 +1,6 @@
 {
   "panel": {
     "admin": "Admin Panel",
-    "playerManagement": "Player Management",
-    "serverManagement": "Server Management",
-    "playerActions": "Player Actions",
     "selectDuration": "Duration"
   },
   "category": {
@@ -20,8 +17,6 @@
     "voiceMute": "Voice Mute",
     "textMute": "Text Mute",
     "warn": "Warn",
-    "changemap": "Change Map",
-    "restartRound": "Restart Round",
     "kill": "Kill",
     "bring": "Bring",
     "goto": "Goto",
@@ -123,8 +118,6 @@
   "common": {
     "selectSwapTarget": "Select swap partner",
     "noPlayers": "No players available",
-    "notImplemented": "(coming soon)",
-    "menuOpened": "Admin menu opened.",
     "console": "Console"
   },
   "hint": {
@@ -273,15 +266,11 @@
     "joinedStatus": "Waiting for the admin's decision"
   },
   "unban": {
-    "title": "Active Bans",
-    "noBans": "No active bans",
     "expiresIn": "expires in",
     "done": "Unbanned {name}.",
     "gone": "That ban is no longer active."
   },
   "unmute": {
-    "title": "Active Mutes",
-    "noMutes": "No active mutes",
     "done": "Unmuted {name}.",
     "gone": "That mute is no longer active."
   },

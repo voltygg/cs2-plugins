@@ -4,7 +4,6 @@
 #include "Admin/Effects/EffectId.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <array>
 
 namespace AdminSystem::Admin::Effects
 {
@@ -65,10 +64,6 @@ struct EffectDescriptors
     Effect Model;
     Effect Bhop;
     Effect Drunk;
-
-    /** Menu order for auto-listed effects. Pointers remain valid for this object's lifetime.
-     * Hide is a self-only Control row and `!hide` command. */
-    const std::array<const Effect*, 6> MenuEffects{&Ghost, &Disco, &Wallhack, &Model, &Bhop, &Drunk};
 };
 
 }  // namespace AdminSystem::Admin::Effects
