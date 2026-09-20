@@ -79,7 +79,7 @@ void HubMenu::SetLanguage(int slot, const std::string& lang)
 void HubMenu::Open(int slot)
 {
     // Players reach it mid-round, where being held still is worse than stray movement.
-    _menus.OpenSession(slot, Build(slot), {.FreezeMovement = false});
+    _menus.OpenSession(slot, Build(slot), {.FreezeMovement = false, .HomePage = true});
 }
 
 std::shared_ptr<VoltMod::Menu> HubMenu::BuildTab(const Tab& tab, int slot)
