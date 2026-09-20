@@ -27,7 +27,6 @@ using AdminSystem::Punishments::PunishType;
 namespace AdminSystem::Admin::Menu
 {
 
-using VoltMod::ButtonRow;
 using VoltMod::MenuBuilder;
 using VoltMod::Strings;
 

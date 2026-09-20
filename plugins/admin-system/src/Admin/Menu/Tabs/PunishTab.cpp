@@ -2,10 +2,10 @@
 
 #include "Admin/AdminManager.hpp"
 #include "Admin/Menu/Flows/LiftFlow.hpp"
+#include "Admin/Menu/Flows/PunishFlow.hpp"
 #include "Admin/Menu/MenuAccess.hpp"
 #include "Admin/Menu/MenuCatalog.hpp"
 #include "Admin/Menu/Pickers/PlayerPicker.hpp"
-#include "Admin/Menu/Flows/PunishFlow.hpp"
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -20,7 +20,6 @@
 #include <utility>
 
 using AdminSystem::Punishments::PunishType;
-using AdminSystem::Punishments::PunishTypeInfo;
 using AdminSystem::Punishments::PunishTypes;
 
 namespace AdminSystem::Admin::Menu
