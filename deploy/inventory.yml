@@ -1,5 +1,3 @@
-# Non-secret deploy topology. Keep secrets in per-server env files or CI.
-
 runtime_image: ghcr.io/voltygg/cs2-plugins/cs2-server-runtime
 
 database:
