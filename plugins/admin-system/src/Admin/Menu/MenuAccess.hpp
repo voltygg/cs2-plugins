@@ -30,8 +30,7 @@ inline VoltMod::EnabledCondition Allows(App& app, std::string_view permission)
     return VoltMod::EnabledCondition([&app, permission](int slot) { return MayUse(app, slot, permission); });
 }
 
-/** Flow validator that re-checks @p permission on @p slot, the one player the flow runs for: a
- *  permission may have been revoked (e.g. by !admin_reload) while the menu was open. */
+/** @ref MayUse as a flow validator, for the one player the flow runs for. */
 inline auto RequirePermission(App& app, std::string_view permission, int slot)
 {
     return [&app, permission, slot](const auto&) -> std::optional<std::string> {
@@ -64,8 +63,7 @@ inline auto RequirePermission(App& app, std::string_view permission, int slot)
 [[nodiscard]] VoltMod::MenuItem WhileTargetable(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target,
                                                 VoltMod::MenuItem item);
 
-/** Warn about any row whose catalog permission differs from the one its descriptor runs on. Lives
- *  here, not beside the tables, because MenuCatalog.hpp stays free of the game SDK. */
+/** Warn about any row whose catalog permission differs from the one its descriptor runs on. */
 void VerifyCatalog(App& app);
 
 }  // namespace AdminSystem::Admin::Menu

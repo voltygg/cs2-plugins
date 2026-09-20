@@ -10,13 +10,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
-/**
- * @brief Every row the admin panel can draw.
- *
- * The tables below own the order rows appear in, the label they carry, and the permission that
- * makes them visible. Each tab's builder turns an entry into a `MenuItem`; one nothing builds is
- * logged and skipped. Free of the game SDK, so `MenuCatalogTests` can link it.
- */
+/** Every row the admin panel can draw, in the order its tab draws them. Free of the game SDK, so
+ *  `MenuCatalogTests` can link it. */
 enum class RowId
 {
     // Punish
@@ -78,8 +73,7 @@ struct RowSpec
     std::span<const RowSpec> Children;
 };
 
-/** The punishment kinds the merged lift list may show, each with the permission that lifts it.
- *  Named so the lift menu asks for a kind rather than a position in the table. */
+/** The punishment kinds the merged lift list may show, each with the permission that lifts it. */
 inline constexpr RowSpec LiftBansRow{RowId::LiftBans, "action.unban", Permission::Unban, {}};
 inline constexpr RowSpec LiftMutesRow{RowId::LiftMutes, "action.unmute", Permission::Mute, {}};
 

@@ -21,7 +21,6 @@ static constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
 // Size cycles both up and down from normal, so it opens anchored on 100% (no change).
 static constexpr int SizeDefault = 4;  // index of 100 in SizePresets
 
-/** The row @p spec names, for the target this card belongs to. */
 static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& rows, const RowSpec& spec,
                                  VoltMod::PlayerRef target)
 {

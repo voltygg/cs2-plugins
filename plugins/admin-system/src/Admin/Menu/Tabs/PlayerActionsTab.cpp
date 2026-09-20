@@ -46,7 +46,6 @@ static VoltMod::MenuItem CheatCheckRow(const MenuContext& ctx, VoltMod::ActionRo
         .ToItem();
 }
 
-/** The row @p spec names, for the target this card belongs to. */
 static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& rows, const RowSpec& spec,
                                  VoltMod::PlayerRef target)
 {

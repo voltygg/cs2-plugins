@@ -12,10 +12,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
-/**
- * Everything a menu-issued punishment accumulates while walking the steps
- * (duration -> reason -> confirm). Copied by value through the menu callbacks.
- */
+/** What a menu-issued punishment accumulates while walking the steps. Copied by value through
+ *  the menu callbacks. */
 struct PendingPunishment
 {
     Punishments::PunishType Type = Punishments::PunishType::Kick;
@@ -26,11 +24,8 @@ struct PendingPunishment
     std::string Reason;
 };
 
-/**
- * Start the punish wizard for @p pending's type: duration -> reason -> confirm for timed
- * punishments, reason -> confirm for kick/warn. Every step (and the final confirm)
- * re-validates the target and the admin's permission, then issues.
- */
+/** Start the punish wizard for @p pending's type: duration -> reason -> confirm for a timed
+ *  punishment, reason -> confirm for a kick or warning. */
 void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pending);
 
 /** Quick Punish list of the configured templates the admin may use on this target. */

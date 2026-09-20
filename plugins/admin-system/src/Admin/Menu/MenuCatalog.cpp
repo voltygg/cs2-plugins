@@ -11,9 +11,8 @@
 namespace AdminSystem::Admin::Menu
 {
 
-/** The permission the descriptor behind @p id dispatches on, or empty for a row that has none.
- *  A constexpr table cannot reach these, which is why the catalog repeats them. Every row is
- *  named and there is no `default`, so a new one has to be placed here before it compiles. */
+/** The permission the descriptor behind @p id dispatches on, empty for a row that has none.
+ *  Every row is named and there is no `default`, so a new one must be placed here to compile. */
 static std::string_view DispatchPermission(App& app, RowId id)
 {
     const auto& actions = app.ActionDescriptors;
@@ -66,8 +65,7 @@ static std::string_view DispatchPermission(App& app, RowId id)
     case RowId::Hide:
         return effects.Hide.Permission;
 
-    // No descriptor to compare against: punishments dispatch through PunishTypes, which
-    // MenuCatalogTests pins to the catalog, and the rest check the catalog's permission directly.
+    // No descriptor to compare against.
     case RowId::LiftList:
     case RowId::PunishPlayers:
     case RowId::LiftBans:

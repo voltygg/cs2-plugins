@@ -13,13 +13,7 @@
 namespace AdminSystem::Admin::Menu
 {
 
-/**
- * @brief Build a paginated picker listing every connected player for @p adminSlot.
- *
- * The framework picker with this plugin's "nobody connected" label filled in; @p spec supplies
- * the title, what a pick does, and - optionally - which rows render disabled (e.g. to gray out
- * an already-picked player). The viewer is @p adminSlot, so a pick receives only the target.
- */
+/** The framework's player picker with this plugin's "nobody connected" label filled in. */
 std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int adminSlot, VoltMod::PlayerPicker spec);
 
 /** A list whose rows act on the player, each opening @p open. A player this admin may not touch

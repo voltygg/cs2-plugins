@@ -43,8 +43,8 @@ bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishTy
         .has_value();
 }
 
-/** Flow validation: the target may have left (or the slot rehosts another player) and the
- *  admin's permissions/immunity may have changed (e.g. !admin_reload) while the menu was open. */
+/** Re-checked at every step: the target may have left, the slot may rehost another player, and
+ *  the admin's permission or immunity may have changed since the menu opened. */
 static std::optional<std::string> ValidatePending(App& app, int slot, const PendingPunishment& pending)
 {
     if (!app.Runtime.Players.Get(pending.Target))

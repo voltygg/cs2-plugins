@@ -17,8 +17,7 @@ enum class MapVerb
     PutToVote,
 };
 
-/** The configured map cycle under @p title, where picking a map applies @p verb to it. The
- *  caller owns the title so the row opening this screen and the screen itself cannot disagree. */
+/** The configured map cycle under @p title, where picking a map applies @p verb to it. */
 std::shared_ptr<VoltMod::Menu> BuildMapPicker(const MenuContext& ctx, MapVerb verb, const std::string& title);
 
 }  // namespace AdminSystem::Admin::Menu

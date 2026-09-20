@@ -32,7 +32,7 @@ namespace AdminSystem::Admin::Menu
 using VoltMod::MenuBuilder;
 using VoltMod::Strings;
 
-/** The slice of a punishment the menu needs; each row's lambda holds a copy, so keep it small. */
+/** Each row's lambda holds a copy of this, so it carries only what a row draws and a lift needs. */
 struct LiftRow
 {
     PunishType Kind = PunishType::Ban;
@@ -42,7 +42,7 @@ struct LiftRow
     std::string Reason;
 };
 
-/** Translation key of the punishment tag. Bans and mutes share one list, so every row is tagged. */
+/** Bans and mutes share one list, so every row carries its kind as a tag. */
 static std::string_view TagKey(PunishType kind)
 {
     return kind == PunishType::Ban ? std::string_view{"action.ban"} : ActionTranslationKey(kind);
@@ -93,11 +93,9 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
         ->Begin();
 }
 
-/** How many punishments the lift list draws. A busy server holds thousands, which no menu can
- *  usefully page through; the rest are lifted by command. */
+/** A busy server holds thousands of active punishments; the rest are lifted by command. */
 static constexpr std::size_t ListLimit = 30;
 
-/** One row per punishment, tagged with its kind. */
 static void AppendRows(App& app, MenuBuilder& builder, const std::vector<Database::Punishment>& punishments,
                        int adminSlot)
 {
@@ -138,7 +136,6 @@ std::shared_ptr<VoltMod::Menu> BuildLiftMenu(const MenuContext& ctx)
     const auto page = app.Punishments.GetActive(std::span{kinds}.first(count), ListLimit);
     AppendRows(app, builder, page.Rows, adminSlot);
 
-    // Say so rather than pretending the list is everything; the rest are lifted by command.
     if (page.Total > page.Rows.size())
     {
         builder.Text(ctx.Translate(

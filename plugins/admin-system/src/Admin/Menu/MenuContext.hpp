@@ -46,8 +46,6 @@ struct MenuContext
         return Menu::AnyVisible(Plugin, Admin.Slot, rows);
     }
 
-    /** Whether @p tab is worth a slot: one that lists rows while any of them shows, one that
-     *  declares a permission while the admin holds it. */
     [[nodiscard]] bool Visible(const TabSpec& tab) const
     {
         return tab.Permission.empty() ? AnyVisible(tab.Rows) : MayUse(Plugin, Admin.Slot, tab.Permission);
@@ -62,8 +60,7 @@ struct MenuContext
         return Plugin.Runtime.Players.Get(target);
     }
 
-    /** @p item greyed with a reason when @p descriptor refuses a dead target: the dispatcher skips
-     *  those silently, so the row would otherwise look live and do nothing. */
+    /** @ref Menu::WhileAlive, applied only when @p descriptor refuses a dead target. */
     template <class Descriptor>
     [[nodiscard]] VoltMod::MenuItem WhileAlive(VoltMod::PlayerRef target, const Descriptor& descriptor,
                                                VoltMod::MenuItem item) const
@@ -85,9 +82,8 @@ struct MenuContext
     VoltMod::PlayerRef Admin;
 };
 
-/** Appends every row of @p specs this admin may see, in catalog order, built by @p make. The whole
- *  spec goes to @p make, so a builder reads the label and permission off the catalog rather than
- *  repeating them. A row @p make returns nothing for is skipped and logged. */
+/** Appends every row of @p specs this admin may see, in catalog order, each built by @p make from
+ *  its whole spec. A row @p make returns nothing for is skipped and logged. */
 template <class Make>
 void AppendCatalogRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder, std::span<const RowSpec> specs, Make make)
 {
