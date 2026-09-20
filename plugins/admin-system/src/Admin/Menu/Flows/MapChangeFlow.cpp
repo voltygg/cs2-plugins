@@ -26,10 +26,8 @@ void ConfirmMapChange(const MenuContext& ctx, MapEntry map)
     VoltMod::Flow<MapEntry>::Create(app.Runtime.Menus, adminSlot, std::move(map))
         ->Validate(RequirePermission(app, Permission::Map, adminSlot))
         ->Confirm({.Title = ConfirmTitle(app.Runtime.Translations, "action.changeMap", adminSlot),
-                   .Summary =
-                       [ctx](const MapEntry& m, VoltMod::SummaryRows& rows) {
-                           rows.Add(ctx.Translate("map.name"), m.Label());
-                       }})
+                   .Summary = [ctx](const MapEntry& m,
+                                    VoltMod::SummaryRows& rows) { rows.Add(ctx.Translate("map.name"), m.Label()); }})
         ->Finish([&app, adminSlot](MapEntry& m) {
             app.Chat.BroadcastAction("broadcast.mapChanging", Core::ActorName(app.Runtime, adminSlot),
                                      {{"map", m.Label()}});
