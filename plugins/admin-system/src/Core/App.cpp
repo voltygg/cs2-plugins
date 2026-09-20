@@ -225,7 +225,8 @@ bool App::OpenAdminMenu(int slot)
     if (!menu)
         return false;
 
-    Runtime.Menus.OpenSession(slot, std::move(menu), {});
+    // The root draws the home hero instead of its rows, which only repeat the sidebar.
+    Runtime.Menus.OpenSession(slot, std::move(menu), {.HomePage = true});
     return true;
 }
 
