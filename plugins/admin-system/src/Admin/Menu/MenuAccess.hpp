@@ -1,11 +1,15 @@
 #pragma once
 
+#include "Admin/Menu/MenuCatalog.hpp"
 #include "Core/App.hpp"
 #include "Core/Permissions.hpp"
 
+#include <VoltMod/Menu/Menu.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -36,6 +40,46 @@ inline auto RequirePermission(App& app, std::string_view permission, int slot)
             return "punish.notAllowed";
         return std::nullopt;
     };
+}
+
+/**
+ * @brief Whether @p adminSlot may see @p row at all.
+ *
+ * Permission only, and the answer decides whether the row is built. A row the admin holds the
+ * permission for but cannot use right now - a dead target, a vote that is not running - stays
+ * visible and greys itself instead, so rows do not appear and vanish under the cursor.
+ */
+[[nodiscard]] bool Visible(App& app, int adminSlot, const RowSpec& row);
+
+/** Whether any of @p rows is visible to @p adminSlot. Walks permission strings; it never builds a
+ *  child menu, so asking about a whole tab costs one pass over a constexpr table. */
+[[nodiscard]] bool AnyVisible(App& app, int adminSlot, std::span<const RowSpec> rows);
+
+/**
+ * @brief @p item greyed out, showing @p reason, whenever @p usable says no.
+ *
+ * `EnabledCondition` only flips a row grey and no row spec exposes `MenuRow::Value`, so the
+ * reason is folded into `Describe` here. Activation, stepping and commit are wrapped too, or a
+ * greyed preset row would still change its value.
+ */
+[[nodiscard]] VoltMod::MenuItem DisableUnless(VoltMod::MenuItem item, std::function<bool(int slot)> usable,
+                                              std::string reason);
+
+/** @ref DisableUnless for an action whose descriptor refuses a dead target. The dispatcher skips
+ *  those silently, so without this the row looks live and does nothing. */
+[[nodiscard]] VoltMod::MenuItem WhileAlive(App& app, int adminSlot, VoltMod::PlayerRef target, VoltMod::MenuItem item);
+
+/** @ref DisableUnless for a row targeting @p target: an admin who outranks the viewer greys the
+ *  row once, in the player list, instead of every row of a card that opens dead. */
+[[nodiscard]] VoltMod::MenuItem WhileTargetable(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target,
+                                                VoltMod::MenuItem item);
+
+/** Appends what @p make builds, but only when @p row is visible to @p adminSlot. */
+template <class Make>
+void AddIfVisible(App& app, int adminSlot, VoltMod::MenuBuilder& builder, const RowSpec& row, Make make)
+{
+    if (Visible(app, adminSlot, row))
+        builder.Add(make());
 }
 
 }  // namespace AdminSystem::Admin::Menu

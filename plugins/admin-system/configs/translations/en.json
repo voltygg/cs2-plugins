@@ -12,7 +12,12 @@
     "effects": "Effects",
     "chatSettings": "Chat Settings",
     "map": "Map",
-    "fun": "Fun Mode"
+    "fun": "Fun Mode",
+    "playerActions": "Player Actions",
+    "playerFun": "Player Fun",
+    "roundModes": "Round Modes",
+    "mapVote": "Map & Vote",
+    "mySettings": "My Settings"
   },
   "action": {
     "kick": "Kick",
@@ -57,7 +62,8 @@
     "giveRandomWeapon": "Random weapon",
     "strip": "Strip weapons",
     "noWeapons": "No weapons configured",
-    "drunk": "Drunk"
+    "drunk": "Drunk",
+    "cheatCheck": "Cheat check"
   },
   "broadcast": {
     "ghostOn": "ghosted",
@@ -128,6 +134,11 @@
     "menuOpened": "Admin menu opened.",
     "console": "Console"
   },
+  "hint": {
+    "targetDead": "dead",
+    "immune": "immune",
+    "noVote": "no vote running"
+  },
   "team": {
     "ct": "Counter-Terrorists",
     "t": "Terrorists",
@@ -154,7 +165,8 @@
     "reason": "Reason",
     "issued": "{action}: {name} - done.",
     "targetLost": "Target left the server; action cancelled.",
-    "notAllowed": "You can no longer target this player."
+    "notAllowed": "You can no longer target this player.",
+    "activeList": "Active bans & mutes"
   },
   "target": {
     "noMatch": "No player matched '{token}'.",
@@ -279,6 +291,9 @@
     "noMutes": "No active mutes",
     "done": "Unmuted {name}.",
     "gone": "That mute is no longer active."
+  },
+  "lift": {
+    "empty": "No active bans or mutes"
   },
   "kickNotice": {
     "permanent": "Permanent ban",
