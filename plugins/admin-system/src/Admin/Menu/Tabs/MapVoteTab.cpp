@@ -78,7 +78,7 @@ static std::shared_ptr<VoltMod::Menu> BuildMapActionsMenu(const MenuContext& ctx
 std::shared_ptr<VoltMod::Menu> BuildMapVoteTab(const MenuContext& ctx)
 {
     App& app = ctx.Plugin;
-    MenuBuilder builder(ctx.Translate("category.map"));
+    MenuBuilder builder(ctx.Translate("category.mapVote"));
 
     const auto& cycle = app.MapCycle.Cycle();
     for (const auto& map : cycle)

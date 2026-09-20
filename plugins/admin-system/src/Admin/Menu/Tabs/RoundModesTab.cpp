@@ -24,7 +24,7 @@ std::shared_ptr<VoltMod::Menu> BuildRoundModesTab(const MenuContext& ctx)
     App& app = ctx.Plugin;
     const VoltMod::EnabledCondition allowed = Allows(app, Permission::FunMode);
 
-    MenuBuilder builder(ctx.Translate("category.fun"));
+    MenuBuilder builder(ctx.Translate("category.roundModes"));
 
     for (const auto& info : Fun::Toggles)
     {

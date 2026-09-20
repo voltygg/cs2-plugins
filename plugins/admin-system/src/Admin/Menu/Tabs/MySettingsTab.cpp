@@ -1,6 +1,8 @@
 #include "Admin/Menu/Tabs/MySettingsTab.hpp"
 
 #include "Admin/AdminManager.hpp"
+#include "Admin/Effects/Descriptors.hpp"
+#include "Admin/Menu/MenuAccess.hpp"
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -132,7 +134,18 @@ std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(const MenuContext& ctx)
     const int adminSlot = ctx.Admin.Slot;
     const int64_t steamId = ctx.Admin.SteamId;
 
-    MenuBuilder builder(ctx.Translate("category.chatSettings"));
+    MenuBuilder builder(ctx.Translate("category.mySettings"));
+
+    // Hide acts on the admin alone, so it belongs with their own settings rather than among the
+    // rows that act on somebody else.
+    builder.Add(ToggleRow{
+        .Label = ctx.Translate("action.hide"),
+        .Get = [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, app.EffectDescriptors.Hide.Id); },
+        .Flip =
+            [&app, adminRef = ctx.Admin](int) {
+                app.PlayerEffects.Toggle(adminRef, adminRef, app.EffectDescriptors.Hide);
+            },
+        .Enabled = Allows(app, Permission::Hide)});
 
     // Persist each row immediately; the menu has no Save action.
     builder.Add(ToggleRow{.Label = ctx.Translate("chat.displayPrefix"),

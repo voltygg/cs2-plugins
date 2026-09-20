@@ -44,11 +44,11 @@ struct Category
 
 static const std::array<Category, 6> Categories{{
     {"category.punish", &BuildPunishTab, {Permission::Kick, Permission::Ban, Permission::Mute, Permission::Unban}, "punish"},
-    {"category.control", &BuildPlayerActionsTab, {Permission::Hide, Permission::Control, Permission::Weapon}, "control"},
-    {"category.effects", &BuildPlayerFunTab, {Permission::Fun, Permission::Bhop}, "effects"},
-    {"category.fun", &BuildRoundModesTab, {Permission::FunMode}, "fun"},
-    {"category.map", &BuildMapVoteTab, {Permission::Map, Permission::Vote}, "map"},
-    {"category.chatSettings", &BuildMySettingsTab, {}, "chat"},
+    {"category.playerActions", &BuildPlayerActionsTab, {Permission::Hide, Permission::Control, Permission::Weapon}, "control"},
+    {"category.playerFun", &BuildPlayerFunTab, {Permission::Fun, Permission::Bhop}, "effects"},
+    {"category.roundModes", &BuildRoundModesTab, {Permission::FunMode}, "fun"},
+    {"category.mapVote", &BuildMapVoteTab, {Permission::Map, Permission::Vote}, "map"},
+    {"category.mySettings", &BuildMySettingsTab, {}, "chat"},
 }};
 
 std::shared_ptr<VoltMod::Menu> BuildRootMenu(AdminSystem::App& app, int adminSlot)
