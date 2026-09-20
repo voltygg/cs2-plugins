@@ -1,49 +1,58 @@
 # Admin system
 
-A database-backed administration plugin for CS2 servers. It provides
-moderation commands, WASD menus, permissions, effects, player reports,
-multi-server grants, abuse protection, and cheat-check workflows.
+[![Version](https://img.shields.io/badge/version-1.0.0-7c3aed.svg)](plugin.json)
+[![CI](https://github.com/voltygg/cs2-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/voltygg/cs2-plugins/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
+
+Database-backed administration for Counter-Strike 2 servers. It includes an in-game panel,
+moderation commands, player controls, reports, cheat checks, and permissions that can be shared
+across several servers.
+
+<p align="center">
+  <img src="../../docs/assets/admin-panel-ui.png" alt="The admin-system Panorama panel open in Counter-Strike 2">
+</p>
 
 ## Features
 
-- Kick, ban, unban, voice mute, text mute, and warning commands.
-- Player controls including slay, teleport, freeze, noclip, team changes,
-  health, armor, speed, size, and bury.
-- Visual and gameplay effects such as ghost, disco, wallhack, smite, model
-  selection, and optional [bhop grants](../bhop/README.md).
-- Map control through the admin menu: change level, queue the next map, and put
-  a map to the game's own yes/no vote panel.
-- Weapon control through the menu: give a configured weapon, a random one, or
-  strip a player.
-- Round Modes through the menu: low gravity, headshot only, knife
-  round, and one-hit kill.
-- Groups, permissions, immunity, per-server grants, and admin stealth.
-- Network-wide punishments and automatic punishment enforcement.
-- Automatic or manual freezing of abusive admins with an audit trail.
-- Player reports for an external website or moderation service to process.
-- Fixed-link, website-room, and player-provided cheat-check workflows.
-- Async database work with in-memory gameplay caches and automatic migrations.
+| Area | Tools |
+| --- | --- |
+| Moderation | Kick, ban, unban, voice mute, text mute, warnings, and network-wide enforcement |
+| Player control | Slay, teleport, freeze, noclip, team changes, health, armor, speed, size, and bury |
+| Effects | Ghost, disco, wallhack, smite, player models, and optional [bhop grants](../bhop/README.md) |
+| Server control | Map changes, next-map selection, map votes, weapon management, and round modes |
+| Access | Groups, wildcard permissions, immunity, per-server grants, and admin stealth |
+| Admin control | Automatic or manual admin freezes, configurable abuse limits, and an audit trail |
+| Reports and checks | Player reports and fixed-link, website-room, or player-provided cheat checks |
+
+Database work runs asynchronously. Migrations run on startup, and gameplay checks use in-memory
+caches.
 
 ## Requirements
 
-- CS2 dedicated server
+- Counter-Strike 2 dedicated server
 - [Metamod:Source 2.0](https://www.sourcemm.net/)
 - PostgreSQL 13+, MariaDB 10.5+, or SQLite (bundled, no server needed)
 
 ## Install
 
 1. Extract the release into the server's `game/csgo/` directory.
-2. Configure `addons/voltmod/plugins/admin-system/configs/settings.jsonc`.
-3. Give every server sharing the database a unique, stable `server.tag`.
-4. Start the server and let the plugin apply its migrations.
-5. Put your SteamID64 in [`database/seed-admin.sql`](database/seed-admin.sql),
-   render it for your driver and pipe it in:
+2. Open `addons/voltmod/plugins/admin-system/configs/settings.jsonc` and configure the
+   `database` section.
+3. Set a unique, permanent `server.tag` on every server that shares the database.
+4. Start the server. The plugin creates or upgrades its tables automatically.
+5. Create the first admin. In a source checkout, replace the sample SteamID64 and name in
+   [`database/seed-admin.sql`](database/seed-admin.sql), then render the script for your database
+   driver. This PostgreSQL example runs from the repository root:
 
    ```bash
-   uv run voltmod database sql database/seed-admin.sql --driver postgres | psql -d admin_system
+   uv run voltmod database sql plugins/admin-system/database/seed-admin.sql \
+     --driver postgres | psql -d admin_system
    ```
 
-6. Restart the server or run `!admin_reload`.
+6. Restart the server or run `!admin_reload` to load the new admin.
+
+Run `volt list` in the server console after startup. `admin-system` should appear in the loaded
+plugin list. If it does not, check the VoltMod log for a configuration or database error.
 
 To apply migrations manually, render
 [`configs/migrations/`](configs/migrations/) the same way.
@@ -188,7 +197,7 @@ Every kick, ban, mute, and warning is written to `admin_activity`. After each
 action, the plugin checks the issuing admin's network-wide totals over the
 configured sliding window. Root admins are exempt.
 
-An admin with `a` can manually freeze another admin with strictly lower
+An admin with `admin.freeze_admins` can manually freeze another admin with strictly lower
 immunity. Frozen admins keep their database records but lose all permissions
 on every connected server until unfrozen. The plugin broadcasts the freeze,
 notifies the admin immediately or on connection, and propagates the state to
