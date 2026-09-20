@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Admin/Menu/MenuContext.hpp"
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/Menu.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Menu/MenuPresets.hpp>
+#include <functional>
 #include <memory>
 
 namespace AdminSystem::Admin::Menu
@@ -28,5 +30,14 @@ std::shared_ptr<VoltMod::Menu> BuildPlayerPicker(AdminSystem::App& app, int admi
  * "nobody connected" label as one that opens a picker.
  */
 void AppendPlayerRows(AdminSystem::App& app, int adminSlot, VoltMod::MenuBuilder& builder, VoltMod::PlayerPicker spec);
+
+/**
+ * @brief @ref AppendPlayerRows for a list whose rows act on the player, each opening @p open.
+ *
+ * A player this admin may not touch is grayed here, once, saying why - rather than opening a card
+ * whose every row is dead for a reason the card never gives.
+ */
+void AppendTargetRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder,
+                      std::function<std::shared_ptr<VoltMod::Menu>(VoltMod::PlayerRef target)> open);
 
 }  // namespace AdminSystem::Admin::Menu

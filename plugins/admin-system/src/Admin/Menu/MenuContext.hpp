@@ -4,8 +4,10 @@
 #include "Admin/Menu/MenuCatalog.hpp"
 #include "Core/App.hpp"
 
+#include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Menu/ActionRows.hpp>
+#include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Players/PlayerRef.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -55,5 +57,30 @@ struct MenuContext
     App& Plugin;
     VoltMod::PlayerRef Admin;
 };
+
+/**
+ * @brief Appends every row of @p specs this admin may see, in catalog order, built by @p make.
+ *
+ * A row @p make returns nothing for is skipped and logged. The catalog and a tab's `MakeRow` are
+ * two edit sites, and a row silently missing from a menu is the kind of gap nobody reports.
+ */
+template <class Make>
+void AppendCatalogRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder, std::span<const RowSpec> specs,
+                       Make make)
+{
+    for (const RowSpec& spec : specs)
+    {
+        if (!ctx.Visible(spec))
+            continue;
+
+        VoltMod::MenuItem item = make(spec.Id);
+        if (!item.Describe)
+        {
+            VoltMod::Log::Warn("Admin menu row '{}' is in the catalog but nothing builds it.", spec.LabelKey);
+            continue;
+        }
+        builder.Add(std::move(item));
+    }
+}
 
 }  // namespace AdminSystem::Admin::Menu

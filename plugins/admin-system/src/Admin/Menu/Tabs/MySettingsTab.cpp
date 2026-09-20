@@ -3,6 +3,7 @@
 #include "Admin/AdminManager.hpp"
 #include "Admin/Effects/Descriptors.hpp"
 #include "Admin/Menu/MenuAccess.hpp"
+#include "Admin/Menu/MenuCatalog.hpp"
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -97,75 +98,88 @@ static std::string CurrentSlotColor(App& app, int64_t steamId, ColorSlot slot)
     return "";
 }
 
-static void AddColorChoice(App& app, MenuBuilder& builder, const std::string& title, int64_t steamId, ColorSlot slot,
-                           int viewerSlot)
+/** Write one color back, leaving the admin's other chat settings as they are. */
+static void SaveColor(App& app, int64_t steamId, ColorSlot slot, const std::string& value)
 {
-    auto choices = BuildColorChoices(app, viewerSlot);
-    int initialIndex = IndexForColor(CurrentSlotColor(app, steamId, slot));
+    auto& admins = app.Admins;
+    const auto* admin = admins.GetAdmin(steamId);
+    if (!admin)
+        return;
 
-    builder.Add(ChoiceRow<std::string>{.Label = title,
-                                       .Choices = std::move(choices),
-                                       .Commit =
-                                           [&app, steamId, slot](int /*menuSlot*/, const std::string& value) {
-                                               auto& admins = app.Admins;
-                                               const auto* admin = admins.GetAdmin(steamId);
-                                               if (!admin)
-                                                   return;
-                                               std::string nameColor = admin->NameColor;
-                                               std::string messageColor = admin->MessageColor;
-                                               switch (slot)
-                                               {
-                                               case ColorSlot::Name:
-                                                   nameColor = value;
-                                                   break;
-                                               case ColorSlot::Message:
-                                                   messageColor = value;
-                                                   break;
-                                               }
-                                               admins.UpdateChatStyleAsync(steamId, admin->DisplayPrefix, nameColor,
-                                                                           messageColor);
-                                           },
-                                       .Index = initialIndex});
+    const std::string& name = slot == ColorSlot::Name ? value : admin->NameColor;
+    const std::string& message = slot == ColorSlot::Message ? value : admin->MessageColor;
+    admins.UpdateChatStyleAsync(steamId, admin->DisplayPrefix, name, message);
+}
+
+static VoltMod::MenuItem ColorRow(const MenuContext& ctx, std::string_view labelKey, ColorSlot slot)
+{
+    App& app = ctx.Plugin;
+    const int64_t steamId = ctx.Admin.SteamId;
+
+    return ChoiceRow<std::string>{
+        .Label = ctx.Translate(labelKey),
+        .Choices = BuildColorChoices(app, ctx.Admin.Slot),
+        .Commit = [&app, steamId, slot](int, const std::string& value) { SaveColor(app, steamId, slot, value); },
+        .Index = IndexForColor(CurrentSlotColor(app, steamId, slot))}
+        .ToItem();
+}
+
+/** Hide acts on the admin alone, so it belongs with their own settings rather than among the rows
+ *  that act on somebody else. */
+static VoltMod::MenuItem HideRow(const MenuContext& ctx)
+{
+    App& app = ctx.Plugin;
+    const VoltMod::PlayerRef admin = ctx.Admin;
+
+    return ToggleRow{
+        .Label = ctx.Translate("action.hide"),
+        .Get = [&app, slot = admin.Slot](int) { return app.Effects.IsActive(slot, app.EffectDescriptors.Hide.Id); },
+        .Flip = [&app, admin](int) { app.PlayerEffects.Toggle(admin, admin, app.EffectDescriptors.Hide); },
+        .Enabled = Allows(app, Permission::Hide)}
+        .ToItem();
+}
+
+static VoltMod::MenuItem PrefixRow(const MenuContext& ctx)
+{
+    App& app = ctx.Plugin;
+    const int64_t steamId = ctx.Admin.SteamId;
+
+    return ToggleRow{.Label = ctx.Translate("chat.displayPrefix"),
+                     .Get =
+                         [&app, steamId](int) {
+                             const auto* admin = app.Admins.GetAdmin(steamId);
+                             return admin ? admin->DisplayPrefix : true;
+                         },
+                     .Flip =
+                         [&app, steamId](int) {
+                             const auto* admin = app.Admins.GetAdmin(steamId);
+                             if (admin)
+                                 app.Admins.UpdateChatStyleAsync(steamId, !admin->DisplayPrefix, admin->NameColor,
+                                                                 admin->MessageColor);
+                         }}
+        .ToItem();
 }
 
 std::shared_ptr<VoltMod::Menu> BuildMySettingsTab(const MenuContext& ctx)
 {
-    App& app = ctx.Plugin;
-    const int adminSlot = ctx.Admin.Slot;
-    const int64_t steamId = ctx.Admin.SteamId;
-
     MenuBuilder builder(ctx.Translate("category.mySettings"));
 
-    // Hide acts on the admin alone, so it belongs with their own settings rather than among the
-    // rows that act on somebody else.
-    builder.Add(ToggleRow{
-        .Label = ctx.Translate("action.hide"),
-        .Get = [&app, adminSlot](int) { return app.Effects.IsActive(adminSlot, app.EffectDescriptors.Hide.Id); },
-        .Flip =
-            [&app, adminRef = ctx.Admin](int) {
-                app.PlayerEffects.Toggle(adminRef, adminRef, app.EffectDescriptors.Hide);
-            },
-        .Enabled = Allows(app, Permission::Hide)});
-
-    // Persist each row immediately; the menu has no Save action.
-    builder.Add(ToggleRow{.Label = ctx.Translate("chat.displayPrefix"),
-                          .Get =
-                              [&app, steamId](int) {
-                                  const auto* a = app.Admins.GetAdmin(steamId);
-                                  return a ? a->DisplayPrefix : true;
-                              },
-                          .Flip =
-                              [&app, steamId](int) {
-                                  auto& admins = app.Admins;
-                                  const auto* a = admins.GetAdmin(steamId);
-                                  if (!a)
-                                      return;
-                                  admins.UpdateChatStyleAsync(steamId, !a->DisplayPrefix, a->NameColor,
-                                                              a->MessageColor);
-                              }});
-
-    AddColorChoice(app, builder, ctx.Translate("chat.nameColor"), steamId, ColorSlot::Name, adminSlot);
-    AddColorChoice(app, builder, ctx.Translate("chat.messageColor"), steamId, ColorSlot::Message, adminSlot);
+    // Every row here persists immediately; the menu has no Save action.
+    AppendCatalogRows(ctx, builder, MySettingsRows, [&](RowId id) -> VoltMod::MenuItem {
+        switch (id)
+        {
+        case RowId::Hide:
+            return HideRow(ctx);
+        case RowId::ChatPrefix:
+            return PrefixRow(ctx);
+        case RowId::NameColor:
+            return ColorRow(ctx, "chat.nameColor", ColorSlot::Name);
+        case RowId::MessageColor:
+            return ColorRow(ctx, "chat.messageColor", ColorSlot::Message);
+        default:
+            return {};
+        }
+    });
 
     return builder.Build();
 }
