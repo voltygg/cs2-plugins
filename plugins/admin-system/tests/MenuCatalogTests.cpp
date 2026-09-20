@@ -99,15 +99,15 @@ TEST_CASE("Every row appears exactly once across the catalog")
     CHECK(seen.size() == static_cast<std::size_t>(Menu::RowId::MessageColor) + 1);
 }
 
-TEST_CASE("A group row is the only kind that may carry no permission of its own")
+TEST_CASE("No row both names a permission and groups children")
 {
     for (const RowSpec& row : AllRows())
     {
         if (row.Permission.empty())
             continue;
         CHECK_MESSAGE(row.Children.empty(),
-                      "row " << row.LabelKey << " both names a permission and groups children; the group's"
-                             << " visibility would then ignore what is inside it");
+                      "row " << row.LabelKey << " names a permission and also groups children, so its own"
+                             << " permission would be ignored in favour of theirs");
     }
 }
 
