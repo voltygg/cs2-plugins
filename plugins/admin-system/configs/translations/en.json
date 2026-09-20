@@ -275,7 +275,8 @@
     "gone": "That mute is no longer active."
   },
   "lift": {
-    "empty": "No active bans or mutes"
+    "empty": "No active bans or mutes",
+    "truncated": "Showing {shown} of {total} - lift older bans with !unban <steamid>"
   },
   "kickNotice": {
     "permanent": "Permanent ban",

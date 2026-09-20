@@ -13,9 +13,12 @@
 #include <VoltMod/Menu/Flow.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -90,6 +93,10 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
         ->Begin();
 }
 
+/** How many punishments the lift list draws. A busy server holds thousands, which no menu can
+ *  usefully page through; the rest are lifted by command. */
+static constexpr std::size_t ListLimit = 30;
+
 /** One row per punishment, tagged with its kind. */
 static void AppendRows(App& app, MenuBuilder& builder, const std::vector<Database::Punishment>& punishments,
                        int adminSlot)
@@ -118,13 +125,24 @@ std::shared_ptr<VoltMod::Menu> BuildLiftMenu(const MenuContext& ctx)
     builder.EmptyText(ctx.Translate("lift.empty"));
 
     // One list, but each kind still appears only for an admin who may lift it.
+    std::array<PunishType, 3> kinds{};
+    std::size_t count = 0;
     if (ctx.Visible(LiftBansRow))
-        AppendRows(app, builder, app.Punishments.GetActive(PunishType::Ban), adminSlot);
-
+        kinds[count++] = PunishType::Ban;
     if (ctx.Visible(LiftMutesRow))
     {
-        AppendRows(app, builder, app.Punishments.GetActive(PunishType::VoiceMute), adminSlot);
-        AppendRows(app, builder, app.Punishments.GetActive(PunishType::TextMute), adminSlot);
+        kinds[count++] = PunishType::VoiceMute;
+        kinds[count++] = PunishType::TextMute;
+    }
+
+    const auto page = app.Punishments.GetActive(std::span{kinds}.first(count), ListLimit);
+    AppendRows(app, builder, page.Rows, adminSlot);
+
+    // Say so rather than pretending the list is everything; the rest are lifted by command.
+    if (page.Total > page.Rows.size())
+    {
+        builder.Text(ctx.Translate(
+            "lift.truncated", {{"shown", std::to_string(page.Rows.size())}, {"total", std::to_string(page.Total)}}));
     }
 
     return builder.Build();

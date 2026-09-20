@@ -7,8 +7,10 @@
 
 #include <VoltMod/Runtime.hpp>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -28,8 +30,16 @@ public:
 
     bool LoadActivePunishments();
 
-    /** Snapshot of the cached active rows of @p kind, newest first (drives the lift menus). */
-    std::vector<Database::Punishment> GetActive(PunishType kind) const;
+    /** What @ref GetActive found: the rows to draw, and how many matched before the cap. */
+    struct ActivePage
+    {
+        std::vector<Database::Punishment> Rows;
+        std::size_t Total = 0;
+    };
+
+    /** The most recent active rows across @p kinds, newest first and at most @p limit of them.
+     *  Drives the lift menu, which cannot usefully hold the thousands a busy server collects. */
+    [[nodiscard]] ActivePage GetActive(std::span<const PunishType> kinds, std::size_t limit) const;
 
     /** The active row of @p kind against @p steamId, dropping it when it has since expired. */
     std::optional<Database::Punishment> GetActive(PunishType kind, int64_t steamId);

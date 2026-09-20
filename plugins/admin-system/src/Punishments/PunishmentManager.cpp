@@ -62,19 +62,32 @@ bool PunishmentManager::LoadActivePunishments()
     return true;
 }
 
-std::vector<Punishment> PunishmentManager::GetActive(PunishType kind) const
+PunishmentManager::ActivePage PunishmentManager::GetActive(std::span<const PunishType> kinds, std::size_t limit) const
 {
-    const Cache& cache = CacheFor(kind);
-    std::vector<Punishment> out;
-    out.reserve(cache.size());
-    for (const auto& [steamId, record] : cache)
+    // Point at the cached rows rather than copying them: a busy server holds thousands of active
+    // punishments and the caller keeps only `limit`.
+    std::vector<const Punishment*> matches;
+    for (PunishType kind : kinds)
     {
-        if (!record.IsExpired())
-            out.push_back(record);
+        const Cache& cache = CacheFor(kind);
+        matches.reserve(matches.size() + cache.size());
+        for (const auto& [steamId, record] : cache)
+        {
+            if (!record.IsExpired())
+                matches.push_back(&record);
+        }
     }
-    std::sort(out.begin(), out.end(),
-              [](const Punishment& a, const Punishment& b) { return a.CreatedAt > b.CreatedAt; });
-    return out;
+
+    ActivePage page{.Total = matches.size()};
+    const std::size_t shown = std::min(limit, matches.size());
+
+    std::partial_sort(matches.begin(), matches.begin() + static_cast<std::ptrdiff_t>(shown), matches.end(),
+                      [](const Punishment* a, const Punishment* b) { return a->CreatedAt > b->CreatedAt; });
+
+    page.Rows.reserve(shown);
+    for (std::size_t i = 0; i < shown; ++i)
+        page.Rows.push_back(*matches[i]);
+    return page;
 }
 
 std::optional<Punishment> PunishmentManager::GetActive(PunishType kind, int64_t steamId)
