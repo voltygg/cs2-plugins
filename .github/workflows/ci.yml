@@ -26,6 +26,7 @@ jobs:
       - name: Check out the closed-source plugins
         if: env.PRIVATE_PLUGINS_PAT != ''
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config --global url."https://x-access-token:${PRIVATE_PLUGINS_PAT}@github.com/".insteadOf "https://github.com/"
           git submodule update --init --checkout plugins/anticheat plugins/stronghold
 
