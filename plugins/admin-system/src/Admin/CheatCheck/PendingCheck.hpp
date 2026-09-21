@@ -3,7 +3,7 @@
 #include "Admin/CheatCheck/CheatCheckMode.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Entities/MoveType.hpp>
+#include <VoltMod/Schema/Generated/Enums.hpp>
 #include <cstdint>
 #include <string>
 
@@ -27,7 +27,7 @@ struct PendingCheck
     int64_t PausedRemainingSec = 0;                             // seconds that were left when the countdown paused
     int64_t NextPollAtSec = 0;                                  // Time::Now timestamp of the next presence poll
     bool PollInFlight = false;                                  // suppress overlapping polls
-    VoltMod::MoveType PriorMoveType = VoltMod::MoveType::Walk;  // restored on unfreeze
+    VoltMod::Schema::MoveType_t PriorMoveType = VoltMod::Schema::MoveType_t::MOVETYPE_WALK;  // restored on unfreeze
     int PriorTeam = 0;                                          // team before force-to-spectator; restored on unfreeze
 };
 

@@ -76,9 +76,9 @@ static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& ro
     case RowId::Swap:
         return submenu(BuildSwapPartnerPicker);
     case RowId::Freeze:
-        return toggle(VoltMod::InMoveType(VoltMod::MoveType::None), Actions::Freeze);
+        return toggle(VoltMod::InMoveType(VoltMod::Schema::MoveType_t::MOVETYPE_NONE), Actions::Freeze);
     case RowId::Noclip:
-        return toggle(VoltMod::InMoveType(VoltMod::MoveType::NoClip), Actions::Noclip);
+        return toggle(VoltMod::InMoveType(VoltMod::Schema::MoveType_t::MOVETYPE_NOCLIP), Actions::Noclip);
     case RowId::Bury:
         return action(Actions::Bury);
     case RowId::Unbury:
@@ -99,7 +99,7 @@ static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& ro
     case RowId::Armor:
         return presets({.LabelKey = spec.LabelKey, .Unit = "AP", .Presets = ArmorPresets, .Action = Actions::SetArmor});
     case RowId::Godmode:
-        return toggle(VoltMod::HasPawnFlag(VoltMod::FL_GODMODE), Actions::Godmode);
+        return toggle(VoltMod::HasPawnFlag(FL_GODMODE), Actions::Godmode);
     case RowId::Weapons:
         return submenu(BuildWeaponPicker);
     default:

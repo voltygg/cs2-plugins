@@ -23,9 +23,9 @@ namespace AdminSystem::Admin::CheatCheck
 {
 
 using VoltMod::Controller;
-using VoltMod::MoveType;
 using VoltMod::Pawn;
 using VoltMod::Time;
+using VoltMod::Schema::MoveType_t;
 namespace Log = VoltMod::Log;
 namespace ChatColors = VoltMod::ChatColors;
 
@@ -60,7 +60,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 
     // A repeated check must restore the original movement/team state.
     const bool wasActive = _checks[targetSlot].Active;
-    const MoveType priorMove = wasActive ? _checks[targetSlot].PriorMoveType : targetPawn.Move();
+    const MoveType_t priorMove = wasActive ? _checks[targetSlot].PriorMoveType : targetPawn.Move();
     const int priorTeam =
         wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? int{targetPawn.Team()} : 0);
     if (wasActive)
@@ -78,7 +78,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     pc.PriorMoveType = priorMove;
     pc.PriorTeam = priorTeam;
 
-    targetPawn.SetMove(MoveType::None);
+    targetPawn.SetMove(MoveType_t::MOVETYPE_NONE);
     if (cfg.moveToSpectator)
         (void)targetCtrl.ChangeTeam(VoltMod::TeamSpectator);
 
@@ -280,7 +280,7 @@ bool CheatCheckManager::Cancel(int adminSlot, int targetSlot)
     auto* target = _rt.Players.Get(targetSlot);
     std::string targetName = target ? target->Name() : std::string();
 
-    const MoveType restore = _checks[targetSlot].PriorMoveType;
+    const MoveType_t restore = _checks[targetSlot].PriorMoveType;
     const int restoreTeam = _checks[targetSlot].PriorTeam;
     ResetCheck(targetSlot);
     Unfreeze(targetSlot, restore, restoreTeam);
@@ -296,7 +296,7 @@ void CheatCheckManager::Expire(int targetSlot)
     auto* target = _rt.Players.Get(targetSlot);
     std::string targetName = target ? target->Name() : std::string();
 
-    const MoveType restore = _checks[targetSlot].PriorMoveType;
+    const MoveType_t restore = _checks[targetSlot].PriorMoveType;
     const int restoreTeam = _checks[targetSlot].PriorTeam;
     const int64_t adminSteamId = _checks[targetSlot].AdminSteamId;
     ResetCheck(targetSlot);  // deactivate before the kick triggers disconnect cleanup
@@ -320,7 +320,7 @@ void CheatCheckManager::Expire(int targetSlot)
     _chat.BroadcastAction("broadcast.cheatCheckTimedOut", {}, {{"player", targetName}});
 }
 
-void CheatCheckManager::Unfreeze(int targetSlot, MoveType restoreMove, int restoreTeam)
+void CheatCheckManager::Unfreeze(int targetSlot, MoveType_t restoreMove, int restoreTeam)
 {
     Controller controller = _rt.Entities.Controller(targetSlot);
     if (!controller)

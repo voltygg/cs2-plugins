@@ -8,9 +8,9 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/Entity.hpp>
-#include <VoltMod/Entities/MoveType.hpp>
 #include <VoltMod/Http/HttpResult.hpp>
 #include <VoltMod/Messaging/CenterHtml.hpp>
+#include <VoltMod/Schema/Generated/Enums.hpp>
 #include <array>
 #include <cstdint>
 #include <functional>
@@ -73,7 +73,7 @@ private:
     void Expire(int targetSlot);
     void ShowPanel(int targetSlot);   // start (or restart) the panel's own refresh loop
     void ResetCheck(int targetSlot);  // cancel timer + clear panel + reset state, silently
-    void Unfreeze(int targetSlot, VoltMod::MoveType restoreMove, int restoreTeam);
+    void Unfreeze(int targetSlot, VoltMod::Schema::MoveType_t restoreMove, int restoreTeam);
     void ResolveUrl(int targetSlot);
     void RequestRoom(int targetSlot);
     void OnRoomResponse(int targetSlot, uint64_t seq, const VoltMod::HttpResult& result);
