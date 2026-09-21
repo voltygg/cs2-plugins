@@ -196,13 +196,13 @@ Exit criteria: on a local server with bots, buy → place → turret kills with 
 
 Signature features first (section 2a) — they are what players will not find elsewhere:
 
-- [ ] Sabotage: hold-E progress bar on the HUD, behind-the-structure test (dot product against its facing), temporary team flip, self-destruct timer, owner warning, cancel on damage to the saboteur. Turret front-cone rule for crouching enemies.
-- [ ] Sensor tower: per-team glow of enemies in range using the `GlowVision` recipe; range grows with level.
-- [ ] Teleporter pair: two placements in one purchase, recharge per level, telefrag protection (exit must be clear — hull trace), team-colored particle.
-- [ ] Jump pad: launch velocity along placement yaw, per-player cooldown, no fall damage for the landing.
-- [ ] Turret specialisation at level 3 (Gatling / Marksman / Cryo) — stats per branch in config; Cryo slow via the max-speed setter with a timed restore.
-- [ ] Scrap pickups (prop + proximity check + despawn timer), bounty tracking and payout, trailing-team income boost.
-- [ ] Supply drops: schedule, drop point choice, falling crate, beacon particle and siren, hold-E claim, random level-2 item placed into the claimer's placement mode for free.
+- [x] Sabotage: hold-E progress bar on the HUD, behind-the-structure test (dot product against its facing), temporary team flip, self-destruct timer, owner warning, cancel on damage to the saboteur. Turret front-cone rule for crouching enemies.
+- [x] Sensor tower: per-team glow of enemies in range using the `GlowVision` recipe; range grows with level.
+- [x] Teleporter pair: two placements in one purchase, recharge per level, telefrag protection (exit must be clear — hull trace), team-colored particle.
+- [x] Jump pad: launch velocity along placement yaw, per-player cooldown, no fall damage for the landing.
+- [x] Turret specialisation at level 3 (Gatling / Marksman / Cryo) — stats per branch in config; Cryo slow via the max-speed setter with a timed restore.
+- [x] Scrap pickups (prop + proximity check + despawn timer), bounty tracking and payout, trailing-team income boost.
+- [x] Supply drops: schedule, drop point choice, falling crate, beacon particle and siren, hold-E claim, random level-2 item placed into the claimer's placement mode for free.
 
 Then the borrowed basics:
 
@@ -432,3 +432,63 @@ Optional and last: this is the part copied most directly from the reference and 
   - `sh_shop` typed in the console and `bind b sh_shop`;
   - the "Stronghold shop" row in `!menu`. The server's main-menu `settings.jsonc` is seeded once, so copy the new one first.
 - Blockers: `sh_core_set` cannot be used in game until stronghold gets a permission policy. That needs a cross-plugin permission contract from admin-system, which M4's VIP tiers need too. Everything else in part B is done. The HUD, the tutorial and the anticheat/bhop checks remain open.
+
+### 2026-09-21 — Milestone 3 signature features (step 4, part A)
+
+- Landed in `plugins/stronghold` on `feat/stronghold` (not pushed). Nothing changed in voltmod, and `conan.lock` is not relocked; the root still builds against `conan editable add voltmod`.
+  - `940e1ea` feat: turn an enemy structure by holding E behind it, and let crouching enemies slip past turrets
+  - `87fd381` feat: add sensor towers that show enemies in range through walls to their team
+  - `0d0e366` feat: add teleporter pairs placed as an entrance and an exit for one price
+  - `ec686db` feat: add jump pads that launch allies along their facing and spare them the landing
+  - `fe8d769` feat: let a turret's last upgrade specialise it as Gatling, Marksman or Cryo
+  - `37ff80c` refactor: give the item settings their own header
+  - `29704a0` feat: drop scrap from destroyed structures, put bounties on streaks and big bases, and boost the trailing team
+  - `534611e` feat: drop timed supply crates that give a free level 2 structure to whoever claims them
+  - `dbfcfdb` refactor: share message, item name and sound helpers, and look up placement prompts from a table
+- New files (`src/`): `Sabotage`, `SensorTowers`, `Teleporters`, `JumpPads`, `TurretBranches`, `Scrap`, `Bounties`, `SupplyDrops`, `ItemSettings` (split out of `Config`), `Text`, and the SDK-free `Hold`, `PadRules` and `Rewards`. `DropPoint` joined `RoundRules`, and `InCone` joined `TurretAim`. New tests: `HoldTests`, `PadRulesTests` and `RewardsTests`, plus cases in `TurretAimTests` and `RoundRulesTests`. The repo runs 257 CTest cases, all passing; `poe build`, `poe test` and `poe lint` pass. The largest files are `Placement.cpp` (290) and `Structures.cpp` (223).
+- API for the next step:
+  - `Structures::Build(item, slot, origin, angles, level = 1)` starts a structure at any level, with that level's head. `Structures::LevelUp(structure, item, next, upgraderSlot)` applies a level or a branch. `StatsOf(item, structure)` gives the branch's stats when one was taken, else the level's. Also `IsBuilt(structure, item, now)`, `PlaySound(runtime, ref, soundEvent)` and `Structures::SetPowered(Structure&, bool)`.
+  - `Structure` gained `Branch`, `PairId`, `Exit` and `PlacedAt`. `CountOwned` skips teleporter exits.
+  - `Placement::Begin(slot, item, PlacementOrder{Free, Level, EntranceId, Refund})`. A free order charges nothing. Cancelling a teleporter exit removes its entrance and refunds it.
+  - `ForSale(settings, item)` hides Cores and items whose feature is off; the shop and supply drops use it. `FindBranch(item, id)`.
+  - `Text.hpp`: `ItemName(runtime, slot, itemId)`, `Tell(runtime, slot, key, tokens, kind)` and `TellAll(runtime, key, tokens, kind)`.
+  - `PadRules`: `OnPad`, `LaunchVelocity`, `Cooldowns` (`TryUse`, `Ready`, `ForgetReady`) and `SteadyMs`. `Hold`: `HoldShare` and `ProgressBar`. `Rewards`: `ScrapValue`, `BountyFor`, `KillReward` and `BountySettings`.
+  - `Cores::DropPoint()`. `configs/cores/<map>.json` takes an optional `drop` point, written by hand.
+  - `StructureHealth::Destroy(structure, destroyerSlot)` is public and drops scrap. `Bounties::OnDeath` now pays every kill reward; that code moved out of `App`.
+  - Settings: new `sabotage`, `scrap`, `bounties` and `supplyDrops` sections; per item `branches`, `pad` and `sounds.use`; per level `rechargeMs`; `turret.crouchConeDegrees`. New item kinds: `sensor_tower`, `teleporter` and `jump_pad`.
+- Deviations:
+  - Progress bars and prompts are center text (`[####----]`), not a Panorama HUD, which does not exist yet.
+  - Sabotage: the owner is warned in chat and center text when the hold starts. The turned structure changes owner as well as team, so its kills and its power follow the saboteur, and its upgraders are dropped. When its time is up it goes through `StructureHealth::Destroy`, so it drops scrap and pays nobody. Cores cannot be sabotaged. A laser mine faces out of its wall, so nobody can stand behind it; it can still be shot. The turned structure keeps its material group.
+  - Turrets ignore a crouching enemy outside `crouchConeDegrees` of the way the turret was placed facing, not of where the head points, and only while `features.sabotage` is on.
+  - Sensor tower: the pole model. Only humans get a glow, since bots cannot see it and every glow costs entities.
+  - The teleporter and the jump pad both use the landmine model (scale 2 and 1.5). There is no teleporter model and no team-coloured particle. Losing either teleporter half removes the other on the next tick, with no scrap for it.
+  - Jump pad stats are per item (`pad`), not per level. The pad writes the velocity with `SetVelocity` and clears `FL_ONGROUND`, as bhop does. `Teleport` with no origin moved nothing, and voltmod's `Pawns::Slap` notes that it has crashed CS2.
+  - Turret branches: the choice is a framework menu that opens on the E press for the last upgrade, since the look-at panel is center text and has no buttons. All three branches use the `level3.vmdl` head.
+  - Scrap uses the drone model and has no collision. The pickup sound plays from the taker, because the piece is removed at once.
+  - Bounties: the clan tag is `$<amount>`. While a bounty shows, the controller's `m_szClan` points into a string the plugin owns. The player's own tag is put back when the bounty ends, on disconnect and on unload. A client that changes its clan tag meanwhile overwrites ours until the bounty changes. The trailing boost needs `features.cores`.
+  - Supply drops: the crate is `money_dispenser.vmdl` with no collision, moved down by `Teleport` each frame. The beacon is the `Stronghold.Air.Siren` sound only, with no particle. A claim means standing within `claimDistance` and holding E; no aiming is needed. The drop point can only be written by hand; there is no command for it.
+- Findings:
+  - Bots crouched with `bot_crouch 1` have `FL_DUCKING` (2) set in `m_fFlags`.
+  - A bot teleported into the air hovers until it moves on its own, and one teleported into a prop's collision is stuck. Pad tests therefore drop bots a little above the pad.
+  - A settings file with a UTF-8 byte order mark fails to load (`1:1: expected_brace`). PowerShell's `Set-Content -Encoding utf8` writes one.
+- Live smoke test (local server, de_dust2, bots, through a temporary `sh_probe` console command that was not committed):
+  - Sabotage: with a bot 60 units straight behind a turret, `CanSabotage` was true. It was false in front, at 300 units and for a teammate. A forced turn moved the turret to the saboteur's team and owner and kept its frags. It shot its old team (100 → 12 hp) and destroyed itself when `switchedMs` ran out (8 s for the test).
+  - Crouch rule: a crouched enemy 250 units behind a turret took no damage for 4 s. 250 units in front, it was shot (100 → 36).
+  - Sensor tower (bots allowed as viewers in the probe build only): after the build time, `prop_dynamic` went from 5 to 11 (3 viewers × 1 enemy × 2 clones). Moving the enemy out of range took it back to 5, and back in range to 11. Killing the owner powered the tower down and removed the clones.
+  - Teleporter (halves built and linked by the probe): a bot on the entrance arrived on the exit, 16 units up. It stayed put through the 8 s recharge and while another bot stood on the exit, then went once the exit was clear. Removing the exit removed the entrance.
+  - Jump pad: a bot dropped onto the pad left at (649, 27, 287) u/s along the pad's yaw and rose about 200 units. Fall damage inside the window was blocked (40 → 40 hp); a bullet was not (40 → 25).
+  - Turret branches: the level 2 upgrade charged 1200. The next upgrade opened "Choose the level 3 turret" with three rows and charged nothing. With Cryo set by the probe, a hit enemy's max speed went from 260 to 130, and back to 260 about 1.5 s after the last hit.
+  - Scrap: an enemy who destroyed a wall got +500, and a scrap piece replaced the wall. Walking onto it paid +450 (1500 × 0.3) and removed it.
+  - Bounties (test settings `streakFrom` 1 and `baseFrom` 2): a kill gave +800 and the tag `$400`. Killing that bot paid +1200 (800 + 400), and its own tag was back after respawn. Two walls gave their owner `$400`. With the T Core at 50%, a T kill paid 1200 (800 × 1.5).
+  - Supply drops (`intervalSeconds` 20, `lifetimeSeconds` 8): nothing came for the first 20 s. Then a crate appeared 800 units above the midpoint of the Cores, fell for 3 s onto the floor, and went 8 s after landing. A claim forced by the probe put the claiming bot into placement mode and removed the crate.
+  - After the refactor, the committed build loaded cleanly and ran with 10 bots. The only load warning is the known `sh_core_set` permission.
+- User must check in game:
+  - Sabotage: holding E behind an enemy structure, the progress bar, the owner's warning, and that the hold stops when you are hit, let go, step away or look away. Also the `[Hold E] Sabotage` line in the panel.
+  - Sensor tower: the glow through walls, shown to your team only, and whether the pole reads as a tower.
+  - Teleporter: the two-step placement (entrance, then exit; R on the exit refunds), the "Now place the exit" message, and the trip itself. Check the landmine model at scale 2.
+  - Jump pad: how the launch feels (`launchSpeed` 650, `launchUp` 550), no fall damage on landing, and the 1.5 s cooldown.
+  - Turret branches: the menu from E on a level 2 turret, its price rows, the panel line `Turret · Cryo`, and the Cryo slow on a real player. Check whether a weapon switch resets the slowed max speed.
+  - Scrap: the drone model on the floor, and the pickup message and sound.
+  - Bounties: the `$600` clan tag on the scoreboard, and the chat messages when a bounty is placed and claimed.
+  - Supply drops: the fall, the siren, the center progress while holding E, and the free placement (the `· free` prompt). On de_dust2 the midpoint of the Cores is in mid (-238, 739, 0). Other maps may need a `drop` point in `configs/cores/<map>.json`.
+- Blockers: none. Still open in M3 (part B): landmine, dispensers, tesla coil, perks and the balance pass.
