@@ -20,17 +20,9 @@ namespace Log = VoltMod::Log;
 namespace Bhop
 {
 
-void BhopManager::Initialize()
+BhopManager::BhopManager(VoltMod::Runtime& runtime, ConfigManager& config)
+    : _rt(runtime), _config(config), _conVars(runtime.ConVars)
 {
-    // Forced hops read this every frame.
-    if (auto impulse = _rt.ConVars.Find<float>("sv_jump_impulse"))
-        _jumpImpulse = std::move(*impulse);
-    else
-        Log::Warn("sv_jump_impulse unusable ({}); forced hops use the engine default.", impulse.error().Detail);
-
-    ApplySettings();
-    RegisterConsoleCommands();
-
     auto& events = _rt.GameEvents;
     _subs.Add(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) { OnPlayerSpawn(e.Slot); }));
     _subs.Add(events.On<VoltMod::PlayerJump>([this](const VoltMod::PlayerJump& e) { OnPlayerJump(e.Slot); }));
@@ -50,6 +42,18 @@ void BhopManager::Initialize()
             if (_grantedSlots[slot])
                 ForceAutoHop(slot);
     }));
+}
+
+void BhopManager::Initialize()
+{
+    // Forced hops read this every frame.
+    if (auto impulse = _rt.ConVars.Find<float>("sv_jump_impulse"))
+        _jumpImpulse = std::move(*impulse);
+    else
+        Log::Warn("sv_jump_impulse unusable ({}); forced hops use the engine default.", impulse.error().Detail);
+
+    ApplySettings();
+    RegisterConsoleCommands();
 }
 
 void BhopManager::ApplySettings()
