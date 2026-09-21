@@ -29,6 +29,7 @@ namespace AdminSystem
 App::~App()
 {
     AdminActions.Unpublish();
+    SharedPermissions.Unpublish();
     AdminSection.Unpublish();
     ReportSection.Unpublish();
     CheatCheck.CancelAll();
@@ -120,6 +121,7 @@ Status App::InitializePunishments()
 
     // Publish the anticheat surface only after its database and admin dependencies are ready.
     AdminActions.Publish();
+    SharedPermissions.Publish();
 
     if (!loaded)
         return std::unexpected(Error::Failed("failed to load active punishments"));

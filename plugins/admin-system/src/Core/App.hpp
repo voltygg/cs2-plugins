@@ -8,6 +8,7 @@
 #include "Admin/FreezeManager.hpp"
 #include "Config/ConfigManager.hpp"
 #include "Core/AdminActionsService.hpp"
+#include "Core/PermissionService.hpp"
 #include "Core/AdminMenuSection.hpp"
 #include "Core/ChatService.hpp"
 #include "Core/PlayerChat.hpp"
@@ -121,6 +122,8 @@ struct App final : VoltMod::Plugin
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Settings, Chat, Punishments};
     /** Published to other plugins in Load; withdrawn before these managers die. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
+    /** Published to other plugins in Load; withdrawn before the access gate dies. */
+    Core::PermissionService SharedPermissions{Runtime, Access};
     /** The main menu's admin entry; published in Load, withdrawn before these managers die. */
     Core::AdminMenuSection AdminSection{*this};
     /** The main menu's report entry; published in Load, withdrawn before these managers die. */
