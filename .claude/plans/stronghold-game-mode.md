@@ -214,9 +214,9 @@ Then the borrowed basics:
 
 ## 8. Milestone 4 — VIP tiers and persistence
 
-- [ ] Tiers `basic / lite / medium / ultra / extreme` as permission strings (`stronghold.vip.<tier>`) resolved through `runtime.Policy` so admin-system groups can grant them. No new tables unless expiry dates are needed; if they are, a `stronghold` DB with its own migrations (test data in seed files, not migrations).
-- [ ] Tier effects from config. Default set is the fair one from section 2a: structure skins, beam colors, kill-feed tag, loadout presets, faster placement, modest salary. The reference's power perks (higher limits, timed free HP/armor/money, discounts) stay available as config options, off by default.
-- [ ] VIP tab: shows current tier, cooldown timers, and what each tier adds. Movement extras (extra air jumps, parachute, grapple) only if wanted — each is its own small task.
+- [x] Tiers `basic / lite / medium / ultra / extreme` as permission strings (`stronghold.vip.<tier>`) resolved through `runtime.Policy` so admin-system groups can grant them. No new tables unless expiry dates are needed; if they are, a `stronghold` DB with its own migrations (test data in seed files, not migrations).
+- [x] Tier effects from config. Default set is the fair one from section 2a: structure skins, beam colors, kill-feed tag, loadout presets, faster placement, modest salary. The reference's power perks (higher limits, timed free HP/armor/money, discounts) stay available as config options, off by default.
+- [x] VIP tab: shows current tier, cooldown timers, and what each tier adds. Movement extras (extra air jumps, parachute, grapple) only if wanted — each is its own small task.
 - [ ] Optional persistence of lifetime stats (structures built, structure frags) for a leaderboard.
 
 ## 9. Milestone 5 — air and armor (optional)
@@ -558,3 +558,66 @@ Optional and last: this is the part copied most directly from the reference and 
   - In observe mode, own turrets and landmines while you shoot at other targets. `anticheat_status` should show no aimbot, triggerbot, silent-aim or wallhack evidence from structure kills.
   - Teleporters, jump pads and the speed and gravity perks should raise nothing either.
 - Blockers: none for anticheat or bhop. The rest of step 6 (ru translations, the balance numbers) is the other agent's.
+
+### 2026-09-21 — Milestone 4, VIP tiers (step 5)
+
+- Landed (not pushed, not tagged, `conan.lock` not relocked; nothing changed in voltmod):
+  - root `feat/stronghold`:
+    - `56407e4` feat: publish admin-system's permission check for other plugins' policies
+    - `6edac47` chore: seed the stronghold VIP tier groups and a test VIP
+  - stronghold `feat/stronghold`:
+    - `3fe363f` fix: take player permissions from admin-system, so admins can run sh_core_set in game
+    - `13cb6f8` feat: add VIP tiers from stronghold.vip permissions with tags, colours, faster builds, salaries and a VIP page
+  - root: this entry and the submodule pointer.
+- Permission sharing:
+  - voltmod has no host-level policy. Each plugin's `Runtime::Policy` is its own, and admin-system's `HasPermission` lived only in admin-system's runtime.
+  - New contract `plugins/contracts/include/Contracts/IPermissions.hpp` (`cs2plugins.IPermissions/1`), with one method, `HasPermission(steamId, permission)`. admin-system publishes it from `Core/PermissionService.hpp`, next to `IAdminActions`, and unpublishes it in `~App`. It is backed by `Admin::Access`: group and wildcard permissions, minus abuse freezes.
+  - stronghold's `App::InstallPolicy` sets `Runtime.Policy.HasPermission` to ask `Exchange.Get<IPermissions>()` on every call. Load order and an admin-system reload therefore do not matter, and with admin-system unloaded every permission is denied. Any other plugin can copy these few lines.
+  - The "N command(s) gate on a permission with no HasPermission policy" load warning is gone.
+- VIP design:
+  - `VipRules` is SDK-free and tested by `VipRulesTests` (9 cases). It holds `VipTierSettings`, `VipSettings`, `TierPermission`, `HighestTier`, `ScaledBuildMs`, `DiscountedPrice`, `HasFreebies`, `CooldownLeft`, `MinutesAndSeconds` and `PackColor`. The laser beam's colour packing moved into `PackColor`.
+  - `Vip` (`Vip.cpp`, `VipPage.cpp`):
+    - `TierOf(slot)` asks `Policy::Authorize` for each tier, highest first, on every use, with no cache.
+    - It also offers `PriceFor`, `LimitFor`, `ClanTag`, `Dress(structure, slot)` and `BuildPage(slot)`, and runs a salary timer and freebie claims.
+  - `Structure` gained `BuildMs` (the item's build time, shortened by the tier), `Color` (the powered render colour) and `BeamColor`. `IsBuilt(structure, now)` no longer takes the item, and turrets and laser mines use the structure's build time. `Structures::Tint` repaints a structure.
+  - Settings: `vip {salaryIntervalSeconds, freebieCooldownSeconds, tiers[]}` and `features.vip`.
+    - Each tier has `clanTag`, `structureColor`, `beamColor`, `buildTimeShare`, `rememberLoadout` and `salary`.
+    - The power options `extraLimit`, `discount`, `freeHealth`, `freeArmor` and `freeMoney` are all 0 by default.
+    - The fair defaults are in the README table: tags `[VIP]`, `[VIP+]`, `[VIP++]` and `[ELITE]`, build time from 90% down to 70%, and $200 to $600 every 5 minutes.
+- Decisions and deviations:
+  - No database. admin-system groups hand out the tiers, and neither the groups nor the `admins` table have an expiry, so a VIP ends only when someone removes the membership by hand.
+  - The "kill-feed tag" is the scoreboard clan tag. As far as is known, CS2's kill feed does not show clan tags; check in game. A bounty's `$amount` tag shows over it. `Bounties` owns both tags, so the two never fight over `m_szClan`.
+  - "Structure skins" are a render tint (`structureColor`). Only turrets and dispensers have material groups, and those already carry team and level. The beam colour replaces the team colour on the owner's laser beams.
+  - "Loadout presets remembered" keeps the chosen weapon set by SteamID in memory through reconnects and map changes, until the plugin reloads. There are no equipment presets.
+  - Freebies are one claim row for all three gifts, with one cooldown. The cooldown is kept by SteamID, so reconnecting does not reset it. Health is raised up to max health and armor up to 100, and only a living player can claim.
+  - Tiers do not add up; each lists everything it gives. Root (`*`) and `stronghold.*` hold every tier, so root admins get Extreme.
+  - A member of a `vip_<tier>` group is an entry in admin-system's `admins` table, so admin-system treats them as an admin. They see the admin menu entry, which is empty for them, and get the group's `[VIP]` chat prefix. The seed groups have immunity 0 and no admin permissions.
+  - Seed data in `plugins/admin-system/database/seed-admin.sql`: the groups `vip_basic` to `vip_extreme`, and a placeholder test VIP (SteamID `76561198000000001`, medium). Swap in a real second account to test with a client.
+  - Deferred: persisting lifetime stats for a leaderboard (the last M4 box stays open), and the movement extras.
+- Live smoke test (local server, de_dust2, 4 bots, driven through a temporary `sh_probe` console command that was not committed):
+  - Setup, all undone afterwards:
+    - Bots have SteamID 0, so a temporary `admins` row for SteamID 0 made every bot a medium VIP.
+    - The test tier also had the power options on: limit +1, 10% off, 50 health, 100 armor and $1000. The salary ran every 20 s and the freebie cooldown was 60 s.
+    - The row, the test config and the saved Core file were removed at the end.
+  - The Permissions load step no longer warns. `Authorize(bot, "stronghold.vip.medium")` was true; `ultra` and `admin.map` were false. `TierOf` was medium: turret price 1800 (2000 less 10%), limit 3, and the clan tag `[VIP+]` on the controller.
+  - A turret built for a VIP took 1600 ms instead of 2000, and a laser mine 1200 instead of 1500. Both got the tint `FFFFDCC8` and the beam colour `FF00C8FF` ([255, 200, 0]).
+  - Salary: a stopped bot with no structures went 4200 → 4600 in one 20 s tick.
+  - VIP page rows: "Your tier: Medium", "Claim your freebies", "What each tier gives", then Basic to Extreme, with "Medium (current)". Clicking the claim row paid +$1000 and set armor to 100. The page then read "Freebies ready in 1:00", and a second click gave nothing.
+  - Remembered weapon set: choosing the AWP for one bot made every other bot report `set=awp`, since they share SteamID 0.
+  - `sh_core_set`:
+    - Run from a bot's client as a medium VIP, `sh_core_set t` was refused, and no cores file was written.
+    - Then the SteamID 0 row moved to the `admin` group, and admin-system was reloaded (`volt reload admin-system`). stronghold's policy answered `admin.map` true through the republished contract, and the same command saved `configs/cores/de_dust2.json`.
+    - The bot's tier went to none, and its clan tag went back to its own.
+  - With admin-system unloaded, `admin.map` was false. After `volt load admin-system` it was true again.
+- Findings:
+  - Bots stay in `challenging` and never join until `bot_join_after_player 0` is set. With no human connected, this looked like a server fault.
+  - `meta unload 1` unloaded every plugin, then hung the server, which had to be killed.
+  - `admin_reload` has no console form. From RCON, `volt reload admin-system` is the way to pick up a database edit.
+  - Another session was using the local server during this step, so this test ran on its own server start. The local server's stronghold `settings.jsonc` was replaced with the repo's copy, which adds the `vip` section; the seeded copy had no other local edits.
+- User must check in game:
+  - The VIP page in the shop, with a real VIP account: swap the seed's placeholder SteamID for a second account, then run `!admin_reload`. Also check the claim row once a power option is on.
+  - The clan tag on the scoreboard, and whether any tag reaches the kill feed.
+  - The structure tint on each model, and the gold, violet and teal beam colours.
+  - The VIP salary chat line every 5 minutes.
+  - `sh_core_set` from a real admin client, and its refusal for a normal player.
+- Blockers: none. This resolves the M2 part B blocker, where stronghold had no permission policy.
