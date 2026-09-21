@@ -21,3 +21,26 @@ VALUES ('admin', '["admin.freeze_admins","admin.kick","admin.ban","admin.unban",
 VALUES (76561198093475210, 'Hikka', '["admin"]', '[]')
 @ON_CONFLICT(steam_id)@;
 UPDATE admins SET groups = '["admin"]', permissions = '[]' WHERE steam_id = 76561198093475210;
+
+-- Stronghold VIP tiers: each group grants one tier and the highest one held applies. Groups
+-- carry no expiry, so remove the membership by hand when a VIP ends.
+@INSERT_IF_ABSENT@ admin_groups (name, permissions, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
+VALUES ('vip_basic', '["stronghold.vip.basic"]', 0, '[]', '[VIP]', 'gold', 'default', 'default')
+@ON_CONFLICT(name)@;
+@INSERT_IF_ABSENT@ admin_groups (name, permissions, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
+VALUES ('vip_lite', '["stronghold.vip.lite"]', 0, '[]', '[VIP]', 'gold', 'default', 'default')
+@ON_CONFLICT(name)@;
+@INSERT_IF_ABSENT@ admin_groups (name, permissions, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
+VALUES ('vip_medium', '["stronghold.vip.medium"]', 0, '[]', '[VIP]', 'gold', 'default', 'default')
+@ON_CONFLICT(name)@;
+@INSERT_IF_ABSENT@ admin_groups (name, permissions, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
+VALUES ('vip_ultra', '["stronghold.vip.ultra"]', 0, '[]', '[VIP]', 'gold', 'default', 'default')
+@ON_CONFLICT(name)@;
+@INSERT_IF_ABSENT@ admin_groups (name, permissions, immunity, inherits, chat_prefix, prefix_color, name_color, message_color)
+VALUES ('vip_extreme', '["stronghold.vip.extreme"]', 0, '[]', '[VIP]', 'gold', 'default', 'default')
+@ON_CONFLICT(name)@;
+
+-- A test VIP on the medium tier; put a second account's SteamID64 here.
+@INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions)
+VALUES (76561198000000001, 'Test VIP', '["vip_medium"]', '[]')
+@ON_CONFLICT(steam_id)@;
