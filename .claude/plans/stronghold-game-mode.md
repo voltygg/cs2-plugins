@@ -673,7 +673,7 @@ Optional and last: this is the part copied most directly from the reference and 
   - signatures: `CBaseEntity::TakeDamageOld`, `CTakeDamageInfo::CTakeDamageInfo`, `CCSGameRules::TerminateRound` (CS2Fixes' bytes);
   - `CNavPhysicsInterface::Nav_TraceShape` at index 5 (inferred from the ABI);
   - schema baselines copied or inferred from Windows in `schema/server.linux.json`: `CPlayer_CameraServices`, `CCSPlayerBase_CameraServices`, `CCSGameRulesProxy`, `CBeam`.
-- Framework finding to follow up: `EntityOps::RemoveDelayed` (the delayed `Kill` IO event) crashes the server without a minidump; stronghold no longer calls it.
+- Framework finding to follow up: `EntityOps::RemoveDelayed` (the delayed `Kill` IO event) crashes the server without a minidump; stronghold no longer calls it. Fixed 2026-09-22, see below.
 - Client checklist (everything that needs a human in game):
   - Shop and menus: the center HTML shop pages and price rows, the Perks and VIP pages, the turret branch menu, `sh_shop` in the console and `bind b sh_shop`, the `!menu` Stats-tab entry, no upgrade while a menu is open.
   - Placement: the ghost visible only to the placer, green and red, E places and charges (the shop's E does not place at once), R cancels, the prompt text, the teleporter's two-step placement and refund, wall facing and scale, laser mines facing out of the wall, placement boxes that match the models (wall, dispensers, tesla coil, rocket battery, air defense, tank).
@@ -690,3 +690,20 @@ Optional and last: this is the part copied most directly from the reference and 
   3. From the repo root, `uv run poe build --relock` and commit `conan.lock` (this drops the `conan editable` link used during development).
   4. Upload the `stronghold` workshop addon in the Workshop Manager, then set its id as `addonId` in the plugin's `configs/settings.jsonc` (0 skips it). Updates wait for Steam moderation.
   5. Verify the Linux items above on `libserver.so` before the first `/deploy-test`, then deploy to one test server and run the client checklist.
+
+### 2026-09-22 — Delayed removal fix
+
+- Root cause: voltmod bound `CEntitySystem::AddEntityIOEvent` with ten parameters, an `int outputId` in the eighth slot. The engine takes nine, and the eighth is a pointer it copies from when non-null. MSVC stores an `int 0` in a stack argument slot with a 4-byte `mov dword ptr [rsp+38h]`, so the slot's upper half kept stale stack bytes. The engine read a wild pointer and crashed inside `new` + copy-construct. The input name and the variant were not the problem.
+- Evidence:
+  - Disassembly of `server.dll` (signature at RVA `0x1247710`): it reads exactly nine arguments. Argument 8 (`[rsp+0x98]`) is null-checked, then passed to a copy constructor at `0x14513f0` for a new 0x90-byte object. Argument 9 is copied into the event's `KeyValues3`. The input name is interned through `CUtlSymbolTableLarge::AddString` at `this+0x1ec8` (`0x514960`, MurmurHash2 seed `0x31415926`). The variant is deep-copied with `g_pMemAlloc` (`0x1492a0`: FIELD_CSTRING gets a fresh buffer and its own `CV_FREE`). `CEntityInstance::AcceptInput` (`0x126bad0`) reads only five arguments; voltmod passed seven, which was harmless but wrong.
+  - Live repro on the local server, with a temporary `sh_probe_kill` command that was not committed: the old `RemoveDelayed` killed the server on the first call from RCON, and CS2 wrote no dump. A ctypes debugger attached to `cs2.exe` caught the first-chance fault and wrote one: `0xc0000005`, read of `0x7e00000000` at `server.dll+0x145147f` (`cmp dword ptr [rbp], r12d` in that copy constructor). The low half of the address is the `int 0`; the high half is stack garbage. Keeping the same temporary name and allocated `variant_t("")` but passing a full-width null in slot 8, or calling the correct nine-argument prototype, removed the prop on time with no crash, even with the name buffer overwritten right after the call.
+- Fix (voltmod `474392c`): `Bindings::AddEntityIOEvent` now has the engine's nine parameters with pointer-typed trailing arguments, and `EntityOps::AddIOEvent` passes `nullptr` for both. `Bindings::AcceptInput` now has its five parameters. The wrong ownership comments (that `variant_t` borrows the string) are corrected; the SDK `variant_t(const char*)` copies its string. The public API is unchanged.
+- Stronghold (`de4757c`): `Projectiles` again removes impact particles and hidden lingering shot props with `RemoveDelayed`, and drops its frame-loop linger list.
+- Verified live on de_dust2, then after `changelevel de_inferno`:
+  - `RemoveDelayed` and `AddIOEvent` at delays 0 and >0, and an IO event carrying a string value (`SetScale "2"`, then Kill).
+  - Two Kills on one entity, `RemoveDelayed` followed by an immediate `Remove`, and `AcceptInput` / `AcceptInputFloat` before a delayed Kill.
+  - Stronghold's impact particle plus a hidden prop.
+  - Two soaks: 3.7 and 3.6 minutes, 37 and 33 rounds of 510 to 550 calls, about 30,000 calls in total. 200 Kills were still pending across the map change; the second soak had eight bots playing.
+  - No fault reached the attached debugger. Every sampled prop was gone after its delay, and the `prop_dynamic` count stayed flat.
+  - `poe build`, `poe test` (295 root, 472 voltmod) and `poe lint` pass in both repos.
+- Still open: the Linux side has the same nine-argument function and the same fix applies, but `libserver.so` was not disassembled here. The rocket impact path in a real match still needs a client (it is on the checklist above).
