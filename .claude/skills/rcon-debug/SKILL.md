@@ -81,7 +81,7 @@ feature; if the binary is older, rebuild instead of reading code.
 
 ## What is reachable from the console
 
-Only commands registered with `.Console()` or `.ConsoleOnly()`; chat commands have
+Only commands registered with `.Anywhere()` or `.ServerOnly()`; chat commands have
 no console entry point, and permissions are never checked on the console.
 
 | Plugin | Console commands |

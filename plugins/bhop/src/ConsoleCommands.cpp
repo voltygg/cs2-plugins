@@ -21,7 +21,7 @@ void BhopManager::RegisterConsoleCommands()
 
     commands.Add("bhop_player")
         .Describe("Grant/revoke session bhop for a player.")
-        .ConsoleOnly()
+        .ServerOnly()
         .Run([this](Caller, Args::SteamId steamId, Args::Int enabled) -> Result<Reply> {
             const bool granted = enabled.Value != 0;
             Grant(steamId.Value, granted);
@@ -30,7 +30,7 @@ void BhopManager::RegisterConsoleCommands()
 
     commands.Add("bhop_reload")
         .Describe("Re-read settings.jsonc and re-apply the bhop configuration.")
-        .ConsoleOnly()
+        .ServerOnly()
         .Run([this](Caller) -> Result<Reply> {
             ReloadSettings();
             return Reply::Silent();
