@@ -19,6 +19,7 @@
       "label": "tab.stats",
       "icon": "stats",
       "entries": [
+        { "kind": "section", "label": "entry.stronghold", "section": "stronghold" },
         { "kind": "command", "label": "entry.level", "command": "mm_lvl" },
         { "kind": "command", "label": "entry.rank", "command": "mm_rank" },
         { "kind": "command", "label": "entry.top", "command": "mm_top" },

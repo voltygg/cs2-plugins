@@ -25,6 +25,7 @@
     "settings": "Settings"
   },
   "entry": {
+    "stronghold": "Stronghold shop",
     "level": "My level",
     "rank": "My rank",
     "top": "Top players",
