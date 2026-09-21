@@ -1,7 +1,15 @@
-# Dev convenience: one IDE, both repos. Not a build input - conanfile.py pins the version
-# unless you `conan editable add vendor/voltmod`. ignore = all keeps the moving pointer out
-# of this repo's status; drop it to track the gitlink instead.
+# Dev convenience, not a build input: conanfile.py pins voltmod. ignore = all hides the pointer.
 [submodule "vendor/voltmod"]
 	path = vendor/voltmod
 	url = https://github.com/voltygg/voltmod.git
 	ignore = all
+
+# Closed source: update = none stops clones without access from fetching it.
+[submodule "plugins/anticheat"]
+	path = plugins/anticheat
+	url = https://github.com/voltygg/cs2-anticheat.git
+	update = none
+[submodule "plugins/stronghold"]
+	path = plugins/stronghold
+	url = https://github.com/voltygg/cs2-stronghold.git
+	update = none

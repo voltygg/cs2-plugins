@@ -1,9 +1,0 @@
-{
-  "name": "anticheat",
-  "version": "1.1.0",
-  "logTag": "ANTICHEAT",
-  "description": "Server-side cheat detection: aim analysis over correlated shots plus client-integrity checks.",
-  "author": "Sukhrob Ilyosbekov",
-  "dependencies": [],
-  "optionalDependencies": ["admin-system"]
-}

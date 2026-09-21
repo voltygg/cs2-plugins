@@ -1,3 +1,6 @@
+# Secrets to be set in the repository settings:
+#   PRIVATE_PLUGINS_PAT: optional personal access token to check out the closed-source plugins.
+
 name: CI
 
 on:
@@ -15,8 +18,16 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
+    env:
+      PRIVATE_PLUGINS_PAT: ${{ secrets.PRIVATE_PLUGINS_PAT }}
     steps:
       - uses: actions/checkout@v7
+
+      - name: Check out the closed-source plugins
+        if: env.PRIVATE_PLUGINS_PAT != ''
+        run: |
+          git config --global url."https://x-access-token:${PRIVATE_PLUGINS_PAT}@github.com/".insteadOf "https://github.com/"
+          git submodule update --init --checkout plugins/anticheat plugins/stronghold
 
       # The action owns the Conan and compiler caches.
       - uses: voltygg/voltmod/.github/actions/setup-toolchain@main

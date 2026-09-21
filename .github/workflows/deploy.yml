@@ -1,3 +1,6 @@
+# Required secrets:
+#   PRIVATE_PLUGINS_PAT: a GitHub personal access token with read access to the private plugins submodule.
+
 name: Deploy
 
 on:
@@ -51,6 +54,13 @@ jobs:
       image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
     steps:
       - uses: actions/checkout@v7
+
+      - name: Check out the closed-source plugins
+        env:
+          PRIVATE_PLUGINS_PAT: ${{ secrets.PRIVATE_PLUGINS_PAT }}
+        run: |
+          git config --global url."https://x-access-token:${PRIVATE_PLUGINS_PAT}@github.com/".insteadOf "https://github.com/"
+          git submodule update --init --checkout plugins/anticheat plugins/stronghold
 
       # Toolchain only, so it tracks main: conan.lock decides which framework the plugins link.
       - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
@@ -119,6 +129,14 @@ jobs:
         server: ${{ fromJSON(needs.targets.outputs.servers) }}
     steps:
       - uses: actions/checkout@v7
+
+      # Rendering settings.jsonc reads every deployed plugin's configs/ from the source tree.
+      - name: Check out the closed-source plugins
+        env:
+          PRIVATE_PLUGINS_PAT: ${{ secrets.PRIVATE_PLUGINS_PAT }}
+        run: |
+          git config --global url."https://x-access-token:${PRIVATE_PLUGINS_PAT}@github.com/".insteadOf "https://github.com/"
+          git submodule update --init --checkout plugins/anticheat plugins/stronghold
 
       - uses: actions/download-artifact@v8
         with:
