@@ -707,3 +707,54 @@ Optional and last: this is the part copied most directly from the reference and 
   - No fault reached the attached debugger. Every sampled prop was gone after its delay, and the `prop_dynamic` count stayed flat.
   - `poe build`, `poe test` (295 root, 472 voltmod) and `poe lint` pass in both repos.
 - Still open: the Linux side has the same nine-argument function and the same fix applies, but `libserver.so` was not disassembled here. The rocket impact path in a real match still needs a client (it is on the checklist above).
+
+### 2026-09-22 — VoltMod native SDK refactor
+
+- Goal: replace hand-rolled engine code in voltmod with the hl2sdk's own types and functions, per the audit. Everything is on `feat/stronghold`; nothing is pushed, tagged or relocked.
+- Lock: voltmod's `conan.lock` was stale. The bot bumped the recipes to hl2sdk `2026.09.14` and metamod `2.0.0.20260915` on 2026-09-16 without relocking. It now pins the published revisions (`hl2sdk-cs2 d6d1810b`, `metamod-source 171a73fa`). The remote has Linux binaries only, so the Windows ones were built locally with `uv run poe release build sdk`. The root lock and the editable build still resolve hl2sdk `2026.09.10`; the only header difference is `CHandle::operator=(const CBaseHandle&)` in `ehandle.h`. The release relock picks up the new pin.
+- voltmod commits:
+  - `bf79750` lock refresh.
+  - `fb5d1dc` `fix!`: `SetRender` takes the generated `Schema::RenderMode_t`. CS2 numbers the modes 0 normal, 1 trans-alpha, 2 none. `Pawn::SetVisible` now writes `kRenderTransAlpha`; before, it wrote 3, which is out of range. GlowVision's relay now gets `rendermode 2` instead of 10. The engine stores the keyvalue unchecked, so 10 reads back as 10.
+  - `3e94a4b`: `DamageHeadshot` is `DMG_HEADSHOT` (1<<19, not 1<<23), and every `Damage*` constant is static_asserted against `DMG_*`.
+  - `a182693`: `Resolve` and `RawController` go through `CEntitySystem::GetEntityInstance(CEntityHandle)` and `GetEntityIdentity(CEntityIndex)`, so the hand-written chunk walk and `& 0x7FFF` are gone. `Entity::Ref`, Trace's hit ref, `Index`, `ClassName` and EmitSoundFilter's source index use `GetRefEHandle`, `GetEntityIndex` and `GetClassname`, so every ref is built the same way `Resolve` compares it.
+  - `d3d0ad9`: Visibility reads the weapon and wearable handles as `CUtlVector<CEntityHandle>`, with a size assert of 24.
+  - `3efe701`: ClientConVars posts through `SingleRecipientFilter` instead of the raw-mask overload. Statuses are asserted against `EQueryCvarValueStatus` and validated with `EQueryCvarValueStatus_IsValid`.
+  - `1463caf` `refactor!`: the `VoltMod::IN_*` and `VoltMod::FL_*` copies are gone; the SDK's `in_buttons.h` and `const.h` names are used instead. `VoltMod::MoveType` is replaced by the generated `Schema::MoveType_t`.
+  - `edd47cf` `refactor!`: `ObserverMode_t` is renamed to `ObserverMode`, so no VoltMod name shadows an SDK name. The team constants now live in one SDK-free `Entities/Teams.hpp`, which Targeting also uses; its private copy is gone. The `ObserverMode`, `HitGroup` and team values are static_asserted against `OBS_MODE_*`, `HITGROUP_*`, `TEAM_*` and `CS_TEAM_*`. The subject line is over 72 characters, and the commit was left as is rather than amended.
+  - `c2747e2`: `AngleToForward` is out of line on mathlib's `AngleVectors`, and `PawnOps::ClearedDestination` uses it.
+  - `84300a0`: TextMsg uses `HUD_PRINT*` directly.
+  - `a03e172`: `SetVisible` packs its alpha with `Color::GetRawColor`, and `IsAlive` compares with `LIFE_ALIVE`.
+  - `ea2fd6f`: the damage layout's handles are `CEntityHandle`, and its flinch hitgroup is `HitGroup_t`.
+  - `34218f6`: `MaxPlayers` is asserted against `ABSOLUTE_PLAYER_LIMIT`, and all 17 `ConVarType` values against `EConVarType_*`.
+  - `2afa03e`: `FindByClassName` and `FindByName` use `EntityInstanceByClassIter_t` and `EntityInstanceByNameIter_t`. The class search starts from `after` along the active list; the name search steps past `after`. The two gamedata signatures and their `Bindings` members are removed (18 functions now).
+- Consumer commits:
+  - stronghold `7b752d9` (render modes) and `30c6f4c` (IN_/FL_ names).
+  - anticheat `51764a9` (IN_/FL_ names, move types, VoltMod's teams instead of its own copy).
+  - root `df7a094` (disco render mode) and `31224b9` (admin-system cheat check and menu, bhop).
+- Verified live on the local de_dust2 server with six bots, through a temporary `sh_probe` command that was not committed:
+  - Before the gamedata entries were removed, the old signatures and the SDK iterators returned identical lists in identical order: 14 class queries (including `point_*`, `env_*` with 158 entities and `weapon_*`) and 7 name queries (spawned `targetname`s, the `probe_*` wildcard, a missing name, `!player`, `!self`). After the removal, the counts were the same.
+  - Entity lookups:
+    - `Resolve(Ref)`, `Index` and `ClassName` held for all 311 entities, and a stale ref resolved to nothing.
+    - Each slot's controller sits at index slot+1, and `SlotOf` round-trips.
+  - A solid trace from one bot's eye resolved `HitEntity` to the other bot's pawn.
+  - Rendering:
+    - `SetVisible(false, 128)` wrote mode 1 and `80ffffff`, and `SetVisible(true)` restored 0 and `ffffffff`.
+    - GlowVision spawned its relays with `kRenderNone`.
+  - Damage:
+    - `Damage.Apply` with `DamageBullet | DamageHeadshot` arrived at the hook as `0x80002` and lowered health.
+    - Across more than 120 natural bot hits, neither bit 19 nor bit 23 was set at `TakeDamageOld` entry. The damage is still the base ~35 there, before the hitgroup applies, so the headshot value rests on the SDK and the schema.
+  - A turret placed through `Structures::Build` next to an enemy bot killed it (frags 1), and the hook saw `prop_dynamic` as the inflictor.
+  - `poe build`, `poe test` (295 root, 472 voltmod) and `poe lint` pass in both repos, and `modgraph` holds.
+- Kept, and why:
+  - `ConVar<T>::Get` stays on the stored `CVValue_t*`. `GetAs<T>` would mean storing a `ConVarRefAbstract`, and `SetRaw` pokes the same storage. `Set` stays on the cfg line.
+  - The cstrike15 usermessages proto change is skipped; the reflection route is deliberate.
+  - `Damage*`, `ObserverMode`, `HitGroup` and the teams stay VoltMod definitions with static_asserts, because `shareddefs.h` is too heavy for public headers and Teams must stay SDK-free.
+  - `ColorOpaqueWhite` and `ColorInvisible` stay `uint32_t` constants, because the SDK's `Color` is not constexpr.
+  - The disco effect and stronghold's hidden or tinted parts moved from the old `TransTexture` to `kRenderTransAlpha`. Parts hidden with alpha 0 could use `kRenderNone` instead.
+- Needs a client:
+  - The look of the alpha and the tints.
+  - The glow outline and the invisible relay.
+  - Visibility filtering: bots receive no transmit.
+  - ClientConVars: a bot has no net channel, so `Query` returned false as designed.
+- Linux, unverified: the SDK iterators and `GetEntityIdentity` read `CEntitySystem` and `CEntityIdentity` through the SDK's struct layout (`m_EntityList`, `m_entityNames`, `m_Symbols`). This was checked on Windows only; check it on `libserver.so` with the other Linux items above.
+- Noticed and left alone: the `FindByClassName` loop in `docs/sdk/entities.md` assigns an `Entity`, which does not compile, because wrappers are not assignable.
