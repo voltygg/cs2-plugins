@@ -136,7 +136,7 @@ Each item: gamedata entry + `Bindings` member + public API + doc page + doctest 
 ### F3 Schema manifest
 
 - [x] Add `m_flGravityScale`, `m_flMaxspeed` (movement services), `m_bTakesDamage`, `m_iMaxHealth`, and whatever F1's spike needs; `voltmod schemagen`; expose `Pawn::SetGravityScale`, `Pawn::SetMaxSpeed`, `Entity::SetMaxHealth`.
-- [ ] Confirm the speed perk survives weapon switches (the engine recomputes max speed per weapon). If it does not, reapply in `Movement.After`.
+- [x] Confirm the speed perk survives weapon switches (the engine recomputes max speed per weapon). If it does not, reapply in `Movement.After`.
 
 ### F4 Effects helpers (small)
 
@@ -206,10 +206,10 @@ Signature features first (section 2a) — they are what players will not find el
 
 Then the borrowed basics:
 
-- [ ] Landmine (proximity trigger by distance check, explosion via `env_explosion` or radius `Damage::Apply`, breaks when shot).
-- [ ] Health dispenser and money dispenser (aura tick, transfer particle, level screens via material group/skin).
-- [ ] Tesla coil (repairs allied structures in range; removes enemy grenade projectiles in range — find by classname each tick; arc particles).
-- [ ] Perks: speed, gravity, +25 HP (until death), income, regen. Decide and document which perks reset on death.
+- [x] Landmine (proximity trigger by distance check, explosion via `env_explosion` or radius `Damage::Apply`, breaks when shot).
+- [x] Health dispenser and money dispenser (aura tick, transfer particle, level screens via material group/skin).
+- [x] Tesla coil (repairs allied structures in range; removes enemy grenade projectiles in range — find by classname each tick; arc particles).
+- [x] Perks: speed, gravity, +25 HP (until death), income, regen. Decide and document which perks reset on death.
 - [ ] Balance pass on a live test server; all numbers in config.
 
 ## 8. Milestone 4 — VIP tiers and persistence
@@ -492,3 +492,54 @@ Optional and last: this is the part copied most directly from the reference and 
   - Bounties: the `$600` clan tag on the scoreboard, and the chat messages when a bounty is placed and claimed.
   - Supply drops: the fall, the siren, the center progress while holding E, and the free placement (the `· free` prompt). On de_dust2 the midpoint of the Cores is in mid (-238, 739, 0). Other maps may need a `drop` point in `configs/cores/<map>.json`.
 - Blockers: none. Still open in M3 (part B): landmine, dispensers, tesla coil, perks and the balance pass.
+
+### 2026-09-21 — Milestone 3 structures and perks (step 4, part B)
+
+- Landed (not pushed, not tagged, `conan.lock` not relocked; the root still builds against `conan editable add voltmod`):
+  - voltmod `feat/stronghold`: `e66959b` feat: generate the entity owner handle, such as a thrown grenade's thrower. `m_hOwnerEntity` becomes `OwnerHandle()`/`SetOwnerHandle()` on every wrapper, with a line in `docs/sdk/entities.md` on resolving a handle field. The schema layout stamp changed, so every plugin needs a rebuild against this checkout (`poe build --install-all`).
+  - stronghold `feat/stronghold`:
+    - `61102db` refactor: share the check for a working structure of a kind, and name the per-team pair plainly
+    - `e84854a` feat: add landmines that blast enemies who step on them for their owner
+    - `721bdb7` feat: add health dispensers that heal allies in range, dressed by team and level
+    - `b742aa7` feat: add money dispensers that pay allies in range
+    - `ee6e643` feat: add tesla coils that repair allied structures and destroy enemy grenades in range
+    - `22ec542` feat: sell speed, gravity, health, income and regen perks from a Perks shop page
+    - `a5e304a` fix: raise max speed with every speed level and put low gravity back after a respawn
+- New files (`src/`): `Landmines`, `Dispensers` (health and money), `TeslaCoils`, `Perks`, and the SDK-free `Blast` and `PerkRules`. New tests: `BlastTests` and `PerkRulesTests`. The repo runs 266 CTest cases, all passing; `poe build`, `poe test` and `poe lint` pass. The largest files are `Placement.cpp` (290) and `Structures.cpp` (286); nothing is over 300.
+- API for the next steps:
+  - `WorkingItem(settings, structure, kind, now)` returns the item of a powered, built structure of that kind, else null. Sensor towers, jump pads, landmines, dispensers and tesla coils use it.
+  - Item kinds `landmine`, `health_dispenser`, `money_dispenser` and `tesla_coil`. Per level: `amount` and `intervalMs` (a dispenser's gift, a coil's repair). Per item: `particles {t, ct}` (a looping particle at the origin, removed with the structure) and `mine.edgeDamageShare`; `pad` doubles as a landmine's trigger. `SkinSettings` is now `TeamNames`, and a skin may hold `{level}` (`t_{level}`). A level that changes the group respawns the last part, so `Parts.back()` gets a new ref.
+  - `Perks`: `Buy(slot, Perk)` returns a `PerkPurchase`; also `Level`, `SettingsOf`, `IncomeFor(slot, reward)`, `OnDeath`, `Forget` and `ForgetAll`. `PerkRules`: `SpeedScale`, `GravityScale`, `WithIncome`, `BoostedMaxHealth` and `Regenerated`. Settings: `perks {speed, gravity, health, income, regen: {price, maxLevel, step}, regenCap, baseHealth, baseMaxSpeed}`. `Bounties` takes `Perks&` and pays kill rewards through `IncomeFor`; bounties are not raised.
+- Decisions and deviations:
+  - Perk reset rule: the health perk ends at death. Speed, gravity, income and regen last until the player leaves or the map changes; rounds do not reset them.
+  - Perks have their own shop page ("Perks") between Structures and VIP, not a "Shop" tab that mixes perks and objects. Perk names carry no numbers, so changing a step in config does not make the menu wrong; the README table gives the defaults.
+  - Speed perk: `m_flMaxspeed` alone does not make anyone faster, because the weapon's speed caps movement (bots with max speed 330 still peaked at 215 with an AK). What works is holding the velocity modifier (`SetSpeedModifier`) at 1 + step × level every frame, plus raising max speed by the same factor (otherwise 260 caps it). The modifier is raised only while it is at least 1, so the engine's slow after a hit still applies. Max speed is raised only from the engine's 260 or from the value the perk last set, so Cryo's slow is left alone.
+  - Gravity is also kept every frame. The engine resets it on respawn after `player_spawn` fires; the loadout's delayed give has the same cause. Max health and max speed also reset on respawn.
+  - Landmine: the blast is a radius `Damage.Apply` through `StructureAttack::Strike` (`DamageBlast`), measured to the waist, with linear falloff to `edgeDamageShare`. It hits enemies only, with no line-of-sight check and no damage to structures. The mine is removed after the blast without scrap. A mine shot to 0 breaks through `StructureHealth` and drops scrap. The arm delay is `buildMs` (2 s). The blast sound plays from the player who stepped on the mine, because the mine is removed at once. There is no explosion particle; the pack has none.
+  - Particles: the dispenser transfer particle and the tesla arc and zap particles are skipped. They draw a path between two control points (`C_INIT_CreateSequentialPathV2`), so they need a second point set on the `info_particle_system`. The mine beacon is a plain continuous emitter and works as an item particle. The dispenser sound plays once per gift interval when anyone took something.
+  - Tesla coil: Cores are not repaired. A grenade's team is its owner entity's (the thrower's pawn), else the projectile's own team. The grenade is removed and the coil plays `sounds.fire` (`Stronghold.Air.Intercept`); there is no zap particle.
+  - The placement boxes for the dispenser, money dispenser and tesla coil are guesses (`[16,16,56]`, `[16,16,72]`).
+  - Balance: every number is in `settings.jsonc`. Prices and limits follow plan section 2. Levels: landmine blast 150/200 damage over 220/280 units; health dispenser 5/8/12 hp a second over 250/300/350 units; money dispenser $30/45/60 every 5 s; tesla repair 20/35/50 a second over 400/500/600 units. The "balance pass on a live test server" box stays open, because it needs human games.
+- Findings:
+  - A thrown HE grenade's `m_hOwnerEntity` is the thrower's `player` pawn, and the projectile's `m_iTeamNum` is also the thrower's team (bot throw on de_dust2).
+  - `info_particle_system` with `effect_name`, `start_active` 1 and an origin spawns, lives, and did not disturb the server (one for 10 s, then 8 beacons for minutes). Seeing it needs a client.
+  - Respawn resets `m_flGravityScale` to 1, `m_iMaxHealth` to 100 and max speed to 260. A weapon switch (strip, then knife and AWP, then Negev) keeps a raised max speed.
+  - With speed modifier 1.3 alone, AK bots peaked at 254, capped by max speed 260. With max speed 400 as well, one reached 276 (215 × 1.3 ≈ 280).
+- Live smoke test (local server, de_dust2, 8 bots, `bot_stop 1` for the aura checks, through a temporary `sh_probe` console command that was not committed):
+  - Landmines: all 8 spawned with their beacon particle. An enemy put on an armed mine took the blast (100 → 23, with armor) and the mine was gone. At 10 hp the enemy died, and the owner was paid +800. A mine shot for 50 broke. Bots set off another mine on their own.
+  - Health dispenser: an ally at 50 hp healed 5 a second up to 100 and stopped there. Upgrading the dispenser respawned its part (`prop_dynamic#337` → `#343`), and a shot on the new part took 30 health.
+  - Money dispenser: an ally in range got +$30 every 5 s. Each of two upgrades respawned the part.
+  - Tesla coil: a dispenser 200 below full was repaired 20 a second. An HE, a molotov and a flash spawned beside the coil with an enemy owner were gone within 300 ms. An HE owned by an ally stayed.
+  - Perks on a bot:
+    - Speed ×3 set the modifier to 1.30 and max speed to 338 (after the fix; before it, max speed stayed at level 1's 286). A fourth purchase was refused as maxed.
+    - Gravity ×2 gave 0.80, health ×2 gave 150 max health, and regen ×1 took 50 → 53 over 3 s. Income ×1 paid 880 for a kill.
+    - After death and respawn: 100/100 health (the health perk was gone), and gravity 0.80, max speed 338 and modifier 1.30 were back. The bot's sampled speed reached 254 with an AK.
+- User must check in game:
+  - Speed perk on a human: that 1.1–1.3× feels right, survives weapon switches and scoping, and that anticheat and bhop leave it alone.
+  - Gravity perk: the jump height at 0.9–0.7 gravity.
+  - Health perk: that the HUD shows 125–300 health and does not clamp it.
+  - Landmine: the model on the floor, the beacon particle and its team colour, the blast sound, and the kill feed for a mine kill.
+  - Dispensers: the `ct_1..3`/`t_1..3` and `level_1..3` material groups (the `skin` keyvalue takes the group's name, which has never been seen in a client), and whether the use sound every second is too much.
+  - Tesla coil: grenades vanishing mid-air near an enemy coil, the intercept sound, and a coil repairing a wall under fire.
+  - The Perks page rows and replies.
+- Blockers: none. Still open in M3: the live balance pass. The F4 particle box stays open for the in-game check above and for two-control-point particles (dispenser transfer, tesla arcs).
