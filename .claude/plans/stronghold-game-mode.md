@@ -4,7 +4,7 @@ Status: planned 2026-09-20, not started. Name **Stronghold** (plugin `plugins/st
 
 ## 1. What it is
 
-Team deathmatch with instant respawn and an economy. Kills pay money; money buys **structures** you place in the world (sentry turret, laser mine, wall, ...), **perks** for yourself, and later **vehicles** (drones, tank). Structures level up 1→3, have health and can be destroyed for a reward. Unlike the inspiration, the fight has a goal: each team defends a **Core**, and the round ends when one falls (section 2a lists everything that is ours rather than borrowed). Inspiration: cs2red.ru "WWDM"; screenshots in `references/concept/`, their content pack at `C:\Program Files (x86)\Steam\steamapps\workshop\content\730\3329709053`.
+Team deathmatch with instant respawn and an economy. Kills pay money; money buys **structures** you place in the world (sentry turret, laser mine, wall, ...), **perks** for yourself, and later **vehicles** (drones, tank). Structures level up 1→3, have health and can be destroyed for a reward. Unlike the inspiration, the fight has a goal: each team defends a **Core**, and the round ends when one falls (section 2a lists everything that is ours rather than borrowed). Inspiration: cs2red.ru "WWDM"; screenshots in `references/wwdm/screenshots/`, their content pack at `C:\Program Files (x86)\Steam\steamapps\workshop\content\730\3329709053`. The decompiled asset files are located at `/references/wwdm/`
 
 Decisions already made:
 

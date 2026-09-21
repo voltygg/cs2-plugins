@@ -85,3 +85,5 @@ vendor/*
 !vendor/voltmod
 
 plugins/anticheat/cleanup/
+
+Source2Viewer.exe
