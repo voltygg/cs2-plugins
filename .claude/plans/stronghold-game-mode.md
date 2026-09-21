@@ -178,16 +178,16 @@ Rules of the road: hold entities as `EntityRef`, never raw pointers across frame
 - [x] **Loadouts** — free weapon set applied now and on each spawn; armor and grenades as one-off purchases.
 - [x] **Placement mode** — enter on purchase click (shop closes). Ghost = same model parts, `ShowOnlyTo` the placer, translucent green/red via `SetRender`. Each frame: trace from eye along view to max distance, snap to hit point, orient by surface normal (floor items upright and yaw = player yaw; laser mine and wall-mounted items align to the wall normal). Validity: surface slope per item, hull trace clear of world/players/structures, minimum distance from spawn points and other structures, item-specific checks. E places and charges; R, weapon fire, death or shop reopen cancels. Validity rules unit-tested on plain vectors.
 - [x] **StructureRegistry** — owns all live structures: owner slot + SteamID, team, kind, level, health, frag count, list of upgraders, entity refs for parts, powered flag. Enforces per-owner limits. Owner death → unpowered until respawn (dim via `SetRender`, behaviours skip unpowered structures); removed on disconnect, team change, round/map end. Lookup by `EntityRef` for the damage hook and look-at.
-- [ ] **Cores and round flow** — spawn one Core per team at the configured position, large health, damage accepted only from attackers within the radius, "under attack" alert with a cooldown, win on destruction or by health at timeout, end-of-round summary screen, wipe structures, carry over money by the configured share. `sh_core_set <team>` writes the map's position file. Round outcome logic unit-tested.
+- [x] **Cores and round flow** — spawn one Core per team at the configured position, large health, damage accepted only from attackers within the radius, "under attack" alert with a cooldown, win on destruction or by health at timeout, end-of-round summary screen, wipe structures, carry over money by the configured share. `sh_core_set <team>` writes the map's position file. Round outcome logic unit-tested.
 - [x] **Structure health** — in `Damage.Before`: victim is a registered part → subtract from the structure's health (friendly fire ignored), block engine damage, pay the destroyer at zero, play break effect, remove. Hit feedback sound.
-- [ ] **Turret** — states: building (short delay) → idle sweep → tracking → firing. Target selection at ~10 Hz, staggered across turrets: nearest living enemy in range with `Trace.Clear` from the muzzle, ignoring own parts. Yaw part and pitch part rotate toward the target at a capped turn rate every frame. Fires on an interval through `Damage::Apply` (attacker = owner pawn, inflictor = turret), tracer/muzzle particle, sound. Levels swap the head model and stats. Targeting math (lead-free aim angles, turn-rate clamp, range/FOV test) unit-tested.
-- [ ] **Laser mine** — placed on a wall; beam endpoint from a trace along the normal; each tick test enemies against the segment (closest-point distance, cheap) and kill through `Damage::Apply`. Team-colored beam. Breaks when shot.
+- [x] **Turret** — states: building (short delay) → idle sweep → tracking → firing. Target selection at ~10 Hz, staggered across turrets: nearest living enemy in range with `Trace.Clear` from the muzzle, ignoring own parts. Yaw part and pitch part rotate toward the target at a capped turn rate every frame. Fires on an interval through `Damage::Apply` (attacker = owner pawn, inflictor = turret), tracer/muzzle particle, sound. Levels swap the head model and stats. Targeting math (lead-free aim angles, turn-rate clamp, range/FOV test) unit-tested.
+- [x] **Laser mine** — placed on a wall; beam endpoint from a trace along the normal; each tick test enemies against the segment (closest-point distance, cheap) and kill through `Damage::Apply`. Team-colored beam. Breaks when shot.
 - [x] **Wall** — static solid prop with health. Nothing else.
-- [ ] **Look-at panel and upgrade** — per player at ~10 Hz: trace with `HitEntity`, resolve to a structure, fill the HUD panel (`SetText`/`SetHidden`). E edge while looking at an allied upgradable structure within reach charges the presser, levels it up, records them as an upgrader. "Not enough money: need $1200" toast.
+- [x] **Look-at panel and upgrade** — per player at ~10 Hz: trace with `HitEntity`, resolve to a structure, fill the HUD panel (`SetText`/`SetHidden`). E edge while looking at an allied upgradable structure within reach charges the presser, levels it up, records them as an upgrader. "Not enough money: need $1200" toast.
 - [ ] **HUD** — shared-style HUD done as a per-player screen: prompts, toasts ("+$800"), rocket warning banner slot for later.
 - [ ] **Tutorial** — first-join screen with three cards and a confirm button; remembered for the map in v1.
-- [ ] **Precache and addon** — `Precache.Add` for every configured model/particle/soundevent file at load; `Addons.Require(3801580041)`. Center-text fallback while a client is still downloading.
-- [ ] **Translations** — English and Russian for every player-facing string.
+- [x] **Precache and addon** — `Precache.Add` for every configured model/particle/soundevent file at load; `Addons.Require(3801580041)`. Center-text fallback while a client is still downloading.
+- [x] **Translations** — English and Russian for every player-facing string.
 - [ ] **Other plugins** — make sure `anticheat` does not flag speed/gravity perks or turret kills (no attacker view angles), and that `bhop` is not loaded on these servers or tolerates modified max speed.
 
 Exit criteria: on a local server with bots, buy → place → turret kills with kill-feed credit → enemy destroys it for a reward → owner death powers the base down and respawn brings it back → a destroyed Core ends the round; 32 bots with 60+ structures holds tick rate (profile the targeting loop).
@@ -357,3 +357,78 @@ Optional and last: this is the part copied most directly from the reference and 
   - Bots spent money on their own (for example 2000 → 1000) even with `mp_buytime 0`. Check whether human buying is blocked.
 - Blockers: none for part B. The `sh_shop` console route above needs a framework decision.
 
+### 2026-09-21 — Milestone 2 core, part B (step 3)
+
+- Landed (not pushed, not tagged, `conan.lock` not relocked; the root still builds against `conan editable add voltmod`):
+  - voltmod `feat/stronghold`:
+    - `a1ec6ec` fix!: run a console command typed by a player as that player
+    - `cf19765` fix: ignore players in server commands whose handler takes no caller slot
+    - `a5d6738` fix: let players type a chat command's console twin, which the engine refused
+    - `585f9b0` feat: end the round with a winner through CCSGameRules::TerminateRound
+    - `90521ef` feat: generate the beam entity's width and end point
+  - stronghold `feat/stronghold`:
+    - `34d0265` feat: open the shop from a player's console with sh_shop
+    - `34ecbe3` refactor: give the vector type and its engine conversions their own headers
+    - `0dddd97` feat: add turrets that track and shoot the nearest visible enemy for their owner
+    - `ac1910d` feat: add laser mines whose team-coloured beam kills enemies that cross it
+    - `246eaeb` feat: show a structure's panel on aim and upgrade it with E
+    - `6d653a8` feat: decide rounds by team Cores with a timer, summary and money carry-over
+    - `de643c5` feat: require the stronghold workshop addon when its id is configured
+    - `cf4eb42` refactor: share entity removal and the level lookup across structures
+  - root: `8262863` feat: add the stronghold shop to the main menu, and this entry.
+- Files (`src/`): `Turrets`, `TurretAim` (SDK-free), `StructureAttack`, `LaserMines`, `Segment` (SDK-free), `LookAt`, `Cores`, `RoundFlow`, `RoundRules` (SDK-free), `Vec3` (SDK-free), `Vectors`. The largest are `Placement.cpp` (272) and `Config.hpp` (226); nothing is over 300. Tests: `TurretAimTests`, `SegmentTests`, `RoundRulesTests`; the repo runs 236 CTest cases, all passing. `poe build`, `poe test` and `poe lint` pass.
+- API for M3:
+  - `StructureAttack::Strike(id, targetPawn, amount, inflictor, damageType)` deals damage through the owner, counts the frag and pays the upgraders. `player_death` runs inside it, so hold ids, not `Structure*`, across the call.
+  - `Structures::BuildForTeam(item, team, origin, angles)` builds an unowned structure. `Structure::Effects` holds extra entities removed with it, such as a beam. `RemoveEntities(runtime, refs)`, `LevelAt(item, level)`.
+  - `ItemSettings` gained `buildMs`, `scale`, `skins {t, ct}` (the last part's material group, set at spawn), `turret {...}`, `laser {...}` and `sounds.ready`. `Settings.cores {...}`; `building.lookDistance`, `building.useDistance`.
+  - `TurretAim`: `AimAt`, `AngleDelta`, `TurnToward`, `InRange`, `OffsetByYaw`, `SweepYaw`. `DistanceToSegment`. `RoundRules`: `DecideRound`, `CarriedMoney`, `RoundStats`, `TopSlot`.
+  - `LookAt::Upgrade(slot, id)`, `Cores::State(team)`, `Cores::SavePosition(team, origin)`.
+  - voltmod: `runtime.World.Rounds.End(VoltMod::RoundEndReason, delaySeconds)`; `VoltMod::Schema::CBeam{entity}` with `SetWidth`, `SetEndWidth`, `SetEndPos`; `ServerCommand` has a `(const CCommand&, int slot)` overload that is client-executable. A `.Console()` command typed in a player's console now runs as that player, permissions included. `ConsoleOnly()` commands, `volt` and the anticheat simulator commands ignore players.
+- Deviations:
+  - The command fix took three voltmod commits. The first made `ServerCommand::Handler` take the slot, which broke anticheat's simulator, so the second kept the one-argument handler for the server only. The third added `FCVAR_CLIENT_CAN_EXECUTE`, without which the engine refuses a client's call before any handler runs. The net API change is additive, so the `!` on `a1ec6ec` no longer applies.
+  - Two framework additions the step did not list, both general:
+    - Round end: `endround` is a cheat command, and CS2's `server.dll` has no `game_round_end` entity (checked by string search), so there was no convar or entity route. `Rounds::End` calls `CCSGameRules::TerminateRound`; the signature is CS2Fixes' (SwiftlyS2 has the same bytes). The game rules pointer comes from `cs_gamerules` `m_pGameRules`, added to the schema manifest. Team scores are not changed.
+    - Beam: a spawned `env_beam` takes the server down 2 to 4 seconds later, with no minidump. That held for both a minimal variant (`targetpoint`) and the full one (`LightningStart`/`LightningEnd` to an `info_target`). The laser draws a `beam` entity instead: `CreateByName("beam")`, set `m_fWidth`, `m_fEndWidth` and `m_vecEndPos` through the new `CBeam` view, `SetRender` for the colour, then `DispatchSpawn` with the origin. The beam uses its default material, so there is no texture setting.
+  - Turret: no tracer or muzzle particle, since F4 is still unproven and a particle cannot be seen headless. The level 2 and 3 `spin` animation is not played. The head is the last part, lifted `turret.headHeight` above the stand by `Teleport` and turned by `Teleport` angles each frame.
+  - Class names are plural where a class runs every instance: `Turrets`, `LaserMines`. The pure round logic is `RoundRules`.
+  - `sh_core_set` needs `admin.map`, and no plugin installs `Policy.HasPermission` for stronghold: admin-system's policy lives in its own runtime. It is refused in game. The command takes an optional player, so the server console or RCON can set it: `sh_core_set t <player>`.
+  - The Core is the `core` item: the tesla model at `scale` 3, 20000 health, never sold. Defaults: `cores.damageRadius` 1500, `roundSeconds` 900, `restartDelaySeconds` 7, `carryOverShare` 0.5. The plugin's timer ends the round, so `mp_roundtime` 60 stays as a backstop.
+  - Money is carried over at the first round start after a `round_end`, because the engine fires `round_start` twice at map start. The summary goes to chat: the result, the top builder and the top destroyer.
+  - main-menu has six tabs, the most it allows, so the `stronghold` section entry is the first row of the Stats tab.
+  - Precache and addon: `Addons.Require(addonId)` runs at load when the id is not 0. There is no separate center-text fallback for a client still downloading; the shop is a framework menu, which already falls back to center HTML.
+- Findings:
+  - The turret stand's top is 39.1 units above the placement point (trace onto the spawned stand), so `headHeight` is 40.
+  - Turret and laser kills: `player_death` has `attacker` = owner and `weapon=prop_dynamic`. The engine names the inflictor's class, not the owner's gun as the F1 spike's pawn-inflictor kill did.
+  - `Rounds.End` on de_dust2: `round_end winner=2 reason=9` (T) and `winner=3 reason=8` (CT), with the next round after the delay.
+  - `voltmod gamedata check` passes 24/24 on Windows build 2000908, the new TerminateRound pattern included. The schema layout check passed with `CCSGameRulesProxy` and `CBeam`.
+  - `find sh_shop` lists only `game server_can_execute` even with `FCVAR_CLIENT_CAN_EXECUTE` set. The client path was proven by the menu opening.
+  - After `volt load stronghold` mid-map, the plugin's roster was empty: a `#slot` target resolved to nobody. It was fine after a server restart.
+- Live smoke test (local server, de_dust2, bots, through a temporary `sh_probe` console command that was not committed):
+  - `sh_shop` run in a bot's client context (`ExecuteClientCommand`) opened the shop: "Menu opened for slot 4 (title: Shop ...)". From RCON it replies "Only players can open the shop.". `sh_core_set t` in a bot's client context was denied by the permission check, not run as the server.
+  - Turrets built next to enemy bots killed them: 11 kills credited to the owner in about a minute, turret frags 3, 3, 2 and 2, and the owner's balance rose with the kill rewards.
+  - Laser mines placed on corridor walls killed crossing enemies, with the owner credited and the mine's frags counted. A mine upgraded to level 2 kept its beam and went on killing.
+  - Upgrades charged 1200 then 2000 for a turret and 800 for a mine. The head model changed to `level2.vmdl`, then `level3.vmdl` (read back), health refilled to 900 and then 1200, and a fourth press was refused at the maximum level. The upgrader bonus was paid: 17000 + 800 kill + 100 bonus + 800 = 18700.
+  - Cores:
+    - Both spawned at round start.
+    - 25000 damage from an enemy standing far away was blocked (20000 → 20000).
+    - From close by it destroyed the T Core, and `round_end winner=3` followed. The new round began 7 s later with fresh Cores, and every balance was cut to max(start money, half).
+    - With `roundSeconds` 45 and the CT Core at 15000/20000, the round ended at 45 s with T winning (`reason=9`).
+    - A position saved from the console (`sh_core_set t #5`) was used by the next round's Core.
+  - Addon: with `addonId` set, `Require` installed the workshop download and mount hooks with no warning. The local server is back to 0.
+- Performance (30 bots, since the fill stopped at 30 on de_dust2; 60 turrets, 4 laser mines and 2 Cores; temporary timers, reverted):
+  - The frame loop held 64 calls a second.
+  - The turret loop took 46 to 66 µs per frame on average (90 to 100 µs in the busiest window).
+  - A shot that does not kill takes 40 to 50 µs. A shot that kills takes 0.35 to 4.5 ms, which is the engine's death handling inside `Damage.Apply`; frame peaks of 3 to 10 ms line up with kills.
+  - The laser tick took 4 to 5 µs for 4 mines at 20 Hz.
+- Linux, to verify before any Linux deploy:
+  - the `CCSGameRules::TerminateRound` pattern (CS2Fixes' bytes);
+  - the inferred `CCSGameRulesProxy` and `CBeam` layouts in `schema/server.linux.json` (the Windows offsets + 736, the gap every entity class shows). A wrong entry stops the framework from loading.
+- User must check in game:
+  - the turret head sits on the stand and turns and pitches onto targets, and the red and blue material groups show and survive an upgrade's `SetModel`;
+  - the kill feed for a turret or laser kill (owner name, and the icon for `prop_dynamic`), and whether the fire sound is too loud or too frequent;
+  - the laser beam: visible, team-coloured, starting at the emitter, ending at the wall, gone while the owner is dead;
+  - the look-at center text (line breaks), E upgrades from a real client, no upgrade while a menu is open, and the "Not enough money" reply;
+  - the Core's size and where it lands at the spawn centroid on each map (players may spawn inside a scaled Core, so save positions with `sh_core_set`); the "Core under attack" center and chat alert; the round summary and win panel;
+  - `sh_shop` typed in the console and `bind b sh_shop`;
+  - the "Stronghold shop" row in `!menu`. The server's main-menu `settings.jsonc` is seeded once, so copy the new one first.
+- Blockers: `sh_core_set` cannot be used in game until stronghold gets a permission policy. That needs a cross-plugin permission contract from admin-system, which M4's VIP tiers need too. Everything else in part B is done. The HUD, the tutorial and the anticheat/bhop checks remain open.
