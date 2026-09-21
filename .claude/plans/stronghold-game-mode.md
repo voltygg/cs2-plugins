@@ -123,19 +123,19 @@ Each item: gamedata entry + `Bindings` member + public API + doc page + doctest 
 
 ### F1 Damage
 
-- [ ] Bind `CBaseEntity::TakeDamageOld` and describe `CTakeDamageInfo` (attacker, inflictor, ability handles; damage; damage type; hit group; position). Accessor struct, no raw offsets in plugins.
-- [ ] `runtime.Hooks.Damage.Before(handler)`: handler sees victim entity + mutable damage info and returns allow / block. Fires for **every** entity, not just players.
-- [ ] `Damage::Apply(victim, spec)` with `spec{Attacker, Inflictor, Amount, Type}`: builds a `CTakeDamageInfo` and calls the engine, so death, kill feed, `player_death` and stats are the engine's own.
-- [ ] Spike before polishing: one `prop_dynamic` that (a) kills a bot through `Apply` with the owner credited, (b) reports bullet damage through `Before`. If bullets never reach `TakeDamageOld` for `prop_dynamic`, try `m_bTakesDamage`/`m_takedamage`, then `prop_physics_override` with motion disabled. Record the winning recipe in the doc page.
+- [x] Bind `CBaseEntity::TakeDamageOld` and describe `CTakeDamageInfo` (attacker, inflictor, ability handles; damage; damage type; hit group; position). Accessor struct, no raw offsets in plugins.
+- [x] `runtime.Hooks.Damage.Before(handler)`: handler sees victim entity + mutable damage info and returns allow / block. Fires for **every** entity, not just players.
+- [x] `Damage::Apply(victim, spec)` with `spec{Attacker, Inflictor, Amount, Type}`: builds a `CTakeDamageInfo` and calls the engine, so death, kill feed, `player_death` and stats are the engine's own.
+- [x] Spike before polishing: one `prop_dynamic` that (a) kills a bot through `Apply` with the owner credited, (b) reports bullet damage through `Before`. If bullets never reach `TakeDamageOld` for `prop_dynamic`, try `m_bTakesDamage`/`m_takedamage`, then `prop_physics_override` with motion disabled. Record the winning recipe in the doc page.
 
 ### F2 Trace
 
-- [ ] Add `HitEntity` (as `EntityRef`/handle) and `Normal` to `TraceHit`.
-- [ ] Add a hull trace (`Trace::Hull(from, to, mins, maxs, options)`). If the nav trace cannot sweep a box, bind the physics query path CS2Fixes/SwiftlyS2 use (`TraceShape`).
+- [x] Add `HitEntity` (as `EntityRef`/handle) and `Normal` to `TraceHit`.
+- [x] Add a hull trace (`Trace::Hull(from, to, mins, maxs, options)`). If the nav trace cannot sweep a box, bind the physics query path CS2Fixes/SwiftlyS2 use (`TraceShape`).
 
 ### F3 Schema manifest
 
-- [ ] Add `m_flGravityScale`, `m_flMaxspeed` (movement services), `m_bTakesDamage`, `m_iMaxHealth`, and whatever F1's spike needs; `voltmod schemagen`; expose `Pawn::SetGravityScale`, `Pawn::SetMaxSpeed`, `Entity::SetMaxHealth`.
+- [x] Add `m_flGravityScale`, `m_flMaxspeed` (movement services), `m_bTakesDamage`, `m_iMaxHealth`, and whatever F1's spike needs; `voltmod schemagen`; expose `Pawn::SetGravityScale`, `Pawn::SetMaxSpeed`, `Entity::SetMaxHealth`.
 - [ ] Confirm the speed perk survives weapon switches (the engine recomputes max speed per weapon). If it does not, reapply in `Movement.After`.
 
 ### F4 Effects helpers (small)
@@ -259,3 +259,48 @@ Optional and last: this is the part copied most directly from the reference and 
 - Skipped on purpose: zone wall, chest, gift, drone kit, the `fx_*` and `zone_*` particles, and `dota_leaves`.
 - Check: a case-insensitive grep for `cs2red|wwdm|warsdm|letaryat|icsdm` over both addon trees and `plugins/stronghold` comes back empty. It covers file names and binary content.
 - User action: upload the addon in the Workshop Manager, then set its id as the plugin's `addonId` config value. 0 skips `Addons.Require` for local runs. The plugin must precache `soundevents/soundevents_stronghold.vsndevts`. No model has been viewed in-game or in ModelDoc yet, so check the scale, the material groups and the tank attachments on first spawn.
+
+### 2026-09-21 — Milestone 1, framework APIs (step 1)
+
+- Landed in voltmod on `feat/stronghold` (not pushed, not tagged, `conan.lock` not relocked; the root keeps `conan editable add voltmod` so the next steps build against the checkout):
+  - `834851e` feat: hook and apply entity damage through CBaseEntity::TakeDamageOld
+  - `5187d3b` feat: report the hit entity and normal and sweep hull traces
+  - `1c7191e` feat: generate max health, damage intake, gravity, max speed and camera fields
+  - `b1c7ac0` feat: add AngleToForward for turning an aim into a direction
+  - `72a1606` fix: give applied damage a position and a push away from the inflictor
+  - `1f62239` docs: record the prop damage recipe and the hull fit check
+- API (from `<VoltMod/Hooks/Api.hpp>` and `<VoltMod/Entities/Api.hpp>`):
+  - `runtime.Hooks.Damage.Before` is `Event<DamageHit&>`, where `DamageHit{Entity Victim; DamageInfo Info; bool Blocked}` and `DamageInfo{EntityRef Attacker, Inflictor; float Amount; uint32_t Type}`. Set `hit.Blocked = true` to cancel. Edits to `Amount` and `Type` reach the engine; `Attacker` and `Inflictor` are read-only there.
+  - `Status runtime.Hooks.Damage.Apply(const Entity& victim, const DamageInfo& info) const`. An empty `Inflictor` falls back to the attacker. The hit lands at the victim's origin, pushed away from the inflictor. Damage type bits are `VoltMod::DamageBullet`, `DamageBlast` and the rest.
+  - `TraceHit` gained `Normal` and `HitEntity` (an `EntityRef`; the world is `worldent`, index 0). New: `Result<TraceHit> runtime.World.Trace.Hull(from, to, mins, maxs, options = {})`.
+  - Schema: `Entity::MaxHealth/SetMaxHealth`, `TakesDamage/SetTakesDamage` and `GravityScale/SetGravityScale` (these are on CBaseEntity, so every wrapper has them), `pawn.MovementServices().MaxSpeed/SetMaxSpeed`, `pawn.CameraServices().ViewEntity/SetViewEntity`, and `Schema::CCSPlayerBase_CameraServices{pawn.CameraServices().Base()}` with `FieldOfView` and `ZoomOwner` (for F5).
+  - `Vector VoltMod::AngleToForward(const QAngle&)` in `<VoltMod/Entities/Angles.hpp>`.
+- Deviations:
+  - A `Before` handler cannot return a value, because `Event` handlers return void. So it sets `DamageHit::Blocked` instead of returning false.
+  - Damage is a service method, `runtime.Hooks.Damage.Apply(...)`, not a free `Damage::Apply`.
+  - Max speed is reached through the generated view (`pawn.MovementServices().SetMaxSpeed`), not a hand-written `Pawn::SetMaxSpeed`. That is the same one hop the docs use for the money services.
+  - The camera fields were added now rather than in step 7. The F4 particle proof stays plugin-side, as the review said, so its box is still open.
+  - `AngleToForward` has no doctest, because it takes SDK types and voltmod tests stay SDK-free. The damage binding got a doctest line in `BindingsTests`.
+- Verified on Windows, server build 2000908:
+  - `voltmod gamedata check`: 23/23 patterns hold. That includes `CBaseEntity::TakeDamageOld` (rva 0x3E5660) and `CTakeDamageInfo::CTakeDamageInfo` (rva 0xEA5600).
+  - `CNavPhysicsInterface::Nav_TraceShape` is at Windows index 3. The offline vtable dump puts slot 3 at `server+0xF876E0`: the thunk that swaps a default filter in for a null argument and tail-jumps. `resolved.windows.json` on the live server records the same `code` 16283360 (0xF876E0).
+  - The host logged "Schema: the generated layout matches game build 2000908" with the new fields.
+  - `CGameTrace` and `Ray_t` come from the SDK headers, not from hand offsets. Both trace buffers are `alignas(16)` for Linux.
+- Live spike (local server, de_dust2, 6 bots):
+  - The damage hook fired for players (victim `player`, attacker and inflictor the shooter's pawn, type 0x2). It also fired for bullets hitting the world, with victim `worldent#0`.
+  - `Apply(bot5, {Attacker = bot4, 500, DamageBullet})` killed the bot, and `player_death` reported `victim=5 attacker=4 weapon=hkp2000`. The weapon is the attacker's active weapon, so a turret kill shows the owner's current gun in the feed.
+  - Before the fix commit, the engine warned "damagetype 2 with info.GetDamageForce() == Vector::vZero". The fix removed the warning.
+  - Traces: looking at a wall gave `normal=(0,-1,0) entity=worldent#0`. Looking down at the floor gave `normal=(0.01,0.01,1.00)`. A hull stops a little short of the line. A zero-length hull at a pawn with no ignore reports start-solid and `HitEntity=player`. A line through a spawned crate reports `entity=prop_dynamic#179`.
+  - Max speed: `SetMaxSpeed(400)` on a bot read back 400 five seconds later. Whether it changes real movement speed, and whether it survives a weapon switch, needs a client.
+- Prop damage recipe (also in `voltmod/docs/sdk/hooks.md`):
+  - Bullets reach `Damage.Before` for a `prop_dynamic` spawned with a precached model and `solid` 6. No health setup is needed; the victim is the prop and the attacker is the shooter's pawn.
+  - The engine keeps no health on `prop_dynamic`: `health` 500, `SetMaxHealth(500)` and `SetTakesDamage(true)` all left it at 500 after hits. Structures must track their own health in `Before` and set `Blocked`.
+  - Do not parent a structure with `FollowEntity`. It bone-merges the prop, and bullets pass through it.
+  - Alternative: a `prop_physics_override` with `spawnflags` 8 and `health` 500 loses health to bullets and to `Apply` (500 → 400 → 374 → 347 → 0), and the engine removes it at zero.
+  - The model must be precached (`World.Precache.Add` at load, active on the next map load). Otherwise the prop spawns with no model and no collision.
+- Linux: nothing verified, because there is no `libserver.so` on this machine. Check these before any Linux deploy:
+  - the two damage signatures (CS2Fixes' bytes, identical in SwiftlyS2);
+  - `Nav_TraceShape` index 5, inferred from the ABI (two destructor slots, declaration order);
+  - the Linux schema baseline for `CPlayer_CameraServices` and `CCSPlayerBase_CameraServices`. These were copied from the Windows dump, because every pawn component in the baseline has identical offsets on both platforms. The host's layout check refuses the load if they are wrong.
+- Blockers and user checks: none blocking. In game, check that a turret kill through `Apply` shows the owner in the kill feed; this was verified only through `player_death`. Also check that `SetMaxSpeed` and `SetGravityScale` change real movement for a human player.
+
