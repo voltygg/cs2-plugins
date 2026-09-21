@@ -144,8 +144,8 @@ Each item: gamedata entry + `Bindings` member + public API + doc page + doctest 
 
 ### F5 Vehicles prerequisites (do in M5, listed here for completeness)
 
-- [ ] Camera: prototype in order — (1) observer mode targeting the vehicle entity (`Pawn::SetObserverMode`, `CPlayer_ObserverServices::SetObserverTarget`), (2) `point_viewcontrol`-style camera entity if CS2 still honours it, (3) hiding the pawn and moving it as the vehicle. Pick the first that gives a stable first/third-person view with the player's pawn safe and parked.
-- [ ] Usercmd writeback or a "suppress movement" flag in the Movement hook, if `MoveType::None` + reading input proves insufficient.
+- [x] Camera: prototype in order — (1) observer mode targeting the vehicle entity (`Pawn::SetObserverMode`, `CPlayer_ObserverServices::SetObserverTarget`), (2) `point_viewcontrol`-style camera entity if CS2 still honours it, (3) hiding the pawn and moving it as the vehicle. Pick the first that gives a stable first/third-person view with the player's pawn safe and parked.
+- [x] Usercmd writeback or a "suppress movement" flag in the Movement hook, if `MoveType::None` + reading input proves insufficient.
 
 Release: tag voltmod, `uv run poe build --relock` from this repo's root, commit `conan.lock` (memory "Shipping a framework fix to prod").
 
@@ -223,11 +223,11 @@ Then the borrowed basics:
 
 Optional and last: this is the part copied most directly from the reference and the most expensive. Gate: players ask for it **and** the F5 camera prototype works. Otherwise M2–M4 are the product.
 
-- [ ] Rocket battery: sky check (upward trace must reach sky/no hit), target picked by looking at a ground point, warning banner + siren to everyone, salvo of rocket props moved per frame on ballistic arcs with exhaust particles, radius damage on impact, then the battery removes itself.
-- [ ] Air defense: targets enemy rockets and drones in range, fires interceptor props, destroys the target on proximity.
-- [ ] Net: overhead solid that drones collide with.
-- [ ] Scout drone and gun drone: pilot's pawn parked and protected or vulnerable (decide), input read from `PlayerInput`, drone moved by velocity with simple collision traces, battery/lifetime, markers on spotted enemies, strike / gun fire through `Damage::Apply`. Exit on E or destruction.
-- [ ] Tank: hull + turret + gun + tracks as parented parts, ground-following by downward traces, turret follows view yaw, cannon shell as a moved prop with radius damage, heavy health, crush damage optional.
+- [x] Rocket battery: sky check (upward trace must reach sky/no hit), target picked by looking at a ground point, warning banner + siren to everyone, salvo of rocket props moved per frame on ballistic arcs with exhaust particles, radius damage on impact, then the battery removes itself.
+- [x] Air defense: targets enemy rockets and drones in range, fires interceptor props, destroys the target on proximity.
+- [x] Net: overhead solid that drones collide with.
+- [x] Scout drone and gun drone: pilot's pawn parked and protected or vulnerable (decide), input read from `PlayerInput`, drone moved by velocity with simple collision traces, battery/lifetime, markers on spotted enemies, strike / gun fire through `Damage::Apply`. Exit on E or destruction.
+- [x] Tank: hull + turret + gun + tracks as parented parts, ground-following by downward traces, turret follows view yaw, cannon shell as a moved prop with radius damage, heavy health, crush damage optional.
 
 ## 10. Testing and rollout
 
@@ -621,3 +621,72 @@ Optional and last: this is the part copied most directly from the reference and 
   - The VIP salary chat line every 5 minutes.
   - `sh_core_set` from a real admin client, and its refusal for a normal player.
 - Blockers: none. This resolves the M2 part B blocker, where stronghold had no permission policy.
+
+### 2026-09-21 — Milestone 5, air and armor (step 7)
+
+- Landed (not pushed, not tagged, `conan.lock` not relocked). Nothing changed in voltmod: the camera fields from step 1 were enough.
+  - stronghold `feat/stronghold`:
+    - `e6db1b8` feat: add rocket batteries that fire one warned salvo of arcing rockets at an aimed point
+    - `84b3df0` fix: let rockets fly over ceilings, trace them like sight lines, and clear their remains without the engine's delayed kill
+    - `b3486f6` feat: add air defenses that fire interceptors at enemy rockets and flying drones
+    - `55b5198` feat: add nets whose square catches enemy drones that fly under them
+    - `7880c76` refactor: deal blasts and hits on structures through StructureAttack, for every structure that fires
+    - `35567c4` fix: burst a rocket that falls far below its target through a gap in the map
+    - `cfa1027` feat: add scout and gun drones that their owner flies through a camera, with a kamikaze blast and a gun
+    - `1ce2343` feat: add a drivable tank whose turret follows the driver's view and fires bursting shells
+    - `75793a6` refactor: share the capped frame clock between turrets, shots and vehicles
+    - `c2df9bf` docs: describe rocket batteries, air defenses, nets, drones and tanks
+  - root: this entry, the ticked boxes and the submodule pointer.
+- Files (`src/`): `Ballistics` (SDK-free arc math), `Projectiles` (every rocket, shell and interceptor in flight), `RocketBatteries`, `AirDefense`, `Nets` (SDK-free catch zone), `FrameClock.hpp`, and `Vehicles/` (`Pilots`, `Drones`, `Tanks`, SDK-free `DriveRules`). `StructureAttack` gained `StrikePart` and `Blast`. Tests: `BallisticsTests`, `NetsTests`, `DriveRulesTests`; the repo runs 295 CTest cases, all passing. `poe build`, `poe test` and `poe lint` pass. Largest files: `Placement.cpp` 301, `ItemSettings.hpp` 299, `Structures.cpp` 294, `Projectiles.cpp` 279.
+- F5 gate: **passed as "plausible, user must verify"**.
+  - Recipe (1), CS2Fixes' view entity: `pawn.CameraServices().SetViewEntity(camera)` on an invisible `prop_dynamic`, `ZoomOwner` set to the invalid handle, optional `FieldOfView`. On a bot the engine accepted it with no error, the fields read back unchanged seconds later, and the pawn's `EyeAngles` followed the camera's angles (0,0, then 30,90 after a `Teleport` of the camera). `SetViewEntity(invalid)` and `MoveType::Walk` gave the view back.
+  - Approach (2), observer mode on a live pawn: `SetObserverMode` refused (a live pawn's observer services are null). Approach (3), hiding the pawn, was not needed.
+  - Input: `MoveType::None` plus `Movement.Before` is enough. A seated bot with `bot_stop 0` steered its drone and tank with its own usercmds; no writeback was needed. A forced input from a test probe drove the vehicles the rest of the time.
+  - Whether a real client sees through the camera, and whether its usercmd view angles still turn with the mouse while the view entity is set, can only be checked in game. If the client pins its angles to the camera's, steering needs `MouseDx/MouseDy` instead (both are already decoded in `PlayerInput`).
+- Decisions and deviations:
+  - Rocket battery: E on your own built battery starts aiming (center prompt with range), E fires, R cancels. The sky check is a line straight up of `placement.skyClearance` (300; de_dust2's sky ceiling over mid is only about 448 above the floor). Rockets fly the highest arc under `projectile.maxRise` and pass through everything until they fall below `collideHeight` (200) above their target, so the map's sky ceiling and roofs do not stop them. They trace the sight layer, which still hits structures, so a player clip over CT spawn does not catch them. A rocket that falls 400 below its target without a hit bursts there. The battery stays until its last rocket lands, so every blast is credited, then removes itself with no scrap. Blasts hurt enemy players (through `Strike`) and enemy structures (through the damage hook, so a far Core takes nothing).
+  - The engine's delayed `Kill` (`EntityOps::RemoveDelayed`) crashed the server with no minidump: at once from an RCON command, for a fresh `prop_dynamic` and a fresh `info_particle_system`, and a moment later from the frame loop for impact particles. Stronghold removes lingering props and particles itself (`Projectiles::Linger`). The framework method itself was left alone; it needs a look before anyone else uses it.
+  - Air defense: one interceptor per launcher per `fireIntervalMs`, no two launchers on one rocket in the same tick. The upper parts turn to the target's yaw when firing. Interceptors home in straight (no gravity) and destroy a rocket on contact, or deal the level's damage to a drone through its owner.
+  - Net: the net model's four physics hulls block nothing (no trace hit it at any height), so a net is a catch zone, a square of `net.halfWidth` (164, from the model's hull data) up to `net.height` (150), turned with the net. The pole is its first, shootable part. An enemy drone that enters the zone is destroyed with the net's owner credited.
+  - Vehicles are structures: placed through the normal placement, with health, look-at panel, scrap and cleanup. The owner gets in with E (`[E] Get in` in the panel). The pilot's pawn is frozen where it stands and can be shot (vulnerable was chosen). On entry the pilot is switched to the knife (`use weapon_knife`), so attack does not spend their ammunition. The camera prop needs `DisableCollision`: with only `solid` 0 it blocked traces, the drone's own shots included.
+  - Drones: velocity steering (forward and strafe along the view yaw, jump and crouch to climb and sink) with a line trace along the way it flies (a hull trace from the drone reported start-solid, since the camera prop sat inside it). A flight uses the drone up when it ends: the pilot gets out or dies, the battery runs out (`lifetimeMs` 60 s scout, 45 s gun), a net catches it, or it is shot down. Scout: attack is the kamikaze blast (250 over 300). Gun drone: 12 damage every 150 ms out to 2000. No spotting markers (optional, skipped).
+  - Tank: five parts (hull, two tracks, turret, gun) moved by `Teleport` every frame from attachment offsets read out of the models (`hullParts`, `gun`, `muzzle` in config). The hull turns with left and right, drives with forward and back (reverse at half speed), follows the ground with a downward trace and stops when a bumper line hits something. The turret turns toward the view yaw at `turretTurnRate`; the gun follows the turret but does not pitch (shells use the view pitch). The shell flies with light gravity and bursts (150 over 220). Health 3000. No crush damage. A parked tank keeps its place and turret for its owner.
+  - Measured on spawned props: the hull top is 69 above its base and the turret top 99.4 with the offsets above; the gun model extends forward along +x, so `gunYawOffset` is 0 (the model's `muzzle` attachment reads `[0, -178.8, 0]` but its hull runs 0..178.8 along x).
+- Live smoke test (local server, de_dust2, 6 to 10 bots, a temporary `sh_probe` console command that was not committed):
+  - A salvo from mid onto two stationary CT bots killed both with the first rocket; `killed ... with "prop_dynamic"` credited the battery's owner. The battery was gone after the last rocket.
+  - With a CT air defense beside the target, several rockets of a salvo never landed (intercepted); two CT bots still took 70 to 76.
+  - A T air defense shot a flying CT drone down, and the pilot got their view and movement back. A test structure marked airborne lost 200 per interceptor.
+  - A CT gun drone flew at about 390 u/s, climbed, and hit a T bot six times (100 → 28). A T gun drone flying into a CT net's square was destroyed. A scout drone's blast killed two CT bots next to it.
+  - A tank drove 260 units forward, stopped at the net's pole in front of its bumper, and a shell took a CT bot 100 → 51. Getting out and back in worked.
+  - After the final refactor the committed build loaded cleanly and a salvo killed two bots again.
+- Performance (per frame, 64 ticks, averaged over 640 frames, temporary timers not committed):
+  - 3 batteries firing 24 rockets in 10 s, 2 air defenses, a tank and drones driven by bots: `Projectiles` 13 to 21 µs average (peaks 150 to 720 µs, the engine's death handling inside a kill), `RocketBatteries` 3 to 5 µs, `Tanks` 8 to 11 µs, `Drones` 12 µs with three drones flying, `Pilots` 0.7 µs.
+- Linux: nothing new to verify; no signature or schema field was added in this step.
+- User must check in game (also in the overall checklist below): the view through the camera for drones and the tank, mouse steering while seated, WASD, jump and crouch, E to get in and out, the knife switch; the rocket model's facing along its arc, the exhaust trail and the stock explosion; the warning banner and siren; the air defense turning and its interceptor; the net and pole models together at the right height; the tank's parts lined up, the gun on the turret, and the chase camera distance.
+- Blockers: none. The F5 view itself needs a human in a client.
+
+### 2026-09-21 — Overall status
+
+- Done on `feat/stronghold` in voltmod, `plugins/stronghold`, `plugins/anticheat` and the root: M0 assets, M1 framework APIs (damage hook and apply, trace hit entity, normal and hull, schema fields, AngleToForward, round end, beam fields, owner handle, player console commands), M2 core (economy, shop, loadouts, placement, structures, structure health, turrets, laser mines, walls, look-at and upgrades, Cores and rounds, addon), M3 (sabotage, sensor towers, teleporters, jump pads, turret branches, scrap, bounties, supply drops, landmines, dispensers, tesla coils, perks), M4 VIP tiers through admin-system's permission contract, the anticheat and bhop integration, and M5 (rocket battery, air defense, net, scout and gun drones, tank).
+- Still open by choice: the HUD and tutorial screens (center text and menus stand in), the F4 particle helper (plugin-side particles work, two-control-point particles do not), the live balance pass, lifetime stats persistence, drone markers and tank crush damage.
+- Unverified on Linux (no `libserver.so` here; check before any Linux deploy):
+  - signatures: `CBaseEntity::TakeDamageOld`, `CTakeDamageInfo::CTakeDamageInfo`, `CCSGameRules::TerminateRound` (CS2Fixes' bytes);
+  - `CNavPhysicsInterface::Nav_TraceShape` at index 5 (inferred from the ABI);
+  - schema baselines copied or inferred from Windows in `schema/server.linux.json`: `CPlayer_CameraServices`, `CCSPlayerBase_CameraServices`, `CCSGameRulesProxy`, `CBeam`.
+- Framework finding to follow up: `EntityOps::RemoveDelayed` (the delayed `Kill` IO event) crashes the server without a minidump; stronghold no longer calls it.
+- Client checklist (everything that needs a human in game):
+  - Shop and menus: the center HTML shop pages and price rows, the Perks and VIP pages, the turret branch menu, `sh_shop` in the console and `bind b sh_shop`, the `!menu` Stats-tab entry, no upgrade while a menu is open.
+  - Placement: the ghost visible only to the placer, green and red, E places and charges (the shop's E does not place at once), R cancels, the prompt text, the teleporter's two-step placement and refund, wall facing and scale, laser mines facing out of the wall, placement boxes that match the models (wall, dispensers, tesla coil, rocket battery, air defense, tank).
+  - Structures: the turret head on its stand, turning and pitching, red and blue groups surviving upgrades; dispenser `ct_/t_` and money `level_` groups; the laser beam (visible, team colour, from the emitter, gone while unpowered); the dimmed unpowered look; destroy and hit sounds; the landmine beacon particle and blast sound; tesla coils removing grenades and repairing; the sensor tower glow for the team only; teleporter trips; jump pad feel and no fall damage.
+  - Kill feed and HUD: turret, laser, landmine, rocket and tank kills (owner name and the `prop_dynamic` icon), the look-at center text line breaks, the rocket warning banner and siren, "Core under attack", the round summary and win panel, bounty and VIP clan tags on the scoreboard, and whether any tag reaches the kill feed.
+  - Perks: speed feel and whether it survives weapon switches and scoping, gravity jump height, health above 100 on the HUD, Cryo's slow on a real player.
+  - VIP: the page with a real VIP account (swap the seed's placeholder SteamID and `!admin_reload`), tints and beam colours, the salary line, `sh_core_set` for an admin and its refusal for others.
+  - Anticheat: in observe mode, own turrets, landmines, rockets, drones and tanks while shooting elsewhere, plus teleporters, jump pads and the perks, should raise nothing.
+  - Vehicles (F5): the view through the camera for drones and the tank, mouse steering while seated (if the view is pinned, switch steering to mouse deltas), WASD, jump and crouch, E in and out, the knife switch; rocket facing, exhaust trail and explosion; the air defense turning and interceptor; net and pole models; tank parts lined up, the gun on the turret, and the chase camera.
+  - Assets: every model's scale and material groups on first spawn, and the Core's size and spawn-centroid position on each map (save positions with `sh_core_set`).
+- Release steps for the user:
+  1. Review and push the `feat/stronghold` branches (voltmod first, then `plugins/stronghold` and `plugins/anticheat`, then the root).
+  2. Tag a voltmod release that contains the `feat/stronghold` commits (`/release`), so CI uploads the Conan package.
+  3. From the repo root, `uv run poe build --relock` and commit `conan.lock` (this drops the `conan editable` link used during development).
+  4. Upload the `stronghold` workshop addon in the Workshop Manager, then set its id as `addonId` in the plugin's `configs/settings.jsonc` (0 skips it). Updates wait for Steam moderation.
+  5. Verify the Linux items above on `libserver.so` before the first `/deploy-test`, then deploy to one test server and run the client checklist.
