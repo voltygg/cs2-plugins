@@ -12,7 +12,7 @@ engine events arrive in load order, and a console command one plugin consumes is
 the next.
 
 - `plugin.json` beside the plugin's `CMakeLists.txt` is its identity: name, version, log tag, description, dependencies. Nothing in C++ or CMake repeats it; read `runtime.PluginName` and `runtime.Version`.
-- Derive the load-cycle class from `VoltMod::Plugin`, construct the base from `Runtime&`, and override `bool Load()`. Put `VOLTMOD_PLUGIN(<Namespace>::App)` at global scope in `App.cpp`, with `<VoltMod/App/PluginEntry.hpp>` included in that one .cpp only. Override lifecycle hooks on `Plugin`; keep custom engine-hook subscriptions in the App's `_subs`.
+- Derive the load-cycle class from `VoltMod::Plugin`, construct the base from `Runtime&`, and override `bool Load()`. Put `VOLTMOD_PLUGIN(<Namespace>::App)` at global scope in `App.cpp`, with `<VoltMod/App/PluginEntry.hpp>` included in that one .cpp only. Override lifecycle hooks on `Plugin`; the App wires its own cross-system handlers in `Load`.
 - The `App` lives for one load cycle. Nothing may survive `volt reload`.
 - `VoltMod::LoadStandardConfig(runtime, config)` loads settings and translations; `runtime.PluginFile("configs/x")` builds any other path under the plugin's directory.
 
@@ -45,6 +45,8 @@ commands.Add("slap")
 
 - Subscribe with `+=` on `Event` members (`runtime.Slots.Changed`, `runtime.Hooks.Movement.Before`, ...) and with `runtime.GameEvents.On<T>()` for game events. A game event needs a struct in `Events/EventTypes.hpp`; there is no string form.
 - Every subscription returns a `Subscription`. Keep it in a `Subscriptions` beside the state its handler captures: `_subs.Add(event += handler)`.
+- A class subscribes in its constructor, unconditionally, and reads config or its mode when the handler fires. VoltMod constructs the App after the runtime is ready and calls `Load` in the same step, so nothing fires in between. Work that needs loaded config, can fail the load, or registers commands stays in `Load` or a method `Load` calls.
+- Construct per-slot state with the slot feed: `VoltMod::PerSlot<State> _state{runtime.Slots};`.
 - Dropping a subscription unsubscribes, and cancels a `Scheduler` timer, so a fire-and-forget deferral still needs an owner.
 - Hook services arm on the first subscription and disarm on the last. There is no `Install()`/`Enable()`. A leaked subscription leaves a live vtable hook after reload, and the host logs it by name when the plugin unloads.
 - For an engine function the framework does not cover: `HookInterface`, `HookVirtual` or `HookFunction` from `<VoltMod/Unsafe/Hook.hpp>`, keeping the `Subscription` it returns. A handler is a lambda taking the hooked object first; a before-handler returns `HookResult` or nothing, an after-handler observes.
