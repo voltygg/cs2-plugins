@@ -1,17 +1,19 @@
 # Stronghold — build-and-defend team deathmatch
 
-Status: planned 2026-09-20, not started. Name **Stronghold** (plugin `plugins/stronghold/`, log tag `Stronghold`, command prefix `sh_`, chat `!shop`). Implement milestone by milestone; every framework change is a commit pair (voltmod first, then this repo with the relocked `conan.lock`).
+Status: planned 2026-09-20; implementation started 2026-09-21 on `feat/stronghold` (voltmod, plugin submodule, root). Name **Stronghold** (plugin `plugins/stronghold/`, log tag `Stronghold`, command prefix `sh_`, chat `!shop`). Implement milestone by milestone; every framework change is a commit pair (voltmod first, then this repo with the relocked `conan.lock`).
 
 ## 1. What it is
 
-Team deathmatch with instant respawn and an economy. Kills pay money; money buys **structures** you place in the world (sentry turret, laser mine, wall, ...), **perks** for yourself, and later **vehicles** (drones, tank). Structures level up 1→3, have health and can be destroyed for a reward. Unlike the inspiration, the fight has a goal: each team defends a **Core**, and the round ends when one falls (section 2a lists everything that is ours rather than borrowed). Inspiration: cs2red.ru "WWDM"; screenshots in `references/wwdm/screenshots/`, their content pack at `C:\Program Files (x86)\Steam\steamapps\workshop\content\730\3329709053`. The decompiled asset files are located at `/references/wwdm/`
+Team deathmatch with instant respawn and an economy. Kills pay money; money buys **structures** you place in the world (sentry turret, laser mine, wall, ...), **perks** for yourself, and later **vehicles** (drones, tank). Structures level up 1→3, have health and can be destroyed for a reward. Unlike the inspiration, the fight has a goal: each team defends a **Core**, and the round ends when one falls (section 2a lists everything that is ours rather than borrowed). The reference mode's screenshots and decompiled asset sources are in `references/wwdm/` (read-only).
 
 Decisions already made:
 
-- All game logic is server-side in one plugin. Client content (models, particles, sounds, Panorama screens) ships in a workshop addon.
-- Content goes into the existing `meatgg_ui` addon (id `3801580041`) — a client downloads one addon per reconnect (`vendor/voltmod/docs/workshop.md`), so a second addon costs every new player an extra reconnect. Revisit only if the addon grows past ~150 MB.
+- All game logic is server-side in one plugin. Models, particles and sounds ship in a separate `stronghold` workshop addon (id in config, 0 skips it); Panorama screens stay in `meatgg_ui`. A second addon costs a Stronghold player one extra reconnect on first join (`voltmod/docs/workshop.md`), but keeps ~100 MB of models off every other server and lets assets and UI update independently.
+- The shop, placement prompt and look-at panel use framework menus and center text first; custom Panorama screens come later if needed.
+- Flat source layout, one file per concept, files kept under ~300 lines. One `Structure` struct with a kind switch, stats from config.
+- No foreign asset or author names in anything shipped or committed outside `references/`.
 - v1 has no database: money, perks and structures live for the map. VIP tiers (M4) add persistence.
-- Framework gaps are closed in voltmod as general-purpose APIs (damage, trace), never as plugin-side signature hacks — plugins cannot bind signatures (`vendor/voltmod/docs/sdk/gamedata.md`).
+- Framework gaps are closed in voltmod as general-purpose APIs (damage, trace), never as plugin-side signature hacks — plugins cannot bind signatures (`voltmod/docs/sdk/gamedata.md`).
 - Vehicles are last and gated on a camera prototype. The mode must be fun without them.
 
 ## 2. Reference design (from the screenshots)
@@ -74,13 +76,13 @@ Deliberately dropped from the reference unless M5 happens: tank, both drones, ro
 
 ### Framework, ready today
 
-- Spawn/remove/keyvalues/inputs/model: `vendor/voltmod/include/VoltMod/Entities/EntityOps.hpp`, `KeyValues.hpp`, `Entity.hpp` (`Teleport`). Worked `prop_dynamic` example incl. `FollowEntity` parenting: `vendor/voltmod/src/Hooks/GlowVision.cpp:37-77`.
+- Spawn/remove/keyvalues/inputs/model: `voltmod/include/VoltMod/Entities/EntityOps.hpp`, `KeyValues.hpp`, `Entity.hpp` (`Teleport`). Worked `prop_dynamic` example incl. `FollowEntity` parenting: `voltmod/src/Hooks/GlowVision.cpp:37-77`.
 - Per-player visibility for the ghost: `Hooks/Visibility.hpp` (`ShowOnlyTo(EntityRef, slot)`); alpha/color: `Entities/Render.hpp` (`SetRender`, `RenderMode_t::TransTexture`).
 - Line traces: `Entities/Trace.hpp` (`Line`, `Clear`, `TraceOptions{Layers, Ignore1, Ignore2}`) — result has `Hit`, `Fraction`, `End` only.
 - Frame loop and timers: `Core/Time/Scheduler.hpp` (`EveryFrame`, `Repeat`, `Delay`); registrations are `Subscription`s.
 - Input: `runtime.Hooks.Movement.Before/After` with `Hooks/PlayerInput.hpp` (`ButtonsHeld`, `ButtonsChanged`, view angles); `EntitySystem::Buttons(slot)`; `IN_USE = 0x20`, `IN_RELOAD = 0x2000`. **Read-only** — `Rewrite` edits only the decoded copy (`src/Hooks/Movement.cpp:43-46`).
 - Player state: `Controller::Money/SetMoney`, `Pawn::SetHealth/SetArmor/SetVelocity/SetMove/SetSpeedModifier` (the speed modifier decays, it is not a setting).
-- UI: `Ui/ScreenManager.hpp` (`ForPlayer`, `Shared`, `Pressed` → `ButtonPress{Slot, ButtonId}`), `Ui/Screen.hpp` (`SetText`, `SetClass`, `SetHidden`, `ShowCursor`), blocks in `vendor/voltmod/panorama/blocks/` (`tabs`, `card`, `button`, `bar`, `toast`). Docs: `vendor/voltmod/docs/custom-ui.md`, `panorama.md`. Reference wiring: `plugins/main-menu/src/App.cpp`. Limits: only Panel/Label/Image/Button; 400 interned names per screen, 1024 global (`voltmod panorama check`); never build ids at runtime.
+- UI: `Ui/ScreenManager.hpp` (`ForPlayer`, `Shared`, `Pressed` → `ButtonPress{Slot, ButtonId}`), `Ui/Screen.hpp` (`SetText`, `SetClass`, `SetHidden`, `ShowCursor`), blocks in `voltmod/panorama/blocks/` (`tabs`, `card`, `button`, `bar`, `toast`). Docs: `voltmod/docs/custom-ui.md`, `panorama.md`. Reference wiring: `plugins/main-menu/src/App.cpp`. Limits: only Panel/Label/Image/Button; 400 interned names per screen, 1024 global (`voltmod panorama check`); never build ids at runtime.
 - Main-menu entry: publish `Contracts::IMenuSection` (`plugins/contracts/include/Contracts/IMenuSection.hpp`).
 - Sound: `EntityOps::EmitSound` / `EmitSoundFilter` take a soundevent name. Precache: `runtime.World.Precache.Add(path)` — takes effect on the **next map load**.
 - Addon requirement: `Workshop/Addons.hpp` (`Require(id)`).
@@ -91,34 +93,29 @@ Deliberately dropped from the reference unless M5 happens: tank, both drones, ro
 
 1. No damage hook, no apply-damage call → no kill credit for turrets, no structure health from bullets.
 2. `TraceHit` has no hit entity and no surface normal; no hull trace.
-3. `m_flGravityScale`, `m_flMaxspeed`, `m_bTakesDamage`, `m_iMaxHealth` are in `vendor/voltmod/schema/server.windows.json` but not in `schema/manifest.json`.
+3. `m_flGravityScale`, `m_flMaxspeed`, `m_bTakesDamage`, `m_iMaxHealth` are in `voltmod/schema/server.windows.json` but not in `schema/manifest.json`.
 4. No camera/view override and no usercmd writeback (vehicles only).
 5. Particles and beams: spawnable through `EntityOps::Spawn` (`info_particle_system` + `effect_name`, `env_beam`) but unproven here.
 
 Signatures and layouts to port: `references/CS2Fixes/gamedata/cs2fixes.jsonc` (`CBaseEntity_TakeDamageOld` ≈:99, `CTakeDamageInfo` offsets ≈:225, `CCSPlayerPawn::OnTakeDamage_Alive` ≈:437); field layouts in `references/swiftlys2/generator/datamaps.json`. Re-verify every signature against the current `server.dll`/`libserver.so` — see memory "Verifying vtable indices".
 
-### Reference addon inventory (`3329709053_dir.vpk` + `_000.._004`)
+### Reference assets (`references/wwdm/`, decompiled source)
 
-- Models `models/cs2red/`: `turret/{stand,stand_high,level1,level2,level3}`, `laser/laser`, `dispenser/dispenser`, `money_dispenser/money_dispenser`, `tesla/tesla`, `pvo_v2/{pvo_base,pvo_cradle,pvo_pods,pvo_interceptor}`, `grad_v2/{grad_base,grad_cradle,grad_rack,grad_rocket}`, `tank/{tank_hull,tank_turret,tank_gun,tank_shell,tank_track_l,tank_track_r}`, `drone/drone`, `drone_gun/{drone_gun,drone_gun_full,mount}`, `drone_kit/weapon_drone_kit`, `wwdm/{wall,net,pole,landmine}`, `zonewall/zonewall`. Turrets, air defense, battery and tank are **multi-part** (base + yaw part + pitch part) — each part is its own prop, rotated by the server. Team variants are material groups (`level1_blue`/`level1_red`, `body_blue`/`body_red`, dispenser `screen_1..3` per level).
-- Particles `particles/cs2red/`: `tesla_arc_{ct,t}[_l2]`, `tesla_zap_{ct,t}[_l2]`, `drone_*` (beacon, debris, lens, mark_ally/enemy/self, shock, wash), `zone_{pillar,sparks,wall}`, `dispenser/{break,transfer_blue,transfer_gold,transfer_red}`, `drone_gun/{impact,muzzle}`, `grad/rocket_exhaust`, `wwdm/mine_beacon[_blue]`.
-- Sounds: `sounds/drones/*`, `sounds/jet/*`; soundevent files `soundevents/soundevents_cs2red{,_air,_buildables,_drone_gun,_tank}.vsndevts`.
-- UI: `panorama/images/custom_game/warsdm/*` (item/perk/vip icons, `.vsvg`), layouts and styles under `panorama/{layout,styles}/custom_game/` with obfuscated names — reference only, our UI uses the meat.gg brand kit.
+- Models (ModelDoc `.vmdl` + `.dmx`): turret `stand`, `stand_high`, `level1..3` (levels 2/3 skinned with a `spin` animation, material groups `blue`/`red`), laser (`laser_emitter` attachment), wall (PhysicsMesh), landmine, net, pole, tesla, dispenser (groups `ct_1..3`/`t_1..3`), money dispenser (`level_1..3`), air defense and rocket battery parts, tank parts (turret has a `gun` attachment), drones. All have physics hulls except the zone wall (skipped).
+- Turrets have **no muzzle attachment**: the muzzle is a per-level offset in config. There is **no beam particle**: the laser uses `env_beam`.
+- Particles: tesla arcs/zaps per team and level, mine beacons, dispenser transfer/break, drone muzzle/shock, rocket exhaust.
+- Soundevents: buildables (building, start, detect, upgrade, laser deploy/charge/activate/beam), turret shot, tank, air (rocket battery, air defense).
+- Panorama layouts are obfuscated; reference only.
 
-## 4. Milestone 0 — extract the reference assets
+## 4. Milestone 0 — re-home the reference assets
 
-Tool: Source 2 Viewer CLI (ValveResourceFormat, `Source2Viewer-CLI.exe`; download the release zip into the scratchpad or `%LOCALAPPDATA%`, never into the repo). Confirm flag names with `--help` first.
+- [ ] Create the `stronghold` addon in the Workshop Tools (`<CS2>/content/csgo_addons/stronghold/`).
+- [ ] Copy the needed sources from `references/wwdm/` under our own paths: `models/stronghold/...`, `materials/stronghold/...`, `particles/stronghold/...`, `sounds/stronghold/...`, `soundevents/soundevents_stronghold.vsndevts` with names like `Stronghold.Build.Upgrade`. Rename every file and internal reference that carries a foreign prefix.
+- [ ] Compile with the local `resourcecompiler`; fix errors; leave out and note anything that still fails.
+- [ ] Case-insensitive grep over the addon tree and `plugins/stronghold` for the foreign prefixes comes back empty.
+- [ ] `plugins/stronghold/docs/assets.md`: path, source ("reference pack" or own), licence status.
 
-- [ ] List the pack: `Source2Viewer-CLI -i <dir.vpk> --vpk_list` → save as a text inventory.
-- [ ] Decompile only the mode's content, by path filter, into a work folder **outside the repo** (e.g. `D:\stronghold-assets\decompiled`):
-  `-i 3329709053_dir.vpk -o <out> -d --vpk_filepath "models/cs2red"` and again for `particles/cs2red`, `materials/cs2red`, `materials/cs2red_fx`, `materials/particle/cs2red`, `sounds/drones`, `sounds/jet`, `soundevents`, `panorama/images/custom_game/warsdm`. `-d` yields `.vmdl` (ModelDoc), `.vmat`, textures, `.vpcf`, `.vsndevts`, `.wav/.mp3`.
-- [ ] Also export each model as glTF (`--gltf_export_format glb --gltf_export_materials`) for inspection in Blender: pivot points of yaw/pitch parts, muzzle attachments, bounding sizes. Record per model: parts, pivots, attachments, material groups, collision mesh present or not.
-- [ ] Decompile the Panorama layouts/styles once and skim them for ideas on how they drive the UI (class toggles, text variables). Do not copy.
-- [ ] Re-home under our own paths: `models/stronghold/...`, `particles/stronghold/...`, `soundevents/soundevents_stronghold.vsndevts`, sound names `Stronghold.Turret.Fire` etc. Fix every internal reference (vmdl → vmat → vtex, vpcf → vmat/child vpcf, vsndevts → vsnd).
-- [ ] Put the sources in the `meatgg_ui` addon content tree (the one `uv run poe panorama-publish` compiles into — confirm its path from `vendor/voltmod/cli`), compile with `resourcecompiler`, and check every model/particle loads in the Workshop Tools model viewer without error materials.
-- [ ] Each structure model needs a physics hull so bullets and players collide with it. Where the decompiled model has none, add a simple hull in ModelDoc.
-- [ ] Write `plugins/stronghold/docs/assets.md`: path, source (reference pack / own / third-party), and licence status per asset.
-
-Ownership: these assets belong to cs2red or the authors they sourced them from. Treat them as development stand-ins; the `assets.md` table is the list to replace or clear with the authors before the addon is published publicly. The item list is config-driven, so swapping a model is a one-line change.
+Ownership: the reference assets belong to their original authors. Treat them as development stand-ins; the `assets.md` table is the list to replace or clear before the addon is published publicly. The item list is config-driven, so swapping a model is a one-line change.
 
 ## 5. Milestone 1 — framework work (voltmod)
 
@@ -245,3 +242,10 @@ Optional and last: this is the part copied most directly from the reference and 
 2. Asset plan after development: commission replacements, buy packs, or get permission for the extracted ones?
 3. Maps: stock competitive maps only (as the reference does), or a curated pool with blocked placement zones? Cores need a sensible position per map either way.
 4. Which of the section 2a features to keep — all have a config switch, but each one kept is work in M3.
+
+## Progress
+
+### 2026-09-21 — plan review
+
+- Corrections applied: `voltmod/` paths, separate `stronghold` addon, asset facts, menu-first UI, flat layout, file-size limit, no foreign names, README in the plugin repo.
+- Framework recipe from `references/`: damage via a `CBaseEntity::TakeDamageOld` detour plus the `CTakeDamageInfo` constructor (CS2Fixes, SwiftlyS2); trace hit entity, normal and hull via `CNavPhysicsInterface::Nav_TraceShape` (CS2AC); camera via `CPlayer_CameraServices::m_hViewEntity` (CS2Fixes).
