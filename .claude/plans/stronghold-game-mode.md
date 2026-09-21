@@ -109,11 +109,11 @@ Signatures and layouts to port: `references/CS2Fixes/gamedata/cs2fixes.jsonc` (`
 
 ## 4. Milestone 0 — re-home the reference assets
 
-- [ ] Create the `stronghold` addon in the Workshop Tools (`<CS2>/content/csgo_addons/stronghold/`).
-- [ ] Copy the needed sources from `references/wwdm/` under our own paths: `models/stronghold/...`, `materials/stronghold/...`, `particles/stronghold/...`, `sounds/stronghold/...`, `soundevents/soundevents_stronghold.vsndevts` with names like `Stronghold.Build.Upgrade`. Rename every file and internal reference that carries a foreign prefix.
-- [ ] Compile with the local `resourcecompiler`; fix errors; leave out and note anything that still fails.
-- [ ] Case-insensitive grep over the addon tree and `plugins/stronghold` for the foreign prefixes comes back empty.
-- [ ] `plugins/stronghold/docs/assets.md`: path, source ("reference pack" or own), licence status.
+- [x] Create the `stronghold` addon in the Workshop Tools (`<CS2>/content/csgo_addons/stronghold/`).
+- [x] Copy the needed sources from `references/wwdm/` under our own paths: `models/stronghold/...`, `materials/stronghold/...`, `particles/stronghold/...`, `sounds/stronghold/...`, `soundevents/soundevents_stronghold.vsndevts` with names like `Stronghold.Build.Upgrade`. Rename every file and internal reference that carries a foreign prefix.
+- [x] Compile with the local `resourcecompiler`; fix errors; leave out and note anything that still fails.
+- [x] Case-insensitive grep over the addon tree and `plugins/stronghold` for the foreign prefixes comes back empty.
+- [x] `plugins/stronghold/docs/assets.md`: path, source ("reference pack" or own), licence status.
 
 Ownership: the reference assets belong to their original authors. Treat them as development stand-ins; the `assets.md` table is the list to replace or clear before the addon is published publicly. The item list is config-driven, so swapping a model is a one-line change.
 
@@ -249,3 +249,13 @@ Optional and last: this is the part copied most directly from the reference and 
 
 - Corrections applied: `voltmod/` paths, separate `stronghold` addon, asset facts, menu-first UI, flat layout, file-size limit, no foreign names, README in the plugin repo.
 - Framework recipe from `references/`: damage via a `CBaseEntity::TakeDamageOld` detour plus the `CTakeDamageInfo` constructor (CS2Fixes, SwiftlyS2); trace hit entity, normal and hull via `CNavPhysicsInterface::Nav_TraceShape` (CS2AC); camera via `CPlayer_CameraServices::m_hViewEntity` (CS2Fixes).
+
+### 2026-09-21 — Milestone 0, assets
+
+- Landed: the `stronghold` addon. Sources are in `<CS2>/content/csgo_addons/stronghold/` and compiled files in `<CS2>/game/csgo_addons/stronghold/` (with `addoninfo.txt`). `<CS2>` is `C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive`. Stronghold commit `684c136` adds `docs/assets.md`, which lists the assets and the model, particle and soundevent paths the plugin uses.
+- Compiled with no failures: 32 models, 41 materials, 57 textures, 43 particles, 28 sounds and one soundevents file. Nothing was left out. The particle textures under `materials/stronghold/fx/` don't compile as particle children, so they need their own `resourcecompiler` pass on the `.vtex` files.
+- Renames: `pvo_v2` became `air_defense`, `grad_v2` became `rocket_battery`, and `lfence` became `laser`. The `wwdm/` models moved up to `models/stronghold/<name>/`. Tracers are now `particles/stronghold/tracers/`, and the laser soft trail is `tracers/laser_trail.vpcf`. The dispenser sounds are `dispenser_use`, `dispenser_destroy` and `dispenser_deny`. The binary DMX string tables were rewritten in place. VRF's stale `Compiled Textures` blocks were removed from the `.vmat` files.
+- Deviations: model materials stay next to their models, as they were in the pack. `materials/stronghold/` only holds the particle textures and the shared roughness map. The 11 buildables, 1 turret, 13 air, 7 tank and 9 drone events are merged into a single `soundevents_stronghold.vsndevts`. Drone events use the pack's spatial `.pos` variants. Some events and particles still point at stock CS2 sounds and particle textures, which ship with the game.
+- Skipped on purpose: zone wall, chest, gift, drone kit, the `fx_*` and `zone_*` particles, and `dota_leaves`.
+- Check: a case-insensitive grep for `cs2red|wwdm|warsdm|letaryat|icsdm` over both addon trees and `plugins/stronghold` comes back empty. It covers file names and binary content.
+- User action: upload the addon in the Workshop Manager, then set its id as the plugin's `addonId` config value. 0 skips `Addons.Require` for local runs. The plugin must precache `soundevents/soundevents_stronghold.vsndevts`. No model has been viewed in-game or in ModelDoc yet, so check the scale, the material groups and the tank attachments on first spawn.
