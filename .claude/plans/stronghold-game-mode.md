@@ -171,18 +171,18 @@ plugins/stronghold/
 
 Rules of the road: hold entities as `EntityRef`, never raw pointers across frames; every `Subscription` is a member declared after what it captures; item stats come from config, not constants; follow `.claude/rules/cpp.md` and `framework-patterns.md`.
 
-- [ ] **Mode rules** — `stronghold.cfg`: instant respawn for both teams, no buy zone/time, game cash awards off, max money raised, no round end on elimination, long round timer, warmup off. Apply on map start.
-- [ ] **Wallet** — start balance, kill reward (income perk multiplier), structure-destroy reward, upgrader bonus per structure frag, `CanAfford`/`Charge`/`Pay`. Mirrors into `Controller::SetMoney`. Pure logic unit-tested.
-- [ ] **Config** — `Settings` with an item list: id, kind, title key, price, base limit, per-level `{health, damage, range, fireInterval, upgradePrice}`, model paths per part, sound names. Reloadable.
-- [ ] **Shop screen** — one `ForPlayer` screen, three tab panels toggled by class, static card ids (`shop_item_turret_buy` ...). Per card: price, owned/limit, state class (`can-buy` / `no-money` / `limit` / `need-vip`). Balance label. Opens on `!shop`, `sh_shop`, main-menu section, and a key: test whether the client sends `drop` (G) or `buymenu` (B) as hookable commands in this mode; bind whichever works and document the fallback `bind`. `ShowCursor` on open, off on close/death/disconnect. Keep the name count under the budget; run `uv run poe lint`.
-- [ ] **Loadouts** — free weapon set applied now and on each spawn; armor and grenades as one-off purchases.
-- [ ] **Placement mode** — enter on purchase click (shop closes). Ghost = same model parts, `ShowOnlyTo` the placer, translucent green/red via `SetRender`. Each frame: trace from eye along view to max distance, snap to hit point, orient by surface normal (floor items upright and yaw = player yaw; laser mine and wall-mounted items align to the wall normal). Validity: surface slope per item, hull trace clear of world/players/structures, minimum distance from spawn points and other structures, item-specific checks. E places and charges; R, weapon fire, death or shop reopen cancels. Validity rules unit-tested on plain vectors.
-- [ ] **StructureRegistry** — owns all live structures: owner slot + SteamID, team, kind, level, health, frag count, list of upgraders, entity refs for parts, powered flag. Enforces per-owner limits. Owner death → unpowered until respawn (dim via `SetRender`, behaviours skip unpowered structures); removed on disconnect, team change, round/map end. Lookup by `EntityRef` for the damage hook and look-at.
+- [x] **Mode rules** — `stronghold.cfg`: instant respawn for both teams, no buy zone/time, game cash awards off, max money raised, no round end on elimination, long round timer, warmup off. Apply on map start.
+- [x] **Wallet** — start balance, kill reward (income perk multiplier), structure-destroy reward, upgrader bonus per structure frag, `CanAfford`/`Charge`/`Pay`. Mirrors into `Controller::SetMoney`. Pure logic unit-tested.
+- [x] **Config** — `Settings` with an item list: id, kind, title key, price, base limit, per-level `{health, damage, range, fireInterval, upgradePrice}`, model paths per part, sound names. Reloadable.
+- [x] **Shop screen** (done as a framework menu per the review; no Panorama screen and no key bind yet) — one `ForPlayer` screen, three tab panels toggled by class, static card ids (`shop_item_turret_buy` ...). Per card: price, owned/limit, state class (`can-buy` / `no-money` / `limit` / `need-vip`). Balance label. Opens on `!shop`, `sh_shop`, main-menu section, and a key: test whether the client sends `drop` (G) or `buymenu` (B) as hookable commands in this mode; bind whichever works and document the fallback `bind`. `ShowCursor` on open, off on close/death/disconnect. Keep the name count under the budget; run `uv run poe lint`.
+- [x] **Loadouts** — free weapon set applied now and on each spawn; armor and grenades as one-off purchases.
+- [x] **Placement mode** — enter on purchase click (shop closes). Ghost = same model parts, `ShowOnlyTo` the placer, translucent green/red via `SetRender`. Each frame: trace from eye along view to max distance, snap to hit point, orient by surface normal (floor items upright and yaw = player yaw; laser mine and wall-mounted items align to the wall normal). Validity: surface slope per item, hull trace clear of world/players/structures, minimum distance from spawn points and other structures, item-specific checks. E places and charges; R, weapon fire, death or shop reopen cancels. Validity rules unit-tested on plain vectors.
+- [x] **StructureRegistry** — owns all live structures: owner slot + SteamID, team, kind, level, health, frag count, list of upgraders, entity refs for parts, powered flag. Enforces per-owner limits. Owner death → unpowered until respawn (dim via `SetRender`, behaviours skip unpowered structures); removed on disconnect, team change, round/map end. Lookup by `EntityRef` for the damage hook and look-at.
 - [ ] **Cores and round flow** — spawn one Core per team at the configured position, large health, damage accepted only from attackers within the radius, "under attack" alert with a cooldown, win on destruction or by health at timeout, end-of-round summary screen, wipe structures, carry over money by the configured share. `sh_core_set <team>` writes the map's position file. Round outcome logic unit-tested.
-- [ ] **Structure health** — in `Damage.Before`: victim is a registered part → subtract from the structure's health (friendly fire ignored), block engine damage, pay the destroyer at zero, play break effect, remove. Hit feedback sound.
+- [x] **Structure health** — in `Damage.Before`: victim is a registered part → subtract from the structure's health (friendly fire ignored), block engine damage, pay the destroyer at zero, play break effect, remove. Hit feedback sound.
 - [ ] **Turret** — states: building (short delay) → idle sweep → tracking → firing. Target selection at ~10 Hz, staggered across turrets: nearest living enemy in range with `Trace.Clear` from the muzzle, ignoring own parts. Yaw part and pitch part rotate toward the target at a capped turn rate every frame. Fires on an interval through `Damage::Apply` (attacker = owner pawn, inflictor = turret), tracer/muzzle particle, sound. Levels swap the head model and stats. Targeting math (lead-free aim angles, turn-rate clamp, range/FOV test) unit-tested.
 - [ ] **Laser mine** — placed on a wall; beam endpoint from a trace along the normal; each tick test enemies against the segment (closest-point distance, cheap) and kill through `Damage::Apply`. Team-colored beam. Breaks when shot.
-- [ ] **Wall** — static solid prop with health. Nothing else.
+- [x] **Wall** — static solid prop with health. Nothing else.
 - [ ] **Look-at panel and upgrade** — per player at ~10 Hz: trace with `HitEntity`, resolve to a structure, fill the HUD panel (`SetText`/`SetHidden`). E edge while looking at an allied upgradable structure within reach charges the presser, levels it up, records them as an upgrader. "Not enough money: need $1200" toast.
 - [ ] **HUD** — shared-style HUD done as a per-player screen: prompts, toasts ("+$800"), rocket warning banner slot for later.
 - [ ] **Tutorial** — first-join screen with three cards and a confirm button; remembered for the map in v1.
@@ -303,4 +303,57 @@ Optional and last: this is the part copied most directly from the reference and 
   - `Nav_TraceShape` index 5, inferred from the ABI (two destructor slots, declaration order);
   - the Linux schema baseline for `CPlayer_CameraServices` and `CCSPlayerBase_CameraServices`. These were copied from the Windows dump, because every pawn component in the baseline has identical offsets on both platforms. The host's layout check refuses the load if they are wrong.
 - Blockers and user checks: none blocking. In game, check that a turret kill through `Apply` shows the owner in the kill feed; this was verified only through `player_death`. Also check that `SetMaxSpeed` and `SetGravityScale` change real movement for a human player.
+
+### 2026-09-21 — Milestone 2 core, part A (step 3)
+
+- Landed in `plugins/stronghold` on `feat/stronghold` (not pushed):
+  - `b4c5f1b` feat: apply the stronghold game rules on map and round start
+  - `4d7b943` feat: add the item table, economy and feature settings
+  - `30f1432` feat: keep player money in the controller balance and pay kill rewards
+  - `0426c6f` feat: give the chosen free weapon set on every spawn and sell equipment
+  - `653f2a9` feat: track placed structures with owner limits, power state and cleanup
+  - `3ad25b9` feat: count structure hit points and pay the destroyer
+  - `b854600` feat: place structures from a ghost that follows the player's aim
+  - `9e65b34` feat: add the shop menu with loadout, structure and VIP pages
+  - `3e5d810` fix: end the warmup from the mode rules
+- Nothing changed in voltmod. `conan.lock` is not relocked; the root still builds against `conan editable add voltmod`.
+- Files (`src/`): `App`, `Commands`, `Config`, `ModeRules`, `Wallet` + `WalletMath` (SDK-free), `Loadouts`, `Structures`, `StructureHealth`, `Placement` + `PlacementRules` (SDK-free), `Shop`. The largest is `Placement.cpp` at 278 lines. Tests: `tests/WalletTests.cpp`, `tests/PlacementRulesTests.cpp` (13 cases).
+- API for part B:
+  - `Structures` (`src/Structures.hpp`): `Build(item, ownerSlot, origin, angles)`, `Find(EntityRef part)`, `FindById`, `All()`, `CountOwned`, `SetPowered`, `Remove(id)`, `RemoveOwnedBy`, `RemoveAll`, `Forget`. `Structure` has `Id, ItemId, Kind, Owner (PlayerRef), Team, Level, Health, Frags, Upgraders, Parts, Powered, Origin, Angles`. Pointers are valid until the next add or remove; keep `Id` across frames. Every part spawns at the placement point; the turret head offset is part B's.
+  - `StructureHealth` blocks every hit on a part, ignores the owner's team, pays `economy.destroyReward` at zero and removes the structure on the next frame (outside the engine's damage call).
+  - `Placement::Begin(slot, item)`, `Cancel`, `IsPlacing`. `PlacementRules`: `SurfaceFits`, `FarFromAll`, `YawOf`, `SlopeLift`.
+  - Config: `ItemSettings{id, kind, price, limit, models[], levels[{health, damage, range, fireIntervalMs, upgradePrice, model, muzzleOffset}], placement{surface, maxSlopeDegrees, mins, maxs}, sounds{place, upgrade, hit, destroy, fire}}`, `FindItem`, `ParseItemKind`. Also `economy.upgraderBonus`, `features.*` and `addonId`, which are read by nothing yet.
+  - `Wallet::Charge/Pay/CanAfford/Balance` work on `Controller::Money`. There is no second copy.
+- Deviations:
+  - Commit order: loadouts, structures and placement landed before the shop, because the shop wires them together.
+  - The wall has no file or commit of its own. It is the generic structure, a solid `prop_dynamic` with tracked health, which is all the plan asks for.
+  - `sh_shop` works only as a chat alias (`!sh_shop`). The framework cannot take a player's console command yet. A registered console command is dispatched with no caller. A client command that is not a ConCommand reaches plugins only for `say` and `vote`. A player-console route needs a small voltmod change, or players can `bind <key> "say !shop"`.
+  - Precache landed early. `Structures::Precache` adds every configured model plus `soundevents/soundevents_stronghold.vsndevts` at load, because placement cannot be tested without models. `Addons.Require` is still part B.
+  - `mp_do_warmup_period` does not exist in CS2, so the cfg runs `mp_warmup_end`. It is a no-op outside warmup (checked live), so running it every round start cannot loop.
+  - The cfg runs at load, at map start and on every `round_start`. The load and map-start passes are overridden by the gamemode cfg; the round-start pass is the one that sticks.
+  - There is no break particle when a structure is destroyed, only the destroy sound (F4 is still unproven). The sound plays from a part that is removed on the next frame, so it may cut short.
+  - main-menu's `settings.jsonc` is unchanged, and it already has 6 tabs. To show the shop in `!menu`, add `{ "kind": "section", "label": "...", "section": "stronghold" }` to a tab.
+- Live smoke test (local server, de_dust2, 6 bots, through a temporary console probe that was not committed):
+  - Settings parsed and 7 resources were precached.
+  - After the first `round_start`, the convars read `mp_respawn_on_death_t 1`, `mp_startmoney 2000`, `mp_maxmoney 60000`, `mp_buytime 0`, `mp_teamcashawards 0` and `mp_roundtime 60`.
+  - The kill reward was paid (bot money went 10000 → 10800).
+  - `Shop::Open` on a bot: `open=true`, "Menu opened for slot 0 (title: Shop, depth: 1, items: 3)".
+  - Placement: the ghost spawned and followed the aim. A bot facing a wall read `TooSteep` for the floor-only wall, and aiming at a player read `NoSurface`.
+  - Walls spawned as `prop_dynamic` with 1000 hp. **Real bot bullets hit a wall** (5 hits, 1000 → 856). A same-team `Damage.Apply` was ignored. Three enemy hits of 400 destroyed it, paid the destroyer +500 (10800 → 11300), and the wall was gone on the next frame.
+  - Power: killing the owner set `powered=false` and the respawn set it back to true.
+  - Cleanup: kicking the owner removed their wall, and `mp_restartgame` removed all structures.
+  - Loadouts: every spawn gave the AK-47 and Deagle. Choosing AWP gave it immediately. Armor cost 650 and set armor to 100.
+- Local server change: the compiled `stronghold` addon was copied as loose files into `C:/cs2-server/game/csgo/{models,materials,particles,soundevents,sounds}`, because the dedicated server does not mount the addon. None of those folders existed before. Delete them to undo.
+- User must check in game:
+  - the menu in center HTML (three pages, price rows, balance subtitle);
+  - that only the placer sees the ghost, and that it turns green and red;
+  - that E places and charges, and that the E press that picks the shop row does not place at once;
+  - that R cancels;
+  - the placement center text;
+  - that a wall is placed facing the player's yaw and at the right scale, and that the hull box (`[-24,-24,0]..[24,24,64]`, a guess) matches the model;
+  - that the laser mine faces out of a wall;
+  - the dimmed look of an unpowered structure;
+  - that the destroy sound plays in full.
+  - Bots spent money on their own (for example 2000 → 1000) even with `mp_buytime 0`. Check whether human buying is blocked.
+- Blockers: none for part B. The `sh_shop` console route above needs a framework decision.
 
