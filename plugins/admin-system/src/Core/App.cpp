@@ -277,7 +277,6 @@ bool App::Load()
     Admin::Effects::PrecacheModels(Runtime);
     // Report invalid configured maps at load instead of on the first !map.
     MapCycle.VerifyAgainstEngine();
-    FunMode.Initialize();
 
     InstallStatusReporting();
     return true;

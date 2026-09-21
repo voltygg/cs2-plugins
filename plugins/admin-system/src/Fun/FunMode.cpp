@@ -17,12 +17,7 @@ namespace AdminSystem::Fun
 static constexpr std::string_view KnifeT = "weapon_knife_t";
 static constexpr std::string_view KnifeCT = "weapon_knife";
 
-FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _overrides(runtime.ConVars) {}
-
-// Restores changed convars when the plugin unloads.
-FunMode::~FunMode() = default;
-
-void FunMode::Initialize()
+FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _overrides(runtime.ConVars)
 {
     ResolveConVars();
 
@@ -36,6 +31,9 @@ void FunMode::Initialize()
             GiveKnifeOnly(e.Slot);
     }));
 }
+
+// Restores changed convars when the plugin unloads.
+FunMode::~FunMode() = default;
 
 bool FunMode::Flip(Toggle toggle)
 {
