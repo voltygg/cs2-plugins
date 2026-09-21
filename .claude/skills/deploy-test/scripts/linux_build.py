@@ -10,7 +10,7 @@ from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parents[3]
-CHECKOUT = ROOT / "vendor" / "voltmod"
+CHECKOUT = ROOT / "voltmod"
 SEED = ROOT / "build" / "linux-seed"
 OWN_RECIPES = ("voltmod", "sqlpp23", "hl2sdk-cs2", "metamod-source")
 
@@ -28,7 +28,7 @@ def locked_references() -> list[str]:
 
 
 def checkout_differs_from_lock(references: list[str]) -> bool:
-    """True when vendor/voltmod is anything but a clean checkout of the release conan.lock pins."""
+    """True when voltmod is anything but a clean checkout of the release conan.lock pins."""
     pinned = next((item for item in references if item.startswith("voltmod/")), None)
     if pinned is None or git("status", "--porcelain"):
         return True
@@ -58,7 +58,7 @@ def main() -> None:
         "--framework",
         choices=["auto", "checkout", "locked"],
         default="auto",
-        help="checkout: build vendor/voltmod too; locked: the release conan.lock pins; "
+        help="checkout: build voltmod too; locked: the release conan.lock pins; "
         "auto: checkout when it differs from that release",
     )
     parser.add_argument("--test", action="store_true", help="Run CTest after the build")

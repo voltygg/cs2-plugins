@@ -1,4 +1,4 @@
-# The CI toolchain (vendor/voltmod/.github/actions/setup-toolchain), baked once for local Linux builds.
+# The CI toolchain (voltmod/.github/actions/setup-toolchain), baked once for local Linux builds.
 FROM registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
 
 RUN echo 'deb https://repo.steampowered.com/steamrt3/apt sniper_beta main contrib non-free' \

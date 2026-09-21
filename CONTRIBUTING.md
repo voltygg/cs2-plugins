@@ -52,17 +52,17 @@ Third-party C++ dependencies require:
 
 ## Change VoltMod with a plugin
 
-`vendor/voltmod` is a separate Git repository. Create its Conan package locally,
+`voltmod` is a separate Git repository. Create its Conan package locally,
 then update this repository's lockfile to use the new recipe revision:
 
 Remove an old `voltmod` editable registration once with
 `uv run conan editable remove voltmod`.
 
 ```powershell
-cd vendor/voltmod
+cd voltmod
 uv run poe release build framework
 cd ../..
-uv run conan lock create . --profile:all vendor/voltmod/conan/profiles/windows-msvc.txt -s build_type=Release -s compiler.runtime_type=Release --lockfile=conan.lock --lockfile-out=conan.lock --update="voltmod/*" --no-remote
+uv run conan lock create . --profile:all voltmod/conan/profiles/windows-msvc.txt -s build_type=Release -s compiler.runtime_type=Release --lockfile=conan.lock --lockfile-out=conan.lock --update="voltmod/*" --no-remote
 uv run poe build
 ```
 

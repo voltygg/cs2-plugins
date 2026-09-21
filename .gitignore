@@ -80,8 +80,4 @@ deploy/.render/
 
 .playwright-mcp/
 
-# Scratch space for local checkouts; VoltMod is optional editable-package source.
-vendor/*
-!vendor/voltmod
-
 Source2Viewer.exe

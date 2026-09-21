@@ -61,14 +61,14 @@ sequence = [
 [tool.ruff]
 line-length = 100
 target-version = "py314"
-extend-exclude = ["vendor", "references"]
+extend-exclude = ["voltmod", "references"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
 
 [tool.mypy]
-exclude = ["^vendor/", "^references/"]
-mypy_path = "vendor/voltmod/cli"
+exclude = ["^voltmod/", "^references/"]
+mypy_path = "voltmod/cli"
 
 [[tool.mypy.overrides]]
 module = ["conan.*", "yaml"]

@@ -42,12 +42,12 @@ Mis-cased includes compile on Windows and fail on Linux CI. hl2sdk's `Color.h`, 
 ## Working on the framework too
 
 `conan.lock` pins a `voltmod` package revision, and a normal build resolves it from Conan. To
-change the framework and a plugin together, register `vendor/voltmod` as the editable `voltmod`
+change the framework and a plugin together, register `voltmod` as the editable `voltmod`
 package once - `uv run conan editable list` shows whether it already is:
 
 ```powershell
-uv run conan editable add vendor/voltmod
-uv run poe build            # compiles vendor/voltmod first, then the plugins; both incremental
+uv run conan editable add voltmod
+uv run poe build            # compiles voltmod first, then the plugins; both incremental
 uv run poe build --relock   # before committing
 ```
 
@@ -56,10 +56,10 @@ uv run poe build --relock   # before committing
 does not point at the new package. Commit the relocked `conan.lock` with the plugin change.
 
 Until the `voltmod` CLI ref in `pyproject.toml` carries the editable-aware `build`, use the
-checkout's own CLI: `uv run --project vendor/voltmod voltmod build [--relock]`. An older CLI links
+checkout's own CLI: `uv run --project voltmod voltmod build [--relock]`. An older CLI links
 an editable checkout without rebuilding it and still prints "Build complete".
 
-The framework has its own suite: `uv run poe test` inside `vendor/voltmod`.
+The framework has its own suite: `uv run poe test` inside `voltmod`.
 
 ## The local server
 
@@ -133,5 +133,5 @@ window.
 | CS2 server path is invalid | Point `CS2_SERVER_PATH` at the directory above `game/`, not at `game/csgo` |
 | Conan profiles or the `volty` remote are missing | `uv run poe bootstrap`. Set `VOLTMOD_SKIP_REMOTE_SETUP=1` only when something else manages remotes |
 | Missing HL2SDK or Metamod package | A publication problem, not a source one. Check the build uses `windows-msvc.txt` or `linux-steamrt.txt` |
-| Missing SDK binaries in the Conan cache | `uv run poe release build sdk` from `vendor/voltmod`, in the dev shell; they are excluded from `--build=missing` |
+| Missing SDK binaries in the Conan cache | `uv run poe release build sdk` from `voltmod`, in the dev shell; they are excluded from `--build=missing` |
 | The plugin is missing from `volt list` | Confirm the host is in `meta list`, then check `game/csgo/addons/voltmod/plugins/<name>/plugin.json` and `<name>.dll` |

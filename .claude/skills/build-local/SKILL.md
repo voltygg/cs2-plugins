@@ -5,7 +5,7 @@ description: Build the CS2 plugins locally on Windows and install them into a lo
 
 # Build locally (cs2-plugins)
 
-Builds this repo with CMake presets + Conan, optionally against the `vendor/voltmod`
+Builds this repo with CMake presets + Conan, optionally against the `voltmod`
 checkout, and installs the result into the local CS2 dedicated server named by
 `CS2_SERVER_PATH` in `.env` (copy `.env.example`).
 
@@ -39,14 +39,14 @@ the checkout as the editable `voltmod` package once (`uv run conan editable list
 shows whether it is):
 
 ```powershell
-uv run conan editable add vendor/voltmod
-uv run poe build            # compiles vendor/voltmod first, then the plugins - both incremental
+uv run conan editable add voltmod
+uv run poe build            # compiles voltmod first, then the plugins - both incremental
 uv run poe build --relock   # before committing: export a package, pin conan.lock, drop the editable
 ```
 
 The `voltmod` CLI here is installed from the git ref in `pyproject.toml`; until
 that ref carries the editable-aware `build`, use the checkout's own:
-`uv run --project vendor/voltmod voltmod build [--relock]`. An older CLI links an
+`uv run --project voltmod voltmod build [--relock]`. An older CLI links an
 editable checkout **without rebuilding it** - a stale DLL that prints "Build
 complete".
 
@@ -54,7 +54,7 @@ complete".
 re-pins `voltmod` in `conan.lock`, removes the editable, builds the plugins, and dies
 if `build/<preset>/generators` does not point at the new package. Commit the
 relocked `conan.lock` with the plugin change ("chore: relock voltmod for ...").
-The framework's own suite runs with `uv run poe test` inside `vendor/voltmod`.
+The framework's own suite runs with `uv run poe test` inside `voltmod`.
 
 ## 3. Presets and tests
 
@@ -67,7 +67,7 @@ The framework's own suite runs with `uv run poe test` inside `vendor/voltmod`.
 `poe build` compiles only. `poe test` recompiles first and then runs CTest, so it
 cannot pass on a stale binary; `poe test -R <regex>` narrows it. Run one of them
 before reporting a C++ change as verified. The framework has its own suite:
-`uv run poe test` inside `vendor/voltmod`.
+`uv run poe test` inside `voltmod`.
 
 `uv run poe lint` runs ruff and `voltmod modgraph`, which rejects forward
 declarations in plugin headers, anonymous namespaces and using-directives.
@@ -95,7 +95,7 @@ Verify the load with `meta list` on the server console (see `rcon-debug`).
 ## Common failures
 
 - **Missing SDK binaries in the Conan cache** - `uv run poe release build sdk`
-  from `vendor/voltmod`, in the dev shell. They are excluded from `--build=missing`.
+  from `voltmod`, in the dev shell. They are excluded from `--build=missing`.
 - **Lock names a recipe revision that no longer exists** (`nasm not in lockfile`,
   odd target names) - re-pin with the `conan lock remove` / `conan lock create`
   pair above for that package.

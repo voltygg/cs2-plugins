@@ -14,7 +14,7 @@ services:
       - cache:/cache
       # Build trees stay in volumes: compiling onto the Windows bind mount is several times slower.
       - build:/work/build/linux-steamrt-release
-      - framework:/work/vendor/voltmod/build/linux-steamrt-release
+      - framework:/work/voltmod/build/linux-steamrt-release
 
 volumes:
   cache:

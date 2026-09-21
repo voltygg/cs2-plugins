@@ -94,9 +94,9 @@ The last command builds and installs `admin-system`, then starts the server. Out
 plugins/     plugin source, configuration, tests, and plugin guides
 docs/        operator and contributor guides
 deploy/      deployment CLI, inventory, and host tooling
-vendor/      optional VoltMod checkout for coordinated framework changes
+voltmod/     optional VoltMod checkout for coordinated framework changes
 build/       generated build output
 ```
 
-`vendor/voltmod` is a separate Git repository used for changes that touch both VoltMod and a
+`voltmod` is a separate Git repository used for changes that touch both VoltMod and a
 plugin. Normal plugin builds get VoltMod from Conan.

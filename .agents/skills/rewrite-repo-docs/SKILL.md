@@ -27,7 +27,7 @@ For any included repository:
 3. Build repository-wide inventories from tracked files. Do not use a broad filesystem crawl as the source of truth.
 4. Read the instruction files that govern each file being edited. For a repository-wide documentation pass, also read the main public docs and all `CLAUDE.md` files completely.
 
-For the `cs2-plugins` workspace, treat the root and `vendor/voltmod` as separate Git repositories. Include both only when the requested scope reaches both. In a repository-wide pass across the workspace, include both `CLAUDE.md` files.
+For the `cs2-plugins` workspace, treat the root and `voltmod` as separate Git repositories. Include both only when the requested scope reaches both. In a repository-wide pass across the workspace, include both `CLAUDE.md` files.
 
 ## Delegate rewriting to Luna
 
@@ -114,6 +114,6 @@ For a targeted code-comment pass:
 - Parse modified YAML, TOML, or JSON with the repository's existing tools.
 - Run documentation generators or link checks when the repository provides them.
 - Run the narrowest relevant lint, format check, build, or test command when comments touch parsed source or public headers.
-- For `cs2-plugins`, validate root and `vendor/voltmod` independently. Relevant existing checks include `uv run poe lint`, `uv run poe test`, and VoltMod's `uv run poe modgraph`.
+- For `cs2-plugins`, validate root and `voltmod` independently. Relevant existing checks include `uv run poe lint`, `uv run poe test`, and VoltMod's `uv run poe modgraph`.
 
 Finish with a concise summary grouped by audience or batch, the checks run in each repository, and any factual issue that could not be resolved from the repository.

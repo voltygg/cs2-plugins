@@ -3,7 +3,7 @@
 C++23 Metamod:Source plugins for Counter-Strike 2 on the VoltMod framework
 (Conan package `voltmod/[~1.5]`).
 
-- `vendor/voltmod` is a separate Git repo with its own `CLAUDE.md`. Check its status and diffs separately.
+- `voltmod` is a separate Git repo with its own `CLAUDE.md`. Check its status and diffs separately.
 - `references/` is read-only.
 
 ## Comments and names
@@ -36,7 +36,7 @@ shell; see the `/build-local` skill. `build-linux` only works in the CI containe
 Framework and plugin together:
 
 ```bash
-uv run conan editable add vendor/voltmod   # once
+uv run conan editable add voltmod   # once
 uv run poe build                           # checkout first, then plugins
 uv run poe build --relock                  # before committing; commit conan.lock with the change
 ```

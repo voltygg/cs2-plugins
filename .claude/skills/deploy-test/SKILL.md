@@ -1,6 +1,6 @@
 ---
 name: deploy-test
-description: Build the Linux plugins (and the vendor/voltmod checkout when it has changes) in a local Docker copy of the CI container and deploy them straight to a remote server, skipping the voltmod release -> CI -> Deploy pipeline. Use for "quick deploy", "deploy to the test server", "try it on prod", "test this on panel-a/box-a", "skip the pipeline".
+description: Build the Linux plugins (and the voltmod checkout when it has changes) in a local Docker copy of the CI container and deploy them straight to a remote server, skipping the voltmod release -> CI -> Deploy pipeline. Use for "quick deploy", "deploy to the test server", "try it on prod", "test this on panel-a/box-a", "skip the pipeline".
 argument-hint: "[server-id] (default: panel-a)"
 ---
 
@@ -29,8 +29,8 @@ The output is `package/host` plus `package/<plugin>` for every inventory plugin.
 
 | `--framework` | Links against | When |
 | --- | --- | --- |
-| `auto` (default) | the checkout if `vendor/voltmod` is dirty or not exactly at the `v<version>` tag `conan.lock` pins, else the locked release | almost always |
-| `checkout` | `vendor/voltmod`, registered editable inside the container and compiled first | force it |
+| `auto` (default) | the checkout if `voltmod` is dirty or not exactly at the `v<version>` tag `conan.lock` pins, else the locked release | almost always |
+| `checkout` | `voltmod`, registered editable inside the container and compiled first | force it |
 | `locked` | the release in `conan.lock`, downloaded from the remote | reproduce what CI would ship |
 
 The first line of output says which one it picked. The host always ships with the

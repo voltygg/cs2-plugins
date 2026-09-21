@@ -1,6 +1,6 @@
 # Dev convenience, not a build input: conanfile.py pins voltmod. ignore = all hides the pointer.
-[submodule "vendor/voltmod"]
-	path = vendor/voltmod
+[submodule "voltmod"]
+	path = voltmod
 	url = https://github.com/voltygg/voltmod.git
 	ignore = all
 
