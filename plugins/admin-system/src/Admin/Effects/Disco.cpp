@@ -10,7 +10,7 @@ namespace AdminSystem::Admin::Effects
 
 using Actions::ActionContext;
 
-static constexpr auto RenderModeTransTexture = VoltMod::RenderMode_t::TransTexture;
+static constexpr auto RenderModeTransAlpha = VoltMod::Schema::RenderMode_t::kRenderTransAlpha;
 static constexpr uint32_t ColorOpaqueWhite = 0xFFFFFFFFu;
 
 // Bright RGBA values cycled at 200 ms - red / orange / yellow / green / blue / magenta.
@@ -32,7 +32,7 @@ Effect MakeDisco(VoltMod::Runtime& runtime)
                   .TickIntervalMs = DiscoIntervalMs,
                   .DurationMs = DiscoDurationSec * 1000,
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
-                      auto savedMode = static_cast<VoltMod::RenderMode_t>(ctx.TargetPawn().RenderMode());
+                      auto savedMode = ctx.TargetPawn().RenderMode();
                       uint32_t savedColor = ctx.TargetPawn().RenderColor();
                       int slot = ctx.Target().Slot();
 
@@ -41,7 +41,7 @@ Effect MakeDisco(VoltMod::Runtime& runtime)
                                       VoltMod::Pawn pawn = entities.PawnOf(slot);
                                       if (!pawn || !pawn.IsAlive())
                                           return;
-                                      pawn.SetRender(RenderModeTransTexture, Palette[idx]);
+                                      pawn.SetRender(RenderModeTransAlpha, Palette[idx]);
                                       idx = (idx + 1) % Palette.size();
                                   },
                               .OnStop =
