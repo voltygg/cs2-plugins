@@ -58,8 +58,8 @@ First join: a three-card "How to play" screen with an "I understand" button.
 
 The reference is an endless deathmatch where building is a side activity. Stronghold gives building a purpose and adds counterplay. All of these are cheap on top of the M2 core (distance checks, timers, one more prop); none needs new framework work beyond section 5. Each has a config switch so a server can run the plain variant.
 
-1. **Team Cores and rounds (headline).** Each team has a Core — a large high-health structure near its spawn. Destroying the enemy Core wins the round; if the timer runs out, the Core with more health wins. Cores only take damage from players and structures within a radius (no cross-map AWP chipping) and announce "Core under attack". Between rounds: short scoreboard with top builder / top destroyer, then bases are wiped and money partly carries over (config, default 50 %). Core positions per map come from a small config file with an admin command to set them in game (`sh_core_set <team>`), falling back to the team's spawn centroid.
-2. **Bases go offline, not away.** While the owner is dead their structures are *unpowered* (no firing, no healing, dimmed) and come back on respawn. They are removed only on disconnect or team change. This replaces the reference rule "structures die with the owner", which makes building pointless in an objective mode.
+1. **One endless match per map (headline).** Replaced the Core rounds on 2026-09-22. Players respawn instantly and bases last the whole map; nothing is wiped and money is never cut. After `match.minutes` chat names the top builder and top destroyer and the round ends through `Rounds.End`, which with `mp_maxrounds 1` ends the match. The Cores, `sh_core_set`, the round wipe, the money carry-over and the trailing-team boost are gone.
+2. **Bases go offline, not away.** While the owner is dead their structures are *unpowered* (no firing, no healing, dimmed) and come back on respawn. They are removed only on disconnect or team change. This replaces the reference rule "structures die with the owner", which makes a base that lasts the whole map pointless.
 3. **Sabotage.** Hold E for 3 s on an enemy structure from behind: it switches sides for 30 s, then self-destructs. The owner gets a warning toast and can cancel it by hitting the saboteur. Turrets do not see a crouching enemy outside their front cone, so flanking is a real tactic.
 4. **Different toolbox.** Before any vehicle work, three cheap structures the reference does not have:
    - **Sensor tower** — enemies within range glow through walls for the owner's team (the framework's per-viewer glow, `Hooks/GlowVision.hpp`).
@@ -758,3 +758,25 @@ Optional and last: this is the part copied most directly from the reference and 
   - ClientConVars: a bot has no net channel, so `Query` returned false as designed.
 - Linux, unverified: the SDK iterators and `GetEntityIdentity` read `CEntitySystem` and `CEntityIdentity` through the SDK's struct layout (`m_EntityList`, `m_entityNames`, `m_Symbols`). This was checked on Windows only; check it on `libserver.so` with the other Linux items above.
 - Noticed and left alone: the `FindByClassName` loop in `docs/sdk/entities.md` assigns an `Entity`, which does not compile, because wrappers are not assignable.
+
+### 2026-09-22 — Endless match, folders and plain names
+
+- Why: the Core rounds wiped every base each round, needed a Core position per map and depended on `TerminateRound` for the round end. Stronghold is now one endless match per map (section 2a, item 1).
+- voltmod: `6109cba` `refactor!` gives `PerSlot`, `MenuStack` and `PendingCommit` a `SlotEvents&` constructor, and `BindReset` is gone. `1e6761c` writes the constructor-subscription rule into the design rules and `docs/players.md`. Not released: `conan.lock` still pins 1.5.5, and the plugins build against the editable checkout. Cut a release and relock before pushing.
+- Constructor subscriptions everywhere. A class subscribes in its constructor and reads config when the handler fires; config, commands and fallible setup stay in `Load` (`.claude/rules/framework-patterns.md`, root `1e37dff`).
+  - anticheat `a219547` (per-slot state), `b973632` (NamechangerPoll, DllInjectionScan, CvarPoll, SuspicionSnapshot, IndirectDamage, DetectionFeed; CommandDump keeps `RegisterCommands`). Root bump `8e0d774`.
+  - bhop `3efc9cf`, admin-system FunMode `62f4406`.
+- stronghold commits, in order:
+  - `1e0ac7e` every `Start()` became the constructor. The VIP salary and the supply-drop schedule read their intervals when they tick.
+  - `e315ea6` `Forget` → `OnMapChange`/`OnDisconnect`, `Clear` → `RemoveAll` (`CancelAll` for rocket aims, `RemoveCrate`, `RemoveGhost`), `Frame` → `Tick`.
+  - `d87865b` supply drops land on `configs/maps/<map>.json` `drop` (new `sh_drop_set [player]`, `admin.map`), else halfway between the spawn centroids.
+  - `33feefc` Cores, Core rounds, `sh_core_set`, the Core item and the trailing boost removed.
+  - `d0e2af6` `MatchFlow` (`match.minutes` 30, `match.endDelaySeconds` 10) and `mp_maxrounds 1`. RoundRules became MatchRules (`MatchStats`, `TopSlot`).
+  - `b32619c` sources into `Config/`, `Common/`, `Economy/`, `Building/`, `Structures/`, `Projectiles/`, `Vehicles/`, `Match/`.
+  - `5bd29da` per-instance classes are `XxxSystem`, and App members are named after them (`TankSystem Tanks`, not `Tanks Armor`).
+  - `067d92c` `Vec3` is gone in favour of the SDK's `Vector`; the geometry tests went with it (Ballistics, TurretAim, Segment, PlacementRules, PadRules, DriveRules, Nets). Cooldowns kept their tests in `Common/Cooldowns`.
+  - `1f493dc` LookAt → StructurePanel (`lookat.*` → `panel.*`, `Upgrade` → `LevelUp`), Pilots → VehicleSeats, Text → Messages, Hold → HoldProgress, Nets merged into DriveRules, ModeRules → GameRules, Config → Settings.
+  - `1d5e334` scrap → loot. `9a2d1df` turret branches → turret upgrades; a level's `upgradePrice` → `price`, `sounds.upgrade` → `sounds.levelUp`. `1baece7` dispensers → medic and cash stations (`medic_station`, `cash_station`); asset names kept.
+  - `711673b` asset wiring moved to `configs/assets.jsonc` + `assets.schema.json`, joined by item id in `BuildSettings`. `b884fc3` item defaults dropped and `kind` defaults to the id. `eb8200c` README.
+- Verified: `poe build`, `poe test` (243 root cases, 471 voltmod) and `poe lint` pass after every commit. A script merged the new settings and assets back and matched the old settings for all 16 items.
+- Not verified live: the match end (summary, `round_end`, then the next map with `mp_maxrounds 1`), `sh_drop_set` and the crate between the spawns, loading `assets.jsonc` in game, and every renamed translation key in a client.
