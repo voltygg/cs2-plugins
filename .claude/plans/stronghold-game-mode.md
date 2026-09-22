@@ -780,3 +780,23 @@ Optional and last: this is the part copied most directly from the reference and 
   - `711673b` asset wiring moved to `configs/assets.jsonc` + `assets.schema.json`, joined by item id in `BuildSettings`. `b884fc3` item defaults dropped and `kind` defaults to the id. `eb8200c` README.
 - Verified: `poe build`, `poe test` (243 root cases, 471 voltmod) and `poe lint` pass after every commit. A script merged the new settings and assets back and matched the old settings for all 16 items.
 - Not verified live: the match end (summary, `round_end`, then the next map with `mp_maxrounds 1`), `sh_drop_set` and the crate between the spawns, loading `assets.jsonc` in game, and every renamed translation key in a client.
+
+### 2026-09-22 — Panorama HUD and arsenal
+
+- Center text, center HTML menus and most chat feedback are gone.
+- **`stronghold_hud`**, one shared screen, shows:
+  - the wallet (balance and delta)
+  - the match clock
+  - the target card for the structure you look at
+  - the bottom prompt (placing, rocket aim, sabotage and supply holds, with a hold bar)
+  - three messages
+- **`stronghold_menu`**, one player screen, holds:
+  - the arsenal: weapon sets and equipment, plus Defense, Base, Assault and Perks tabs
+  - the turret specialisation choice
+  - the how-to-play page, shown on a player's first spawn
+- Controls: `!sh` and `!menu` open the arsenal. A G key through the client's `drop` command never reached the server and was removed.
+- Assets:
+  - The card art was generated with GPT Image through Codex.
+  - The screens ship in the `stronghold` addon, not `meatgg_ui`; `poe panorama-publish` now names main-menu and admin-system only.
+- Name budget: 576 of the client's 1024 names.
+- Custom HUD layouts reject any attribute outside `id`, `class`, `hittest`, `text`, `src` and `textureheight` (`scaling` dropped the whole layout); `voltmod panorama check` now refuses the rest.

@@ -26,7 +26,7 @@ uv run poe schema                            # regenerate the admin-system table
 uv run poe build --install <plugin> --start  # copy to CS2_SERVER_PATH and launch
 uv run poe build --install-all               # copy every plugin instead of one
 uv run poe panorama                          # render, compile and install the Panorama screens into your client (Windows)
-uv run poe panorama-publish                  # compile every screen into the meatgg_ui workshop addon folder
+uv run poe panorama-publish                  # compile the main-menu and admin-system screens into the meatgg_ui addon folder
 uv run poe new-plugin <name>
 ```
 

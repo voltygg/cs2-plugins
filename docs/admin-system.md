@@ -198,7 +198,7 @@ the framework's block library and coloured from meat.gg's palette. To publish it
    `plugins.admin-system.settings.menu` in `deploy/inventory.yml`.
 
 Before testing the download, delete the loose files `uv run poe panorama` copied
-into your client's `game/csgo/panorama/*/custom_game/`, or the client keeps using them.
+into your client's `game/csgo/panorama/`, or the client keeps using them.
 
 The player is frozen while a menu is open either way, so browsing does not also
 walk them around.
