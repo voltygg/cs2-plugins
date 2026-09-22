@@ -108,7 +108,7 @@ plugins:
 ```
 
 `settings` is deep-merged into the plugin file; a list or scalar replaces what it lands on. A key
-the plugin's `settings.schema.json` does not define fails the deploy. `${NAME}` in a string comes
+the plugin's `settings.jsonc` does not set fails the deploy. `${NAME}` in a string comes
 from the server's secrets, plus `${SERVER_TAG}` (`<server-id>-<instance-name>`) and
 `${SERVER_NAME}` (the instance hostname); an unset name fails the deploy. Per-server admin grants
 reference the tag, so server ids and instance names have to stay stable.

@@ -1,0 +1,56 @@
+# Main menu
+
+The meat.gg hub menu. `!menu` opens a tabbed menu that links to stats, VIP, the admin panel, the
+website and other plugins' menus. The last tab is always Settings, where each player picks their
+language for every VoltMod plugin.
+
+The Panorama layout ships in the `meatgg_ui` workshop addon, which admin-system uses as well.
+Clients that have not downloaded the addon yet get the same menu as center HTML.
+
+## Commands
+
+| Command | Who | What it does |
+| --- | --- | --- |
+| `!menu`, `!m` | Everyone | Open the main menu |
+
+## Configuration
+
+Settings are in `addons/voltmod/plugins/main-menu/configs/settings.jsonc` on the server.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `plugin.locale` | `ru` | Server language; a player's pick in the Settings tab wins |
+| `menu.panorama` | `true` | Draw the Panorama layout; `false` uses center HTML for everyone |
+| `menu.addonId` | `3801580041` | The `meatgg_ui` workshop addon clients download |
+| `tabs` | stats, VIP, admin, skins, clans, rules | Up to 6 tabs, drawn before Settings |
+
+Each tab has a `label`, an `icon` and a list of `entries`. A label is a translation key, or literal
+text when no translation has that key. Icons are `stats`, `vip`, `admin`, `skins`, `clans`,
+`rules` and `site`.
+
+An entry's `kind` sets what it does:
+
+| Kind | Field | What it does |
+| --- | --- | --- |
+| `command` | `command` | Runs a console command as the player, such as `mm_lvl` for a legacy plugin's menu |
+| `link` | `url` | Prints the URL to the player's chat |
+| `section` | `section` | Opens another VoltMod plugin's menu; hidden while that plugin is not loaded |
+
+Sections come from plugins that publish a `Contracts::IMenuSection` (see
+[contracts](../contracts/README.md)): `admin` and `report` from admin-system, `stronghold` from
+stronghold. An entry with an unknown kind or an empty target is dropped and logged when the
+settings load.
+
+Player-facing text is in `configs/translations/`.
+
+## Panorama
+
+`panorama/screens/` holds the menu screen. `panorama/templates/meatgg/` is the meat.gg brand kit
+(theme, home and menu styles) that other plugins' screens use as well.
+
+```bash
+uv run poe panorama            # render, compile and install into your client
+uv run poe panorama-publish    # compile every screen into the meatgg_ui addon folder
+```
+
+For shared build commands, see the [repository README](../../README.md).

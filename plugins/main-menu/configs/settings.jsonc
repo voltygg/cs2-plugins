@@ -1,5 +1,4 @@
 {
-  "$schema": "./settings.schema.json",
   "plugin": {
     // Server default language. A player's pick in the Settings tab wins for every plugin.
     "locale": "ru"

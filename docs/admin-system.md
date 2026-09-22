@@ -10,11 +10,9 @@ mechanics, see [Local development](local-development.md) and
 ## Configuration
 
 Runtime settings live in `addons/voltmod/plugins/admin-system/configs/settings.jsonc`. The file
-is JSONC, so comments are allowed. `settings.schema.json` sets
-`additionalProperties: false` throughout, so an editor squiggles an unrecognized
-key; the loader itself ignores both unknown and missing keys, which is why a
-retired setting needs no config migration and a missing list falls back to the
-built-in defaults.
+is JSONC, so comments are allowed. The loader ignores both unknown and missing keys, which is
+why a retired setting needs no config migration and a missing list falls back to the built-in
+defaults.
 
 | Section | Purpose |
 | --- | --- |
@@ -208,9 +206,9 @@ walk them around.
 ## Database
 
 `database.driver` in `settings.jsonc` picks the backend: `postgres` (default),
-`mariadb`, or `sqlite` (bundled, no server to run). See
-`configs/settings.schema.json` for the full key set, including `path` (the
-sqlite file) and `connectTimeoutSec`.
+`mariadb`, or `sqlite` (bundled, no server to run). The `database` section of
+`configs/settings.jsonc` lists every key, including `path` (the sqlite file) and
+`connectTimeoutSec`.
 
 The plugin owns its schema. `configs/migrations/NNNN_name.sql` holds one
 dialect-free file per change, and the plugin applies them in filename order at

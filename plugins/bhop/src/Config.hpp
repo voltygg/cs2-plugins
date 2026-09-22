@@ -42,5 +42,3 @@ struct Settings
 using ConfigManager = VoltMod::Options<Settings>;
 
 }  // namespace Bhop
-
-/** Accepts the `"$schema"` key settings.jsonc names for editor completion. */

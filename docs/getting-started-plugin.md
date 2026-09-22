@@ -22,9 +22,9 @@ by hand.
 plugins/hello-world/
   CMakeLists.txt        voltmod_add_plugin(hello-world)
   plugin.json           name, version, logTag, description, author, dependencies
+  README.md             what the plugin does, its commands and settings
   configs/
     settings.jsonc
-    settings.schema.json
     translations/en.json
   src/
     App.cpp             VOLTMOD_PLUGIN(HelloWorld::App) and App::Load
@@ -44,7 +44,7 @@ there; load order is alphabetical either way.
 | --- | --- |
 | Startup and composition | `src/App.cpp` |
 | Commands | `src/Commands.cpp`, or another `.cpp` under `src/` |
-| Settings | `src/Config.hpp`, plus `configs/settings.jsonc` and `configs/settings.schema.json` |
+| Settings | `src/Config.hpp`, plus `configs/settings.jsonc` |
 | Player-facing text | every file under `configs/translations/` |
 | SDK-free logic | plain C++ types, so it can be unit-tested |
 

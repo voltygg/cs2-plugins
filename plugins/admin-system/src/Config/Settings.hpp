@@ -35,5 +35,3 @@ struct Settings
 };
 
 }  // namespace AdminSystem::Config
-
-/** Accepts the `"$schema"` key settings.jsonc names for editor completion. */

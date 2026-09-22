@@ -27,10 +27,6 @@ class SettingsRenderer:
     def render(self, instance: Instance, plugin: str) -> dict[str, Any]:
         configs = ROOT / "plugins" / plugin / "configs"
         settings = self._read_jsonc(configs / "settings.jsonc")
-        schema_file = configs / "settings.schema.json"
-        schema = {}
-        if schema_file.is_file():
-            schema = json.loads(schema_file.read_text(encoding="utf-8"))
         variables = {
             **self._env.variables(),
             # Per-server admin grants reference the tag, so it must stay stable.
@@ -38,7 +34,7 @@ class SettingsRenderer:
             "SERVER_NAME": instance.server_name,
         }
         config = self._inventory.plugins[plugin]
-        self._merge(settings, self._fill(config.settings, variables, plugin), schema, plugin)
+        self._merge(settings, self._fill(config.settings, variables, plugin), plugin)
         if config.database:
             database = self._database(config.database)
             settings["database"] = {**settings.get("database", {}), **database}
@@ -71,22 +67,17 @@ class SettingsRenderer:
         self,
         settings: dict[str, Any],
         overrides: dict[str, Any],
-        schema: dict[str, Any],
         plugin: str,
         prefix: str = "",
     ) -> None:
-        """Deep-merge overrides; lists and scalars replace. Keys the schema lacks fail."""
-        known = schema.get("properties")
+        """Deep-merge overrides; lists and scalars replace. A key the plugin's file lacks fails."""
         for key, value in overrides.items():
-            if known is not None and key not in known:
+            if key not in settings:
                 raise DeployError(f"inventory sets unknown {plugin} setting '{prefix}{key}'")
-            if not isinstance(value, dict):
+            if isinstance(value, dict) and isinstance(settings[key], dict):
+                self._merge(settings[key], value, plugin, f"{prefix}{key}.")
+            else:
                 settings[key] = value
-                continue
-            if not isinstance(settings.get(key), dict):
-                settings[key] = {}
-            child_schema = (known or {}).get(key, {})
-            self._merge(settings[key], value, child_schema, plugin, f"{prefix}{key}.")
 
     def _database(self, name: str) -> dict[str, Any]:
         database = self._inventory.database
