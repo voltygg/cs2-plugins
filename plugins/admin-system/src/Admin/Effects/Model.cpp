@@ -21,9 +21,13 @@ static constexpr std::string_view DefaultModelCt = "characters/models/ctm_sas/ct
 static std::string_view DefaultModelForTeam(int team)
 {
     if (team == VoltMod::TeamT)
+    {
         return DefaultModelT;
+    }
     if (team == VoltMod::TeamCT)
+    {
         return DefaultModelCt;
+    }
     return {};
 }
 
@@ -64,7 +68,9 @@ Effect MakeModel(VoltMod::Runtime& runtime)
                           const auto& models = FunModels();
                           choices.reserve(models.size());
                           for (int i = 0; i < static_cast<int>(models.size()); ++i)
+                          {
                               choices.push_back({models[i].Name, i});
+                          }
                           return choices;
                       },
                   .Setup = [&runtime](const ActionContext& ctx, int param) -> EffectInstance {
@@ -77,7 +83,9 @@ Effect MakeModel(VoltMod::Runtime& runtime)
                       return {.OnStop = [&ops = runtime.World.EntityOps, &entities = runtime.Entities, targetSlot]() {
                           Pawn pawn = entities.PawnOf(targetSlot);
                           if (!pawn || !pawn.IsAlive())
+                          {
                               return;
+                          }
                           ops.SetModel(pawn.Raw(), DefaultModelForTeam(pawn.Team()));
                       }};
                   }};

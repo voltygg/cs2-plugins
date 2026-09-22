@@ -24,9 +24,13 @@ namespace Log = VoltMod::Log;
 static void StampTimes(Punishment& record)
 {
     if (record.CreatedAt == 0)
+    {
         record.CreatedAt = Time::Now();
+    }
     if (record.Duration > 0 && record.ExpiresAt == 0)
+    {
         record.ExpiresAt = Time::GetExpirationTime(record.Duration);
+    }
 }
 
 // Make the engine re-evaluate channels negotiated before the (un)mute landed. The
@@ -35,19 +39,27 @@ static void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, boo
 {
     auto* engine = rt.Unsafe.Interfaces.Engine;
     if (!engine)
+    {
         return;
+    }
 
     auto* sender = rt.Players.BySteamId(senderSteamId);
     if (!sender)
+    {
         return;
+    }
 
     int senderSlot = sender->Slot();
     for (int i = 0; i < 64; ++i)
     {
         if (i == senderSlot)
+        {
             continue;
+        }
         if (!rt.Players.Get(i))
+        {
             continue;
+        }
         engine->SetClientListening(CPlayerSlot(i), CPlayerSlot(senderSlot), !muted);
     }
 }
@@ -73,7 +85,9 @@ PunishmentManager::ActivePage PunishmentManager::GetActive(std::span<const Punis
         for (const auto& [steamId, record] : cache)
         {
             if (!record.IsExpired())
+            {
                 matches.push_back(&record);
+            }
         }
     }
 
@@ -85,7 +99,9 @@ PunishmentManager::ActivePage PunishmentManager::GetActive(std::span<const Punis
 
     page.Rows.reserve(shown);
     for (std::size_t i = 0; i < shown; ++i)
+    {
         page.Rows.push_back(*matches[i]);
+    }
     return page;
 }
 
@@ -94,12 +110,16 @@ std::optional<Punishment> PunishmentManager::GetActive(PunishType kind, int64_t 
     Cache& cache = CacheFor(kind);
     auto it = cache.find(steamId);
     if (it == cache.end())
+    {
         return std::nullopt;
+    }
     if (it->second.IsExpired())
     {
         cache.erase(it);
         if (kind == PunishType::VoiceMute)
+        {
             RefreshVoiceChannel(_rt, steamId, false);
+        }
         return std::nullopt;
     }
     return it->second;
@@ -113,7 +133,9 @@ bool PunishmentManager::IsPunished(PunishType kind, int64_t steamId) const
 void PunishmentManager::Issue(Punishment& record)
 {
     if (record.Kind == PunishType::Kick)
+    {
         return;  // a kick stores no row; IssuePunishment applies and broadcasts it directly
+    }
 
     StampTimes(record);
 
@@ -125,7 +147,9 @@ void PunishmentManager::Issue(Punishment& record)
         cache[record.TargetSteamId] = record;
         _repos.Punishments.CreateAsync(record, [&cache, steamId = record.TargetSteamId](int64_t id) {
             if (auto it = cache.find(steamId); it != cache.end() && it->second.Id == 0)
+            {
                 it->second.Id = id;
+            }
         });
     }
     else
@@ -136,7 +160,9 @@ void PunishmentManager::Issue(Punishment& record)
     if (record.Kind == PunishType::Ban)
     {
         if (auto* player = _rt.Players.BySteamId(record.TargetSteamId))
+        {
             KickDeferred(player->Slot(), record.TargetSteamId, record.Reason);
+        }
     }
     else if (record.Kind == PunishType::VoiceMute)
     {
@@ -148,7 +174,9 @@ void PunishmentManager::Issue(Punishment& record)
                               info.Timed ? std::optional{record.Duration} : std::nullopt);
 
     if (record.Kind == PunishType::Warn)
+    {
         EscalateWarning(record);
+    }
 }
 
 void PunishmentManager::EscalateWarning(const Punishment& warning)
@@ -166,7 +194,9 @@ void PunishmentManager::EscalateWarning(const Punishment& warning)
         PunishType::Warn, warning.TargetSteamId, [this, autoBan = std::move(autoBan)](int active) mutable {
             const int threshold = _config.Get().punishments.warningThreshold;
             if (threshold <= 0 || active < threshold)
+            {
                 return;
+            }
 
             Log::Info("Warning threshold ({}) reached for {} -- escalating to ban.", threshold, autoBan.TargetSteamId);
             _repos.Punishments.ClearAsync(PunishType::Warn, autoBan.TargetSteamId);
@@ -181,7 +211,9 @@ bool PunishmentManager::Remove(PunishType kind, int64_t recordId, int64_t remove
     Cache& cache = CacheFor(kind);
     auto it = std::ranges::find_if(cache, [recordId](const auto& entry) { return entry.second.Id == recordId; });
     if (it == cache.end())
+    {
         return false;  // already lifted, possibly by another server - nothing to remove
+    }
 
     RemoveCached(kind, it, removedBy, reason);
     return true;
@@ -193,7 +225,9 @@ bool PunishmentManager::RemoveBySteamId(PunishType kind, int64_t steamId, int64_
     Cache& cache = CacheFor(kind);
     auto it = cache.find(steamId);
     if (it == cache.end())
+    {
         return false;
+    }
 
     RemoveCached(kind, it, removedBy, reason);
     return true;
@@ -202,7 +236,9 @@ bool PunishmentManager::RemoveBySteamId(PunishType kind, int64_t steamId, int64_
 std::string PunishmentManager::AdminDisplayName(int64_t steamId) const
 {
     if (const VoltMod::Player* admin = _rt.Players.BySteamId(steamId))
+    {
         return admin->Name();
+    }
     return _rt.Translations.Get("common.console");
 }
 
@@ -216,18 +252,24 @@ void PunishmentManager::RemoveCached(PunishType kind, Cache::iterator it, int64_
     // Erased before the refresh, which re-reads the cache through the listening hook.
     CacheFor(kind).erase(it);
     if (kind == PunishType::VoiceMute)
+    {
         RefreshVoiceChannel(_rt, steamId, false);
+    }
 }
 
 void PunishmentManager::KickDeferred(int slot, int64_t steamId, std::string reason)
 {
     if (!VoltMod::IsValidSlot(slot))
+    {
         return;
+    }
 
     _pendingKick[slot] = _rt.Scheduler.NextTick([&rt = _rt, slot, steamId, reason = std::move(reason)] {
         // The seat can change hands before this fires; kicking whoever took it is not the ban.
         if (rt.Players.Get(VoltMod::PlayerRef{slot, steamId}))
+        {
             (void)rt.Entities.Controller(slot).Kick(reason);
+        }
     });
 }
 
@@ -249,18 +291,24 @@ void PunishmentManager::SwapCaches(std::vector<Punishment> rows)
     const Cache previouslyVoiceMuted = std::exchange(CacheFor(PunishType::VoiceMute), {});
 
     for (Cache& cache : _active)
+    {
         cache.clear();
+    }
     for (auto& row : rows)
     {
         if (IsCached(row.Kind))
+        {
             CacheFor(row.Kind)[row.TargetSteamId] = std::move(row);
+        }
     }
 
     const Cache& voiceMuted = CacheFor(PunishType::VoiceMute);
     for (const auto& [steamId, record] : previouslyVoiceMuted)
     {
         if (!voiceMuted.contains(steamId))
+        {
             RefreshVoiceChannel(_rt, steamId, false);
+        }
     }
 }
 

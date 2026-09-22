@@ -25,11 +25,11 @@ enum class PunishType
 struct PunishTypeInfo
 {
     PunishType Type;
-    std::string_view AuditName;        ///< Stored in `admin_activity.action` and `punishments.kind`.
-    std::string_view IssuedBroadcast;  ///< Translation key of the broadcast verb when issued.
-    std::string_view LiftedBroadcast;  ///< Same when lifted; empty when the kind cannot be lifted.
+    std::string_view AuditName;           ///< Stored in `admin_activity.action` and `punishments.kind`.
+    std::string_view IssuedBroadcast;     ///< Translation key of the broadcast verb when issued.
+    std::string_view LiftedBroadcast;     ///< Same when lifted; empty when the kind cannot be lifted.
     std::string_view RequiredPermission;  ///< The admin permission needed to issue it.
-    bool Timed;                        ///< Carries a duration, and stays cached until it expires.
+    bool Timed;                           ///< Carries a duration, and stays cached until it expires.
 };
 
 inline constexpr std::array<PunishTypeInfo, VoltMod::EnumCount<PunishType>> PunishTypes{{
@@ -46,7 +46,9 @@ static_assert(
         for (std::size_t i = 0; i < PunishTypes.size(); ++i)
         {
             if (VoltMod::EnumIndex(PunishTypes[i].Type) != i)
+            {
                 return false;
+            }
         }
         return true;
     }(),
@@ -71,7 +73,9 @@ inline std::optional<PunishType> ParseAuditAction(std::string_view auditName)
     for (const PunishTypeInfo& info : PunishTypes)
     {
         if (info.AuditName == auditName)
+        {
             return info.Type;
+        }
     }
     return std::nullopt;
 }

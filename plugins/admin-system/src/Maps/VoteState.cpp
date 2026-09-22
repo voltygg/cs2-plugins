@@ -21,7 +21,9 @@ VoteState::VoteState(VoltMod::Runtime& runtime, const Config::ConfigManager& con
 bool VoteState::StartMapVote(const MapEntry& map, int callerSlot)
 {
     if (_rt.Hooks.Vote.InProgress())
+    {
         return false;
+    }
 
     const auto& cfg = _config.Get().maps.vote;
 
@@ -36,14 +38,18 @@ bool VoteState::StartMapVote(const MapEntry& map, int callerSlot)
         // Queued rather than applied now, so a vote that lands mid-round does not cut it short.
         [this, map](bool passed, VoltMod::VoteEndReason) {
             if (passed)
+            {
                 _cycle.SetNext(map);
+            }
         });
 }
 
 bool VoteState::CancelVote()
 {
     if (!_rt.Hooks.Vote.InProgress())
+    {
         return false;
+    }
     _rt.Hooks.Vote.EndVote(VoltMod::VoteEndReason::Cancelled);
     return true;
 }

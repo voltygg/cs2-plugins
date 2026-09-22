@@ -13,7 +13,9 @@ void PlayerRepository::RecordConnectAsync(int64_t steamId, const std::string& na
 {
     // Bots connect with xuid 0 and never get a players row.
     if (steamId <= 0)
+    {
         return;
+    }
 
     _db.RunAsync("player_record_connect", [steamId, name, ipAddress, now = Time::Now()](auto& conn) {
         const Tables::Players t;
@@ -30,7 +32,9 @@ void PlayerRepository::RecordConnectAsync(int64_t steamId, const std::string& na
 void PlayerRepository::RecordDisconnectAsync(int64_t steamId, const std::string& name, int64_t sessionSeconds)
 {
     if (steamId <= 0)
+    {
         return;
+    }
 
     _db.RunAsync("player_record_disconnect", [steamId, name, now = Time::Now(),
                                               seconds = sessionSeconds > 0 ? sessionSeconds : int64_t{0}](auto& conn) {

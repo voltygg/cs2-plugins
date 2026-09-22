@@ -30,7 +30,9 @@ std::shared_ptr<VoltMod::Menu> HubMenu::Build(int slot)
         const bool visible =
             std::ranges::any_of(tab.entries, [&](const Entry& entry) { return IsVisible(entry, slot); });
         if (!visible)
+        {
             continue;
+        }
 
         // A copy, so a config reload while the menu is open cannot pull the tab out from under it.
         builder.Add(SubmenuRow{.Label = Text(slot, tab.label),
@@ -55,7 +57,9 @@ std::shared_ptr<VoltMod::Menu> HubMenu::BuildSettings(int slot)
     for (const std::string& code : codes)
     {
         if (code == current)
+        {
             index = static_cast<int>(choices.size());
+        }
         choices.push_back({.Label = _translations.GetOr("language." + code, slot, code), .Value = code});
     }
 
@@ -88,7 +92,9 @@ std::shared_ptr<VoltMod::Menu> HubMenu::BuildTab(const Tab& tab, int slot)
     for (const Entry& entry : tab.entries)
     {
         if (IsVisible(entry, slot))
+        {
             builder.Add(Row(entry));
+        }
     }
     return builder.Build();
 }
@@ -148,13 +154,17 @@ void HubMenu::OpenSection(std::string_view id, int slot, MenuSurface& surface)
     }
     surface.CloseAll(slot);
     if (!section->Open(slot))
+    {
         _messages.ReplyKey(slot, "entry.unavailable");
+    }
 }
 
 bool HubMenu::IsVisible(const Entry& entry, int slot)
 {
     if (entry.kind != EntryKind::Section)
+    {
         return true;
+    }
     Contracts::IMenuSection* section = Section(entry.target);
     return section && section->IsVisibleTo(slot);
 }

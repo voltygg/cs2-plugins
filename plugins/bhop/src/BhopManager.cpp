@@ -29,7 +29,9 @@ BhopManager::BhopManager(VoltMod::Runtime& runtime, ConfigManager& config)
     // Map changes can reset gamemode convars.
     _subs.Add(events.On<VoltMod::RoundStart>([this](const VoltMod::RoundStart&) {
         if (_mode == Mode::Enabled)
+        {
             _conVars.ApplyGlobal();
+        }
     }));
 
     _subs.Add(_rt.Players.Disconnected += [this](VoltMod::Player& player) { OnPlayerDisconnect(player); });
@@ -37,10 +39,16 @@ BhopManager::BhopManager(VoltMod::Runtime& runtime, ConfigManager& config)
     // Grants need a post-simulation hop because subtick movement ignores the scoped override.
     _subs.Add(_rt.Scheduler.EveryFrame([this] {
         if (_mode != Mode::Grants)
+        {
             return;
+        }
         for (int slot = 0; slot < MaxPlayers; ++slot)
+        {
             if (_grantedSlots[slot])
+            {
                 ForceAutoHop(slot);
+            }
+        }
     }));
 }
 
@@ -48,9 +56,13 @@ void BhopManager::Initialize()
 {
     // Forced hops read this every frame.
     if (auto impulse = _rt.ConVars.Find<float>("sv_jump_impulse"))
+    {
         _jumpImpulse = std::move(*impulse);
+    }
     else
+    {
         Log::Warn("sv_jump_impulse unusable ({}); forced hops use the engine default.", impulse.error().Detail);
+    }
 
     ApplySettings();
     RegisterConsoleCommands();
@@ -61,7 +73,9 @@ void BhopManager::ApplySettings()
     const BhopSettings& settings = _config.Get().bhop;
 
     if (auto parsed = VoltMod::Parse<Mode>(settings.mode))
+    {
         _mode = *parsed;
+    }
     else
     {
         Log::Warn("Unknown bhop.mode '{}'; falling back to 'enabled'.", settings.mode);
@@ -79,10 +93,14 @@ void BhopManager::ApplySettings()
                           [this](int slot, const VoltMod::PlayerInput&) { OnRunCommandPost(slot); });
     }
     else if (_mode != Mode::Grants)
+    {
         _movementSubs.Clear();
+    }
 
     if (_mode == Mode::Enabled)
+    {
         _conVars.ApplyGlobal();
+    }
 
     Log::Info("Bhop mode: {} ({} convar overrides).", _mode == Mode::Enabled ? "enabled" : "grants", _conVars.Count());
 }
@@ -90,26 +108,38 @@ void BhopManager::ApplySettings()
 void BhopManager::Grant(int64_t steamId, bool enabled)
 {
     if (enabled)
+    {
         _granted.insert(steamId);
+    }
     else
+    {
         _granted.erase(steamId);
+    }
 
     Player* player = _rt.Players.BySteamId(steamId);
     if (!player)
+    {
         return;
+    }
 
     int slot = player->Slot();
     if (!VoltMod::IsValidSlot(slot))
+    {
         return;
+    }
 
     _grantedSlots[slot] = enabled;
 
     if (_mode == Mode::Grants)
     {
         if (enabled)
+        {
             _conVars.ReplicateOverrides(slot);
+        }
         else
+        {
             _conVars.ReplicateServerValues(slot);
+        }
     }
 
     if (_config.Get().bhop.notifyPlayer)
@@ -133,9 +163,15 @@ void BhopManager::ReloadSettings()
 
     // Refresh prediction values for granted clients.
     if (_mode == Mode::Grants)
+    {
         for (int slot = 0; slot < MaxPlayers; ++slot)
+        {
             if (_grantedSlots[slot])
+            {
                 _conVars.ReplicateOverrides(slot);
+            }
+        }
+    }
 
     Log::Info("bhop_reload: settings re-applied.");
 }
@@ -156,7 +192,9 @@ void BhopManager::OnPlayerDisconnect(Player& player)
 void BhopManager::OnRunCommandPre(int slot)
 {
     if (_mode == Mode::Grants && VoltMod::IsValidSlot(slot) && _grantedSlots[slot])
+    {
         _conVars.HoldRaw();
+    }
 }
 
 void BhopManager::OnRunCommandPost(int /*slot*/)
@@ -167,7 +205,9 @@ void BhopManager::OnRunCommandPost(int /*slot*/)
 bool BhopManager::IsActiveSlot(int slot) const
 {
     if (!VoltMod::IsValidSlot(slot))
+    {
         return false;
+    }
     return _mode == Mode::Enabled || _grantedSlots[slot];
 }
 
@@ -175,7 +215,9 @@ void BhopManager::OnPlayerJump(int slot)
 {
     const HopBoostSettings& boost = _config.Get().bhop.hopBoost;
     if (!boost.enabled || !IsActiveSlot(slot))
+    {
         return;
+    }
 
     auto now = std::chrono::steady_clock::now();
     auto last = _lastJump[slot];
@@ -183,16 +225,22 @@ void BhopManager::OnPlayerJump(int slot)
 
     bool chained = last.time_since_epoch().count() != 0 && now - last <= std::chrono::milliseconds(boost.chainWindowMs);
     if (!chained)
+    {
         return;
+    }
 
     Pawn pawn = _rt.Entities.PawnOf(slot);
     if (!pawn)
+    {
         return;
+    }
 
     Vector velocity = pawn.Velocity();
     float speed = std::hypot(velocity.x, velocity.y);
     if (speed < 1.0f)
+    {
         return;
+    }
 
     float scaled = std::min(speed * boost.factor, std::max(boost.maxSpeed, speed));
     velocity.x *= scaled / speed;
@@ -203,19 +251,27 @@ void BhopManager::OnPlayerJump(int slot)
 void BhopManager::ForceAutoHop(int slot)
 {
     if (!(_rt.Entities.Buttons(slot) & IN_JUMP))
+    {
         return;
+    }
 
     Pawn pawn = _rt.Entities.PawnOf(slot);
     if (!pawn)
+    {
         return;
+    }
 
     uint32_t flags = pawn.Flags();
     if (!(flags & FL_ONGROUND))
+    {
         return;
+    }
 
     Vector velocity = pawn.Velocity();
     if (velocity.z > 0.0f)
+    {
         return;  // The engine already applied the jump.
+    }
 
     constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0)
     velocity.z = _jumpImpulse ? _jumpImpulse.Get() : DefaultJumpImpulse;
@@ -231,7 +287,9 @@ void BhopManager::OnPlayerSpawn(int slot)
 {
     // Enabled mode already replicates values server-wide.
     if (_mode != Mode::Grants || !VoltMod::IsValidSlot(slot))
+    {
         return;
+    }
 
     Player* player = _rt.Players.Get(slot);
     bool granted = player && _granted.contains(player->SteamId());
@@ -239,7 +297,9 @@ void BhopManager::OnPlayerSpawn(int slot)
 
     // Restore the override after the engine's spawn snapshot.
     if (granted)
+    {
         _conVars.ReplicateOverrides(slot);
+    }
 }
 
 }  // namespace Bhop

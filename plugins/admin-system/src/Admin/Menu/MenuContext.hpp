@@ -30,7 +30,9 @@ struct MenuContext
     {
         VoltMod::Player* admin = plugin.Runtime.Players.Get(adminSlot);
         if (!admin)
+        {
             return std::nullopt;
+        }
         return MenuContext{plugin, admin->Ref()};
     }
 
@@ -67,7 +69,9 @@ struct MenuContext
     {
         VoltMod::Player* player = Player(target);
         if (!player)
+        {
             return std::nullopt;
+        }
         return std::format("{}: {}", Translate(titleKey), player->Name());
     }
 
@@ -83,7 +87,9 @@ void AppendCatalogRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder, st
     for (const RowSpec& spec : specs)
     {
         if (!ctx.Visible(spec))
+        {
             continue;
+        }
 
         VoltMod::MenuItem item = make(spec);
         if (!item.Describe)

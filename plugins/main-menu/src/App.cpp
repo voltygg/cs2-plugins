@@ -15,7 +15,9 @@ void RegisterCommands(App& app);
 bool App::Load()
 {
     if (!VoltMod::LoadStandardConfig(Runtime, Config))
+    {
         return false;
+    }
 
     if (const VoltMod::PanoramaMenuSettings& menu = Config.Get().menu; menu.panorama)
     {
@@ -31,7 +33,9 @@ bool App::Load()
 
         ReportButton = Runtime.Screens.Pressed += [this](const VoltMod::ButtonPress& press) {
             if (press.ButtonId == MainMenuLayout::Report && Panorama->IsOpen(press.Slot))
+            {
                 Hub.OpenSection("report", press.Slot, *Panorama);
+            }
         };
     }
 

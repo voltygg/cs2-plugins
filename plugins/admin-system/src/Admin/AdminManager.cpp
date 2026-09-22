@@ -25,24 +25,32 @@ bool AdminManager::LoadAdmins()
     _resolvedStyles.clear();
 
     for (const auto& admin : admins)
+    {
         _admins[admin.SteamId] = admin;
+    }
 
     // Merge server grants into each admin's effective group list.
     for (auto& [steamId, groupNames] : _repos.Admins.FindGroupsForServer(_config.Get().server.tag))
     {
         auto it = _admins.find(steamId);
         if (it == _admins.end())
+        {
             continue;
+        }
         auto& groups = it->second.Groups;
         for (auto& name : groupNames)
         {
             if (std::find(groups.begin(), groups.end(), name) == groups.end())
+            {
                 groups.push_back(std::move(name));
+            }
         }
     }
 
     for (auto& [steamId, admin] : _admins)
+    {
         _resolvedPermissions[steamId] = ResolvePermissions(admin);
+    }
 
     Log::Info("Loaded {} admin(s) from database.", _admins.size());
     return true;
@@ -55,7 +63,9 @@ bool AdminManager::LoadGroups()
     _groups.clear();
     _resolvedStyles.clear();
     for (const auto& group : groups)
+    {
         _groups[group.Name] = group;
+    }
 
     Log::Info("Loaded {} admin group(s) from database.", _groups.size());
     return true;
@@ -77,7 +87,9 @@ const Database::Admin* AdminManager::GetAdmin(int64_t steamId)
 {
     auto it = _admins.find(steamId);
     if (it != _admins.end())
+    {
         return &it->second;
+    }
 
     return nullptr;
 }
@@ -86,16 +98,22 @@ bool AdminManager::HasPermission(int64_t steamId, std::string_view permission)
 {
     auto it = _resolvedPermissions.find(steamId);
     if (it == _resolvedPermissions.end())
+    {
         return false;
+    }
 
     const PermissionSet& granted = it->second;
     if (granted.contains(Permission::Root) || granted.contains(permission))
+    {
         return true;
+    }
 
     for (size_t dot = permission.find('.'); dot != std::string_view::npos; dot = permission.find('.', dot + 1))
     {
         if (granted.contains(std::format("{}*", permission.substr(0, dot + 1))))
+        {
             return true;
+        }
     }
     return false;
 }
@@ -104,7 +122,9 @@ int AdminManager::GetImmunity(int64_t steamId)
 {
     auto it = _admins.find(steamId);
     if (it == _admins.end())
+    {
         return 0;
+    }
 
     return ResolveImmunity(it->second);
 }
@@ -157,11 +177,17 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
     {
         auto groupIt = _groups.find(groupName);
         if (groupIt == _groups.end())
+        {
             continue;
+        }
         if (groupIt->second.ChatPrefix.empty())
+        {
             continue;
+        }
         if (!chosen || groupIt->second.Immunity > chosen->Immunity)
+        {
             chosen = &groupIt->second;
+        }
     }
 
     if (chosen)
@@ -184,9 +210,13 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
     // so admins can override individual slots without losing the rest of their group's styling.
     const auto& adminRow = adminIt->second;
     if (!adminRow.NameColor.empty())
+    {
         style.NameColor = adminRow.NameColor;
+    }
     if (!adminRow.MessageColor.empty())
+    {
         style.MessageColor = adminRow.MessageColor;
+    }
     style.DisplayPrefix = adminRow.DisplayPrefix;
 
     _resolvedStyles[steamId] = style;
@@ -198,7 +228,9 @@ void AdminManager::UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, con
 {
     auto it = _admins.find(steamId);
     if (it == _admins.end())
+    {
         return;
+    }
 
     // Cache-first: the next chat line uses the new style immediately; the persist rides the worker.
     _repos.Admins.UpdateChatStyleAsync(steamId, displayPrefix, nameColor, messageColor);

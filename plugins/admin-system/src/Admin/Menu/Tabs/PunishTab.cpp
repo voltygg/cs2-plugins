@@ -60,7 +60,9 @@ std::shared_ptr<VoltMod::Menu> BuildPunishCard(const MenuContext& ctx, VoltMod::
 
     const auto title = ctx.CardTitle("category.punish", targetRef);
     if (!title)
+    {
         return nullptr;
+    }
 
     MenuBuilder builder(*title);
 

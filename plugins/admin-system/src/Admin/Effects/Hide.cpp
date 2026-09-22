@@ -47,11 +47,15 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                                       visibility.SetControllerHidden(slot, false);
                                       Controller controller = entities.Controller(slot);
                                       if (!controller)
+                                      {
                                           return;
+                                      }
                                       controller.SetName(savedName);
                                       // Joining T or CT also ends hide, and that choice wins.
                                       if (savedTeam != TeamSpectator && controller.Team() == TeamSpectator)
+                                      {
                                           (void)controller.ChangeTeam(savedTeam);
+                                      }
                                   }};
                   }};
 }

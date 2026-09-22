@@ -35,7 +35,9 @@ inline auto RequirePermission(App& app, std::string_view permission, int slot)
 {
     return [&app, permission, slot](const auto&) -> std::optional<std::string> {
         if (!MayUse(app, slot, permission))
+        {
             return "punish.notAllowed";
+        }
         return std::nullopt;
     };
 }

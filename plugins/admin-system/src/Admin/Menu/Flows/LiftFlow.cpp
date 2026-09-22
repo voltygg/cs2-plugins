@@ -53,7 +53,9 @@ static bool Lift(App& app, const LiftRow& row, int64_t adminSteamId)
 {
     const std::string_view reasonKey = LiftReasonKey(row.Kind);
     if (reasonKey.empty())
+    {
         return false;  // Not liftable: no row is ever built for these.
+    }
 
     return app.Punishments.Remove(row.Kind, row.Id, adminSteamId, app.Runtime.Translations.Get(reasonKey));
 }
@@ -83,7 +85,9 @@ static void StartLiftConfirm(App& app, int adminSlot, LiftRow row)
             auto& translations = app.Runtime.Translations;
             auto* admin = app.Runtime.Players.Get(adminSlot);
             if (!admin)
+            {
                 return;
+            }
 
             // Lift broadcasts the removal; the reply covers broadcasts being disabled.
             const bool removed = Lift(app, r, admin->SteamId());
@@ -126,7 +130,9 @@ std::shared_ptr<VoltMod::Menu> BuildLiftMenu(const MenuContext& ctx)
     std::array<PunishType, 3> kinds{};
     std::size_t count = 0;
     if (ctx.Visible(LiftBansRow))
+    {
         kinds[count++] = PunishType::Ban;
+    }
     if (ctx.Visible(LiftMutesRow))
     {
         kinds[count++] = PunishType::VoiceMute;

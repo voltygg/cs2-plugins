@@ -31,14 +31,18 @@ static std::vector<Entry> ResolveList(const std::vector<Raw>& rows, const std::v
         std::vector<Entry> entries;
         entries.reserve(source.size());
         for (const auto& row : source)
+        {
             entries.push_back(toEntry(row));
+        }
 
         Validation::FilterValid(
             entries,
             [validate](const Entry& entry, std::size_t) -> std::optional<std::string> {
                 auto problem = validate(entry);
                 if (problem.empty())
+                {
                     return std::nullopt;
+                }
                 return problem;
             },
             what);
@@ -63,19 +67,27 @@ ConfigManager::ConfigSnapshot ConfigManager::BuildSnapshot(Settings raw)
         [](const PunishmentTemplate& t, std::size_t) -> std::optional<std::string> {
             auto type = Punishments::ParsePunishType(t.type);
             if (!type || !Punishments::InfoFor(*type).Timed)
+            {
                 return std::format("type must be ban/voiceMute/textMute, got '{}'", t.type);
+            }
             if (ParseDuration(t.duration) < 0)
+            {
                 return std::format("bad duration '{}'", t.duration);
+            }
             if (t.name.empty() || t.reason.empty())
+            {
                 return std::string("name and reason must be non-empty");
+            }
             return std::nullopt;
         },
         "punishments.templates");
 
     snapshot.Templates.reserve(punishments.templates.size());
     for (const auto& t : punishments.templates)
+    {
         snapshot.Templates.push_back(
             {t.name, *Punishments::ParsePunishType(t.type), ParseDuration(t.duration), t.reason});
+    }
 
     // An empty duration picker would dead-end the menu ban/mute flow; the helper falls back to
     // the struct defaults so the list exists in exactly one place.
@@ -87,9 +99,13 @@ ConfigManager::ConfigSnapshot ConfigManager::BuildSnapshot(Settings raw)
         reports.reasons,
         [](const ReportReason& r, std::size_t) -> std::optional<std::string> {
             if (r.code.empty() || r.label.empty())
+            {
                 return std::string("code and label must be non-empty");
+            }
             if (r.code.size() > 32)
+            {
                 return std::format("code '{}' is longer than 32 chars", r.code);
+            }
             return std::nullopt;
         },
         "reports.reasons");

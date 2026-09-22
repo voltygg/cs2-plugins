@@ -21,16 +21,22 @@ ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<in
 {
     const auto& config = _config.Get().reports;
     if (!config.enabled)
+    {
         return {ReportDenial::Disabled};
+    }
 
     if (int64_t wait = _anyTarget.RemainingSec(reporterSteamId, now, config.cooldownSec); wait > 0)
+    {
         return {ReportDenial::OnCooldown, wait};
+    }
 
     if (targetSteamId)
     {
         const auto pair = std::pair{reporterSteamId, *targetSteamId};
         if (int64_t wait = _perTarget.RemainingSec(pair, now, config.duplicateWindowSec); wait > 0)
+        {
             return {ReportDenial::OnCooldown, wait};
+        }
     }
 
     return {};
@@ -57,7 +63,9 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
     if (!EvaluateGate(reporterSteamId, targetSteamId, now))
     {
         if (onDone)
+        {
             onDone(false);
+        }
         return;
     }
 
@@ -83,9 +91,13 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
         // The write is the only database-health signal there is, so a failure refunds the
         // attempt rather than costing the reporter a cooldown.
         if (!ok)
+        {
             ReleaseCooldown(reporterSteamId, targetSteamId);
+        }
         if (onDone)
+        {
             onDone(ok);
+        }
     });
 }
 

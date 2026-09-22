@@ -22,7 +22,9 @@ void ReportRepository::CreateAsync(const Report& report, std::function<void(bool
         },
         [onDone = std::move(onDone)](VoltMod::Status result) {
             if (onDone)
+            {
                 onDone(result.has_value());
+            }
         });
 }
 

@@ -45,11 +45,15 @@ static const std::unordered_map<std::string_view, std::string_view>& ColorLabelK
 static int IndexForColor(std::string_view color)
 {
     if (color.empty())
+    {
         return 0;
+    }
     for (size_t i = 0; i < ChatColors::Palette.size(); ++i)
     {
         if (ChatColors::Palette[i].Name == color)
+        {
             return static_cast<int>(i + 1);
+        }
     }
 
     return 0;
@@ -69,7 +73,9 @@ static std::vector<VoltMod::Labeled<std::string>> BuildColorChoices(App& app, in
     // The framework renders the palette; colors without a translation key fall back to their name.
     auto palette = ChatColors::PaletteChoices([&](std::string_view name) -> std::string {
         if (auto it = keys.find(name); it != keys.end())
+        {
             return translations.Get(it->second, viewerSlot);
+        }
         return {};
     });
     choices.insert(choices.end(), std::make_move_iterator(palette.begin()), std::make_move_iterator(palette.end()));
@@ -87,7 +93,9 @@ static std::string CurrentSlotColor(App& app, int64_t steamId, ColorSlot slot)
 {
     const auto* admin = app.Admins.GetAdmin(steamId);
     if (!admin)
+    {
         return "";
+    }
     switch (slot)
     {
     case ColorSlot::Name:
@@ -104,7 +112,9 @@ static void SaveColor(App& app, int64_t steamId, ColorSlot slot, const std::stri
     auto& admins = app.Admins;
     const auto* admin = admins.GetAdmin(steamId);
     if (!admin)
+    {
         return;
+    }
 
     const std::string& name = slot == ColorSlot::Name ? value : admin->NameColor;
     const std::string& message = slot == ColorSlot::Message ? value : admin->MessageColor;
@@ -154,8 +164,10 @@ static VoltMod::MenuItem PrefixRow(const MenuContext& ctx, const RowSpec& spec)
                          [&app, steamId](int) {
                              const auto* admin = app.Admins.GetAdmin(steamId);
                              if (admin)
+                             {
                                  app.Admins.UpdateChatStyleAsync(steamId, !admin->DisplayPrefix, admin->NameColor,
                                                                  admin->MessageColor);
+                             }
                          }}
         .ToItem();
 }

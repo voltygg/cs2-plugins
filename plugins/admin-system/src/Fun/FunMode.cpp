@@ -28,7 +28,9 @@ FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _overrides(runtime.C
     // Apply round rules to late joins.
     _subs.Add(events.On<VoltMod::PlayerSpawn>([this](const VoltMod::PlayerSpawn& e) {
         if (e.Slot >= 0 && _state.IsOn(Toggle::KnifeRound))
+        {
             GiveKnifeOnly(e.Slot);
+        }
     }));
 }
 
@@ -40,9 +42,13 @@ bool FunMode::Flip(Toggle toggle)
     const bool on = _state.Flip(toggle);
 
     if (toggle == Toggle::KnifeRound)
+    {
         ApplyRoundStart();  // Also update players already alive.
+    }
     else
+    {
         ApplyOverrides();
+    }
 
     return on;
 }
@@ -59,12 +65,16 @@ void FunMode::ApplyRoundStart()
     ApplyOverrides();
 
     if (!_state.IsOn(Toggle::KnifeRound))
+    {
         return;
+    }
 
     for (auto* player : _rt.Players.All())
     {
         if (player)
+        {
             GiveKnifeOnly(player->Slot());
+        }
     }
 }
 
@@ -76,12 +86,18 @@ void FunMode::ResolveConVars()
 
         // Only headshot-only is bool; Find rejects a mismatched engine type.
         if (auto number = _rt.ConVars.Find<float>(name))
+        {
             _handles.push_back({.Owner = row.Owner, .OnValue = row.OnValue, .Handle = std::move(*number)});
+        }
         else if (auto flag = _rt.ConVars.Find<bool>(name))
+        {
             _handles.push_back({.Owner = row.Owner, .OnValue = row.OnValue, .Handle = std::move(*flag)});
+        }
         else
+        {
             VoltMod::Log::Warn("Fun mode: convar '{}' unusable ({}); the toggle that drives it is inert.", name,
                                flag.error().Detail);
+        }
     }
 }
 
@@ -99,9 +115,13 @@ void FunMode::ApplyOverrides()
                 }
                 // Headshot-only is the sole bool setting.
                 if constexpr (std::same_as<std::remove_cvref_t<decltype(convar)>, VoltMod::ConVar<bool>>)
+                {
                     _overrides.Set(convar, handle.OnValue != 0.0f);
+                }
                 else
+                {
                     _overrides.Set(convar, handle.OnValue);
+                }
             },
             handle.Handle);
     }
@@ -111,7 +131,9 @@ void FunMode::GiveKnifeOnly(int slot)
 {
     auto pawn = _rt.Entities.PawnOf(slot);
     if (!pawn || !pawn.IsAlive())
+    {
         return;
+    }
 
     _rt.World.Items.StripWeapons(pawn, false);
     _rt.World.Items.Give(pawn, pawn.Team() == VoltMod::TeamT ? KnifeT : KnifeCT);

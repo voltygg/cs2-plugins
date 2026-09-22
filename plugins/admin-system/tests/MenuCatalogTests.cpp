@@ -31,7 +31,9 @@ static std::vector<RowSpec> AllRows()
 {
     std::vector<RowSpec> rows;
     for (const Menu::TabSpec& tab : Menu::Tabs)
+    {
         CollectRows(tab.Rows, rows);
+    }
     return rows;
 }
 
@@ -61,16 +63,22 @@ static bool HasPhrase(const glz::json_t& root, std::string_view dotted)
         const std::size_t dot = dotted.find('.', start);
         const std::string segment{dotted.substr(start, dot == std::string_view::npos ? dot : dot - start)};
         if (!node->is_object())
+        {
             return false;
+        }
 
         const auto& object = node->get_object();
         const auto entry = object.find(segment);
         if (entry == object.end())
+        {
             return false;
+        }
 
         node = &entry->second;
         if (dot == std::string_view::npos)
+        {
             break;
+        }
         start = dot + 1;
     }
     return node->holds<std::string>();
@@ -97,7 +105,9 @@ TEST_CASE("Every row appears exactly once across the catalog")
     const std::vector<RowSpec> rows = AllRows();
     std::set<Menu::RowId> seen;
     for (const RowSpec& row : rows)
+    {
         CHECK_MESSAGE(seen.insert(row.Id).second, "row " << row.LabelKey << " is listed in two tables");
+    }
 
     // A row that is in no table can never be drawn, and its MakeRow case is dead.
     CHECK(seen.size() == static_cast<std::size_t>(Menu::RowId::MessageColor) + 1);
@@ -108,7 +118,9 @@ TEST_CASE("No row both names a permission and groups children")
     for (const RowSpec& row : AllRows())
     {
         if (row.Permission.empty())
+        {
             continue;
+        }
         CHECK_MESSAGE(row.Children.empty(), "row " << row.LabelKey
                                                    << " names a permission and also groups children, so its own"
                                                    << " permission would be ignored in favour of theirs");
@@ -131,14 +143,20 @@ TEST_CASE("Every catalog label is translated in every language")
 {
     std::vector<std::string> keys;
     for (const Menu::TabSpec& tab : Menu::Tabs)
+    {
         keys.emplace_back(tab.LabelKey);
+    }
     for (const RowSpec& row : AllRows())
+    {
         keys.emplace_back(row.LabelKey);
+    }
 
     for (const std::string& language : {std::string("en"), std::string("ru")})
     {
         const glz::json_t phrases = Translations(language);
         for (const std::string& key : keys)
+        {
             CHECK_MESSAGE(HasPhrase(phrases, key), language << ".json is missing '" << key << "'");
+        }
     }
 }

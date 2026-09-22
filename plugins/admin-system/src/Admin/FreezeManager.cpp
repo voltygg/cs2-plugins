@@ -29,12 +29,16 @@ void FreezeManager::RefreshFromDatabase()
     _repos.Admins.FindFrozenAsync([this](std::vector<Db::FrozenAdmin> rows) {
         std::unordered_map<int64_t, Db::FrozenAdmin> fresh;
         for (auto& row : rows)
+        {
             fresh.emplace(row.SteamId, std::move(row));
+        }
 
         for (const auto& [steamId, row] : fresh)
         {
             if (!_frozen.contains(steamId))
+            {
                 NotifyFrozen(steamId);
+            }
         }
 
         _frozen = std::move(fresh);
@@ -45,7 +49,9 @@ std::optional<Db::FrozenAdmin> FreezeManager::GetFrozen(int64_t steamId) const
 {
     auto it = _frozen.find(steamId);
     if (it == _frozen.end())
+    {
         return std::nullopt;
+    }
     return it->second;
 }
 
@@ -62,7 +68,9 @@ void FreezeManager::Unfreeze(int64_t targetSteamId, int64_t bySteamId, const std
 {
     auto it = _frozen.find(targetSteamId);
     if (it == _frozen.end())
+    {
         return;
+    }
 
     _repos.Admins.ClearFrozenAsync(targetSteamId);
 
@@ -81,9 +89,13 @@ void FreezeManager::RecordPunishment(int64_t adminSteamId, std::string_view admi
 
     // The console, frozen admins and root admins never trip the rate check.
     if (adminSteamId == 0 || !_config.Get().abuseProtection.enabled || IsFrozen(adminSteamId))
+    {
         return;
+    }
     if (_admins.HasPermission(adminSteamId, Permission::Root))
+    {
         return;
+    }
 
     CheckAutoFreeze(adminSteamId, adminName);
 }
@@ -123,7 +135,9 @@ void FreezeManager::CheckAutoFreeze(int64_t adminSteamId, std::string_view admin
                            (limits.maxMutes > 0 && counts.Mutes >= limits.maxMutes) ||
                            (limits.maxWarnings > 0 && counts.Warnings >= limits.maxWarnings);
             if (!tripped || IsFrozen(adminSteamId))
+            {
                 return;
+            }
 
             auto reason = std::format("Rate limit exceeded: {} bans, {} kicks, {} mutes, {} warnings in {} min",
                                       counts.Bans, counts.Kicks, counts.Mutes, counts.Warnings, limits.windowMinutes);
@@ -137,7 +151,9 @@ void FreezeManager::NotifyFrozen(int64_t steamId)
 {
     auto* player = _rt.Players.BySteamId(steamId);
     if (!player)
+    {
         return;
+    }
 
     auto row = GetFrozen(steamId);
     int slot = player->Slot();
@@ -148,7 +164,9 @@ void FreezeManager::NotifyFrozen(int64_t steamId)
 void FreezeManager::NotifyFrozenSoon(int slot, int64_t steamId)
 {
     if (!VoltMod::IsValidSlot(slot))
+    {
         return;
+    }
 
     _pendingNotice[slot] = _rt.Scheduler.NextTick([this, steamId] { NotifyFrozen(steamId); });
 }

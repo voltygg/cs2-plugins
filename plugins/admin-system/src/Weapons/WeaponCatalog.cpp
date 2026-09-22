@@ -10,10 +10,14 @@ static constexpr std::string_view ItemPrefix = "weapon_";
 std::string ValidateWeaponEntry(const WeaponEntry& entry)
 {
     if (entry.Item.empty())
+    {
         return "item must be non-empty";
+    }
     // Anything else would be handed to GiveNamedItem as an arbitrary classname.
     if (!std::string_view(entry.Item).starts_with(ItemPrefix))
+    {
         return "item must be an entity classname starting with 'weapon_'";
+    }
     return {};
 }
 

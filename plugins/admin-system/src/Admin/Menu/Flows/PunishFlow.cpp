@@ -41,7 +41,9 @@ bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishTy
     auto& players = app.Runtime.Players;
     const VoltMod::PlayerRef admin = players.RefFor(adminSlot);
     if (!app.Runtime.Policy.Authorize(admin, target, InfoFor(type).RequiredPermission).has_value())
+    {
         return false;
+    }
 
     return app.Access.CanPunish(admin.SteamId, target.SteamId);
 }
@@ -51,9 +53,13 @@ bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishTy
 static std::optional<std::string> ValidatePending(App& app, int slot, const PendingPunishment& pending)
 {
     if (!app.Runtime.Players.Get(pending.Target))
+    {
         return "punish.targetLost";
+    }
     if (!CanStillPunish(app, slot, pending.Target, pending.Type))
+    {
         return "punish.notAllowed";
+    }
     return std::nullopt;
 }
 
@@ -63,7 +69,9 @@ static void Issue(App& app, int adminSlot, PendingPunishment& pending)
     auto* admin = app.Runtime.Players.Get(adminSlot);
     auto* target = app.Runtime.Players.Get(pending.Target);
     if (!admin || !target)
+    {
         return;
+    }
 
     // Captured before issuing: bans and kicks can drop the target immediately.
     const std::string targetName = target->Name();
@@ -112,11 +120,15 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
 
     std::vector<Labeled<int>> durations;
     for (int seconds : app.Settings.GetMenuDurations())
+    {
         durations.push_back({.Label = DurationLabel(translations, seconds, adminSlot), .Value = seconds});
+    }
 
     std::vector<Labeled<std::string>> reasons;
     for (const auto& reason : app.Settings.Get().punishments.reasonPresets)
+    {
         reasons.push_back({.Label = reason, .Value = reason});
+    }
 
     MakeBaseFlow(app, adminSlot, std::move(pending))
         ->AddDurationStep({.Title = stepTitle("panel.selectDuration"),
@@ -139,7 +151,9 @@ bool AnyTemplateUsable(AdminSystem::App& app, int adminSlot, VoltMod::PlayerRef 
     for (const auto& tmpl : app.Settings.GetPunishmentTemplates())
     {
         if (CanStillPunish(app, adminSlot, target, tmpl.Type))
+        {
             return true;
+        }
     }
     return false;
 }
@@ -149,7 +163,9 @@ std::shared_ptr<VoltMod::Menu> BuildQuickPunishMenu(AdminSystem::App& app, int a
     auto& translations = app.Runtime.Translations;
     auto* targetPlayer = app.Runtime.Players.Get(target);
     if (!targetPlayer)
+    {
         return nullptr;
+    }
 
     MenuBuilder builder(std::format("{}: {}", translations.Get("punish.quickPunish", adminSlot), targetPlayer->Name()));
 
@@ -158,7 +174,9 @@ std::shared_ptr<VoltMod::Menu> BuildQuickPunishMenu(AdminSystem::App& app, int a
     for (const auto& tmpl : app.Settings.GetPunishmentTemplates())
     {
         if (!CanStillPunish(app, adminSlot, target, tmpl.Type))
+        {
             continue;
+        }
 
         PendingPunishment pending{
             .Type = tmpl.Type,

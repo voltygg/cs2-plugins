@@ -31,20 +31,30 @@ enum class PanelState
 static PanelState PanelStateFor(const PendingCheck& pc)
 {
     if (pc.SuspectJoined)
+    {
         return PanelState::Joined;
+    }
     if (pc.AwaitingUrl)
+    {
         return PanelState::CreatingRoom;
+    }
     if (pc.Mode == CheatCheckMode::PlayerProvided && pc.ResolvedUrl.empty())
+    {
         return PanelState::ProvideLink;
+    }
     if (!pc.ResolvedUrl.empty())
+    {
         return PanelState::HasUrl;
+    }
     return PanelState::Generic;
 }
 
 std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
 {
     if (!_rt.Players.Get(slot))
+    {
         return {};
+    }
 
     auto& tr = _rt.Translations;
 

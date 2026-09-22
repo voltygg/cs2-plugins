@@ -32,7 +32,9 @@ struct AdminLineStyle
 static std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase)
 {
     if (actorName.empty())
+    {
         return std::format("{}{} {}{}", style.PrefixColor, style.Prefix, style.PhraseColor, phrase);
+    }
 
     return std::format("{}{} {}{}{} {}{}", style.PrefixColor, style.Prefix, style.NameColor, actorName,
                        ChatColors::Default, style.PhraseColor, phrase);
@@ -54,7 +56,9 @@ static std::string FormatAdminLine(const AdminLineStyle& style, std::string_view
     // Names sit inside the colored phrase, so wrap each in the name color before substituting.
     std::map<std::string, std::string> colored;
     for (const auto& [token, name] : nameTokens)
+    {
         colored.emplace(token, std::format("{}{}{}", style.NameColor, name, style.PhraseColor));
+    }
 
     return FormatAdminLine(style, actorName, Strings::SubstituteTokens(std::string(phraseTemplate), colored));
 }
@@ -90,7 +94,9 @@ void ChatService::BroadcastPunishment(std::string_view actionKey, std::string_vi
                                       std::optional<int64_t> durationSec)
 {
     if (!_config.Get().chat.broadcastPunishments)
+    {
         return;
+    }
 
     const AdminLineStyle style = StyleOf(_config.Get().chat);
 
@@ -114,7 +120,9 @@ void ChatService::BroadcastAction(std::string_view translationKey, std::string_v
                                   std::string_view targetName)
 {
     if (!_config.Get().chat.broadcastPunishments)
+    {
         return;
+    }
 
     const AdminLineStyle style = StyleOf(_config.Get().chat);
     auto phrase = BroadcastPhrase(translationKey);
@@ -126,7 +134,9 @@ void ChatService::BroadcastAction(std::string_view translationKey, std::string_v
                                   const std::map<std::string, std::string>& nameTokens)
 {
     if (!_config.Get().chat.broadcastPunishments)
+    {
         return;
+    }
 
     _rt.Messages.Broadcast(
         FormatAdminLine(StyleOf(_config.Get().chat), adminName, BroadcastPhrase(translationKey), nameTokens));

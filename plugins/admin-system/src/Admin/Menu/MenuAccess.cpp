@@ -14,9 +14,13 @@ namespace AdminSystem::Admin::Menu
 bool Visible(App& app, int adminSlot, const RowSpec& row)
 {
     if (!row.Children.empty())
+    {
         return AnyVisible(app, adminSlot, row.Children);
+    }
     if (row.Permission.empty())
+    {
         return app.Admins.IsAdmin(app.Runtime.Players.RefFor(adminSlot).SteamId);
+    }
     return MayUse(app, adminSlot, row.Permission);
 }
 
@@ -38,21 +42,27 @@ VoltMod::MenuItem DisableUnless(VoltMod::MenuItem item, std::function<bool(int)>
     item.Describe = [describe = std::move(describe), allowed, reason = std::move(reason)](int slot) {
         VoltMod::MenuRow row = describe ? describe(slot) : VoltMod::MenuRow{};
         if (!row.Enabled || (*allowed)(slot))
+        {
             return row;
+        }
         row.Enabled = false;
         row.Value = reason;
         return row;
     };
     item.Activate = [activate = std::move(activate), allowed](int slot, VoltMod::MenuSurface& surface) {
         if (activate && (*allowed)(slot))
+        {
             activate(slot, surface);
+        }
     };
     item.Step = [step = std::move(step), allowed](int slot, int direction) {
         return step && (*allowed)(slot) && step(slot, direction);
     };
     item.Commit = [commit = std::move(commit), allowed](int slot) {
         if (commit && (*allowed)(slot))
+        {
             commit(slot);
+        }
     };
     return item;
 }

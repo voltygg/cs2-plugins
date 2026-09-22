@@ -29,23 +29,23 @@ static WeaponActionResult RunWeaponAction(App& app, VoltMod::PlayerRef admin, Vo
 {
     auto outcome = WeaponActionResult::NotAllowed;
 
-    app.Actions.Run(admin, target,
-                    Action{.Permission = Permission::Weapon,
-                           .RequireAlive = false,
-                           .Body = [&](const ActionContext& ctx) -> OptKey {
-                               if (!ctx.TargetPawn().IsAlive())
-                               {
-                                   outcome = WeaponActionResult::TargetDead;
-                                   return std::nullopt;
-                               }
-                               if (!body(ctx))
-                               {
-                                   outcome = WeaponActionResult::EngineRefused;
-                                   return std::nullopt;
-                               }
-                               outcome = WeaponActionResult::Ok;
-                               return std::string(broadcastKey);
-                           }});
+    app.Actions.Run(
+        admin, target,
+        Action{
+            .Permission = Permission::Weapon, .RequireAlive = false, .Body = [&](const ActionContext& ctx) -> OptKey {
+                if (!ctx.TargetPawn().IsAlive())
+                {
+                    outcome = WeaponActionResult::TargetDead;
+                    return std::nullopt;
+                }
+                if (!body(ctx))
+                {
+                    outcome = WeaponActionResult::EngineRefused;
+                    return std::nullopt;
+                }
+                outcome = WeaponActionResult::Ok;
+                return std::string(broadcastKey);
+            }});
 
     return outcome;
 }

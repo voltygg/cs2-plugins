@@ -69,6 +69,7 @@ public:
      *  back to the admin's group default. Unknown admins are ignored. */
     void UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                               const std::string& messageColor);
+
 private:
     using PermissionSet = std::set<std::string, std::less<>>;
 

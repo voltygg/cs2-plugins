@@ -8,7 +8,9 @@ namespace AdminSystem::Maps
 std::size_t VoteThreshold(std::size_t cast, double successRatio)
 {
     if (cast == 0)
+    {
         return 0;
+    }
 
     // Clamped so a mis-set ratio cannot make the vote either free or impossible.
     double ratio = std::clamp(successRatio, 0.0, 1.0);

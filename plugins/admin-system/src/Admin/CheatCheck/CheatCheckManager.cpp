@@ -38,7 +38,9 @@ static constexpr int DeadlineTickMs = 1000;
 static bool IsValidLink(const std::string& link)
 {
     if (link.rfind("https://", 0) != 0 && link.rfind("http://", 0) != 0)
+    {
         return false;
+    }
     // A real URL has no whitespace or HTML-significant characters; reject panel-injection attempts.
     return link.find_first_of(" \t\r\n<>\"'") == std::string::npos;
 }
@@ -46,13 +48,17 @@ static bool IsValidLink(const std::string& link)
 bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 {
     if (!ValidSlot(adminSlot) || !ValidSlot(targetSlot))
+    {
         return false;
+    }
 
     auto& plrMgr = _rt.Players;
     auto* admin = plrMgr.Get(adminSlot);
     auto* target = plrMgr.Get(targetSlot);
     if (!admin || !target)
+    {
         return false;
+    }
 
     Controller targetCtrl = _rt.Entities.Controller(targetSlot);
     Pawn targetPawn = targetCtrl.GetPawn();
@@ -64,7 +70,9 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     const int priorTeam =
         wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? int{targetPawn.Team()} : 0);
     if (wasActive)
+    {
         ResetCheck(targetSlot);
+    }
 
     auto& pc = _checks[targetSlot];
     pc.Active = true;
@@ -80,7 +88,9 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
 
     targetPawn.SetMove(MoveType_t::MOVETYPE_NONE);
     if (cfg.moveToSpectator)
+    {
         (void)targetCtrl.ChangeTeam(VoltMod::TeamSpectator);
+    }
 
     pc.DeadlineTimer = _rt.Scheduler.Repeat(DeadlineTickMs, [this, targetSlot] { Tick(targetSlot); });
 
@@ -140,10 +150,14 @@ void CheatCheckManager::RequestRoom(int targetSlot)
 void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const VoltMod::HttpResult& result)
 {
     if (!ValidSlot(targetSlot))
+    {
         return;
+    }
     auto& pc = _checks[targetSlot];
     if (!pc.Active || pc.RequestSeq != seq)  // stale: cancelled, expired, re-called, or slot reused
+    {
         return;
+    }
 
     const auto& roomCfg = _config.Get().cheatCheck.websiteAutoRoom;
     if (auto urls = ParseRoomResponse(roomCfg, result))
@@ -160,15 +174,21 @@ void CheatCheckManager::OnRoomResponse(int targetSlot, uint64_t seq, const VoltM
         }
 
         if (!urls->CheckerUrl.empty())
+        {
             RelayCheckerUrl(targetSlot, urls->CheckerUrl);
+        }
         _view.SendInstructions(targetSlot, pc);
         return;
     }
 
     if (!result.Ok)
+    {
         Log::Warn("Cheat-check room request failed: {}", result.Error);
+    }
     else
+    {
         Log::Warn("Cheat-check room response rejected (status {}): {}", result.StatusCode, result.Body.substr(0, 300));
+    }
 
     OnRoomFailed(targetSlot);
 }
@@ -199,7 +219,9 @@ void CheatCheckManager::Tick(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
     if (!pc.Active)
+    {
         return;
+    }
 
     // Polling continues while the room suspends the deadline.
     if (!pc.SuspectJoined && Time::Now() >= pc.DeadlineSec)
@@ -214,14 +236,20 @@ void CheatCheckManager::Tick(int targetSlot)
 CheatCheckManager::SubmitResult CheatCheckManager::SubmitPlayerLink(int callerSlot, const std::string& link)
 {
     if (!ValidSlot(callerSlot))
+    {
         return SubmitResult::NoActiveCheck;
+    }
 
     auto& pc = _checks[callerSlot];
     if (!pc.Active || pc.Mode != CheatCheckMode::PlayerProvided)
+    {
         return SubmitResult::NoActiveCheck;
+    }
 
     if (!IsValidLink(link))
+    {
         return SubmitResult::Invalid;
+    }
 
     pc.ResolvedUrl = link;
 
@@ -244,20 +272,26 @@ void CheatCheckManager::FallbackToFixed(PendingCheck& pc)
     pc.AwaitingUrl = false;
     const auto& cfg = _config.Get().cheatCheck;
     if (!cfg.fixedLink.url.empty())
+    {
         pc.ResolvedUrl = cfg.fixedLink.url;
+    }
 }
 
 std::optional<int> CheatCheckManager::ResolveAdminSlot(const PendingCheck& pc) const
 {
     if (!_rt.Players.Get(VoltMod::PlayerRef{pc.AdminSlot, pc.AdminSteamId}))
+    {
         return std::nullopt;
+    }
     return pc.AdminSlot;
 }
 
 void CheatCheckManager::ReplyToAdmin(const PendingCheck& pc, const std::function<std::string()>& buildMessage)
 {
     if (auto slot = ResolveAdminSlot(pc))
+    {
         _chat.Reply(*slot, buildMessage());
+    }
 }
 
 void CheatCheckManager::ShowPanel(int targetSlot)
@@ -275,7 +309,9 @@ void CheatCheckManager::ResetCheck(int targetSlot)
 bool CheatCheckManager::Cancel(int adminSlot, int targetSlot)
 {
     if (!ValidSlot(targetSlot) || !_checks[targetSlot].Active)
+    {
         return false;
+    }
 
     auto* target = _rt.Players.Get(targetSlot);
     std::string targetName = target ? target->Name() : std::string();
@@ -313,9 +349,13 @@ void CheatCheckManager::Expire(int targetSlot)
         _punishments.Issue(ban);
     }
     else if (cfg.autoKick)
+    {
         (void)_rt.Entities.Controller(targetSlot).Kick(cfg.kickReason);
+    }
     else
+    {
         Unfreeze(targetSlot, restore, restoreTeam);
+    }
 
     _chat.BroadcastAction("broadcast.cheatCheckTimedOut", {}, {{"player", targetName}});
 }
@@ -324,17 +364,23 @@ void CheatCheckManager::Unfreeze(int targetSlot, MoveType_t restoreMove, int res
 {
     Controller controller = _rt.Entities.Controller(targetSlot);
     if (!controller)
+    {
         return;
+    }
     // restoreTeam is a real playing team (T/CT) only if we actually pulled them to spectator at start.
     if (restoreTeam >= VoltMod::TeamT)
+    {
         (void)controller.ChangeTeam(restoreTeam);
+    }
     controller.GetPawn().SetMove(restoreMove);
 }
 
 void CheatCheckManager::CancelAllForSlot(int slot)
 {
     if (ValidSlot(slot) && _checks[slot].Active)
+    {
         ResetCheck(slot);  // silent: the player is gone, no unfreeze/broadcast
+    }
 }
 
 void CheatCheckManager::CancelAll()
@@ -342,7 +388,9 @@ void CheatCheckManager::CancelAll()
     for (int slot = 0; slot < MaxSlots; ++slot)
     {
         if (!_checks[slot].Active)
+        {
             continue;
+        }
         Unfreeze(slot, _checks[slot].PriorMoveType, _checks[slot].PriorTeam);
         ResetCheck(slot);
     }

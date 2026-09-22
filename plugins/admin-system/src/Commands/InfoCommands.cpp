@@ -26,14 +26,18 @@ void RegisterInfoCommands(VoltMod::CommandManager& commands, App& app)
         .Run([&app](Caller c) -> Result<Reply> {
             auto players = app.Runtime.Players.All();
             if (players.empty())
+            {
                 return c.Ok("cmd.noPlayersOnline");
+            }
 
             auto& adminMgr = app.Admins;
             c.Say("cmd.whoHeader", {{"count", std::to_string(players.size())}});
             for (auto* p : players)
             {
                 if (!p)
+                {
                     continue;
+                }
                 auto style = adminMgr.GetChatStyle(p->SteamId());
                 std::string tag = style.HasPrefix() ? style.Prefix : "-";
                 c.SayRaw(std::format("  #{} {} [{}] (immunity {})", p->Slot(), p->Name(), tag,

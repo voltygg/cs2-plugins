@@ -29,11 +29,15 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
     if (pc.RoomCode.empty() || pc.PollInFlight || Time::Now() < pc.NextPollAtSec)
+    {
         return;
+    }
 
     auto* target = _rt.Players.Get(targetSlot);
     if (!target)
+    {
         return;  // disconnect cleanup tears the check down
+    }
 
     const auto& cfg = _config.Get().cheatCheck.websiteAutoRoom;
     auto request = BuildPresenceRequest(cfg, pc.RoomCode, target->SteamId());
@@ -55,10 +59,14 @@ void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const VoltMod::HttpResult& result)
 {
     if (!ValidSlot(targetSlot))
+    {
         return;
+    }
     auto& pc = _checks[targetSlot];
     if (!pc.Active || pc.RequestSeq != seq)  // stale: cancelled, expired, re-called, or slot reused
+    {
         return;
+    }
 
     const auto& cfg = _config.Get().cheatCheck.websiteAutoRoom;
     pc.PollInFlight = false;
@@ -76,7 +84,9 @@ void CheatCheckManager::OnPresenceResponse(int targetSlot, uint64_t seq, const V
     }
 
     if (*present == pc.SuspectJoined)
+    {
         return;
+    }
 
     const std::string targetName = target ? target->Name() : std::string();
 

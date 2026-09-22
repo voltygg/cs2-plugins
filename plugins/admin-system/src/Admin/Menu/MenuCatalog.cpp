@@ -107,7 +107,9 @@ static void CheckRows(App& app, std::span<const RowSpec> rows)
 void VerifyCatalog(App& app)
 {
     for (const TabSpec& tab : Tabs)
+    {
         CheckRows(app, tab.Rows);
+    }
 }
 
 }  // namespace AdminSystem::Admin::Menu

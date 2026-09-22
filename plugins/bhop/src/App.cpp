@@ -11,7 +11,9 @@ namespace Bhop
 bool App::Load()
 {
     if (!VoltMod::LoadStandardConfig(Runtime, Config))
+    {
         return false;
+    }
 
     Bhop.Initialize();
     return true;

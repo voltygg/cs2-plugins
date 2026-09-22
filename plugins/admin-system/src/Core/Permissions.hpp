@@ -11,10 +11,11 @@ inline constexpr const char* FreezeAdmins = "admin.freeze_admins";  // freeze ot
 inline constexpr const char* Kick = "admin.kick";
 inline constexpr const char* Ban = "admin.ban";
 inline constexpr const char* Unban = "admin.unban";
-inline constexpr const char* Mute = "admin.mute";        // voice mute / text mute / warn
-inline constexpr const char* Control = "admin.control";  // slay / move / teleport / freeze / noclip / bury / team / speed
-inline constexpr const char* Fun = "admin.fun";          // ghost / disco / smite / size
-inline constexpr const char* Health = "admin.health";    // health / armor / godmode
+inline constexpr const char* Mute = "admin.mute";  // voice mute / text mute / warn
+inline constexpr const char* Control =
+    "admin.control";                                   // slay / move / teleport / freeze / noclip / bury / team / speed
+inline constexpr const char* Fun = "admin.fun";        // ghost / disco / smite / size
+inline constexpr const char* Health = "admin.health";  // health / armor / godmode
 inline constexpr const char* Hide = "admin.hide";
 inline constexpr const char* Wallhack = "admin.wallhack";
 inline constexpr const char* Bhop = "admin.bhop";  // requires the bhop plugin in "grants" mode

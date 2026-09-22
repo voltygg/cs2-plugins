@@ -29,7 +29,6 @@ public:
     void UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,
                               const std::string& messageColor);
 
-
     /** Freeze every privilege this admin holds, network-wide. frozenBy 0 = automatic. */
     void SetFrozenAsync(int64_t steamId, int64_t frozenBy, const std::string& reason);
 

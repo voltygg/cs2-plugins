@@ -33,7 +33,9 @@ static void Apply(const MenuContext& ctx, MapVerb verb, const MapEntry& map, int
         return;
     case MapVerb::PutToVote:
         if (!app.Votes.StartMapVote(map, slot))
+        {
             app.Chat.Reply(slot, app.Runtime.Translations.Get("cmd.voteInProgress", slot));
+        }
         return;
     }
 }
@@ -44,7 +46,9 @@ std::shared_ptr<VoltMod::Menu> BuildMapPicker(const MenuContext& ctx, MapVerb ve
     builder.EmptyText(ctx.Translate("map.noMaps"));
 
     for (const auto& map : ctx.Plugin.MapCycle.Cycle())
+    {
         builder.Button(map.Label(), [ctx, verb, map](int slot) { Apply(ctx, verb, map, slot); });
+    }
 
     return builder.Build();
 }

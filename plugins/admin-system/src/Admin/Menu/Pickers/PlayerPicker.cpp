@@ -39,7 +39,9 @@ void AppendTargetRows(const MenuContext& ctx, VoltMod::MenuBuilder& builder,
     }
 
     if (connected.empty())
+    {
         builder.Text(ctx.Translate("common.noPlayers"));
+    }
 }
 
 }  // namespace AdminSystem::Admin::Menu

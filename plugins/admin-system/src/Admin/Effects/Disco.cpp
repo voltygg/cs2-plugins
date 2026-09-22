@@ -40,7 +40,9 @@ Effect MakeDisco(VoltMod::Runtime& runtime)
                                   [&entities = runtime.Entities, slot, idx = size_t{0}]() mutable {
                                       VoltMod::Pawn pawn = entities.PawnOf(slot);
                                       if (!pawn || !pawn.IsAlive())
+                                      {
                                           return;
+                                      }
                                       pawn.SetRender(RenderModeTransAlpha, Palette[idx]);
                                       idx = (idx + 1) % Palette.size();
                                   },
@@ -48,7 +50,9 @@ Effect MakeDisco(VoltMod::Runtime& runtime)
                                   [&entities = runtime.Entities, slot, savedMode, savedColor]() {
                                       VoltMod::Pawn pawn = entities.PawnOf(slot);
                                       if (pawn)
+                                      {
                                           pawn.SetRender(savedMode, savedColor == 0 ? ColorOpaqueWhite : savedColor);
+                                      }
                                   }};
                   }};
 }

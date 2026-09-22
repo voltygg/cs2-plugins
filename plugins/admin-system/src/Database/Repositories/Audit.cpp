@@ -47,7 +47,9 @@ void AdminActivityRepository::CountSinceAsync(int64_t adminSteamId, int64_t sinc
             {
                 const auto action = Punishments::ParseAuditAction(std::string_view(row.action));
                 if (!action)
+                {
                     continue;
+                }
 
                 const auto count = static_cast<int>(row.total);
                 switch (*action)

@@ -67,11 +67,15 @@ void App::OnPlayerConnect(Player& player)
 
     // Tell a frozen admin now, not at their first denied command.
     if (Freeze.IsFrozen(steamId))
+    {
         Freeze.NotifyFrozenSoon(slot, steamId);
+    }
 
     // Kicking inside the connect hook is unsafe on some builds.
     if (auto ban = Punishments.GetActive(AdminSystem::Punishments::PunishType::Ban, steamId))
+    {
         Punishments.KickDeferred(slot, steamId, ban->Reason);
+    }
 }
 
 void App::OnPlayerDisconnect(Player& player)
@@ -84,16 +88,22 @@ void App::OnPlayerDisconnect(Player& player)
 Status App::ConnectDatabase()
 {
     if (!Db.Connect(Settings.Get().database))
+    {
         return std::unexpected(Error::Engine("unavailable; chat commands will reject all callers"));
+    }
 
     Migration = VoltMod::RunMigrations(Db, Runtime.PluginFile("configs/migrations"),
                                        {.HistoryTable = "schema_migrations", .LockKey = 727274});
     if (!Migration)
+    {
         return std::unexpected(Error::Failed("migrations failed; not loading admins against an out-of-date schema"));
+    }
 
     const auto& server = Settings.Get().server;
     if (!Repos.Servers.Upsert(server.tag, server.name))
+    {
         Log::Warn("Failed to register server '{}' in the servers table.", server.tag);
+    }
 
     return {};
 }
@@ -104,7 +114,9 @@ Status App::LoadAdminData()
     const bool admins = Admins.LoadAdmins();
     Freeze.RefreshFromDatabase();
     if (!groups || !admins)
+    {
         return std::unexpected(Error::Failed("failed to load groups/admins from DB"));
+    }
     return {};
 }
 
@@ -124,7 +136,9 @@ Status App::InitializePunishments()
     SharedPermissions.Publish();
 
     if (!loaded)
+    {
         return std::unexpected(Error::Failed("failed to load active punishments"));
+    }
     return {};
 }
 
@@ -135,10 +149,14 @@ void App::RegisterVoiceMuteHook()
         [this](IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender,
                bool listen) -> VoltMod::HookResult<bool> {
             if (!listen)
+            {
                 return {};
+            }
             VoltMod::Player* muted = Runtime.Players.Get(sender.Get());
             if (!muted || !Punishments.IsPunished(Punishments::PunishType::VoiceMute, muted->SteamId()))
+            {
                 return {};
+            }
 
             // Called once per receiver; ChatService collapses it to one chat line.
             PlayerChat.NotifyVoiceMuted(muted);
@@ -154,7 +172,9 @@ void App::RegisterGameEventListeners()
     _subs.Add(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) {
         // Per-life effects only; EffectScope::Session survives death.
         if (e.VictimSlot >= 0)
+        {
             Effects.CancelOnDeath(e.VictimSlot);
+        }
     }));
     _subs.Add(events.On<VoltMod::RoundEnd>([this](const VoltMod::RoundEnd&) {
         Effects.CancelRound();
@@ -165,9 +185,13 @@ void App::RegisterGameEventListeners()
     _subs.Add(events.On<VoltMod::PlayerTeam>([this](const VoltMod::PlayerTeam& e) {
         // Hide is spectator-only; joining a team ends it.
         if (e.Slot < 0 || e.Disconnect)
+        {
             return;
+        }
         if (e.Team == VoltMod::TeamT || e.Team == VoltMod::TeamCT)
+        {
             Effects.Cancel(e.Slot, EffectDescriptors.Hide.Id);
+        }
     }));
 }
 
@@ -214,7 +238,9 @@ bool App::OpenAdminMenu(int slot)
 {
     auto menu = Admin::Menu::BuildRootMenu(*this, slot);
     if (!menu)
+    {
         return false;
+    }
 
     // The root shows the home page; its rows only repeat the sidebar.
     Runtime.Menus.OpenSession(slot, std::move(menu), {.HomePage = true});
@@ -243,7 +269,9 @@ void App::AddHomePageText()
 bool App::Load()
 {
     if (!VoltMod::LoadStandardConfig(Runtime, Settings))
+    {
         return false;
+    }
 
     Admin::Menu::VerifyCatalog(*this);
     InstallPolicy();
@@ -261,14 +289,18 @@ bool App::Load()
     auto& steps = Runtime.LoadSteps;
     const bool database = steps.Optional("Database", [this] { return ConnectDatabase(); });
     if (database)
+    {
         steps.Optional("Admins", [this] { return LoadAdminData(); });
+    }
 
     RegisterCommands();
     AdminSection.Publish();
     ReportSection.Publish();
 
     if (database)
+    {
         steps.Optional("Punishments", [this] { return InitializePunishments(); });
+    }
 
     RegisterGameEventListeners();
     RegisterVoiceMuteHook();

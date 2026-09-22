@@ -29,7 +29,9 @@ bool ReportMenuSection::Open(int slot)
 {
     const VoltMod::Player* player = _app.Runtime.Players.Get(slot);
     if (!player)
+    {
         return false;
+    }
 
     // The same gate as `!report`, so the menu entry and the command refuse alike.
     const ReportGate gate = _app.Reports.CanReport(player->SteamId());
@@ -39,7 +41,9 @@ bool ReportMenuSection::Open(int slot)
         return true;
     }
     if (!gate)
+    {
         return false;
+    }
 
     OpenReportMenu(_app, slot);
     return true;

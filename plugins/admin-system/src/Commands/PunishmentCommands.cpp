@@ -30,7 +30,9 @@ static Result<Reply> Punish(App& app, const Caller& c, Player& target, PunishTyp
                             std::chrono::seconds duration, std::string_view successKey)
 {
     if (!app.Access.CanPunish(c.Player->SteamId(), target.SteamId()))
+    {
         return c.Fail("target.immune");
+    }
 
     // Captured before issuing: bans and kicks can drop the target immediately.
     std::string targetName = target.Name();

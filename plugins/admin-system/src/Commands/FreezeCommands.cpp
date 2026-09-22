@@ -31,20 +31,28 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
 
             const auto* row = app.Admins.GetAdmin(who.SteamId);
             if (!row)
+            {
                 return c.Fail("cmd.freezeNotAdmin", {{"name", targetName}});
+            }
             targetName = row->Name;
 
             // Targeting yourself is allowed in general, so freezing yourself needs an
             // explicit rejection here.
             if (who.SteamId == c.Player->SteamId())
+            {
                 return c.Fail("cmd.freezeSelf");
+            }
 
             // Freezing an admin is punitive, so it takes the punishment rank check.
             if (!app.Access.CanPunish(c.Player->SteamId(), who.SteamId))
+            {
                 return c.Fail("cmd.freezeNoOutrank", {{"name", targetName}});
+            }
 
             if (app.Freeze.IsFrozen(who.SteamId))
+            {
                 return c.Fail("cmd.freezeAlready", {{"name", targetName}});
+            }
 
             const std::string reason = ReasonOr(c, why, "reason.frozenByAdmin");
             app.Freeze.Freeze(who.SteamId, targetName, c.Player->SteamId(), c.Player->Name(), reason);
@@ -74,18 +82,24 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
                     }
                 }
                 if (matches > 1)
+                {
                     return c.Fail("target.ambiguous", {{"token", token.Value}, {"count", std::to_string(matches)}});
+                }
             }
 
             auto row = app.Freeze.GetFrozen(targetSteamId);
             if (!row)
+            {
                 return c.Fail("cmd.unfreezeNone", {{"token", token.Value}});
+            }
 
             // Restoring privileges is as much an act on that admin as freezing them, so it takes
             // the same rank check - without this, holding FreezeAdmins was enough to unfreeze
             // someone you could never have frozen.
             if (!app.Access.CanPunish(c.Player->SteamId(), targetSteamId))
+            {
                 return c.Fail("cmd.freezeNoOutrank", {{"name", row->Name}});
+            }
 
             // Unfreeze erases the row; the name is ours because GetFrozen handed back a copy.
             app.Freeze.Unfreeze(targetSteamId, c.Player->SteamId(), c.Player->Name());
@@ -98,7 +112,9 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
         .Run([&app](Caller c) -> Result<Reply> {
             const auto& frozen = app.Freeze.Frozen();
             if (frozen.empty())
+            {
                 return c.Ok("cmd.frozenNone");
+            }
 
             c.Say("cmd.frozenHeader", {{"count", std::to_string(frozen.size())}});
             for (const auto& [steamId, row] : frozen)

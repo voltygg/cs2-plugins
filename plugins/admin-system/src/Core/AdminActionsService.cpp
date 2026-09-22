@@ -61,7 +61,9 @@ void AdminActionsService::AlertAdmins(int64_t steamId, std::string_view detector
     for (auto* admin : _rt.Players.All())
     {
         if (!_access.HasPermission(admin->SteamId(), Permission::Ban))
+        {
             continue;
+        }
         _rt.Messages.ReplyKey(admin->Slot(), "anticheat.alert",
                               {{"name", suspectName}, {"detector", detectorName}, {"score", scoreText}});
     }

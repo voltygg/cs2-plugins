@@ -46,7 +46,9 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponPicker(const MenuContext& ctx, VoltMod
 
     const auto title = ctx.CardTitle("action.giveWeapon", target);
     if (!title)
+    {
         return nullptr;
+    }
 
     MenuBuilder builder(*title);
 
@@ -64,7 +66,9 @@ std::shared_ptr<VoltMod::Menu> BuildWeaponPicker(const MenuContext& ctx, VoltMod
         builder.Button(ctx.Translate("action.giveRandomWeapon"), [&app, admin, target](int slot) {
             const auto& weapons = app.Settings.GetWeaponMenu();
             if (weapons.empty())
+            {
                 return;
+            }
             ReportWeaponOutcome(
                 app, slot, Weapons::GiveWeapon(app, admin, target, weapons[VoltMod::RandomIndex(weapons.size())].Item),
                 "cmd.weaponGiveFailed");

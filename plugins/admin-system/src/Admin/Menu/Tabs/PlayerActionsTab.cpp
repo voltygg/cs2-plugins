@@ -38,9 +38,13 @@ static VoltMod::MenuItem CheatCheckRow(const MenuContext& ctx, VoltMod::ActionRo
                      .Flip =
                          [&app, admin = ctx.Admin, target](int) {
                              if (app.CheatCheck.IsActive(target.Slot))
+                             {
                                  Actions::CancelCheck(app, admin, target);
+                             }
                              else
+                             {
                                  Actions::CallCheck(app, admin, target);
+                             }
                          },
                      .Enabled = rows.Allows(spec.Permission)}
         .ToItem();
@@ -120,7 +124,9 @@ std::shared_ptr<VoltMod::Menu> BuildPlayerActionsCard(const MenuContext& ctx, Vo
 {
     const auto title = ctx.CardTitle("category.playerActions", target);
     if (!title)
+    {
         return nullptr;
+    }
 
     MenuBuilder builder(*title);
     auto rows = ctx.Rows(target);

@@ -79,7 +79,9 @@ std::unordered_map<int64_t, std::vector<std::string>> AdminRepository::FindGroup
         const Tables::AdminServerGroups t;
         std::unordered_map<int64_t, std::vector<std::string>> grants;
         for (const auto& row : conn(sqlpp::select(t.adminSteamId, t.groupName).from(t).where(t.serverTag == serverTag)))
+        {
             grants[row.adminSteamId].emplace_back(row.groupName);
+        }
         return grants;
     });
 }

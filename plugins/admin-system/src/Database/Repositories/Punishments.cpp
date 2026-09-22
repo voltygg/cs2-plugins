@@ -35,7 +35,9 @@ static auto ActiveQuery(int64_t now)
         {
             auto kind = Punishments::ParseAuditAction(row.kind);
             if (!kind)  // a kind written by a newer build; leave it to that build
+            {
                 continue;
+            }
 
             records.push_back(Punishment{.Id = row.id,
                                          .Kind = *kind,
@@ -117,7 +119,9 @@ void PunishmentRepository::CountActiveAsync(PunishType kind, int64_t steamId, st
                      sqlpp::select(sqlpp::count(t.id).as(total))
                          .from(t)
                          .where(t.targetSteamId == steamId and t.kind == InfoFor(kind).AuditName and ActiveAt(t, now))))
+            {
                 active = static_cast<int>(row.total);
+            }
             return active;
         },
         std::move(onDone));

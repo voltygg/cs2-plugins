@@ -49,7 +49,9 @@ std::shared_ptr<VoltMod::Menu> BuildRootMenu(AdminSystem::App& app, int adminSlo
 {
     const std::optional<MenuContext> ctx = MenuContext::For(app, adminSlot);
     if (!ctx)
+    {
         return nullptr;
+    }
 
     // The version goes in the subtitle rather than into the title as markup: both menu hosts
     // show a subtitle, and only one of them can render a <font> tag.
@@ -59,7 +61,9 @@ std::shared_ptr<VoltMod::Menu> BuildRootMenu(AdminSystem::App& app, int adminSlo
     for (const TabSpec& tab : Tabs)
     {
         if (!ctx->Visible(tab))
+        {
             continue;
+        }
 
         builder.Add(SubmenuRow{.Label = ctx->Translate(tab.LabelKey),
                                .Build = [ctx = *ctx, id = tab.Id](int) { return BuildTab(ctx, id); },

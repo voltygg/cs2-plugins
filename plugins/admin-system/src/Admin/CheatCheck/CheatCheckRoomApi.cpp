@@ -15,12 +15,16 @@ static std::string ExtractField(const VoltMod::HttpResult& result, std::string_v
                                 const std::string& valueTemplate = {})
 {
     if (path.empty())
+    {
         return {};
+    }
 
     // Reads "" for a body that does not parse, so the structural guard is the same call.
     const std::string value = VoltMod::Json::GetStringByPath(result.Body, path);
     if (value.empty() || valueTemplate.empty())
+    {
         return value;
+    }
     return VoltMod::Strings::SubstituteTokens(valueTemplate, {{"value", value}});
 }
 
@@ -29,13 +33,17 @@ std::optional<VoltMod::HttpRequest> BuildRoomRequest(const Config::CheatCheckWeb
                                                      int64_t adminSteamId, std::string_view adminName)
 {
     if (cfg.createRoomUrl.empty())
+    {
         return std::nullopt;
+    }
 
     // Substituting inside the parsed template rather than its text is what keeps a player name
     // containing a quote or a backslash from producing a body the room service cannot read.
     glz::generic body = cfg.requestBody;
     if (body.is_null())
+    {
         body = glz::generic::object_t{};
+    }
     VoltMod::Json::SubstituteTokens(body, {
                                               {"steamId", std::to_string(targetSteamId)},
                                               {"playerName", std::string(targetName)},
@@ -58,11 +66,15 @@ std::optional<RoomUrls> ParseRoomResponse(const Config::CheatCheckWebsiteAutoRoo
                                           const VoltMod::HttpResult& result)
 {
     if (!result.IsSuccess())
+    {
         return std::nullopt;
+    }
 
     std::string code = ExtractField(result, cfg.playerUrlField);
     if (code.empty())
+    {
         return std::nullopt;
+    }
 
     using VoltMod::Strings;
     return RoomUrls{
@@ -77,7 +89,9 @@ std::optional<VoltMod::HttpRequest> BuildPresenceRequest(const Config::CheatChec
                                                          const std::string& roomCode, int64_t targetSteamId)
 {
     if (cfg.presenceUrl.empty() || roomCode.empty())
+    {
         return std::nullopt;
+    }
 
     VoltMod::HttpRequest request{
         .Method = VoltMod::HttpMethod::Get,
@@ -96,17 +110,23 @@ std::optional<bool> ParsePresence(const Config::CheatCheckWebsiteAutoRoom& cfg, 
                                   int64_t targetSteamId)
 {
     if (!result.IsSuccess())
+    {
         return std::nullopt;
+    }
 
     auto participants = VoltMod::Json::ParseDocument(result.Body);
     if (!participants || !participants->is_array())
+    {
         return std::nullopt;
+    }
 
     const std::string wanted = std::to_string(targetSteamId);
     for (const auto& participant : participants->get<glz::generic::array_t>())
     {
         if (VoltMod::Json::GetString(participant, cfg.presenceField) == wanted)
+        {
             return true;
+        }
     }
     return false;
 }

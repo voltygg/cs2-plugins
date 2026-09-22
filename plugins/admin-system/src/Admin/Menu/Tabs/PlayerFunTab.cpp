@@ -68,7 +68,9 @@ std::shared_ptr<VoltMod::Menu> BuildPlayerFunCard(const MenuContext& ctx, VoltMo
 {
     const auto title = ctx.CardTitle("category.playerFun", target);
     if (!title)
+    {
         return nullptr;
+    }
 
     MenuBuilder builder(*title);
     auto rows = ctx.Rows(target);
