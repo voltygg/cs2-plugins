@@ -42,9 +42,7 @@
     "language": "Language"
   },
   "language": {
-    "default": "Server default",
-    "en": "English",
-    "ru": "Русский"
+    "default": "Server default"
   },
   "link": {
     "message": "{label}: {url}"

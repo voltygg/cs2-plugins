@@ -42,9 +42,7 @@
     "language": "Язык"
   },
   "language": {
-    "default": "Как на сервере",
-    "en": "English",
-    "ru": "Русский"
+    "default": "Как на сервере"
   },
   "link": {
     "message": "{label}: {url}"

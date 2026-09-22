@@ -1,5 +1,7 @@
 {#- The menu block styled like the meat-app frontend. Hover switches instantly: a fade leaves two
     rows half-lit when the pointer moves fast. -#}
+{% include "@main-menu/meatgg/controls.css.j2" %}
+
 .screen {
   opacity: 1;
   transition-property: opacity;
@@ -13,20 +15,13 @@
 }
 
 /* Pressed buttons shrink a touch; each sets its own scale on :active. */
-.button,
 .tab,
-.icon-button,
-.row__stepper,
-.pager__arrow {
+.row__stepper {
   transition-property: pre-transform-scale2d;
   transition-duration: 0.12s;
 }
 
 .menu {
-  background-color: gradient(linear, 0% 0%, 0% 100%, from(window-top), to(window-bottom));
-  border: 1px solid hairline;
-  border-radius: 16px;
-  box-shadow: rgba(0, 0, 0, 0.72) 0px 0px 40px 0px;
   color: text-primary;
   transform: translateY(0px);
   transition-property: transform;
@@ -131,29 +126,6 @@
 
 .menu__subtitle {
   color: text-secondary;
-}
-
-.icon-button {
-  border-radius: 10px;
-  background-color: fill;
-  border: 1px solid hairline;
-}
-
-.icon-button:hover {
-  background-color: primary-selected;
-  border: 1px solid primary-line;
-}
-
-.icon-button:active {
-  pre-transform-scale2d: 0.94;
-}
-
-.icon-button__image {
-  wash-color: text-secondary;
-}
-
-.icon-button:hover .icon-button__image {
-  wash-color: text-primary;
 }
 
 .screen.screen--prompting .menu__rows,
@@ -305,61 +277,10 @@
   color: secondary;
 }
 
-/* The site's outlined button: a quiet fill that picks up the red edge on hover. */
 .button {
   width: 140px;
-  border-radius: 10px;
-  background-color: fill-subtle;
-  border: 1px solid hairline-strong;
-}
-
-.button:hover {
-  background-color: primary-hover;
-  border: 1px solid primary-line;
-}
-
-.button:active {
-  pre-transform-scale2d: 0.97;
-}
-
-.button__label {
-  font-weight: bold;
-  color: text-primary;
 }
 
 .pager__label {
   color: text-secondary;
-}
-
-.pager__arrow {
-  border-radius: 10px;
-  background-color: fill-subtle;
-  border: 1px solid hairline-strong;
-  color: text-secondary;
-}
-
-.pager__arrow:hover {
-  background-color: primary-selected;
-  border: 1px solid primary-line;
-  color: text-primary;
-}
-
-.pager__arrow:active {
-  pre-transform-scale2d: 0.94;
-}
-
-/* The site's contained primary button, for a screen's main action. */
-.button--primary {
-  background-color: primary;
-  border: 1px solid primary;
-  box-shadow: rgba(225, 39, 60, 0.2) 0px 3px 8px 0px;
-}
-
-.button--primary:hover {
-  background-color: primary-light;
-  border: 1px solid primary-light;
-}
-
-.button--primary .button__label {
-  color: #ffffff;
 }
