@@ -39,7 +39,7 @@ public:
 
     /** The most recent active rows across @p kinds, newest first and at most @p limit of them.
      *  Drives the lift menu, which cannot usefully hold the thousands a busy server collects. */
-    [[nodiscard]] ActivePage GetActive(std::span<const PunishType> kinds, std::size_t limit) const;
+    ActivePage GetActive(std::span<const PunishType> kinds, std::size_t limit) const;
 
     /** The active row of @p kind against @p steamId, dropping it when it has since expired. */
     std::optional<Database::Punishment> GetActive(PunishType kind, int64_t steamId);

@@ -30,7 +30,7 @@ public:
     bool CancelVote();
 
     /** Whether a vote is on screen right now, so the menu can gray Cancel instead of hiding it. */
-    [[nodiscard]] bool IsRunning() const { return _rt.Hooks.Vote.InProgress(); }
+    bool IsRunning() const { return _rt.Hooks.Vote.InProgress(); }
 
 private:
     VoltMod::Runtime& _rt;

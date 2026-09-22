@@ -29,9 +29,9 @@ struct App final : VoltMod::Plugin
     VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Layout, MainMenuLayout::Tabs.size(),
                                        MainMenuLayout::Rows.size(), MainMenuLayout::IconSetNames};
     std::optional<VoltMod::PanoramaMenu> Panorama;
-    /** Starts sessions on Panorama while held. Declared after it, so it lets go first. */
+    /** Routes menu sessions to Panorama while held; declared after it so it releases first. */
     VoltMod::Subscription PreferPanorama;
-    /** The landing page's report button. */
+    /** The home page's report button; the layout does not own that id. */
     VoltMod::Subscription ReportButton;
 };
 

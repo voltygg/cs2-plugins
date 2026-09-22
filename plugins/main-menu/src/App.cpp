@@ -29,7 +29,6 @@ bool App::Load()
         Panorama.emplace(Runtime.PanoramaMenuServices(), Layout, menu.addonId);
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);
 
-        // The menu layout ignores ids it does not own, so the landing page's button is handled here.
         ReportButton = Runtime.Screens.Pressed += [this](const VoltMod::ButtonPress& press) {
             if (press.ButtonId == MainMenuLayout::Report && Panorama->IsOpen(press.Slot))
                 Hub.OpenSection("report", press.Slot, *Panorama);

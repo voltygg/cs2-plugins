@@ -26,7 +26,7 @@ namespace AdminSystem::Admin::Menu
 struct MenuContext
 {
     /** Empty when the admin is no longer connected, which is the only reason a build fails. */
-    [[nodiscard]] static std::optional<MenuContext> For(App& plugin, int adminSlot)
+    static std::optional<MenuContext> For(App& plugin, int adminSlot)
     {
         VoltMod::Player* admin = plugin.Runtime.Players.Get(adminSlot);
         if (!admin)
@@ -34,43 +34,36 @@ struct MenuContext
         return MenuContext{plugin, admin->Ref()};
     }
 
-    [[nodiscard]] std::string Translate(std::string_view key, const VoltMod::Tokens& tokens = {}) const
+    std::string Translate(std::string_view key, const VoltMod::Tokens& tokens = {}) const
     {
         return Plugin.Runtime.Translations.Get(key, Admin.Slot, tokens);
     }
 
-    [[nodiscard]] bool Visible(const RowSpec& row) const { return Menu::Visible(Plugin, Admin.Slot, row); }
+    bool Visible(const RowSpec& row) const { return Menu::Visible(Plugin, Admin.Slot, row); }
 
-    [[nodiscard]] bool AnyVisible(std::span<const RowSpec> rows) const
-    {
-        return Menu::AnyVisible(Plugin, Admin.Slot, rows);
-    }
+    bool AnyVisible(std::span<const RowSpec> rows) const { return Menu::AnyVisible(Plugin, Admin.Slot, rows); }
 
-    [[nodiscard]] bool Visible(const TabSpec& tab) const
+    bool Visible(const TabSpec& tab) const
     {
         return tab.Permission.empty() ? AnyVisible(tab.Rows) : MayUse(Plugin, Admin.Slot, tab.Permission);
     }
 
     /** The action/effect rows for this admin against @p target. */
-    [[nodiscard]] VoltMod::ActionRows Rows(VoltMod::PlayerRef target) const { return Plugin.MenuRows(Admin, target); }
+    VoltMod::ActionRows Rows(VoltMod::PlayerRef target) const { return Plugin.MenuRows(Admin, target); }
 
     /** The connected player @p target names, or null once they leave. */
-    [[nodiscard]] VoltMod::Player* Player(VoltMod::PlayerRef target) const
-    {
-        return Plugin.Runtime.Players.Get(target);
-    }
+    VoltMod::Player* Player(VoltMod::PlayerRef target) const { return Plugin.Runtime.Players.Get(target); }
 
     /** @ref Menu::WhileAlive, applied only when @p descriptor refuses a dead target. */
     template <class Descriptor>
-    [[nodiscard]] VoltMod::MenuItem WhileAlive(VoltMod::PlayerRef target, const Descriptor& descriptor,
-                                               VoltMod::MenuItem item) const
+    VoltMod::MenuItem WhileAlive(VoltMod::PlayerRef target, const Descriptor& descriptor, VoltMod::MenuItem item) const
     {
         return descriptor.RequireAlive ? Menu::WhileAlive(Plugin, Admin.Slot, target, std::move(item))
                                        : std::move(item);
     }
 
     /** The "<tab>: <name>" title every card carries, or nothing once @p target leaves. */
-    [[nodiscard]] std::optional<std::string> CardTitle(std::string_view titleKey, VoltMod::PlayerRef target) const
+    std::optional<std::string> CardTitle(std::string_view titleKey, VoltMod::PlayerRef target) const
     {
         VoltMod::Player* player = Player(target);
         if (!player)

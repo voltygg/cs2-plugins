@@ -47,7 +47,7 @@ void App::InstallPolicy()
     // CanTarget stays unset: only punishments check rank, where they are issued.
     policy.Reply = [this](int slot, std::string_view message) { Chat.Reply(slot, message); };
     policy.Broadcast = [this](const VoltMod::Authorized& who, std::string_view key) {
-        // Target-less and self-targeted both read as "Bob noclipped"; one roster makes self pointer identity.
+        // No target and self-target both read "Bob noclipped".
         const bool named = who.Target && who.Target != &who.Caller;
         Chat.BroadcastAction(key, who.Caller.Name(), named ? who.Target->Name() : std::string_view{});
     };
@@ -65,11 +65,11 @@ void App::OnPlayerConnect(Player& player)
     const int slot = player.Slot();
     Repos.Players.RecordConnectAsync(steamId, player.Name(), std::string(player.Ip()));
 
-    // Notify frozen admins on connect instead of waiting for their first denied command.
+    // Tell a frozen admin now, not at their first denied command.
     if (Freeze.IsFrozen(steamId))
         Freeze.NotifyFrozenSoon(slot, steamId);
 
-    // Defer kicks because some builds cannot kick safely inside the connect hook; bots never match SteamID bans.
+    // Kicking inside the connect hook is unsafe on some builds.
     if (auto ban = Punishments.GetActive(AdminSystem::Punishments::PunishType::Ban, steamId))
         Punishments.KickDeferred(slot, steamId, ban->Reason);
 }
@@ -112,14 +112,14 @@ Status App::InitializePunishments()
 {
     const bool loaded = Punishments.LoadActivePunishments();
 
-    // Poll for cross-server freezes and keep this server's shared registry entry alive.
+    // Picks up freezes from other servers and keeps this server's registry entry alive.
     _subs.Add(Runtime.Scheduler.Repeat(60'000, [this] {
         Punishments.ExpireOldPunishments();
         Freeze.RefreshFromDatabase();
         Repos.Servers.HeartbeatAsync(Settings.Get().server.tag);
     }));
 
-    // Publish the anticheat surface only after its database and admin dependencies are ready.
+    // Only now: the database and admins are ready.
     AdminActions.Publish();
     SharedPermissions.Publish();
 
@@ -140,9 +140,9 @@ void App::RegisterVoiceMuteHook()
             if (!muted || !Punishments.IsPunished(Punishments::PunishType::VoiceMute, muted->SteamId()))
                 return {};
 
-            // One hook call per receiver; ChatService rate-limits this to one chat line.
+            // Called once per receiver; ChatService collapses it to one chat line.
             PlayerChat.NotifyVoiceMuted(muted);
-            // Run the engine's own handler with listening off instead of the caller's value.
+            // Let the engine run with listening off.
             VoltMod::CallOriginal(&IVEngineServer2::SetClientListening, &engine, receiver, sender, false);
             return VoltMod::HookResult<bool>::Block(false);
         }));
@@ -152,18 +152,18 @@ void App::RegisterGameEventListeners()
 {
     auto& events = Runtime.GameEvents;
     _subs.Add(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) {
-        // Only per-life effects end on death; EffectScope::Session grants survive.
+        // Per-life effects only; EffectScope::Session survives death.
         if (e.VictimSlot >= 0)
             Effects.CancelOnDeath(e.VictimSlot);
     }));
     _subs.Add(events.On<VoltMod::RoundEnd>([this](const VoltMod::RoundEnd&) {
         Effects.CancelRound();
-        // Apply queued map changes after the round so players can read the scoreboard.
+        // After the round, so players see the scoreboard.
         MapCycle.ChangeToNext();
     }));
     _subs.Add(events.On<VoltMod::RoundPrestart>([this](const VoltMod::RoundPrestart&) { Effects.CancelRound(); }));
     _subs.Add(events.On<VoltMod::PlayerTeam>([this](const VoltMod::PlayerTeam& e) {
-        // Hide is spectator-only: joining T or CT ends it, invisible play included.
+        // Hide is spectator-only; joining a team ends it.
         if (e.Slot < 0 || e.Disconnect)
             return;
         if (e.Team == VoltMod::TeamT || e.Team == VoltMod::TeamCT)
@@ -176,7 +176,6 @@ void App::InstallStatusReporting()
     auto& status = Runtime.Status;
 
     status.RegisterSection("db", [this] {
-        // Report current worker state so post-load failures and recoveries are visible.
         return VoltMod::Json::Write(glz::obj{"connected", Db.IsConnected(), "driver",
                                              VoltMod::DriverName(Db.GetDriver()), "migrationVersion",
                                              Migration.CurrentVersion, "migrationsApplied", Migration.Applied});
@@ -217,7 +216,7 @@ bool App::OpenAdminMenu(int slot)
     if (!menu)
         return false;
 
-    // The root draws the home hero instead of its rows, which only repeat the sidebar.
+    // The root shows the home page; its rows only repeat the sidebar.
     Runtime.Menus.OpenSession(slot, std::move(menu), {.HomePage = true});
     return true;
 }
@@ -249,7 +248,7 @@ bool App::Load()
     Admin::Menu::VerifyCatalog(*this);
     InstallPolicy();
     RegisterPlayerLifecycle();
-    // Freeze players while menus are open so navigation input cannot also move them.
+    // Menu navigation keys must not move the player.
     Runtime.Freeze.Enable(true);
     if (const auto& menu = Settings.Get().menu; menu.panorama)
     {
@@ -258,7 +257,7 @@ bool App::Load()
         PreferPanorama = Runtime.Menus.Prefer(*Panorama);
     }
 
-    // Skip database-dependent stages after a database failure.
+    // No database: skip the steps that need it.
     auto& steps = Runtime.LoadSteps;
     const bool database = steps.Optional("Database", [this] { return ConnectDatabase(); });
     if (database)
@@ -273,9 +272,9 @@ bool App::Load()
 
     RegisterGameEventListeners();
     RegisterVoiceMuteHook();
-    // Queued model assets reach clients on the next map load.
+    // Takes effect on the next map load.
     Admin::Effects::PrecacheModels(Runtime);
-    // Report invalid configured maps at load instead of on the first !map.
+    // Reports bad map names now, not at the first !map.
     MapCycle.VerifyAgainstEngine();
 
     InstallStatusReporting();
