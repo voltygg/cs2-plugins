@@ -3,7 +3,7 @@
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Menu/MenuModel.hpp>
 #include <memory>
 
 namespace AdminSystem::Admin::Menu

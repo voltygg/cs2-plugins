@@ -2,7 +2,7 @@
 
 #include "Punishments/PunishType.hpp"
 
-#include <VoltMod/Core/Time/Time.hpp>
+#include <VoltMod/Core/Time/Durations.hpp>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -25,7 +25,6 @@ struct Admin
     bool DisplayPrefix = true;
     std::string NameColor;
     std::string MessageColor;
-
 
     int64_t CreatedAt = 0;
     int64_t UpdatedAt = 0;

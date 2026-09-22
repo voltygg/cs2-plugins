@@ -4,8 +4,8 @@
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Menu/Menu.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Menu/MenuModel.hpp>
 #include <VoltMod/Menu/MenuPresets.hpp>
 #include <functional>
 #include <memory>

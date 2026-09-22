@@ -8,7 +8,7 @@
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
-#include <VoltMod/Core/Time/Time.hpp>
+#include <VoltMod/Core/Time/Durations.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>

@@ -2,7 +2,7 @@
 
 #include "Database/Tables/Schema.hpp"
 
-#include <VoltMod/Core/Time/Time.hpp>
+#include <VoltMod/Core/Time/Durations.hpp>
 #include <string>
 #include <utility>
 

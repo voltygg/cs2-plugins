@@ -4,7 +4,7 @@
 #include "Punishments/PunishType.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Menu/MenuModel.hpp>
 #include <cstdint>
 #include <memory>
 #include <string>

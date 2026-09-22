@@ -5,8 +5,8 @@
 #include <Contracts/IMenuSection.hpp>
 #include <VoltMod/App/ServiceExchange.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
-#include <VoltMod/Engine/ConVars/ConVars.hpp>
-#include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Engine/ConVars/ConVar.hpp>
+#include <VoltMod/Menu/MenuModel.hpp>
 #include <VoltMod/Menu/MenuRouter.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
 #include <memory>

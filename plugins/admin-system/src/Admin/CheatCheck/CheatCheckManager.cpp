@@ -9,8 +9,8 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
+#include <VoltMod/Core/Time/Durations.hpp>
 #include <VoltMod/Core/Time/Scheduler.hpp>
-#include <VoltMod/Core/Time/Time.hpp>
 #include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Http/HttpClient.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>

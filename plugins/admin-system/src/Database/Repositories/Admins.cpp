@@ -4,7 +4,7 @@
 #include "Database/Tables/Schema.hpp"
 
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/Time/Time.hpp>
+#include <VoltMod/Core/Time/Durations.hpp>
 #include <string_view>
 #include <utility>
 
@@ -33,17 +33,17 @@ std::vector<Admin> AdminRepository::FindAll()
         std::vector<Admin> admins;
         for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t)).from(t)))
         {
-            admins.push_back(Admin{.Id = row.id,
-                                   .SteamId = row.steamId,
-                                   .Name = std::string(row.name),
-                                   .Groups = ReadNameList(row.groups, "admins.groups", std::to_string(row.steamId)),
-                                   .Permissions = ReadNameList(row.permissions, "admins.permissions",
-                                                               std::to_string(row.steamId)),
-                                   .DisplayPrefix = row.displayPrefix,
-                                   .NameColor = std::string(row.nameColor),
-                                   .MessageColor = std::string(row.messageColor),
-                                   .CreatedAt = row.createdAt,
-                                   .UpdatedAt = row.updatedAt});
+            admins.push_back(
+                Admin{.Id = row.id,
+                      .SteamId = row.steamId,
+                      .Name = std::string(row.name),
+                      .Groups = ReadNameList(row.groups, "admins.groups", std::to_string(row.steamId)),
+                      .Permissions = ReadNameList(row.permissions, "admins.permissions", std::to_string(row.steamId)),
+                      .DisplayPrefix = row.displayPrefix,
+                      .NameColor = std::string(row.nameColor),
+                      .MessageColor = std::string(row.messageColor),
+                      .CreatedAt = row.createdAt,
+                      .UpdatedAt = row.updatedAt});
         }
         return admins;
     });
@@ -56,17 +56,18 @@ std::vector<AdminGroup> AdminRepository::FindAllGroups()
         std::vector<AdminGroup> groups;
         for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t)).from(t)))
         {
-            groups.push_back(AdminGroup{.Id = row.id,
-                                        .Name = std::string(row.name),
-                                        .Permissions = ReadNameList(row.permissions, "admin_groups.permissions", row.name),
-                                        .Immunity = static_cast<int32_t>(row.immunity),
-                                        .Inherits = ReadNameList(row.inherits, "admin_groups.inherits", row.name),
-                                        .ChatPrefix = std::string(row.chatPrefix),
-                                        .PrefixColor = std::string(row.prefixColor),
-                                        .NameColor = std::string(row.nameColor),
-                                        .MessageColor = std::string(row.messageColor),
-                                        .CreatedAt = row.createdAt,
-                                        .UpdatedAt = row.updatedAt});
+            groups.push_back(
+                AdminGroup{.Id = row.id,
+                           .Name = std::string(row.name),
+                           .Permissions = ReadNameList(row.permissions, "admin_groups.permissions", row.name),
+                           .Immunity = static_cast<int32_t>(row.immunity),
+                           .Inherits = ReadNameList(row.inherits, "admin_groups.inherits", row.name),
+                           .ChatPrefix = std::string(row.chatPrefix),
+                           .PrefixColor = std::string(row.prefixColor),
+                           .NameColor = std::string(row.nameColor),
+                           .MessageColor = std::string(row.messageColor),
+                           .CreatedAt = row.createdAt,
+                           .UpdatedAt = row.updatedAt});
         }
         return groups;
     });

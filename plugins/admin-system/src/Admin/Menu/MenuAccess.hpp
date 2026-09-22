@@ -4,7 +4,7 @@
 #include "Core/App.hpp"
 #include "Core/Permissions.hpp"
 
-#include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Menu/MenuModel.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <functional>
 #include <optional>

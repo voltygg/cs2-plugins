@@ -2,7 +2,7 @@
 
 #include "Admin/Menu/MenuContext.hpp"
 
-#include <VoltMod/Menu/Menu.hpp>
+#include <VoltMod/Menu/MenuModel.hpp>
 #include <VoltMod/Players/PlayerRef.hpp>
 #include <memory>
 
