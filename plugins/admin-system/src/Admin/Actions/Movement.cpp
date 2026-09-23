@@ -1,35 +1,52 @@
-﻿#include "Descriptors.hpp"
+#include "Descriptors.hpp"
 
-#include <VoltMod/Entities/PawnOps.hpp>
+#include <optional>
 
 namespace AdminSystem::Admin::Actions
 {
 
-namespace PawnOps = VoltMod::PawnOps;
+using VoltMod::Schema::MoveType_t;
 
 static constexpr float BuryDepth = 15.0f;
 
+/** Switch between @p type and walking; true when @p type is now on. */
+static bool ToggleMoveType(const VoltMod::Pawn& pawn, MoveType_t type)
+{
+    const bool on = pawn.MoveType() != type;
+    pawn.SetMoveType(on ? type : MoveType_t::MOVETYPE_WALK);
+    return on;
+}
+
+static void ShiftUp(const VoltMod::Pawn& pawn, float height)
+{
+    Vector origin = pawn.Origin();
+    origin.z += height;
+    (void)pawn.Teleport(origin, std::nullopt, std::nullopt);
+}
+
 const Action Noclip{Permission::Control, /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
-                        return PawnOps::ToggleNoclip(ctx.TargetPawn()) ? "broadcast.noclipOn" : "broadcast.noclipOff";
+                        return ToggleMoveType(ctx.Target().Pawn(), MoveType_t::MOVETYPE_NOCLIP) ? "broadcast.noclipOn"
+                                                                                                : "broadcast.noclipOff";
                     }};
 
 const Action Freeze{Permission::Control, /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {
-                        return PawnOps::ToggleFreeze(ctx.TargetPawn()) ? "broadcast.freezeOn" : "broadcast.freezeOff";
+                        return ToggleMoveType(ctx.Target().Pawn(), MoveType_t::MOVETYPE_NONE) ? "broadcast.freezeOn"
+                                                                                              : "broadcast.freezeOff";
                     }};
 
 const Action Bury{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                      PawnOps::ShiftZ(ctx.TargetPawn(), -BuryDepth);
+                      ShiftUp(ctx.Target().Pawn(), -BuryDepth);
                       return "broadcast.buried";
                   }};
 
 const Action Unbury{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                        PawnOps::ShiftZ(ctx.TargetPawn(), BuryDepth);
+                        ShiftUp(ctx.Target().Pawn(), BuryDepth);
                         return "broadcast.unburied";
                     }};
 
 const ParamAction SetSpeed{Permission::Control, /*requireAlive*/ true,
                            [](const ActionContext& ctx, int percent) -> OptKey {
-                               ctx.TargetPawn().SetSpeedModifier(percent / 100.0f);
+                               ctx.Target().Pawn().SetSpeedModifier(percent / 100.0f);
                                return "broadcast.speedSet";
                            }};
 

@@ -61,7 +61,7 @@ static std::string_view DispatchPermission(App& app, RowId id)
     case RowId::Smite:
         return actions.Smite.Permission;
     case RowId::Size:
-        return actions.SetSize.Permission;
+        return Actions::SetSize.Permission;
     case RowId::Hide:
         return effects.Hide.Permission;
 

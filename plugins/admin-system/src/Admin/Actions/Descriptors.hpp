@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Admin/Actions/ActionContext.hpp"
+#include "Admin/Actions/PawnTimers.hpp"
 #include "Core/Types.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -26,33 +27,31 @@ extern const Action Goto;
 /** Exchange origins between two already-resolved targets. */
 void Swap(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef first, VoltMod::PlayerRef second);
 
-/** Param is the destination team (VoltMod::TeamSpectator/TeamT/TeamCT); out-of-range values are ignored. */
+/** Param is the destination VoltMod::Team; teams a player cannot join are ignored. */
 extern const ParamAction ChangeTeam;
 
-// These actions need engine services outside ActionContext, so App builds them from Runtime once.
+/** Param is the model-size percent (100 = normal); the framework clamps the scale. */
+extern const ParamAction SetSize;
 
-/** Apply upward velocity and three seconds of fall protection. */
-Action MakeSlap(VoltMod::Runtime& runtime);
+// These actions need services outside ActionContext, so App builds them once.
 
-/**
- * Spawn a no-damage explosion, then slay after 300 ms. Fall back to delayed slay
- * when entity operations are unavailable.
- */
-Action MakeSmite(VoltMod::Runtime& runtime);
+/** Upward punt with three seconds of fall protection. */
+Action MakeSlap(PawnTimers& timers);
 
-/** Param is the model-size percent (100 = normal); the body divides by 100 and the framework clamps it. */
-ParamAction MakeSetSize(VoltMod::Runtime& runtime);
+/** A no-damage explosion, then a slay 300 ms later. */
+Action MakeSmite(VoltMod::Runtime& runtime, PawnTimers& timers);
 
 /** Runtime-bound action descriptors owned by `App` for one load cycle. */
 struct ActionDescriptors
 {
     explicit ActionDescriptors(VoltMod::Runtime& runtime)
-        : Slap(MakeSlap(runtime)), Smite(MakeSmite(runtime)), SetSize(MakeSetSize(runtime))
+        : Timers(runtime), Slap(MakeSlap(Timers)), Smite(MakeSmite(runtime, Timers))
     {}
 
+    /** Declared first: the actions below hold it. */
+    PawnTimers Timers;
     Action Slap;
     Action Smite;
-    ParamAction SetSize;
 };
 
 /** Returns false if the action was rejected (immunity/permission) or the check could not start. */

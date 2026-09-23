@@ -46,11 +46,11 @@ static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& ro
     case RowId::Smite:
         return ctx.WhileAlive(target, actions.Smite, rows.Action(spec.LabelKey, actions.Smite));
     case RowId::Size:
-        return ctx.WhileAlive(target, actions.SetSize,
+        return ctx.WhileAlive(target, Admin::Actions::SetSize,
                               rows.Presets({.LabelKey = spec.LabelKey,
                                             .Unit = "%",
                                             .Presets = SizePresets,
-                                            .Action = actions.SetSize,
+                                            .Action = Admin::Actions::SetSize,
                                             .Index = SizeDefault}));
     default:
         return {};

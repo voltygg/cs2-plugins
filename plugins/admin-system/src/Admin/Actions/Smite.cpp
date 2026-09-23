@@ -1,10 +1,6 @@
 #include "Admin/Actions/Descriptors.hpp"
 
-#include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Time/Scheduler.hpp>
-#include <VoltMod/Entities/KeyValues.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <mathlib/vector.h>
 
 namespace AdminSystem::Admin::Actions
 {
@@ -15,24 +11,19 @@ static constexpr float ExplosionCleanupSeconds = 1.0f;
 // below stays deterministic, and bystanders are untouched. Flag 64 would mute it.
 static constexpr int EnvExplosionNoDamage = 1;
 
-Action MakeSmite(VoltMod::Runtime& runtime)
+Action MakeSmite(VoltMod::Runtime& runtime, PawnTimers& timers)
 {
-    return Action{Permission::Fun, /*requireAlive*/ true, [&runtime](const ActionContext& ctx) -> OptKey {
-                      auto& ops = runtime.World.EntityOps;
-                      if (ops.CanSpawn())
+    return Action{Permission::Fun, /*requireAlive*/ true, [&runtime, &timers](const ActionContext& ctx) -> OptKey {
+                      VoltMod::KeyValues kv;
+                      kv.Set("origin", ctx.Target().Pawn().Origin()).Set("spawnflags", EnvExplosionNoDamage);
+                      if (const VoltMod::Entity boom = runtime.Entities.Spawn("env_explosion", kv))
                       {
-                          VoltMod::KeyValues kv;
-                          kv.Set("origin", ctx.TargetPawn().Origin()).Set("spawnflags", EnvExplosionNoDamage);
-                          if (auto* boom = ops.Spawn("env_explosion", kv))
-                          {
-                              ops.AcceptInput(boom, "Explode");
-                              ops.RemoveDelayed(boom, ExplosionCleanupSeconds);
-                          }
+                          boom.AcceptInput("Explode");
+                          boom.RemoveAfter(ExplosionCleanupSeconds);
                       }
 
-                      // Delayed so the blast plays before the target drops; Pawns owns the timer,
-                      // which is what keeps it off the next occupant of the slot.
-                      runtime.World.Pawns.SlayDelayed(ctx.Target().Slot(), SmiteSlayDelayMs);
+                      // Delayed so the blast plays before the target drops.
+                      timers.SlayAfter(ctx.Target().Slot(), SmiteSlayDelayMs);
                       return "broadcast.smote";
                   }};
 }

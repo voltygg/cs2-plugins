@@ -1,14 +1,12 @@
 #include "Admin/Actions/Descriptors.hpp"
 
-#include <VoltMod/Runtime.hpp>
-
 namespace AdminSystem::Admin::Actions
 {
 
-Action MakeSlap(VoltMod::Runtime& runtime)
+Action MakeSlap(PawnTimers& timers)
 {
-    return Action{Permission::Control, /*requireAlive*/ true, [&runtime](const ActionContext& ctx) -> OptKey {
-                      runtime.World.Pawns.Slap(ctx.TargetPawn());
+    return Action{Permission::Control, /*requireAlive*/ true, [&timers](const ActionContext& ctx) -> OptKey {
+                      timers.Slap(ctx.Target().Pawn());
                       return "broadcast.slapped";
                   }};
 }

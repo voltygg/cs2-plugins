@@ -10,7 +10,6 @@
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Entities/PawnPredicates.hpp>
 #include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 
@@ -20,6 +19,22 @@ namespace AdminSystem::Admin::Menu
 using VoltMod::MenuBuilder;
 using VoltMod::SubmenuRow;
 using VoltMod::ToggleRow;
+using VoltMod::Schema::MoveType_t;
+
+static bool IsFrozen(const VoltMod::Pawn& pawn)
+{
+    return pawn.MoveType() == MoveType_t::MOVETYPE_NONE;
+}
+
+static bool IsNoclip(const VoltMod::Pawn& pawn)
+{
+    return pawn.MoveType() == MoveType_t::MOVETYPE_NOCLIP;
+}
+
+static bool HasGodmode(const VoltMod::Pawn& pawn)
+{
+    return pawn.Godmode();
+}
 
 static constexpr int HealthPresets[] = {1, 50, 100, 200, 500, 999};
 static constexpr int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
@@ -80,9 +95,9 @@ static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& ro
     case RowId::Swap:
         return submenu(BuildSwapPartnerPicker);
     case RowId::Freeze:
-        return toggle(VoltMod::InMoveType(VoltMod::Schema::MoveType_t::MOVETYPE_NONE), Actions::Freeze);
+        return toggle(IsFrozen, Actions::Freeze);
     case RowId::Noclip:
-        return toggle(VoltMod::InMoveType(VoltMod::Schema::MoveType_t::MOVETYPE_NOCLIP), Actions::Noclip);
+        return toggle(IsNoclip, Actions::Noclip);
     case RowId::Bury:
         return action(Actions::Bury);
     case RowId::Unbury:
@@ -103,7 +118,7 @@ static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& ro
     case RowId::Armor:
         return presets({.LabelKey = spec.LabelKey, .Unit = "AP", .Presets = ArmorPresets, .Action = Actions::SetArmor});
     case RowId::Godmode:
-        return toggle(VoltMod::HasPawnFlag(FL_GODMODE), Actions::Godmode);
+        return toggle(HasGodmode, Actions::Godmode);
     case RowId::Weapons:
         return submenu(BuildWeaponPicker);
     default:
