@@ -26,7 +26,7 @@ def apply_modifiers(ob):
 
 
 def cut(ob, cutter_bm):
-    """Subtracts @p cutter_bm from @p ob, e.g. vent slots."""
+    """Subtracts `cutter_bm` from `ob`, e.g. vent slots."""
     cutter = to_object(ob.name + "_cutter", cutter_bm)
     mod = ob.modifiers.new("cut", "BOOLEAN")
     mod.operation = "DIFFERENCE"
@@ -38,7 +38,7 @@ def cut(ob, cutter_bm):
 
 
 def box_uv(bm, size):
-    """Projects each face along its main axis; @p size is world units per texture repeat."""
+    """Projects each face along its main axis; `size` is world units per texture repeat."""
     uv = bm.loops.layers.uv.verify()
     for face in bm.faces:
         n = face.normal
@@ -49,7 +49,7 @@ def box_uv(bm, size):
 
 
 def finish(ob, mat, bone, uv_size=48.0, bevel=0.0):
-    """Bevels hard edges, projects UVs, sets the material and binds every vertex to @p bone."""
+    """Bevels hard edges, projects UVs, sets the material and binds every vertex to `bone`."""
     if bevel:
         mod = ob.modifiers.new("bevel", "BEVEL")
         mod.width = bevel
@@ -69,7 +69,7 @@ def finish(ob, mat, bone, uv_size=48.0, bevel=0.0):
 
 
 def bind_along(ob, along, bottom, top):
-    """Rebinds a finished spring so each vertex blends from @p bottom to @p top along the coil."""
+    """Rebinds a finished spring so each vertex blends from `bottom` to `top` along the coil."""
     ob.vertex_groups.clear()
     low = ob.vertex_groups.new(name=bottom)
     high = ob.vertex_groups.new(name=top)
@@ -80,7 +80,7 @@ def bind_along(ob, along, bottom, top):
 
 
 def join(parts, name, smooth_degrees=35):
-    """Joins @p parts into the first of them, renamed @p name and smooth-shaded."""
+    """Joins `parts` into the first of them, renamed `name` and smooth-shaded."""
     bpy.ops.object.select_all(action="DESELECT")
     for ob in parts:
         ob.select_set(True)
@@ -102,7 +102,7 @@ def hull(name, bm, mat):
 
 
 def vertices(ob, material=None, bone=None):
-    """Indices of @p ob's vertices on faces with @p material and/or bound to @p bone."""
+    """Indices of `ob`'s vertices on faces with `material` and/or bound to `bone`."""
     chosen = set(range(len(ob.data.vertices)))
     if material is not None:
         slot = ob.data.materials.find(material)
@@ -118,7 +118,7 @@ def vertices(ob, material=None, bone=None):
 
 
 def transform(ob, indices, move=(0, 0, 0), scale=1.0, pivot=(0, 0, 0)):
-    """Scales the chosen vertices about @p pivot, then moves them; for editing a joined mesh."""
+    """Scales the chosen vertices about `pivot`, then moves them; for editing a joined mesh."""
     pivot = Vector(pivot)
     for index in indices:
         vert = ob.data.vertices[index]
@@ -127,5 +127,5 @@ def transform(ob, indices, move=(0, 0, 0), scale=1.0, pivot=(0, 0, 0)):
 
 
 def replace_material(ob, old, new):
-    """Points the faces using material @p old at @p new, e.g. a renamed .vmat."""
+    """Points the faces using material `old` at `new`, e.g. a renamed .vmat."""
     ob.data.materials[ob.data.materials.find(old)] = new

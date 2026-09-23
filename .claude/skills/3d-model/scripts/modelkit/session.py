@@ -22,9 +22,9 @@ def status():
 
 
 def scene(name, material_path):
-    """Makes @p name the active scene, emptied except for the preview rig, set up for DMX export.
+    """Makes `name` the active scene, emptied except for the preview rig, set up for DMX export.
 
-    @p material_path is the model's folder in the addon, e.g. "models/stronghold/jump_pad/".
+    `material_path` is the model's folder in the addon, e.g. "models/stronghold/jump_pad/".
     """
     sc = bpy.data.scenes.get(name) or bpy.data.scenes.new(name)
     for ob in list(sc.objects):
@@ -48,10 +48,10 @@ def configure_export(sc, material_path):
 
 
 def open_model(blend_path, scene_name, replace=False):
-    """Appends @p scene_name and its actions from a model's .blend into the open session.
+    """Appends `scene_name` and its actions from a model's .blend into the open session.
 
     The user's own file stays open. Blender renames incoming data whose name is taken (a
-    material becoming "x.vmat.001" breaks the DMX), so a clash is an error unless @p replace,
+    material becoming "x.vmat.001" breaks the DMX), so a clash is an error unless `replace`,
     which first deletes the session's copies.
     """
     with bpy.data.libraries.load(blend_path) as (source, _):

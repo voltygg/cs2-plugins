@@ -8,7 +8,7 @@ from mathutils import Matrix, Vector
 
 
 def cone(r0, r1, z0, z1, seg=64):
-    """A capped cylinder or frustum from @p z0 to @p z1."""
+    """A capped cylinder or frustum from `z0` to `z1`."""
     bm = bmesh.new()
     bmesh.ops.create_cone(
         bm,
@@ -29,7 +29,7 @@ def tube(r_in, r_out, z0, z1, seg=64):
 
 
 def sector(r_in, r_out, a0, a1, z0, z1, seg=6, closed=False):
-    """A curved block between angles @p a0 and @p a1 degrees."""
+    """A curved block between angles `a0` and `a1` degrees."""
     bm = bmesh.new()
     count = seg if closed else seg + 1
     angles = [math.radians(a0 + (a1 - a0) * i / seg) for i in range(count)]
@@ -50,7 +50,7 @@ def sector(r_in, r_out, a0, a1, z0, z1, seg=6, closed=False):
 
 
 def prism(points, z0, z1):
-    """A convex outline of (x, y) points extruded from @p z0 to @p z1."""
+    """A convex outline of (x, y) points extruded from `z0` to `z1`."""
     bm = bmesh.new()
     bottom = [bm.verts.new((x, y, z0)) for x, y in points]
     top = [bm.verts.new((x, y, z1)) for x, y in points]
@@ -63,7 +63,7 @@ def prism(points, z0, z1):
 
 
 def box(center, size, yaw=0.0):
-    """A box of @p size (x, y, z) at @p center, turned @p yaw degrees about Z."""
+    """A box of `size` (x, y, z) at `center`, turned `yaw` degrees about Z."""
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
     bmesh.ops.scale(bm, vec=size, verts=bm.verts)
@@ -74,7 +74,7 @@ def box(center, size, yaw=0.0):
 
 
 def radial_box(radius, angle, size, z0, z1):
-    """A box centred @p radius out along @p angle degrees; @p size is (radial, tangential)."""
+    """A box centred `radius` out along `angle` degrees; `size` is (radial, tangential)."""
     a = math.radians(angle)
     center = (radius * math.cos(a), radius * math.sin(a), (z0 + z1) / 2)
     return box(center, (size[0], size[1], z1 - z0), angle)
@@ -86,14 +86,14 @@ def moved(bm, offset):
 
 
 def around(radius, angles):
-    """(x, y, 0) offsets at @p radius for each angle in degrees."""
+    """(x, y, 0) offsets at `radius` for each angle in degrees."""
     return [
         (radius * math.cos(math.radians(a)), radius * math.sin(math.radians(a)), 0) for a in angles
     ]
 
 
 def bolts(radius, angles, size, z0, z1):
-    """Hex bolt heads of radius @p size on a circle, one per angle in degrees."""
+    """Hex bolt heads of radius `size` on a circle, one per angle in degrees."""
     return merge(moved(cone(size, size, z0, z1, seg=6), at) for at in around(radius, angles))
 
 

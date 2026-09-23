@@ -9,7 +9,7 @@ SIZE = 1024
 
 
 def load_pixels(path, size=SIZE):
-    """RGBA float pixels of the image at @p path, scaled to @p size square. Rows run bottom-up."""
+    """RGBA float pixels of the image at `path`, scaled to `size` square. Rows run bottom-up."""
     img = bpy.data.images.load(path, check_existing=False)
     if size and tuple(img.size) != (size, size):
         img.scale(size, size)
@@ -19,7 +19,7 @@ def load_pixels(path, size=SIZE):
 
 
 def save_pixels(path, px, data=False):
-    """Writes @p px as a PNG to @p path and returns it as an image; @p data marks a normal map."""
+    """Writes `px` as a PNG to `path` and returns it as an image; `data` marks a normal map."""
     name = os.path.basename(path)
     height, width = px.shape[:2]
     # Updated in place: removing it would leave the materials that show it with an empty slot.
@@ -72,7 +72,7 @@ def solid(path, rgb, size=16):
 
 
 def replace_texture(source, color_path, normal_path=None, strength=1.5):
-    """Installs a generated texture as @p color_path, with a matching normal map when asked.
+    """Installs a generated texture as `color_path`, with a matching normal map when asked.
 
     Keeping the file names keeps every .vmat valid; open previews pick the change up.
     """

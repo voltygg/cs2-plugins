@@ -7,9 +7,9 @@ from mathutils import Euler, Matrix, Vector
 
 
 def skeleton(name, bones, meshes):
-    """Creates the armature @p name and skins @p meshes to it.
+    """Creates the armature `name` and skins `meshes` to it.
 
-    @p bones is a list of (name, head, tail, parent or None), parents first. A mesh's vertex
+    `bones` is a list of (name, head, tail, parent or None), parents first. A mesh's vertex
     groups name the bones it follows.
     """
     data = bpy.data.armatures.get(name) or bpy.data.armatures.new(name)
@@ -33,9 +33,9 @@ def skeleton(name, bones, meshes):
 
 
 def animate(arm, name, tracks):
-    """Records the action @p name on @p arm, replacing one of that name, and returns it.
+    """Records the action `name` on `arm`, replacing one of that name, and returns it.
 
-    @p tracks maps a bone to keys (frame, (dx, dy, dz), (rx, ry, rz) degrees): a move and a turn
+    `tracks` maps a bone to keys (frame, (dx, dy, dz), (rx, ry, rz) degrees): a move and a turn
     about the bone's head, in model axes, relative to rest and to the parent bone. Untracked bones
     stay at rest. A looping action ends on the key it starts with.
     """
@@ -60,6 +60,6 @@ def animate(arm, name, tracks):
 
 
 def show(arm, action, frame=0):
-    """Poses @p arm at @p frame of @p action."""
+    """Poses `arm` at `frame` of `action`."""
     arm.animation_data.action = bpy.data.actions[action]
     bpy.context.scene.frame_set(frame)

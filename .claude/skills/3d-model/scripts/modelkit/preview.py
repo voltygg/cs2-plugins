@@ -48,7 +48,7 @@ def stage():
 
 
 def render(path, eye, look_at, size=(900, 600)):
-    """Renders from @p eye looking at @p look_at to a PNG.
+    """Renders from `eye` looking at `look_at` to a PNG.
 
     A player sees a floor prop from about 64 units up and 60 to 80 away.
     """
@@ -79,7 +79,7 @@ def contact_sheet(paths, out, columns=2):
 
 
 def frame_viewport(object_name):
-    """Shows the user @p object_name in Material Preview in their 3D view."""
+    """Shows the user `object_name` in Material Preview in their 3D view."""
     window = bpy.context.window_manager.windows[0]
     window.scene = bpy.context.scene
     for area in window.screen.areas:

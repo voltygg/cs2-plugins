@@ -19,12 +19,12 @@ def write_vmat(
     opacity=None,
     cutout=None,
 ):
-    """Writes a csgo_complex material; texture names are files in @p folder, e.g. "models/x/y/".
+    """Writes a csgo_complex material; texture names are files in `folder`, e.g. "models/x/y/".
 
-    @p rough is the addon path of a flat white roughness texture, scaled by @p roughness.
-    With @p glow_mask the material glows at @p glow times its colour where the mask is white.
-    With @p opacity it is see-through, such as glass, and casts no shadow.
-    With @p cutout, a mask texture, it has holes where the mask is black and shows both faces,
+    `rough` is the addon path of a flat white roughness texture, scaled by `roughness`.
+    With `glow_mask` the material glows at `glow` times its colour where the mask is white.
+    With `opacity` it is see-through, such as glass, and casts no shadow.
+    With `cutout`, a mask texture, it has holes where the mask is black and shows both faces,
     such as a net or a fence.
     """
     keys = [("shader", "csgo_complex.vfx")]
@@ -64,10 +64,10 @@ def write_vmdl(
 ):
     """Writes a ModelDoc .vmdl.
 
-    @p meshes: [(name, dmx)]. @p hulls: [dmx]. @p animations: [(name, dmx, looping)]; a prop plays
-    none until an input starts one. @p material_groups: {group: {from vmat: to vmat}}, the first
-    being the default. @p attachments: [(name, bone, (x, y, z), (pitch, yaw, roll))].
-    @p surface is the hulls' surface property; "metal_barrel" stops bullets however thin the hull.
+    `meshes`: [(name, dmx)]. `hulls`: [dmx]. `animations`: [(name, dmx, looping)]; a prop plays
+    none until an input starts one. `material_groups`: {group: {from vmat: to vmat}}, the first
+    being the default. `attachments`: [(name, bone, (x, y, z), (pitch, yaw, roll))].
+    `surface` is the hulls' surface property; "metal_barrel" stops bullets however thin the hull.
     """
     nodes = [
         {"_class": "BoneMarkupList", "children": [], "bone_cull_type": "None"},

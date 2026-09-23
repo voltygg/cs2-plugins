@@ -15,8 +15,8 @@ SETTINGS = "modelkit"
 def remember(scene_name, model, armature=None, actions=(), files=None):
     """Stores how the scene exports, so a later session can re-export it from the .blend alone.
 
-    @p model names the animation files (`<model>_<action>.dmx`); @p actions list the actions,
-    the one to pose after export first; @p files renames mesh files ({object: stem}), which otherwise
+    `model` names the animation files (`<model>_<action>.dmx`); `actions` list the actions,
+    the one to pose after export first; `files` renames mesh files ({object: stem}), which otherwise
     take the object's name.
     """
     bpy.data.scenes[scene_name][SETTINGS] = {
@@ -35,7 +35,7 @@ def settings(scene_name):
 
 
 def export(scene_name, out_dir):
-    """Exports the scene's meshes and each remembered action as DMX into @p out_dir.
+    """Exports the scene's meshes and each remembered action as DMX into `out_dir`.
 
     Blender Source Tools exports only the current action and leaves object references stale,
     so everything is looked up by name on each pass.
@@ -83,7 +83,7 @@ def export(scene_name, out_dir):
 
 
 def save_blend(scene_name, path):
-    """Writes only @p scene_name and its remembered actions to @p path, image paths relative.
+    """Writes only `scene_name` and its remembered actions to `path`, image paths relative.
 
     Other scenes, such as imported references, stay out.
     """

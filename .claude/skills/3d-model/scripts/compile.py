@@ -32,7 +32,7 @@ REFERENCE = re.compile(rb"[\w/.-]+\.(?:dmx|vmat|png|tga|psd|jpg)", re.IGNORECASE
 
 
 def referenced(folder: Path) -> set[str]:
-    """File names inside @p folder that its .vmdl, .vmat or DMX files name."""
+    """File names inside `folder` that its .vmdl, .vmat or DMX files name."""
     names: set[str] = set()
     for path in folder.iterdir():
         if path.suffix.lower() in (".vmdl", ".vmat", ".dmx"):
@@ -51,7 +51,7 @@ def orphans(folder: Path) -> list[Path]:
 
 
 def mirror(source: Path, target: Path, skip: tuple[str, ...] = ()) -> None:
-    """Makes @p target hold exactly the files of @p source, minus suffixes in @p skip."""
+    """Makes `target` hold exactly the files of `source`, minus suffixes in `skip`."""
     if target.exists() and target.resolve() == source.resolve():
         return
     target.mkdir(parents=True, exist_ok=True)
