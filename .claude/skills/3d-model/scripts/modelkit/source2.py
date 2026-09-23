@@ -16,7 +16,7 @@ def remember(scene_name, model, armature=None, actions=(), files=None):
     """Stores how the scene exports, so a later session can re-export it from the .blend alone.
 
     @p model names the animation files (`<model>_<action>.dmx`); @p actions list the actions,
-    the spawn animation first; @p files renames mesh files ({object: stem}), which otherwise
+    the one to pose after export first; @p files renames mesh files ({object: stem}), which otherwise
     take the object's name.
     """
     bpy.data.scenes[scene_name][SETTINGS] = {

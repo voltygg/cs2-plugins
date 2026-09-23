@@ -118,12 +118,12 @@ model's scene, and put imported references in a scene of their own.
 `rig.skeleton` creates the bones and skins the mesh; each vertex group names the bone its part
 follows. `rig.animate` records an action from per-bone keys `(frame, move, turn)`, at 30 fps,
 relative to rest; re-recording replaces the action. `source2.remember` stores the model name,
-armature, actions (spawn animation first) and file renames, so a later session exports from the
-`.blend` alone.
+armature, actions and file renames, so a later session exports from the `.blend` alone.
 
 - Exaggerate. A 10-unit lift looked static in game. Crouch before the action, overshoot, then
   bounce to rest. Something that should look alive needs a moving `idle` loop.
-- The first action in the `.vmdl` plays when the prop spawns. A looping action ends on its first key.
+- A `prop_dynamic` plays no animation until told, so the plugin must start the idle loop
+  (step 9). A looping action ends on its first key.
 - Check a few frames of each action in a `preview.contact_sheet`, looking for parts that clip.
 
 ## 7. Review with the user
@@ -158,9 +158,10 @@ uv run python .claude/skills/3d-model/scripts/compile.py plugins/<plugin>/addon 
 - Point the plugin at the `.vmdl`, and update the scale, placement box, trigger radii and measured
   offsets to the new size. In Stronghold, `Scale` in `ItemAssets` resizes the model, its
   collision and its animation together, with no recompile.
-- `prop_dynamic` has no `SetAnimation` input (`game/core/base.fgd`). Play a one-shot with
-  `SetAnimationNotLooping`, after `SetIdleAnimationLooping` names the loop to return to.
-  Stronghold's `PlayAnimation` in `World/Effects` does both.
+- Start a loop from spawn with the `SetAnimationLooping` input; in Stronghold, name it in `Idle`
+  in `ItemAssets`. `prop_dynamic` has no `SetAnimation` input (`game/core/base.fgd`). Play a
+  one-shot with `SetAnimationNotLooping`, after `SetIdleAnimationLooping` names the loop to
+  return to. Stronghold's `PlayAnimation` in `World/Effects` does both.
 - Record new or replaced assets in the plugin's assets doc, with how they were made.
 - Build with `build-local`, install with `uv run poe install <plugin>`, and check that the
   installed DLL's hash matches the build before the user tests it.

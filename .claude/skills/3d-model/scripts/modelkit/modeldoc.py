@@ -17,18 +17,23 @@ def write_vmat(
     glow_mask=None,
     glow=1.0,
     opacity=None,
+    cutout=None,
 ):
     """Writes a csgo_complex material; texture names are files in @p folder, e.g. "models/x/y/".
 
     @p rough is the addon path of a flat white roughness texture, scaled by @p roughness.
     With @p glow_mask the material glows at @p glow times its colour where the mask is white.
     With @p opacity it is see-through, such as glass, and casts no shadow.
+    With @p cutout, a mask texture, it has holes where the mask is black and shows both faces,
+    such as a net or a fence.
     """
     keys = [("shader", "csgo_complex.vfx")]
     if glow_mask:
         keys.append(("F_SELF_ILLUM", "1"))
     if opacity is not None:
         keys += [("F_TRANSLUCENT", "1"), ("F_DO_NOT_CAST_SHADOWS", "1")]
+    if cutout:
+        keys += [("F_ALPHA_TEST", "1"), ("F_RENDER_BACKFACES", "1")]
     keys += [("g_flMetalness", f"{metalness:g}"), ("g_flRoughnessScaleFactor", f"{roughness:g}")]
     if glow_mask:
         keys.append(("g_flSelfIllumScale", f"{glow:g}"))
@@ -37,6 +42,8 @@ def write_vmat(
             ("g_flOpacityScale", f"{opacity:g}"),
             ("TextureTranslucency", "[1.000000 1.000000 1.000000 0.000000]"),
         ]
+    if cutout:
+        keys += [("g_flAlphaTestReference", "0.5"), ("TextureTranslucency", folder + cutout)]
     keys += [
         ("g_vColorTint", "[1.000000 1.000000 1.000000 0.000000]"),
         ("TextureAmbientOcclusion", "materials/default/default_ao.tga"),
@@ -57,8 +64,8 @@ def write_vmdl(
 ):
     """Writes a ModelDoc .vmdl.
 
-    @p meshes: [(name, dmx)]. @p hulls: [dmx]. @p animations: [(name, dmx, looping)], the first
-    playing when the prop spawns. @p material_groups: {group: {from vmat: to vmat}}, the first
+    @p meshes: [(name, dmx)]. @p hulls: [dmx]. @p animations: [(name, dmx, looping)]; a prop plays
+    none until an input starts one. @p material_groups: {group: {from vmat: to vmat}}, the first
     being the default. @p attachments: [(name, bone, (x, y, z), (pitch, yaw, roll))].
     @p surface is the hulls' surface property; "metal_barrel" stops bullets however thin the hull.
     """
