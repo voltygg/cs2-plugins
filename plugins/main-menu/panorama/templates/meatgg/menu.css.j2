@@ -1,5 +1,4 @@
-{#- The menu block styled like the meat-app frontend. Hover switches instantly: a fade leaves two
-    rows half-lit when the pointer moves fast. -#}
+{#- Hover has no transition on purpose: with a fade, a quick mouse move leaves two rows highlighted. -#}
 {% include "@main-menu/meatgg/controls.css.j2" %}
 
 .screen {
@@ -9,12 +8,11 @@
   transition-timing-function: ease-out;
 }
 
-/* Collapse as well as fade: a transparent panel still takes clicks. */
+/* Collapse the screen as well as fading it, because a transparent panel still catches clicks. */
 .screen.hidden {
   opacity: 0;
 }
 
-/* Pressed buttons shrink a touch; each sets its own scale on :active. */
 .tab,
 .row__stepper {
   transition-property: pre-transform-scale2d;
@@ -39,7 +37,6 @@
   border-radius: 16px 0px 0px 16px;
 }
 
-/* The site's red bloom behind the page, clipped to the window's right corners. */
 .menu__content {
   background-color: gradient(radial, 70% 0%, 0% 0%, 70% 55%, from(primary-glow), to(clear));
   border-radius: 0px 16px 16px 0px;
@@ -105,7 +102,6 @@
   font-weight: bold;
 }
 
-/* Tracked micro-caps above a title. */
 .menu__breadcrumb,
 .overline {
   font-size: 11px;
@@ -133,7 +129,6 @@
   opacity: 0.3;
 }
 
-/* The button is the row's card, so its hover can light the edge too; steppers sit beside it. */
 .row {
   height: 48px;
 }
@@ -142,7 +137,7 @@
   border-radius: 10px;
   background-color: fill-subtle;
   border: 1px solid hairline;
-  /* Also fades the pending-value highlight out once it applies. */
+  /* The background transition also fades out the pending highlight. */
   transition-property: pre-transform-scale2d, background-color;
   transition-duration: 0.12s, 0.2s;
 }
@@ -156,8 +151,7 @@
   pre-transform-scale2d: 0.99;
 }
 
-/* Styling only; a disabled row still reports its press, and the driver drops it. Dimmed rather
-   than faded out: a half-transparent row reads as still loading. */
+/* Disabled rows are dimmed rather than made transparent, which would look like loading. */
 .row.row--disabled .row__button,
 .row.row--disabled .row__button:hover {
   background-color: clear;
@@ -168,13 +162,13 @@
   color: text-disabled;
 }
 
-/* A stepped value waiting to apply; the transition fades it out once it has. */
+/* A row whose new value is still being applied. */
 .row.row--pending .row__button {
   background-color: primary-selected;
   border: 1px solid primary-edge;
 }
 
-/* A heading or placeholder: the model refuses the press, so the row must not invite one. */
+/* Headings and placeholders can't be pressed, so they get no hover effect. */
 .row.row--static .row__button,
 .row.row--static .row__button:hover {
   background-color: clear;

@@ -1,6 +1,5 @@
-{#- meat.gg's window surface and controls, colour and state only; the blocks or the screen size
-    them. Include after theme.css.j2. -#}
-/* The menu block's `.menu`, or `.window` on a screen that draws its own. */
+{#- Colors and hover states for meat.gg windows and buttons. Include it after theme.css.j2. -#}
+/* Screens that don't use the menu block draw a `.window` instead. */
 .menu,
 .window {
   background-color: gradient(linear, 0% 0%, 0% 100%, from(window-top), to(window-bottom));
@@ -9,7 +8,6 @@
   box-shadow: rgba(0, 0, 0, 0.72) 0px 0px 40px 0px;
 }
 
-/* The site's outlined button: a quiet fill that picks up the red edge on hover. */
 .button {
   border-radius: 10px;
   background-color: fill-subtle;
@@ -32,7 +30,6 @@
   color: text-primary;
 }
 
-/* The site's contained primary button, for a screen's main action. */
 .button--primary {
   background-color: primary;
   border: 1px solid primary;
