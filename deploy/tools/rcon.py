@@ -1,5 +1,3 @@
-"""Source RCON over TCP."""
-
 import socket
 import struct
 import time

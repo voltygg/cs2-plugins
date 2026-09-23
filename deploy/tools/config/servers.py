@@ -1,5 +1,3 @@
-"""Server and instance models from deploy/inventory.yml."""
-
 import re
 from typing import ClassVar, Literal, Self
 from urllib.parse import urlsplit

@@ -1,10 +1,9 @@
-"""The Linux build, staged per install component under package/."""
-
 import shutil
 import subprocess
 
+from deploy.tools import console
 from deploy.tools.errors import DeployError
-from deploy.tools.paths import PACKAGE, ROOT
+from deploy.tools.paths import PACKAGE_DIR, ROOT
 
 
 class AddonPackager:
@@ -17,9 +16,11 @@ class AddonPackager:
 
     def package(self, component: str) -> None:
         if not self._build_dir.is_dir():
-            raise DeployError(f"no build at build/{self.PRESET}; run `voltmod build {self.PRESET}`")
-        destination = PACKAGE / component
+            raise DeployError(
+                f"no build at build/{self.PRESET}; run `voltmod build -p {self.PRESET}`"
+            )
+        destination = PACKAGE_DIR / component
         shutil.rmtree(destination, ignore_errors=True)
-        print(f"=== Packaging {component} into package/{component} ===")
+        console.section(f"Packaging {component} into package/{component}")
         install = ["cmake", "--install", str(self._build_dir), "--component", component]
         subprocess.run([*install, "--prefix", str(destination)], check=True)

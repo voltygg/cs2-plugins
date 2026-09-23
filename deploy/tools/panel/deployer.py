@@ -1,12 +1,10 @@
-"""Deploys to panel servers."""
-
 import io
-import sys
 import tarfile
 from collections.abc import Generator
 from contextlib import contextmanager
 from functools import cached_property
 
+from deploy.tools import console
 from deploy.tools.addons.builder import AddonsBuilder
 from deploy.tools.config.servers import Instance, PanelServer
 from deploy.tools.deployer import Deployer
@@ -14,7 +12,7 @@ from deploy.tools.errors import DeployError
 from deploy.tools.panel.api import PanelApi
 from deploy.tools.panel.gameinfo import GameInfo
 from deploy.tools.panel.metamod import Metamod
-from deploy.tools.paths import RENDER
+from deploy.tools.paths import RENDER_DIR
 
 
 class PanelDeployer(Deployer[PanelServer]):
@@ -22,7 +20,7 @@ class PanelDeployer(Deployer[PanelServer]):
 
     @cached_property
     def api(self) -> PanelApi:
-        return PanelApi(self.server, self.env.require("PANEL_API_KEY"))
+        return PanelApi(self.server, self.secrets.require("PANEL_API_KEY"))
 
     def deploy(self) -> None:
         instance = self.server.instance()
@@ -30,15 +28,17 @@ class PanelDeployer(Deployer[PanelServer]):
         archive = self._plugin_archive(instance)
         gameinfo = GameInfo.read(self.api, game_dir)
         metamod = Metamod.read(self.api, game_dir)
-        plugins = " ".join(self.server.plugins_for(instance)) or "<none>"
-        print(f"=== Deploying {self.server.id} ({self.server.panel_url}, {self.api.state()}) ===")
-        print(f"    plugins:  {plugins} ({len(archive) // 1024} KiB)")
         host = f"addons/{AddonsBuilder.HOST_ADDON_DIR}, addons/{AddonsBuilder.HOST_MANIFEST}"
-        print(f"    host:     {host}")
-        print(f"    metamod:  {metamod.wanted}{'' if metamod.outdated else ' (installed)'}")
-        print(f"    gameinfo: {gameinfo.change}")
+        self.print_plan(
+            "Deploying",
+            f"panel:    {self.server.panel_url} ({self.api.state()})",
+            f"payload:  {len(archive) // 1024} KiB",
+            f"host:     {host}",
+            f"metamod:  {metamod.latest_url}{'' if metamod.outdated else ' (installed)'}",
+            f"gameinfo: {gameinfo.planned_change}",
+        )
         if self.dry_run:
-            print("=== Dry run complete; the server was not changed ===")
+            console.done("Dry run complete; the server was not changed")
             return
 
         metamod.download()
@@ -50,19 +50,20 @@ class PanelDeployer(Deployer[PanelServer]):
             self._remove_unused_plugins(instance)
         except Exception:
             # A server running a partial install beats one left offline.
-            print("ERROR: deploy failed; starting the server again", file=sys.stderr)
+            console.error("deploy failed; starting the server again")
             self._start_after_failure()
             raise
         self._start()
-        print(f"=== Deploy to {self.server.id} complete ===")
+        console.done(f"Deploy to {self.server.id} complete")
 
-    def update(self) -> None:
+    def restart(self) -> None:
+        self.print_plan("Restarting", f"panel: {self.server.panel_url}")
         if self.dry_run:
-            print(f"DRY: restart {self.server.id} through {self.server.panel_url}")
+            console.done("Dry run complete; nothing restarted")
             return
         self._stop()
         self._start()
-        print(f"=== Update of {self.server.id} complete ===")
+        console.done(f"Restart of {self.server.id} complete")
 
     @contextmanager
     def rcon_address(self, instance: Instance) -> Generator[tuple[str, int]]:
@@ -70,7 +71,7 @@ class PanelDeployer(Deployer[PanelServer]):
         yield self.server.host, instance.port
 
     def _plugin_archive(self, instance: Instance) -> bytes:
-        addons = self.addons.build(instance, RENDER / self.server.id)
+        addons = self.addons.build(instance, RENDER_DIR / self.server.id)
         buffer = io.BytesIO()
         with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
             tar.add(addons, arcname="addons")
@@ -81,18 +82,18 @@ class PanelDeployer(Deployer[PanelServer]):
         if removed := self.api.delete(
             f"{self.server.game_dir}/addons/{AddonsBuilder.PLUGINS_DIR}", unused
         ):
-            print(f"    removed unassigned plugins: {' '.join(removed)}")
+            console.item(f"removed unassigned plugins: {' '.join(removed)}")
 
     def _stop(self) -> None:
         # Overwriting a loaded .so can crash a running server.
         if self.api.state() == "offline":
             return
-        print("    stopping server")
+        console.item("stopping server")
         if not self.api.power("stop", "offline", 60) and not self.api.power("kill", "offline", 30):
             raise DeployError("server did not stop")
 
     def _start(self) -> None:
-        print("    starting server")
+        console.item("starting server")
         if not self.api.power("start", "running", 600):
             raise DeployError("server did not start within 10 minutes; check the panel console")
 
@@ -101,4 +102,4 @@ class PanelDeployer(Deployer[PanelServer]):
         try:
             self._start()
         except DeployError as error:
-            print(f"ERROR: {error}", file=sys.stderr)
+            console.error(str(error))

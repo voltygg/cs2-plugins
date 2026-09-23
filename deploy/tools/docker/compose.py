@@ -1,25 +1,24 @@
-"""The Compose project a Docker host runs."""
-
 import shlex
 from pathlib import Path
 
+from deploy.tools import console
 from deploy.tools.addons.builder import AddonsBuilder
-from deploy.tools.config.server_env import ServerEnv
+from deploy.tools.config.secrets import ServerSecrets
 from deploy.tools.config.servers import DockerServer, Instance
-from deploy.tools.paths import DEPLOY
+from deploy.tools.paths import DEPLOY_DIR
 
 
 class ComposeProject:
     """docker-compose.yml plus each instance's plugin bundle, env file and pre-launch hook."""
 
-    COMPOSE_FILE = DEPLOY / "docker" / "docker-compose.yml"
-    PRE_LAUNCH_HOOK = DEPLOY / "docker" / "pre.sh"
+    COMPOSE_FILE = DEPLOY_DIR / "docker" / "docker-compose.yml"
+    PRE_LAUNCH_HOOK = DEPLOY_DIR / "docker" / "pre.sh"
 
     def __init__(
-        self, server: DockerServer, env: ServerEnv, addons: AddonsBuilder, image: str
+        self, server: DockerServer, secrets: ServerSecrets, addons: AddonsBuilder, image: str
     ) -> None:
         self._server = server
-        self._env = env
+        self._secrets = secrets
         self._addons = addons
         self._image = image
 
@@ -41,9 +40,9 @@ class ComposeProject:
         path.write_text(text, encoding="utf-8", newline="\n")
 
     def _env_file(self, instance: Instance) -> str:
-        token = self._env.get(f"GSLT_{instance.name}")
+        token = self._secrets.get(f"GSLT_{instance.name}")
         if not token:
-            print(f"WARNING: GSLT_{instance.name} is not set; '{instance.name}' starts in LAN mode")
+            console.warn(f"GSLT_{instance.name} is not set; '{instance.name}' starts in LAN mode")
         values = {
             # Read by docker-compose.yml; the rest configures the container.
             "INSTANCE": instance.name,
@@ -51,7 +50,7 @@ class ComposeProject:
             "RUNTIME_IMAGE": self._image,
             "GAME_INSTALL": self._server.game_install,
             "SRCDS_TOKEN": token,
-            "CS2_RCONPW": self._env.get("RCON_PASSWORD"),
+            "CS2_RCONPW": self._secrets.get("RCON_PASSWORD"),
             "CS2_PORT": str(instance.port),
             "CS2_STARTMAP": instance.map,
             "CS2_SERVERNAME": instance.server_name,

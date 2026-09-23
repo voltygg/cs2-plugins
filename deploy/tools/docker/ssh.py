@@ -1,10 +1,9 @@
-"""ssh and rsync against a Docker host."""
-
 import shlex
 import socket
 import subprocess
 from pathlib import Path
 
+from deploy.tools import console
 from deploy.tools.config.servers import DockerServer
 from deploy.tools.docker.tunnel import Tunnel
 
@@ -22,7 +21,7 @@ class Ssh:
     def run(self, command: str, *, capture: bool = False) -> str:
         args = ["ssh", *self._options, self.target, command]
         if self.dry_run:
-            print(f"DRY: {shlex.join(args)}")
+            console.dry(shlex.join(args))
             return ""
         return subprocess.run(args, check=True, text=True, capture_output=capture).stdout or ""
 

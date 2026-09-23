@@ -1,16 +1,16 @@
 # Deployment
 
 ```bash
-uv run poe deploy-package                             # stage the host and plugins under package/
-uv run poe deploy-server [--server ID] [--dry-run]    # install plugins and settings, restart
-uv run poe deploy-update [--server ID] [--dry-run]    # restart so CS2 updates
+uv run poe deploy package                             # stage the host and plugins under package/
+uv run poe deploy push [--server ID] [--dry-run]      # install plugins and settings, restart
+uv run poe deploy restart [--server ID] [--dry-run]   # restart so CS2 updates
 uv run poe rcon "volt list" [--server ID] [--instance NAME]
-uv run poe deploy-tunnel --server ID                  # Docker hosts: database on 127.0.0.1:5433
-uv run poe deploy-cleanup --server ID --yes           # Docker hosts: remove the deployment
+uv run poe deploy tunnel --server ID                  # Docker hosts: database on 127.0.0.1:5433
+uv run poe deploy cleanup ID --yes                    # Docker hosts: remove the deployment
 ```
 
-Without `--server`, `deploy-server` and `deploy-update` act on every enabled server; `rcon` and
-`deploy-tunnel` need a single enabled server or an explicit `--server`. `--instance` is required
+Without `--server`, `deploy push` and `deploy restart` act on every enabled server; `rcon` and
+`deploy tunnel` need a single enabled server or an explicit `--server`. `--instance` is required
 when a server runs more than one instance.
 
 Two server kinds:
@@ -28,7 +28,7 @@ For a local server use `uv run poe build --install <plugin> --start`; see
 - `uv sync` in the repository root. CI installs only the deploy group:
   `uv run --only-group deploy`.
 - A `package/` directory holding the Linux build. The Linux build runs only in CI, so download the
-  `package` artifact of a Deploy run into `package/`, or run `uv run poe deploy-package` on a
+  `package` artifact of a Deploy run into `package/`, or run `uv run poe deploy package` on a
   machine that has one.
 - `deploy/secrets/<id>/.env` for each server you deploy (see [Secrets](#secrets)).
 - Docker hosts: a prepared host (see [Docker hosts](#docker-hosts)) and an SSH key.
@@ -157,7 +157,7 @@ Metamod loads the host and nothing else. The host reads each
 loads the plugins itself; a plugin has no Metamod manifest of its own.
 
 The host and the plugins are one ABI: the host refuses a plugin built against a different
-`HostAbiVersion`. So `deploy-package` always stages the host, the builder always puts it in the
+`HostAbiVersion`. So `deploy package` always stages the host, the builder always puts it in the
 payload, and a payload with no staged host fails the deploy rather than dropping plugins onto
 whatever host the server already runs.
 
@@ -168,13 +168,13 @@ inventory are left alone.
 
 Map, GSLT, hostname and RCON password live in the panel's Startup tab, not the inventory.
 
-`deploy-server` builds the addons tree, reads `gameinfo.gi` and the installed Metamod build, then:
+`deploy push` builds the addons tree, reads `gameinfo.gi` and the installed Metamod build, then:
 downloads Metamod when the mirror has a newer one, writes the patched `gameinfo.gi`, stops the
 server (overwriting a loaded `.so` can crash it), installs Metamod, uploads the tree, removes
 unassigned plugins, and starts the server again. A failure after the stop starts the server before
 reporting the error. `--dry-run` only reads.
 
-It does not check that the plugins loaded - run `uv run poe rcon "volt list"`. `deploy-update` just
+It does not check that the plugins loaded - run `uv run poe rcon "volt list"`. `deploy restart` just
 stops and starts the server, so the egg runs its own SteamCMD update.
 
 Some hosts link every server to one shared CS2 install and refuse to read those links. There the
@@ -219,7 +219,7 @@ patches `gameinfo.gi`, and reinstalls Metamod when the mirror has a newer build.
 pin a build or `MMS_BASE` to use another mirror. It stops the container when the bundle has no
 `voltmod.vdf`, since nothing the deploy shipped would load.
 
-`deploy-server` renders the tree under `deploy/.render/<id>`, creates the bind-mount directories,
+`deploy push` renders the tree under `deploy/.render/<id>`, creates the bind-mount directories,
 syncs to `deploy_root` (the sync never deletes, so the installed Metamod survives), removes the
 plugin folders an instance no longer uses, pulls the runtime image at `RUNTIME_IMAGE_TAG` (the
 commit SHA in CI, `latest` otherwise), recreates the instances one at a time so `pre.sh` reinstalls
@@ -227,19 +227,19 @@ them, checks that each is running, and removes the image's other tags. `--dry-ru
 previews the sync and prints the remote commands.
 
 SteamCMD only runs when a container starts, so a running server never gets a Valve update.
-`deploy-update` restarts the instances one at a time and waits for SteamCMD in between.
+`deploy restart` restarts the instances one at a time and waits for SteamCMD in between.
 
 Reach the database through an SSH tunnel:
 
 ```bash
-uv run poe deploy-tunnel --server box-a     # --local-port, --db-host, --db-port
+uv run poe deploy tunnel --server box-a     # --local-port, --db-host, --db-port
 psql "host=127.0.0.1 port=5433 dbname=admin_system user=postgres"
 ```
 
 Ctrl-C closes it. `poe rcon` opens the same kind of tunnel on its own, since the host firewall
 leaves only the game's UDP port open.
 
-`deploy-cleanup --server box-a --yes` removes the containers, every tag of the runtime image,
+`deploy cleanup box-a --yes` removes the containers, every tag of the runtime image,
 `deploy_root` and `cs2_root`. Docker, PostgreSQL, firewall rules, the `steam` user, registry
 packages and plugin databases stay. `--dry-run` previews it.
 
@@ -274,8 +274,8 @@ deploy/
     cli.py                the commands
     deployer.py           Deployer: what every server kind implements
     deployer_factory.py   DeployerFactory: builds the Deployer for each server's kind
-    paths.py, errors.py, rcon.py
-    config/               servers.py (models), inventory.py, server_env.py
+    paths.py, errors.py, rcon.py, console.py
+    config/               servers.py (models), inventory.py, secrets.py
     addons/               packager.py, settings.py, builder.py
     panel/                api.py, metamod.py, gameinfo.py, deployer.py
     docker/               ssh.py, tunnel.py, host.py, compose.py, deployer.py
@@ -288,7 +288,7 @@ entry in `DeployerFactory.BY_KIND`.
 
 | Symptom | Check |
 | --- | --- |
-| `no package for <name>` | `package/` is empty; download the CI artifact or run `deploy-package` |
+| `no package for <name>` | `package/` is empty; download the CI artifact or run `deploy package` |
 | `package/host has no metamod/voltmod.vdf` | the package set has no host; rebuild the framework and repackage |
 | The server starts but no plugin loads | `uv run poe rcon "meta list"` for the host, then `"volt list"` for the plugins |
 | A plugin loads with stale settings | it is not in the instance's `plugins` list, so its `settings.jsonc` was never rendered |

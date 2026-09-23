@@ -8,7 +8,7 @@ argument-hint: "[server-id] (default: panel-a)"
 
 The full path to a server is a voltmod release tag (~7 min), a relock, and the Deploy
 workflow (~10 min). This skips all of it: build the `.so` files here, stage `package/`,
-and run the same `deploy-server` command CI runs. Nothing is committed, tagged or pushed.
+and run the same `deploy push` command CI runs. Nothing is committed, tagged or pushed.
 
 What lands on the server is **not in git**. The next Deploy workflow run overwrites it, and
 a change that tested well still ships through the `commit` skill and, for the framework,
@@ -52,8 +52,8 @@ Always pass `--server`; without it every enabled server is deployed.
 
 ```bash
 uv run poe rcon "status" --server panel-a              # who is online - the deploy restarts the server
-uv run poe deploy-server --server panel-a --dry-run    # reads only
-uv run poe deploy-server --server panel-a
+uv run poe deploy push --server panel-a --dry-run    # reads only
+uv run poe deploy push --server panel-a
 ```
 
 `panel-a` is the live server. If `status` shows human players, tell the user and wait for

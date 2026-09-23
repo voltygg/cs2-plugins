@@ -43,7 +43,7 @@ jobs:
         env:
           SERVER: ${{ inputs.server }}
         run: |
-          plan=$(uv run --locked --only-group deploy python -m deploy.tools.cli plan ${SERVER:+--server "$SERVER"})
+          plan=$(uv run --locked --only-group deploy python -m deploy.tools.cli ci-matrix ${SERVER:+--server "$SERVER"})
           echo "$plan" | tee -a "$GITHUB_OUTPUT"
 
   build:
@@ -169,5 +169,5 @@ jobs:
           SSH_KEY_FILE: ${{ runner.temp }}/id_deploy
           RUNTIME_IMAGE_TAG: ${{ github.sha }}
         run: >-
-          uv run --locked --only-group deploy python -m deploy.tools.cli deploy
+          uv run --locked --only-group deploy python -m deploy.tools.cli push
           --server "${{ matrix.server.id }}" ${{ inputs.dry_run && '--dry-run' || '' }}

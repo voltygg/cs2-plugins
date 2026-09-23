@@ -54,7 +54,7 @@ uv run poe rcon "<command>" ["<command>" ...] [--server <id>] [--instance <name>
 
 Resolves the address from `deploy/inventory.yml` and `RCON_PASSWORD` from
 `deploy/secrets/<id>/.env`, and prints each response under a
-`### <command>` header. A panel server is reached directly on its game port, a
+`=== <command> ===` header. A panel server is reached directly on its game port, a
 Docker host through an SSH tunnel. The flags are optional when one server is
 enabled and it has one instance.
 

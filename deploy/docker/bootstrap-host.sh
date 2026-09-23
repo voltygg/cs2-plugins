@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prepare an Ubuntu 24.04+ Docker host. Run as root, then use
-# `uv run poe deploy-server`. Pass `--skip-docker` for a managed Docker install.
+# `uv run poe deploy push`. Pass `--skip-docker` for a managed Docker install.
 
 set -euo pipefail
 

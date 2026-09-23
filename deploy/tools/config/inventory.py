@@ -1,5 +1,3 @@
-"""deploy/inventory.yml: plugins, servers and the Docker runtime image repository."""
-
 from pathlib import Path
 from typing import Annotated, Any, ClassVar, Self
 
@@ -8,7 +6,7 @@ from pydantic import Field, ValidationError, field_validator, model_validator
 
 from deploy.tools.config.servers import DockerServer, Instance, Model, PanelServer, Server
 from deploy.tools.errors import DeployError
-from deploy.tools.paths import DEPLOY
+from deploy.tools.paths import DEPLOY_DIR
 
 
 class Plugin(Model):
@@ -28,7 +26,7 @@ class Database(Model):
 
 
 class Inventory(Model):
-    PATH: ClassVar[Path] = DEPLOY / "inventory.yml"
+    PATH: ClassVar[Path] = DEPLOY_DIR / "inventory.yml"
 
     runtime_image: str
     database: Database = Field(default_factory=Database)
@@ -69,11 +67,19 @@ class Inventory(Model):
                 return server
         raise DeployError(f"server '{server_id}' not found in {self.PATH.name}")
 
-    def select(self, server_id: str | None) -> list[DockerServer | PanelServer]:
+    def targets(self, server_id: str | None) -> list[DockerServer | PanelServer]:
         """The named server, or every enabled one."""
         if server_id:
             return [self.server(server_id)]
         return [server for server in self.servers if server.enabled]
+
+    def target(self, server_id: str | None) -> DockerServer | PanelServer:
+        """The named server, or the only enabled one."""
+        servers = self.targets(server_id)
+        if len(servers) != 1:
+            ids = ", ".join(server.id for server in servers) or "none enabled"
+            raise DeployError(f"pass --server ({ids})")
+        return servers[0]
 
     def unused_plugins(self, server: Server, instance: Instance) -> list[str]:
         """Inventory plugins the instance does not run, which a deploy removes from the server."""

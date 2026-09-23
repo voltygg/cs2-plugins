@@ -1,6 +1,5 @@
-"""The panel's client API."""
-
 import time
+from functools import cache
 from typing import Any
 
 import httpx
@@ -11,8 +10,11 @@ from deploy.tools.errors import DeployError
 # Cloudflare in front of many panels rejects default client agents.
 USER_AGENT = "cs2-plugins-deploy"
 
-# For requests that carry no panel key: the node's upload URL and the Metamod mirror.
-web = httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=300, follow_redirects=True)
+
+@cache
+def web_client() -> httpx.Client:
+    """For requests that carry no panel key: the node's upload URL and the Metamod mirror."""
+    return httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=300, follow_redirects=True)
 
 
 class PanelApi:
@@ -44,7 +46,7 @@ class PanelApi:
 
     def read(self, path: str) -> str:
         """A file's text, or "" when it does not exist."""
-        if self._entry(path) is None:
+        if self._find_entry(path) is None:
             return ""
         response = self._request_if_found("GET", "/files/contents", params={"file": path})
         return response.text if response else ""
@@ -60,7 +62,7 @@ class PanelApi:
 
     def delete(self, root: str, names: list[str]) -> list[str]:
         """Delete the entries under root that exist and return them."""
-        present = [name for name in names if self._entry(f"{root}/{name}") is not None]
+        present = [name for name in names if self._find_entry(f"{root}/{name}") is not None]
         if present:
             self._request("POST", "/files/delete", json={"root": root, "files": present})
         return present
@@ -71,7 +73,7 @@ class PanelApi:
         # Merge, don't pass params=: that replaces the query and drops the node's upload token.
         target = httpx.URL(upload_url).copy_merge_params({"directory": directory})
         try:
-            response = web.post(
+            response = web_client().post(
                 target,
                 files={"files": (name, archive, "application/octet-stream")},
             )
@@ -82,13 +84,13 @@ class PanelApi:
         self._request("POST", "/files/delete", json={"root": directory, "files": [name]})
 
     def is_link(self, path: str) -> bool:
-        entry = self._entry(path)
+        entry = self._find_entry(path)
         return bool(entry and entry["is_symlink"])
 
-    def _entry(self, path: str) -> dict[str, Any] | None:
+    def _find_entry(self, path: str) -> dict[str, Any] | None:
         directory, _, name = path.rpartition("/")
         # Some nodes answer a missing path with 500 instead of 404, so confirm the parent first.
-        if directory and self._entry(directory) is None:
+        if directory and self._find_entry(directory) is None:
             return None
         listing = {"directory": directory or "/"}
         response = self._request_if_found("GET", "/files/list", params=listing)

@@ -1,15 +1,13 @@
-"""The addons tree an instance runs."""
-
 import json
 import shutil
 from pathlib import Path
 
 from deploy.tools.addons.settings import SettingsRenderer
 from deploy.tools.config.inventory import Inventory
-from deploy.tools.config.server_env import ServerEnv
+from deploy.tools.config.secrets import ServerSecrets
 from deploy.tools.config.servers import Instance, Server
 from deploy.tools.errors import DeployError
-from deploy.tools.paths import PACKAGE
+from deploy.tools.paths import PACKAGE_DIR
 
 
 class AddonsBuilder:
@@ -17,14 +15,14 @@ class AddonsBuilder:
 
     # The framework's install component, staged under package/ by the same name.
     HOST = "host"
-    # Not imported from voltmod.cs2_install: CI deploys install only the deploy group.
+    # Copied from voltmod.server.install, not imported: CI deploys install only the deploy group.
     HOST_ADDON_DIR = "voltmod"
     HOST_MANIFEST = "metamod/voltmod.vdf"
     PLUGINS_DIR = f"{HOST_ADDON_DIR}/plugins"
 
-    def __init__(self, inventory: Inventory, server: Server, env: ServerEnv) -> None:
+    def __init__(self, inventory: Inventory, server: Server, secrets: ServerSecrets) -> None:
         self._server = server
-        self._settings = SettingsRenderer(inventory, server, env)
+        self._settings = SettingsRenderer(inventory, server, secrets)
 
     def build(self, instance: Instance, destination: Path) -> Path:
         """Rebuild destination/addons with the host and the instance's plugins, and return it."""
@@ -36,7 +34,7 @@ class AddonsBuilder:
         if not (addons / self.HOST_MANIFEST).is_file():
             raise DeployError(
                 f"package/{self.HOST} has no {self.HOST_MANIFEST}; "
-                "rebuild the framework and run `uv run poe deploy-package`"
+                "rebuild the framework and run `uv run poe deploy package`"
             )
         for plugin in self._server.plugins_for(instance):
             self._unpack(plugin, addons)
@@ -52,7 +50,7 @@ class AddonsBuilder:
 
     @staticmethod
     def _unpack(name: str, addons: Path) -> None:
-        package = PACKAGE / name / "addons"
+        package = PACKAGE_DIR / name / "addons"
         if not package.is_dir():
-            raise DeployError(f"no package for {name}; run `uv run poe deploy-package`")
+            raise DeployError(f"no package for {name}; run `uv run poe deploy package`")
         shutil.copytree(package, addons, dirs_exist_ok=True)

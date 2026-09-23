@@ -1,12 +1,10 @@
-"""A plugin's deployed settings.jsonc."""
-
 import json
 import re
 from pathlib import Path
 from typing import Any
 
 from deploy.tools.config.inventory import Inventory
-from deploy.tools.config.server_env import ServerEnv
+from deploy.tools.config.secrets import ServerSecrets
 from deploy.tools.config.servers import Instance, Server
 from deploy.tools.errors import DeployError
 from deploy.tools.paths import ROOT
@@ -19,22 +17,22 @@ class SettingsRenderer:
     # Strings match first, so `//` inside a URL survives comment removal.
     COMMENT_OR_STRING = re.compile(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*.*?\*/', re.DOTALL)
 
-    def __init__(self, inventory: Inventory, server: Server, env: ServerEnv) -> None:
+    def __init__(self, inventory: Inventory, server: Server, secrets: ServerSecrets) -> None:
         self._inventory = inventory
         self._server = server
-        self._env = env
+        self._secrets = secrets
 
     def render(self, instance: Instance, plugin: str) -> dict[str, Any]:
         configs = ROOT / "plugins" / plugin / "configs"
         settings = self._read_jsonc(configs / "settings.jsonc")
         variables = {
-            **self._env.variables(),
+            **self._secrets.as_dict(),
             # Per-server admin grants reference the tag, so it must stay stable.
             "SERVER_TAG": f"{self._server.id}-{instance.name}",
             "SERVER_NAME": instance.server_name,
         }
         config = self._inventory.plugins[plugin]
-        self._merge(settings, self._fill(config.settings, variables, plugin), plugin)
+        self._override(settings, self._substitute(config.settings, variables, plugin), plugin)
         if config.database:
             database = self._database(config.database)
             settings["database"] = {**settings.get("database", {}), **database}
@@ -50,12 +48,12 @@ class SettingsRenderer:
     def _keep_strings(match: re.Match[str]) -> str:
         return match.group(0) if match.group(0).startswith('"') else ""
 
-    def _fill(self, value: Any, variables: dict[str, str], plugin: str) -> Any:
+    def _substitute(self, value: Any, variables: dict[str, str], plugin: str) -> Any:
         """Replace ${NAME} in every string inside value; an unknown name fails."""
         if isinstance(value, dict):
-            return {key: self._fill(item, variables, plugin) for key, item in value.items()}
+            return {key: self._substitute(item, variables, plugin) for key, item in value.items()}
         if isinstance(value, list):
-            return [self._fill(item, variables, plugin) for item in value]
+            return [self._substitute(item, variables, plugin) for item in value]
         if not isinstance(value, str):
             return value
         for name in self.PLACEHOLDER.findall(value):
@@ -63,7 +61,7 @@ class SettingsRenderer:
                 raise DeployError(f"${{{name}}} in the {plugin} settings is not set")
         return self.PLACEHOLDER.sub(lambda match: variables[match.group(1)], value)
 
-    def _merge(
+    def _override(
         self,
         settings: dict[str, Any],
         overrides: dict[str, Any],
@@ -75,13 +73,13 @@ class SettingsRenderer:
             if key not in settings:
                 raise DeployError(f"inventory sets unknown {plugin} setting '{prefix}{key}'")
             if isinstance(value, dict) and isinstance(settings[key], dict):
-                self._merge(settings[key], value, plugin, f"{prefix}{key}.")
+                self._override(settings[key], value, plugin, f"{prefix}{key}.")
             else:
                 settings[key] = value
 
     def _database(self, name: str) -> dict[str, Any]:
         database = self._inventory.database
-        host = self._env.get("DB_HOST", database.host or "")
+        host = self._secrets.get("DB_HOST", database.host or "")
         if not host:
             raise DeployError(f"DB_HOST is not set for {self._server.id}")
         return {
@@ -89,6 +87,6 @@ class SettingsRenderer:
             "port": database.port,
             "database": name,
             "username": database.user,
-            "password": self._env.require("DB_PASSWORD"),
+            "password": self._secrets.require("DB_PASSWORD"),
             "sslMode": database.ssl_mode,
         }

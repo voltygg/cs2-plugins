@@ -1,10 +1,9 @@
-"""Docker and Compose commands on a Docker host."""
-
 import shlex
 import subprocess
-import sys
+import textwrap
 from pathlib import PurePosixPath
 
+from deploy.tools import console
 from deploy.tools.config.servers import DockerServer, Instance
 from deploy.tools.docker.ssh import Ssh
 from deploy.tools.errors import DeployError
@@ -53,11 +52,11 @@ class DockerHost:
         ]
 
         if not stopped:
-            print("    every instance is running")
+            console.item("every instance is running")
             return
 
         names = ", ".join(item.name for item in stopped)
-        print(f"ERROR: {names} not running; the last log lines of each follow", file=sys.stderr)
+        console.error(f"{names} not running; the last log lines of each follow")
         logs = (self._compose_command(item, "logs --tail=80") for item in stopped)
         self._ssh.run("; ".join(f"({item}) || true" for item in logs))
         raise DeployError(f"{names} did not start on {self._server.id}")
@@ -101,17 +100,20 @@ class DockerHost:
 
     def _wait_for_steamcmd(self, instance: Instance) -> None:
         """Block while SteamCMD runs in the instance's container, so updates go one at a time."""
-        if self._ssh.dry_run:
-            return
         waiting = shlex.quote(f"    {instance.name}: SteamCMD still running")
         limit = self.STEAMCMD_TIMEOUT_MINUTES * 60
-        script = (
-            f"container=$({self._compose_command(instance, 'ps -q')}) && "
-            'if [ -n "$container" ]; then sleep 10; waited=0; '
-            "while docker exec \"$container\" sh -lc 'pgrep -f steamcmd >/dev/null 2>&1'; do "
-            f"[ $waited -lt {limit} ] || exit {self.STEAMCMD_TIMEOUT_EXIT_CODE}; "
-            f"echo {waiting}; sleep 15; waited=$((waited + 15)); done; fi"
-        )
+        script = textwrap.dedent(f"""\
+            container=$({self._compose_command(instance, "ps -q")}) || exit $?
+            [ -n "$container" ] || exit 0
+            sleep 10
+            waited=0
+            while docker exec "$container" sh -lc 'pgrep -f steamcmd >/dev/null 2>&1'; do
+                [ $waited -lt {limit} ] || exit {self.STEAMCMD_TIMEOUT_EXIT_CODE}
+                echo {waiting}
+                sleep 15
+                waited=$((waited + 15))
+            done
+        """)
 
         try:
             self._ssh.run(script)
