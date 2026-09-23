@@ -10,8 +10,9 @@ const Action Kill{Permission::Control, /*requireAlive*/ true, [](const ActionCon
 
 const Action Godmode{Permission::Health, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
                          const VoltMod::Pawn pawn = ctx.Target().Pawn();
-                         pawn.SetGodmode(!pawn.Godmode());
-                         return pawn.Godmode() ? "broadcast.godmodeOn" : "broadcast.godmodeOff";
+                         const bool on = !pawn.Godmode();
+                         pawn.SetGodmode(on);
+                         return on ? "broadcast.godmodeOn" : "broadcast.godmodeOff";
                      }};
 
 const ParamAction SetHealth{Permission::Health, /*requireAlive*/ true,

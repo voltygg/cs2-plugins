@@ -86,7 +86,7 @@ struct App final : VoltMod::Plugin
     Config::ConfigManager Settings;
     /** Runs actions through Runtime::Policy: permissions, targeting, broadcasts. */
     VoltMod::ActionDispatcher Actions{Runtime.Policy};
-    /** Actions that need Runtime beyond ActionContext (Slap, Smite, SetSize). */
+    /** Actions that need Runtime beyond ActionContext (Slap, Smite). */
     Admin::Actions::ActionDescriptors ActionDescriptors{Runtime};
     VoltMod::Database Db{Runtime.Scheduler};
     Database::Repositories Repos{Db};

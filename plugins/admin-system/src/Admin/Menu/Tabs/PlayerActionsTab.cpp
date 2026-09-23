@@ -31,11 +31,6 @@ static bool IsNoclip(const VoltMod::Pawn& pawn)
     return pawn.MoveType() == MoveType_t::MOVETYPE_NOCLIP;
 }
 
-static bool HasGodmode(const VoltMod::Pawn& pawn)
-{
-    return pawn.Godmode();
-}
-
 static constexpr int HealthPresets[] = {1, 50, 100, 200, 500, 999};
 static constexpr int ArmorPresets[] = {0, 50, 100, 200, 500, 999};
 static constexpr int SpeedPresets[] = {10, 25, 50, 100, 150, 200, 300};
@@ -118,7 +113,7 @@ static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& ro
     case RowId::Armor:
         return presets({.LabelKey = spec.LabelKey, .Unit = "AP", .Presets = ArmorPresets, .Action = Actions::SetArmor});
     case RowId::Godmode:
-        return toggle(HasGodmode, Actions::Godmode);
+        return toggle(&VoltMod::Pawn::Godmode, Actions::Godmode);
     case RowId::Weapons:
         return submenu(BuildWeaponPicker);
     default:
