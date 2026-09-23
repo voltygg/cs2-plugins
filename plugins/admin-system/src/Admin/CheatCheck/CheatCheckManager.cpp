@@ -11,7 +11,6 @@
 #include <VoltMod/Core/Text/Translations.hpp>
 #include <VoltMod/Core/Time/Durations.hpp>
 #include <VoltMod/Core/Time/Scheduler.hpp>
-#include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Http/HttpClient.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
@@ -25,7 +24,6 @@ namespace AdminSystem::Admin::CheatCheck
 using VoltMod::Controller;
 using VoltMod::Pawn;
 using VoltMod::Time;
-using VoltMod::Schema::MoveType_t;
 namespace Log = VoltMod::Log;
 namespace ChatColors = VoltMod::ChatColors;
 
@@ -61,14 +59,13 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     }
 
     Controller targetCtrl = _rt.Entities.Controller(targetSlot);
-    Pawn targetPawn = targetCtrl.GetPawn();
     const auto& cfg = _config.Get().cheatCheck;
 
     // A repeated check must restore the original movement/team state.
     const bool wasActive = _checks[targetSlot].Active;
-    const MoveType_t priorMove = wasActive ? _checks[targetSlot].PriorMoveType : targetPawn.Move();
-    const int priorTeam =
-        wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? int{targetPawn.Team()} : 0);
+    const VoltMod::MovementFreeze priorFreeze = wasActive ? _checks[targetSlot].Freeze : VoltMod::MovementFreeze{};
+    const VoltMod::Team priorTeam =
+        wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? targetCtrl.Team() : VoltMod::Team::None);
     if (wasActive)
     {
         ResetCheck(targetSlot);
@@ -83,13 +80,13 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     pc.ResolvedUrl.clear();
     pc.AwaitingUrl = false;
     pc.RequestSeq = _seq++;
-    pc.PriorMoveType = priorMove;
+    pc.Freeze = priorFreeze;
     pc.PriorTeam = priorTeam;
 
-    targetPawn.SetMove(MoveType_t::MOVETYPE_NONE);
+    pc.Freeze.Hold(targetCtrl.Pawn());
     if (cfg.moveToSpectator)
     {
-        (void)targetCtrl.ChangeTeam(VoltMod::TeamSpectator);
+        (void)targetCtrl.ChangeTeam(VoltMod::Team::Spectator);
     }
 
     pc.DeadlineTimer = _rt.Scheduler.Repeat(DeadlineTickMs, [this, targetSlot] { Tick(targetSlot); });
@@ -316,10 +313,10 @@ bool CheatCheckManager::Cancel(int adminSlot, int targetSlot)
     auto* target = _rt.Players.Get(targetSlot);
     std::string targetName = target ? target->Name() : std::string();
 
-    const MoveType_t restore = _checks[targetSlot].PriorMoveType;
-    const int restoreTeam = _checks[targetSlot].PriorTeam;
+    const VoltMod::MovementFreeze freeze = _checks[targetSlot].Freeze;
+    const VoltMod::Team restoreTeam = _checks[targetSlot].PriorTeam;
     ResetCheck(targetSlot);
-    Unfreeze(targetSlot, restore, restoreTeam);
+    Unfreeze(targetSlot, freeze, restoreTeam);
 
     _chat.BroadcastAction("broadcast.cheatCheckCleared", Core::ActorName(_rt, adminSlot), targetName);
     return true;
@@ -332,8 +329,8 @@ void CheatCheckManager::Expire(int targetSlot)
     auto* target = _rt.Players.Get(targetSlot);
     std::string targetName = target ? target->Name() : std::string();
 
-    const MoveType_t restore = _checks[targetSlot].PriorMoveType;
-    const int restoreTeam = _checks[targetSlot].PriorTeam;
+    const VoltMod::MovementFreeze freeze = _checks[targetSlot].Freeze;
+    const VoltMod::Team restoreTeam = _checks[targetSlot].PriorTeam;
     const int64_t adminSteamId = _checks[targetSlot].AdminSteamId;
     ResetCheck(targetSlot);  // deactivate before the kick triggers disconnect cleanup
 
@@ -354,25 +351,25 @@ void CheatCheckManager::Expire(int targetSlot)
     }
     else
     {
-        Unfreeze(targetSlot, restore, restoreTeam);
+        Unfreeze(targetSlot, freeze, restoreTeam);
     }
 
     _chat.BroadcastAction("broadcast.cheatCheckTimedOut", {}, {{"player", targetName}});
 }
 
-void CheatCheckManager::Unfreeze(int targetSlot, MoveType_t restoreMove, int restoreTeam)
+void CheatCheckManager::Unfreeze(int targetSlot, VoltMod::MovementFreeze freeze, VoltMod::Team restoreTeam)
 {
     Controller controller = _rt.Entities.Controller(targetSlot);
     if (!controller)
     {
         return;
     }
-    // restoreTeam is a real playing team (T/CT) only if we actually pulled them to spectator at start.
-    if (restoreTeam >= VoltMod::TeamT)
+    // Set only when the check pulled the player to spectator.
+    if (VoltMod::IsPlaying(restoreTeam))
     {
         (void)controller.ChangeTeam(restoreTeam);
     }
-    controller.GetPawn().SetMove(restoreMove);
+    freeze.Release(controller.Pawn());
 }
 
 void CheatCheckManager::CancelAllForSlot(int slot)
@@ -391,7 +388,7 @@ void CheatCheckManager::CancelAll()
         {
             continue;
         }
-        Unfreeze(slot, _checks[slot].PriorMoveType, _checks[slot].PriorTeam);
+        Unfreeze(slot, _checks[slot].Freeze, _checks[slot].PriorTeam);
         ResetCheck(slot);
     }
 }

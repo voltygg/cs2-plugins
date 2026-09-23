@@ -73,7 +73,7 @@ private:
     void Expire(int targetSlot);
     void ShowPanel(int targetSlot);   // start (or restart) the panel's own refresh loop
     void ResetCheck(int targetSlot);  // cancel timer + clear panel + reset state, silently
-    void Unfreeze(int targetSlot, VoltMod::Schema::MoveType_t restoreMove, int restoreTeam);
+    void Unfreeze(int targetSlot, VoltMod::MovementFreeze freeze, VoltMod::Team restoreTeam);
     void ResolveUrl(int targetSlot);
     void RequestRoom(int targetSlot);
     void OnRoomResponse(int targetSlot, uint64_t seq, const VoltMod::HttpResult& result);
