@@ -16,6 +16,7 @@
     "report": "Report a player"
   },
   "tab": {
+    "shop": "Shop",
     "stats": "Stats",
     "vip": "VIP",
     "admin": "Admin",
@@ -26,6 +27,7 @@
   },
   "entry": {
     "stronghold": "Stronghold shop",
+    "shop": "Online shop",
     "level": "My level",
     "rank": "My rank",
     "top": "Top players",

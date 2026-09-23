@@ -68,7 +68,7 @@ struct Hub
 };
 
 /** The layout draws no more tabs than this. */
-inline constexpr int MaxTabs = 6;
+inline constexpr int MaxTabs = 7;
 
 /** Drops entries with an unknown kind or an unusable target, and tabs past MaxTabs, logging each. */
 Hub CleanSettings(Settings raw);

@@ -22,11 +22,11 @@ Settings are in `addons/voltmod/plugins/main-menu/configs/settings.jsonc` on the
 | `plugin.locale` | `ru` | Server language; a player's pick in the Settings tab wins |
 | `menu.panorama` | `true` | Draw the Panorama layout; `false` uses center HTML for everyone |
 | `menu.addonId` | `3801580041` | The `meatgg_ui` workshop addon clients download |
-| `tabs` | stats, VIP, admin, skins, clans, rules | Up to 6 tabs, drawn before Settings |
+| `tabs` | stats, shop, VIP, admin, skins, clans, rules | Up to 7 tabs, drawn before Settings |
 
 Each tab has a `label`, an `icon` and a list of `entries`. A label is a translation key, or literal
-text when no translation has that key. Icons are `stats`, `vip`, `admin`, `skins`, `clans`,
-`rules` and `site`.
+text when no translation has that key. Icons are `stats`, `shop`, `vip`, `admin`, `skins`,
+`clans`, `rules` and `site`.
 
 An entry's `kind` sets what it does:
 

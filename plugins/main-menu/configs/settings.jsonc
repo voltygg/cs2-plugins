@@ -1,29 +1,36 @@
 {
   "plugin": {
-    // Server default language. A player's pick in the Settings tab wins for every plugin.
+    // Default language; a player's own pick wins.
     "locale": "ru"
   },
   "menu": {
-    // Clients without the layout (addon still downloading) get the same menu in center HTML.
+    // Players without the addon get center HTML.
     "panorama": true,
-    // meatgg_ui, the same addon admin-system requires; a client downloads it once.
+    // meatgg_ui, shared with admin-system.
     "addonId": 3801580041
   },
-  // At most 6 tabs; a Settings tab is always added after them. A label is a translation key or literal text. `kind` is one of:
-  //   command  runs a console command as the player (a legacy plugin's menu, e.g. mm_lvl for !lvl)
-  //   link     prints the URL to the player's chat
-  //   section  opens another VoltMod plugin's menu; hidden while that plugin is not loaded
+  // Up to 7 tabs, then Settings. A tab with nothing to show is hidden.
+  //   command  runs a console command as the player
+  //   link     prints the URL in chat
+  //   section  opens another plugin's menu, if it is loaded
   "tabs": [
     {
       "label": "tab.stats",
       "icon": "stats",
       "entries": [
-        { "kind": "section", "label": "entry.stronghold", "section": "stronghold" },
         { "kind": "command", "label": "entry.level", "command": "mm_lvl" },
         { "kind": "command", "label": "entry.rank", "command": "mm_rank" },
         { "kind": "command", "label": "entry.top", "command": "mm_top" },
         { "kind": "command", "label": "entry.topTime", "command": "mm_toptime" },
         { "kind": "command", "label": "entry.session", "command": "mm_session" }
+      ]
+    },
+    {
+      "label": "tab.shop",
+      "icon": "shop",
+      "entries": [
+        { "kind": "section", "label": "entry.stronghold", "section": "stronghold" },
+        { "kind": "link", "label": "entry.shop", "url": "https://meat.gg/shop" }
       ]
     },
     {

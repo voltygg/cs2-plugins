@@ -2,12 +2,15 @@
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
+#include <VoltMod/Messaging/ChatColors.hpp>
 #include <algorithm>
+#include <format>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+namespace ChatColors = VoltMod::ChatColors;
 namespace Log = VoltMod::Log;
 using VoltMod::ChoiceRow;
 using VoltMod::MenuBuilder;
@@ -126,7 +129,9 @@ void HubMenu::Run(const Entry& entry, int slot, MenuSurface& surface)
 {
     if (entry.kind == EntryKind::Link)
     {
-        _messages.ReplyKey(slot, "link.message", {{"label", Text(slot, entry.label)}, {"url", entry.target}});
+        _messages.ReplyKey(
+            slot, "link.message",
+            {{"label", Text(slot, entry.label)}, {"url", std::format("{}{}", ChatColors::LightBlue, entry.target)}});
         return;
     }
 
