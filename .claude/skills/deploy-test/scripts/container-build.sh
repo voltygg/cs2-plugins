@@ -8,7 +8,7 @@ cd /work
 # The bind-mounted repositories belong to the Windows user.
 git config --global --add safe.directory '*'
 
-# The checkout's own CLI: the pinned one may link an editable framework without rebuilding it.
+# The checkout's own CLI, so it matches the framework it builds.
 uv venv --quiet --allow-existing --python 3.14 /cache/venv
 uv pip install --quiet --python /cache/venv/bin/python --reinstall-package voltmod /work/voltmod
 export PATH="/cache/venv/bin:$PATH"
@@ -26,9 +26,9 @@ if [ "$FRAMEWORK" = checkout ]; then
     conan editable add /work/voltmod
 fi
 
-voltmod build "$preset"
+voltmod build -p "$preset"
 if [ "$RUN_TESTS" = 1 ]; then
-    voltmod test "$preset"
+    voltmod test -p "$preset"
 fi
 
 uv run --quiet --locked --only-group deploy python -m deploy.tools.cli package

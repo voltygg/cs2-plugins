@@ -1,109 +1,63 @@
 ---
 name: build-local
-description: Build the CS2 plugins locally on Windows and install them into a local CS2 server. Use for "build", "compile", "does it compile", "rebuild", "run the tests", or "deploy to my local server".
+description: Build the CS2 plugins on Windows, run their tests, and install them into the local CS2 server. Use for "build", "compile", "does it compile", "rebuild", "run the tests", or "deploy to my local server". Run it before calling any C++ change verified.
 ---
 
-# Build locally (cs2-plugins)
+# Build locally
 
-Builds this repo with CMake presets + Conan, optionally against the `voltmod`
-checkout, and installs the result into the local CS2 dedicated server named by
-`CS2_SERVER_PATH` in `.env` (copy `.env.example`).
+## Compile and test
 
-## When to use
-
-The user says "build", "rebuild", "does this compile", "run the tests", or asks to
-try a change on their local server. Also run this before claiming any C++ change
-is verified.
-
-## 1. Compile from a VS developer shell
-
-The Bash tool's shell has no MSVC on PATH. Every command that compiles goes through
-the PowerShell tool with the dev shell loaded first; shell state does not persist
-between calls, so repeat the two launcher lines in every compiling call:
+The Bash tool has no MSVC. Use the PowerShell tool and load the dev shell in the same call:
 
 ```powershell
-$vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-& "$vs\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation | Out-Null
-uv run poe build
+$env:PATH = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer;$env:PATH"
+& "$(vswhere -latest -property installationPath)\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation | Out-Null
+uv run poe test          # compiles, then CTest; -R <regex> narrows. `poe build` only compiles
 ```
 
-A `'vswhere.exe' is not recognized` line means the VS Installer directory is missing
-from `PATH`. `VsDevCmd.bat` calls `vswhere.exe` bare from its own directory, which
-only resolves when `NoDefaultCurrentDirectoryInExePath` is unset. Put
-`C:\Program Files (x86)\Microsoft Visual Studio\Installer` on `PATH` to silence it.
+Output: `build/windows-msvc-release/plugins/<name>/windows-x86_64/<name>.dll`. `windows-msvc-debug`
+does not link (the prebuilt protobuf is Release). Linux builds only in the CI container; see
+`deploy-test`. `uv run poe lint` runs ruff, the source conventions, the Panorama and schema checks.
 
-## 2. Consuming the framework
+## Against the voltmod checkout
 
-`conan.lock` pins a `voltmod` package revision. To work on the framework, register
-the checkout as the editable `voltmod` package once (`uv run conan editable list`
-shows whether it is):
+`conan.lock` pins a released voltmod. To build against `voltmod/`, register it once (check with
+`uv run conan editable list`):
 
 ```powershell
-uv run conan editable add voltmod
-uv run poe build            # compiles voltmod first, then the plugins - both incremental
-uv run poe build --relock   # before committing: export a package, pin conan.lock, drop the editable
+uv run conan editable add voltmod   # poe build/test now compile the checkout first
+uv run poe build --relock           # before committing, from the repo root
 ```
 
-The `voltmod` CLI here is installed from the git ref in `pyproject.toml`; until
-that ref carries the editable-aware `build`, use the checkout's own:
-`uv run --project voltmod voltmod build [--relock]`. An older CLI links an
-editable checkout **without rebuilding it** - a stale DLL that prints "Build
-complete".
+`--relock` exports the checkout, pins it in `conan.lock`, drops the editable and fails if the build
+did not use it. Commit `conan.lock` with the change; CI resolves it only after a voltmod release
+(`release` skill). The framework's own tests: `uv run poe test` inside `voltmod`.
 
-`--relock` builds the checkout, exports it to the Conan cache (`conan export-pkg`),
-re-pins `voltmod` in `conan.lock`, removes the editable, builds the plugins, and dies
-if `build/<preset>/generators` does not point at the new package. Commit the
-relocked `conan.lock` with the plugin change ("chore: relock voltmod for ...").
-The framework's own suite runs with `uv run poe test` inside `voltmod`.
-
-## 3. Presets and tests
-
-| Preset | Output | Notes |
-| --- | --- | --- |
-| `windows-msvc-release` | `build/windows-msvc-release/plugins/<name>/windows-x86_64/<name>.dll` | The default; use it to verify changes. |
-| `windows-msvc-debug` | - | Does not link: the prebuilt `libprotobuf.lib` is Release and clashes on `_ITERATOR_DEBUG_LEVEL`. |
-| `linux-steamrt-release` | `.so` | CI toolchain container only. `poe build-linux` fails on Windows. |
-
-`poe build` compiles only. `poe test` recompiles first and then runs CTest, so it
-cannot pass on a stale binary; `poe test -R <regex>` narrows it. Run one of them
-before reporting a C++ change as verified. The framework has its own suite:
-`uv run poe test` inside `voltmod`.
-
-`uv run poe lint` runs ruff and `voltmod lint`, which rejects forward
-declarations in plugin headers, anonymous namespaces and using-directives.
-
-## 4. Install into the local server
+## Install into the local server
 
 ```powershell
-uv run poe run <plugin>                        # build, copy into CS2_SERVER_PATH, launch
-uv run poe install [plugin]                    # copy only; no name copies every plugin and the host
-uv run poe serve                               # launch alone
+uv run poe run <plugin>        # build, install, launch
+uv run poe install [plugin]    # copy only; no name copies every plugin and the host
+uv run poe panorama            # compile the Panorama screens into your own client
 ```
 
-`install` merges the plugin's server-ready `addons/` tree into `game/csgo`,
-seeds `configs/settings.jsonc` once and preserves later edits. A running server
-holds the DLL open and the copy fails with `WinError 32`: stop `cs2.exe` first.
+Install seeds `configs/settings.jsonc` once and keeps later edits. Stop `cs2.exe` first, or the copy
+fails with `WinError 32`. A plugin with a custom UI shows nothing until `poe panorama` has run
+(needs CS2 Workshop Tools). Confirm the load with `meta list` (`rcon-debug`).
 
-A custom Panorama UI also needs the screens rendered and compiled into your own client:
-`uv run poe panorama` (Windows, needs the CS2 Workshop Tools; the client is found
-through Steam unless `CS2_CLIENT_PATH` is set). Without it the server writes to a
-layout the client does not have and shows nothing.
+## Failures
 
-Verify the load with `meta list` on the server console (see `rcon-debug`).
-
-## Common failures
-
-- **Missing SDK binaries in the Conan cache** - `uv run poe release build sdk`
-  from `voltmod`, in the dev shell. They are excluded from `--build=missing`.
-- **Lock names a recipe revision that no longer exists** (`nasm not in lockfile`,
-  odd target names) - re-pin with the `conan lock remove` / `conan lock create`
-  pair above for that package.
-- **Profiles or the remote are missing** - `uv run poe bootstrap`.
-- **Mis-cased includes** compile here and fail on Linux CI: hl2sdk's `Color.h`,
-  `KeyValues.h`, `CommandBuffer.h`, `PlayerState.h` need exact case.
+- `CreateProcess failed: The system cannot find the file specified`: Strawberry was removed from
+  `PATH`; ccache lives in `C:\Strawberry\c\bin`.
+- `Access is denied` on `voltmod\.venv\Scripts\voltmod.exe`: a hung build holds the venv. Stop
+  `Get-Process | ? Path -like "*voltmod\.venv*"`.
+- `--relock` says the build tree is not configured against the package: delete
+  `build/windows-msvc-release` and rerun.
+- SDK binaries missing from the Conan cache: `uv run poe release build sdk` inside `voltmod`.
+- Profiles or remote missing: `uv run poe bootstrap`.
+- An include compiles here and fails on Linux CI: fix its case (`Color.h`, `KeyValues.h`,
+  `CommandBuffer.h`, `PlayerState.h`).
 
 ## Report
 
-State the preset built, whether the framework package was rebuilt and relocked,
-the CTest result, and the output path. If only a subset built or tests were
-skipped, say so.
+Preset, whether voltmod was relocked, the CTest result, the output path, and anything skipped.
