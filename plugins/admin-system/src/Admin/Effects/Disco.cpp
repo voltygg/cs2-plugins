@@ -3,19 +3,15 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <array>
-#include <cstdint>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
+using VoltMod::Color;
 
-static constexpr auto RenderModeTransAlpha = VoltMod::Schema::RenderMode_t::kRenderTransAlpha;
-static constexpr uint32_t ColorOpaqueWhite = 0xFFFFFFFFu;
-
-// Bright RGBA values cycled at 200 ms - red / orange / yellow / green / blue / magenta.
-static constexpr std::array<uint32_t, 6> Palette = {
-    0xFF0000FFu, 0xFF8000FFu, 0xFFFF00FFu, 0x00FF00FFu, 0x0000FFFFu, 0xFF00FFFFu,
+static constexpr std::array<Color, 6> Palette = {
+    Color{255, 0, 0}, Color{255, 128, 0}, Color{255, 255, 0}, Color{0, 255, 0}, Color{0, 0, 255}, Color{255, 0, 255},
 };
 
 static constexpr int DiscoIntervalMs = 200;
@@ -32,28 +28,25 @@ Effect MakeDisco(VoltMod::Runtime& runtime)
                   .TickIntervalMs = DiscoIntervalMs,
                   .DurationMs = DiscoDurationSec * 1000,
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
-                      auto savedMode = ctx.TargetPawn().RenderMode();
-                      uint32_t savedColor = ctx.TargetPawn().RenderColor();
-                      int slot = ctx.Target().Slot();
+                      const VoltMod::Pawn target = ctx.Target().Pawn();
+                      const auto savedMode = target.RenderMode();
+                      // A pawn that never set a colour reads all zero, which would restore it invisible.
+                      const Color savedColor =
+                          target.RenderColor() == Color{0, 0, 0, 0} ? Color{} : target.RenderColor();
+                      const int slot = ctx.Target().Slot();
 
                       return {.OnTick =
-                                  [&entities = runtime.Entities, slot, idx = size_t{0}]() mutable {
-                                      VoltMod::Pawn pawn = entities.PawnOf(slot);
-                                      if (!pawn || !pawn.IsAlive())
+                                  [&entities = runtime.Entities, slot, index = size_t{0}]() mutable {
+                                      const VoltMod::Pawn pawn = entities.Pawn(slot);
+                                      if (!pawn.IsAlive())
                                       {
                                           return;
                                       }
-                                      pawn.SetRender(RenderModeTransAlpha, Palette[idx]);
-                                      idx = (idx + 1) % Palette.size();
+                                      pawn.SetRender(VoltMod::Schema::RenderMode_t::kRenderTransAlpha, Palette[index]);
+                                      index = (index + 1) % Palette.size();
                                   },
-                              .OnStop =
-                                  [&entities = runtime.Entities, slot, savedMode, savedColor]() {
-                                      VoltMod::Pawn pawn = entities.PawnOf(slot);
-                                      if (pawn)
-                                      {
-                                          pawn.SetRender(savedMode, savedColor == 0 ? ColorOpaqueWhite : savedColor);
-                                      }
-                                  }};
+                              .OnStop = [&entities = runtime.Entities, slot, savedMode,
+                                         savedColor]() { entities.Pawn(slot).SetRender(savedMode, savedColor); }};
                   }};
 }
 
