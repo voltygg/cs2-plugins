@@ -167,11 +167,7 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
         builder.Text(translations.Get("common.noPlayers", reporterSlot));
     }
 
-    auto menu = builder.Build();
-
-    // Reporters may press !report mid-round, where being held still would get them killed. The
-    // rest of the flow pushes onto this session, so it stays unfrozen throughout.
-    app.Runtime.Menus.OpenSession(reporterSlot, std::move(menu), {.FreezeMovement = false});
+    app.Runtime.Menus.OpenSession(reporterSlot, builder.Build(), {});
 }
 
 }  // namespace AdminSystem::Reports

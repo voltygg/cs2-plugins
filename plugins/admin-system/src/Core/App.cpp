@@ -276,8 +276,6 @@ bool App::Load()
     Admin::Menu::VerifyCatalog(*this);
     InstallPolicy();
     RegisterPlayerLifecycle();
-    // Menu navigation keys must not move the player.
-    Runtime.Freeze.Enable(true);
     if (const auto& menu = Settings.Get().menu; menu.panorama)
     {
         AddHomePageText();
