@@ -1,6 +1,6 @@
 from rich.console import Console
 
-# The same line styles as the voltmod CLI, which the deploy group does not install.
+# Mirrors the voltmod CLI's console helpers, which the deploy group does not install.
 _out = Console(highlight=False, soft_wrap=True)
 _err = Console(stderr=True, highlight=False, soft_wrap=True)
 
