@@ -7,21 +7,24 @@ import numpy as np
 from mathutils import Vector
 
 from . import objects, shapes, surfaces
+from .session import PREVIEW_OBJECTS
 
 
 def stage():
-    """Adds a camera, a sun, a grey world and an unexported ground plane when missing."""
+    """Adds a camera, a sun, a grey world and an unexported ground plane when missing.
+
+    Scenes share the preview objects: a second copy would be renamed and lose its lookup name.
+    """
     sc = bpy.context.scene
-    if "preview_camera" not in sc.objects:
-        cam = bpy.data.objects.new("preview_camera", bpy.data.cameras.new("preview_camera"))
-        sc.collection.objects.link(cam)
-    if "preview_sun" not in sc.objects:
+    if "preview_camera" not in bpy.data.objects:
+        bpy.data.objects.new("preview_camera", bpy.data.cameras.new("preview_camera"))
+    if "preview_sun" not in bpy.data.objects:
         sun = bpy.data.objects.new("preview_sun", bpy.data.lights.new("preview_sun", "SUN"))
         sun.data.energy = 3.5
         sun.rotation_euler = (math.radians(40), math.radians(10), math.radians(30))
-        sc.collection.objects.link(sun)
-    if "preview_ground" not in sc.objects:
+    if "preview_ground" not in bpy.data.objects:
         ground = objects.to_object("preview_ground", shapes.box((0, 0, -0.01), (600, 600, 0.01)))
+        sc.collection.objects.unlink(ground)
         mat = surfaces.material("preview_ground", metallic=0.0, roughness=0.9)
         mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (
             0.45,
@@ -31,6 +34,9 @@ def stage():
         )
         ground.data.materials.append(mat)
         ground.vs.export = False
+    for name in PREVIEW_OBJECTS:
+        if name not in sc.objects:
+            sc.collection.objects.link(bpy.data.objects[name])
     if not sc.world:
         sc.world = bpy.data.worlds.new("preview_world")
     sc.world.use_nodes = True

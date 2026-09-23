@@ -21,10 +21,13 @@ def load_pixels(path, size=SIZE):
 def save_pixels(path, px, data=False):
     """Writes @p px as a PNG to @p path and returns it as an image; @p data marks a normal map."""
     name = os.path.basename(path)
-    if img := bpy.data.images.get(name):
-        bpy.data.images.remove(img)
     height, width = px.shape[:2]
-    img = bpy.data.images.new(name, width, height, alpha=False, is_data=data)
+    # Updated in place: removing it would leave the materials that show it with an empty slot.
+    img = bpy.data.images.get(name)
+    if img is None:
+        img = bpy.data.images.new(name, width, height, alpha=False, is_data=data)
+    elif tuple(img.size) != (width, height):
+        img.scale(width, height)
     img.pixels[:] = px.ravel()
     img.filepath_raw = path
     img.file_format = "PNG"
