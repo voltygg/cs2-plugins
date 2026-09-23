@@ -6,10 +6,22 @@
 namespace AdminSystem::Admin::Actions
 {
 
+namespace Log = VoltMod::Log;
+
 static float Jitter(float range)
 {
     static std::mt19937 generator{std::random_device{}()};
     return std::uniform_real_distribution<float>(-range, range)(generator);
+}
+
+PawnTimers::PawnTimers(VoltMod::Runtime& runtime) : _runtime(runtime), _timers(runtime.Slots)
+{
+    if (auto available = _runtime.Hooks.Damage.Available(); !available)
+    {
+        Log::Warn("Slapped players will take fall damage: {}", available.error().Detail);
+        return;
+    }
+    _damage = _runtime.Hooks.Damage.Before += [this](VoltMod::DamageHit& hit) { OnDamage(hit); };
 }
 
 void PawnTimers::Slap(const VoltMod::Pawn& pawn, float upward, float horizontal, int fallProtectMs)
@@ -17,15 +29,28 @@ void PawnTimers::Slap(const VoltMod::Pawn& pawn, float upward, float horizontal,
     pawn.Launch(Vector{Jitter(horizontal), Jitter(horizontal), upward});
 
     const int slot = pawn.Slot();
-    if (fallProtectMs <= 0 || !VoltMod::IsValidSlot(slot) || pawn.Godmode())
+    if (fallProtectMs <= 0 || !VoltMod::IsValidSlot(slot))
     {
         return;
     }
 
-    pawn.SetGodmode(true);
-    // Resolved again when it fires: the pawn is only valid this frame.
-    _timers[slot].FallProtect =
-        _runtime.Scheduler.Delay(fallProtectMs, [this, slot] { _runtime.Entities.Pawn(slot).SetGodmode(false); });
+    Timers& timers = _timers[slot];
+    timers.Slapped = pawn.Ref();
+    timers.FallSafeUntil = std::chrono::steady_clock::now() + std::chrono::milliseconds(fallProtectMs);
+}
+
+void PawnTimers::OnDamage(VoltMod::DamageHit& hit)
+{
+    if (!(hit.Info.Type & VoltMod::DamageFall))
+    {
+        return;
+    }
+    const int slot = hit.Victim.AsPawn().Slot();
+    if (VoltMod::IsValidSlot(slot) && hit.Victim.Ref() == _timers[slot].Slapped &&
+        std::chrono::steady_clock::now() < _timers[slot].FallSafeUntil)
+    {
+        hit.Blocked = true;
+    }
 }
 
 void PawnTimers::SlayAfter(int slot, int64_t delayMs)
