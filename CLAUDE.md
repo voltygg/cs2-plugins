@@ -21,10 +21,10 @@ uv run poe doctor                            # check toolchain, Conan, optional 
 uv run poe bootstrap                         # first-time: install VoltMod profiles and remote
 uv run poe build                             # compile (windows-msvc-release)
 uv run poe test                              # compile, then CTest
-uv run poe lint                              # ruff + modgraph + panorama and schema checks
+uv run poe lint                              # ruff + source conventions + panorama and schema checks
 uv run poe schema                            # regenerate the admin-system table specs from its migrations
-uv run poe build --install <plugin> --start  # copy to CS2_SERVER_PATH and launch
-uv run poe build --install-all               # copy every plugin instead of one
+uv run poe run <plugin>                      # build, copy to CS2_SERVER_PATH and launch
+uv run poe install                           # copy every built plugin; name one to copy only it
 uv run poe panorama                          # render, compile and install the Panorama screens into your client (Windows)
 uv run poe panorama-publish                  # compile the main-menu and admin-system screens into the meatgg_ui addon folder
 uv run poe new-plugin <name>

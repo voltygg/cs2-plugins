@@ -20,7 +20,7 @@ Two server kinds:
 | `panel` | A Pterodactyl panel server | the panel's client API - no SSH, no Docker |
 | `docker` | A Linux machine you control, one container per instance from `joedwards32/cs2` | SSH |
 
-For a local server use `uv run poe build --install <plugin> --start`; see
+For a local server use `uv run poe run <plugin>`; see
 [Local development](../docs/local-development.md).
 
 ## Prerequisites

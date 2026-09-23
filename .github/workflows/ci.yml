@@ -34,10 +34,10 @@ jobs:
       - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
 
       - name: Build (configure -> build)
-        run: voltmod build linux-steamrt-release
+        run: voltmod build -p linux-steamrt-release
 
       - name: Test
-        run: voltmod test linux-steamrt-release
+        run: voltmod test -p linux-steamrt-release
 
   lint:
     name: Lint (ruff)

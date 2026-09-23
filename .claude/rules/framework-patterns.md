@@ -55,7 +55,7 @@ commands.Add("slap")
 
 - `Pawn` is the body (health, armor, movement, aim); `Controller` is the identity (name, money, team). Get them from `runtime.Entities.PawnOf(slot)` and `.Controller(slot)`.
 - Both are frame-local. Store an `EntityRef` or `PlayerRef` and resolve again where used. `explicit operator bool()` is the only validity check.
-- Schema fields are generated pairs: `pawn.Health()` reads, `pawn.SetHealth(100)` writes and replicates. Offsets are baked by `voltmod schemagen`; the load aborts if they no longer match the engine.
+- Schema fields are generated pairs: `pawn.Health()` reads, `pawn.SetHealth(100)` writes and replicates. Offsets are baked by `voltmod framework schemagen`; the load aborts if they no longer match the engine.
 - `runtime.Screens.Shared(layout)` and `runtime.Screens.ForPlayer(layout, slot)` return a move-only `Screen` whose destructor removes the entity; hold it as a member. `VoltMod::PlayerScreens` keeps one player screen per slot, created on first draw. `runtime.Addons.Require(id)` returns a `Subscription`; the requirement lasts as long as you hold it.
 
 ## Errors and messages

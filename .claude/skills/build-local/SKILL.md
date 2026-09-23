@@ -69,19 +69,18 @@ cannot pass on a stale binary; `poe test -R <regex>` narrows it. Run one of them
 before reporting a C++ change as verified. The framework has its own suite:
 `uv run poe test` inside `voltmod`.
 
-`uv run poe lint` runs ruff and `voltmod modgraph`, which rejects forward
+`uv run poe lint` runs ruff and `voltmod lint`, which rejects forward
 declarations in plugin headers, anonymous namespaces and using-directives.
 
 ## 4. Install into the local server
 
 ```powershell
-uv run poe build --install <plugin>            # build, then copy into CS2_SERVER_PATH
-uv run poe build --install-all                 # ...every plugin, host included
-uv run poe build --install <plugin> --start    # ...and launch the server
-uv run poe start-server                        # launch alone
+uv run poe run <plugin>                        # build, copy into CS2_SERVER_PATH, launch
+uv run poe install [plugin]                    # copy only; no name copies every plugin and the host
+uv run poe serve                               # launch alone
 ```
 
-`--install` merges the plugin's server-ready `addons/` tree into `game/csgo`,
+`install` merges the plugin's server-ready `addons/` tree into `game/csgo`,
 seeds `configs/settings.jsonc` once and preserves later edits. A running server
 holds the DLL open and the copy fails with `WinError 32`: stop `cs2.exe` first.
 

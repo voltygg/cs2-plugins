@@ -5,7 +5,7 @@ From a working checkout to a plugin answering `!ping`. Set the repository up fir
 
 ```powershell
 uv run poe new-plugin hello-world
-uv run poe build --install hello-world --start
+uv run poe run hello-world
 ```
 
 Then, in the server console, `volt list` should show `hello-world` with its version. Join and type
@@ -71,7 +71,8 @@ first when it is installed. Never pass ownership or let an exception cross the m
 ## The loop
 
 ```powershell
-uv run poe build --install hello-world
+uv run poe build
+uv run poe install hello-world
 ```
 
 Restart the local server when Windows keeps the replaced DLL locked. Before pushing:

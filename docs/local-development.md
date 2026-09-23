@@ -5,7 +5,7 @@ uv sync
 Copy-Item .env.example .env      # set CS2_SERVER_PATH
 uv run poe doctor
 uv run poe bootstrap             # first build only
-uv run poe build --install admin-system --start
+uv run poe run admin-system
 ```
 
 For the first-plugin walkthrough see [Create your first plugin](getting-started-plugin.md); for the
@@ -33,7 +33,7 @@ uv run poe build
 | `linux-steamrt-release` | `.so` | CI toolchain container only; `poe build-linux` fails on Windows |
 
 `poe build` compiles. `poe test` recompiles first and then runs CTest, so it cannot pass on a stale
-binary; `poe test -R <regex>` narrows it. `poe lint` runs ruff, `voltmod modgraph`, and the
+binary; `poe test -R <regex>` narrows it. `poe lint` runs ruff, `voltmod lint`, and the
 Panorama and schema checks.
 
 Mis-cased includes compile on Windows and fail on Linux CI. hl2sdk's `Color.h`, `KeyValues.h`,
@@ -64,20 +64,19 @@ The framework has its own suite: `uv run poe test` inside `voltmod`.
 ## The local server
 
 ```powershell
-uv run poe build --install <plugin>            # build, then copy into CS2_SERVER_PATH
-uv run poe build --install <plugin> --start    # ...and launch
+uv run poe run <plugin>                        # build, copy into CS2_SERVER_PATH and launch
 uv run poe install [plugin]                    # install alone; no name installs everything
-uv run poe start-server                        # launch alone
+uv run poe serve                               # launch alone
 ```
 
-`--install` merges the host and the plugin's server-ready `addons/` tree into `game/csgo`, seeds
+`install` merges the host and the plugin's server-ready `addons/` tree into `game/csgo`, seeds
 `configs/settings.jsonc` once and keeps later edits. A running server holds the DLL open and the
 copy fails with `WinError 32`, so stop `cs2.exe` first. Install from another build with `--preset`,
 or override `.env` on the command line:
 
 ```powershell
 uv run poe install admin-system --preset windows-msvc-debug
-uv run poe start-server --server-path D:/CS2-Server --map de_mirage
+uv run poe serve --server D:/CS2-Server --map de_mirage
 ```
 
 The installed tree is:
@@ -116,7 +115,7 @@ A custom Panorama UI also has to be compiled into your own client with `uv run p
 
 ## Reading logs
 
-`poe start-server` runs `cs2.exe -dedicated -console -usercon` in the foreground, so the console
+`poe serve` runs `cs2.exe -dedicated -console -usercon` in the foreground, so the console
 window is the log. To get a file, launch `cs2.exe` yourself with `-condebug` as well: everything,
 VoltMod lines included, then lands in `<CS2_SERVER_PATH>/game/csgo/addons/metamod/console.log`.
 `con_logfile` is not a command, and redirecting stdout stays empty because `-console` owns its own

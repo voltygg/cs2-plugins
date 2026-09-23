@@ -53,7 +53,7 @@ Copy-Item .env.example .env      # set CS2_SERVER_PATH in .env
 uv sync
 uv run poe doctor
 uv run poe bootstrap             # first-time Conan setup, build, and tests
-uv run poe build --install admin-system --start
+uv run poe run admin-system
 ```
 
 The last command builds and installs `admin-system`, then starts the server. Output goes to
@@ -66,11 +66,11 @@ The last command builds and installs `admin-system`, then starts the server. Out
 | --- | --- |
 | `uv run poe doctor` | Check the toolchain, project files, Conan setup, and local CS2 server |
 | `uv run poe bootstrap` | Perform first-time setup, then configure, build, and test |
-| `uv run poe build [preset]` | Build with a `windows-msvc-{release,debug}` or `linux-steamrt-{release,debug}` preset |
+| `uv run poe build [-p preset]` | Build with a `windows-msvc-{release,debug}` or `linux-steamrt-{release,debug}` preset |
 | `uv run poe build-linux` | Build the Linux Steam Runtime preset inside the CI container |
-| `uv run poe build --install <name> [--start]` | Build and install one plugin, then optionally start the server |
+| `uv run poe run [name]` | Build, install into the local server, and start it |
 | `uv run poe install [name]` | Install a built plugin without starting the server |
-| `uv run poe start-server` | Start the configured local server |
+| `uv run poe serve` | Start the configured local server |
 | `uv run poe test` | Build and run the CTest suite |
 | `uv run poe lint` / `uv run poe format` | Check project conventions or format the C++ source |
 | `uv run poe schema` | Regenerate admin-system table specifications from its migrations |

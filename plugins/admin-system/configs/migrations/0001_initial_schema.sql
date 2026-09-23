@@ -1,6 +1,6 @@
 -- admin-system schema. RunMigrations resolves the placeholders for the configured driver.
 -- Add a change as a new numbered file; never edit one that has been applied.
--- Tables come first: `voltmod database tables` reads this file to generate the C++ specs.
+-- Tables come first: `voltmod database header` reads this file to generate the C++ specs.
 
 CREATE TABLE IF NOT EXISTS admin_groups (
   id @ID@,

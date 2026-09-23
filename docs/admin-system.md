@@ -178,7 +178,7 @@ menu, which is why the plugin says so in the server log at load.
 
 ```bash
 uv run poe panorama                              # render, compile, install into your client
-uv run poe build --install admin-system --start  # then set menu.panorama in the server's copy
+uv run poe run admin-system  # then set menu.panorama in the server's copy
 ```
 
 Reconnect after compiling; the client reads the layout at load.

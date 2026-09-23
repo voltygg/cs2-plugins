@@ -5,5 +5,10 @@
   "description": "Admins, punishments, menus and reports.",
   "author": "Sukhrob Ilyosbekov",
   "dependencies": [],
-  "optionalDependencies": []
+  "optionalDependencies": [],
+  "database": {
+    "migrations": "configs/migrations",
+    "header": "src/Database/Tables/Schema.hpp",
+    "namespace": "AdminSystem::Database::Tables"
+  }
 }

@@ -23,7 +23,7 @@ uv run python .claude/skills/deploy-test/scripts/linux_build.py            # add
 ```
 
 It runs the `build` service of `scripts/docker-compose.yml`: the image (the CI toolchain on
-the sniper SDK) is built once, then `voltmod build linux-steamrt-release` and
+the sniper SDK) is built once, then `voltmod build -p linux-steamrt-release` and
 `deploy.tools.cli package` run inside it.
 The output is `package/host` plus `package/<plugin>` for every inventory plugin.
 

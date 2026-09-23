@@ -12,14 +12,14 @@ still bhop") instead of guessing and rebuilding.
 
 ## Local dev server
 
-`uv run poe start-server` launches the server at `CS2_SERVER_PATH` on `CS2_PORT`
+`uv run poe serve` launches the server at `CS2_SERVER_PATH` on `CS2_PORT`
 with `-usercon +rcon_password <RCON_PASSWORD>`, all from `.env`. Start it from
 PowerShell with redirected stdout when you need the log afterwards (VoltMod logs
 to the console only):
 
 ```powershell
 $log = "<scratchpad>\server.log"
-Start-Process -FilePath "uv" -ArgumentList "run poe start-server" -RedirectStandardOutput $log -RedirectStandardError "$log.err" -PassThru
+Start-Process -FilePath "uv" -ArgumentList "run poe serve" -RedirectStandardOutput $log -RedirectStandardError "$log.err" -PassThru
 ```
 
 A client on the same machine joins with `connect localhost:27015` in its console.
