@@ -1,5 +1,5 @@
-# Secrets to be set in the repository settings:
-#   PRIVATE_PLUGINS_PAT: optional personal access token to check out the closed-source plugins.
+# Secrets:
+#   PRIVATE_PLUGINS_PAT  optional; a token that can read the closed-source plugin repos
 
 name: CI
 
@@ -9,12 +9,12 @@ on:
   pull_request:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Build + test
+    name: Build and test
     runs-on: ubuntu-latest
     container:
       image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
@@ -30,23 +30,18 @@ jobs:
           git config --global url."https://x-access-token:${PRIVATE_PLUGINS_PAT}@github.com/".insteadOf "https://github.com/"
           git submodule update --init --checkout plugins/anticheat plugins/stronghold
 
-      # The action owns the Conan and compiler caches.
       - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
 
-      - name: Build (configure -> build)
+      - name: Build
         run: voltmod build -p linux-steamrt-release
 
       - name: Test
         run: voltmod test -p linux-steamrt-release
 
   lint:
-    name: Lint (ruff)
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v10.1.0
-
-      - name: Ruff check (build tooling)
-        run: uv run poe lint-ci
+      - uses: astral-sh/setup-uv@v10.1.0
+      - run: uv run poe lint-ci

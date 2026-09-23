@@ -1,5 +1,7 @@
-# Required secrets:
-#   PRIVATE_PLUGINS_PAT: a GitHub personal access token with read access to the private plugins submodule.
+# Secrets:
+#   PRIVATE_PLUGINS_PAT  repository; a token that can read the closed-source plugin repos
+#   SERVER_ENV           each server environment; the whole deploy/secrets/<id>/.env file
+#   SSH_KEY              each Docker host environment; the private deploy key
 
 name: Deploy
 
@@ -22,7 +24,6 @@ permissions:
 
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
   targets:
@@ -47,7 +48,7 @@ jobs:
           echo "$plan" | tee -a "$GITHUB_OUTPUT"
 
   build:
-    name: Build + package plugins
+    name: Build and package plugins
     runs-on: ubuntu-latest
     timeout-minutes: 90
     container:
@@ -66,7 +67,7 @@ jobs:
       # Toolchain only, so it tracks main: conan.lock decides which framework the plugins link.
       - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
 
-      - name: Build Linux plugins
+      - name: Build
         run: voltmod build -p linux-steamrt-release
 
       - name: Test
@@ -82,9 +83,8 @@ jobs:
           if-no-files-found: error
 
   runtime-image:
-    name: Build + publish runtime image
+    name: Build and publish the runtime image
     needs: targets
-    # A dry run publishes nothing.
     if: needs.targets.outputs.docker == 'true' && !inputs.dry_run
     runs-on: ubuntu-latest
     timeout-minutes: 30
