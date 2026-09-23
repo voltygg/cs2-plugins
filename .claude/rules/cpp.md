@@ -30,7 +30,7 @@ paths:
 
 - Constructor injection. No singletons, ambient lookups, or generic Services/Env bags.
 - Stable services bind in constructors; per-request data (slots, descriptors) goes to methods.
-- `ActionContext` carries only the resolved pair and its controllers, never `Runtime&`. A body that needs a service uses the `App&` it captured, or a small per-descriptor factory when built as static data (see `Admin/Effects/*.cpp`).
+- `ActionContext` carries only the resolved pair (`ctx.Target().Pawn()` for the body), never `Runtime&`. A body that needs a service uses the `App&` it captured, or a small per-descriptor factory when built as static data (see `Admin/Effects/*.cpp`).
 
 ## Tests
 

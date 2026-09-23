@@ -69,10 +69,7 @@ VoltMod::MenuItem DisableUnless(VoltMod::MenuItem item, std::function<bool(int)>
 
 VoltMod::MenuItem WhileAlive(App& app, int adminSlot, VoltMod::PlayerRef target, VoltMod::MenuItem item)
 {
-    auto alive = [&entities = app.Runtime.Entities, target](int) {
-        VoltMod::Pawn pawn = entities.PawnOf(target.Slot);
-        return pawn && pawn.IsAlive();
-    };
+    auto alive = [&entities = app.Runtime.Entities, target](int) { return entities.Pawn(target.Slot).IsAlive(); };
     return DisableUnless(std::move(item), alive, app.Runtime.Translations.Get("hint.targetDead", adminSlot));
 }
 

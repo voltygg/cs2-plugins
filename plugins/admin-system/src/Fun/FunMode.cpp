@@ -129,14 +129,14 @@ void FunMode::ApplyOverrides()
 
 void FunMode::GiveKnifeOnly(int slot)
 {
-    auto pawn = _rt.Entities.PawnOf(slot);
-    if (!pawn || !pawn.IsAlive())
+    const VoltMod::Pawn pawn = _rt.Entities.Pawn(slot);
+    if (!pawn.IsAlive())
     {
         return;
     }
 
-    _rt.World.Items.StripWeapons(pawn, false);
-    _rt.World.Items.Give(pawn, pawn.Team() == VoltMod::TeamT ? KnifeT : KnifeCT);
+    pawn.StripWeapons(false);
+    pawn.GiveItem(pawn.Team() == VoltMod::Team::T ? KnifeT : KnifeCT);
 }
 
 }  // namespace AdminSystem::Fun

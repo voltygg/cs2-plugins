@@ -1,6 +1,5 @@
 #include "Admin/Effects/Descriptors.hpp"
 
-#include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Hooks/GlowVision.hpp>
 #include <VoltMod/Hooks/Visibility.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -11,7 +10,7 @@ namespace AdminSystem::Admin::Effects
 using Actions::ActionContext;
 using VoltMod::Controller;
 using VoltMod::GlowVision;
-using VoltMod::TeamSpectator;
+using VoltMod::Team;
 
 // Silent by design (empty On/Off keys): a broadcast would defeat the stealth, and the blanked
 // name covers the case where the visibility filter is inert after a CS2 update.
@@ -26,11 +25,12 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                   .TickIntervalMs = GlowVision::RefreshIntervalMs,
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
                       // The controller keeps a team while dead or spectating; the pawn may not exist.
-                      int savedTeam = ctx.TargetCtrl.Team();
-                      std::string savedName(ctx.TargetCtrl.Name());
+                      const Controller target = ctx.Target().Controller();
+                      const Team savedTeam = target.Team();
+                      std::string savedName(target.Name());
 
-                      ctx.TargetCtrl.SetName("");
-                      (void)ctx.TargetCtrl.ChangeTeam(TeamSpectator);
+                      target.SetName("");
+                      (void)target.ChangeTeam(Team::Spectator);
 
                       int slot = ctx.Target().Slot();
                       auto& visibility = runtime.Hooks.Visibility;
@@ -52,7 +52,7 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                                       }
                                       controller.SetName(savedName);
                                       // Joining T or CT also ends hide, and that choice wins.
-                                      if (savedTeam != TeamSpectator && controller.Team() == TeamSpectator)
+                                      if (savedTeam != Team::Spectator && controller.Team() == Team::Spectator)
                                       {
                                           (void)controller.ChangeTeam(savedTeam);
                                       }

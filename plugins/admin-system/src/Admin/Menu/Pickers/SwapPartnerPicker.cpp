@@ -27,8 +27,7 @@ std::shared_ptr<VoltMod::Menu> BuildSwapPartnerPicker(const MenuContext& ctx, Vo
                               .Enabled =
                                   [&entities = app.Runtime.Entities, first](VoltMod::PlayerRef candidate) {
                                       // Gray out partners Swap would reject: the already-picked player and the dead.
-                                      VoltMod::Pawn pawn = entities.PawnOf(candidate.Slot);
-                                      return candidate.Slot != first.Slot && pawn && pawn.IsAlive();
+                                      return candidate.Slot != first.Slot && entities.Pawn(candidate.Slot).IsAlive();
                                   }});
 }
 

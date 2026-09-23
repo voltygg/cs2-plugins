@@ -229,7 +229,7 @@ void BhopManager::OnPlayerJump(int slot)
         return;
     }
 
-    Pawn pawn = _rt.Entities.PawnOf(slot);
+    Pawn pawn = _rt.Entities.Pawn(slot);
     if (!pawn)
     {
         return;
@@ -250,19 +250,14 @@ void BhopManager::OnPlayerJump(int slot)
 
 void BhopManager::ForceAutoHop(int slot)
 {
-    if (!(_rt.Entities.Buttons(slot) & IN_JUMP))
+    const VoltMod::Controller controller = _rt.Entities.Controller(slot);
+    if (!(controller.Buttons() & IN_JUMP))
     {
         return;
     }
 
-    Pawn pawn = _rt.Entities.PawnOf(slot);
-    if (!pawn)
-    {
-        return;
-    }
-
-    uint32_t flags = pawn.Flags();
-    if (!(flags & FL_ONGROUND))
+    Pawn pawn = controller.Pawn();
+    if (!pawn.IsOnGround())
     {
         return;
     }
@@ -275,9 +270,7 @@ void BhopManager::ForceAutoHop(int slot)
 
     constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0)
     velocity.z = _jumpImpulse ? _jumpImpulse.Get() : DefaultJumpImpulse;
-    pawn.SetVelocity(velocity);
-    // Clear FL_ONGROUND now to prevent a one-tick re-grounding hitch.
-    pawn.SetFlags(flags & ~FL_ONGROUND);
+    pawn.Launch(velocity);
 
     // Forced hops do not emit player_jump.
     OnPlayerJump(slot);

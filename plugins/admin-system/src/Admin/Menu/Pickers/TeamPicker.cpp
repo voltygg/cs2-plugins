@@ -5,10 +5,10 @@
 #include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <string>
+#include <utility>
 
 namespace AdminSystem::Admin::Menu
 {
@@ -20,16 +20,16 @@ std::shared_ptr<VoltMod::Menu> BuildTeamPicker(const MenuContext& ctx, VoltMod::
     App& app = ctx.Plugin;
     MenuBuilder builder(ctx.Translate("action.changeTeam"));
 
-    auto addTeam = [&](const std::string& label, int team) {
+    auto addTeam = [&](const std::string& label, VoltMod::Team team) {
         builder.Button(label, [&app, admin = ctx.Admin, target, team](int slot) {
-            app.Actions.Run(admin, target, team, Actions::ChangeTeam);
+            app.Actions.Run(admin, target, std::to_underlying(team), Actions::ChangeTeam);
             app.Runtime.Menus.CloseAll(slot);
         });
     };
 
-    addTeam(ctx.Translate("team.ct"), VoltMod::TeamCT);
-    addTeam(ctx.Translate("team.t"), VoltMod::TeamT);
-    addTeam(ctx.Translate("team.spec"), VoltMod::TeamSpectator);
+    addTeam(ctx.Translate("team.ct"), VoltMod::Team::CT);
+    addTeam(ctx.Translate("team.t"), VoltMod::Team::T);
+    addTeam(ctx.Translate("team.spec"), VoltMod::Team::Spectator);
 
     return builder.Build();
 }

@@ -9,7 +9,6 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/App/PluginEntry.hpp>
 #include <VoltMod/Database/Api.hpp>
-#include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Events/EventTypes.hpp>
 #include <VoltMod/Unsafe/Hook.hpp>
 #include <algorithm>
@@ -188,7 +187,7 @@ void App::RegisterGameEventListeners()
         {
             return;
         }
-        if (e.Team == VoltMod::TeamT || e.Team == VoltMod::TeamCT)
+        if (VoltMod::IsPlaying(e.Team))
         {
             Effects.Cancel(e.Slot, EffectDescriptors.Hide.Id);
         }

@@ -38,8 +38,7 @@ Effect MakeDrunk(VoltMod::Runtime& runtime)
                       auto& entities = runtime.Entities;
                       return {.OnTick = [&messages, &entities, slot]() {
                           // Shaking a dead or departed player would be wasted traffic.
-                          auto pawn = entities.PawnOf(slot);
-                          if (pawn && pawn.IsAlive())
+                          if (entities.Pawn(slot).IsAlive())
                           {
                               messages.Shake(slot, ShakeDurationSec, ShakeFrequency, ShakeAmplitude);
                           }

@@ -3,7 +3,6 @@
 #include "Admin/Effects/Descriptors.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Entities/PawnOps.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <string_view>
 
@@ -18,13 +17,13 @@ static constexpr std::string_view DefaultModelT = "characters/models/tm_phoenix/
 static constexpr std::string_view DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
 
 // Spectators and unassigned players have no restore model; SetModel ignores the empty view.
-static std::string_view DefaultModelForTeam(int team)
+static std::string_view DefaultModelForTeam(VoltMod::Team team)
 {
-    if (team == VoltMod::TeamT)
+    if (team == VoltMod::Team::T)
     {
         return DefaultModelT;
     }
-    if (team == VoltMod::TeamCT)
+    if (team == VoltMod::Team::CT)
     {
         return DefaultModelCt;
     }
@@ -46,11 +45,11 @@ void PrecacheModels(VoltMod::Runtime& runtime)
 {
     for (const auto& model : FunModels())
     {
-        runtime.World.Precache.Add(model.Path);
+        runtime.Precache.Add(model.Path);
     }
 
-    runtime.World.Precache.Add(DefaultModelT);
-    runtime.World.Precache.Add(DefaultModelCt);
+    runtime.Precache.Add(DefaultModelT);
+    runtime.Precache.Add(DefaultModelCt);
 }
 
 Effect MakeModel(VoltMod::Runtime& runtime)
@@ -75,18 +74,17 @@ Effect MakeModel(VoltMod::Runtime& runtime)
                       },
                   .Setup = [&runtime](const ActionContext& ctx, int param) -> EffectInstance {
                       // Dispatch already bounds-checked param and required the target alive.
-                      runtime.World.EntityOps.SetModel(ctx.TargetPawn().Raw(), FunModels()[param].Path);
+                      ctx.Target().Pawn().SetModel(FunModels()[param].Path);
 
                       // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
                       // team default when cleared while alive (a no-op on death, where IsAlive is false).
                       int targetSlot = ctx.Target().Slot();
-                      return {.OnStop = [&ops = runtime.World.EntityOps, &entities = runtime.Entities, targetSlot]() {
-                          Pawn pawn = entities.PawnOf(targetSlot);
-                          if (!pawn || !pawn.IsAlive())
+                      return {.OnStop = [&entities = runtime.Entities, targetSlot]() {
+                          const Pawn pawn = entities.Pawn(targetSlot);
+                          if (pawn.IsAlive())
                           {
-                              return;
+                              pawn.SetModel(DefaultModelForTeam(pawn.Team()));
                           }
-                          ops.SetModel(pawn.Raw(), DefaultModelForTeam(pawn.Team()));
                       }};
                   }};
 }

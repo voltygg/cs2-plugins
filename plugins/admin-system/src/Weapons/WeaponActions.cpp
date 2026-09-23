@@ -33,7 +33,7 @@ static WeaponActionResult RunWeaponAction(App& app, VoltMod::PlayerRef admin, Vo
         admin, target,
         Action{
             .Permission = Permission::Weapon, .RequireAlive = false, .Body = [&](const ActionContext& ctx) -> OptKey {
-                if (!ctx.TargetPawn().IsAlive())
+                if (!ctx.Target().Pawn().IsAlive())
                 {
                     outcome = WeaponActionResult::TargetDead;
                     return std::nullopt;
@@ -53,18 +53,15 @@ static WeaponActionResult RunWeaponAction(App& app, VoltMod::PlayerRef admin, Vo
 WeaponActionResult GiveWeapon(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target, std::string_view item)
 {
     const std::string classname(item);
-    auto& items = app.Runtime.World.Items;
     return RunWeaponAction(
-        app, admin, target,
-        [&items, &classname](const ActionContext& ctx) { return items.Give(ctx.TargetPawn(), classname); },
+        app, admin, target, [&classname](const ActionContext& ctx) { return ctx.Target().Pawn().GiveItem(classname); },
         "broadcast.gaveWeapon");
 }
 
 WeaponActionResult StripWeapons(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target)
 {
-    auto& items = app.Runtime.World.Items;
     return RunWeaponAction(
-        app, admin, target, [&items](const ActionContext& ctx) { return items.StripWeapons(ctx.TargetPawn()); },
+        app, admin, target, [](const ActionContext& ctx) { return ctx.Target().Pawn().StripWeapons(); },
         "broadcast.stripped");
 }
 
