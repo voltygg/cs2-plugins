@@ -76,7 +76,7 @@ The last command builds and installs `admin-system`, then starts the server. Out
 | `uv run poe schema` | Regenerate admin-system table specifications from its migrations |
 | `uv run poe new-plugin <name>` | Create and register a new plugin |
 | `uv run poe panorama` | Compile Panorama screens into the local CS2 client on Windows |
-| `uv run poe deploy-*` / `uv run poe rcon` | Deploy to remote hosts or send an RCON command |
+| `uv run poe deploy <command>` / `uv run poe rcon` | Deploy to remote hosts or send an RCON command |
 
 ## Documentation
 
