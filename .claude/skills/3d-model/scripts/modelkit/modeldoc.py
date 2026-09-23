@@ -7,19 +7,36 @@ HEADER = (
 
 
 def write_vmat(
-    path, folder, color, rough, normal=None, metalness=0.6, roughness=0.55, glow_mask=None, glow=1.0
+    path,
+    folder,
+    color,
+    rough,
+    normal=None,
+    metalness=0.6,
+    roughness=0.55,
+    glow_mask=None,
+    glow=1.0,
+    opacity=None,
 ):
     """Writes a csgo_complex material; texture names are files in @p folder, e.g. "models/x/y/".
 
     @p rough is the addon path of a flat white roughness texture, scaled by @p roughness.
     With @p glow_mask the material glows at @p glow times its colour where the mask is white.
+    With @p opacity it is see-through, such as glass, and casts no shadow.
     """
     keys = [("shader", "csgo_complex.vfx")]
     if glow_mask:
         keys.append(("F_SELF_ILLUM", "1"))
+    if opacity is not None:
+        keys += [("F_TRANSLUCENT", "1"), ("F_DO_NOT_CAST_SHADOWS", "1")]
     keys += [("g_flMetalness", f"{metalness:g}"), ("g_flRoughnessScaleFactor", f"{roughness:g}")]
     if glow_mask:
         keys.append(("g_flSelfIllumScale", f"{glow:g}"))
+    if opacity is not None:
+        keys += [
+            ("g_flOpacityScale", f"{opacity:g}"),
+            ("TextureTranslucency", "[1.000000 1.000000 1.000000 0.000000]"),
+        ]
     keys += [
         ("g_vColorTint", "[1.000000 1.000000 1.000000 0.000000]"),
         ("TextureAmbientOcclusion", "materials/default/default_ao.tga"),
@@ -35,12 +52,15 @@ def write_vmat(
     return path
 
 
-def write_vmdl(path, meshes, hulls=(), animations=(), material_groups=None, attachments=()):
+def write_vmdl(
+    path, meshes, hulls=(), animations=(), material_groups=None, attachments=(), surface="metal"
+):
     """Writes a ModelDoc .vmdl.
 
     @p meshes: [(name, dmx)]. @p hulls: [dmx]. @p animations: [(name, dmx, looping)], the first
     playing when the prop spawns. @p material_groups: {group: {from vmat: to vmat}}, the first
     being the default. @p attachments: [(name, bone, (x, y, z), (pitch, yaw, roll))].
+    @p surface is the hulls' surface property; "metal_barrel" stops bullets however thin the hull.
     """
     nodes = [
         {"_class": "BoneMarkupList", "children": [], "bone_cull_type": "None"},
@@ -54,7 +74,7 @@ def write_vmdl(path, meshes, hulls=(), animations=(), material_groups=None, atta
     if animations:
         nodes.append(listing("AnimationList", [animation(*a) for a in animations]))
     if hulls:
-        nodes.append(listing("PhysicsShapeList", [physics_hull(h) for h in hulls]))
+        nodes.append(listing("PhysicsShapeList", [physics_hull(h, surface) for h in hulls]))
     root = {"rootNode": {"_class": "RootNode", "children": nodes}}
     with open(path, "w", newline="\n") as f:
         f.write(HEADER + kv3(root) + "\n")
@@ -101,12 +121,12 @@ def animation(name, dmx, looping):
     }
 
 
-def physics_hull(dmx):
+def physics_hull(dmx, surface):
     return {
         "_class": "PhysicsHullFile",
         "filename": dmx,
         "parent_bone": "",
-        "surface_prop": "metal",
+        "surface_prop": surface,
         "collision_tags": "",
         "name": "",
     }
