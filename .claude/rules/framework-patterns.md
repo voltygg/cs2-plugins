@@ -54,7 +54,7 @@ commands.Add("slap")
 ## Entities
 
 - `Pawn` is the body (health, armor, movement, aim, weapons); `Controller` is the identity (name, money, team). Get them from `runtime.Entities.Pawn(slot)` and `.Controller(slot)`, or `player.Pawn()` and `player.Controller()`.
-- All are frame-local. Store an `EntityRef` or `PlayerRef` and resolve again where used: `runtime.Entities.Resolve(ref).Remove()`. `explicit operator bool()` is the only validity check, and a falsy wrapper ignores verbs, so `runtime.Entities.Pawn(slot).IsAlive()` needs no null check.
+- All are frame-local. Store an `EntityRef` or `PlayerRef` and get it again where used: `runtime.Entities.Get(ref).Remove()`, or `runtime.Entities.Pawn(ref)` for a player pawn. `explicit operator bool()` is the only validity check, and a falsy wrapper ignores verbs, so `runtime.Entities.Pawn(slot).IsAlive()` needs no null check.
 - Verbs live on the entity they act on: `entity.AcceptInput`, `Remove`, `RemoveAfter`, `SetModel`, `SetRender`, `EmitSound`; `pawn.GiveItem`, `Launch`, `Heal`, `SetGodmode`, `SetMoveType`; `controller.ChangeTeam`, `Kick`. Create through `runtime.Entities` (`Spawn`, `SpawnProp`, `SpawnParticle`, `SpawnBeam`); walk with `Find`, `FindAll` and `AlivePawns`. Never pass `.Raw()` to a framework call.
 - Teams are `VoltMod::Team` with `IsPlaying` and `Opposite`; render colours are `VoltMod::Color{r, g, b[, a]}`. Handle fields end in `Ref` and return an `EntityRef`.
 - Schema fields are generated pairs: `pawn.Health()` reads, `pawn.SetHealth(100)` writes and replicates. Offsets are baked by `voltmod framework schemagen`; the load aborts if they no longer match the engine.
