@@ -84,7 +84,7 @@ the code in the same task.
 - **Path:** grep the plugin for `.vmdl`. In Stronghold it's `src/Config/ItemAssets.cpp`.
 - **Size:** the scale, placement box, trigger radii (the jump pad's `Launcher`) and offsets
   measured on the mesh, such as muzzles and `PartAt`.
-- **Names:** attachments, animations, material groups (`SkinOf`) and bones.
+- **Names:** attachments, animations, material groups (`Skin`) and bones.
 - **Assets doc:** the plugin's `docs/assets.md` has the addon layout and licence status.
 
 ## 4. Textures
