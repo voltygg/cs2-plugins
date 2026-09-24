@@ -12,15 +12,15 @@ from . import rig
 SETTINGS = "modelkit"
 
 
-def remember(scene_name, model, armature=None, actions=(), files=None):
+def remember(scene_name, model=None, armature=None, actions=(), files=None):
     """Stores how the scene exports, so a later session can re-export it from the .blend alone.
 
-    `model` names the animation files (`<model>_<action>.dmx`); `actions` list the actions,
-    the one to pose after export first; `files` renames mesh files ({object: stem}), which otherwise
-    take the object's name.
+    `model` prefixes the animation files (`<model>_<action>.dmx`); without it each takes its
+    action's name. `actions` list the actions, the one to pose after export first; `files` renames
+    mesh files ({object: stem}), which otherwise take the object's name.
     """
     bpy.data.scenes[scene_name][SETTINGS] = {
-        "model": model,
+        "model": model or "",
         "armature": armature or "",
         "actions": list(actions),
         "files": dict(files or {}),
@@ -65,7 +65,8 @@ def export(scene_name, out_dir):
             sc.frame_set(0)
             bpy.ops.export_scene.smd(export_scene=True)
             if armature and action:
-                target = os.path.join(out_dir, f"{kept['model']}_{action}.dmx")
+                stem = f"{kept['model']}_{action}" if kept["model"] else action
+                target = os.path.join(out_dir, f"{stem}.dmx")
                 shutil.copy(os.path.join(staging, "anims", f"{armature}.dmx"), target)
                 written.append(target)
         for name in os.listdir(staging):
