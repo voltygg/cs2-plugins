@@ -65,6 +65,7 @@ STEEL = textured("steel", 0.8, 0.45)
 CHROME = textured("chrome", 1.0, 0.2, normal=False)
 DECK = textured("deck", 0.7, 0.5)
 HAZARD = textured("hazard", 0.2, 0.6)
+ARROW = textured("arrow", 0.2, 0.6)
 
 
 def arm_angle(lift):
@@ -137,6 +138,15 @@ def nut(x, y):
     return shapes.moved(shapes.cone(0.45, 0.45, 0.5, 0.85, seg=6), (x, y, 0))
 
 
+def chevron(x):
+    """A painted arrow head pointing +X, the way the pad throws, with its tip at `x` + 4.5."""
+    width, half, tip = 1.8, 6.0, x + 4.5
+    left = [(tip, 0), (tip - width, 0), (x - width, half), (x, half)]
+    right = [(tip, 0), (x, -half), (x - width, -half), (tip - width, 0)]
+    top = DECK_TOP + 0.04
+    return shapes.merge([shapes.prism(left, DECK_TOP, top), shapes.prism(right, DECK_TOP, top)])
+
+
 def part(name, bm, mat, bone, **finish):
     return objects.finish(objects.to_object(name, bm), mat, bone, **finish)
 
@@ -174,9 +184,11 @@ base_steel = shapes.merge(
 )
 parts.append(part("base_steel", base_steel, STEEL, "root", uv_size=16.0))
 
-# Deck: worn plate inside a hazard-striped rim, over a steel skirt with corner caps.
+# Deck: worn plate with orange arrows inside a hazard-striped rim, over a steel skirt.
 plate = shapes.box((0, 0, PLATE_Z), (2 * INSIDE_X, 2 * INSIDE_Y, 1.0))
 parts.append(part("deck_plate", plate, DECK, "deck", uv_size=32.0, bevel=0.1))
+arrows = shapes.merge([chevron(-4.5), chevron(1.5)])
+parts.append(part("arrows", arrows, ARROW, "deck", uv_size=12.0))
 rim = shapes.merge(
     [
         mirrored(lambda s: shapes.box((s * RIM_X, 0, PLATE_Z), (BORDER, 2 * DECK_Y, 1.0))),
