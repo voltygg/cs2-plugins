@@ -59,6 +59,28 @@ def animate(arm, name, tracks):
     return action
 
 
+def eased(keys):
+    """(frame, value) for each frame through `keys`, never overshooting them (monotone cubic)."""
+    frames, values = zip(*keys)
+    steps = [b - a for a, b in zip(frames, frames[1:])]
+    slopes = [(b - a) / h for a, b, h in zip(values, values[1:], steps)]
+    tangents = [0.0] * len(keys)
+    for i in range(1, len(keys) - 1):
+        if slopes[i - 1] * slopes[i] > 0:
+            w1, w2 = 2 * steps[i] + steps[i - 1], steps[i] + 2 * steps[i - 1]
+            tangents[i] = (w1 + w2) / (w1 / slopes[i - 1] + w2 / slopes[i])
+    samples = []
+    for i, h in enumerate(steps):
+        a, b = values[i], values[i + 1]
+        ma, mb = tangents[i] * h, tangents[i + 1] * h
+        for frame in range(frames[i], frames[i + 1]):
+            t = (frame - frames[i]) / h
+            ease = (2 * t**3 - 3 * t**2 + 1) * a + (3 * t**2 - 2 * t**3) * b
+            samples.append((frame, ease + (t**3 - 2 * t**2 + t) * ma + (t**3 - t**2) * mb))
+    samples.append((frames[-1], values[-1]))
+    return samples
+
+
 def show(arm, action, frame=0):
     """Poses `arm` at `frame` of `action`."""
     arm.animation_data.action = bpy.data.actions[action]

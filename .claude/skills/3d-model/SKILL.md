@@ -1,28 +1,41 @@
 ---
 name: 3d-model
-description: Make, change, retexture or animate a 3D prop for any plugin's workshop addon in Blender (through the Blender MCP), compile it with the CS2 Workshop Tools, wire it into the plugin, and clean up afterwards. Use for "make a model for X", "replace the stand-in model", "reskin", "new texture for X", "animate the X", "the model looks too big/plain", or any new or changed .vmdl.
+description: Make, reskin or animate a prop for a plugin's workshop addon in Blender, or give one FX (glow, moving parts, particles), then compile, install and wire it in. Use for any new or changed .vmdl or .vpcf, such as "make a model for X", "reskin X", "animate X" or "add particles to X".
 ---
 
-# 3D models
+# 3D models and FX
 
-Blender runs on the user's machine with the `blender` MCP and Blender Source Tools. Work in
-their open session, show them the result, and export only once they approve.
+Build, reskin or animate a prop for a plugin's workshop addon, or give it FX: a glow, moving parts
+or a particle effect. Models are built in the user's open Blender session through the `blender`
+MCP and Blender Source Tools. Particle effects need no Blender.
 
-- `scripts/check.py`: checks the tools outside Blender.
-- `scripts/modelkit/`: the helpers you run inside Blender:
-  - `session`: status, scenes, opening models, cleanup
-  - `surfaces`: textures and preview materials
-  - `shapes`: mesh parts
-  - `objects`: finishing and joining parts, editing a joined mesh
-  - `rig`: skeleton and actions
-  - `preview`: renders and the user's viewport
-  - `source2`: DMX export and the `.blend`
-  - `modeldoc`: `.vmat` and `.vmdl` writers; these also run without Blender
-- `scripts/compile.py`: compiles and installs one model folder.
-- `examples/jump_pad.py`: a complete skinned, animated prop. Read it before building one.
+The flow: check the tools, read what the plugin expects, build, review with the user, then export,
+compile, wire into the plugin and clean up. Nothing is exported before the user approves.
 
-One Blender unit is one Source unit. +X is the model's forward and +Z is up. A player is
-32 × 32 × 72 units, with eyes at 64.
+## Tools
+
+| Tool | What it does |
+| --- | --- |
+| `scripts/check.py` | Checks the tools outside Blender |
+| `scripts/compile.py` | Compiles one model or particle folder and installs it |
+| `scripts/particles.py` | Checks `.vpcf` field names; lists a class's fields and the game's particle textures |
+| `scripts/modelkit/` | The helpers you run inside Blender, below |
+| `examples/jump_pad.py` | A skinned, animated prop. Read it before building one |
+| `examples/teleporter.py` | Glow, team colour and FX animations. Read it before adding FX |
+
+| `modelkit` module | For |
+| --- | --- |
+| `session` | Status, scenes, opening models, cleanup |
+| `surfaces` | Textures and preview materials |
+| `shapes` | Mesh parts |
+| `objects` | Finishing, joining and editing parts |
+| `rig` | Skeleton and actions |
+| `preview` | Renders and the user's viewport |
+| `source2` | DMX export and the `.blend` |
+| `modeldoc` | `.vmat`, `.vmdl` and `.vpcf` writers; also runs without Blender |
+
+One Blender unit is one Source unit; +X is forward and +Z is up. A player is 32 × 32 × 72 units,
+with eyes at 64.
 
 ## 1. Check the tools
 
@@ -30,7 +43,7 @@ One Blender unit is one Source unit. +X is the model's forward and +Z is up. A p
 uv run python .claude/skills/3d-model/scripts/check.py <plugin>
 ```
 
-In Blender, load the kit and read the session:
+Then load the kit in Blender:
 
 ```python
 import sys
@@ -41,145 +54,181 @@ from modelkit import session, surfaces, shapes, objects, rig, preview, source2, 
 result = session.status()
 ```
 
-Stop and tell the user when something is missing:
+Stop and tell the user if:
 
-- Blender or its MCP isn't answering.
+- Blender or its MCP doesn't answer.
 - `source_tools_enabled` is false.
-- `check.py` reports MISSING. The Codex lines only matter when new textures are needed, and a
-  running CS2 only blocks installing.
+- `check.py` reports MISSING. Codex only matters for new textures, and a running CS2 only blocks
+  installing.
 
-When the user has unsaved changes, work only in the model's own scene.
+If the user has unsaved changes, work only in the model's own scene.
 
 ## 2. Pick the path
 
-| The model | Start with |
+| Situation | Start with |
 | --- | --- |
-| New | step 3, then build it in a new scene with `session.scene(name, "models/<plugin>/<model>/")` |
-| Has a `.blend` beside its `.vmdl` | `session.open_model(<blend>, <scene>)`, which brings its scene, actions and export settings into the session |
-| Has DMX files only, such as a reference-pack stand-in | `session.import_dmx(scene, folder, meshes, animations)`. Check the result, then `source2.remember(...)` |
-| Needs new textures only | step 4 alone, then step 8. No geometry work |
+| A new model | Step 3, then `session.scene(name, "models/<plugin>/<model>/")` |
+| A model with a `.blend` | `session.open_model(<blend>, <scene>)` |
+| A model with DMX files only, such as a stand-in | `session.import_dmx(scene, folder, meshes, animations)`; check it, then `source2.remember(...)` |
+| New textures only | Step 4, then step 8 |
+| FX | A glow or a moving part: open or import the model, then steps 5 and 6. A particle effect: [Particles](#particles) |
 
-`open_model` refuses when the session already holds data with the same names, because Blender
-would rename the incoming materials to `x.vmat.001` and break the DMX. Pass `replace=True` to
-reload over your own earlier copy, never over the user's work.
+`open_model` refuses names the session already holds, because Blender would rename a material to
+`x.vmat.001` and break the DMX. Pass `replace=True` only to reload over your own copy.
 
-## 3. Read the contract
+## 3. Read what the plugin expects
 
-Before you design, find everything the plugin assumes about the model:
+Before designing, find what the plugin assumes about the model. Keep every name it uses, or change
+the code in the same task.
 
-- The model path. Grep the plugin for `.vmdl`; in Stronghold it is `src/Config/ItemAssets.cpp`.
-- What fixes the size: the model scale, the placement box, trigger radii (the jump pad's
-  `Launcher`), and offsets measured on the mesh, such as muzzles and part stacking (`PartAt`).
-- Names the code uses: attachments, animations, material groups or skins (`SkinOf`), and bones.
-- The plugin's assets doc (`docs/assets.md`): addon layout and licence status.
-
-Keep every name the code uses, or change the code in the same task.
+- **Path:** grep the plugin for `.vmdl`. In Stronghold it's `src/Config/ItemAssets.cpp`.
+- **Size:** the scale, placement box, trigger radii (the jump pad's `Launcher`) and offsets
+  measured on the mesh, such as muzzles and `PartAt`.
+- **Names:** attachments, animations, material groups (`SkinOf`) and bones.
+- **Assets doc:** the plugin's `docs/assets.md` has the addon layout and licence status.
 
 ## 4. Textures
 
-Before the first Codex run, list `~/.codex/generated_images/`, so cleanup can tell which folders
-the runs added. Run Codex in the background while you work:
+List `~/.codex/generated_images/` before the first run, so cleanup knows which folders are new.
+Then run Codex in the background while you work:
 
 ```bash
 codex exec --skip-git-repo-check --sandbox workspace-write -C "<scratchpad>/tex" "Use the imagegen skill (built-in image_gen tool) to generate <name>.png: albedo texture for a low-poly CS2 prop; perfectly seamless and tileable on both axes; flat orthographic; evenly lit albedo only (no baked shadows, highlights, perspective or vignette); square 1024x1024; no text, logos or watermark. Subject: <material>. Copy the final image into the current directory as <name>.png."
 ```
 
-- Look at each result. Brushed or streaked metal turns into wood grain on curved surfaces, so
-  ask for powder-coated or speckled metal.
+- Look at every result. Brushed metal turns into wood grain on curves, so ask for powder-coated or
+  speckled metal.
 - `surfaces.replace_texture(generated, color_png, normal_png, strength)` installs a texture at
-  1024 px under the existing file name, rebuilds its normal map and refreshes the previews.
-  Keeping the name keeps every `.vmat` valid. Use a strength of about 1.5 for painted metal and
-  10 for raised patterns; stronger turns metal into foam.
-- `surfaces.brightened` makes a lighter trim variant, and `surfaces.solid` makes glow colours
-  and self-illum masks.
+  1024 px under the existing name, so every `.vmat` stays valid, and rebuilds its normal map. Use a
+  strength of about 1.5 for painted metal and 10 for raised patterns.
+- `surfaces.brightened` makes a lighter or darker variant. `surfaces.solid` makes glow colours and
+  masks.
 
 ## 5. Build or edit
 
-Write the build as a scratchpad script and run it with `execute_blender_code`. Keep to the
-model's scene, and put imported references in a scene of their own.
+Write the build as a scratchpad script and run it with `execute_blender_code`. Stay in the model's
+scene, and give imported references a scene of their own.
 
-- **New parts:** build the geometry with the `shapes` functions and cut holes with
-  `objects.cut`. `objects.finish` bevels, projects UVs, sets the material and binds the part to a
-  bone. `objects.join` merges parts into the render mesh, and `objects.hull` makes the collision
-  mesh.
-- **Changing a finished mesh:** `objects.vertices(body, material=..., bone=...)` picks the
-  vertices of one part, and `objects.transform` moves or scales them. Add new parts with
-  `objects.join([body, *parts], body.name)`, and repoint a renamed material with
-  `objects.replace_material`. If the whole model only needs resizing, prefer the plugin's scale.
-- **Looks:**
-  - Compare the size against a player; a floor prop wider than about 40 units looks oversized.
-  - Primitives alone look like programmer art. Add bevels, trim in a second material, bolts,
-    vents, a recessed insert and normal maps. About 5–12k triangles is fine.
-  - Keep glow to thin lines, slots and small markers, at glow 1.0. Large bands read as flat colour.
-  - Put team colour on its own glow material and remap it in a material group (`blue`/`red`).
+- **New parts:** make the geometry with `shapes` and cut holes with `objects.cut`.
+  `objects.finish` bevels, maps UVs, sets the material and binds the part to a bone.
+  `objects.join` makes the render mesh and `objects.hull` the collision.
+- **A finished mesh:** `objects.vertices(body, material=..., bone=...)` picks a part, and
+  `objects.transform` moves or scales it. Add parts with `objects.join([body, *parts], body.name)`
+  and repoint a renamed material with `objects.replace_material`. To only resize, use the
+  plugin's scale.
+- **Size:** compare against a player. A floor prop over about 40 units wide looks oversized.
+- **Detail:** add bevels, a trim material, bolts, vents, an inset and normal maps. 5–12k
+  triangles is fine.
+- **Glow:** keep it to thin lines and small markers at glow 1.0. A large glow reads as flat colour
+  unless a grate or slots break it up. Team colour gets its own glow material, remapped in
+  `blue`/`red` material groups.
 
 ## 6. Animate
 
-`rig.skeleton` creates the bones and skins the mesh; each vertex group names the bone its part
-follows. `rig.animate` records an action from per-bone keys `(frame, move, turn)`, at 30 fps,
-relative to rest; re-recording replaces the action. `source2.remember` stores the model name,
-armature, actions and file renames, so a later session exports from the `.blend` alone.
+`rig.skeleton` makes the bones and skins the mesh by vertex group. `rig.animate` records an action
+from per-bone `(frame, move, turn)` keys at 30 fps, relative to rest. `rig.eased` fills in the
+frames between keys without overshoot. `source2.remember` saves the export settings in the
+`.blend`.
 
-- Exaggerate. A 10-unit lift looked static in game. Crouch before the action, overshoot, then
-  bounce to rest. Something that should look alive needs a moving `idle` loop.
-- A `prop_dynamic` plays no animation until told, so the plugin must start the idle loop
-  (step 9). A looping action ends on its first key.
-- Check a few frames of each action in a `preview.contact_sheet`, looking for parts that clip.
+- **Exaggerate:** a 10-unit lift looked static in game. Crouch, overshoot, then bounce to rest.
+- **Idle:** anything that should look alive needs a moving `idle` loop, and the plugin must start
+  it (step 9). A loop ends on its first key.
+- **Turning parts** end every action on whole turns, so the loop picks up cleanly after a
+  one-shot.
+- **FX as animation:** put a glowing part on its own bone and move it. The teleporter's light
+  strip lifts off as a hoop and sweeps past the player, which made a planned particle burst
+  unnecessary.
+- **Check** a few frames of each action with `preview.contact_sheet`, looking for parts that clip.
 
 ## 7. Review with the user
 
-- Stage the preview with `preview.stage()` and show the model with `preview.frame_viewport`.
-- Render stills from a player's view with `preview.render` (about 64 units up, 60 to 80 away).
-- Tell the user how to play an action: select the armature, pick it in the Action Editor, press Space.
-- Iterate. Do not export, compile or install before they approve.
+- Stage the scene with `preview.stage()` and show the model with `preview.frame_viewport`.
+- Render stills from a player's view with `preview.render`: about 64 units up, 60–80 away.
+- Tell the user how to play an action: select the armature, pick the action in the Action Editor,
+  press Space.
+- Iterate. Export nothing before they approve.
 
 ## 8. Export and compile
 
 ```python
-source2.export(scene, model_dir)                       # DMX: meshes, hull, one file per action
-source2.save_blend(scene, model_dir + "/<model>.blend")
-modeldoc.write_vmat(...)   # only for new or changed materials
-modeldoc.write_vmdl(...)   # only when meshes, animations, groups or attachments change
+source2.export(scene, model_dir)                        # meshes, hull, one DMX per action
+source2.save_blend(scene, model_dir + "/<model>.blend")  # goes to Git LFS, not the compile
+modeldoc.write_vmat(...)  # only for new or changed materials
+modeldoc.write_vmdl(...)  # only when meshes, animations, groups or attachments change
 ```
+
+Stop the CS2 server and client first; installing into a running game fails.
 
 ```bash
 uv run python .claude/skills/3d-model/scripts/compile.py plugins/<plugin>/addon models/<plugin>/<model> --install client server
 ```
 
-- `export` refuses renamed `.001` materials, and it leaves stale object references behind, so
-  look objects up by name afterwards.
-- `compile.py` mirrors the folder into the Workshop Tools content folder, wipes and recompiles
-  the model, and mirrors the result into each install target.
-- Installing into a running game fails, so stop the server and client first. The `.blend` stays
-  out of the compile and goes into Git LFS.
+- `export` refuses `.001` materials and leaves object references stale, so look objects up by
+  name afterwards.
+- `compile.py` mirrors the folder into the Workshop Tools content folder, recompiles it from
+  scratch and copies the result to each install target.
 
 ## 9. Wire it into the plugin
 
 - Point the plugin at the `.vmdl`, and update the scale, placement box, trigger radii and measured
-  offsets to the new size. In Stronghold, `Scale` in `ItemAssets` resizes the model, its
-  collision and its animation together, with no recompile.
-- Start a loop from spawn with the `SetAnimationLooping` input; in Stronghold, name it in `Idle`
-  in `ItemAssets`. `prop_dynamic` has no `SetAnimation` input (`game/core/base.fgd`). Play a
-  one-shot with `SetAnimationNotLooping`, after `SetIdleAnimationLooping` names the loop to
-  return to. Stronghold's `PlayAnimation` in `World/Effects` does both.
-- Record new or replaced assets in the plugin's assets doc, with how they were made.
+  offsets. In Stronghold, `Scale` in `ItemAssets` resizes the model, collision and animation
+  without a recompile.
+- Start a loop with the `SetAnimationLooping` input; in Stronghold, name it in `Idle` in
+  `ItemAssets`. `prop_dynamic` has no `SetAnimation` input (`game/core/base.fgd`).
+- Play a one-shot with `Entity::PlayAnimation(animation, idle)`, which returns to the loop after.
+- Record new or replaced assets, and how they were made, in the plugin's assets doc.
 - Build with `build-local`, install with `uv run poe install <plugin>`, and check that the
-  installed DLL's hash matches the build before the user tests it.
+  installed DLL's hash matches the build.
 
 ## 10. Clean up
 
-The task is done when nothing it created is left without a purpose:
+The task is done when nothing it created is left without a purpose.
 
-- **Blender:** `session.remove_scene` for each scene the task created that isn't the model, such
-  as imported references, then `session.purge()`. Leave the user's own scenes alone.
-- **Model folder:** `compile.py --prune` deletes source files that no `.vmdl`, `.vmat` or DMX
-  names, such as replaced textures. Delete any stray export by hand: `anims/`, or a DMX named
-  after a Blender object instead of the model.
-- **Game folders:** `compile.py` already drops stale files from the model's own folders. If a
-  model folder was renamed or removed, delete its old folder under `content/csgo_addons/<addon>/`,
-  `game/csgo_addons/<addon>/` and `game/csgo/` on the client and the server.
+- **Blender:** `session.remove_scene` for every scene the task made other than the model, then
+  `session.purge()`. Leave the user's own scenes alone.
+- **Model folder:** `compile.py --prune` deletes sources nothing names, such as replaced textures.
+  Delete stray exports by hand: `anims/`, or a DMX named after a Blender object.
+- **Game folders:** if a model or effect folder was renamed or removed, delete its old copy under
+  `content/csgo_addons/<addon>/`, `game/csgo_addons/<addon>/` and `game/csgo/`, on the client and
+  the server.
 - **Plugin:** remove constants, config and doc lines that only served the replaced model.
-- **Scratch:** delete the scratchpad renders, drafts and scripts. Also delete the
-  `~/.codex/generated_images/` folders the Codex runs added, comparing with the step 4 listing.
-- **Git:** `git status` in the plugin repo shows only the files you meant to change. Commit with
-  the `commit` skill when asked.
+- **Scratch:** delete the scratchpad files, and the `~/.codex/generated_images/` folders your runs
+  added.
+- **Git:** `git status` shows only the files you meant to change. Commit with the `commit` skill
+  when asked.
+
+## Particles
+
+Use a particle effect for sparks, smoke or light that fades. Try glow and animation first: they
+live in the model, while an effect is a separate file the plugin must spawn, precache and remove.
+
+1. **Write** each effect into `<addon>/particles/<plugin>/<effect>/` with `modeldoc.write_vpcf`,
+   built from `modeldoc.op(...)` operators. A team variant is its own file; a part several effects
+   share is a child.
+2. **Check the field names.** `resourcecompiler` silently drops fields it doesn't know, so a typo
+   compiles into an effect without that setting. `particles.py fields <class>` prints the real
+   names: `C_INIT_RandomLifeTime` takes `m_fLifetimeMin`, not `m_flLifetimeMin`.
+3. **Compile and install.** `compile.py` runs `particles.py check` first and stops on an unknown
+   field:
+
+   ```bash
+   uv run python .claude/skills/3d-model/scripts/compile.py plugins/<plugin>/addon particles/<plugin>/<effect> --install client server
+   ```
+
+4. **Review.** Nothing renders particles outside the game, so the user checks them in game or in
+   the Workshop Tools particle editor (`cs2.exe -tools`).
+5. **Wire.** `runtime.Entities.SpawnParticle(effect, origin, angles)` starts an effect, and
+   removing the entity stops it. Keep a loop's `EntityRef` and remove it with its owner. Give a
+   one-shot `RemoveAfter(seconds)`, longer than its longest particle life. Precache every `.vpcf`
+   the plugin spawns; children load with it. In Stronghold, `ParticleT` and `ParticleCt` in
+   `ItemAssets` loop at a structure's origin.
+
+- **Textures:** use the game's own, such as `materials/particle/particle_glow_01.vtex` (soft
+  glow), `beam_hotwhite.vtex` (streaks) or `sparks/sparks.vtex`. `particles.py textures <word>`
+  lists them.
+- **Schema dump:** the field checks read `references/swiftlys2`, which is local only. Without it,
+  `compile.py` says so and compiles unchecked.
+- **On an existing model:** measure the point in Blender, from the `.blend` or
+  `session.import_dmx`, and spawn the effect at the prop's origin plus that offset, turned by its
+  yaw (Stronghold's `OffsetByYaw`). The effect won't follow a moving part; animate a glowing part
+  for that.

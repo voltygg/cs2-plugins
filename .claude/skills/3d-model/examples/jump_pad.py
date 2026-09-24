@@ -312,28 +312,6 @@ def pose(lift):
     }
 
 
-def eased(keys):
-    """(frame, value) for each frame through `keys`, never overshooting them (monotone cubic)."""
-    frames, values = zip(*keys)
-    steps = [b - a for a, b in zip(frames, frames[1:])]
-    slopes = [(b - a) / h for a, b, h in zip(values, values[1:], steps)]
-    tangents = [0.0] * len(keys)
-    for i in range(1, len(keys) - 1):
-        if slopes[i - 1] * slopes[i] > 0:
-            w1, w2 = 2 * steps[i] + steps[i - 1], steps[i] + 2 * steps[i - 1]
-            tangents[i] = (w1 + w2) / (w1 / slopes[i - 1] + w2 / slopes[i])
-    samples = []
-    for i, h in enumerate(steps):
-        a, b = values[i], values[i + 1]
-        ma, mb = tangents[i] * h, tangents[i + 1] * h
-        for frame in range(frames[i], frames[i + 1]):
-            t = (frame - frames[i]) / h
-            ease = (2 * t**3 - 3 * t**2 + 1) * a + (3 * t**2 - 2 * t**3) * b
-            samples.append((frame, ease + (t**3 - 2 * t**2 + t) * ma + (t**3 - t**2) * mb))
-    samples.append((frames[-1], values[-1]))
-    return samples
-
-
 def tracks(lifts):
     keys = {}
     for frame, lift in lifts:
@@ -347,7 +325,7 @@ rig.animate(arm, "jump_pad_idle", tracks(idle))
 # The plugin throws the player on first contact, so the deck kicks from the first frame.
 launch = [(0, 0.0), (1, 7.0), (2, 14.5), (3, 18.5), (4, HIGHEST), (7, 16.8), (10, 17.6)]
 launch += [(13, 16.5), (18, 6.0), (21, 0.0), (23, LOWEST), (26, 0.6), (29, -0.2), (32, 0.0)]
-rig.animate(arm, "jump_pad_launch", tracks(eased(launch)))
+rig.animate(arm, "jump_pad_launch", tracks(rig.eased(launch)))
 rig.show(arm, "jump_pad_idle")
 # Action names are shared by every scene in the session, so they carry the model's name.
 source2.remember(

@@ -1,9 +1,18 @@
-"""The files the compiler reads: .vmat materials and ModelDoc .vmdl models. Needs no Blender."""
+"""The files the compiler reads: .vmat materials, ModelDoc .vmdl models and .vpcf particle
+systems. Needs no Blender."""
 
 HEADER = (
     "<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} "
     "format:modeldoc28:version{fb63b6ca-f435-4aa0-a2c7-c66ddc651dca} -->\n"
 )
+PARTICLE_HEADER = (
+    "<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} "
+    "format:vpcf66:version{dd571be4-586e-4f41-8b2d-5bbc969e1c53} -->\n"
+)
+
+
+class Resource(str):
+    """A path to another compiled file, such as a particle's texture or child effect."""
 
 
 def write_vmat(
@@ -88,6 +97,40 @@ def write_vmdl(
     return path
 
 
+def write_vpcf(path, emitters, initializers, operators, renderers, children=(), **fields):
+    """Writes a particle system. Each operator is an `op(...)`; `children` are .vpcf paths that
+    start with it; `fields` are the system's own, such as m_nMaxParticles or m_ConstantColor.
+    A texture is a `Resource`: m_vecTexturesInput=[{"m_hTexture": Resource(path)}].
+
+    The compiler drops a field it doesn't know, so run `particles.py check` on the result.
+    """
+    system = {"_class": "CParticleSystemDefinition", "m_nBehaviorVersion": 12, **fields}
+    system["m_Emitters"] = list(emitters)
+    system["m_Initializers"] = list(initializers)
+    system["m_Operators"] = list(operators)
+    system["m_Renderers"] = list(renderers)
+    if children:
+        system["m_Children"] = [{"m_ChildRef": Resource(child)} for child in children]
+    with open(path, "w", newline="\n") as f:
+        f.write(PARTICLE_HEADER + kv3(system) + "\n")
+    return path
+
+
+def op(cls, **fields):
+    """One emitter, initializer, operator or renderer, e.g. op("C_OP_Decay")."""
+    return {"_class": cls, **fields}
+
+
+def literal(value):
+    """A fixed number where the field takes an input, such as an emitter's particle count."""
+    return {"m_nType": "PF_TYPE_LITERAL", "m_flLiteralValue": float(value)}
+
+
+def vector(x, y, z):
+    """A fixed vector where the field takes an input, such as a velocity bound."""
+    return {"m_nType": "PVEC_TYPE_LITERAL", "m_vLiteralValue": [float(x), float(y), float(z)]}
+
+
 def listing(cls, children):
     return {"_class": cls, "children": children}
 
@@ -157,4 +200,6 @@ def kv3(value, depth=0):
         return text + "0" if text.endswith(".") else text
     if isinstance(value, int):
         return str(value)
+    if isinstance(value, Resource):
+        return f'resource:"{value}"'
     return f'"{value}"'
