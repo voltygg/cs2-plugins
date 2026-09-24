@@ -183,7 +183,9 @@ uv run python .claude/skills/3d-model/scripts/compile.py plugins/<plugin>/addon 
 
 ## 10. Clean up
 
-The task is done when nothing it created is left without a purpose.
+The task is done when nothing it created is left without a purpose. Deploying is not the end: the
+user tests in game and often asks for changes, so keep the build script, renders and generated
+images until they say the model is finished or ask to commit.
 
 - **Blender:** `session.remove_scene` for every scene the task made other than the model, then
   `session.purge()`. Leave the user's own scenes alone.
@@ -193,8 +195,8 @@ The task is done when nothing it created is left without a purpose.
   `content/csgo_addons/<addon>/`, `game/csgo_addons/<addon>/` and `game/csgo/`, on the client and
   the server.
 - **Plugin:** remove constants, config and doc lines that only served the replaced model.
-- **Scratch:** delete the scratchpad files, and the `~/.codex/generated_images/` folders your runs
-  added.
+- **Scratch:** once the user is done, delete the scratchpad files and the
+  `~/.codex/generated_images/` folders your runs added.
 - **Git:** `git status` shows only the files you meant to change. Commit with the `commit` skill
   when asked.
 
