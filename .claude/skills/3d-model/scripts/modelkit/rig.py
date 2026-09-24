@@ -82,6 +82,9 @@ def eased(keys):
 
 
 def show(arm, action, frame=0):
-    """Poses `arm` at `frame` of `action`."""
-    arm.animation_data.action = bpy.data.actions[action]
-    bpy.context.scene.frame_set(frame)
+    """Poses `arm` at `frame` of `action`, with the timeline spanning just that action."""
+    chosen = bpy.data.actions[action]
+    arm.animation_data.action = chosen
+    sc = bpy.context.scene
+    sc.frame_start, sc.frame_end = (int(f) for f in chosen.frame_range)
+    sc.frame_set(frame)
