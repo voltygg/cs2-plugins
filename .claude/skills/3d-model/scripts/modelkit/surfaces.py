@@ -93,7 +93,8 @@ def reload_images():
 def material(name, color=None, normal=None, metallic=0.7, roughness=0.5, glow=None):
     """A Blender material named like the game's, e.g. "jump_pad_body.vmat".
 
-    The DMX records only the name; the game look comes from the .vmat.
+    The DMX records only the name; the game look comes from the .vmat. `glow` is a flat glow
+    colour, or True to glow with the `color` texture.
     """
     mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     mat.use_nodes = True
@@ -116,7 +117,10 @@ def material(name, color=None, normal=None, metallic=0.7, roughness=0.5, glow=No
         normal_map = nodes.new("ShaderNodeNormalMap")
         links.new(tex.outputs["Color"], normal_map.inputs["Color"])
         links.new(normal_map.outputs["Normal"], bsdf.inputs["Normal"])
-    if glow is not None:
+    if glow is True:
+        links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
+        bsdf.inputs["Emission Strength"].default_value = 1.2
+    elif glow is not None:
         bsdf.inputs["Base Color"].default_value = (*glow, 1)
         bsdf.inputs["Emission Color"].default_value = (*glow, 1)
         bsdf.inputs["Emission Strength"].default_value = 1.2

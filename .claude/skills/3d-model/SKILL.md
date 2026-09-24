@@ -119,9 +119,10 @@ scene, and give imported references a scene of their own.
 - **Size:** compare against a player. A floor prop over about 40 units wide looks oversized.
 - **Detail:** add bevels, a trim material, bolts, vents, an inset and normal maps. 5–12k
   triangles is fine.
-- **Glow:** keep it to thin lines and small markers at glow 1.0. A large glow reads as flat colour
-  unless a grate or slots break it up. Team colour gets its own glow material, remapped in
-  `blue`/`red` material groups.
+- **Glow:** keep it to thin lines and small markers at glow 1.0. A large glow reads as flat colour,
+  even under a grate; light it from a core that fades to dark instead, like the teleporter's well.
+- **Team colour** goes on a thin glowing part that players see from a distance, such as a strip,
+  with its own material remapped in `blue`/`red` material groups.
 
 ## 6. Animate
 

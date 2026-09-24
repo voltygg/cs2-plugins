@@ -1,9 +1,9 @@
 """The Stronghold teleporter built with modelkit: glow, team colour and FX animations.
 
 Rebuilds plugins/stronghold/addon/models/stronghold/teleporter in the scene "teleporter" from the
-committed textures. A rotor turns under the grate over a floor that glows in the team colour, and
-on each teleport the light strip lifts off as a hoop and sweeps past the player. Run it inside
-Blender with the repo root as REPO:
+committed textures, and draws the well's glow. A rotor turns under the grate over the lit well,
+and on each teleport the team-coloured light strip lifts off as a hoop and sweeps past the player.
+Run it inside Blender with the repo root as REPO:
 
     ns = {"REPO": r"<repo>"}
     exec(open(r"<repo>/.claude/skills/3d-model/examples/teleporter.py").read(), ns)
@@ -16,6 +16,7 @@ import os
 import sys
 
 import bmesh
+import numpy as np
 from mathutils import Matrix
 
 sys.path.insert(0, os.path.join(REPO, ".claude", "skills", "3d-model", "scripts"))  # noqa: F821
@@ -64,9 +65,24 @@ BODY = textured("body", 0.45, 0.55, "body")
 RIM = textured("rim", 0.5, 0.5, "body")
 WELL = textured("well", 0.4, 0.7, "body")
 STEEL = textured("steel", 0.85, 0.4, "steel")
-STRIP = surfaces.material("teleporter_strip.vmat", glow=(0.8, 0.93, 1.0))
-# The team glow: the red material group swaps it for teleporter_core_red.vmat.
-CORE = surfaces.material("teleporter_core.vmat", glow=(0.02, 0.3, 1.0))
+# The team colour: the red material group swaps in teleporter_strip_red.vmat.
+STRIP = surfaces.material("teleporter_strip.vmat", glow=(0.02, 0.3, 1.0))
+
+
+def draw_glow(path, size=512):
+    """The well's light: brightest at the rotor and fading to dark at the frame, in faint rings."""
+    y, x = np.mgrid[0:size, 0:size]
+    r = np.hypot((x + 0.5) / size * 2 - 1, (y + 0.5) / size * 2 - 1)
+    light = np.clip(1 - (r - 0.15) / 0.9, 0, 1) ** 1.8
+    light *= 0.85 + 0.15 * np.cos(r * np.pi * 14) ** 2
+    px = np.ones((size, size, 4), dtype=np.float32)
+    px[..., :3] = light[..., None] * np.array((0.75, 0.9, 1.0), dtype=np.float32)
+    return surfaces.save_pixels(path, px)
+
+
+# A flat glow this large read as a hot grill in game, so the well is lit from the rotor outwards.
+glow = draw_glow(os.path.join(DIR, "teleporter_core_color.png"))
+CORE = surfaces.material("teleporter_core.vmat", glow, metallic=0.0, roughness=0.4, glow=True)
 
 
 def turned(bm, degrees):
@@ -92,6 +108,15 @@ def panels(r_in, r_out, z0, z1):
 
 def part(name, bm, mat, bone="root", **finish):
     return objects.finish(objects.to_object(name, bm), mat, bone, **finish)
+
+
+def across_well(ob):
+    """Maps `ob`'s UVs across the whole well, centred on the rotor."""
+    uv = ob.data.uv_layers.active.data
+    for loop in ob.data.loops:
+        co = ob.data.vertices[loop.vertex_index].co
+        uv[loop.index].uv = (0.5 + co.x / (2 * FRAME_IN), 0.5 + co.y / (2 * FRAME_IN))
+    return ob
 
 
 def grate():
@@ -139,10 +164,10 @@ cross = shapes.merge(
 )
 parts.append(part("cross", cross, STEEL, uv_size=16.0, bevel=0.08))
 
-# A glow this large reads as flat colour on its own; the grate and the blades break it up.
+# The lit floor, in rings under the rotor's blades.
 bands = ((3.4, 7.2), (8.0, 11.6), (12.4, 16.0), (16.8, 19.0))
 rings = shapes.merge(shapes.tube(r0, r1, FLOOR - 0.05, FLOOR + 0.1, seg=48) for r0, r1 in bands)
-parts.append(part("floor_glow", rings, CORE, uv_size=8.0))
+parts.append(across_well(part("floor_glow", rings, CORE)))
 
 # Rotor: four swept blades on a hub, dark against the glowing floor.
 blade = [polar(BLADE_ROOT, -35), polar(BLADE_TIP, 0), polar(BLADE_TIP, 22), polar(BLADE_ROOT, 40)]
@@ -210,13 +235,12 @@ preview.stage()
 
 
 def write_modeldoc():
-    """The .vmat files, their flat glow colours and the .vmdl with its red material group."""
+    """The .vmat files, the strip's team colours and the .vmdl with its red material group."""
     rough, mask = FOLDER + "teleporter_rough.png", "teleporter_glow_mask.png"
     surfaces.solid(os.path.join(DIR, "teleporter_rough.png"), (1, 1, 1))
     surfaces.solid(os.path.join(DIR, mask), (1, 1, 1))
-    surfaces.solid(os.path.join(DIR, "teleporter_strip_color.png"), (0.85, 0.93, 1.0))
-    surfaces.solid(os.path.join(DIR, "teleporter_core_color.png"), (0.08, 0.45, 1.0))
-    surfaces.solid(os.path.join(DIR, "teleporter_core_red_color.png"), (1.0, 0.18, 0.06))
+    surfaces.solid(os.path.join(DIR, "teleporter_strip_color.png"), (0.08, 0.45, 1.0))
+    surfaces.solid(os.path.join(DIR, "teleporter_strip_red_color.png"), (1.0, 0.18, 0.06))
 
     def vmat(name, color, normal=None, **look):
         path = os.path.join(DIR, f"teleporter_{name}.vmat")
@@ -228,7 +252,7 @@ def write_modeldoc():
     vmat("well", "teleporter_well_color.png", body_normal, metalness=0.4, roughness=0.7)
     steel_normal = "teleporter_steel_normal.png"
     vmat("steel", "teleporter_steel_color.png", steel_normal, metalness=0.85, roughness=0.4)
-    for name in ("strip", "core", "core_red"):
+    for name in ("strip", "strip_red", "core"):
         color = f"teleporter_{name}_color.png"
         vmat(name, color, metalness=0.0, roughness=0.4, glow_mask=mask, glow=1.0)
 
@@ -246,7 +270,7 @@ def write_modeldoc():
         ],
         material_groups={
             "blue": {},
-            "red": {at("teleporter_core.vmat"): at("teleporter_core_red.vmat")},
+            "red": {at("teleporter_strip.vmat"): at("teleporter_strip_red.vmat")},
         },
     )
 
