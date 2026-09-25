@@ -4,6 +4,7 @@ set -euo pipefail
 Root="/home/steam/cs2-dedicated"
 Csgo="$Root/game/csgo"
 AddonsSrc="/home/steam/plugin-bundles/addons"
+AssetsSrc="/home/steam/plugin-bundles/assets"
 MmsBase="${MMS_BASE:-https://mms.alliedmods.net/mmsdrop/2.0}"
 MmsStamp="$Csgo/addons/metamod/.mms-build"
 
@@ -15,6 +16,11 @@ fi
 if [[ -d "$AddonsSrc" ]]; then
     mkdir -p "$Csgo/addons"
     cp -a "$AddonsSrc/." "$Csgo/addons/"
+fi
+
+# Compiled workshop files the plugins' server code needs; clients download the whole addon.
+if [[ -d "$AssetsSrc" ]]; then
+    cp -a "$AssetsSrc/." "$Csgo/"
 fi
 
 # The host is the only Metamod plugin; without it nothing the deploy shipped loads.

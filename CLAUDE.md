@@ -54,7 +54,7 @@ docs/                  Development and deployment notes
 ```
 
 A plugin owns `plugin.json` (name, version, log tag, dependencies), `src/`, `tests/`, `configs/`
-(operator-owned, seeded once), `translations/` (and `migrations/`, `data/` when it ships them), and a `CMakeLists.txt` calling `voltmod_add_plugin(<name>)`; register it with
+(operator-owned, seeded once), `translations/` (and `migrations/`, `data/`, `server-assets/` when it ships them), and a `CMakeLists.txt` calling `voltmod_add_plugin(<name>)`; register it with
 `add_subdirectory()` in the root. C++ deps: `conanfile.py`, then `find_package` in the root CMake, then link in the plugin.
 
 Conventions and framework patterns are in `.claude/rules/` and load per file path.

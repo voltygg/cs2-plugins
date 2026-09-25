@@ -2,6 +2,7 @@
 
 ```bash
 uv run poe deploy package                             # stage host and plugins in build/package/
+uv run poe deploy assets <plugin>                     # refresh a plugin's server-assets/
 uv run poe deploy push [--server ID] [--dry-run]      # install plugins and settings, restart
 uv run poe deploy restart [--server ID] [--dry-run]   # restart so CS2 updates
 uv run poe rcon "volt list" [--server ID] [--instance NAME]
@@ -151,6 +152,19 @@ addons/
       <plugin>.so                  the plugin module
       configs/settings.jsonc       rendered per instance
 ```
+
+A plugin with a `server-assets/` folder also ships it into `game/csgo`, beside `addons/`. The
+server mounts no workshop addon, so the compiled files its code touches go there loose: models
+(`.vmdl_c`: collision, hitboxes, attachments), particles (`.vpcf_c`) and sound events
+(`.vsndevts_c`). Clients still download the whole addon. After recompiling the addon in the
+Workshop Tools, refresh the folder and commit it:
+
+```bash
+uv run poe deploy assets stronghold    # from game/csgo_addons/stronghold; --addon for another name
+```
+
+It reads the client install from `--client` or `CS2_CLIENT_PATH`, defaulting to Steam's usual
+path. A deploy only adds and overwrites these files; one the plugin dropped stays on the server.
 
 Metamod loads the host and nothing else. The host reads each
 `addons/voltmod/plugins/<plugin>/plugin.json` and
