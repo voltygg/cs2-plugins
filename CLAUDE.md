@@ -1,7 +1,7 @@
 # CS2 plugins
 
 C++23 Metamod:Source plugins for Counter-Strike 2 on the VoltMod framework
-(Conan package `voltmod/[~1.5]`).
+(Conan package `voltmod/[~1.6]`).
 
 - `voltmod` is a separate Git repo with its own `CLAUDE.md`. Check its status and diffs separately.
 - `references/` is read-only.
