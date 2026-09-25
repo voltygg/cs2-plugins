@@ -43,6 +43,13 @@ deploy = "python -m deploy.cli"
 rcon = "python -m deploy.cli rcon"
 schema = "voltmod database header"
 
+[tool.poe.tasks.meatgg-addon]
+help = "Build the meatgg workshop addon: every screen, Stronghold's content and the rank icons"
+sequence = [
+    { cmd = "voltmod panorama compile main-menu admin-system stronghold --addon meatgg --no-deploy" },
+    { cmd = "python workshop/build_meatgg.py" },
+]
+
 [tool.poe.tasks.lint]
 help = "Lint the build tooling and check the plugin source conventions"
 sequence = [{ ref = "lint-ci" }, { ref = "schema --check" }]

@@ -26,6 +26,7 @@ uv run poe schema                            # regenerate the admin-system table
 uv run poe run <plugin>                      # build, copy to CS2_SERVER_PATH and launch
 uv run poe install                           # copy every built plugin; name one to copy only it
 uv run poe panorama                          # render, compile and install the Panorama screens into your client (Windows)
+uv run poe meatgg-addon                      # build the meatgg workshop addon: every screen, Stronghold content, rank icons
 uv run poe panorama-publish                  # compile the main-menu and admin-system screens into the meatgg_ui addon folder
 uv run poe new-plugin <name>
 ```
@@ -50,6 +51,7 @@ plugins/bhop/          Bunnyhop modes
 plugins/main-menu/     !menu hub; owns the meat.gg Panorama brand kit (panorama/templates/meatgg)
 contracts/             Interfaces shared between plugins (header-only, not a plugin)
 deploy/                Deploy CLI for panel servers and Docker hosts
+workshop/              Builds the meatgg workshop addon; meatgg/ holds compiled files copied in as they are
 docs/                  Development and deployment notes
 ```
 
