@@ -1,5 +1,5 @@
+#include "App.hpp"
 #include "Commands/Commands.hpp"
-#include "Core/App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>

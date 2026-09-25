@@ -2,7 +2,7 @@
 
 #include "Admin/Actions/ActionContext.hpp"
 #include "Admin/Actions/Descriptors.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>

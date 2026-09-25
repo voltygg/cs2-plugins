@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/App.hpp"
+#include "App.hpp"
 #include "Punishments/PunishType.hpp"
 
 #include <VoltMod/Api.hpp>

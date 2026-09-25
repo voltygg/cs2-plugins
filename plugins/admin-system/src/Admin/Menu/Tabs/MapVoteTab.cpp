@@ -3,7 +3,7 @@
 #include "Admin/Menu/MenuAccess.hpp"
 #include "Admin/Menu/MenuCatalog.hpp"
 #include "Admin/Menu/Pickers/MapPicker.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 #include "Core/ChatService.hpp"
 #include "Core/Permissions.hpp"
 #include "Maps/VoteState.hpp"

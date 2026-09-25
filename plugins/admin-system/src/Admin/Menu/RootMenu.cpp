@@ -8,7 +8,7 @@
 #include "Admin/Menu/Tabs/PlayerFunTab.hpp"
 #include "Admin/Menu/Tabs/PunishTab.hpp"
 #include "Admin/Menu/Tabs/RoundModesTab.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>

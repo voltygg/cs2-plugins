@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <string>

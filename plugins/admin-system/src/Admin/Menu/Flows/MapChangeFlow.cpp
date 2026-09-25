@@ -2,7 +2,7 @@
 
 #include "Admin/Menu/Labels.hpp"
 #include "Admin/Menu/MenuAccess.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 #include "Core/ChatService.hpp"
 #include "Core/Permissions.hpp"
 #include "Maps/MapCycleState.hpp"

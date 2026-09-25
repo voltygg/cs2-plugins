@@ -40,8 +40,7 @@ static std::vector<RowSpec> AllRows()
 /** The translation file as a generic tree: some groups nest further (report.reasons.*). */
 static glz::json_t Translations(const std::string& language)
 {
-    const std::filesystem::path path =
-        std::filesystem::path(ADMIN_SYSTEM_DIR) / "translations" / (language + ".json");
+    const std::filesystem::path path = std::filesystem::path(ADMIN_SYSTEM_DIR) / "translations" / (language + ".json");
     std::ifstream file(path, std::ios::binary);
     REQUIRE_MESSAGE(file.good(), "missing " << path.string());
 

@@ -1,4 +1,4 @@
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include "Admin/Effects/Model.hpp"
 #include "Admin/Menu/MenuAccess.hpp"

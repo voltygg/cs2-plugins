@@ -1,5 +1,5 @@
-#include "../../Core/App.hpp"
 #include "Admin/Actions/Descriptors.hpp"
+#include "App.hpp"
 #include "Core/ChatService.hpp"
 
 #include <VoltMod/Engine/Math.hpp>

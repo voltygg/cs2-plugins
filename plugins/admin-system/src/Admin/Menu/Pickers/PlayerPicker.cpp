@@ -1,7 +1,7 @@
 #include "Admin/Menu/Pickers/PlayerPicker.hpp"
 
 #include "Admin/Menu/MenuAccess.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>

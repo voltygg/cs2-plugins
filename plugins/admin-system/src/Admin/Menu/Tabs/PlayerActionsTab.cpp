@@ -7,7 +7,7 @@
 #include "Admin/Menu/Pickers/SwapPartnerPicker.hpp"
 #include "Admin/Menu/Pickers/TeamPicker.hpp"
 #include "Admin/Menu/Pickers/WeaponPicker.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/ActionRows.hpp>

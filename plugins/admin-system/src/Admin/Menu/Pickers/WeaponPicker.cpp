@@ -1,6 +1,6 @@
 #include "Admin/Menu/Pickers/WeaponPicker.hpp"
 
-#include "Core/App.hpp"
+#include "App.hpp"
 #include "Core/ChatService.hpp"
 #include "Weapons/WeaponActions.hpp"
 #include "Weapons/WeaponCatalog.hpp"

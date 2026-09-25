@@ -1,5 +1,5 @@
+#include "App.hpp"
 #include "Commands/Commands.hpp"
-#include "Core/App.hpp"
 #include "Reports/ReportFlow.hpp"
 #include "Reports/ReportManager.hpp"
 

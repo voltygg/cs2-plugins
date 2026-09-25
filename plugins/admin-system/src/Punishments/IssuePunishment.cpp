@@ -1,7 +1,7 @@
 #include "Punishments/IssuePunishment.hpp"
 
 #include "Admin/FreezeManager.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 #include "Core/ChatService.hpp"
 #include "Punishments/PunishmentManager.hpp"
 

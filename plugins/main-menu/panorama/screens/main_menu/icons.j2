@@ -1,5 +1,5 @@
 {#- Maps each tab `icon` name from settings.jsonc to a built-in CS2 icon. -#}
-{% set ICONS = [
+{% set ICONS = game_icons([
   ("stats", "stats"),
   ("shop", "buyzone"),
   ("vip", "star"),
@@ -9,4 +9,4 @@
   ("rules", "info"),
   ("site", "globe"),
   ("settings", "settings"),
-] %}
+]) %}

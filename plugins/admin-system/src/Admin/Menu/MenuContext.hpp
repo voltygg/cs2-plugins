@@ -2,7 +2,7 @@
 
 #include "Admin/Menu/MenuAccess.hpp"
 #include "Admin/Menu/MenuCatalog.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>

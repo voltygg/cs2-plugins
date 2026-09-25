@@ -1,7 +1,7 @@
 ﻿#include "WeaponActions.hpp"
 
 #include "Admin/Actions/ActionContext.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 #include "Core/Permissions.hpp"
 
 #include <VoltMod/Api.hpp>

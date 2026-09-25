@@ -1,7 +1,7 @@
 #include "Admin/Menu/Pickers/MapPicker.hpp"
 
 #include "Admin/Menu/Flows/MapChangeFlow.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 #include "Core/ChatService.hpp"
 #include "Maps/MapCycleState.hpp"
 #include "Maps/VoteState.hpp"

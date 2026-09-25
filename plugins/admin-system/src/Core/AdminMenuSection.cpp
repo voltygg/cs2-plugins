@@ -1,6 +1,6 @@
 #include "Core/AdminMenuSection.hpp"
 
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Api.hpp>
 

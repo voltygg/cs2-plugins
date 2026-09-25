@@ -26,7 +26,7 @@ struct App final : VoltMod::Plugin
     ConfigManager Config{&CleanSettings};
     HubMenu Hub{Config, Runtime.Translations, Runtime.Messages, Runtime.ConVars, Runtime.Exchange, Runtime.Menus};
 
-    VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Layout, MainMenuLayout::Tabs.size(),
+    VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Name, MainMenuLayout::Tabs.size(),
                                        MainMenuLayout::Rows.size(), MainMenuLayout::IconSetNames};
     std::optional<VoltMod::PanoramaMenu> Panorama;
     /** Routes menu sessions to Panorama while held; declared after it so it releases first. */

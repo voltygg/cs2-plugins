@@ -1,7 +1,7 @@
 #include "Admin/AdminManager.hpp"
 #include "Admin/FreezeManager.hpp"
+#include "App.hpp"
 #include "Commands/Commands.hpp"
-#include "Core/App.hpp"
 #include "Core/Permissions.hpp"
 
 #include <VoltMod/Api.hpp>

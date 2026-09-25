@@ -3,7 +3,7 @@
 #include "Admin/Actions/Descriptors.hpp"
 #include "Admin/Effects/Descriptors.hpp"
 #include "Admin/Menu/MenuAccess.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <span>

@@ -1,6 +1,6 @@
 #include "Reports/ReportMenuSection.hpp"
 
-#include "Core/App.hpp"
+#include "App.hpp"
 #include "Reports/ReportFlow.hpp"
 #include "Reports/ReportManager.hpp"
 

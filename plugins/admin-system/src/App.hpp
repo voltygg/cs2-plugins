@@ -77,7 +77,7 @@ struct App final : VoltMod::Plugin
     }
 
     /** The admin menu layout, and the menu drawn on it when `menu.panorama` is on. */
-    VoltMod::PanoramaMenuLayout MenuLayout{Runtime.Screens, AdminMenuLayout::Layout, AdminMenuLayout::Tabs.size(),
+    VoltMod::PanoramaMenuLayout MenuLayout{Runtime.Screens, AdminMenuLayout::Name, AdminMenuLayout::Tabs.size(),
                                            AdminMenuLayout::Rows.size(), AdminMenuLayout::IconSetNames};
     std::optional<VoltMod::PanoramaMenu> Panorama;
     /** Routes menu sessions to Panorama while held; declared after it so it releases first. */

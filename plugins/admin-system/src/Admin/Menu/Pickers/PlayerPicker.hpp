@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Admin/Menu/MenuContext.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>

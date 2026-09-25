@@ -102,9 +102,12 @@
   font-weight: bold;
 }
 
-.menu__breadcrumb,
 .overline {
   font-size: 11px;
+}
+
+.menu__breadcrumb,
+.overline {
   font-weight: bold;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -115,7 +118,6 @@
 }
 
 .menu__title {
-  font-size: 26px;
   letter-spacing: -0.5px;
   color: text-primary;
 }
@@ -127,10 +129,6 @@
 .screen.screen--prompting .menu__rows,
 .screen.screen--prompting .pager {
   opacity: 0.3;
-}
-
-.row {
-  height: 48px;
 }
 
 .row__button {
@@ -199,8 +197,6 @@
 }
 
 .row__chevron {
-  margin-bottom: 3px;
-  font-size: 24px;
   color: text-disabled;
 }
 
@@ -217,7 +213,9 @@
 .switch__knob {
   border-radius: 9px;
   background-color: text-secondary;
+  transition-property: transform;
   transition-duration: 0.15s;
+  transition-timing-function: ease-out;
 }
 
 .row.row--on .switch {
@@ -229,14 +227,7 @@
   background-color: #ffffff;
 }
 
-.row__steppers {
-  margin-left: 6px;
-  margin-right: 0px;
-}
-
 .row__stepper {
-  width: 34px;
-  height: 100%;
   border-radius: 10px;
   background-color: fill-subtle;
   border: 1px solid hairline;
@@ -269,10 +260,6 @@
 
 .menu__prompt-hint {
   color: secondary;
-}
-
-.button {
-  width: 140px;
 }
 
 .pager__label {

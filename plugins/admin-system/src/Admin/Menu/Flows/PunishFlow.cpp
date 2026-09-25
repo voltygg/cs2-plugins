@@ -2,8 +2,8 @@
 
 #include "Admin/AdminManager.hpp"
 #include "Admin/Menu/Labels.hpp"
+#include "App.hpp"
 #include "Config/ConfigManager.hpp"
-#include "Core/App.hpp"
 #include "Core/ChatService.hpp"
 #include "Punishments/IssuePunishment.hpp"
 

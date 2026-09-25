@@ -1,4 +1,4 @@
-{# namespace: MainMenuLayout #}
+{% extends "screen.xml.j2" %}
 {% import "menu.xml.j2" as blocks %}
 {% import "button.xml.j2" as controls %}
 {% import "@main-menu/meatgg/home.xml.j2" as meatgg %}
@@ -12,17 +12,13 @@
 </Panel>
 {% endset %}
 
-<root>
-  <styles>
-    <include src="file://{resources}/styles/custom_game/{{screen}}.css" />
-  </styles>
-
-  {% call blocks.menu(8, 8, ICONS, home) -%}
-  <Panel class="wordmark" hittest="false">
-    <Image class="wordmark__mark" src="s2r://panorama/images/meatgg/mark.vtex" hittest="false" />
-    <Label class="wordmark__meat" text="MEAT" hittest="false" />
-    <Label class="wordmark__gg" text=".GG" hittest="false" />
-  </Panel>
-  <Label class="menu__brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
-  {%- endcall %}
-</root>
+{% block content %}
+      {% call blocks.menu(8, 8, ICONS, home) -%}
+      <Panel class="wordmark" hittest="false">
+        <Image class="wordmark__mark" src="s2r://panorama/images/meatgg/mark.vtex" hittest="false" />
+        <Label class="wordmark__meat" text="MEAT" hittest="false" />
+        <Label class="wordmark__gg" text=".GG" hittest="false" />
+      </Panel>
+      <Label class="menu__brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
+      {%- endcall %}
+{% endblock %}

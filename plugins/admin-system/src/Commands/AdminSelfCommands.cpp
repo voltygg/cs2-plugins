@@ -1,6 +1,6 @@
 #include "Admin/Effects/Descriptors.hpp"
+#include "App.hpp"
 #include "Commands/Commands.hpp"
-#include "Core/App.hpp"
 #include "Core/Permissions.hpp"
 
 #include <VoltMod/Api.hpp>

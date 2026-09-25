@@ -2,7 +2,7 @@
 
 #include "Admin/Actions/Descriptors.hpp"
 #include "Admin/Menu/Pickers/PlayerPicker.hpp"
-#include "Core/App.hpp"
+#include "App.hpp"
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Entities/EntitySystem.hpp>

@@ -1,6 +1,6 @@
+#include "App.hpp"
 #include "Commands/Commands.hpp"
 #include "Config/ConfigManager.hpp"
-#include "Core/App.hpp"
 #include "Core/Permissions.hpp"
 #include "Punishments/IssuePunishment.hpp"
 #include "Punishments/PunishmentManager.hpp"
