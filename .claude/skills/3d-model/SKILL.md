@@ -81,9 +81,9 @@ If the user has unsaved changes, work only in the model's own scene.
 Before designing, find what the plugin assumes about the model. Keep every name it uses, or change
 the code in the same task.
 
-- **Path:** grep the plugin for `.vmdl`. In Stronghold it's `src/Config/ItemAssets.cpp`.
+- **Path:** grep the plugin for `.vmdl`. In Stronghold it's `src/Assets/Catalog.cpp`.
 - **Size:** the scale, placement box, trigger radii (the jump pad's `Launcher`) and offsets
-  measured on the mesh, such as muzzles and `PartAt`.
+  measured on the mesh, such as muzzles and each part's `At`.
 - **Names:** attachments, animations, material groups (`Skin`) and bones.
 - **Assets doc:** the plugin's `docs/assets.md` has the addon layout and licence status.
 
@@ -172,10 +172,10 @@ uv run python .claude/skills/3d-model/scripts/compile.py plugins/<plugin>/addon 
 ## 9. Wire it into the plugin
 
 - Point the plugin at the `.vmdl`, and update the scale, placement box, trigger radii and measured
-  offsets. In Stronghold, `Scale` in `ItemAssets` resizes the model, collision and animation
+  offsets. In Stronghold, `Scale` in `StructureAssets` resizes the model, collision and animation
   without a recompile.
 - Start a loop with the `SetAnimationLooping` input; in Stronghold, name it in `Idle` in
-  `ItemAssets`. `prop_dynamic` has no `SetAnimation` input (`game/core/base.fgd`).
+  `StructureAssets`. `prop_dynamic` has no `SetAnimation` input (`game/core/base.fgd`).
 - Play a one-shot with `Entity::PlayAnimation(animation, idle)`, which returns to the loop after.
 - Record new or replaced assets, and how they were made, in the plugin's assets doc.
 - Build with `build-local`, install with `uv run poe install <plugin>`, and check that the
@@ -223,8 +223,8 @@ live in the model, while an effect is a separate file the plugin must spawn, pre
 5. **Wire.** `runtime.Entities.SpawnParticle(effect, origin, angles)` starts an effect, and
    removing the entity stops it. Keep a loop's `EntityRef` and remove it with its owner. Give a
    one-shot `RemoveAfter(seconds)`, longer than its longest particle life. Precache every `.vpcf`
-   the plugin spawns; children load with it. In Stronghold, `ParticleT` and `ParticleCt` in
-   `ItemAssets` loop at a structure's origin.
+   the plugin spawns; children load with it. In Stronghold, `Loop` in
+   `StructureAssets` loops at a structure's origin.
 
 - **Textures:** use the game's own, such as `materials/particle/particle_glow_01.vtex` (soft
   glow), `beam_hotwhite.vtex` (streaks) or `sparks/sparks.vtex`. `particles.py textures <word>`
