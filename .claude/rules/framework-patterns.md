@@ -1,6 +1,7 @@
 ---
 paths:
   - "plugins/**"
+  - "contracts/**"
 ---
 
 # Framework patterns

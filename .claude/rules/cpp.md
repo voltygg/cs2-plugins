@@ -2,6 +2,7 @@
 paths:
   - "plugins/**/*.cpp"
   - "plugins/**/*.hpp"
+  - "contracts/**/*.hpp"
 ---
 
 # C++ conventions

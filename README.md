@@ -21,7 +21,7 @@ Native C++23 plugins for Counter-Strike 2 dedicated servers, built on
 | [main-menu](plugins/main-menu/) | A configurable `!menu` hub for stats, VIP, admin tools, and website links | Supports Panorama UI with a center-HTML fallback |
 | [stronghold](https://github.com/voltygg/cs2-stronghold) | Build-and-defend team deathmatch: instant respawn, an economy, and buildable structures guarding each team's Core | In development |
 
-Shared interfaces between plugins live in `plugins/contracts/`.
+Shared interfaces between plugins live in `contracts/`.
 
 ## Install a release
 

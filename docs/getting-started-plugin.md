@@ -57,7 +57,7 @@ the root `CMakeLists.txt`, and the imported target in the plugin's own CMake.
 
 ## Talking to another plugin
 
-An interface two plugins share lives in `plugins/contracts/include/`, not in either plugin. The
+An interface two plugins share lives in `contracts/include/`, not in either plugin. The
 provider publishes it and the consumer asks for it:
 
 ```cpp
