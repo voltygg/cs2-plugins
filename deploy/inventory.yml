@@ -39,6 +39,11 @@ plugins:
       bhop: { mode: enabled }
   anticheat: {}
   main-menu: {}
+  stronghold:
+    settings:
+      plugin: { locale: ru }
+      addonId: 3807912773
+      economy: { startMoney: 60000 }
 
 servers:
   - id: panel-a
@@ -51,6 +56,7 @@ servers:
       - bhop
       - anticheat
       - main-menu
+      - stronghold
     instances:
       - { name: main, port: 27030, hostname: "CS2 Main" }
 
