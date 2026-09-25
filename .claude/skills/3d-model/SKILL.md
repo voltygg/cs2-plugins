@@ -68,13 +68,15 @@ If the user has unsaved changes, work only in the model's own scene.
 | Situation | Start with |
 | --- | --- |
 | A new model | Step 3, then `session.scene(name, "models/<plugin>/<model>/")` |
-| A model with a `.blend` | `session.open_model(<blend>, <scene>)` |
+| A model with a `.blend` | `session.open_model(<blend>)`, which opens every part's scene |
 | A model with DMX files only, such as a stand-in | `session.import_dmx(scene, folder, meshes, animations)`; check it, then `source2.remember(...)` |
 | New textures only | Step 4, then step 8 |
 | FX | A glow or a moving part: open or import the model, then steps 5 and 6. A particle effect: [Particles](#particles) |
 
-`open_model` refuses names the session already holds, because Blender would rename a material to
-`x.vmat.001` and break the DMX. Pass `replace=True` only to reload over your own copy.
+A model folder keeps one `.blend`, named after the folder, with one scene per part, since each
+part is its own `.vmdl`. `open_model` refuses names the session already holds, because Blender
+would rename a material to `x.vmat.001` and break the DMX. Pass `replace=True` only to reload over
+your own copy.
 
 ## 3. Read what the plugin expects
 
@@ -153,7 +155,7 @@ frames between keys without overshoot. `source2.remember` saves the export setti
 
 ```python
 source2.export(scene, model_dir)                        # meshes, hull, one DMX per action
-source2.save_blend(scene, model_dir + "/<model>.blend")  # goes to Git LFS, not the compile
+source2.save_blend(scenes, model_dir + "/<folder>.blend")  # every part's scene; Git LFS, not the compile
 modeldoc.write_vmat(...)  # only for new or changed materials
 modeldoc.write_vmdl(...)  # only when meshes, animations, groups or attachments change
 ```

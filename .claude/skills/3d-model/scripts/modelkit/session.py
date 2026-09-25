@@ -47,16 +47,20 @@ def configure_export(sc, material_path):
     sc.vs.export_path = "//"
 
 
-def open_model(blend_path, scene_name, replace=False):
-    """Appends `scene_name` and its actions from a model's .blend into the open session.
+def open_model(blend_path, scenes=None, replace=False):
+    """Appends a model's scenes, one per part, and its actions from its .blend into the session.
 
-    The user's own file stays open. Blender renames incoming data whose name is taken (a
-    material becoming "x.vmat.001" breaks the DMX), so a clash is an error unless `replace`,
-    which first deletes the session's copies.
+    `scenes` is one name or a list; without it every scene comes in. The user's own file stays
+    open. Blender renames incoming data whose name is taken (a material becoming "x.vmat.001"
+    breaks the DMX), so a clash is an error unless `replace`, which first deletes the session's
+    copies. Returns the first scene, now the active one.
     """
+    if isinstance(scenes, str):
+        scenes = [scenes]
     with bpy.data.libraries.load(blend_path) as (source, _):
+        names = list(source.scenes if scenes is None else scenes)
         incoming = {
-            "scenes": [scene_name],
+            "scenes": names,
             "actions": list(source.actions),
             "materials": list(source.materials),
             "images": list(source.images),
@@ -66,17 +70,18 @@ def open_model(blend_path, scene_name, replace=False):
     ]
     if clashes and not replace:
         raise ValueError(f"already in the session: {clashes}; pass replace=True to reload")
-    remove_scene(scene_name)
+    for name in names:
+        remove_scene(name)
     for kind, name in clashes:
         if kind != "scenes" and (data := getattr(bpy.data, kind).get(name)):
             getattr(bpy.data, kind).remove(data)
     with bpy.data.libraries.load(blend_path, link=False) as (_, target):
-        target.scenes = [scene_name]
+        target.scenes = list(names)
         target.actions = incoming["actions"]
     # An action no armature holds would go in the next purge.
     for action in target.actions:
         action.use_fake_user = True
-    sc = bpy.data.scenes[scene_name]
+    sc = bpy.data.scenes[names[0]]
     folder = os.path.dirname(blend_path)
     for img in bpy.data.images:
         if img.filepath and not os.path.exists(bpy.path.abspath(img.filepath)):

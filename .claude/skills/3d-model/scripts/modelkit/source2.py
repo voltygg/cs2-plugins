@@ -83,12 +83,23 @@ def export(scene_name, out_dir):
     return sorted(written)
 
 
-def save_blend(scene_name, path):
-    """Writes only `scene_name` and its remembered actions to `path`, image paths relative.
+def save_blend(scenes, path):
+    """Writes `scenes`, one name or a list, and their remembered actions to `path`, image paths
+    relative. Other scenes, such as imported references, stay out.
 
-    Other scenes, such as imported references, stay out.
+    A model folder keeps one .blend with a scene per part, so the save must include every scene
+    the file already holds; otherwise it would drop them.
     """
-    actions = settings(scene_name)["actions"]
-    blocks = {bpy.data.scenes[scene_name], *(bpy.data.actions[a] for a in actions)}
+    names = [scenes] if isinstance(scenes, str) else list(scenes)
+    if os.path.exists(path):
+        with bpy.data.libraries.load(path) as (held, _):
+            dropped = sorted(set(held.scenes) - set(names))
+        if dropped:
+            raise ValueError(f"{path} also holds {dropped}; open them and save them together")
+    blocks = set()
+    for name in names:
+        blocks.add(bpy.data.scenes[name])
+        for action in settings(name)["actions"]:
+            blocks.add(bpy.data.actions[action])
     bpy.data.libraries.write(path, blocks, path_remap="RELATIVE_ALL", fake_user=True, compress=True)
     return path
