@@ -41,8 +41,8 @@ uv run poe install [plugin]    # copy only; no name copies every plugin and the 
 uv run poe panorama            # compile the Panorama screens into your own client
 ```
 
-Install seeds `configs/settings.jsonc` once and keeps later edits. Stop `cs2.exe` first, or the copy
-fails with `WinError 32`. A plugin with a custom UI shows nothing until `poe panorama` has run
+Install seeds each file under `configs/` once and keeps later edits. Stop `cs2.exe` first, or the
+copy fails with `WinError 32`. A plugin with a custom UI shows nothing until `poe panorama` has run
 (needs CS2 Workshop Tools). Confirm the load with `meta list` (`rcon-debug`).
 
 ## Failures

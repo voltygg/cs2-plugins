@@ -41,7 +41,7 @@ Sections come from plugins that publish a `Contracts::IMenuSection` (see
 stronghold. An entry with an unknown kind or an empty target is dropped and logged when the
 settings load.
 
-Player-facing text is in `configs/translations/`.
+Player-facing text is in `translations/`.
 
 ## Panorama
 

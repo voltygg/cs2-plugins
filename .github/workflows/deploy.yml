@@ -131,7 +131,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Rendering settings.jsonc reads every deployed plugin's configs/ from the source tree.
+      # Deploy copies every deployed plugin's configs/ from the source tree.
       - name: Check out the closed-source plugins
         env:
           PRIVATE_PLUGINS_PAT: ${{ secrets.PRIVATE_PLUGINS_PAT }}

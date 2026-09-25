@@ -10,7 +10,7 @@ namespace Bhop
 
 bool App::Load()
 {
-    if (!VoltMod::LoadStandardConfig(Runtime, Config))
+    if (!VoltMod::LoadConfig(Runtime, Config))
     {
         return false;
     }

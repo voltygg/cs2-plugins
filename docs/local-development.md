@@ -70,7 +70,7 @@ uv run poe serve                               # launch alone
 ```
 
 `install` merges the host and the plugin's server-ready `addons/` tree into `game/csgo`, seeds
-`configs/settings.jsonc` once and keeps later edits. A running server holds the DLL open and the
+each file under `configs/` once and keeps later edits. A running server holds the DLL open and the
 copy fails with `WinError 32`, so stop `cs2.exe` first. Install from another build with `--preset`,
 or override `.env` on the command line:
 
@@ -89,7 +89,8 @@ game/csgo/addons/
   voltmod/plugins/<plugin>/
     plugin.json
     <plugin>.dll
-    configs/
+    configs/                 seeded once, never overwritten
+    translations/
 ```
 
 Verify with `volt list` on the server console. `meta list` shows the host, which is the one Metamod

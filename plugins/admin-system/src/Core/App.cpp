@@ -91,7 +91,7 @@ Status App::ConnectDatabase()
         return std::unexpected(Error::Engine("unavailable; chat commands will reject all callers"));
     }
 
-    Migration = VoltMod::RunMigrations(Db, Runtime.PluginFile("configs/migrations"),
+    Migration = VoltMod::RunMigrations(Db, Runtime.PluginFile("migrations"),
                                        {.HistoryTable = "schema_migrations", .LockKey = 727274});
     if (!Migration)
     {
@@ -267,7 +267,7 @@ void App::AddHomePageText()
 
 bool App::Load()
 {
-    if (!VoltMod::LoadStandardConfig(Runtime, Settings))
+    if (!VoltMod::LoadConfig(Runtime, Settings))
     {
         return false;
     }

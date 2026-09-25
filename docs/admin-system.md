@@ -210,15 +210,15 @@ walk them around.
 `configs/settings.jsonc` lists every key, including `path` (the sqlite file) and
 `connectTimeoutSec`.
 
-The plugin owns its schema. `configs/migrations/NNNN_name.sql` holds one
+The plugin owns its schema. `migrations/NNNN_name.sql` holds one
 dialect-free file per change, and the plugin applies them in filename order at
 load, substituting the handful of spellings the backends disagree on. To apply
 them by hand, render them for your driver first:
 
 ```bash
-uv run voltmod database sql configs/migrations --driver postgres | psql -d admin_system
-uv run voltmod database sql configs/migrations --driver mariadb  | mariadb admin_system
-uv run voltmod database sql configs/migrations --driver sqlite   | sqlite3 admin-system.sqlite
+uv run voltmod database sql migrations --driver postgres | psql -d admin_system
+uv run voltmod database sql migrations --driver mariadb  | mariadb admin_system
+uv run voltmod database sql migrations --driver sqlite   | sqlite3 admin-system.sqlite
 ```
 
 Seed the first admin the same way, after putting your SteamID64 in the file:

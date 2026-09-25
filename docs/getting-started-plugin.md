@@ -25,7 +25,8 @@ plugins/hello-world/
   README.md             what the plugin does, its commands and settings
   configs/
     settings.jsonc
-    translations/en.json
+  translations/
+    en.json
   src/
     App.cpp             VOLTMOD_PLUGIN(HelloWorld::App) and App::Load
     App.hpp             everything the plugin owns for one load cycle
@@ -45,7 +46,7 @@ there; load order is alphabetical either way.
 | Startup and composition | `src/App.cpp` |
 | Commands | `src/Commands.cpp`, or another `.cpp` under `src/` |
 | Settings | `src/Config.hpp`, plus `configs/settings.jsonc` |
-| Player-facing text | every file under `configs/translations/` |
+| Player-facing text | every file under `translations/` |
 | SDK-free logic | plain C++ types, so it can be unit-tested |
 
 `voltmod_add_plugin` discovers every `.cpp` under `src/`, so a new file needs no CMake edit.
@@ -101,6 +102,6 @@ Everything that is not specific to this repository lives in the framework's docs
 | Symptom | Check |
 | --- | --- |
 | `hello-world` is missing from `volt list` | The host is in `meta list`; then `game/csgo/addons/voltmod/plugins/hello-world/plugin.json` and `hello-world.dll` |
-| The plugin loads but `!ping` does nothing | `configs/translations/en.json` was installed, and `plugin.locale` names a file that exists |
+| The plugin loads but `!ping` does nothing | `translations/en.json` was installed, and `plugin.locale` names a file that exists |
 | `settings.jsonc` changes are ignored | The installer seeds it once; edit the copy under `game/csgo/addons/voltmod/plugins/hello-world/configs/` |
 | Conan cannot resolve SDK packages | `uv run poe bootstrap`. A missing published binary is a publication problem; changing source will not fix it |

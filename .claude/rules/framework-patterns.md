@@ -14,7 +14,7 @@ the next.
 - `plugin.json` beside the plugin's `CMakeLists.txt` is its identity: name, version, log tag, description, dependencies. Nothing in C++ or CMake repeats it; read `runtime.PluginName` and `runtime.Version`.
 - Derive the load-cycle class from `VoltMod::Plugin`, construct the base from `Runtime&`, and override `bool Load()`. Put `VOLTMOD_PLUGIN(<Namespace>::App)` at global scope in `App.cpp`, with `<VoltMod/App/PluginEntry.hpp>` included in that one .cpp only. Override lifecycle hooks on `Plugin`; the App wires its own cross-system handlers in `Load`.
 - The `App` lives for one load cycle. Nothing may survive `volt reload`.
-- `VoltMod::LoadStandardConfig(runtime, config)` loads settings and translations; `runtime.PluginFile("configs/x")` builds any other path under the plugin's directory.
+- `VoltMod::LoadConfig(runtime, config)` loads settings and translations; `runtime.PluginFile("data/x")` builds any other path under the plugin's directory: `configs/` for files the operator tunes (seeded once), `data/` for files the plugin ships.
 
 ## Commands
 
@@ -85,7 +85,7 @@ commands.Add("slap")
 
 - `VoltMod::Database::RunAsync`/`Run` take a job callable over `auto& conn`, dispatched to whichever backend (Postgres, MariaDB, SQLite) is configured. A bare name blocks and is load-time only; `Async` returns first. Both report failure as `Result<T>` over `Error`.
 - `VoltMod::Insert` returns the generated id; `VoltMod::Upsert` is the portable update-then-insert. Repository methods that return before the write lands end in `Async`.
-- A migration is one dialect-free `configs/migrations/NNNN_name.sql`; `RunMigrations` substitutes `@ID@`, `@NOW@`, `@TRUE@`, `@FALSE@`, `@INSERT_IF_ABSENT@` and `@ON_CONFLICT(cols)@` for the live driver. Add a change as a new numbered file; never edit one that has been applied.
+- A migration is one dialect-free `migrations/NNNN_name.sql`; `RunMigrations` substitutes `@ID@`, `@NOW@`, `@TRUE@`, `@FALSE@`, `@INSERT_IF_ABSENT@` and `@ON_CONFLICT(cols)@` for the live driver. Add a change as a new numbered file; never edit one that has been applied.
 - Table specs are generated from those migrations by `uv run poe schema` into `src/Database/Tables/Schema.hpp`; `poe lint` fails if they drift. Never edit the generated header.
 - Managers take `Database::Repositories&`, built once in `App`. Do not construct a repository at a call site.
-- admin-system settings: `configs/settings.jsonc`; migrations: `configs/migrations/`. Several servers may share one database and `server.tag` identifies each. Run `!admin_reload` after editing admin data by hand.
+- admin-system settings: `configs/settings.jsonc`; migrations: `migrations/`. Several servers may share one database and `server.tag` identifies each. Run `!admin_reload` after editing admin data by hand.

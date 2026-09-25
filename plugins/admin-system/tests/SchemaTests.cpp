@@ -17,7 +17,7 @@ using VoltMod::Scheduler;
 
 static std::string MigrationsDir()
 {
-    return (std::filesystem::path(ADMIN_SYSTEM_DIR) / "configs" / "migrations").string();
+    return (std::filesystem::path(ADMIN_SYSTEM_DIR) / "migrations").string();
 }
 
 /** doctest evaluates the message eagerly, so this has to be safe on a successful result. */

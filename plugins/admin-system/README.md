@@ -55,7 +55,7 @@ Run `volt list` in the server console after startup. `admin-system` should appea
 plugin list. If it does not, check the VoltMod log for a configuration or database error.
 
 To apply migrations manually, render
-[`configs/migrations/`](configs/migrations/) the same way.
+[`migrations/`](migrations/) the same way.
 
 ## Permissions
 
@@ -157,7 +157,7 @@ Cheat checks support `fixedLink`, `websiteAutoRoom`, and `playerProvided`
 modes. Website presence polling is optional.
 
 Player-facing messages live under
-[`configs/translations/`](configs/translations/). Keep every language file
+[`translations/`](translations/). Keep every language file
 key-parallel. Reload database-backed admin state with `!admin_reload` after
 changing groups, grants, or admins.
 

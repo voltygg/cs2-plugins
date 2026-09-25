@@ -7,7 +7,7 @@
   "dependencies": [],
   "optionalDependencies": [],
   "database": {
-    "migrations": "configs/migrations",
+    "migrations": "migrations",
     "header": "src/Database/Tables/Schema.hpp",
     "namespace": "AdminSystem::Database::Tables"
   }

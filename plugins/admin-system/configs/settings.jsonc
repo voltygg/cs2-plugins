@@ -1,6 +1,6 @@
 {
   "plugin": {
-    // Server default language: a file name in configs/translations without `.json`. A player's
+    // Server default language: a file name in translations/ without `.json`. A player's
     // pick in the main menu's Settings tab wins over it.
     "locale": "ru"
   },

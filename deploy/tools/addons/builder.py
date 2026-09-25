@@ -7,7 +7,7 @@ from deploy.tools.config.inventory import Inventory
 from deploy.tools.config.secrets import ServerSecrets
 from deploy.tools.config.servers import Instance, Server
 from deploy.tools.errors import DeployError
-from deploy.tools.paths import PACKAGE_DIR
+from deploy.tools.paths import PACKAGE_DIR, ROOT
 
 
 class AddonsBuilder:
@@ -38,15 +38,16 @@ class AddonsBuilder:
             )
         for plugin in self._server.plugins_for(instance):
             self._unpack(plugin, addons)
-            self._write_settings(instance, plugin, addons)
+            self._write_configs(instance, plugin, addons)
         return addons
 
-    def _write_settings(self, instance: Instance, plugin: str, addons: Path) -> None:
+    def _write_configs(self, instance: Instance, plugin: str, addons: Path) -> None:
+        """Copy the plugin's configs/ from the source tree, rendering settings.jsonc per server."""
+        configs = addons / self.PLUGINS_DIR / plugin / "configs"
+        shutil.copytree(ROOT / "plugins" / plugin / "configs", configs, dirs_exist_ok=True)
         settings = self._settings.render(instance, plugin)
         text = json.dumps(settings, indent=2, ensure_ascii=False) + "\n"
-        settings_file = addons / self.PLUGINS_DIR / plugin / "configs" / "settings.jsonc"
-        settings_file.parent.mkdir(parents=True, exist_ok=True)
-        settings_file.write_text(text, encoding="utf-8", newline="\n")
+        (configs / "settings.jsonc").write_text(text, encoding="utf-8", newline="\n")
 
     @staticmethod
     def _unpack(name: str, addons: Path) -> None:
