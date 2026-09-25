@@ -1,6 +1,5 @@
 #include "HubMenu.hpp"
 
-#include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Messaging/ChatColors.hpp>
 #include <algorithm>
@@ -11,7 +10,6 @@
 #include <vector>
 
 namespace ChatColors = VoltMod::ChatColors;
-namespace Log = VoltMod::Log;
 using VoltMod::ChoiceRow;
 using VoltMod::MenuBuilder;
 using VoltMod::MenuItem;
@@ -138,11 +136,7 @@ void HubMenu::Run(const Entry& entry, int slot, MenuSurface& surface)
     if (entry.kind == EntryKind::Command)
     {
         surface.CloseAll(slot);
-        if (auto ran = _conVars.ExecuteClientCommand(slot, entry.target); !ran)
-        {
-            Log::Warn("'{}' did not run: {}", entry.target, ran.error().Detail);
-            _messages.ReplyKey(slot, "entry.unavailable");
-        }
+        _conVars.ExecuteClientCommand(slot, entry.target);
         return;
     }
 

@@ -23,10 +23,10 @@ Effect MakeBhop(VoltMod::Runtime& runtime)
                       int64_t steamId = ctx.Target().SteamId();
                       // There is no recovery path if the engine is already unavailable.
                       auto& conVars = runtime.ConVars;
-                      (void)conVars.ExecuteServerCommand(std::format("bhop_player {} 1", steamId));
+                      conVars.ExecuteServerCommand(std::format("bhop_player {} 1", steamId));
                       // The runtime outlives the effect manager and its callbacks.
                       return {.OnStop = [&conVars, steamId]() {
-                          (void)conVars.ExecuteServerCommand(std::format("bhop_player {} 0", steamId));
+                          conVars.ExecuteServerCommand(std::format("bhop_player {} 0", steamId));
                       }};
                   }};
 }

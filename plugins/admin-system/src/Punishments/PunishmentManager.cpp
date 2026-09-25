@@ -268,7 +268,7 @@ void PunishmentManager::KickDeferred(int slot, int64_t steamId, std::string reas
         // The seat can change hands before this fires; kicking whoever took it is not the ban.
         if (rt.Players.Get(VoltMod::PlayerRef{slot, steamId}))
         {
-            (void)rt.Entities.Controller(slot).Kick(reason);
+            rt.Entities.Controller(slot).Kick(reason);
         }
     });
 }

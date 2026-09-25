@@ -63,7 +63,7 @@ void PawnTimers::SlayAfter(int slot, int64_t delayMs)
     _timers[slot].Slay = _runtime.Scheduler.Delay(delayMs, [this, slot] {
         if (const VoltMod::Pawn pawn = _runtime.Entities.Pawn(slot); pawn.IsAlive())
         {
-            (void)pawn.Slay();
+            pawn.Slay();
         }
     });
 }

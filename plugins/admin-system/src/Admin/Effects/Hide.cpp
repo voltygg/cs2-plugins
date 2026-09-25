@@ -30,7 +30,7 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                       std::string savedName(target.Name());
 
                       target.SetName("");
-                      (void)target.ChangeTeam(Team::Spectator);
+                      target.ChangeTeam(Team::Spectator);
 
                       int slot = ctx.Target().Slot();
                       auto& visibility = runtime.Hooks.Visibility;
@@ -54,7 +54,7 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                                       // Joining T or CT also ends hide, and that choice wins.
                                       if (savedTeam != Team::Spectator && controller.Team() == Team::Spectator)
                                       {
-                                          (void)controller.ChangeTeam(savedTeam);
+                                          controller.ChangeTeam(savedTeam);
                                       }
                                   }};
                   }};

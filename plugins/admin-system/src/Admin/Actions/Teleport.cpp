@@ -30,8 +30,7 @@ const Action Bring{Permission::Control, /*requireAlive*/ true, [](const ActionCo
                        {
                            return std::nullopt;
                        }
-                       (void)ctx.Target().Pawn().Teleport(ClearedDestination(caller), std::nullopt,
-                                                          Vector{0.0f, 0.0f, 0.0f});
+                       ctx.Target().Pawn().Teleport(ClearedDestination(caller), std::nullopt, Vector{0.0f, 0.0f, 0.0f});
                        return "broadcast.brought";
                    }};
 
@@ -41,8 +40,7 @@ const Action Goto{Permission::Control, /*requireAlive*/ true, [](const ActionCon
                       {
                           return std::nullopt;
                       }
-                      (void)caller.Teleport(ClearedDestination(ctx.Target().Pawn()), std::nullopt,
-                                            Vector{0.0f, 0.0f, 0.0f});
+                      caller.Teleport(ClearedDestination(ctx.Target().Pawn()), std::nullopt, Vector{0.0f, 0.0f, 0.0f});
                       return "broadcast.goto";
                   }};
 
@@ -68,8 +66,8 @@ void Swap(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef first, VoltMod:
     // Both spots empty in the same frame, so the exact origins need no clearance.
     const Vector originA = a.Origin();
     const Vector originB = b.Origin();
-    (void)a.Teleport(originB, std::nullopt, Vector{0.0f, 0.0f, 0.0f});
-    (void)b.Teleport(originA, std::nullopt, Vector{0.0f, 0.0f, 0.0f});
+    a.Teleport(originB, std::nullopt, Vector{0.0f, 0.0f, 0.0f});
+    b.Teleport(originA, std::nullopt, Vector{0.0f, 0.0f, 0.0f});
     BroadcastPair(app, *ctxA, *ctxB, "broadcast.swapped");
 }
 

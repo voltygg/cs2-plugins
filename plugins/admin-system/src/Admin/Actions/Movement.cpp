@@ -21,7 +21,7 @@ static void ShiftUp(const VoltMod::Pawn& pawn, float height)
 {
     Vector origin = pawn.Origin();
     origin.z += height;
-    (void)pawn.Teleport(origin, std::nullopt, std::nullopt);
+    pawn.Teleport(origin, std::nullopt, std::nullopt);
 }
 
 const Action Noclip{Permission::Control, /*requireAlive*/ false, [](const ActionContext& ctx) -> OptKey {

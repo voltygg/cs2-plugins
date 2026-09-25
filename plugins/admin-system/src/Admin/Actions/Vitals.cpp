@@ -4,7 +4,7 @@ namespace AdminSystem::Admin::Actions
 {
 
 const Action Kill{Permission::Control, /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
-                      (void)ctx.Target().Pawn().Slay();
+                      ctx.Target().Pawn().Slay();
                       return "broadcast.killed";
                   }};
 

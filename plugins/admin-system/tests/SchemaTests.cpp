@@ -51,9 +51,9 @@ TEST_CASE("The migrations build the schema the generated specs describe")
         auto probe = db.Run("select-all-columns", [](auto& conn) {
             const auto count = [&conn](auto table) {
                 int rows = 0;
-                for (const auto& row : conn(sqlpp::select(sqlpp::all_of(table)).from(table).where(table.id == 0)))
+                for ([[maybe_unused]] const auto& row :
+                     conn(sqlpp::select(sqlpp::all_of(table)).from(table).where(table.id == 0)))
                 {
-                    (void)row;
                     ++rows;
                 }
                 return rows;
@@ -68,9 +68,9 @@ TEST_CASE("The migrations build the schema the generated specs describe")
         CHECK(db.Run("seeded-group", [](auto& conn) {
                     const Tables::AdminGroups t;
                     int found = 0;
-                    for (const auto& row : conn(sqlpp::select(t.name).from(t).where(t.name == "super_admin")))
+                    for ([[maybe_unused]] const auto& row :
+                         conn(sqlpp::select(t.name).from(t).where(t.name == "super_admin")))
                     {
-                        (void)row;
                         ++found;
                     }
                     return found;

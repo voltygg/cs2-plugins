@@ -20,7 +20,7 @@ static void Issue(App& app, const Player& admin, const Player& target, PunishTyp
     // A kick leaves no row; it is applied and broadcast here.
     if (type == PunishType::Kick)
     {
-        (void)app.Runtime.Entities.Controller(target.Slot()).Kick(reason);
+        app.Runtime.Entities.Controller(target.Slot()).Kick(reason);
         app.Chat.BroadcastPunishment(InfoFor(type).IssuedBroadcast, admin.Name(), target.Name(), reason, std::nullopt);
         return;
     }

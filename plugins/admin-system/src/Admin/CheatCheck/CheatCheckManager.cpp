@@ -86,7 +86,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     pc.Freeze.Hold(targetCtrl.Pawn());
     if (cfg.moveToSpectator)
     {
-        (void)targetCtrl.ChangeTeam(VoltMod::Team::Spectator);
+        targetCtrl.ChangeTeam(VoltMod::Team::Spectator);
     }
 
     pc.DeadlineTimer = _rt.Scheduler.Repeat(DeadlineTickMs, [this, targetSlot] { Tick(targetSlot); });
@@ -347,7 +347,7 @@ void CheatCheckManager::Expire(int targetSlot)
     }
     else if (cfg.autoKick)
     {
-        (void)_rt.Entities.Controller(targetSlot).Kick(cfg.kickReason);
+        _rt.Entities.Controller(targetSlot).Kick(cfg.kickReason);
     }
     else
     {
@@ -367,7 +367,7 @@ void CheatCheckManager::Unfreeze(int targetSlot, VoltMod::MovementFreeze freeze,
     // Set only when the check pulled the player to spectator.
     if (VoltMod::IsPlaying(restoreTeam))
     {
-        (void)controller.ChangeTeam(restoreTeam);
+        controller.ChangeTeam(restoreTeam);
     }
     freeze.Release(controller.Pawn());
 }
