@@ -2,15 +2,15 @@ import os
 from collections.abc import Generator
 from contextlib import contextmanager
 
-from deploy.tools import console
-from deploy.tools.addons.builder import AddonsBuilder
-from deploy.tools.config.inventory import Inventory
-from deploy.tools.config.servers import DockerServer, Instance
-from deploy.tools.deployer import Deployer
-from deploy.tools.docker.compose import ComposeProject
-from deploy.tools.docker.host import DockerHost
-from deploy.tools.docker.ssh import Ssh
-from deploy.tools.paths import RENDER_DIR
+from deploy import console
+from deploy.bundle.builder import AddonsBuilder
+from deploy.config.inventory import Inventory
+from deploy.config.servers import DockerServer, Instance
+from deploy.deployer import Deployer
+from deploy.docker.compose import ComposeProject
+from deploy.docker.host import DockerHost
+from deploy.docker.ssh import Ssh
+from deploy.paths import RENDER_DIR
 
 
 class DockerDeployer(Deployer[DockerServer]):

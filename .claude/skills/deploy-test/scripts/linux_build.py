@@ -1,4 +1,4 @@
-"""Build the Linux plugins in a local copy of the CI container and stage them under package/."""
+"""Build the Linux plugins in a local CI container copy and stage them under build/package/."""
 
 import argparse
 import json

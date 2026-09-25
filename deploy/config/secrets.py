@@ -2,8 +2,8 @@ import os
 
 from dotenv import dotenv_values
 
-from deploy.tools.errors import DeployError
-from deploy.tools.paths import DEPLOY_DIR, ROOT
+from deploy.errors import DeployError
+from deploy.paths import DEPLOY_DIR, ROOT
 
 
 class ServerSecrets:

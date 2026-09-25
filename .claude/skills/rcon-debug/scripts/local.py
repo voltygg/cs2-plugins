@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT))
 from dotenv import dotenv_values  # noqa: E402
 from voltmod.server.cs2_server import Cs2Server  # noqa: E402
 
-from deploy.tools.rcon import RconClient  # noqa: E402
+from deploy.rcon import RconClient  # noqa: E402
 
 BOOT_TIMEOUT = 180
 

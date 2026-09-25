@@ -44,7 +44,7 @@ jobs:
         env:
           SERVER: ${{ inputs.server }}
         run: |
-          plan=$(uv run --locked --only-group deploy python -m deploy.tools.cli ci-matrix ${SERVER:+--server "$SERVER"})
+          plan=$(uv run --locked --only-group deploy python -m deploy.cli ci-matrix ${SERVER:+--server "$SERVER"})
           echo "$plan" | tee -a "$GITHUB_OUTPUT"
 
   build:
@@ -74,12 +74,12 @@ jobs:
         run: voltmod test -p linux-steamrt-release
 
       - name: Package plugins
-        run: uv run --locked --only-group deploy python -m deploy.tools.cli package
+        run: uv run --locked --only-group deploy python -m deploy.cli package
 
       - uses: actions/upload-artifact@v7
         with:
           name: package
-          path: package/
+          path: build/package/
           if-no-files-found: error
 
   runtime-image:
@@ -104,7 +104,7 @@ jobs:
 
       - uses: docker/build-push-action@v7
         with:
-          context: deploy/docker
+          context: deploy/files/docker
           push: true
           tags: |
             ${{ needs.targets.outputs.runtime_image }}:${{ github.sha }}
@@ -143,7 +143,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: package
-          path: package
+          path: build/package
 
       - uses: astral-sh/setup-uv@v10.1.0
 
@@ -169,5 +169,5 @@ jobs:
           SSH_KEY_FILE: ${{ runner.temp }}/id_deploy
           RUNTIME_IMAGE_TAG: ${{ github.sha }}
         run: >-
-          uv run --locked --only-group deploy python -m deploy.tools.cli push
+          uv run --locked --only-group deploy python -m deploy.cli push
           --server "${{ matrix.server.id }}" ${{ inputs.dry_run && '--dry-run' || '' }}

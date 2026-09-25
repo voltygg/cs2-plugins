@@ -3,9 +3,9 @@ import socket
 import subprocess
 from pathlib import Path
 
-from deploy.tools import console
-from deploy.tools.config.servers import DockerServer
-from deploy.tools.docker.tunnel import Tunnel
+from deploy import console
+from deploy.config.servers import DockerServer
+from deploy.docker.tunnel import Tunnel
 
 
 class Ssh:

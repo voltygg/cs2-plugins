@@ -3,11 +3,11 @@ import re
 from pathlib import Path
 from typing import Any
 
-from deploy.tools.config.inventory import Inventory
-from deploy.tools.config.secrets import ServerSecrets
-from deploy.tools.config.servers import Instance, Server
-from deploy.tools.errors import DeployError
-from deploy.tools.paths import ROOT
+from deploy.config.inventory import Inventory
+from deploy.config.secrets import ServerSecrets
+from deploy.config.servers import Instance, Server
+from deploy.errors import DeployError
+from deploy.paths import ROOT
 
 
 class SettingsRenderer:

@@ -1,18 +1,18 @@
 import shlex
 from pathlib import Path
 
-from deploy.tools import console
-from deploy.tools.addons.builder import AddonsBuilder
-from deploy.tools.config.secrets import ServerSecrets
-from deploy.tools.config.servers import DockerServer, Instance
-from deploy.tools.paths import DEPLOY_DIR
+from deploy import console
+from deploy.bundle.builder import AddonsBuilder
+from deploy.config.secrets import ServerSecrets
+from deploy.config.servers import DockerServer, Instance
+from deploy.paths import FILES_DIR
 
 
 class ComposeProject:
     """docker-compose.yml plus each instance's plugin bundle, env file and pre-launch hook."""
 
-    COMPOSE_FILE = DEPLOY_DIR / "docker" / "docker-compose.yml"
-    PRE_LAUNCH_HOOK = DEPLOY_DIR / "docker" / "pre.sh"
+    COMPOSE_FILE = FILES_DIR / "docker" / "docker-compose.yml"
+    PRE_LAUNCH_HOOK = FILES_DIR / "docker" / "pre.sh"
 
     def __init__(
         self, server: DockerServer, secrets: ServerSecrets, addons: AddonsBuilder, image: str

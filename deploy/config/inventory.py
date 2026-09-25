@@ -4,9 +4,9 @@ from typing import Annotated, Any, ClassVar, Self
 import yaml
 from pydantic import Field, ValidationError, field_validator, model_validator
 
-from deploy.tools.config.servers import DockerServer, Instance, Model, PanelServer, Server
-from deploy.tools.errors import DeployError
-from deploy.tools.paths import DEPLOY_DIR
+from deploy.config.servers import DockerServer, Instance, Model, PanelServer, Server
+from deploy.errors import DeployError
+from deploy.paths import DEPLOY_DIR
 
 
 class Plugin(Model):

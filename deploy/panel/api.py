@@ -4,8 +4,8 @@ from typing import Any
 
 import httpx
 
-from deploy.tools.config.servers import PanelServer
-from deploy.tools.errors import DeployError
+from deploy.config.servers import PanelServer
+from deploy.errors import DeployError
 
 # Cloudflare in front of many panels rejects default client agents.
 USER_AGENT = "cs2-plugins-deploy"

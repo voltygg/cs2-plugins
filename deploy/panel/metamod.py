@@ -2,9 +2,9 @@ from typing import Self
 
 import httpx
 
-from deploy.tools import console
-from deploy.tools.errors import DeployError
-from deploy.tools.panel.api import PanelApi, web_client
+from deploy import console
+from deploy.errors import DeployError
+from deploy.panel.api import PanelApi, web_client
 
 
 class Metamod:

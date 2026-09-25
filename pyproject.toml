@@ -39,8 +39,8 @@ run = "voltmod run"
 panorama = "voltmod panorama compile"
 panorama-publish = "voltmod panorama compile main-menu admin-system --addon meatgg_ui --no-deploy"
 format = "voltmod format plugins contracts"
-deploy = "python -m deploy.tools.cli"
-rcon = "python -m deploy.tools.cli rcon"
+deploy = "python -m deploy.cli"
+rcon = "python -m deploy.cli rcon"
 schema = "voltmod database header"
 
 [tool.poe.tasks.lint]

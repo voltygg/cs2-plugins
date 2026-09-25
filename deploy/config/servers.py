@@ -4,7 +4,7 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from deploy.tools.errors import DeployError
+from deploy.errors import DeployError
 
 
 class Model(BaseModel):

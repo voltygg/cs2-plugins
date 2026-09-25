@@ -1,13 +1,13 @@
 import shutil
 import subprocess
 
-from deploy.tools import console
-from deploy.tools.errors import DeployError
-from deploy.tools.paths import PACKAGE_DIR, ROOT
+from deploy import console
+from deploy.errors import DeployError
+from deploy.paths import PACKAGE_DIR, ROOT
 
 
 class AddonPackager:
-    """Stages one built install component under package/<name> with `cmake --install`."""
+    """Stages one built install component under build/package/<name> with `cmake --install`."""
 
     PRESET = "linux-steamrt-release"
 
@@ -21,6 +21,6 @@ class AddonPackager:
             )
         destination = PACKAGE_DIR / component
         shutil.rmtree(destination, ignore_errors=True)
-        console.section(f"Packaging {component} into package/{component}")
+        console.section(f"Packaging {component} into build/package/{component}")
         install = ["cmake", "--install", str(self._build_dir), "--component", component]
         subprocess.run([*install, "--prefix", str(destination)], check=True)

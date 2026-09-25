@@ -3,10 +3,10 @@ import subprocess
 import textwrap
 from pathlib import PurePosixPath
 
-from deploy.tools import console
-from deploy.tools.config.servers import DockerServer, Instance
-from deploy.tools.docker.ssh import Ssh
-from deploy.tools.errors import DeployError
+from deploy import console
+from deploy.config.servers import DockerServer, Instance
+from deploy.docker.ssh import Ssh
+from deploy.errors import DeployError
 
 
 class DockerHost:

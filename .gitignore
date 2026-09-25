@@ -2,7 +2,6 @@
 build/
 CMakeUserPresets.json
 objdir/
-package/
 
 # IDE
 .vs/
@@ -63,9 +62,6 @@ __pycache__/
 .env
 .env.local
 *.local.json
-
-# Deploy: per-server env (.env covered by the global rule above) + rendered configs.
-deploy/.render/
 
 # uv
 .venv/

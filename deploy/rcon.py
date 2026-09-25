@@ -3,7 +3,7 @@ import struct
 import time
 from typing import Self
 
-from deploy.tools.errors import DeployError
+from deploy.errors import DeployError
 
 
 class RconClient:

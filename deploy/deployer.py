@@ -2,13 +2,13 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager
 
-from deploy.tools import console
-from deploy.tools.addons.builder import AddonsBuilder
-from deploy.tools.config.inventory import Inventory
-from deploy.tools.config.secrets import ServerSecrets
-from deploy.tools.config.servers import Instance, Server
-from deploy.tools.errors import DeployError
-from deploy.tools.rcon import RconClient
+from deploy import console
+from deploy.bundle.builder import AddonsBuilder
+from deploy.config.inventory import Inventory
+from deploy.config.secrets import ServerSecrets
+from deploy.config.servers import Instance, Server
+from deploy.errors import DeployError
+from deploy.rcon import RconClient
 
 
 class Deployer[S: Server](ABC):

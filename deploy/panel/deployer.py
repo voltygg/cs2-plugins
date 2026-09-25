@@ -4,15 +4,15 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from functools import cached_property
 
-from deploy.tools import console
-from deploy.tools.addons.builder import AddonsBuilder
-from deploy.tools.config.servers import Instance, PanelServer
-from deploy.tools.deployer import Deployer
-from deploy.tools.errors import DeployError
-from deploy.tools.panel.api import PanelApi
-from deploy.tools.panel.gameinfo import GameInfo
-from deploy.tools.panel.metamod import Metamod
-from deploy.tools.paths import RENDER_DIR
+from deploy import console
+from deploy.bundle.builder import AddonsBuilder
+from deploy.config.servers import Instance, PanelServer
+from deploy.deployer import Deployer
+from deploy.errors import DeployError
+from deploy.panel.api import PanelApi
+from deploy.panel.gameinfo import GameInfo
+from deploy.panel.metamod import Metamod
+from deploy.paths import RENDER_DIR
 
 
 class PanelDeployer(Deployer[PanelServer]):

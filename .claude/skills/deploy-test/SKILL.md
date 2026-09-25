@@ -7,9 +7,9 @@ argument-hint: "[server-id] (default: panel-a)"
 # Quick deploy for testing
 
 Skips the release tag, relock and Deploy workflow (~20 min): build the `.so` files locally, stage
-`package/`, and run the same `deploy push` as CI. Nothing is committed. The server runs uncommitted
-binaries until the next Deploy workflow; a change that tested well still ships through `commit`
-and, for voltmod, `release`.
+`build/package/`, and run the same `deploy push` as CI. Nothing is committed. The server runs
+uncommitted binaries until the next Deploy workflow; a change that tested well still ships through
+`commit` and, for voltmod, `release`.
 
 ## 1. Build
 

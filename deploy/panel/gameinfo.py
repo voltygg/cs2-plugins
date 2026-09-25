@@ -1,9 +1,9 @@
 import re
 from typing import Self
 
-from deploy.tools.errors import DeployError
-from deploy.tools.panel.api import PanelApi
-from deploy.tools.paths import DEPLOY_DIR
+from deploy.errors import DeployError
+from deploy.panel.api import PanelApi
+from deploy.paths import FILES_DIR
 
 
 class GameInfo:
@@ -12,7 +12,7 @@ class GameInfo:
     SEARCH_PATH = "csgo/addons/metamod"
     GAME_CSGO_LINE = re.compile(r"^([ \t]*)Game[ \t]+csgo[ \t]*(\r?)$", re.MULTILINE)
     # Valve's file from an up-to-date dedicated server; refresh it when a CS2 update changes it.
-    TEMPLATE = DEPLOY_DIR / "panel" / "gameinfo.gi"
+    TEMPLATE = FILES_DIR / "panel" / "gameinfo.gi"
 
     def __init__(self, api: PanelApi, game_dir: str, current: str, shared_install: bool) -> None:
         self._api = api

@@ -31,8 +31,8 @@ if [ "$RUN_TESTS" = 1 ]; then
     voltmod test -p "$preset"
 fi
 
-uv run --quiet --locked --only-group deploy python -m deploy.tools.cli package
+uv run --quiet --locked --only-group deploy python -m deploy.cli package
 # An editable framework keeps the host in its own build tree, which the packager does not read.
 if [ "$FRAMEWORK" = checkout ]; then
-    cmake --install "/work/voltmod/build/$preset" --component host --prefix /work/package/host
+    cmake --install "/work/voltmod/build/$preset" --component host --prefix /work/build/package/host
 fi

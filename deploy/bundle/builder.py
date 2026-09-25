@@ -2,18 +2,18 @@ import json
 import shutil
 from pathlib import Path
 
-from deploy.tools.addons.settings import SettingsRenderer
-from deploy.tools.config.inventory import Inventory
-from deploy.tools.config.secrets import ServerSecrets
-from deploy.tools.config.servers import Instance, Server
-from deploy.tools.errors import DeployError
-from deploy.tools.paths import PACKAGE_DIR, ROOT
+from deploy.bundle.settings import SettingsRenderer
+from deploy.config.inventory import Inventory
+from deploy.config.secrets import ServerSecrets
+from deploy.config.servers import Instance, Server
+from deploy.errors import DeployError
+from deploy.paths import PACKAGE_DIR, ROOT
 
 
 class AddonsBuilder:
     """Assembles an instance's `addons` tree from the host, the plugins and rendered settings."""
 
-    # The framework's install component, staged under package/ by the same name.
+    # The framework's install component, staged under build/package/ by the same name.
     HOST = "host"
     # Copied from voltmod.server.install, not imported: CI deploys install only the deploy group.
     HOST_ADDON_DIR = "voltmod"
@@ -33,7 +33,7 @@ class AddonsBuilder:
         self._unpack(self.HOST, addons)
         if not (addons / self.HOST_MANIFEST).is_file():
             raise DeployError(
-                f"package/{self.HOST} has no {self.HOST_MANIFEST}; "
+                f"build/package/{self.HOST} has no {self.HOST_MANIFEST}; "
                 "rebuild the framework and run `uv run poe deploy package`"
             )
         for plugin in self._server.plugins_for(instance):

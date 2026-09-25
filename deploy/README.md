@@ -1,7 +1,7 @@
 # Deployment
 
 ```bash
-uv run poe deploy package                             # stage the host and plugins under package/
+uv run poe deploy package                             # stage host and plugins in build/package/
 uv run poe deploy push [--server ID] [--dry-run]      # install plugins and settings, restart
 uv run poe deploy restart [--server ID] [--dry-run]   # restart so CS2 updates
 uv run poe rcon "volt list" [--server ID] [--instance NAME]
@@ -27,9 +27,9 @@ For a local server use `uv run poe run <plugin>`; see
 
 - `uv sync` in the repository root. CI installs only the deploy group:
   `uv run --only-group deploy`.
-- A `package/` directory holding the Linux build. The Linux build runs only in CI, so download the
-  `package` artifact of a Deploy run into `package/`, or run `uv run poe deploy package` on a
-  machine that has one.
+- A `build/package/` directory holding the Linux build. The Linux build runs only in CI, so
+  download the `package` artifact of a Deploy run into `build/package/`, or run
+  `uv run poe deploy package` on a machine that has one.
 - `deploy/secrets/<id>/.env` for each server you deploy (see [Secrets](#secrets)).
 - Docker hosts: a prepared host (see [Docker hosts](#docker-hosts)) and an SSH key.
 - Panel servers: an API key from the panel's Account -> API Credentials page.
@@ -137,8 +137,8 @@ cp deploy/secrets/panel-a/.env.example deploy/secrets/panel-a/.env
 
 ## What a deploy ships
 
-`AddonsBuilder` rebuilds the instance's `addons` tree from `package/` on every deploy: the voltmod
-host, then each plugin the instance runs, then that plugin's rendered `settings.jsonc`.
+`AddonsBuilder` rebuilds the instance's `addons` tree from `build/package/` on every deploy: the
+voltmod host, then each plugin the instance runs, then that plugin's rendered `settings.jsonc`.
 
 ```text
 addons/
@@ -178,9 +178,10 @@ It does not check that the plugins loaded - run `uv run poe rcon "volt list"`. `
 stops and starts the server, so the egg runs its own SteamCMD update.
 
 Some hosts link every server to one shared CS2 install and refuse to read those links. There the
-deploy replaces `gameinfo.gi` with a patched copy of [`panel/gameinfo.gi`](panel/gameinfo.gi),
-which does not follow CS2 updates: when an update changes `gameinfo.gi`, copy it from an updated
-dedicated server into that file and deploy again.
+deploy replaces `gameinfo.gi` with a patched copy of
+[`files/panel/gameinfo.gi`](files/panel/gameinfo.gi), which does not follow CS2 updates: when an
+update changes `gameinfo.gi`, copy it from an updated dedicated server into that file and deploy
+again.
 
 Turn off the egg's validate-on-start option if it has one. Validation restores `gameinfo.gi` and
 Metamod stops loading.
@@ -190,7 +191,7 @@ Metamod stops loading.
 Prepare a fresh Ubuntu 24.04+ machine:
 
 ```bash
-sudo bash deploy/docker/bootstrap-host.sh     # --skip-docker if Docker is installed
+sudo bash deploy/files/docker/bootstrap-host.sh     # --skip-docker if Docker is installed
 ```
 
 It creates the `steam` user and directories, installs Docker with Compose, and opens SSH and UDP
@@ -198,13 +199,13 @@ ports 27015-27035.
 
 ```text
 /home/steam/cs2/server                      shared SteamCMD install
-/home/steam/cs2/deploy/docker-compose.yml   one instance; a copy of docker/docker-compose.yml
+/home/steam/cs2/deploy/docker-compose.yml   one instance; a copy of files/docker/docker-compose.yml
 /home/steam/cs2/deploy/instances/<name>/    addons, .env, pre.sh, plugin bundles
 ```
 
-[`docker/docker-compose.yml`](docker/docker-compose.yml) describes a single instance and is never
-generated. Each instance runs as its own Compose project, `cs2-<name>`, and its `.env` fills in
-the image, container name, port and paths. On the host:
+[`files/docker/docker-compose.yml`](files/docker/docker-compose.yml) describes a single instance
+and is never generated. Each instance runs as its own Compose project, `cs2-<name>`, and its `.env`
+fills in the image, container name, port and paths. On the host:
 
 ```bash
 cd /home/steam/cs2/deploy
@@ -214,12 +215,12 @@ docker compose -p cs2-main --env-file instances/main/.env ps    # or logs, resta
 The shared install is mounted into every container, and each instance's own `addons` directory is
 mounted over `csgo/addons`, so instances on one host can run different plugins.
 
-Before CS2 starts, [`docker/pre.sh`](docker/pre.sh) copies the instance's bundle into place,
-patches `gameinfo.gi`, and reinstalls Metamod when the mirror has a newer build. Set `MMS_URL` to
-pin a build or `MMS_BASE` to use another mirror. It stops the container when the bundle has no
-`voltmod.vdf`, since nothing the deploy shipped would load.
+Before CS2 starts, [`files/docker/pre.sh`](files/docker/pre.sh) copies the instance's bundle into
+place, patches `gameinfo.gi`, and reinstalls Metamod when the mirror has a newer build. Set
+`MMS_URL` to pin a build or `MMS_BASE` to use another mirror. It stops the container when the
+bundle has no `voltmod.vdf`, since nothing the deploy shipped would load.
 
-`deploy push` renders the tree under `deploy/.render/<id>`, creates the bind-mount directories,
+`deploy push` renders the tree under `build/deploy/<id>`, creates the bind-mount directories,
 syncs to `deploy_root` (the sync never deletes, so the installed Metamod survives), removes the
 plugin folders an instance no longer uses, pulls the runtime image at `RUNTIME_IMAGE_TAG` (the
 commit SHA in CI, `latest` otherwise), recreates the instances one at a time so `pre.sh` reinstalls
@@ -268,28 +269,26 @@ tag in `.github/workflows/ci.yml`, `.github/workflows/deploy.yml` and `.circleci
 deploy/
   inventory.yml               servers, instances, plugins and their settings
   secrets/<id>/.env           a server's secrets (gitignored; copy .env.example)
-  docker/                     runtime image, docker-compose.yml, pre-launch hook, host setup script
-  panel/gameinfo.gi           gameinfo.gi for panel hosts with a linked CS2 install
-  tools/                      the CLI, one class per file
-    cli.py                the commands
-    deployer.py           Deployer: what every server kind implements
-    deployer_factory.py   DeployerFactory: builds the Deployer for each server's kind
-    paths.py, errors.py, rcon.py, console.py
-    config/               servers.py (models), inventory.py, secrets.py
-    addons/               packager.py, settings.py, builder.py
-    panel/                api.py, metamod.py, gameinfo.py, deployer.py
-    docker/               ssh.py, tunnel.py, host.py, compose.py, deployer.py
+  files/docker/               runtime image, docker-compose.yml, pre-launch hook, host setup script
+  files/panel/gameinfo.gi     gameinfo.gi for panel hosts with a linked CS2 install
+  cli.py                      the commands, and the Deployer for each server's kind
+  deployer.py                 Deployer: what every server kind implements
+  paths.py, errors.py, rcon.py, console.py
+  config/                     servers.py (models), inventory.py, secrets.py
+  bundle/                     packager.py, settings.py, builder.py
+  panel/                      api.py, metamod.py, gameinfo.py, deployer.py
+  docker/                     ssh.py, tunnel.py, host.py, compose.py, deployer.py
 ```
 
 A new server kind is a model in `config/servers.py`, a package with a `Deployer` subclass, and one
-entry in `DeployerFactory.BY_KIND`.
+entry in `DEPLOYERS` in `cli.py`.
 
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| `no package for <name>` | `package/` is empty; download the CI artifact or run `deploy package` |
-| `package/host has no metamod/voltmod.vdf` | the package set has no host; rebuild the framework and repackage |
+| `no package for <name>` | `build/package/` is empty; download the CI artifact or run `deploy package` |
+| `build/package/host has no metamod/voltmod.vdf` | the package set has no host; rebuild the framework and repackage |
 | The server starts but no plugin loads | `uv run poe rcon "meta list"` for the host, then `"volt list"` for the plugins |
 | A plugin loads with stale settings | it is not in the instance's `plugins` list, so its `settings.jsonc` was never rendered |
 | Metamod stops loading after a CS2 update | `gameinfo.gi` was restored; redeploy, and on a panel turn off validate-on-start |
