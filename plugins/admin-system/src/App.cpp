@@ -47,8 +47,18 @@ void App::InstallPolicy()
 
 void App::RegisterPlayerLifecycle()
 {
+    _subs.Add(Runtime.Players.Connecting += [this](VoltMod::ConnectRequest& request) { RefuseBanned(request); });
     _subs.Add(Runtime.Players.Connected += [this](Player& player) { OnPlayerConnect(player); });
     _subs.Add(Runtime.Players.Disconnected += [this](Player& player) { OnPlayerDisconnect(player); });
+}
+
+void App::RefuseBanned(VoltMod::ConnectRequest& request)
+{
+    if (auto ban = Punishments.GetActive(AdminSystem::Punishments::PunishType::Ban, request.SteamId))
+    {
+        request.Rejected = true;
+        request.Reason = ban->Reason;
+    }
 }
 
 void App::OnPlayerConnect(Player& player)
@@ -61,12 +71,6 @@ void App::OnPlayerConnect(Player& player)
     if (Freeze.IsFrozen(steamId))
     {
         Freeze.NotifyFrozenSoon(slot, steamId);
-    }
-
-    // Kicking inside the connect hook is unsafe on some builds.
-    if (auto ban = Punishments.GetActive(AdminSystem::Punishments::PunishType::Ban, steamId))
-    {
-        Punishments.KickDeferred(slot, steamId, ban->Reason);
     }
 }
 

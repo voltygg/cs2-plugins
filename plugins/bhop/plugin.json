@@ -1,9 +1,12 @@
 {
+  "$schema": "https://raw.githubusercontent.com/voltygg/voltmod/main/templates/plugin.schema.json",
   "name": "bhop",
   "version": "1.0.0",
   "logTag": "BHOP",
   "description": "Smooth, client-predicted bunnyhop with per-player session grants.",
   "author": "Sukhrob Ilyosbekov",
+  "website": "https://github.com/voltygg/cs2-plugins",
+  "license": "proprietary",
   "dependencies": [],
   "optionalDependencies": []
 }

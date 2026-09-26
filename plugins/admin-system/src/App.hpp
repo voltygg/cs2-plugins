@@ -112,6 +112,8 @@ private:
     void RegisterPlayerLifecycle();
     /** Home page text: greeting, players online, map. */
     void AddHomePageText();
+    /** Keeps a banned account out; it sees the ban reason. */
+    void RefuseBanned(VoltMod::ConnectRequest& request);
     void OnPlayerConnect(VoltMod::Player& player);
     void OnPlayerDisconnect(VoltMod::Player& player);
     VoltMod::Status ConnectDatabase();
