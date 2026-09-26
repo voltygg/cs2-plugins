@@ -1,8 +1,7 @@
 voltmod_add_plugin(admin-system DATABASE)
 target_link_libraries(admin-system PRIVATE cs2-contracts)
 
-# Compile the SDK-free cores into the test binary. DATABASE lets the schema tests run the
-# migrations against in-memory SQLite.
+# SDK-free cores; DATABASE lets the schema tests run the migrations on in-memory SQLite.
 voltmod_add_tests(admin-system-tests
     DATABASE
     SOURCES
