@@ -28,8 +28,8 @@ plugins/hello-world/
   translations/
     en.json
   src/
-    App.cpp             VOLTMOD_PLUGIN(HelloWorld::App) and App::Load
-    App.hpp             everything the plugin owns for one load cycle
+    App.cpp             App::Load
+    App.hpp             HelloWorld::App: everything the plugin owns for one load cycle
     Commands.cpp        the !ping command
     Config.hpp          the settings struct
 ```
@@ -43,7 +43,7 @@ there; load order is alphabetical either way.
 
 | Change | File |
 | --- | --- |
-| Startup and composition | `src/App.cpp` |
+| Startup and composition | `src/App.hpp` (members, in dependency order) and `src/App.cpp` (`Load`) |
 | Commands | `src/Commands.cpp`, or another `.cpp` under `src/` |
 | Settings | `src/Config.hpp`, plus `configs/settings.jsonc` |
 | Player-facing text | every file under `translations/` |
@@ -61,8 +61,8 @@ An interface two plugins share lives in `contracts/include/`, not in either plug
 provider publishes it and the consumer asks for it:
 
 ```cpp
-runtime.Exchange.Publish<IThing>(&_impl);   // provider, in App::Load
-auto* thing = runtime.Exchange.Get<IThing>();  // consumer; null when the provider is not loaded
+_published = runtime.Exchange.Publish<IThing>(&_impl);  // provider, in App::Load; keep the Subscription
+auto* thing = runtime.Exchange.Get<IThing>();            // consumer; null when the provider is not loaded
 ```
 
 Ask for it where you use it rather than caching the pointer: the publisher can unload between

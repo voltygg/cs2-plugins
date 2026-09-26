@@ -22,6 +22,9 @@ public:
     /** Parse and validate @p path, then publish it. A failed load keeps the previous settings. */
     VoltMod::Status LoadSettings(std::string_view path) { return _options.Load(path); }
 
+    /** Read the file @ref LoadSettings read, again. */
+    VoltMod::Status Reload() { return _options.Reload(); }
+
     const Settings& Get() const { return _options.Get().Values; }
 
     /** Valid templates. Invalid entries are logged and skipped. */

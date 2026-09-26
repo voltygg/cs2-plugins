@@ -5,8 +5,10 @@
 #include "Core/ChatService.hpp"
 #include "Punishments/PunishmentManager.hpp"
 
+#include <VoltMod/Core/Signals/Subscription.hpp>
 #include <VoltMod/Core/Time/Throttle.hpp>
 #include <VoltMod/Players/Player.hpp>
+#include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <cstdint>
 #include <optional>
@@ -25,18 +27,17 @@ namespace AdminSystem::Core
 class PlayerChat
 {
 public:
+    /** Subscribes to every chat line no menu or command took. */
     PlayerChat(VoltMod::Runtime& runtime, const Config::ConfigManager& config, ChatService& chat,
                Admin::AdminManager& admins, Punishments::PunishmentManager& punishments)
         : _rt(runtime), _config(config), _chat(chat), _admins(admins), _punishments(punishments)
-    {}
+    {
+        _said = _rt.Players.Said += [this](VoltMod::ChatMessage& chat) { HandleSay(chat); };
+    }
 
-    /**
-     * Apply admin-system semantics to a player's say/say_team message:
-     * dispatch registered chat commands, drop messages from text-muted players, and rebroadcast
-     * admin chat with a colored prefix. Returns true when the original message should be
-     * superseded (the hook caller must skip the engine's default broadcast).
-     */
-    bool HandleSay(VoltMod::Player* player, std::string_view message, bool isSayTeam);
+    /** Block a text-muted player's line, and rebroadcast admin chat with a colored prefix in
+     *  place of the original. */
+    void HandleSay(VoltMod::ChatMessage& chat);
 
     /**
      * Re-emit an admin's regular chat with their group's colored prefix attached.
@@ -67,6 +68,9 @@ private:
 
     VoltMod::Throttle<int> _voiceMuteNotice{MuteNoticeIntervalSec};
     VoltMod::Throttle<int> _textMuteNotice{MuteNoticeIntervalSec};
+
+    /** Declared last so the handler stops before the state it captures. */
+    VoltMod::Subscription _said;
 };
 
 }  // namespace AdminSystem::Core

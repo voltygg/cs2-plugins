@@ -7,7 +7,6 @@
 #include "Config/ConfigManager.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/App/PluginEntry.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Events/EventTypes.hpp>
 #include <VoltMod/Unsafe/Hook.hpp>
@@ -20,17 +19,11 @@ using VoltMod::Player;
 using VoltMod::Status;
 namespace Log = VoltMod::Log;
 
-VOLTMOD_PLUGIN(AdminSystem::App);
-
 namespace AdminSystem
 {
 
 App::~App()
 {
-    AdminActions.Unpublish();
-    SharedPermissions.Unpublish();
-    AdminSection.Unpublish();
-    ReportSection.Unpublish();
     CheatCheck.CancelAll();
     Effects.CancelAll();
     Runtime.Players.Clear();
@@ -267,19 +260,13 @@ void App::AddHomePageText()
 
 bool App::Load()
 {
-    if (!VoltMod::LoadConfig(Runtime, Settings))
-    {
-        return false;
-    }
-
     Admin::Menu::VerifyCatalog(*this);
     InstallPolicy();
     RegisterPlayerLifecycle();
     if (const auto& menu = Settings.Get().menu; menu.panorama)
     {
         AddHomePageText();
-        Panorama.emplace(Runtime.PanoramaMenuServices(), MenuLayout, menu.addonId);
-        PreferPanorama = Runtime.Menus.Prefer(*Panorama);
+        Panorama = Runtime.UsePanorama(MenuLayout, menu.addonId);
     }
 
     // No database: skip the steps that need it.

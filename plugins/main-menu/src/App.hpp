@@ -6,9 +6,7 @@
 #include <Ui/MainMenu.hpp>
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Signals/Subscription.hpp>
-#include <VoltMod/Menu/PanoramaMenu.hpp>
 #include <VoltMod/Menu/PanoramaMenuLayout.hpp>
-#include <optional>
 
 namespace MainMenu
 {
@@ -19,18 +17,17 @@ static_assert(static_cast<int>(MainMenuLayout::Tabs.size()) == MaxTabs + 1,
 /** One load cycle's state; members are destroyed in reverse order. */
 struct App final : VoltMod::Plugin
 {
-    explicit App(VoltMod::Runtime& runtime) : Plugin(runtime) {}
+    using Plugin::Plugin;
 
     bool Load() override;
 
-    ConfigManager Config{&CleanSettings};
+    ConfigManager Config = VoltMod::LoadConfig(Runtime, ConfigManager{&CleanSettings});
     HubMenu Hub{Config, Runtime.Translations, Runtime.Messages, Runtime.ConVars, Runtime.Exchange, Runtime.Menus};
 
     VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Name, MainMenuLayout::Tabs.size(),
                                        MainMenuLayout::Rows.size(), MainMenuLayout::IconSetNames};
-    std::optional<VoltMod::PanoramaMenu> Panorama;
-    /** Routes menu sessions to Panorama while held; declared after it so it releases first. */
-    VoltMod::Subscription PreferPanorama;
+    /** Menus on the layout while `menu.panorama` is on; declared after it so it releases first. */
+    VoltMod::Subscription Panorama;
     /** The home page's report button; the layout does not own that id. */
     VoltMod::Subscription ReportButton;
 };

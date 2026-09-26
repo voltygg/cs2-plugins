@@ -26,7 +26,6 @@
 #include <VoltMod/Core/Signals/Subscriptions.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Menu/ActionRows.hpp>
-#include <VoltMod/Menu/PanoramaMenu.hpp>
 #include <VoltMod/Menu/PanoramaMenuLayout.hpp>
 #include <VoltMod/Players/ActionDispatcher.hpp>
 #include <VoltMod/Players/EffectDispatcher.hpp>
@@ -45,7 +44,7 @@ namespace AdminSystem
  *  sends. */
 struct App final : VoltMod::Plugin
 {
-    explicit App(VoltMod::Runtime& runtime) : Plugin(runtime) {}
+    using Plugin::Plugin;
     ~App() override;
     App(const App&) = delete;
     App& operator=(const App&) = delete;
@@ -55,12 +54,6 @@ struct App final : VoltMod::Plugin
 
     /** Opens the admin menu for @p slot; false when it could not be built. */
     bool OpenAdminMenu(int slot);
-
-    /** Chat rules run first, then menus and commands. */
-    bool OnPlayerChat(VoltMod::Player* player, std::string_view message, bool teamChat) override
-    {
-        return PlayerChat.HandleSay(player, message, teamChat);
-    }
 
     /** Admin-panel rows for an admin/target pair. Build them here, not in each menu file. With no
      *  @p target the rows deny. */
@@ -79,11 +72,10 @@ struct App final : VoltMod::Plugin
     /** The admin menu layout, and the menu drawn on it when `menu.panorama` is on. */
     VoltMod::PanoramaMenuLayout MenuLayout{Runtime.Screens, AdminMenuLayout::Name, AdminMenuLayout::Tabs.size(),
                                            AdminMenuLayout::Rows.size(), AdminMenuLayout::IconSetNames};
-    std::optional<VoltMod::PanoramaMenu> Panorama;
-    /** Routes menu sessions to Panorama while held; declared after it so it releases first. */
-    VoltMod::Subscription PreferPanorama;
+    /** Declared after the layout, so it releases first. */
+    VoltMod::Subscription Panorama;
 
-    Config::ConfigManager Settings;
+    Config::ConfigManager Settings = VoltMod::LoadConfig<Config::ConfigManager>(Runtime);
     /** Runs actions through Runtime::Policy: permissions, targeting, broadcasts. */
     VoltMod::ActionDispatcher Actions{Runtime.Policy};
     /** Actions that need Runtime beyond ActionContext (Slap, Smite). */
@@ -107,7 +99,7 @@ struct App final : VoltMod::Plugin
     VoltMod::EffectDispatcher PlayerEffects{Actions, Effects};
     Admin::Effects::EffectDescriptors EffectDescriptors{Runtime};
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Settings, Chat, Punishments};
-    /** Published in Load, unpublished in ~App, before what they wrap dies. */
+    /** Published in Load; each withdraws itself before what it wraps dies. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
     Core::PermissionService SharedPermissions{Runtime, Access};
     Core::AdminMenuSection AdminSection{*this};

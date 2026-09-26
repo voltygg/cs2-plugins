@@ -27,11 +27,12 @@ namespace Bhop
 class BhopManager
 {
 public:
-    /** Registers the game-event, disconnect and frame listeners; they check the mode when they fire. */
+    /** Registers the listeners, which check the mode when they fire, and the console commands. */
     BhopManager(VoltMod::Runtime& runtime, ConfigManager& config);
 
-    /** Parse settings, apply the mode and register console commands. */
-    void Initialize();
+    /** Apply the configured mode. Called from Load, once the settings are known good, because it
+     *  changes server convars. */
+    void ApplySettings();
 
     /** Session grant/revoke for @p steamId; applies immediately when the player is online. */
     void Grant(int64_t steamId, bool enabled);
@@ -50,7 +51,6 @@ private:
     };
 
     void RegisterConsoleCommands();  // ConsoleCommands.cpp
-    void ApplySettings();
 
     void OnRunCommandPre(int slot);
     void OnRunCommandPost(int slot);

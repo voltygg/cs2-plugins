@@ -9,12 +9,7 @@ namespace AdminSystem::Core
 
 void AdminMenuSection::Publish()
 {
-    _app.Runtime.Exchange.Publish<Contracts::IMenuSection>(this, "admin");
-}
-
-void AdminMenuSection::Unpublish()
-{
-    _app.Runtime.Exchange.Unpublish<Contracts::IMenuSection>("admin");
+    _published = _app.Runtime.Exchange.Publish<Contracts::IMenuSection>(this, "admin");
 }
 
 bool AdminMenuSection::IsVisibleTo(int slot)

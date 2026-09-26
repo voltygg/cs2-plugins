@@ -1,11 +1,8 @@
 #include "App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/App/PluginEntry.hpp>
 #include <string>
 #include <utility>
-
-VOLTMOD_PLUGIN(MainMenu::App);
 
 namespace MainMenu
 {
@@ -14,11 +11,6 @@ void RegisterCommands(App& app);
 
 bool App::Load()
 {
-    if (!VoltMod::LoadConfig(Runtime, Config))
-    {
-        return false;
-    }
-
     if (const VoltMod::PanoramaMenuSettings& menu = Config.Get().menu; menu.panorama)
     {
         auto translated = [this](std::string key) {
@@ -28,13 +20,12 @@ bool App::Load()
         Layout.AddText(MainMenuLayout::HomeBodyVar, translated("home.body"));
         Layout.AddText(MainMenuLayout::HomeReportVar, translated("home.report"));
 
-        Panorama.emplace(Runtime.PanoramaMenuServices(), Layout, menu.addonId);
-        PreferPanorama = Runtime.Menus.Prefer(*Panorama);
+        Panorama = Runtime.UsePanorama(Layout, menu.addonId);
 
         ReportButton = Runtime.Screens.Pressed += [this](const VoltMod::ButtonPress& press) {
-            if (press.ButtonId == MainMenuLayout::Report && Panorama->IsOpen(press.Slot))
+            if (press.ButtonId == MainMenuLayout::Report && Runtime.Menus.IsOpen(press.Slot))
             {
-                Hub.OpenSection("report", press.Slot, *Panorama);
+                Hub.OpenSection("report", press.Slot, Runtime.Menus);
             }
         };
     }

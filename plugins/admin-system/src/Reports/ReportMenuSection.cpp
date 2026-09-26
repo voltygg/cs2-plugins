@@ -12,12 +12,7 @@ namespace AdminSystem::Reports
 
 void ReportMenuSection::Publish()
 {
-    _app.Runtime.Exchange.Publish<Contracts::IMenuSection>(this, "report");
-}
-
-void ReportMenuSection::Unpublish()
-{
-    _app.Runtime.Exchange.Unpublish<Contracts::IMenuSection>("report");
+    _published = _app.Runtime.Exchange.Publish<Contracts::IMenuSection>(this, "report");
 }
 
 bool ReportMenuSection::IsVisibleTo(int slot)

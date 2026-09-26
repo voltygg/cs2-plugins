@@ -4,6 +4,7 @@
 #include "Punishments/PunishmentManager.hpp"
 
 #include <Contracts/IAdminActions.hpp>
+#include <VoltMod/Core/Signals/Subscription.hpp>
 #include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Core
@@ -23,9 +24,8 @@ public:
         : _rt(runtime), _punishments(punishments), _access(access)
     {}
 
+    /** Offer this to other plugins until this is destroyed. */
     void Publish();
-    /** Called before the managers this delegates to are destroyed. */
-    void Unpublish();
 
     Contracts::BanResult Ban(int64_t steamId, int64_t durationSec, std::string_view reason) override;
     void AlertAdmins(int64_t steamId, std::string_view detector, int score) override;
@@ -34,6 +34,8 @@ private:
     VoltMod::Runtime& _rt;
     Punishments::PunishmentManager& _punishments;
     Admin::Access& _access;
+    /** Declared last, so the entry is withdrawn before anything it reaches. */
+    VoltMod::Subscription _published;
 };
 
 }  // namespace AdminSystem::Core

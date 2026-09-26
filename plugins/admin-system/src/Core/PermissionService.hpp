@@ -3,6 +3,7 @@
 #include "Admin/Access.hpp"
 
 #include <Contracts/IPermissions.hpp>
+#include <VoltMod/Core/Signals/Subscription.hpp>
 #include <VoltMod/Runtime.hpp>
 
 namespace AdminSystem::Core
@@ -14,9 +15,8 @@ class PermissionService final : public Contracts::IPermissions
 public:
     PermissionService(VoltMod::Runtime& runtime, Admin::Access& access) : _rt(runtime), _access(access) {}
 
-    void Publish() { _rt.Exchange.Publish<Contracts::IPermissions>(this); }
-    /** Called before the access gate this delegates to is destroyed. */
-    void Unpublish() { _rt.Exchange.Unpublish<Contracts::IPermissions>(); }
+    /** Offer this to other plugins until this is destroyed. */
+    void Publish() { _published = _rt.Exchange.Publish<Contracts::IPermissions>(this); }
 
     bool HasPermission(int64_t steamId, std::string_view permission) override
     {
@@ -26,6 +26,8 @@ public:
 private:
     VoltMod::Runtime& _rt;
     Admin::Access& _access;
+    /** Declared last, so the entry is withdrawn before anything it reaches. */
+    VoltMod::Subscription _published;
 };
 
 }  // namespace AdminSystem::Core

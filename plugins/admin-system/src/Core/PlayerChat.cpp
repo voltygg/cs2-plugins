@@ -81,47 +81,27 @@ void PlayerChat::RebroadcastAdminChat(const Player* admin, std::string_view mess
     _rt.Messages.Broadcast(line);
 }
 
-bool PlayerChat::HandleSay(Player* player, std::string_view message, bool isSayTeam)
+void PlayerChat::HandleSay(VoltMod::ChatMessage& chat)
 {
-    if (!player || message.empty())
-    {
-        return false;
-    }
-
-    // Menu free-text input: if a chat capture is pending for this player, the line is
-    // their menu answer, not a chat message. Always supersede so it isn't broadcast.
-    if (_rt.Hooks.ChatInput.TryConsume(player->Slot(), message))
-    {
-        return true;
-    }
-
-    // Returns false for an unprefixed line and for unknown commands (e.g. "!ads"), so both
-    // fall through to normal chat instead of being silently swallowed.
-    if (_rt.Commands.HandleChatMessage(player, message))
-    {
-        return true;
-    }
-
-    int64_t steamId = player->SteamId();
+    const int64_t steamId = chat.Sender.SteamId();
     if (_punishments.IsPunished(Punishments::PunishType::TextMute, steamId))
     {
-        int slot = player->Slot();
+        const int slot = chat.Sender.Slot();
         if (_textMuteNotice.TryAcquire(slot, Time::Now()))
         {
             ReplyMuteNotice(slot, "muteNotice.text",
                             _punishments.GetActive(Punishments::PunishType::TextMute, steamId));
         }
-        return true;
+        chat.Blocked = true;
+        return;
     }
 
     const auto& chatCfg = _config.Get().chat;
     if (chatCfg.tagAdminChatMessages && _admins.IsAdmin(steamId))
     {
-        RebroadcastAdminChat(player, message, isSayTeam);
-        return true;
+        RebroadcastAdminChat(&chat.Sender, chat.Text, chat.TeamOnly);
+        chat.Blocked = true;
     }
-
-    return false;
 }
 
 void PlayerChat::NotifyVoiceMuted(Player* player)

@@ -50,10 +50,7 @@ BhopManager::BhopManager(VoltMod::Runtime& runtime, ConfigManager& config)
             }
         }
     }));
-}
 
-void BhopManager::Initialize()
-{
     // Forced hops read this every frame.
     if (auto impulse = _rt.ConVars.Find<float>("sv_jump_impulse"))
     {
@@ -64,7 +61,6 @@ void BhopManager::Initialize()
         Log::Warn("sv_jump_impulse unusable ({}); forced hops use the engine default.", impulse.error().Detail);
     }
 
-    ApplySettings();
     RegisterConsoleCommands();
 }
 
@@ -152,7 +148,7 @@ void BhopManager::ReloadSettings()
 {
     _conVars.Reset();
 
-    if (auto loaded = _config.Load(_rt.PluginFile("configs/settings.jsonc")); !loaded)
+    if (auto loaded = _config.Reload(); !loaded)
     {
         Log::Warn("bhop_reload: {}; keeping previous values in memory.", loaded.error().Detail);
         return;

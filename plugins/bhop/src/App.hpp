@@ -11,12 +11,15 @@ namespace Bhop
 /** One load cycle's state; members are destroyed in reverse order. */
 struct App final : VoltMod::Plugin
 {
-    explicit App(VoltMod::Runtime& runtime) : Plugin(runtime) {}
+    using Plugin::Plugin;
 
-    /** Loads settings and starts the bhop policy. False aborts the load. */
-    bool Load() override;
+    bool Load() override
+    {
+        Bhop.ApplySettings();
+        return true;
+    }
 
-    ConfigManager Config;
+    ConfigManager Config = VoltMod::LoadConfig<ConfigManager>(Runtime);
     BhopManager Bhop{Runtime, Config};
 };
 

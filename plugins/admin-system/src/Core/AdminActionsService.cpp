@@ -18,12 +18,7 @@ namespace AdminSystem::Core
 
 void AdminActionsService::Publish()
 {
-    _rt.Exchange.Publish<Contracts::IAdminActions>(this);
-}
-
-void AdminActionsService::Unpublish()
-{
-    _rt.Exchange.Unpublish<Contracts::IAdminActions>();
+    _published = _rt.Exchange.Publish<Contracts::IAdminActions>(this);
 }
 
 BanResult AdminActionsService::Ban(int64_t steamId, int64_t durationSec, std::string_view reason)
