@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ClientLanguage.hpp"
 #include "Config.hpp"
 #include "HubMenu.hpp"
 
@@ -22,6 +23,7 @@ struct App final : VoltMod::Plugin
     bool Load() override;
 
     ConfigManager Config = VoltMod::LoadConfig(Runtime, ConfigManager{&CleanSettings});
+    ClientLanguage Language{Runtime};
     HubMenu Hub{Config, Runtime.Translations, Runtime.Messages, Runtime.ConVars, Runtime.Exchange, Runtime.Menus};
 
     VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Name, MainMenuLayout::Tabs.size(),
