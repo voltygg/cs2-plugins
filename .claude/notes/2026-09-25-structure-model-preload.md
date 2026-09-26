@@ -1,6 +1,6 @@
 # Stronghold placement preview delay (2026-09-25)
 
-Status: worked around. The shop preloads every structure model when it opens, and the red/green
+Status: worked around. The shop preloads every structure's part models when it opens, and the red/green
 placement ghost now shows after a second or two instead of a long wait. The proper fix is still
 open.
 
@@ -20,11 +20,16 @@ open.
 ## What is in place
 
 - `plugins/stronghold/src/World/ModelPreload.*`: `Preload(slot)` spawns one near-invisible
-  (alpha 2) prop per structure model 48 units in front of the player's eyes, sent only to them,
-  removed after 30 seconds. It skips a player whose last preload is still up.
-- `Shop::Open` calls it, and so does the first spawn of each map.
+  (alpha 2), shadowless prop per structure part model (what a level-1 ghost wears: 27, or 22 with
+  tanks off) 48 units in front of a live player's eyes, sent only to them, removed after 30
+  seconds. It skips a player while a prop from their last preload still exists, so a round restart
+  that wipes the props does not block the next preload.
+- `Shop` owns it and calls it from `Shop::Open`. There is no first-spawn preload: the intro page
+  cannot buy anything.
+- Not covered: a supply-drop prize starts a ghost without the shop, and a shop visit longer than
+  30 seconds outlives the props.
 - Offered but not done: also preloading on every respawn. That is more of the same workaround,
-  and costs about 38 hidden props per player for 30 seconds after each spawn.
+  and costs about 22 hidden props per player for 30 seconds after each spawn.
 
 ## Proper fix: load the models with the map
 
@@ -49,6 +54,11 @@ VoltMod adding resources at the wrong moment. If it's the timing, fixing that is
 and much smaller. Test in a client: disable the shop preload, join, spawn, open the shop right
 away and pick a structure you have not seen yet this map. If the ghost still waits, the manifest
 is server-only and the prefab route stands.
+
+While the ghost is missing, place it with E on a valid spot. If the structure shows at once, the
+model was already loaded and the wait has another cause that the preload only hides. Aim at the
+floor within `building.maxDistance` (250): with nothing hit, the ghost sits at the player's eyes,
+which looks the same as a ghost that has not loaded.
 
 Related: VoltMod `docs/sdk/entities.md` (Precache), `src/Engine/Server/Precache.cpp`, and the
 host hook on `CGameRulesGameSystem`'s `OnBuildGameSessionManifest`.
