@@ -26,7 +26,11 @@ App::~App()
 {
     CheatCheck.CancelAll();
     Effects.CancelAll();
-    Runtime.Players.Clear();
+    // Record every session still open, as a disconnect would, while the database is up.
+    for (Player* player : Runtime.Players.All())
+    {
+        OnPlayerDisconnect(*player);
+    }
     Db.Disconnect();
 }
 

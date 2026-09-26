@@ -136,7 +136,7 @@ void HubMenu::Run(const Entry& entry, int slot, MenuSurface& surface)
     if (entry.kind == EntryKind::Command)
     {
         surface.CloseAll(slot);
-        _conVars.ExecuteClientCommand(slot, entry.target);
+        _entities.Controller(slot).ExecuteCommand(entry.target);
         return;
     }
 

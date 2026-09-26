@@ -5,7 +5,7 @@
 #include <Contracts/IMenuSection.hpp>
 #include <VoltMod/App/ServiceExchange.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
-#include <VoltMod/Engine/ConVars/ConVar.hpp>
+#include <VoltMod/Entities/EntitySystem.hpp>
 #include <VoltMod/Menu/MenuModel.hpp>
 #include <VoltMod/Menu/MenuRouter.hpp>
 #include <VoltMod/Messaging/Messages.hpp>
@@ -21,11 +21,11 @@ class HubMenu
 {
 public:
     HubMenu(const ConfigManager& config, VoltMod::Translations& translations, VoltMod::Messages& messages,
-            VoltMod::ConVars& conVars, VoltMod::ServiceExchange& exchange, VoltMod::MenuRouter& menus)
+            VoltMod::EntitySystem& entities, VoltMod::ServiceExchange& exchange, VoltMod::MenuRouter& menus)
         : _config(config),
           _translations(translations),
           _messages(messages),
-          _conVars(conVars),
+          _entities(entities),
           _exchange(exchange),
           _menus(menus)
     {}
@@ -53,7 +53,7 @@ private:
     const ConfigManager& _config;
     VoltMod::Translations& _translations;
     VoltMod::Messages& _messages;
-    VoltMod::ConVars& _conVars;
+    VoltMod::EntitySystem& _entities;
     VoltMod::ServiceExchange& _exchange;
     VoltMod::MenuRouter& _menus;
 };

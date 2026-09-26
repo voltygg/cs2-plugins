@@ -24,7 +24,7 @@ struct App final : VoltMod::Plugin
 
     ConfigManager Config = VoltMod::LoadConfig(Runtime, ConfigManager{&CleanSettings});
     ClientLanguage Language{Runtime};
-    HubMenu Hub{Config, Runtime.Translations, Runtime.Messages, Runtime.ConVars, Runtime.Exchange, Runtime.Menus};
+    HubMenu Hub{Config, Runtime.Translations, Runtime.Messages, Runtime.Entities, Runtime.Exchange, Runtime.Menus};
 
     VoltMod::PanoramaMenuLayout Layout{Runtime.Screens, MainMenuLayout::Name, MainMenuLayout::Tabs.size(),
                                        MainMenuLayout::Rows.size(), MainMenuLayout::IconSetNames};
