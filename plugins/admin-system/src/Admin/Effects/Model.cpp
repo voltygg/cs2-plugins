@@ -55,7 +55,7 @@ void PrecacheModels(VoltMod::Runtime& runtime)
 Effect MakeModel(VoltMod::Runtime& runtime)
 {
     return Effect{.Permission = Permission::Fun,
-                  .Id = static_cast<int>(EffectId::Model),
+                  .Id = EffectId::Model,
                   .NameKey = "action.model",
                   .OnKey = "broadcast.modelOn",
                   .OffKey = "broadcast.modelOff",

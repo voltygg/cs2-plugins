@@ -27,7 +27,7 @@ namespace AdminSystem::Admin::Menu
 class ActionRows
 {
 public:
-    /** Referenced objects must outlive the generated rows. Effects may be null. */
+    /** Referenced objects must outlive the generated rows. */
     struct Services
     {
         Actions::ActionDispatcher& Actions;
@@ -36,7 +36,8 @@ public:
         VoltMod::PlayerManager& Players;
         VoltMod::EntitySystem& Entities;
         VoltMod::MenuSurface& Menus;
-        Effects::EffectManager* Effects = nullptr;
+        Effects::EffectDispatcher& PlayerEffects;
+        const Effects::EffectManager& Effects;
     };
 
     /** Rows requiring a target are disabled when @p target is empty. */
@@ -80,10 +81,6 @@ public:
 private:
     std::shared_ptr<VoltMod::Menu> BuildPicker(const Effects::EffectDescriptor& effect,
                                                VoltMod::EnabledCondition allowed) const;
-
-    Effects::EffectDispatcher Effects() const;
-
-    VoltMod::EnabledCondition EffectAllows(const Effects::EffectDescriptor& effect) const;
 
     VoltMod::PlayerRef TargetRef() const { return _target.value_or(VoltMod::PlayerRef{}); }
 

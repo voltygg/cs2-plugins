@@ -23,15 +23,19 @@ void EffectDispatcher::Apply(PlayerRef admin, PlayerRef target, const EffectDesc
     {
         return;
     }
-    if (effect.Choices && (param < 0 || param >= static_cast<int>(effect.Choices().size())))
+    if (effect.Choices)
     {
-        return;
+        const int count = static_cast<int>(effect.Choices().size());
+        if (param < 0 || param >= count)
+        {
+            return;
+        }
     }
 
     EffectInstance inst = effect.Setup(*ctx, param);
-    // Register only when there is state to track: a pure fire-and-forget never occupies the slot
-    // map, so IsActive stays false and no stale toggle state lingers.
-    if (inst.OnTick || inst.OnStop || effect.DurationMs > 0)
+    // A pure fire-and-forget never occupies the slot map, so IsActive stays false for it.
+    const bool hasState = inst.OnTick || inst.OnStop || effect.DurationMs > 0;
+    if (hasState)
     {
         _effects.Apply(target.Slot, effect.Id, std::move(inst), effect.Scope, effect.TickIntervalMs, effect.DurationMs);
     }

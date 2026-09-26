@@ -31,11 +31,6 @@ EnabledCondition ActionRows::Allows(std::string_view permission) const
         });
 }
 
-Effects::EffectDispatcher ActionRows::Effects() const
-{
-    return Effects::EffectDispatcher{_services->Actions, *_services->Effects};
-}
-
 std::string ActionRows::Translate(std::string_view key, Tokens tokens) const
 {
     return _services->Translations.Get(key, _admin.Slot, tokens);
@@ -91,20 +86,15 @@ MenuItem ActionRows::Presets(const PresetSpec& spec)
         .ToItem();
 }
 
-EnabledCondition ActionRows::EffectAllows(const Effects::EffectDescriptor& effect) const
-{
-    return _services->Effects ? Allows(effect.Permission) : EnabledCondition(false);
-}
-
 MenuItem ActionRows::Effect(const Effects::EffectDescriptor& effect)
 {
     return ToggleRow{
         .Label = Translate(effect.NameKey),
-        .Get = [effects = _services->Effects, target = TargetRef(),
-                id = effect.Id](int) { return effects && effects->IsActive(target.Slot, id); },
-        .Flip = [self = *this, target = TargetRef(),
-                 e = &effect](int) { self.Effects().Toggle(self._admin, target, *e); },
-        .Enabled = EffectAllows(effect),
+        .Get = [services = _services, target = TargetRef(),
+                id = effect.Id](int) { return services->Effects.IsActive(target.Slot, id); },
+        .Flip = [services = _services, admin = _admin, target = TargetRef(),
+                 e = &effect](int) { services->PlayerEffects.Toggle(admin, target, *e); },
+        .Enabled = Allows(effect.Permission),
     }
         .ToItem();
 }
@@ -126,7 +116,7 @@ std::shared_ptr<VoltMod::Menu> ActionRows::BuildPicker(const Effects::EffectDesc
     MenuBuilder builder(std::format("{}: {}", Translate(effect.NameKey), targetPlayer->Name()));
 
     auto apply = [self = *this, target = *_target, e = &effect](int slot, int param) {
-        self.Effects().Apply(self._admin, target, *e, param);
+        self._services->PlayerEffects.Apply(self._admin, target, *e, param);
         self._services->Menus.CloseAll(slot);
     };
 
@@ -142,7 +132,7 @@ std::shared_ptr<VoltMod::Menu> ActionRows::BuildPicker(const Effects::EffectDesc
         builder.Add(ButtonRow{.Label = Translate(effect.ResetLabelKey),
                               .Activate =
                                   [self = *this, target = *_target, e = &effect](int slot) {
-                                      self.Effects().Clear(self._admin, target, *e);
+                                      self._services->PlayerEffects.Clear(self._admin, target, *e);
                                       self._services->Menus.CloseAll(slot);
                                   },
                               .Enabled = allowed});
@@ -153,7 +143,7 @@ std::shared_ptr<VoltMod::Menu> ActionRows::BuildPicker(const Effects::EffectDesc
 
 MenuItem ActionRows::EffectPicker(const Effects::EffectDescriptor& effect)
 {
-    EnabledCondition allowed = EffectAllows(effect);
+    EnabledCondition allowed = Allows(effect.Permission);
     return SubmenuRow{
         .Label = Translate(effect.NameKey),
         .Build = [self = *this, e = &effect, allowed](int) -> std::shared_ptr<VoltMod::Menu> {

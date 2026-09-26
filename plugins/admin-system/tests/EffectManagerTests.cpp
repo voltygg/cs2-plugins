@@ -4,17 +4,18 @@
 #include <VoltMod/Core/Time/Scheduler.hpp>
 #include <doctest/doctest.h>
 
+using AdminSystem::Admin::Effects::EffectId;
 using AdminSystem::Admin::Effects::EffectInstance;
 using AdminSystem::Admin::Effects::EffectManager;
 using AdminSystem::Admin::Effects::EffectScope;
 using VoltMod::MaxPlayers;
 using VoltMod::Scheduler;
 
-static constexpr int Disco = 0;
-static constexpr int Ghost = 1;
+static constexpr EffectId Disco = EffectId::Disco;
+static constexpr EffectId Ghost = EffectId::Ghost;
 
 // Apply with just an OnStop: state-only, no tick, no duration.
-static void ApplyStateOnly(EffectManager& mgr, int slot, int id, std::function<void()> onStop)
+static void ApplyStateOnly(EffectManager& mgr, int slot, EffectId id, std::function<void()> onStop)
 {
     mgr.Apply(slot, id, EffectInstance{.OnStop = std::move(onStop)}, EffectScope::Persistent, 0, 0);
 }

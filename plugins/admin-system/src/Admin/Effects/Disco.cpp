@@ -20,7 +20,7 @@ static constexpr int DiscoDurationSec = 15;
 Effect MakeDisco(VoltMod::Runtime& runtime)
 {
     return Effect{.Permission = Permission::Fun,
-                  .Id = static_cast<int>(EffectId::Disco),
+                  .Id = EffectId::Disco,
                   .NameKey = "action.disco",
                   .OnKey = "broadcast.discoOn",
                   .OffKey = "broadcast.discoOff",

@@ -9,7 +9,7 @@ using VoltMod::MaxPlayers;
 namespace AdminSystem::Admin::Effects
 {
 
-bool EffectManager::IsActive(int slot, int effectId) const
+bool EffectManager::IsActive(int slot, EffectId effectId) const
 {
     if (!IsValidSlot(slot))
     {
@@ -20,7 +20,7 @@ bool EffectManager::IsActive(int slot, int effectId) const
     return it != _effects[slot].end() && !it->second.Stopped;
 }
 
-void EffectManager::Apply(int slot, int effectId, EffectInstance instance, EffectScope scope, int tickIntervalMs,
+void EffectManager::Apply(int slot, EffectId effectId, EffectInstance instance, EffectScope scope, int tickIntervalMs,
                           int durationMs)
 {
     if (!IsValidSlot(slot))
@@ -47,7 +47,7 @@ void EffectManager::Apply(int slot, int effectId, EffectInstance instance, Effec
     }
 }
 
-void EffectManager::Cancel(int slot, int effectId)
+void EffectManager::Cancel(int slot, EffectId effectId)
 {
     if (!IsValidSlot(slot))
     {
@@ -65,14 +65,14 @@ void EffectManager::Cancel(int slot, int effectId)
     entry.Stop();
 }
 
-void EffectManager::CancelWhere(int slot, const std::function<bool(int id, const ActiveEffect&)>& keep)
+void EffectManager::CancelWhere(int slot, const std::function<bool(EffectId id, const ActiveEffect&)>& keep)
 {
     if (!IsValidSlot(slot))
     {
         return;
     }
 
-    std::vector<int> ids;
+    std::vector<EffectId> ids;
     ids.reserve(_effects[slot].size());
     for (const auto& [id, entry] : _effects[slot])
     {
@@ -81,7 +81,7 @@ void EffectManager::CancelWhere(int slot, const std::function<bool(int id, const
             ids.push_back(id);
         }
     }
-    for (int id : ids)
+    for (EffectId id : ids)
     {
         Cancel(slot, id);
     }
@@ -93,7 +93,7 @@ void EffectManager::CancelAll(int slot)
     {
         return;
     }
-    CancelWhere(slot, [](int, const ActiveEffect&) { return true; });
+    CancelWhere(slot, [](EffectId, const ActiveEffect&) { return true; });
 }
 
 void EffectManager::CancelOnDeath(int slot)
@@ -102,14 +102,14 @@ void EffectManager::CancelOnDeath(int slot)
     {
         return;
     }
-    CancelWhere(slot, [](int, const ActiveEffect& e) { return e.Scope != EffectScope::Session; });
+    CancelWhere(slot, [](EffectId, const ActiveEffect& e) { return e.Scope != EffectScope::Session; });
 }
 
 void EffectManager::CancelRound()
 {
     for (int slot = 0; slot < MaxPlayers; ++slot)
     {
-        CancelWhere(slot, [](int, const ActiveEffect& e) { return e.Scope == EffectScope::Round; });
+        CancelWhere(slot, [](EffectId, const ActiveEffect& e) { return e.Scope == EffectScope::Round; });
     }
 }
 

@@ -65,7 +65,8 @@ struct App final : VoltMod::Plugin
                                         .Players = Runtime.Players,
                                         .Entities = Runtime.Entities,
                                         .Menus = Runtime.Menus,
-                                        .Effects = &Effects},
+                                        .PlayerEffects = PlayerEffects,
+                                        .Effects = Effects},
                                        admin, std::move(target));
     }
 
@@ -76,7 +77,7 @@ struct App final : VoltMod::Plugin
     VoltMod::Subscription Panorama;
 
     Config::ConfigManager Settings = VoltMod::LoadConfig<Config::ConfigManager>(Runtime);
-    /** Runs actions through Runtime::Policy: permissions, targeting, broadcasts. */
+    /** Runs actions through Runtime::Policy (permissions, targeting) and announces them. */
     Admin::Actions::ActionDispatcher Actions{Runtime.Policy};
     /** Actions that need Runtime beyond ActionContext (Slap, Smite). */
     Admin::Actions::ActionDescriptors ActionDescriptors{Runtime};
@@ -95,7 +96,7 @@ struct App final : VoltMod::Plugin
     Core::PlayerChat PlayerChat{Runtime, Settings, Chat, Admins, Punishments};
     Reports::ReportManager Reports{Repos, Settings, Runtime};
     Admin::Effects::EffectManager Effects{Runtime.Scheduler};
-    /** Runs effects through Runtime::Policy: permissions, targeting, broadcasts. */
+    /** Runs effects through Actions. */
     Admin::Effects::EffectDispatcher PlayerEffects{Actions, Effects};
     Admin::Effects::EffectDescriptors EffectDescriptors{Runtime};
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Settings, Chat, Punishments};

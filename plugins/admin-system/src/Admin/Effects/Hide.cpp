@@ -18,7 +18,7 @@ using VoltMod::Team;
 Effect MakeHide(VoltMod::Runtime& runtime)
 {
     return Effect{.Permission = Permission::Hide,
-                  .Id = static_cast<int>(EffectId::Hide),
+                  .Id = EffectId::Hide,
                   .NameKey = "action.hide",
                   .OnKey = "",
                   .OffKey = "",

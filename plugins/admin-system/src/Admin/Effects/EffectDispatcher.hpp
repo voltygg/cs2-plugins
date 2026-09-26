@@ -9,23 +9,13 @@
 namespace AdminSystem::Admin::Effects
 {
 
-/**
- * @brief Runs data-defined effects (@ref EffectDescriptor) against a player, the effect-side
- * counterpart of @ref Actions::ActionDispatcher.
- *
- * Every verb resolves the admin/target pair through the @ref Actions::ActionDispatcher it wraps, so
- * `Policy::Authorize` supplies the permission check, the targetability check, and the broadcast
- * callback. The @ref EffectManager it drives is plugin-owned, so a plugin holds the dispatcher next to
- * its manager (`EffectDispatcher PlayerEffects{Actions, Effects};`) rather than reaching for a
- * runtime member.
- */
+/** Runs data-defined effects (@ref EffectDescriptor) against a player, the effect-side counterpart
+ *  of @ref Actions::ActionDispatcher. */
 class EffectDispatcher
 {
 public:
-    /** @p actions supplies the roster, the controllers and the policy (already wired for the
-     *  plugin's other single-target dispatch); @p effects owns the per-slot effect state. Both
-     *  must outlive the dispatcher. Cheap to construct, so a call site may build one per dispatch
-     *  or hold one as a long-lived member. */
+    /** Resolves and announces through @p actions; @p effects holds the state. Both must outlive
+     *  the dispatcher. */
     EffectDispatcher(Actions::ActionDispatcher& actions, EffectManager& effects) : _actions(actions), _effects(effects)
     {}
 

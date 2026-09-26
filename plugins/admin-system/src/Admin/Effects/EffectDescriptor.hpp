@@ -28,14 +28,14 @@ struct EffectChoice
  * that broadcast. Dispatch via @ref EffectDispatcher, which applies `Policy::Authorize` before
  * running the body.
  *
- * Leave @ref Choices empty for a plain toggle row (@ref MenuBuilder::Effect); set it to drive a
- * picker submenu (@ref MenuBuilder::EffectPicker), where each @ref EffectChoice's `Param` is what
- * `Setup` receives.
+ * Leave @ref Choices empty for a plain toggle row (@ref Menu::ActionRows::Effect); set it to drive
+ * a picker submenu (@ref Menu::ActionRows::EffectPicker), where each @ref EffectChoice's `Param` is
+ * what `Setup` receives.
  */
 struct EffectDescriptor
 {
     std::string Permission;    /**< Permission token; "" skips the check. */
-    int Id;                    /**< Plugin-defined key into the per-slot EffectManager map. */
+    EffectId Id;
     std::string NameKey;       /**< Translation key for the menu row label. */
     std::string OnKey;         /**< Broadcast key when applied ("" = silent). */
     std::string OffKey;        /**< Broadcast key when cleared ("" = silent). */
@@ -44,8 +44,7 @@ struct EffectDescriptor
     int TickIntervalMs = 0;
     int DurationMs = 0;
     bool RequireAlive = false;
-    /** Empty = plain toggle (@ref MenuBuilder::Effect); non-empty drives a picker submenu
-     *  (@ref MenuBuilder::EffectPicker) whose rows are these choices. */
+    /** Empty = plain toggle; non-empty drives a picker submenu whose rows are these choices. */
     std::function<std::vector<EffectChoice>()> Choices;
     std::function<EffectInstance(const Actions::ActionContext&, int param)> Setup;
 };

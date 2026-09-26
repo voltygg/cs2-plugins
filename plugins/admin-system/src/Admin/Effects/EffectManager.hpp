@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Admin/Effects/EffectId.hpp"
+
 #include <VoltMod/Core/Signals/Subscription.hpp>
 #include <VoltMod/Core/Slots/Slot.hpp>
 #include <VoltMod/Core/Time/Scheduler.hpp>
@@ -63,19 +65,15 @@ struct ActiveEffect
 };
 
 /**
- * @brief Per-slot registry of toggleable/timed player effects, keyed by a plugin-defined
- * integer id (cast your effect enum). Owns each effect's timers and its re-apply/replace
- * semantics.
- *
- * This remains plugin-owned so `CancelAll` can run before engine teardown; `OnStop` callbacks may
- * access pawns and timers.
+ * @brief Per-slot registry of toggleable/timed player effects, keyed by @ref EffectId. Owns each
+ * effect's timers and its re-apply/replace semantics.
  */
 class EffectManager
 {
 public:
     explicit EffectManager(VoltMod::Scheduler& scheduler) : _scheduler(scheduler) {}
 
-    bool IsActive(int slot, int effectId) const;
+    bool IsActive(int slot, EffectId effectId) const;
 
     /**
      * @brief Register a new effect for `slot`. If an effect of the same id is already active,
@@ -84,9 +82,9 @@ public:
      * running `instance.OnStop`. The now-inactive slot entry is reclaimed lazily on the next
      * Apply/Cancel for that id.
      */
-    void Apply(int slot, int effectId, EffectInstance instance, EffectScope scope, int tickIntervalMs, int durationMs);
+    void Apply(int slot, EffectId effectId, EffectInstance instance, EffectScope scope, int tickIntervalMs, int durationMs);
 
-    void Cancel(int slot, int effectId);
+    void Cancel(int slot, EffectId effectId);
     /** Cancel every active effect on @p slot. */
     void CancelAll(int slot);
     /** Cancel every active effect, on every slot. */
@@ -100,11 +98,11 @@ public:
 private:
     // Snapshot the ids to cancel before cancelling: Cancel runs OnStop, which may re-enter the
     // slot map, so the map must not be iterated while entries are erased.
-    void CancelWhere(int slot, const std::function<bool(int id, const ActiveEffect&)>& keep);
+    void CancelWhere(int slot, const std::function<bool(EffectId id, const ActiveEffect&)>& keep);
 
     VoltMod::Scheduler& _scheduler;
     // Slot-indexed array of small maps: only a handful of effects run per player at once.
-    std::array<std::unordered_map<int, ActiveEffect>, VoltMod::MaxPlayers> _effects{};
+    std::array<std::unordered_map<EffectId, ActiveEffect>, VoltMod::MaxPlayers> _effects{};
 };
 
 }  // namespace AdminSystem::Admin::Effects
