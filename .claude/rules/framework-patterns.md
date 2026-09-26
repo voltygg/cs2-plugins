@@ -35,7 +35,7 @@ commands.Add("slap")
 
 ## Authorization
 
-- Gate with `.Permission("x")` in any plugin: the runtime asks admin-system's published `VoltMod::IPermissions`, and denies while it is not loaded. admin-system alone sets `Policy.HasPermission`, `Reply`, and its dispatcher's `OnBroadcast`.
+- Gate with `.Permission("x")` in any plugin: the runtime asks admin-system's published `VoltMod::IPermissions`, and denies while it is not loaded. admin-system publishes it and alone sets `Policy.Reply` and its dispatcher's `OnBroadcast`.
 - Ask `Policy::Authorize(caller, target, permission)` wherever the answer is needed. Never re-implement the check.
 - A plugin's `CanTarget` is an immunity comparison only; console and self-targeting are settled before it runs.
 
