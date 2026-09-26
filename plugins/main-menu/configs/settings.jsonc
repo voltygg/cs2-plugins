@@ -7,7 +7,7 @@
     // Players without the addon get center HTML.
     "panorama": true,
     // meatgg_ui, shared with admin-system.
-    "addonId": 3801580041
+    "addonId": 0
   },
   // Up to 7 tabs, then Settings. A tab with nothing to show is hidden.
   //   command  runs a console command as the player
@@ -21,7 +21,11 @@
         { "kind": "command", "label": "entry.level", "command": "mm_lvl" },
         { "kind": "command", "label": "entry.rank", "command": "mm_rank" },
         { "kind": "command", "label": "entry.top", "command": "mm_top" },
-        { "kind": "command", "label": "entry.topTime", "command": "mm_toptime" },
+        {
+          "kind": "command",
+          "label": "entry.topTime",
+          "command": "mm_toptime"
+        },
         { "kind": "command", "label": "entry.session", "command": "mm_session" }
       ]
     },
@@ -29,34 +33,60 @@
       "label": "tab.shop",
       "icon": "shop",
       "entries": [
-        { "kind": "section", "label": "entry.stronghold", "section": "stronghold" },
+        {
+          "kind": "section",
+          "label": "entry.stronghold",
+          "section": "stronghold"
+        },
         { "kind": "link", "label": "entry.shop", "url": "https://meat.gg/shop" }
       ]
     },
     {
       "label": "tab.vip",
       "icon": "vip",
-      "entries": [{ "kind": "command", "label": "entry.vip", "command": "mm_vip" }]
+      "entries": [
+        { "kind": "command", "label": "entry.vip", "command": "mm_vip" }
+      ]
     },
     {
       "label": "tab.admin",
       "icon": "admin",
-      "entries": [{ "kind": "section", "label": "entry.admin", "section": "admin" }]
+      "entries": [
+        { "kind": "section", "label": "entry.admin", "section": "admin" }
+      ]
     },
     {
       "label": "tab.skins",
       "icon": "skins",
-      "entries": [{ "kind": "link", "label": "entry.skins", "url": "https://meat.gg/skinchanger" }]
+      "entries": [
+        {
+          "kind": "link",
+          "label": "entry.skins",
+          "url": "https://meat.gg/skinchanger"
+        }
+      ]
     },
     {
       "label": "tab.clans",
       "icon": "clans",
-      "entries": [{ "kind": "link", "label": "entry.clans", "url": "https://meat.gg/clans" }]
+      "entries": [
+        {
+          "kind": "link",
+          "label": "entry.clans",
+          "url": "https://meat.gg/clans"
+        }
+      ]
     },
     {
       "label": "tab.rules",
       "icon": "rules",
-      "entries": [{ "kind": "link", "label": "entry.rules", "url": "https://meat.gg/rules" }]
+      "entries": [
+        {
+          "kind": "link",
+          "label": "entry.rules",
+          "url": "https://meat.gg/rules"
+        }
+      ]
     }
   ]
 }

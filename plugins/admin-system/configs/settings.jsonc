@@ -188,7 +188,7 @@
     // `addonId` distributes it to other clients.
     "panorama": false,
     // Workshop addon required for connecting clients; use 0 with a locally installed layout.
-    "addonId": 3801580041
+    "addonId": 0
   },
   "weapons": {
     // Offered by Player Actions > Give weapon. `item` is an entity classname; non-`weapon_` values are skipped.
