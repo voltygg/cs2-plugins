@@ -41,7 +41,7 @@ void PawnTimers::Slap(const VoltMod::Pawn& pawn, float upward, float horizontal,
 
 void PawnTimers::OnDamage(VoltMod::DamageHit& hit)
 {
-    if (!(hit.Info.Type & VoltMod::DamageFall))
+    if (!(hit.Type & VoltMod::DamageFall))
     {
         return;
     }
