@@ -44,7 +44,7 @@ namespace AdminSystem
  *  sends. */
 struct App final : VoltMod::Plugin
 {
-    using Plugin::Plugin;
+    explicit App(VoltMod::Runtime& runtime) : Plugin(runtime) {}
     ~App() override;
     App(const App&) = delete;
     App& operator=(const App&) = delete;

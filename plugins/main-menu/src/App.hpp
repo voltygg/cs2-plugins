@@ -18,7 +18,7 @@ static_assert(static_cast<int>(MainMenuLayout::Tabs.size()) == MaxTabs + 1,
 /** One load cycle's state; members are destroyed in reverse order. */
 struct App final : VoltMod::Plugin
 {
-    using Plugin::Plugin;
+    explicit App(VoltMod::Runtime& runtime) : Plugin(runtime) {}
 
     bool Load() override;
 
