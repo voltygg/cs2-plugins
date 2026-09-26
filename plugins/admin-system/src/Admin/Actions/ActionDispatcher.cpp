@@ -21,14 +21,25 @@ Result<ActionContext> ActionDispatcher::Resolve(PlayerRef caller, PlayerRef targ
     return ActionContext{.Auth = *authorized};
 }
 
-void ActionDispatcher::Run(PlayerRef caller, PlayerRef target, const Action& action) const
+std::optional<ActionContext> ActionDispatcher::Prepare(PlayerRef caller, PlayerRef target, std::string_view permission,
+                                                       bool requireAlive) const
 {
-    auto ctx = Resolve(caller, target, action.Permission);
+    auto ctx = Resolve(caller, target, permission);
     if (!ctx)
     {
-        return;
+        return std::nullopt;
     }
-    if (action.RequireAlive && !ctx->Target().Pawn().IsAlive())
+    if (requireAlive && !ctx->Target().Pawn().IsAlive())
+    {
+        return std::nullopt;
+    }
+    return *ctx;
+}
+
+void ActionDispatcher::Run(PlayerRef caller, PlayerRef target, const Action& action) const
+{
+    auto ctx = Prepare(caller, target, action.Permission, action.RequireAlive);
+    if (!ctx)
     {
         return;
     }
@@ -40,12 +51,8 @@ void ActionDispatcher::Run(PlayerRef caller, PlayerRef target, const Action& act
 
 void ActionDispatcher::Run(PlayerRef caller, PlayerRef target, int param, const ParamAction& action) const
 {
-    auto ctx = Resolve(caller, target, action.Permission);
+    auto ctx = Prepare(caller, target, action.Permission, action.RequireAlive);
     if (!ctx)
-    {
-        return;
-    }
-    if (action.RequireAlive && !ctx->Target().Pawn().IsAlive())
     {
         return;
     }

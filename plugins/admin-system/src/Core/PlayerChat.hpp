@@ -35,10 +35,6 @@ public:
         _said = _rt.Players.Said += [this](VoltMod::ChatMessage& chat) { HandleSay(chat); };
     }
 
-    /** Block a text-muted player's line, and rebroadcast admin chat with a colored prefix in
-     *  place of the original. */
-    void HandleSay(VoltMod::ChatMessage& chat);
-
     /**
      * Re-emit an admin's regular chat with their group's colored prefix attached.
      * Caller is expected to SUPERCEDE the original say/say_team in the chat hook.
@@ -53,6 +49,10 @@ public:
     void NotifyVoiceMuted(VoltMod::Player* player);
 
 private:
+    /** Block a text-muted player's line, and rebroadcast admin chat with a colored prefix in
+     *  place of the original. */
+    void HandleSay(VoltMod::ChatMessage& chat);
+
     VoltMod::Runtime& _rt;
     const Config::ConfigManager& _config;
     ChatService& _chat;

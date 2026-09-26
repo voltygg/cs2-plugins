@@ -2,6 +2,7 @@
 
 #include <VoltMod/Hooks/ClientConVars.hpp>
 #include <array>
+#include <string_view>
 #include <utility>
 
 using VoltMod::ClientConVarStatus;
@@ -20,12 +21,9 @@ static constexpr std::array SteamLanguages{
     SteamLanguage{.Steam = "russian", .Code = "ru"},
 };
 
-ClientLanguage::ClientLanguage(VoltMod::Runtime& runtime) : _rt(runtime)
-{
-    _connected = _rt.Players.FullyConnected += [this](VoltMod::Player& player) { OnFullyConnected(player); };
-}
-
-std::string_view ClientLanguage::CodeFor(std::string_view steamLanguage)
+/** The translation code for Steam's language name, or empty for one no plugin translates. Extend
+ *  the table when a language gains translation files. */
+static std::string_view CodeFor(std::string_view steamLanguage)
 {
     for (const SteamLanguage& language : SteamLanguages)
     {
@@ -35,6 +33,11 @@ std::string_view ClientLanguage::CodeFor(std::string_view steamLanguage)
         }
     }
     return {};
+}
+
+ClientLanguage::ClientLanguage(VoltMod::Runtime& runtime) : _rt(runtime)
+{
+    _connected = _rt.Players.FullyConnected += [this](VoltMod::Player& player) { OnFullyConnected(player); };
 }
 
 void ClientLanguage::OnFullyConnected(VoltMod::Player& player)

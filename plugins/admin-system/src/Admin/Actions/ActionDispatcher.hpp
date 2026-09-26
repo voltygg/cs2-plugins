@@ -6,6 +6,7 @@
 #include <VoltMod/Players/PlayerRef.hpp>
 #include <VoltMod/Players/Policy.hpp>
 #include <functional>
+#include <optional>
 #include <string_view>
 
 namespace AdminSystem::Admin::Actions
@@ -41,6 +42,10 @@ public:
     void Broadcast(const ActionContext& ctx, std::string_view translationKey) const;
 
 private:
+    /** @ref Resolve, then nothing when @p requireAlive and the target is dead. */
+    std::optional<ActionContext> Prepare(VoltMod::PlayerRef caller, VoltMod::PlayerRef target,
+                                         std::string_view permission, bool requireAlive) const;
+
     VoltMod::Policy& _policy;
 };
 

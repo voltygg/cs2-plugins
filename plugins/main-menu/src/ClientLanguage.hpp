@@ -3,7 +3,6 @@
 #include <VoltMod/Core/Signals/Subscription.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <string_view>
 
 namespace MainMenu
 {
@@ -18,10 +17,6 @@ class ClientLanguage
 public:
     /** Subscribes to fully connected players. */
     explicit ClientLanguage(VoltMod::Runtime& runtime);
-
-    /** The translation code for Steam's language name (`english` is `en`), or empty for one no
-     *  plugin translates. Extend it when a language gains translation files. */
-    static std::string_view CodeFor(std::string_view steamLanguage);
 
 private:
     void OnFullyConnected(VoltMod::Player& player);
