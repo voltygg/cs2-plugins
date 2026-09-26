@@ -30,7 +30,7 @@ caches.
 ## Requirements
 
 - Counter-Strike 2 dedicated server
-- [Metamod:Source 2.0](https://www.sourcemm.net/)
+- VoltMod's `gameinfo.gi` line; see [Install a release](../../README.md#install-a-release)
 - PostgreSQL 13+, MariaDB 10.5+, or SQLite (bundled, no server needed)
 
 ## Install

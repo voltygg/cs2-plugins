@@ -45,12 +45,12 @@ uv run poe deploy push --server <id>
 After about a minute of boot:
 
 ```bash
-uv run poe rcon "meta list" "volt list" --server <id>
+uv run poe rcon "volt list" --server <id>
 ```
 
-`volt list` must list every plugin of the instance. One missing after a framework change means
-the host and plugins came from different builds (`HostAbiVersion`): rebuild and redeploy. Then test
-the behaviour with `rcon-debug`.
+`volt list` must list every plugin of the instance; an unknown command means the host did not
+load. One missing after a framework change means the host and plugins came from different builds
+(`HostAbiVersion`): rebuild and redeploy. Then test the behaviour with `rcon-debug`.
 
 ## Failures
 

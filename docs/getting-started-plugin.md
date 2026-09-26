@@ -101,7 +101,7 @@ Everything that is not specific to this repository lives in the framework's docs
 
 | Symptom | Check |
 | --- | --- |
-| `hello-world` is missing from `volt list` | The host is in `meta list`; then `game/csgo/addons/voltmod/plugins/hello-world/plugin.json` and `hello-world.dll` |
+| `hello-world` is missing from `volt list` | `game/csgo/addons/voltmod/plugins/hello-world/plugin.json` and `hello-world.dll` |
 | The plugin loads but `!ping` does nothing | `translations/en.json` was installed, and `plugin.locale` names a file that exists |
 | `settings.jsonc` changes are ignored | The installer seeds it once; edit the copy under `game/csgo/addons/voltmod/plugins/hello-world/configs/` |
 | Conan cannot resolve SDK packages | `uv run poe bootstrap`. A missing published binary is a publication problem; changing source will not fix it |

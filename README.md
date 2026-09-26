@@ -25,26 +25,24 @@ Shared interfaces between plugins live in `contracts/`.
 
 ## Install a release
 
-You need a Counter-Strike 2 dedicated server with
-[Metamod:Source 2](https://www.sourcemm.net/downloads.php/?branch=master).
+You need a Counter-Strike 2 dedicated server. Metamod:Source is optional.
 
 1. Download the plugin archive from the repository's
    [releases](https://github.com/voltygg/cs2-plugins/releases).
 2. Extract it into the server's `game/csgo` directory. The archive includes the VoltMod host and
    the selected plugin.
-3. Edit `game/csgo/addons/voltmod/plugins/<plugin>/configs/settings.jsonc`.
-4. Restart the server.
-5. Run `volt list` in the server console and confirm that the plugin is loaded.
+3. In `game/csgo/gameinfo.gi`, add `Game csgo/addons/voltmod` directly above `Game csgo`. A CS2
+   update removes this line; add it again after one.
+4. Edit `game/csgo/addons/voltmod/plugins/<plugin>/configs/settings.jsonc`.
+5. Restart the server.
+6. Run `volt list` in the server console and confirm that the plugin is loaded.
 
-Metamod loads the VoltMod host, which loads plugins from `addons/voltmod/plugins/`. Use `meta list`
-to check the host and `volt list` to check its plugins. The anticheat starts in `observe` mode;
-read its guide before changing the rollout mode.
+The anticheat starts in `observe` mode; read its guide before changing the rollout mode.
 
 ## Build from source
 
 Local Windows development requires Git, [uv](https://docs.astral.sh/uv/), Python 3.14 or newer,
-Visual Studio 2022 or newer with the C++ workload, and a local CS2 dedicated server with
-Metamod:Source.
+Visual Studio 2022 or newer with the C++ workload, and a local CS2 dedicated server.
 
 ```powershell
 git clone https://github.com/voltygg/cs2-plugins.git

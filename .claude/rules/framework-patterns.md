@@ -8,9 +8,8 @@ paths:
 
 ## Lifecycle
 
-The plugin is a DLL the VoltMod host loads; the host is the only Metamod plugin. A plugin's
-engine events arrive in load order, and a console command one plugin consumes is not offered to
-the next.
+The plugin is a DLL the VoltMod host loads. A plugin's engine events arrive in load order, and a
+console command one plugin consumes is not offered to the next.
 
 - `plugin.json` beside the plugin's `CMakeLists.txt` is its identity: name, version, log tag, description, dependencies. Nothing in C++ or CMake repeats it; read `runtime.PluginName` and `runtime.Version`.
 - Derive the load-cycle class from `VoltMod::Plugin`, construct the base from `Runtime&`, and override `bool Load()`. Put `VOLTMOD_PLUGIN(<Namespace>::App)` at global scope in `App.cpp`, with `<VoltMod/App/PluginEntry.hpp>` included in that one .cpp only. Override lifecycle hooks on `Plugin`; the App wires its own cross-system handlers in `Load`.

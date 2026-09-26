@@ -1,7 +1,7 @@
 [project]
 name = "cs2-plugins"
 version = "1.0.0"
-description = "CS2 Metamod plugin monorepo build tools"
+description = "CS2 plugin monorepo build tools"
 readme = "README.md"
 requires-python = ">=3.14"
 license = { text = "MIT" }

@@ -82,19 +82,19 @@ uv run poe serve --server D:/CS2-Server --map de_mirage
 The installed tree is:
 
 ```text
-game/csgo/addons/
-  metamod/voltmod.vdf        the only Metamod manifest
-  voltmod/bin/win64/voltmod.dll
-  voltmod/gamedata/
-  voltmod/plugins/<plugin>/
+game/csgo/addons/voltmod/
+  bin/win64/server_valve.dll   the loader the engine starts
+  bin/win64/voltmod.dll        the host
+  gamedata/
+  plugins/<plugin>/
     plugin.json
     <plugin>.dll
-    configs/                 seeded once, never overwritten
+    configs/                   seeded once, never overwritten
     translations/
 ```
 
-Verify with `volt list` on the server console. `meta list` shows the host, which is the one Metamod
-plugin. Metamod has no `meta reload`; `meta unload` then `meta load`.
+`run` and `serve` add `Game csgo/addons/voltmod` above `Game csgo` in `gameinfo.gi` when it is
+missing; a CS2 update removes it. Verify with `volt list` on the server console.
 
 A custom Panorama UI also has to be compiled into your own client with `uv run poe panorama`
 (Windows, needs the CS2 Workshop Tools; the client is found through Steam unless
@@ -118,7 +118,8 @@ A custom Panorama UI also has to be compiled into your own client with `uv run p
 
 `poe serve` runs `cs2.exe -dedicated -console -usercon` in the foreground, so the console
 window is the log. To get a file, launch `cs2.exe` yourself with `-condebug` as well: everything,
-VoltMod lines included, then lands in `<CS2_SERVER_PATH>/game/csgo/addons/metamod/console.log`.
+VoltMod lines included, then lands in `<CS2_SERVER_PATH>/game/csgo/addons/voltmod/console.log`
+(`addons/metamod/` when Metamod is installed).
 `con_logfile` is not a command, and redirecting stdout stays empty because `-console` owns its own
 window.
 
@@ -132,6 +133,7 @@ window.
 | `vswhere.exe is not recognized` | Put `C:\Program Files (x86)\Microsoft Visual Studio\Installer` on `PATH` |
 | CS2 server path is invalid | Point `CS2_SERVER_PATH` at the directory above `game/`, not at `game/csgo` |
 | Conan profiles or the `volty` remote are missing | `uv run poe bootstrap`. Set `VOLTMOD_SKIP_REMOTE_SETUP=1` only when something else manages remotes |
-| Missing HL2SDK or Metamod package | A publication problem, not a source one. Check the build uses `windows-msvc.txt` or `linux-steamrt.txt` |
+| Missing HL2SDK or KHook package | A publication problem, not a source one. Check the build uses `windows-msvc.txt` or `linux-steamrt.txt` |
 | Missing SDK binaries in the Conan cache | `uv run poe release build sdk` from `voltmod`, in the dev shell; they are excluded from `--build=missing` |
-| The plugin is missing from `volt list` | Confirm the host is in `meta list`, then check `game/csgo/addons/voltmod/plugins/<name>/plugin.json` and `<name>.dll` |
+| `volt` is an unknown command | The host did not start; the console's `[VoltMod]` lines say why |
+| The plugin is missing from `volt list` | Check `game/csgo/addons/voltmod/plugins/<name>/plugin.json` and `<name>.dll` |

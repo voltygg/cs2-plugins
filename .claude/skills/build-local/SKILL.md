@@ -43,7 +43,7 @@ uv run poe panorama            # compile the Panorama screens into your own clie
 
 Install seeds each file under `configs/` once and keeps later edits. Stop `cs2.exe` first, or the
 copy fails with `WinError 32`. A plugin with a custom UI shows nothing until `poe panorama` has run
-(needs CS2 Workshop Tools). Confirm the load with `meta list` (`rcon-debug`).
+(needs CS2 Workshop Tools). Confirm the load with `volt list` (`rcon-debug`).
 
 ## Failures
 
