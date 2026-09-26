@@ -33,11 +33,11 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                       target.ChangeTeam(Team::Spectator);
 
                       int slot = ctx.Target().Slot();
-                      auto& visibility = runtime.Hooks.Visibility;
+                      auto& visibility = runtime.Visibility;
                       visibility.SetControllerHidden(slot, true);
 
                       // The tick rebuilds the clones across rounds, spawns and deaths.
-                      auto glow = runtime.Hooks.Visibility.CreateGlow(slot);
+                      auto glow = runtime.Visibility.CreateGlow(slot);
                       glow->Refresh();
 
                       return {.OnTick = [glow]() { glow->Refresh(); },

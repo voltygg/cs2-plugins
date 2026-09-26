@@ -16,12 +16,12 @@ static float Jitter(float range)
 
 PawnTimers::PawnTimers(VoltMod::Runtime& runtime) : _runtime(runtime), _timers(runtime.Slots)
 {
-    if (auto available = _runtime.Hooks.Damage.Available(); !available)
+    if (auto available = _runtime.Damage.Available(); !available)
     {
         Log::Warn("Slapped players will take fall damage: {}", available.error().Detail);
         return;
     }
-    _damage = _runtime.Hooks.Damage.Before += [this](VoltMod::DamageHit& hit) { OnDamage(hit); };
+    _damage = _runtime.Damage.Before += [this](VoltMod::DamageHit& hit) { OnDamage(hit); };
 }
 
 void PawnTimers::Slap(const VoltMod::Pawn& pawn, float upward, float horizontal, int fallProtectMs)

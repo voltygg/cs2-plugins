@@ -46,7 +46,7 @@ commands.Add("slap")
 
 ## Subscriptions and hooks
 
-- Subscribe with `+=` on `Event` members (`runtime.Slots.Changed`, `runtime.Hooks.Movement.Before`, ...) and with `runtime.GameEvents.On<T>()` for game events. Every game event has a generated struct in `Events/EventTypes.hpp` (`player_death` is `PlayerDeath`, `dmg_health` is `DmgHealth`); there is no string form. The player an event is about is `e.Slot`, always valid, so don't guard it; other players are `<Key>Slot` and may be -1.
+- Subscribe with `+=` on `Event` members (`runtime.Slots.Changed`, `runtime.Movement.Before`, ...) and with `runtime.GameEvents.On<T>()` for game events. Every game event has a generated struct in `Events/EventTypes.hpp` (`player_death` is `PlayerDeath`, `dmg_health` is `DmgHealth`); there is no string form. The player an event is about is `e.Slot`, always valid, so don't guard it; other players are `<Key>Slot` and may be -1.
 - Every subscription returns a `Subscription`. Keep it in a `Subscriptions` beside the state its handler captures: `_subs.Add(event += handler)`.
 - A class subscribes and registers its commands in its constructor, unconditionally; settings are already loaded when it is built. VoltMod constructs the App after the runtime is ready and calls `Load` in the same step, so nothing fires in between. Work that can fail the load, or acts outside the plugin (a server convar, a published service), stays in `Load` or a method `Load` calls, because a broken settings file refuses the plugin only after every member is built.
 - Construct per-slot state with the slot feed: `VoltMod::PerSlot<State> _state{runtime.Slots};`.
@@ -82,7 +82,7 @@ commands.Add("slap")
 - `VoltMod::Options<Settings>` loads the struct from `configs/settings.jsonc` and republishes it on every `Load`; `Reload()` reads the same file again. bhop and anticheat use it as their `ConfigManager` directly.
 - When settings need validation or derived values, give `Options` a snapshot type and the function that builds it (`Options<Settings, ConfigSnapshot>{&BuildSnapshot}`), and wrap it in a plugin `ConfigManager` that offers `Get()` plus the derived values (admin-system `Config/ConfigManager.*`); read a section as `config.Get().chat`, not through a getter per section. The builder runs on a local copy and the snapshot is published in one move, so a failed reload leaves the previous one intact. Never publish a half-validated value.
 - Resolve `VoltMod::ConVar<T>` handles once at start, not by name per call.
-- Ask the service's `Available()` (`runtime.Hooks.Movement`, `runtime.Screens`, ...) before relying on anything that depends on gamedata.
+- Ask the service's `Available()` (`runtime.Movement`, `runtime.Screens`, ...) before relying on anything that depends on gamedata.
 
 ## Database
 

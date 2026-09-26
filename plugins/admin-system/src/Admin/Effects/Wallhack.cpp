@@ -19,7 +19,7 @@ Effect MakeWallhack(VoltMod::Runtime& runtime)
                   .Scope = EffectScope::Round,
                   .TickIntervalMs = GlowVision::RefreshIntervalMs,
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
-                      auto glow = runtime.Hooks.Visibility.CreateGlow(ctx.Target().Slot());
+                      auto glow = runtime.Visibility.CreateGlow(ctx.Target().Slot());
 
                       // Build the glow clones immediately; the repeating tick then tracks spawns/deaths/team
                       // changes. OnStop clears the visibility-filter entries and removes any surviving clones

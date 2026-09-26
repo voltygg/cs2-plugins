@@ -49,7 +49,7 @@ void ClientLanguage::OnFullyConnected(VoltMod::Player& player)
     }
 
     // Pending queries are dropped when the slot changes hands, so the answer is this player's.
-    _rt.Hooks.ClientConVars.Query(
+    _rt.ClientConVars.Query(
         player.Slot(), "cl_language",
         [this](int slot, ClientConVarStatus status, std::string_view, std::string_view value) {
             if (status != ClientConVarStatus::Answered)
