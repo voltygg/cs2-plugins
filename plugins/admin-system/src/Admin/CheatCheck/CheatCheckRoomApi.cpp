@@ -55,9 +55,9 @@ std::optional<VoltMod::HttpRequest> BuildRoomRequest(const Config::CheatCheckWeb
         .Method = VoltMod::HttpMethod::Post,
         .Url = cfg.createRoomUrl,
         .Body = VoltMod::Json::Write(body),
+        .Headers = {{"Content-Type", "application/json"}},
         .TimeoutMs = cfg.timeoutMs,
     };
-    request.AddHeader("Content-Type", "application/json");
     request.AddAuth(cfg.authHeader, cfg.authScheme, cfg.apiKey);
     return request;
 }
