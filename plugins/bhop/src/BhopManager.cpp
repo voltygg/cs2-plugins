@@ -144,8 +144,7 @@ void BhopManager::Grant(int64_t steamId, bool enabled)
 
     if (_config.Get().bhop.notifyPlayer)
     {
-        const std::string_view key = enabled ? "bhop.granted" : "bhop.revoked";
-        _rt.Messages.Send(slot, _rt.Translations.Get(key, slot), MessageKind::Center);
+        _rt.Messages.SendKey(slot, enabled ? "bhop.granted" : "bhop.revoked", {}, MessageKind::Center);
     }
 }
 

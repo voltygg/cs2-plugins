@@ -82,8 +82,8 @@ static void Submit(App& app, int reporterSlot, PendingReport& pending)
                            {
                                return;
                            }
-                           app.Runtime.Messages.ReplyKey(player->Slot(), ok ? "report.submitted" : "report.failed",
-                                                         {{"name", name}});
+                           app.Runtime.Messages.SendKey(player->Slot(), ok ? "report.submitted" : "report.failed",
+                                                        {{"name", name}});
                        });
 }
 

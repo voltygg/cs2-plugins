@@ -37,7 +37,7 @@ bool ReportMenuSection::Open(int slot)
     const ReportGate gate = _app.Reports.CanReport(player->SteamId());
     if (gate.Reason == ReportDenial::OnCooldown)
     {
-        _app.Runtime.Messages.ReplyKey(slot, "report.cooldown", {{"seconds", std::to_string(gate.SecondsLeft)}});
+        _app.Runtime.Messages.SendKey(slot, "report.cooldown", {{"seconds", std::to_string(gate.SecondsLeft)}});
         return true;
     }
     if (!gate)

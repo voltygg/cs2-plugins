@@ -127,7 +127,7 @@ void HubMenu::Run(const Entry& entry, int slot, MenuSurface& surface)
 {
     if (entry.kind == EntryKind::Link)
     {
-        _messages.ReplyKey(
+        _messages.SendKey(
             slot, "link.message",
             {{"label", Text(slot, entry.label)}, {"url", std::format("{}{}", ChatColors::LightBlue, entry.target)}});
         return;
@@ -148,13 +148,13 @@ void HubMenu::OpenSection(std::string_view id, int slot, MenuSurface& surface)
     Contracts::IMenuSection* section = Section(id);
     if (!section || !section->IsVisibleTo(slot))
     {
-        _messages.ReplyKey(slot, "entry.unavailable");
+        _messages.SendKey(slot, "entry.unavailable");
         return;
     }
     surface.CloseAll(slot);
     if (!section->Open(slot))
     {
-        _messages.ReplyKey(slot, "entry.unavailable");
+        _messages.SendKey(slot, "entry.unavailable");
     }
 }
 

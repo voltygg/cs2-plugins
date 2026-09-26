@@ -26,7 +26,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
         .Permission(Permission::FreezeAdmins)
         // PlayerOrSteamId: an offline admin is addressed by the bare SteamID64 they are
         // stored under, anyone online by the usual selector grammar.
-        .Run([&app](Caller c, Args::PlayerOrSteamId who, Args::Opt<Args::Rest> why) -> Result<Reply> {
+        .Run([&app](Caller c, Args::PlayerOrSteamId who, Args::Opt<Args::Rest> why) {
             std::string targetName = who.Online ? who.Online->Name() : std::to_string(who.SteamId);
 
             const auto* row = app.Admins.GetAdmin(who.SteamId);
@@ -64,7 +64,7 @@ void RegisterFreezeCommands(VoltMod::CommandManager& commands, App& app)
         .Permission(Permission::FreezeAdmins)
         // The target may be offline and not even resolvable as a player - it is matched
         // against the frozen list itself, so this stays a bespoke Word argument.
-        .Run([&app](Caller c, Args::Word token) -> Result<Reply> {
+        .Run([&app](Caller c, Args::Word token) {
             int64_t targetSteamId = 0;
             if (Strings::IsNumeric(token.Value))
             {

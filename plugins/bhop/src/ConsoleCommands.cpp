@@ -5,7 +5,6 @@
 
 using VoltMod::Caller;
 using VoltMod::Reply;
-using VoltMod::Result;
 
 namespace Args = VoltMod::Args;
 
@@ -22,7 +21,7 @@ void BhopManager::RegisterConsoleCommands()
     commands.Add("bhop_player")
         .Describe("Grant/revoke session bhop for a player.")
         .ServerOnly()
-        .Run([this](Caller, Args::SteamId steamId, Args::Int enabled) -> Result<Reply> {
+        .Run([this](Caller, Args::SteamId steamId, Args::Int enabled) {
             const bool granted = enabled.Value != 0;
             Grant(steamId.Value, granted);
             return Reply{std::format("bhop_player: {} for {}.", granted ? "granted" : "revoked", steamId.Value)};
@@ -31,10 +30,7 @@ void BhopManager::RegisterConsoleCommands()
     commands.Add("bhop_reload")
         .Describe("Re-read settings.jsonc and re-apply the bhop configuration.")
         .ServerOnly()
-        .Run([this](Caller) -> Result<Reply> {
-            ReloadSettings();
-            return Reply::Silent();
-        });
+        .Run([this](Caller) { ReloadSettings(); });
 }
 
 }  // namespace Bhop

@@ -50,7 +50,7 @@ void RegisterInfoCommands(VoltMod::CommandManager& commands, App& app)
         .Alias("reload_admins")
         .Describe("Reload admins and groups from the database without restarting.")
         .Permission(Permission::Root)
-        .Run([&app](Caller c) -> Result<Reply> {
+        .Run([&app](Caller c) {
             bool ok = app.Admins.Reload();
             app.Freeze.RefreshFromDatabase();
             return ok ? c.Ok("cmd.adminReloadDone") : c.Fail("cmd.adminReloadFailed");

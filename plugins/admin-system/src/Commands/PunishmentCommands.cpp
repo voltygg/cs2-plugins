@@ -45,7 +45,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
     commands.Add("kick")
         .Describe("Kick a player.")
         .Permission(Permission::Kick)
-        .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) -> Result<Reply> {
+        .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) {
             return Punish(app, c, *t.Value, PunishType::Kick, ReasonOr(c, why, "reason.kickedByAdmin"),
                           std::chrono::seconds{0}, "cmd.kickSuccess");
         });
@@ -53,9 +53,9 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
     commands.Add("ban")
         .Describe("Ban a player. Duration: minutes (e.g. 30) or 30s/5m/2h/7d; 0/'perm' = permanent.")
         .Permission(Permission::Ban)
-        .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
+        .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) {
             // The default ban reason is a config string, not a translation key.
-            std::string reason = why.Value ? why.Value->Value : app.Settings.Get().punishments.defaultBanReason;
+            std::string reason = why.ValueOr(app.Settings.Get().punishments.defaultBanReason);
             return Punish(app, c, *t.Value, PunishType::Ban, reason, d.Value, "cmd.banSuccess");
         });
 
@@ -63,7 +63,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Describe("Lift an active ban for the given SteamID.")
         .Permission(Permission::Unban)
         .UsageKey("cmd.unbanUsage")
-        .Run([&app](Caller c, Args::SteamId id, Args::Opt<Args::Rest> why) -> Result<Reply> {
+        .Run([&app](Caller c, Args::SteamId id, Args::Opt<Args::Rest> why) {
             const std::string reason = ReasonOr(c, why, LiftReasonKey(PunishType::Ban));
             bool removed = app.Punishments.RemoveBySteamId(PunishType::Ban, id.Value, c.Player->SteamId(), reason);
             Tokens tokens{{"id", std::to_string(id.Value)}};
@@ -75,7 +75,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Alias("mute")
         .Describe("Voice-mute a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.")
         .Permission(Permission::Mute)
-        .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
+        .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) {
             return Punish(app, c, *t.Value, PunishType::VoiceMute, ReasonOr(c, why, "reason.voiceMutedByAdmin"),
                           d.Value, "cmd.voiceMuteSuccess");
         });
@@ -86,9 +86,9 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Describe("Lift an active voice mute. Takes a SteamID64 for a player who has left.")
         .Permission(Permission::Mute)
         // A mute outlives the session that earned it, so the target may be offline by now.
-        .Run([&app](Caller c, Args::PlayerOrSteamId who) -> Result<Reply> {
+        .Run([&app](Caller c, Args::PlayerOrSteamId who) {
             bool removed = app.Punishments.RemoveBySteamId(PunishType::VoiceMute, who.SteamId, c.Player->SteamId(),
-                                                           c.Tr.Get(LiftReasonKey(PunishType::VoiceMute)));
+                                                           c.Translations.Get(LiftReasonKey(PunishType::VoiceMute)));
             Tokens tokens{{"name", who.Online ? who.Online->Name() : std::to_string(who.SteamId)}};
             return removed ? c.Ok("cmd.voiceUnmuteSuccess", tokens) : c.Fail("cmd.voiceUnmuteNotMuted", tokens);
         });
@@ -98,7 +98,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Alias("gag")
         .Describe("Text-mute (chat-block) a player. Duration: minutes or 30s/5m/2h/7d; 0/'perm' = permanent.")
         .Permission(Permission::Mute)
-        .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) -> Result<Reply> {
+        .Run([&app](Caller c, Args::Target t, Args::Duration d, Args::Opt<Args::Rest> why) {
             return Punish(app, c, *t.Value, PunishType::TextMute, ReasonOr(c, why, "reason.textMutedByAdmin"), d.Value,
                           "cmd.textMuteSuccess");
         });
@@ -109,9 +109,9 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
         .Describe("Lift an active text mute. Takes a SteamID64 for a player who has left.")
         .Permission(Permission::Mute)
         // A mute outlives the session that earned it, so the target may be offline by now.
-        .Run([&app](Caller c, Args::PlayerOrSteamId who) -> Result<Reply> {
+        .Run([&app](Caller c, Args::PlayerOrSteamId who) {
             bool removed = app.Punishments.RemoveBySteamId(PunishType::TextMute, who.SteamId, c.Player->SteamId(),
-                                                           c.Tr.Get(LiftReasonKey(PunishType::TextMute)));
+                                                           c.Translations.Get(LiftReasonKey(PunishType::TextMute)));
             Tokens tokens{{"name", who.Online ? who.Online->Name() : std::to_string(who.SteamId)}};
             return removed ? c.Ok("cmd.textUnmuteSuccess", tokens) : c.Fail("cmd.textUnmuteNotMuted", tokens);
         });
@@ -119,7 +119,7 @@ void RegisterPunishmentCommands(VoltMod::CommandManager& commands, App& app)
     commands.Add("warn")
         .Describe("Issue a warning. Auto-escalates to a ban once the threshold is reached.")
         .Permission(Permission::Mute)
-        .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) -> Result<Reply> {
+        .Run([&app](Caller c, Args::Target t, Args::Opt<Args::Rest> why) {
             return Punish(app, c, *t.Value, PunishType::Warn, ReasonOr(c, why, "reason.warnedByAdmin"),
                           std::chrono::seconds{0}, "cmd.warnSuccess");
         });

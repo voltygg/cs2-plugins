@@ -24,10 +24,12 @@ Register from `App::Load()` with the fluent builder:
 commands.Add("slap")
     .Describe("Slap a player")
     .Permission(Permission::Slap)
-    .Run([&app](Caller c, Args::Target target, Args::Rest reason) -> Result<Reply> { ... });
+    .Run([&app](Caller c, Args::Target target, Args::Rest reason) { ... });
 ```
 
 - The handler's parameter list is the argument spec: `Caller` first, then one `Args::` value per argument. Targets, durations, and reasons arrive parsed and immunity-checked.
+- A handler returns `c.Ok`/`c.Fail`, or nothing when it has nothing to say. Only one that mixes both returns `Reply::Silent()` and declares `-> Result<Reply>`.
+- Read arguments through them: `target->Name()`, `why.ValueOr(fallback)`. `c.Translations.Get(key)` with no slot is the server language, for reasons stored or announced.
 - `CommandManager` owns commands for the load cycle. Event, timer, and hook subscriptions live in the App's `_subs`.
 
 ## Authorization
@@ -63,7 +65,7 @@ commands.Add("slap")
 ## Errors and messages
 
 - Return `Result<T>`/`Status` when the caller needs to know why. `Error::Detail` is log text, `Error::Key` the translation key for the player reply.
-- All player-facing text goes through `Runtime::Messages` with translation keys.
+- All player-facing text goes through `Runtime::Messages` with translation keys: `SendKey(slot, key, tokens, kind)` for one player, `BroadcastKey` for everyone, each in their own language. `Send`/`Broadcast` take finished text.
 
 ## Menus and effects
 

@@ -24,7 +24,7 @@ namespace Commands
 inline std::string ReasonOr(const VoltMod::Caller& c, const VoltMod::Args::Opt<VoltMod::Args::Rest>& typed,
                             std::string_view fallbackKey)
 {
-    return typed.Value ? typed.Value->Value : c.Tr.Get(fallbackKey);
+    return typed.ValueOr(c.Translations.Get(fallbackKey));
 }
 
 void RegisterAdminMenuCommand(VoltMod::CommandManager& commands, App& app);

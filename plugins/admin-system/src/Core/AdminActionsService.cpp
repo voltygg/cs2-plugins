@@ -64,8 +64,8 @@ void AdminActionsService::AlertAdmins(int64_t steamId, std::string_view detector
         {
             continue;
         }
-        _rt.Messages.ReplyKey(admin->Slot(), "anticheat.alert",
-                              {{"name", suspectName}, {"detector", detectorName}, {"score", scoreText}});
+        _rt.Messages.SendKey(admin->Slot(), "anticheat.alert",
+                             {{"name", suspectName}, {"detector", detectorName}, {"score", scoreText}});
     }
 }
 

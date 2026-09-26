@@ -158,7 +158,7 @@ void FreezeManager::NotifyFrozen(int64_t steamId)
     auto row = GetFrozen(steamId);
     int slot = player->Slot();
     auto notice = _rt.Translations.Get("freeze.notice", slot, {{"reason", row ? row->Reason : ""}});
-    _rt.Messages.Reply(slot, std::format("{}{}", ChatColors::Red, notice));
+    _rt.Messages.Send(slot, std::format("{}{}", ChatColors::Red, notice));
 }
 
 void FreezeManager::NotifyFrozenSoon(int slot, int64_t steamId)

@@ -65,19 +65,19 @@ static std::string FormatAdminLine(const AdminLineStyle& style, std::string_view
 
 void ChatService::Reply(int slot, std::string_view message)
 {
-    _rt.Messages.Reply(slot, message);
+    _rt.Messages.Send(slot, message);
 }
 
 void ChatService::ReplyLink(int slot, std::string_view label, std::string_view url)
 {
-    _rt.Messages.Reply(slot, label);
-    _rt.Messages.Reply(slot, std::format("{}{}", ChatColors::Olive, url));
+    _rt.Messages.Send(slot, label);
+    _rt.Messages.Send(slot, std::format("{}{}", ChatColors::Olive, url));
 }
 
 void ChatService::NoPermission(int slot)
 {
     auto msg = std::format("{}{}", ChatColors::Red, _rt.Translations.Get("cmd.noPermission", slot));
-    _rt.Messages.Reply(slot, msg);
+    _rt.Messages.Send(slot, msg);
 }
 
 /** The colouring every broadcast shares, so no two lines disagree on the tag. */

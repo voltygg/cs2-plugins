@@ -22,7 +22,7 @@ void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app)
 {
     commands.Add("cc")
         .Describe("Submit your verification link for a pending cheat check.")
-        .Run([&app](Caller c, Args::Word link) -> Result<Reply> {
+        .Run([&app](Caller c, Args::Word link) {
             switch (app.CheatCheck.SubmitPlayerLink(c.Slot, link.Value))
             {
             case CheatCheckManager::SubmitResult::Relayed:
@@ -38,24 +38,24 @@ void RegisterCheatCheckCommands(VoltMod::CommandManager& commands, App& app)
     commands.Add("check")
         .Describe("Start a cheat check on a player.")
         .Permission(Permission::Control)
-        .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-            if (!AdminSystem::Admin::Actions::CallCheck(app, c.Player->Ref(), t.Value->Ref()))
+        .Run([&app](Caller c, Args::Target t) {
+            if (!AdminSystem::Admin::Actions::CallCheck(app, c.Player->Ref(), t->Ref()))
             {
                 return c.Fail("cmd.noPermission");
             }
-            return c.Ok("cheatCheck.started", {{"name", t.Value->Name()}});
+            return c.Ok("cheatCheck.started", {{"name", t->Name()}});
         });
 
     commands.Add("cccancel")
         .Alias("uncheck")
         .Describe("Cancel a pending cheat check on a player.")
         .Permission(Permission::Control)
-        .Run([&app](Caller c, Args::Target t) -> Result<Reply> {
-            if (!AdminSystem::Admin::Actions::CancelCheck(app, c.Player->Ref(), t.Value->Ref()))
+        .Run([&app](Caller c, Args::Target t) {
+            if (!AdminSystem::Admin::Actions::CancelCheck(app, c.Player->Ref(), t->Ref()))
             {
                 return c.Fail("cheatCheck.noActiveCheck");
             }
-            return c.Ok("cheatCheck.cancelled", {{"name", t.Value->Name()}});
+            return c.Ok("cheatCheck.cancelled", {{"name", t->Name()}});
         });
 }
 
