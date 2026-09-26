@@ -11,7 +11,6 @@ from deploy.deployer import Deployer
 from deploy.errors import DeployError
 from deploy.panel.api import PanelApi
 from deploy.panel.gameinfo import GameInfo
-from deploy.panel.metamod import Metamod
 from deploy.paths import RENDER_DIR
 
 
@@ -27,25 +26,20 @@ class PanelDeployer(Deployer[PanelServer]):
         game_dir = self.server.game_dir
         archive = self._plugin_archive(instance)
         gameinfo = GameInfo.read(self.api, game_dir)
-        metamod = Metamod.read(self.api, game_dir)
-        host = f"addons/{AddonsBuilder.HOST_ADDON_DIR}, addons/{AddonsBuilder.HOST_MANIFEST}"
         self.print_plan(
             "Deploying",
             f"panel:    {self.server.panel_url} ({self.api.state()})",
             f"payload:  {len(archive) // 1024} KiB",
-            f"host:     {host}",
-            f"metamod:  {metamod.latest_url}{'' if metamod.outdated else ' (installed)'}",
+            f"host:     addons/{AddonsBuilder.HOST_ADDON_DIR}",
             f"gameinfo: {gameinfo.planned_change}",
         )
         if self.dry_run:
             console.done("Dry run complete; the server was not changed")
             return
 
-        metamod.download()
         gameinfo.write()
         self._stop()
         try:
-            metamod.install()
             self.api.extract(game_dir, "cs2-plugins.tar.gz", archive)
             self._remove_unused_plugins(instance)
         except Exception:

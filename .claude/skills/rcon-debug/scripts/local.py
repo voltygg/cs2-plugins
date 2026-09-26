@@ -3,7 +3,7 @@
 Usage: uv run python .claude/skills/rcon-debug/scripts/local.py [--start] "<command>" ...
 
 Settings come from .env. --start launches cs2.exe detached with -condebug, so the console lands in
-game/csgo/addons/metamod/console.log, and waits until RCON answers.
+console.log under the first `Game` path of gameinfo.gi, and waits until RCON answers.
 """
 
 import argparse
@@ -35,7 +35,7 @@ def listening_address(port: int) -> str | None:
 
 def start(settings: dict[str, str | None], port: int) -> str:
     server = Cs2Server.open(Path(settings["CS2_SERVER_PATH"] or ""))
-    server.restore_metamod_search_path()
+    server.restore_voltmod_search_path()
     if server.executable is None:
         raise SystemExit(f"no cs2.exe under {server.root}")
     # fmt: off
@@ -48,7 +48,10 @@ def start(settings: dict[str, str | None], port: int) -> str:
     # fmt: on
     detached = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
     subprocess.Popen(command, cwd=server.executable.parent, creationflags=detached)
-    print(f"started; log: {server.root / 'game/csgo/addons/metamod/console.log'}", flush=True)
+    # The engine writes the log under the first Game path, which is Metamod's when it is installed.
+    gameinfo = (server.game_dir / "gameinfo.gi").read_text(encoding="utf-8", errors="replace")
+    log_dir = "metamod" if "csgo/addons/metamod" in gameinfo else "voltmod"
+    print(f"started; log: {server.game_dir / 'addons' / log_dir / 'console.log'}", flush=True)
     deadline = time.monotonic() + BOOT_TIMEOUT
     while time.monotonic() < deadline:
         time.sleep(3)

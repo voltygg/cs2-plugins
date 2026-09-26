@@ -18,8 +18,9 @@ class AddonsBuilder:
     HOST = "host"
     # Copied from voltmod.server.install, not imported: CI deploys install only the deploy group.
     HOST_ADDON_DIR = "voltmod"
-    HOST_MANIFEST = "metamod/voltmod.vdf"
     PLUGINS_DIR = f"{HOST_ADDON_DIR}/plugins"
+    # The module the engine loads through gameinfo.gi; it starts the host.
+    LOADER = f"{HOST_ADDON_DIR}/bin/linuxsteamrt64/libserver_valve.so"
     # Beside addons/; its contents go into game/csgo.
     ASSETS = "assets"
 
@@ -40,9 +41,9 @@ class AddonsBuilder:
         assets.mkdir()
         # The host is in every payload: it loads only plugins built against its own ABI.
         self._unpack(self.HOST, addons)
-        if not (addons / self.HOST_MANIFEST).is_file():
+        if not (addons / self.LOADER).is_file():
             raise DeployError(
-                f"build/package/{self.HOST} has no {self.HOST_MANIFEST}; "
+                f"build/package/{self.HOST} has no {self.LOADER}; "
                 "rebuild the framework and run `uv run poe deploy package`"
             )
         for plugin in self._server.plugins_for(instance):

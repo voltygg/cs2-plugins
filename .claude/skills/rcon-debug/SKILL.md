@@ -10,15 +10,15 @@ Confirm a hypothesis on the server before writing a fix.
 ## Local server
 
 ```bash
-uv run python .claude/skills/rcon-debug/scripts/local.py [--start] "meta list" "volt list"
+uv run python .claude/skills/rcon-debug/scripts/local.py [--start] "volt list" "status"
 ```
 
 Reads `.env`, finds the adapter CS2 bound (often a virtual one, not loopback), and prints each
 response under `=== <command> ===`. `--start` launches `cs2.exe` detached with `-condebug` when
 nothing listens, and waits for RCON. The log, VoltMod lines included, is then
-`<CS2_SERVER_PATH>/game/csgo/addons/metamod/console.log`; `poe serve` writes no file. Stop the
-server with the `quit` command. Anything that needs a player in game waits for the user
-(`connect localhost:27015` in their client).
+`<CS2_SERVER_PATH>/game/csgo/addons/voltmod/console.log` (`addons/metamod/` when Metamod is
+installed); `poe serve` writes no file. Stop the server with the `quit` command. Anything that needs
+a player in game waits for the user (`connect localhost:27015` in their client).
 
 ## Remote server
 
@@ -50,7 +50,7 @@ commands need a player. List them:
 grep -rn -A3 '\.Add("' plugins --include=*.cpp | grep -B3 -E '\.(ServerOnly|Anywhere)\(' | grep '\.Add("'
 ```
 
-Engine: `meta list`, `status`, `<convar>` to read, `<convar> <value>` to set, `mp_restartgame 1`.
+Engine: `status`, `<convar>` to read, `<convar> <value>` to set, `mp_restartgame 1`.
 
 ## Rules
 

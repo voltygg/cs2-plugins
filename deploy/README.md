@@ -143,9 +143,8 @@ voltmod host, then each plugin the instance runs, then that plugin's rendered `s
 
 ```text
 addons/
-  metamod/voltmod.vdf             the only Metamod manifest
   voltmod/
-    bin/linuxsteamrt64/            the host binary
+    bin/linuxsteamrt64/            the loader (libserver_valve.so) and the host (voltmod.so)
     gamedata/                      shipped once, with the host
     plugins/<plugin>/
       plugin.json                  name, version and dependencies
@@ -166,9 +165,10 @@ uv run poe deploy assets stronghold    # from game/csgo_addons/stronghold; --add
 It reads the client install from `--client` or `CS2_CLIENT_PATH`, defaulting to Steam's usual
 path. A deploy only adds and overwrites these files; one the plugin dropped stays on the server.
 
-Metamod loads the host and nothing else. The host reads each
-`addons/voltmod/plugins/<plugin>/plugin.json` and
-loads the plugins itself; a plugin has no Metamod manifest of its own.
+The engine finds the loader because the deploy adds `Game csgo/addons/voltmod` directly above
+`Game csgo` in `gameinfo.gi`. The loader starts the host, which reads each
+`addons/voltmod/plugins/<plugin>/plugin.json` and loads the plugins itself. The deploy does not
+install or touch Metamod; a server that already has it keeps it.
 
 The host and the plugins are one ABI: the host refuses a plugin built against a different
 `HostAbiVersion`. So `deploy package` always stages the host, the builder always puts it in the
@@ -182,9 +182,8 @@ inventory are left alone.
 
 Map, GSLT, hostname and RCON password live in the panel's Startup tab, not the inventory.
 
-`deploy push` builds the addons tree, reads `gameinfo.gi` and the installed Metamod build, then:
-downloads Metamod when the mirror has a newer one, writes the patched `gameinfo.gi`, stops the
-server (overwriting a loaded `.so` can crash it), installs Metamod, uploads the tree, removes
+`deploy push` builds the addons tree and reads `gameinfo.gi`, then: writes the patched
+`gameinfo.gi`, stops the server (overwriting a loaded `.so` can crash it), uploads the tree, removes
 unassigned plugins, and starts the server again. A failure after the stop starts the server before
 reporting the error. `--dry-run` only reads.
 
@@ -198,7 +197,7 @@ update changes `gameinfo.gi`, copy it from an updated dedicated server into that
 again.
 
 Turn off the egg's validate-on-start option if it has one. Validation restores `gameinfo.gi` and
-Metamod stops loading.
+VoltMod stops loading.
 
 ## Docker hosts
 
@@ -230,12 +229,11 @@ The shared install is mounted into every container, and each instance's own `add
 mounted over `csgo/addons`, so instances on one host can run different plugins.
 
 Before CS2 starts, [`files/docker/pre.sh`](files/docker/pre.sh) copies the instance's bundle into
-place, patches `gameinfo.gi`, and reinstalls Metamod when the mirror has a newer build. Set
-`MMS_URL` to pin a build or `MMS_BASE` to use another mirror. It stops the container when the
-bundle has no `voltmod.vdf`, since nothing the deploy shipped would load.
+place and patches `gameinfo.gi`. It stops the container when the bundle has no
+`libserver_valve.so`, since nothing the deploy shipped would load.
 
 `deploy push` renders the tree under `build/deploy/<id>`, creates the bind-mount directories,
-syncs to `deploy_root` (the sync never deletes, so the installed Metamod survives), removes the
+syncs to `deploy_root` (the sync never deletes, so installed addons survive), removes the
 plugin folders an instance no longer uses, pulls the runtime image at `RUNTIME_IMAGE_TAG` (the
 commit SHA in CI, `latest` otherwise), recreates the instances one at a time so `pre.sh` reinstalls
 them, checks that each is running, and removes the image's other tags. `--dry-run` renders,
@@ -290,7 +288,7 @@ deploy/
   paths.py, errors.py, rcon.py, console.py
   config/                     servers.py (models), inventory.py, secrets.py
   bundle/                     packager.py, settings.py, builder.py
-  panel/                      api.py, metamod.py, gameinfo.py, deployer.py
+  panel/                      api.py, gameinfo.py, deployer.py
   docker/                     ssh.py, tunnel.py, host.py, compose.py, deployer.py
 ```
 
@@ -302,8 +300,8 @@ entry in `DEPLOYERS` in `cli.py`.
 | Symptom | Check |
 | --- | --- |
 | `no package for <name>` | `build/package/` is empty; download the CI artifact or run `deploy package` |
-| `build/package/host has no metamod/voltmod.vdf` | the package set has no host; rebuild the framework and repackage |
-| The server starts but no plugin loads | `uv run poe rcon "meta list"` for the host, then `"volt list"` for the plugins |
+| `build/package/host has no voltmod/bin/linuxsteamrt64/libserver_valve.so` | the package set has no host; rebuild the framework and repackage |
+| The server starts but no plugin loads | `uv run poe rcon "volt list"`; an unknown command means the host did not load, so read the `[VoltMod]` lines in the console |
 | A plugin loads with stale settings | it is not in the instance's `plugins` list, so its `settings.jsonc` was never rendered |
-| Metamod stops loading after a CS2 update | `gameinfo.gi` was restored; redeploy, and on a panel turn off validate-on-start |
-| A plugin from an old install keeps loading | delete its leftover `addons/metamod/<plugin>.vdf` by hand; the tooling only manages `voltmod.vdf` |
+| VoltMod stops loading after a CS2 update | `gameinfo.gi` was restored; redeploy, and on a panel turn off validate-on-start |
+| Metamod tries to load the host, or an old plugin keeps loading | delete the leftover `addons/metamod/voltmod.vdf` or `<plugin>.vdf` by hand; the deploy no longer touches `addons/metamod/` |

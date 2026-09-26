@@ -13,7 +13,7 @@ USER_AGENT = "cs2-plugins-deploy"
 
 @cache
 def web_client() -> httpx.Client:
-    """For requests that carry no panel key: the node's upload URL and the Metamod mirror."""
+    """For requests that carry no panel key: the node's upload URL."""
     return httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=300, follow_redirects=True)
 
 

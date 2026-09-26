@@ -7,9 +7,9 @@ from deploy.paths import FILES_DIR
 
 
 class GameInfo:
-    """A panel server's csgo/gameinfo.gi, which must list Metamod's search path."""
+    """A panel server's csgo/gameinfo.gi, which must list VoltMod's search path."""
 
-    SEARCH_PATH = "csgo/addons/metamod"
+    SEARCH_PATH = "csgo/addons/voltmod"
     GAME_CSGO_LINE = re.compile(r"^([ \t]*)Game[ \t]+csgo[ \t]*(\r?)$", re.MULTILINE)
     # Valve's file from an up-to-date dedicated server; refresh it when a CS2 update changes it.
     TEMPLATE = FILES_DIR / "panel" / "gameinfo.gi"
@@ -20,7 +20,7 @@ class GameInfo:
         self.current = current
         self.shared_install = shared_install
         source = self.TEMPLATE.read_bytes().decode() if shared_install else current
-        self.patched = self.with_metamod(source)
+        self.patched = self.with_voltmod(source)
 
     @classmethod
     def read(cls, api: PanelApi, game_dir: str) -> Self:
@@ -33,8 +33,8 @@ class GameInfo:
         return cls(api, game_dir, current, shared_install=False)
 
     @classmethod
-    def with_metamod(cls, text: str) -> str:
-        """text with Metamod's search path above the first `Game csgo` line."""
+    def with_voltmod(cls, text: str) -> str:
+        """`text` with VoltMod's search path directly above the first `Game csgo` line."""
         if cls.SEARCH_PATH in text:
             return text
         replacement = rf"\1Game\t{cls.SEARCH_PATH}\2\n\g<0>"

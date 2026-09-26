@@ -1,6 +1,6 @@
 "GameInfo"
 {
-	// Valve's csgo/gameinfo.gi for linked panel installs; the deploy adds the Metamod search path.
+	// Valve's csgo/gameinfo.gi for linked panel installs; the deploy adds the VoltMod search path.
 
 	game 		"Counter-Strike 2"
 	title 		"Counter-Strike 2"

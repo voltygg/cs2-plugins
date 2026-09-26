@@ -26,7 +26,7 @@ class Ssh:
         return subprocess.run(args, check=True, text=True, capture_output=capture).stdout or ""
 
     def sync(self, source: Path, destination: str) -> None:
-        """Copy source into destination without deleting extra files, so installed Metamod stays."""
+        """Copy source into destination without deleting extra files, so installed addons stay."""
         preview = ["--dry-run", "--verbose"] if self.dry_run else []
         shell = shlex.join(["ssh", *self._options])
         paths = [f"{source.as_posix()}/", f"{self.target}:{destination}/"]
