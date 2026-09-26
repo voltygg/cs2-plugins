@@ -167,10 +167,7 @@ void App::RegisterGameEventListeners()
     auto& events = Runtime.GameEvents;
     _subs.Add(events.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath& e) {
         // Per-life effects only; EffectScope::Session survives death.
-        if (e.VictimSlot >= 0)
-        {
-            Effects.CancelOnDeath(e.VictimSlot);
-        }
+        Effects.CancelOnDeath(e.Slot);
     }));
     _subs.Add(events.On<VoltMod::RoundEnd>([this](const VoltMod::RoundEnd&) {
         Effects.CancelRound();
@@ -180,7 +177,7 @@ void App::RegisterGameEventListeners()
     _subs.Add(events.On<VoltMod::RoundPrestart>([this](const VoltMod::RoundPrestart&) { Effects.CancelRound(); }));
     _subs.Add(events.On<VoltMod::PlayerTeam>([this](const VoltMod::PlayerTeam& e) {
         // Hide is spectator-only; joining a team ends it.
-        if (e.Slot < 0 || e.Disconnect)
+        if (e.Disconnect)
         {
             return;
         }

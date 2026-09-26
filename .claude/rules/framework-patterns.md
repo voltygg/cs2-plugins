@@ -46,7 +46,7 @@ commands.Add("slap")
 
 ## Subscriptions and hooks
 
-- Subscribe with `+=` on `Event` members (`runtime.Slots.Changed`, `runtime.Hooks.Movement.Before`, ...) and with `runtime.GameEvents.On<T>()` for game events. A game event needs a struct in `Events/EventTypes.hpp`; there is no string form.
+- Subscribe with `+=` on `Event` members (`runtime.Slots.Changed`, `runtime.Hooks.Movement.Before`, ...) and with `runtime.GameEvents.On<T>()` for game events. Every game event has a generated struct in `Events/EventTypes.hpp` (`player_death` is `PlayerDeath`, `dmg_health` is `DmgHealth`); there is no string form. The player an event is about is `e.Slot`, always valid, so don't guard it; other players are `<Key>Slot` and may be -1.
 - Every subscription returns a `Subscription`. Keep it in a `Subscriptions` beside the state its handler captures: `_subs.Add(event += handler)`.
 - A class subscribes and registers its commands in its constructor, unconditionally; settings are already loaded when it is built. VoltMod constructs the App after the runtime is ready and calls `Load` in the same step, so nothing fires in between. Work that can fail the load, or acts outside the plugin (a server convar, a published service), stays in `Load` or a method `Load` calls, because a broken settings file refuses the plugin only after every member is built.
 - Construct per-slot state with the slot feed: `VoltMod::PerSlot<State> _state{runtime.Slots};`.

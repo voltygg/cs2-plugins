@@ -274,7 +274,7 @@ void BhopManager::ForceAutoHop(int slot)
 void BhopManager::OnPlayerSpawn(int slot)
 {
     // Enabled mode already replicates values server-wide.
-    if (_mode != Mode::Grants || !VoltMod::IsValidSlot(slot))
+    if (_mode != Mode::Grants)
     {
         return;
     }
