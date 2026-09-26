@@ -38,7 +38,7 @@ void App::InstallPolicy()
     };
     // CanTarget stays unset: only punishments check rank, where they are issued.
     policy.Reply = [this](int slot, std::string_view message) { Chat.Reply(slot, message); };
-    policy.Broadcast = [this](const VoltMod::Authorized& who, std::string_view key) {
+    Actions.OnBroadcast = [this](const VoltMod::Authorized& who, std::string_view key) {
         // No target and self-target both read "Bob noclipped".
         const bool named = who.Target && who.Target != &who.Caller;
         Chat.BroadcastAction(key, who.Caller.Name(), named ? who.Target->Name() : std::string_view{});

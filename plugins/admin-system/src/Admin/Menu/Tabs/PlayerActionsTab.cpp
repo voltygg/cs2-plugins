@@ -10,7 +10,6 @@
 #include "App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 
 namespace AdminSystem::Admin::Menu
@@ -39,7 +38,7 @@ static constexpr int SpeedPresets[] = {10, 25, 50, 100, 150, 200, 300};
 static constexpr int SpeedDefault = 3;  // index of 100 in SpeedPresets
 
 /** Call and cancel share one switch; as two buttons, Cancel was greyed out nearly always. */
-static VoltMod::MenuItem CheatCheckRow(const MenuContext& ctx, VoltMod::ActionRows& rows, const RowSpec& spec,
+static VoltMod::MenuItem CheatCheckRow(const MenuContext& ctx, ActionRows& rows, const RowSpec& spec,
                                        VoltMod::PlayerRef target)
 {
     App& app = ctx.Plugin;
@@ -60,14 +59,14 @@ static VoltMod::MenuItem CheatCheckRow(const MenuContext& ctx, VoltMod::ActionRo
         .ToItem();
 }
 
-static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& rows, const RowSpec& spec,
+static VoltMod::MenuItem MakeRow(const MenuContext& ctx, ActionRows& rows, const RowSpec& spec,
                                  VoltMod::PlayerRef target)
 {
-    auto action = [&](const VoltMod::Action& a) { return ctx.WhileAlive(target, a, rows.Action(spec.LabelKey, a)); };
-    auto toggle = [&](auto pred, const VoltMod::Action& a) {
+    auto action = [&](const Actions::Action& a) { return ctx.WhileAlive(target, a, rows.Action(spec.LabelKey, a)); };
+    auto toggle = [&](auto pred, const Actions::Action& a) {
         return ctx.WhileAlive(target, a, rows.StateToggle(spec.LabelKey, pred, a));
     };
-    auto presets = [&](const VoltMod::ActionRows::PresetSpec& preset) {
+    auto presets = [&](const ActionRows::PresetSpec& preset) {
         return ctx.WhileAlive(target, preset.Action, rows.Presets(preset));
     };
     auto submenu = [&](auto build) {

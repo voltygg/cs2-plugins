@@ -5,6 +5,7 @@ target_link_libraries(admin-system PRIVATE cs2-contracts)
 voltmod_add_tests(admin-system-tests
     DATABASE
     SOURCES
+        src/Admin/Effects/EffectManager.cpp
         src/Database/JsonList.cpp
         src/Maps/MapQuery.cpp
         src/Maps/VoteMath.cpp

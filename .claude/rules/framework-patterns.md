@@ -35,7 +35,7 @@ commands.Add("slap")
 
 ## Authorization
 
-- Inject permissions, immunity, replies, and broadcasts once through `Runtime::Policy`.
+- Gate with `.Permission("x")` in any plugin: the runtime asks admin-system's published `VoltMod::IPermissions`, and denies while it is not loaded. admin-system alone sets `Policy.HasPermission`, `Reply`, and its dispatcher's `OnBroadcast`.
 - Ask `Policy::Authorize(caller, target, permission)` wherever the answer is needed. Never re-implement the check.
 - A plugin's `CanTarget` is an immunity comparison only; console and self-targeting are settled before it runs.
 
@@ -70,11 +70,11 @@ commands.Add("slap")
 
 ## Menus and effects
 
-- `MenuBuilder(title).Add(ButtonRow{...})` for rows, `ActionRows` for rows acting on an admin/target pair, `Flow<TState>::Create(menus, slot, state)` for multi-step actions.
+- `MenuBuilder(title).Add(ButtonRow{...})` for rows, admin-system's `Admin::Menu::ActionRows` for rows acting on an admin/target pair, `Flow<TState>::Create(menus, slot, state)` for multi-step actions.
 - Menus go through `runtime.Menus`: `Start` begins a session, `Open` pushes onto it. With Panorama on, a plugin holds `runtime.UsePanorama(layout, addonId)`'s `Subscription` below its `VoltMod::PanoramaMenuLayout`; a player without the layout gets center HTML.
 - A Panorama menu screen is the framework's `menu` block (it draws the root panel too), styled by `menu_styles(ICONS)` from main-menu's `meatgg/menu_screen.css.j2`; don't restyle it per plugin.
 - A plugin adds a main menu entry by publishing `Contracts::IMenuSection` with `Exchange.Publish<Contracts::IMenuSection>(impl, id)` and keeping the returned `Subscription` as the publisher's last member; main-menu's config names the id.
-- Admin effects are `EffectDescriptor` values; menu order comes from the explicit `MenuEffects` table.
+- Admin actions and effects are admin-system's own types (`Admin/Actions/`, `Admin/Effects/`): effects are `EffectDescriptor` values, and menu order comes from the explicit `MenuEffects` table.
 
 ## Configuration
 

@@ -1,11 +1,15 @@
 #pragma once
 
 #include "Admin/Access.hpp"
+#include "Admin/Actions/ActionDispatcher.hpp"
 #include "Admin/Actions/Descriptors.hpp"
 #include "Admin/AdminManager.hpp"
 #include "Admin/CheatCheck/CheatCheckManager.hpp"
 #include "Admin/Effects/Descriptors.hpp"
+#include "Admin/Effects/EffectDispatcher.hpp"
+#include "Admin/Effects/EffectManager.hpp"
 #include "Admin/FreezeManager.hpp"
+#include "Admin/Menu/ActionRows.hpp"
 #include "Config/ConfigManager.hpp"
 #include "Core/AdminActionsService.hpp"
 #include "Core/AdminMenuSection.hpp"
@@ -25,11 +29,7 @@
 #include <VoltMod/Core/Signals/Subscription.hpp>
 #include <VoltMod/Core/Signals/Subscriptions.hpp>
 #include <VoltMod/Database/Api.hpp>
-#include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Menu/PanoramaMenuLayout.hpp>
-#include <VoltMod/Players/ActionDispatcher.hpp>
-#include <VoltMod/Players/EffectDispatcher.hpp>
-#include <VoltMod/Players/EffectManager.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -57,16 +57,16 @@ struct App final : VoltMod::Plugin
 
     /** Admin-panel rows for an admin/target pair. Build them here, not in each menu file. With no
      *  @p target the rows deny. */
-    VoltMod::ActionRows MenuRows(VoltMod::PlayerRef admin, std::optional<VoltMod::PlayerRef> target = std::nullopt)
+    Admin::Menu::ActionRows MenuRows(VoltMod::PlayerRef admin, std::optional<VoltMod::PlayerRef> target = std::nullopt)
     {
-        return VoltMod::ActionRows({.Actions = Actions,
-                                    .Policy = Runtime.Policy,
-                                    .Translations = Runtime.Translations,
-                                    .Players = Runtime.Players,
-                                    .Entities = Runtime.Entities,
-                                    .Menus = Runtime.Menus,
-                                    .Effects = &Effects},
-                                   admin, std::move(target));
+        return Admin::Menu::ActionRows({.Actions = Actions,
+                                        .Policy = Runtime.Policy,
+                                        .Translations = Runtime.Translations,
+                                        .Players = Runtime.Players,
+                                        .Entities = Runtime.Entities,
+                                        .Menus = Runtime.Menus,
+                                        .Effects = &Effects},
+                                       admin, std::move(target));
     }
 
     /** The admin menu layout, and the menu drawn on it when `menu.panorama` is on. */
@@ -77,7 +77,7 @@ struct App final : VoltMod::Plugin
 
     Config::ConfigManager Settings = VoltMod::LoadConfig<Config::ConfigManager>(Runtime);
     /** Runs actions through Runtime::Policy: permissions, targeting, broadcasts. */
-    VoltMod::ActionDispatcher Actions{Runtime.Policy};
+    Admin::Actions::ActionDispatcher Actions{Runtime.Policy};
     /** Actions that need Runtime beyond ActionContext (Slap, Smite). */
     Admin::Actions::ActionDescriptors ActionDescriptors{Runtime};
     VoltMod::Database Db{Runtime.Scheduler};
@@ -94,9 +94,9 @@ struct App final : VoltMod::Plugin
     Punishments::PunishmentManager Punishments{Repos, Settings, Runtime, Chat};
     Core::PlayerChat PlayerChat{Runtime, Settings, Chat, Admins, Punishments};
     Reports::ReportManager Reports{Repos, Settings, Runtime};
-    VoltMod::EffectManager Effects{Runtime.Scheduler};
+    Admin::Effects::EffectManager Effects{Runtime.Scheduler};
     /** Runs effects through Runtime::Policy: permissions, targeting, broadcasts. */
-    VoltMod::EffectDispatcher PlayerEffects{Actions, Effects};
+    Admin::Effects::EffectDispatcher PlayerEffects{Actions, Effects};
     Admin::Effects::EffectDescriptors EffectDescriptors{Runtime};
     Admin::CheatCheck::CheatCheckManager CheatCheck{Runtime, Settings, Chat, Punishments};
     /** Published in Load; each withdraws itself before what it wraps dies. */

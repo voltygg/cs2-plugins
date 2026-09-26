@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Admin/Actions/ActionContext.hpp"
+#include "Admin/Effects/EffectDescriptor.hpp"
 #include "Admin/Effects/EffectId.hpp"
 
 #include <VoltMod/Api.hpp>
@@ -8,10 +9,7 @@
 namespace AdminSystem::Admin::Effects
 {
 
-using Effect = VoltMod::EffectDescriptor;
-using EffectInstance = VoltMod::EffectInstance;
-using EffectChoice = VoltMod::EffectChoice;
-using EffectScope = VoltMod::EffectScope;
+using Effect = EffectDescriptor;
 
 // Effect bodies need engine services outside ActionContext, so each descriptor captures Runtime
 // while App builds the set for a load cycle.

@@ -8,7 +8,6 @@
 #include "App.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 
 namespace AdminSystem::Admin::Menu
@@ -21,13 +20,13 @@ static constexpr int SizePresets[] = {10, 25, 50, 75, 100, 150, 200};
 // Size cycles both up and down from normal, so it opens anchored on 100% (no change).
 static constexpr int SizeDefault = 4;  // index of 100 in SizePresets
 
-static VoltMod::MenuItem MakeRow(const MenuContext& ctx, VoltMod::ActionRows& rows, const RowSpec& spec,
+static VoltMod::MenuItem MakeRow(const MenuContext& ctx, ActionRows& rows, const RowSpec& spec,
                                  VoltMod::PlayerRef target)
 {
     auto& effects = ctx.Plugin.EffectDescriptors;
     auto& actions = ctx.Plugin.ActionDescriptors;
 
-    auto effect = [&](const VoltMod::EffectDescriptor& e) { return ctx.WhileAlive(target, e, rows.Effect(e)); };
+    auto effect = [&](const Effects::EffectDescriptor& e) { return ctx.WhileAlive(target, e, rows.Effect(e)); };
 
     switch (spec.Id)
     {

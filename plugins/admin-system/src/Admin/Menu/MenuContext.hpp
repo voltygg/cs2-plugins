@@ -1,12 +1,12 @@
 #pragma once
 
+#include "Admin/Menu/ActionRows.hpp"
 #include "Admin/Menu/MenuAccess.hpp"
 #include "Admin/Menu/MenuCatalog.hpp"
 #include "App.hpp"
 
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Text/Translations.hpp>
-#include <VoltMod/Menu/ActionRows.hpp>
 #include <VoltMod/Menu/MenuBuilder.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Players/PlayerRef.hpp>
@@ -51,7 +51,7 @@ struct MenuContext
     }
 
     /** The action/effect rows for this admin against @p target. */
-    VoltMod::ActionRows Rows(VoltMod::PlayerRef target) const { return Plugin.MenuRows(Admin, target); }
+    ActionRows Rows(VoltMod::PlayerRef target) const { return Plugin.MenuRows(Admin, target); }
 
     /** The connected player @p target names, or null once they leave. */
     VoltMod::Player* Player(VoltMod::PlayerRef target) const { return Plugin.Runtime.Players.Get(target); }

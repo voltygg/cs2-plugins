@@ -7,7 +7,6 @@ whichever plugin publishes the interface.
 | Interface | Published by | Used by | What it offers |
 | --- | --- | --- | --- |
 | `IAdminActions` | admin-system | anticheat | Automated bans and admin alerts |
-| `IPermissions` | admin-system | stronghold | Whether a SteamID holds a permission |
 | `IMenuSection` | admin-system (`admin`, `report`), stronghold (`stronghold`) | main-menu | A menu entry that opens the plugin's own UI |
 
 ## Using one
@@ -27,8 +26,11 @@ if (auto* admin = Runtime.Exchange.Get<Contracts::IAdminActions>())
 ```
 
 `Get` returns nullptr when nothing is published. Publish with `Exchange.Publish<T>(this)` in
-`Load`, or `Publish<T>(this, id)` for an interface with several publishers, and unpublish on
-unload.
+`Load`, or `Publish<T>(this, id)` for an interface with several publishers, and keep the returned
+`Subscription` as the publisher's last member; dropping it withdraws the entry.
+
+Permissions are not a contract here: admin-system publishes VoltMod's own `IPermissions`, and every
+plugin's `.Permission("x")` asks it through the runtime.
 
 ## Changing one
 
